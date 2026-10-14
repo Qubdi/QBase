@@ -99,6 +99,17 @@ describe('ProjectOpenDialog', () => {
         expect(screen.queryByText('Elsewhere')).toBeNull();
     });
 
+    it('is a dialog of limited width, not the whole screen', async () => {
+        renderDialog();
+        await screen.findByText('Diagram 3');
+        const classes = screen.getByRole('dialog').className;
+        expect(classes).toContain('max-w-5xl');
+        expect(classes).not.toContain('max-w-none');
+        expect(classes).not.toMatch(/min-w-\[\d+vw\]/);
+        // and it still leaves a margin on small screens
+        expect(classes).toContain('w-[calc(100vw-2rem)]');
+    });
+
     it('names the project and keeps Open disabled until a diagram is chosen', async () => {
         renderDialog();
         await screen.findByText('Diagram 3');

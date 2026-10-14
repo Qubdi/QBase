@@ -90,7 +90,8 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
             }}
         >
             <DialogContent
-                className="flex h-[30rem] max-h-screen max-w-none flex-col md:min-w-[80vw] xl:min-w-[55vw]"
+                // wide enough for the table, never the whole screen
+                className="flex h-[30rem] max-h-[90vh] w-[calc(100vw-2rem)] max-w-5xl flex-col"
                 showClose={canClose}
                 onInteractOutside={(e) => !canClose && e.preventDefault()}
                 onEscapeKeyDown={(e) => !canClose && e.preventDefault()}
