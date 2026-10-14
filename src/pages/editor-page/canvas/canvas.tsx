@@ -1721,7 +1721,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                                                         'size-8 p-1 shadow-none',
                                                         snapToGridEnabled ||
                                                             shiftPressed
-                                                            ? 'bg-pink-600 text-white hover:bg-pink-500 dark:hover:bg-pink-700 hover:text-white'
+                                                            ? 'bg-teal-600 text-white hover:bg-teal-500 dark:hover:bg-teal-700 hover:text-white'
                                                             : ''
                                                     )}
                                                     onClick={() =>
@@ -1813,7 +1813,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                         >
                             <Badge
                                 variant="default"
-                                className="bg-pink-600 text-white"
+                                className="bg-teal-600 text-white"
                             >
                                 {t('loading_diagram')}
                             </Badge>
@@ -1830,7 +1830,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                             className="!shadow-none"
                         >
                             <Button
-                                className="size-11 bg-pink-600 p-2 hover:bg-pink-500"
+                                className="size-11 bg-teal-600 p-2 hover:bg-teal-500"
                                 onClick={showSidePanel}
                             >
                                 <Pencil />
@@ -1877,7 +1877,8 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     <Background
                         variant={BackgroundVariant.Dots}
                         gap={16}
-                        size={1}
+                        size={1.2}
+                        color="hsl(var(--muted-foreground) / 0.35)"
                     />
                     {/* Empty state when all tables are hidden by filter */}
                     {allTablesHiddenByFilter && (
