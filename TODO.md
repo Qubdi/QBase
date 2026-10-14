@@ -23,7 +23,7 @@ UUID and no separate project page. Diagrams are created inside the workspace.
 
 ## Backlog: admin panel and home page
 
-1. **Lists grow without limit.** In the admin panel the Projects and Users lists keep
+1. ✅ **Lists grow without limit.** (done: server paging, fixed page sizes, scrolling table) In the admin panel the Projects and Users lists keep
    growing and make the page taller. The same happens on the home page (`/`).
    - Add pagination (page size ~10 to 20) to the admin Users list, the admin Projects list and
      the home project list, and keep the page height stable (the list area scrolls or pages;
