@@ -5,11 +5,18 @@ import { Button } from '@/components/button/button';
 import { useStorage } from '@/hooks/use-storage';
 import { api, errorMessage, type RemoteDiagramSummary } from '@/lib/qubdi/api';
 import { serverContentToDiagram } from '@/lib/qubdi/open-remote';
-import { findLocalId, setProjectId, setRemoteId } from '@/lib/qubdi/remote-map';
+import {
+    clearRemoteId,
+    findLocalId,
+    setProjectId,
+    setRemoteId,
+} from '@/lib/qubdi/remote-map';
 import { generateId } from '@/lib/utils';
 
 export interface ProjectDiagramsProps {
     diagrams: RemoteDiagramSummary[];
+    /** Called after a diagram was deleted so the page can reload its list. */
+    onChanged?: () => void;
 }
 
 const roleLabel = (role: RemoteDiagramSummary['role']) =>
@@ -18,6 +25,7 @@ const roleLabel = (role: RemoteDiagramSummary['role']) =>
 /** The diagrams of one project, with a way to open each in the editor. */
 export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
     diagrams,
+    onChanged,
 }) => {
     const { addDiagram, deleteDiagram, listDiagrams } = useStorage();
     const navigate = useNavigate();
@@ -25,6 +33,7 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [confirmId, setConfirmId] = useState<string | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     useEffect(() => {
         listDiagrams()
@@ -102,6 +111,26 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
         }
     };
 
+    // only admins (role 'owner') may delete; the server enforces it too
+    const remove = async (d: RemoteDiagramSummary) => {
+        setError(null);
+        setBusyId(d.id);
+        try {
+            await api.deleteDiagram(d.id);
+            const local = findLocalId(d.id);
+            if (local) {
+                await deleteDiagram(local).catch(() => undefined);
+                clearRemoteId(local);
+            }
+            onChanged?.();
+        } catch (e) {
+            fail(e);
+        } finally {
+            setBusyId(null);
+            setConfirmDeleteId(null);
+        }
+    };
+
     if (diagrams.length === 0) {
         return (
             <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -163,6 +192,30 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                                             onClick={() => setConfirmId(d.id)}
                                         >
                                             Get latest
+                                        </Button>
+                                    )
+                                ) : null}
+                                {d.role === 'owner' ? (
+                                    confirmDeleteId === d.id ? (
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            disabled={busy}
+                                            onClick={() => void remove(d)}
+                                        >
+                                            Delete for everyone
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-destructive hover:text-destructive"
+                                            disabled={busy}
+                                            onClick={() =>
+                                                setConfirmDeleteId(d.id)
+                                            }
+                                        >
+                                            Delete
                                         </Button>
                                     )
                                 ) : null}

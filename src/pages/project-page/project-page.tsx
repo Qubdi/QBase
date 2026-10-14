@@ -37,6 +37,7 @@ const ProjectView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [newOpen, setNewOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
+    const [tick, setTick] = useState(0);
 
     useEffect(() => {
         setState({ kind: 'loading' });
@@ -59,7 +60,7 @@ const ProjectView: React.FC = () => {
                 setError(errorMessage(e));
                 setState({ kind: 'missing' });
             });
-    }, [projectId]);
+    }, [projectId, tick]);
 
     if (state.kind === 'loading') {
         return <Spinner size="large" className="mx-auto mt-24 text-primary" />;
@@ -134,7 +135,10 @@ const ProjectView: React.FC = () => {
                     to create or change diagrams.
                 </p>
             ) : null}
-            <ProjectDiagrams diagrams={diagrams} />
+            <ProjectDiagrams
+                diagrams={diagrams}
+                onChanged={() => setTick((t) => t + 1)}
+            />
             {canEdit ? (
                 <>
                     <NewDiagramDialog
