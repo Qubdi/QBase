@@ -9,6 +9,7 @@ import {
     sampleContent,
     type TestCtx,
     type TestUser,
+    grant,
 } from './helpers.js';
 
 describe('share links', () => {
@@ -47,12 +48,7 @@ describe('share links', () => {
             [editor, 'editor'],
             [viewer, 'viewer'],
         ] as const) {
-            await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${id}/members`,
-                headers: as(owner),
-                payload: { email: u.email, role },
-            });
+            await grant(ctx.app, u, role);
         }
     });
     afterAll(() => ctx.close());

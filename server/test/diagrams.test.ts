@@ -8,6 +8,8 @@ import {
     sampleContent,
     type TestCtx,
     type TestUser,
+    grant,
+    projectFor,
 } from './helpers.js';
 
 describe('diagrams and permissions', () => {
@@ -29,13 +31,7 @@ describe('diagrams and permissions', () => {
             [editor, 'editor'],
             [viewer, 'viewer'],
         ] as const) {
-            const res = await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${diagramId}/members`,
-                headers: as(owner),
-                payload: { email: u.email, role },
-            });
-            expect(res.statusCode).toBe(201);
+            await grant(ctx.app, u, role);
         }
     });
     afterAll(() => ctx.close());
@@ -53,12 +49,16 @@ describe('diagrams and permissions', () => {
         }
     });
 
-    it('creates a diagram and makes the creator the owner', async () => {
+    it('creates a diagram in a project (an admin creator is the owner)', async () => {
         const res = await ctx.app.inject({
             method: 'POST',
             url: '/diagrams',
             headers: as(owner),
-            payload: { title: 'Another', content: sampleContent },
+            payload: {
+                title: 'Another',
+                content: sampleContent,
+                projectId: await projectFor(ctx.app),
+            },
         });
         expect(res.statusCode).toBe(201);
         expect(res.json().role).toBe('owner');
@@ -119,14 +119,15 @@ describe('diagrams and permissions', () => {
         expect(bad.statusCode).toBe(400);
     });
 
-    it('lists only diagrams the user is a member of', async () => {
+    it('lists only diagrams in projects the user belongs to', async () => {
         const mine = await ctx.app.inject({
             url: '/diagrams',
             headers: as(viewer),
         });
-        expect(mine.json().map((d: { id: string }) => d.id)).toEqual([
-            diagramId,
-        ]);
+        // the whole project is visible to its members
+        expect(mine.json().map((d: { id: string }) => d.id)).toContain(
+            diagramId
+        );
         const none = await ctx.app.inject({
             url: '/diagrams',
             headers: as(stranger),

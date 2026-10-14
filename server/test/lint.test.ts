@@ -6,7 +6,15 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog } from '../src/db/schema.js';
 import { parseArgs, runCli, type CliIo } from '../src/cli/lint.js';
 import diagramFixture from './fixtures/postgres-diagram.json' with { type: 'json' };
-import { as, createTestApp, registerUser, type TestCtx, type TestUser } from './helpers.js';
+import {
+    as,
+    createTestApp,
+    registerUser,
+    type TestCtx,
+    type TestUser,
+    grant,
+    projectFor,
+} from './helpers.js';
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x));
 const content = diagramFixture.content as Record<string, unknown>;
@@ -36,8 +44,8 @@ describe('lint API', () => {
         owner = await registerUser(ctx.app, 'owner@example.com');
         viewer = await registerUser(ctx.app, 'viewer@example.com');
         stranger = await registerUser(ctx.app, 'stranger@example.com');
-        id = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: diagramFixture })).json().id;
-        await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/members`, headers: as(owner), payload: { email: viewer.email, role: 'viewer' } });
+        id = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })).json().id;
+        await grant(ctx.app, viewer, 'viewer');
     });
     afterAll(() => ctx.close());
 

@@ -11,7 +11,15 @@ import type {
 import diagramFixture from './fixtures/postgres-diagram.json' with { type: 'json' };
 import metadataFixture from './fixtures/postgres-metadata.json' with { type: 'json' };
 import { loadConfig } from '../src/config.js';
-import { as, createTestApp, registerUser, type TestCtx, type TestUser } from './helpers.js';
+import {
+    as,
+    createTestApp,
+    registerUser,
+    type TestCtx,
+    type TestUser,
+    grant,
+    projectFor,
+} from './helpers.js';
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x));
 const base = metadataFixture as unknown as DatabaseMetadata;
@@ -95,19 +103,14 @@ describe('drift detection', () => {
             method: 'POST',
             url: '/diagrams',
             headers: as(owner),
-            payload: diagramFixture,
+            payload: { ...diagramFixture, projectId: await projectFor(ctx.app) },
         });
         diagramId = created.json().id;
         for (const [u, role] of [
             [editor, 'editor'],
             [viewer, 'viewer'],
         ] as const) {
-            await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${diagramId}/members`,
-                headers: as(owner),
-                payload: { email: u.email, role },
-            });
+            await grant(ctx.app, u, role);
         }
         const saved = await ctx.app.inject({
             method: 'POST',
@@ -365,7 +368,7 @@ describe('drift detection', () => {
                 const withKeys = (await check()).json();
                 expect(withKeys.status).toBe('clean');
             } finally {
-                await ctx.app.inject({ method: 'PUT', url: `/diagrams/${diagramId}`, headers: as(owner), payload: diagramFixture });
+                await ctx.app.inject({ method: 'PUT', url: `/diagrams/${diagramId}`, headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } });
             }
         });
     });
@@ -496,7 +499,7 @@ describe('drift detection', () => {
             addColumn('phone');
             const report = (await check()).json();
             const other = (
-                await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: diagramFixture })
+                await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })
             ).json().id;
             const res = await ctx.app.inject({ url: `/diagrams/${other}/drift/reports/${report.id}`, headers: as(owner) });
             expect(res.statusCode).toBe(404);
@@ -510,7 +513,7 @@ describe('drift detection', () => {
         });
 
         it('is removed with the diagram', async () => {
-            const tmp = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: diagramFixture })).json().id;
+            const tmp = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })).json().id;
             await put(owner, settings({ enabled: false }), tmp);
             await check(owner, tmp);
             await ctx.app.inject({ method: 'DELETE', url: `/diagrams/${tmp}`, headers: as(owner) });
@@ -558,7 +561,7 @@ describe('drift webhooks', () => {
             { factory }
         );
         owner = await registerUser(ctx.app, 'hook@example.com');
-        diagramId = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: diagramFixture })).json().id;
+        diagramId = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })).json().id;
         connectionId = (
             await ctx.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(owner), payload: { ...conn(), name: 'c' } })
         ).json().id;
@@ -660,7 +663,8 @@ describe('drift webhooks', () => {
         const strict = await createTestApp({ connectionKey: 'a-long-enough-connection-key' }, { factory }, false);
         try {
             const u = await registerUser(strict.app, 'strict@example.com');
-            const id = (await strict.app.inject({ method: 'POST', url: '/diagrams', headers: as(u), payload: diagramFixture })).json().id;
+            await grant(strict.app, u, 'editor');
+            const id = (await strict.app.inject({ method: 'POST', url: '/diagrams', headers: as(u), payload: { ...diagramFixture, projectId: await projectFor(strict.app) } })).json().id;
             const cid = (
                 await strict.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(u), payload: { ...conn(), name: 'c' } })
             ).json().id;
@@ -695,7 +699,7 @@ describe('drift scheduler', () => {
         ctx = await createTestApp({ connectionKey: 'a-long-enough-connection-key' }, { factory });
         owner = await registerUser(ctx.app, 'sched@example.com');
         for (let i = 0; i < 3; i++) {
-            ids.push((await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: diagramFixture })).json().id);
+            ids.push((await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })).json().id);
         }
     });
     afterAll(() => ctx.close());

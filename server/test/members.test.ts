@@ -1,173 +1,84 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { auditLog } from '../src/db/schema.js';
 import {
     as,
     createDiagram,
     createTestApp,
+    grant,
     registerUser,
     type TestCtx,
     type TestUser,
 } from './helpers.js';
 
-describe('members', () => {
+// Access to a diagram comes from its project and is granted by an admin (see
+// admin-projects.test.ts). The diagram only exposes a read-only member list.
+describe('diagram members (read-only)', () => {
     let ctx: TestCtx;
-    let owner: TestUser;
+    let admin: TestUser;
     let bob: TestUser;
     let carol: TestUser;
     let stranger: TestUser;
     let diagramId: string;
 
-    const add = (who: TestUser, email: string, role = 'viewer') =>
+    const list = (who: TestUser) =>
         ctx.app.inject({
-            method: 'POST',
             url: `/diagrams/${diagramId}/members`,
             headers: as(who),
-            payload: { email, role },
         });
 
     beforeAll(async () => {
         ctx = await createTestApp();
-        owner = await registerUser(ctx.app, 'owner@example.com');
+        admin = await registerUser(ctx.app, 'admin@example.com');
         bob = await registerUser(ctx.app, 'bob@example.com');
         carol = await registerUser(ctx.app, 'carol@example.com');
         stranger = await registerUser(ctx.app, 'stranger@example.com');
-        diagramId = await createDiagram(ctx.app, owner);
+        diagramId = await createDiagram(ctx.app, admin);
+        await grant(ctx.app, bob, 'viewer');
+        await grant(ctx.app, carol, 'editor');
     });
     afterAll(() => ctx.close());
 
-    it('lets the owner add a member by email and grants access', async () => {
-        const res = await add(owner, 'BOB@example.com', 'viewer');
-        expect(res.statusCode).toBe(201);
-        expect(res.json()).toMatchObject({ email: 'bob@example.com', role: 'viewer' });
-        const get = await ctx.app.inject({
-            url: `/diagrams/${diagramId}`,
-            headers: as(bob),
-        });
-        expect(get.statusCode).toBe(200);
+    it('lists the project members with their roles to any member', async () => {
+        for (const who of [admin, bob, carol]) {
+            const res = await list(who);
+            expect(res.statusCode).toBe(200);
+            const roles = Object.fromEntries(
+                res.json().map((m: { email: string; role: string }) => [m.email, m.role])
+            );
+            expect(roles).toEqual({
+                'bob@example.com': 'viewer',
+                'carol@example.com': 'editor',
+            });
+        }
     });
 
-    it('rejects duplicates, unknown users and invalid roles', async () => {
-        expect((await add(owner, 'bob@example.com')).statusCode).toBe(409);
-        expect((await add(owner, 'ghost@example.com')).statusCode).toBe(404);
-        expect((await add(owner, 'carol@example.com', 'owner')).statusCode).toBe(400);
+    it('hides the list from strangers and anonymous callers', async () => {
+        expect((await list(stranger)).statusCode).toBe(404);
+        const anon = await ctx.app.inject({ url: `/diagrams/${diagramId}/members` });
+        expect(anon.statusCode).toBe(401);
     });
 
-    it('lists members for any member and hides them from strangers', async () => {
-        const ok = await ctx.app.inject({
+    it('no longer lets anyone add, change or remove diagram members', async () => {
+        const add = await ctx.app.inject({
+            method: 'POST',
             url: `/diagrams/${diagramId}/members`,
-            headers: as(bob),
+            headers: as(admin),
+            payload: { email: stranger.email, role: 'viewer' },
         });
-        expect(ok.statusCode).toBe(200);
-        expect(ok.json().map((m: { role: string }) => m.role).sort()).toEqual([
-            'owner',
-            'viewer',
-        ]);
-        const no = await ctx.app.inject({
-            url: `/diagrams/${diagramId}/members`,
-            headers: as(stranger),
-        });
-        expect(no.statusCode).toBe(404);
-    });
-
-    it('only lets the owner manage members', async () => {
-        expect((await add(bob, 'carol@example.com')).statusCode).toBe(403);
-        expect((await add(stranger, 'carol@example.com')).statusCode).toBe(404);
-
+        expect(add.statusCode).toBe(404);
         const patch = await ctx.app.inject({
             method: 'PATCH',
             url: `/diagrams/${diagramId}/members/${bob.id}`,
-            headers: as(bob),
+            headers: as(admin),
             payload: { role: 'editor' },
-        });
-        expect(patch.statusCode).toBe(403);
-        const del = await ctx.app.inject({
-            method: 'DELETE',
-            url: `/diagrams/${diagramId}/members/${bob.id}`,
-            headers: as(bob),
-        });
-        expect(del.statusCode).toBe(403);
-    });
-
-    it('changes a role and the new permissions apply immediately', async () => {
-        const patch = await ctx.app.inject({
-            method: 'PATCH',
-            url: `/diagrams/${diagramId}/members/${bob.id}`,
-            headers: as(owner),
-            payload: { role: 'editor' },
-        });
-        expect(patch.statusCode).toBe(200);
-        const put = await ctx.app.inject({
-            method: 'PUT',
-            url: `/diagrams/${diagramId}`,
-            headers: as(bob),
-            payload: { title: 'Bob edit' },
-        });
-        expect(put.statusCode).toBe(200);
-    });
-
-    it('protects the owner membership', async () => {
-        const patch = await ctx.app.inject({
-            method: 'PATCH',
-            url: `/diagrams/${diagramId}/members/${owner.id}`,
-            headers: as(owner),
-            payload: { role: 'viewer' },
-        });
-        expect(patch.statusCode).toBe(400);
-        const del = await ctx.app.inject({
-            method: 'DELETE',
-            url: `/diagrams/${diagramId}/members/${owner.id}`,
-            headers: as(owner),
-        });
-        expect(del.statusCode).toBe(400);
-    });
-
-    it('returns 404 when changing or removing a non-member', async () => {
-        const patch = await ctx.app.inject({
-            method: 'PATCH',
-            url: `/diagrams/${diagramId}/members/${carol.id}`,
-            headers: as(owner),
-            payload: { role: 'viewer' },
         });
         expect(patch.statusCode).toBe(404);
         const del = await ctx.app.inject({
             method: 'DELETE',
-            url: `/diagrams/${diagramId}/members/${carol.id}`,
-            headers: as(owner),
+            url: `/diagrams/${diagramId}/members/${bob.id}`,
+            headers: as(admin),
         });
         expect(del.statusCode).toBe(404);
-    });
-
-    it('removes a member and revokes access', async () => {
-        const del = await ctx.app.inject({
-            method: 'DELETE',
-            url: `/diagrams/${diagramId}/members/${bob.id}`,
-            headers: as(owner),
-        });
-        expect(del.statusCode).toBe(204);
-        const get = await ctx.app.inject({
-            url: `/diagrams/${diagramId}`,
-            headers: as(bob),
-        });
-        expect(get.statusCode).toBe(404);
-    });
-
-    it('requires login', async () => {
-        const res = await ctx.app.inject({
-            url: `/diagrams/${diagramId}/members`,
-        });
-        expect(res.statusCode).toBe(401);
-    });
-
-    it('audits share and role changes', async () => {
-        const actions = (await ctx.db.select().from(auditLog))
-            .filter((r) => r.diagramId === diagramId)
-            .map((r) => r.action);
-        expect(actions).toEqual(
-            expect.arrayContaining([
-                'member.add',
-                'member.role_change',
-                'member.remove',
-            ])
-        );
+        // and nothing changed
+        expect((await list(admin)).json()).toHaveLength(2);
     });
 });

@@ -250,7 +250,7 @@ describe('admin panel and projects', () => {
             expect(row.title).not.toBe('Draft rename');
         });
 
-        it('shows project members on the diagram and blocks per-diagram edits', async () => {
+        it('shows project members on the diagram, read-only', async () => {
             const list = await call('GET', `/diagrams/${diagramId}/members`, viewer);
             expect(list.statusCode).toBe(200);
             expect(list.json().map((m: { email: string }) => m.email)).toContain(
@@ -260,21 +260,17 @@ describe('admin panel and projects', () => {
                 email: 'stranger@example.com',
                 role: 'viewer',
             });
-            expect(add.statusCode).toBe(400);
-            expect(add.json().error).toBe('managed_by_project');
+            expect(add.statusCode).toBe(404);
         });
 
-        it('keeps standalone diagrams private to their own members', async () => {
-            const own = await call('POST', '/diagrams', editor, {
-                title: 'Personal',
-                content: sampleContent,
-            });
-            expect(own.statusCode).toBe(201);
-            const id = own.json().id;
-            expect((await call('GET', `/diagrams/${id}`, editor)).statusCode).toBe(200);
-            expect((await call('GET', `/diagrams/${id}`, viewer)).statusCode).toBe(404);
-            // admins do not get a back door into personal diagrams
-            expect((await call('GET', `/diagrams/${id}`, admin)).statusCode).toBe(404);
+        it('refuses to create a diagram without a project', async () => {
+            for (const u of [admin, editor]) {
+                const res = await call('POST', '/diagrams', u, {
+                    title: 'Loose',
+                    content: sampleContent,
+                });
+                expect(res.statusCode).toBe(400);
+            }
         });
     });
 

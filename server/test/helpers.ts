@@ -4,12 +4,13 @@ import { loadConfig, type Config } from '../src/config.js';
 import { createDb } from '../src/db/client.js';
 
 export const TEST_DB = 'qubdidb_test';
-export const ADMIN_URL =
-    'postgres://qubdidb:qubdidb@localhost:5433/postgres';
+export const ADMIN_URL = 'postgres://qubdidb:qubdidb@localhost:5433/postgres';
 export const TEST_URL = `postgres://qubdidb:qubdidb@localhost:5433/${TEST_DB}`;
 
 // the first user on a fresh database is the admin; they create everyone else
 let adminCookie: string | null = null;
+// one shared project that test diagrams live in (every diagram needs a project)
+let testProjectId: string | null = null;
 
 export interface TestCtx {
     app: FastifyInstance;
@@ -31,8 +32,9 @@ export async function createTestApp(
     const { db, pool } = createDb(TEST_URL);
     if (reset) {
         adminCookie = null;
+        testProjectId = null;
         await pool.query(
-        'truncate table audit_log, sessions, project_members, projects, diagram_members, diagrams, saved_connections, drift_settings, drift_reports, users restart identity cascade'
+            'truncate table audit_log, sessions, project_members, projects, diagrams, saved_connections, drift_settings, drift_reports, users restart identity cascade'
         );
     }
     const app = buildApp({ config, db, introspect });
@@ -108,6 +110,41 @@ export async function loginUser(
     };
 }
 
+/** The shared test project, created on first use by the admin (first user). */
+export async function projectFor(app: FastifyInstance): Promise<string> {
+    if (testProjectId) return testProjectId;
+    if (!adminCookie) throw new Error('register the admin (first user) first');
+    const res = await app.inject({
+        method: 'POST',
+        url: '/admin/projects',
+        headers: { cookie: adminCookie },
+        payload: { name: 'Test project' },
+    });
+    if (res.statusCode !== 201) {
+        throw new Error(`create project failed: ${res.statusCode} ${res.body}`);
+    }
+    testProjectId = res.json().id;
+    return testProjectId!;
+}
+
+/** Gives a user a role in the shared test project, as an admin would. */
+export async function grant(
+    app: FastifyInstance,
+    user: TestUser,
+    role: 'editor' | 'viewer'
+): Promise<void> {
+    const projectId = await projectFor(app);
+    const res = await app.inject({
+        method: 'PUT',
+        url: `/admin/projects/${projectId}/members/${user.id}`,
+        headers: { cookie: adminCookie! },
+        payload: { role },
+    });
+    if (res.statusCode !== 200) {
+        throw new Error(`grant failed: ${res.statusCode} ${res.body}`);
+    }
+}
+
 export const as = (user: TestUser) => ({ cookie: user.cookie });
 
 export const sampleContent = {
@@ -122,11 +159,13 @@ export async function createDiagram(
     user: TestUser,
     title = 'My diagram'
 ): Promise<string> {
+    const projectId = await projectFor(app);
+    if (user.cookie !== adminCookie) await grant(app, user, 'editor');
     const res = await app.inject({
         method: 'POST',
         url: '/diagrams',
         headers: as(user),
-        payload: { title, content: sampleContent },
+        payload: { title, content: sampleContent, projectId },
     });
     return res.json().id;
 }

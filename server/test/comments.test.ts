@@ -4,9 +4,11 @@ import { auditLog, comments } from '../src/db/schema.js';
 import {
     as,
     createTestApp,
+    projectFor,
     registerUser,
     type TestCtx,
     type TestUser,
+    grant,
 } from './helpers.js';
 
 const table = (id: string, fieldIds: string[] = []) => ({
@@ -93,6 +95,7 @@ describe('comments', () => {
             url: '/diagrams',
             headers: as(owner),
             payload: {
+                projectId: await projectFor(ctx.app),
                 title: 'Shop',
                 content: content([table('t1', ['f1']), table('t2', ['f2'])], ['r1']),
             },
@@ -102,12 +105,7 @@ describe('comments', () => {
             [editor, 'editor'],
             [viewer, 'viewer'],
         ] as const) {
-            await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${id}/members`,
-                headers: as(owner),
-                payload: { email: u.email, role },
-            });
+            await grant(ctx.app, u, role);
         }
         const link = await ctx.app.inject({
             method: 'POST',
@@ -225,7 +223,11 @@ describe('comments', () => {
                     method: 'POST',
                     url: '/diagrams',
                     headers: as(owner),
-                    payload: { title: 'Other', content: content([table('t1')]) },
+                    payload: {
+                        projectId: await projectFor(ctx.app),
+                        title: 'Other',
+                        content: content([table('t1')]),
+                    },
                 })
             ).json().id;
             const made = (await add(owner, 'table', 't1')).json();

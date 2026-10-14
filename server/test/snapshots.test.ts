@@ -8,6 +8,7 @@ import {
     sampleContent,
     type TestCtx,
     type TestUser,
+    grant,
 } from './helpers.js';
 
 describe('published snapshots', () => {
@@ -46,12 +47,7 @@ describe('published snapshots', () => {
             [editor, 'editor'],
             [viewer, 'viewer'],
         ] as const) {
-            await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${id}/members`,
-                headers: as(owner),
-                payload: { email: u.email, role },
-            });
+            await grant(ctx.app, u, role);
         }
     });
     afterAll(() => ctx.close());
@@ -243,12 +239,7 @@ describe('auto-publish', () => {
         owner = await registerUser(ctx.app, 'owner@example.com');
         viewer = await registerUser(ctx.app, 'viewer@example.com');
         id = await createDiagram(ctx.app, owner);
-        await ctx.app.inject({
-            method: 'POST',
-            url: `/diagrams/${id}/members`,
-            headers: as(owner),
-            payload: { email: viewer.email, role: 'viewer' },
-        });
+        await grant(ctx.app, viewer, 'viewer');
     });
     afterAll(() => ctx.close());
 
