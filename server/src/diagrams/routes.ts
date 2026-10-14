@@ -7,7 +7,7 @@ import { diagrams, projectMembers, snapshots, users } from '../db/schema.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import { diagramStats, statsColumns } from './summary.js';
 import {
-    latestSnapshot,
+    latestSnapshots,
     presentDiagram,
     publishSnapshot,
 } from './service.js';
@@ -85,20 +85,22 @@ export const diagramRoutes =
                       .where(eq(projectMembers.userId, me.id));
             rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
             // viewers must not learn about unpublished renames
-            return Promise.all(
-                rows.map(async (r) => {
-                    if (canWrite(r.role)) return r;
-                    const last = await latestSnapshot(db, r.id);
-                    return {
-                        ...r,
-                        title: last?.title ?? r.title,
-                        updatedAt: last?.publishedAt ?? r.updatedAt,
-                        // the numbers describe what the viewer can open: the published copy
-                        // (nothing published yet: nothing to describe)
-                        ...diagramStats(last?.content),
-                    };
-                })
+            const latest = await latestSnapshots(
+                db,
+                rows.filter((r) => !canWrite(r.role)).map((r) => r.id)
             );
+            return rows.map((r) => {
+                if (canWrite(r.role)) return r;
+                const last = latest.get(r.id);
+                return {
+                    ...r,
+                    title: last?.title ?? r.title,
+                    updatedAt: last?.publishedAt ?? r.updatedAt,
+                    // the numbers describe what the viewer can open: the published copy
+                    // (nothing published yet: nothing to describe)
+                    ...diagramStats(last?.content),
+                };
+            });
         });
 
         app.post('/', async (req, reply) => {

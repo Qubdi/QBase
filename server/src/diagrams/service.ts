@@ -22,6 +22,20 @@ export async function latestSnapshot(
     return row;
 }
 
+/** The latest snapshot of each given diagram, in one query. */
+export async function latestSnapshots(
+    db: Db,
+    diagramIds: string[]
+): Promise<Map<string, SnapshotRow>> {
+    if (diagramIds.length === 0) return new Map();
+    const rows = await db
+        .selectDistinctOn([snapshots.diagramId])
+        .from(snapshots)
+        .where(inArray(snapshots.diagramId, diagramIds))
+        .orderBy(snapshots.diagramId, desc(snapshots.version));
+    return new Map(rows.map((r) => [r.diagramId, r]));
+}
+
 /**
  * What a member is allowed to see. Writers get the working copy; viewers only
  * ever get the latest published snapshot (or no content if nothing is published).
