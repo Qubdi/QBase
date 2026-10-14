@@ -13,7 +13,6 @@ and schema lint.
 | Editor | `src/` | React 18, TypeScript, Vite, Tailwind, `@xyflow/react`, Dexie |
 | Backend (optional) | `server/` | Node 22, Fastify, Drizzle, PostgreSQL |
 | Shared logic | `shared/` | Pure TypeScript with no dependencies: `reconcile`, drift classification, `lint` |
-| Original editor code | `OLD/` | Untouched copy kept for reference |
 
 ## Features
 

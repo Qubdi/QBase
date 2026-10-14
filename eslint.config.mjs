@@ -21,7 +21,6 @@ const compat = new FlatCompat({
 export default [
     {
         ignores: [
-            'OLD/**',
             'server/**',
             '**/dist',
             '**/.eslintrc.cjs',
