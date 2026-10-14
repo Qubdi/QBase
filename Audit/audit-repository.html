@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 6</b></div>
+  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 7</b></div>
   <h1>14 open, 2 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-14</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (153 files, 1391 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (154 files, 1395 tests), npm audit · server tests run against Postgres (27 files, 466 tests, SQL Server tests skipped) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
@@ -51,7 +51,7 @@
         <tr><td class="svc-name">REPO-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No update bot config, <code>SECURITY.md</code> or <code>CODEOWNERS</code></td><td><code>.github/</code></td><td class="wrap-cell">Add Dependabot config, <code>SECURITY.md</code>, <code>CODEOWNERS</code></td></tr>
         <tr><td class="svc-name">REPO-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">CI runs no <code>npm audit</code>, secret scan or Docker build</td><td><code>.github/workflows/ci.yaml:1</code></td><td class="wrap-cell">Add audit, gitleaks and <code>docker build</code> steps</td></tr>
         <tr><td class="svc-name">REPO-010</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">README lists <code>OLD/</code>, which does not exist; configs still ignore it</td><td><code>README.md:16</code></td><td class="wrap-cell">Remove it from README, eslint and vitest configs</td></tr>
-        <tr><td class="svc-name">REPO-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Node 24 in <code>.nvmrc</code> and CI; Node 22 in server image and README</td><td><code>server/Dockerfile:3</code></td><td class="wrap-cell">Align on one Node version</td></tr>
+        <tr><td class="svc-name">REPO-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Node 24 in <code>.nvmrc</code> and CI; Node 22 in server image and README</td><td><code>server/Dockerfile:15</code></td><td class="wrap-cell">Align on one Node version</td></tr>
         <tr><td class="svc-name">REPO-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>public/sitemap.xml</code> lists placeholder <code>qubdi.example</code> while robots blocks all</td><td><code>public/sitemap.xml:4</code></td><td class="wrap-cell">Delete the sitemap or set the real host</td></tr>
         <tr><td class="svc-name">REPO-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Root version 1.20.1 and server 0.1.0 disagree; release-please bumps root only</td><td><code>.github/workflows/release.yaml:20</code></td><td class="wrap-cell">Version both packages together</td></tr>
         <tr><td class="svc-name">REPO-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">UI image bakes the backend URL at build; compose uses <code>localhost:3001</code></td><td><code>docker-compose.yml:40</code></td><td class="wrap-cell">Serve backend URL through runtime <code>config.js</code></td></tr>

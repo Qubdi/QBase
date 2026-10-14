@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 6</b></div>
-  <h1>45 open across four lenses, 3 High. Nothing is Crit.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 7</b></div>
+  <h1>26 open across four lenses, 3 High. Nothing is Crit.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-14</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (153 files, 1391 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (154 files, 1395 tests), npm audit · server tests run against Postgres (27 files, 466 tests, SQL Server tests skipped) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
@@ -43,9 +43,9 @@
       <tbody>
         <tr><td>Security &amp; secrets</td><td>12</td><td>0</td><td>1</td><td>3</td><td>0</td></tr>
         <tr><td>Repository</td><td>14</td><td>0</td><td>2</td><td>1</td><td>0</td></tr>
-        <tr><td>Server</td><td>19</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>19</td><td>0</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>5</td><td>1</td></tr>
-        <tr><td>Total</td><td>45</td><td>0</td><td>3</td><td>9</td><td>1</td></tr>
+        <tr><td>Total</td><td>26</td><td>0</td><td>3</td><td>28</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -65,8 +65,8 @@
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
-    <p>Last-write-wins saves, unbounded loads and single-process state.</p>
-    <p class="lbl">19 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p>No open findings; all nineteen fixed.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 19 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
@@ -87,6 +87,7 @@
         <tr><td>4</td><td>2026-10-14</td><td class="wrap-cell">0 new, 1 fixed, 0 dropped</td></tr>
         <tr><td>5</td><td>2026-10-14</td><td class="wrap-cell">0 new, 0 fixed, 1 accepted (CLI-006 cut from 27 suppressions and 12 casts to 10)</td></tr>
         <tr><td>6</td><td>2026-10-14</td><td class="wrap-cell">0 new, 1 fixed, 0 dropped</td></tr>
+        <tr><td>7</td><td>2026-10-14</td><td class="wrap-cell">0 new, 19 fixed, 0 dropped; 2 findings re-anchored</td></tr>
       </tbody>
     </table>
   </div>
