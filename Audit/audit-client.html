@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 3</b></div>
-  <h1>3 open.</h1>
+  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 4</b></div>
+  <h1>2 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-14</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (152 files, 1385 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (152 files, 1388 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
 
@@ -30,13 +30,12 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">3 open &middot; 0 Crit &middot; 0 High &middot; 2 Med &middot; 1 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">2 open &middot; 0 Crit &middot; 0 High &middot; 1 Med &middot; 1 Low. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
         <tr><td class="svc-name">CLI-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Autosave serialises the whole diagram on every change</td><td><code>src/components/qubdi/server-autosave.tsx:39</code></td><td class="wrap-cell">Compare a revision counter instead of JSON</td></tr>
-        <tr><td class="svc-name">CLI-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Leave-page save uses plain <code>fetch</code>; the browser may cancel it</td><td><code>src/components/qubdi/server-autosave.tsx:48</code></td><td class="wrap-cell">Send with <code>keepalive</code> on <code>pagehide</code></td></tr>
         <tr><td class="svc-name">CLI-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">16 lint suppressions and <code>any</code> casts remain in app code</td><td><code>src/</code></td><td class="wrap-cell">Remove them as files are touched</td></tr>
       </tbody>
     </table>
@@ -45,11 +44,12 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (3)</summary>
+  <details><summary>Fixed (4)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Leave-page save used plain <code>fetch</code>; now sent with <code>keepalive</code></td></tr>
         <tr><td class="svc-name">CLI-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL import validators for MySQL, SQLite and SQL Server were stubs; now implemented</td></tr>
         <tr><td class="svc-name">CLI-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Star-us dialog and its GIF were never opened; deleted with i18n keys</td></tr>
         <tr><td class="svc-name">CLI-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Hard-coded <code>qubdi.example</code> in template pages; host now from <code>VITE_HOST_URL</code></td></tr>
