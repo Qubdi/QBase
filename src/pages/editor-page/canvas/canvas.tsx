@@ -966,9 +966,22 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         [nodes, overlapGraph, setOverlapGraph, getNode]
     );
 
-    const updateOverlappingGraphOnChangesDebounced = debounce(
-        updateOverlappingGraphOnChanges,
-        200
+    // One debounced function for the life of the canvas, always calling the latest
+    // version. Making a new one on every render meant nothing was ever debounced:
+    // the overlap graph was rebuilt after every step of a drag, re-rendering every table.
+    const updateOverlappingGraphOnChangesRef = useRef(
+        updateOverlappingGraphOnChanges
+    );
+    updateOverlappingGraphOnChangesRef.current =
+        updateOverlappingGraphOnChanges;
+    const updateOverlappingGraphOnChangesDebounced = useMemo(
+        () =>
+            debounce(
+                (...args: Parameters<typeof updateOverlappingGraphOnChanges>) =>
+                    updateOverlappingGraphOnChangesRef.current(...args),
+                200
+            ),
+        []
     );
 
     const findRelevantNodesChanges = useCallback(
