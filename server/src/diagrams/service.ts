@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { comments, diagrams, snapshots } from '../db/schema.js';
 import { planCarryForward } from '../comments/targets.js';
@@ -78,7 +78,12 @@ export async function publishSnapshot(
     db: Db,
     diagramId: string,
     userId: string,
-    opts: { note?: string | null; onlyIfChanged?: boolean } = {}
+    opts: {
+        note?: string | null;
+        onlyIfChanged?: boolean;
+        /** keep only this many newest snapshots; 0 or unset keeps all */
+        keep?: number
+    } = {}
 ): Promise<SnapshotRow | null> {
     const row = await db.transaction(async (tx) => {
         const [d] = await tx
@@ -107,6 +112,18 @@ export async function publishSnapshot(
                 note: opts.note ?? null,
             })
             .returning();
+
+        // retention: versions are consecutive, so everything this far back goes
+        if (opts.keep && opts.keep > 0) {
+            await tx
+                .delete(snapshots)
+                .where(
+                    and(
+                        eq(snapshots.diagramId, diagramId),
+                        lte(snapshots.version, created.version - opts.keep)
+                    )
+                );
+        }
 
         // comments follow the diagram to the new version while their target
         // exists; the rest are flagged as orphaned, never deleted

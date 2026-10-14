@@ -65,7 +65,7 @@ const publishBody = z
     .default({});
 
 export const diagramRoutes =
-    (db: Db, config: Pick<Config, 'diagramBodyLimit'>): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep'>): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -197,6 +197,7 @@ export const diagramRoutes =
                 const snap = await publishSnapshot(db, id, req.user!.id, {
                     note: 'Auto-published on save',
                     onlyIfChanged: true,
+                    keep: config.snapshotKeep,
                 });
                 if (snap) {
                     await audit(db, {
@@ -233,7 +234,10 @@ export const diagramRoutes =
                 return reply.code(403).send({ error: 'forbidden' });
             }
             const { note } = publishBody.parse(req.body ?? {});
-            const snap = await publishSnapshot(db, id, req.user!.id, { note });
+            const snap = await publishSnapshot(db, id, req.user!.id, {
+                note,
+                keep: config.snapshotKeep,
+            });
             if (!snap) return reply.code(404).send({ error: 'not_found' });
             await audit(db, {
                 userId: req.user!.id,

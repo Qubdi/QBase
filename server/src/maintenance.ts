@@ -1,4 +1,4 @@
-import { lt } from 'drizzle-orm';
+import { lt, sql } from 'drizzle-orm';
 import type { Config } from './config.js';
 import type { Db } from './db/client.js';
 import { auditLog, sessions } from './db/schema.js';
@@ -31,14 +31,34 @@ export async function purgeAuditLog(
     return rows.length;
 }
 
+/**
+ * Applies the snapshot limit to diagrams published before it existed: removes
+ * every version more than `keep` behind that diagram's newest one.
+ */
+export async function pruneSnapshots(db: Db, keep: number): Promise<number> {
+    if (!(keep > 0)) return 0;
+    const res = await db.execute(sql`
+        delete from snapshots s
+        using (
+            select diagram_id, max(version) as newest
+            from snapshots
+            group by diagram_id
+        ) latest
+        where s.diagram_id = latest.diagram_id
+          and s.version <= latest.newest - ${keep}
+    `);
+    return res.rowCount ?? 0;
+}
+
 export async function runMaintenance(
     db: Db,
-    config: Pick<Config, 'auditRetentionDays'>,
+    config: Pick<Config, 'auditRetentionDays' | 'snapshotKeep'>,
     now: Date = new Date()
 ) {
     return {
         sessions: await purgeExpiredSessions(db, now),
         audit: await purgeAuditLog(db, config.auditRetentionDays, now),
+        snapshots: await pruneSnapshots(db, config.snapshotKeep),
     };
 }
 
@@ -47,7 +67,7 @@ export async function runMaintenance(
  * stops it and waits for a run that is already going.
  */
 export function startMaintenance(
-    deps: { db: Db; config: Pick<Config, 'auditRetentionDays'> },
+    deps: { db: Db; config: Pick<Config, 'auditRetentionDays' | 'snapshotKeep'> },
     intervalMs = 3_600_000
 ): () => Promise<void> {
     let current: Promise<void> | null = null;
