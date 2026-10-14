@@ -68,7 +68,11 @@ export const MembersDialog: React.FC<MembersDialogProps> = ({
                 <DialogHeader>
                     <DialogTitle>Members</DialogTitle>
                     <DialogDescription>
-                        Owners and editors can edit. Viewers can only read.
+                        {remoteId &&
+                        members.length > 0 &&
+                        !members.some((m) => m.role === 'owner')
+                            ? 'Access to this diagram comes from its project. Ask an admin to change who can open or edit it.'
+                            : 'Owners and editors can edit. Viewers can only read.'}
                     </DialogDescription>
                 </DialogHeader>
                 {!remoteId ? (

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     CloudUpload,
     Database,
@@ -6,6 +7,7 @@ import {
     LogOut,
     RefreshCw,
     Share2,
+    ShieldCheck,
     UserRound,
     Users,
 } from 'lucide-react';
@@ -16,12 +18,15 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/dropdown-menu/dropdown-menu';
 import { useToast } from '@/components/toast/use-toast';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { errorMessage } from '@/lib/qubdi/api';
+import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';
 import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { ImportFromDatabaseDialog } from './import-from-database-dialog';
@@ -34,6 +39,8 @@ export const AccountMenu: React.FC = () => {
     const { enabled, user, logout, syncDiagram, remoteIdFor } = useQubdi();
     const { currentDiagram } = useChartDB();
     const { toast } = useToast();
+    const navigate = useNavigate();
+    const [projects, setProjects] = useState<MyProject[]>([]);
     const [authOpen, setAuthOpen] = useState(false);
     const [membersOpen, setMembersOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
@@ -66,9 +73,19 @@ export const AccountMenu: React.FC = () => {
         );
     }
 
-    const sync = async () => {
+    // only projects where the user can write are valid sync targets
+    const loadProjects = (open: boolean) => {
+        if (!open) return;
+        api.listProjects()
+            .then((list) =>
+                setProjects(list.filter((p) => p.role !== 'viewer'))
+            )
+            .catch(() => setProjects([]));
+    };
+
+    const sync = async (projectId?: string) => {
         try {
-            await syncDiagram(currentDiagram);
+            await syncDiagram(currentDiagram, projectId);
             forceRender((n) => n + 1);
             toast({ title: 'Synced to server' });
         } catch (e) {
@@ -82,7 +99,7 @@ export const AccountMenu: React.FC = () => {
 
     return (
         <>
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={loadProjects}>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-1">
                         <UserRound className="size-4" />
@@ -95,10 +112,36 @@ export const AccountMenu: React.FC = () => {
                         {user.isAdmin ? ' (admin)' : ''}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={sync}>
-                        <CloudUpload className="mr-2 size-4" />
-                        Sync to server
-                    </DropdownMenuItem>
+                    {remoteIdFor(currentDiagram.id) || projects.length === 0 ? (
+                        <DropdownMenuItem onClick={() => void sync()}>
+                            <CloudUpload className="mr-2 size-4" />
+                            Sync to server
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                                <CloudUpload className="mr-2 size-4" />
+                                Sync to server
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuLabel>
+                                    Save into a project
+                                </DropdownMenuLabel>
+                                {projects.map((p) => (
+                                    <DropdownMenuItem
+                                        key={p.id}
+                                        onClick={() => void sync(p.id)}
+                                    >
+                                        {p.name}
+                                    </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => void sync()}>
+                                    Only me (personal)
+                                </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                    )}
                     <DropdownMenuItem onClick={() => setImportOpen(true)}>
                         <Database className="mr-2 size-4" />
                         Import from database
@@ -115,6 +158,12 @@ export const AccountMenu: React.FC = () => {
                         <Users className="mr-2 size-4" />
                         Members
                     </DropdownMenuItem>
+                    {user.isAdmin ? (
+                        <DropdownMenuItem onClick={() => navigate('/admin')}>
+                            <ShieldCheck className="mr-2 size-4" />
+                            Admin panel
+                        </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuItem onClick={() => setPasswordOpen(true)}>
                         <KeyRound className="mr-2 size-4" />
                         Change password

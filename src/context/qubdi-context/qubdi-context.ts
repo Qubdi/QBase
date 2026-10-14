@@ -9,8 +9,11 @@ export interface QubdiContext {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    /** Uploads the local diagram; returns the server diagram id. */
-    syncDiagram: (diagram: Diagram) => Promise<string>;
+    /**
+     * Uploads the local diagram; returns the server diagram id. A new
+     * diagram is created inside `projectId` when given, otherwise it is personal.
+     */
+    syncDiagram: (diagram: Diagram, projectId?: string) => Promise<string>;
     remoteIdFor: (localId: string) => string | undefined;
 }
 
