@@ -2,52 +2,35 @@
 
 Open work, newest first. Tick an item when it ships and note the commit.
 
-## Open: dragging a table freezes the relationship lines
+## ✅ Done: dragging a table froze the relationship lines (`1582178`)
 
-Reported by the user: when a table is dragged, slowly or fast, the relationship lines
-freeze, then jump to the new spot. Seen on the Docker app and on the local build
-(`/diagrams/monica_db`, the 89-table monica template). The original ChartDB
-(app.chartdb.io) feels smoother on the same template.
+The user reported that while a table was dragged, its relationship line froze and then jumped
+to the new spot. The original ChartDB was smooth in the same browser.
 
-**Key clue (from the user):** with only **2 tables** that reference each other, the table
-itself moves perfectly smoothly but the relationship line lags and jumps. A 2-table diagram
-has almost no rendering work, so this is not a performance problem: the line is not being
-redrawn from the table's live position on every drag step. Start here, not with profiling:
+**Cause:** the reduced-motion CSS in `globals.css` set `transition-duration: 0.01ms` on
+every element. The default `transition-property` is `all`, so every element (including each
+line's SVG path `d`) got a transition, restarted on every drag step. Chrome painted the
+in-between shape, so the line looked frozen. It only showed for people with
+"reduce animations" on in Windows; headless test browsers never hit it. The page data was
+correct every frame (recorded in the user's own browser); only the paint lagged.
 
-- [ ] Reproduce with a 2-table diagram and record, per animation frame, the table's position
-      and the line end's position as drawn on screen (not only the `d` attribute).
-- [ ] Find where the line reads a stale or delayed position: the edge rebuild effect in
-      `canvas.tsx` (100 ms timeout), the memoized `getInternalNode` / `sourceNode` /
-      `targetNode` in `relationship-edge.tsx`, handle positions only re-measured by
-      `updateNodeInternals` (now scheduled once per frame in `table-node-field-handles.ts`),
-      and the side-keeping logic in `relationship-edge-sides.ts`.
-- [ ] Check against the original ChartDB with the same 2 tables.
+**Fix:** under reduced motion, `transition: none !important` instead of a tiny duration,
+with a test that guards the rule. The user confirmed it now works perfectly.
 
-Done so far (each measured with scripted drags in headless Chrome; the freeze is still
-reported, so these are not the whole answer):
+Speed work done along the way (each measured): context menus compare the selection by
+content (`d3dbc37`); connection handles mounted only where used (`5ff1ab2`, `6ea5c10`);
+lines keep their side unless another is clearly closer (`203e16a`); light static table
+shadow (`4b01519`); side panels stop re-rendering on every pan (`afdadce`); stable overlap
+debounce and hover reported only while drawing a line (`ebca763`).
 
-- Context menus compare the selection by content (`d3dbc37`)
-- Connection handles mounted only where used (`5ff1ab2`, `6ea5c10`)
-- Lines keep their side unless another is clearly closer (`203e16a`)
-- Light static table shadow instead of an animated one (`4b01519`)
-- Side panels stop re-rendering on every pan (`afdadce`)
-- Stable overlap debounce; hover reported only while drawing a line (`ebca763`)
+Leftovers (optional):
 
-Still to do:
-
-- [ ] Reproduce what the user sees. The scripted tests measure frame times and read the
-      line's `d` attribute; they may not catch what is on screen. Get a screen recording or
-      a Chrome Performance trace of a real drag on the user's machine (their window is
-      2560×1271).
-- [ ] Profile the case that is still slower than the original: a fast drag that reaches the
-      viewport edge (auto-pan). Ours has 300–500 ms frames, the original 130–220 ms.
-- [ ] Check the drag-end burst (`updateTablesState` rebuilds relationships and all nodes on
-      mouse up).
-- [ ] Check the edge rebuild effect in `canvas.tsx` (100 ms timeout) and the memoized
-      `getInternalNode` in `relationship-edge.tsx` for stale positions during a drag.
+- [ ] A fast drag that reaches the viewport edge (auto-pan) is still slower than the original
+      on the 89-table monica template (300–500 ms frames vs 130–220 ms).
+- [ ] The line disappears for one frame right after a table is dropped (edges are rebuilt
+      after the drag ends).
 - [ ] `CommentMarker`: one store subscription per field that re-renders on any comment change;
       select per target instead.
-- [ ] When fixed, re-measure against app.chartdb.io and have the user confirm by hand.
 
 ## In progress: project workspace URLs
 
