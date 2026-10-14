@@ -28,10 +28,7 @@ export type AuditAction =
     | 'drift.configure'
     | 'drift.check'
     | 'drift.dismiss'
-    | 'lint.configure'
-    | 'member.add'
-    | 'member.role_change'
-    | 'member.remove';
+    | 'lint.configure';
 
 export async function audit(
     db: Db,
