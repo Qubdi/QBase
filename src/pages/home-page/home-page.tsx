@@ -1,45 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { FolderKanban } from 'lucide-react';
 import { Badge } from '@/components/badge/badge';
 import { AdminLandingRedirect } from '@/components/qubdi/admin-landing-redirect';
 import { AppShell } from '@/components/qubdi/app-shell';
+import { ListPager } from '@/components/qubdi/list-pager';
 import { Spinner } from '@/components/spinner/spinner';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';
+import { api, type MyProject } from '@/lib/qubdi/api';
 import { projectHomePath } from '@/lib/qubdi/project-path';
+
+// three rows of three cards: the page stays one height however many projects
+const PAGE_SIZE = 9;
 
 const roleLabel = (role: MyProject['role']) =>
     role === 'owner' ? 'Admin' : role === 'editor' ? 'Editor' : 'Viewer';
 
 const Projects: React.FC = () => {
     const { user } = useQubdi();
-    const [projects, setProjects] = useState<MyProject[] | null>(null);
-    const [counts, setCounts] = useState<Record<string, number>>({});
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        Promise.all([api.listProjects(), api.listDiagrams()])
-            .then(([list, diagrams]) => {
-                setProjects(list);
-                const byProject: Record<string, number> = {};
-                for (const d of diagrams) {
-                    if (d.projectId) {
-                        byProject[d.projectId] =
-                            (byProject[d.projectId] ?? 0) + 1;
-                    }
-                }
-                setCounts(byProject);
-            })
-            .catch((e) => {
-                setError(errorMessage(e));
-                setProjects([]);
-            });
-    }, []);
+    // the server only returns the projects this user is assigned to (admins: all)
+    const list = usePagedList(
+        ({ page, limit, q }) => api.listProjects({ page, limit, q }),
+        { limit: PAGE_SIZE }
+    );
 
     return (
         <main className="mx-auto w-full max-w-5xl px-4 py-8">
@@ -48,14 +36,14 @@ const Projects: React.FC = () => {
                 Each project is its own workspace. Open one to work on its
                 database diagrams.
             </p>
-            {error ? (
+            {list.error ? (
                 <p role="alert" className="mb-4 text-sm text-destructive">
-                    {error}
+                    {list.error}
                 </p>
             ) : null}
-            {projects === null ? (
+            {list.initialLoading ? (
                 <Spinner size="large" className="mx-auto mt-12 text-primary" />
-            ) : projects.length === 0 ? (
+            ) : list.total === 0 ? (
                 <div className="rounded-xl border border-dashed p-10 text-center">
                     <FolderKanban className="mx-auto mb-3 size-8 text-muted-foreground" />
                     <p className="font-medium">No projects yet</p>
@@ -77,37 +65,48 @@ const Projects: React.FC = () => {
                     </p>
                 </div>
             ) : (
-                <ul
-                    className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                    aria-label="Projects"
-                >
-                    {projects.map((p) => (
-                        <li key={p.id}>
-                            <Link
-                                to={projectHomePath(p.slug)}
-                                className="flex h-full flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
-                            >
-                                <div className="flex items-start justify-between gap-2">
-                                    <span className="font-primary text-base font-semibold">
-                                        {p.name}
-                                    </span>
-                                    <Badge variant="secondary">
-                                        {roleLabel(p.role)}
-                                    </Badge>
-                                </div>
-                                {p.description ? (
-                                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                                        {p.description}
+                <div className="flex flex-col gap-3">
+                    <ul
+                        className="grid min-h-96 auto-rows-min gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                        aria-label="Projects"
+                    >
+                        {list.items.map((p) => (
+                            <li key={p.id}>
+                                <Link
+                                    to={projectHomePath(p.slug)}
+                                    className="flex h-full min-h-28 flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <span className="font-primary text-base font-semibold">
+                                            {p.name}
+                                        </span>
+                                        <Badge variant="secondary">
+                                            {roleLabel(p.role)}
+                                        </Badge>
+                                    </div>
+                                    {p.description ? (
+                                        <p className="line-clamp-2 text-sm text-muted-foreground">
+                                            {p.description}
+                                        </p>
+                                    ) : null}
+                                    <p className="mt-auto pt-2 text-xs text-muted-foreground">
+                                        {p.diagramCount} diagram
+                                        {p.diagramCount === 1 ? '' : 's'}
                                     </p>
-                                ) : null}
-                                <p className="mt-auto pt-2 text-xs text-muted-foreground">
-                                    {counts[p.id] ?? 0} diagram
-                                    {(counts[p.id] ?? 0) === 1 ? '' : 's'}
-                                </p>
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                    <ListPager
+                        page={list.page}
+                        pageCount={list.pageCount}
+                        limit={list.limit}
+                        total={list.total}
+                        onPageChange={list.setPage}
+                        disabled={list.loading}
+                        noun="projects"
+                    />
+                </div>
             )}
         </main>
     );
