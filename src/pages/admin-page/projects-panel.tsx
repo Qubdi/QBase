@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/components/input/input';
 import { Link } from 'react-router-dom';
 import { projectHomePath } from '@/lib/qubdi/project-path';
@@ -29,8 +30,10 @@ import {
 
 const PAGE_SIZE = 8;
 
-const selectClass =
-    'h-9 rounded-md border border-input bg-background px-2 text-sm';
+const ROLE_OPTIONS = [
+    { value: 'viewer', label: 'Viewer' },
+    { value: 'editor', label: 'Editor' },
+];
 
 const roleHelp: Record<ProjectRole, string> = {
     editor: 'Can create and edit diagrams in this project',
@@ -351,19 +354,15 @@ export const ProjectsPanel: React.FC = () => {
                                         excludeIds={memberIds}
                                     />
                                 </div>
-                                <select
-                                    className={selectClass}
+                                <OptionSelect
                                     aria-label="Permission for new member"
+                                    className="w-full md:w-32"
                                     value={assignRole}
-                                    onChange={(e) =>
-                                        setAssignRole(
-                                            e.target.value as ProjectRole
-                                        )
+                                    onValueChange={(v) =>
+                                        setAssignRole(v as ProjectRole)
                                     }
-                                >
-                                    <option value="viewer">Viewer</option>
-                                    <option value="editor">Editor</option>
-                                </select>
+                                    options={ROLE_OPTIONS}
+                                />
                                 <Button
                                     type="submit"
                                     disabled={busy || !assignUser}
@@ -393,29 +392,23 @@ export const ProjectsPanel: React.FC = () => {
                                                 {m.email}
                                             </span>
                                             <span className="flex items-center gap-2">
-                                                <select
-                                                    className={selectClass}
+                                                <OptionSelect
+                                                    size="sm"
+                                                    className="w-28"
                                                     aria-label={`Permission for ${m.email}`}
                                                     value={m.role}
                                                     disabled={busy}
-                                                    onChange={(e) =>
-                                                        run(() =>
+                                                    onValueChange={(v) =>
+                                                        void run(() =>
                                                             api.adminSetProjectMember(
                                                                 selected.id,
                                                                 m.userId,
-                                                                e.target
-                                                                    .value as ProjectRole
+                                                                v as ProjectRole
                                                             )
                                                         )
                                                     }
-                                                >
-                                                    <option value="viewer">
-                                                        Viewer
-                                                    </option>
-                                                    <option value="editor">
-                                                        Editor
-                                                    </option>
-                                                </select>
+                                                    options={ROLE_OPTIONS}
+                                                />
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
