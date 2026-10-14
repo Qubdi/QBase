@@ -20,7 +20,7 @@ const everyone = [
 
 const adminListUsers = vi.fn();
 vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@/lib/qubdi/api')>()),
+    ...(await importOriginal<Record<string, unknown>>()),
     api: { adminListUsers: (...args: unknown[]) => adminListUsers(...args) },
 }));
 
