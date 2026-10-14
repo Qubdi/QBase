@@ -4,7 +4,11 @@ import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import type { Db } from '../db/client.js';
 import { driftReports, driftSettings, savedConnections } from '../db/schema.js';
-import { canWrite, getRole } from '../diagrams/permissions.js';
+import {
+    canWrite,
+    getDiagramProject,
+    getRole,
+} from '../diagrams/permissions.js';
 import { isValidCron, nextCronRun } from '../lib/cron.js';
 import {
     badgeOf,
@@ -112,15 +116,19 @@ export const driftRoutes =
                 }
             }
             if (body.connectionId) {
-                const [conn] = await db
-                    .select({ id: savedConnections.id })
-                    .from(savedConnections)
-                    .where(
-                        and(
-                            eq(savedConnections.id, body.connectionId),
-                            eq(savedConnections.ownerId, req.user!.id)
-                        )
-                    );
+                const projectId = await getDiagramProject(db, id);
+                const [conn] = projectId
+                    ? await db
+                          .select({ id: savedConnections.id })
+                          .from(savedConnections)
+                          .where(
+                              and(
+                                  eq(savedConnections.id, body.connectionId),
+                                  // only the diagram's own project's connections
+                                  eq(savedConnections.projectId, projectId)
+                              )
+                          )
+                    : [];
                 if (!conn) {
                     return reply
                         .code(400)

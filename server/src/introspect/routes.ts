@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { savedConnections } from '../db/schema.js';
+import { canWrite, getProjectRole } from '../diagrams/permissions.js';
 import { CryptoBox } from './crypto-box.js';
 import { filterMetadata } from './filter.js';
 import {
@@ -59,7 +60,11 @@ const introspectBody = z
 
 const saveBody = connectionFields.extend({
     name: z.string().trim().min(1).max(100),
+    // saved connections belong to a project
+    projectId: uuid,
 });
+
+const listQuery = z.object({ projectId: uuid });
 
 export interface IntrospectDeps {
     db: Db;
@@ -124,13 +129,12 @@ export const introspectRoutes =
             const [saved] = await db
                 .select()
                 .from(savedConnections)
-                .where(
-                    and(
-                        eq(savedConnections.id, body.savedConnectionId),
-                        eq(savedConnections.ownerId, userId)
-                    )
-                );
-            if (!saved) {
+                .where(eq(savedConnections.id, body.savedConnectionId));
+            // usable by editors of the connection's project; others see 404
+            const role = saved
+                ? await getProjectRole(db, saved.projectId, userId)
+                : null;
+            if (!saved || !role || !canWrite(role)) {
                 reply.code(404).send({ error: 'not_found' });
                 return null;
             }
@@ -225,16 +229,47 @@ export const introspectRoutes =
 
         // --- saved connections (passwords encrypted at rest) ----------------
 
-        app.get('/connections', async (req) => {
+        /** Role of the caller in a project; replies 404/403 and returns false unless they can write. */
+        const requireProjectWriter = async (
+            projectId: string,
+            userId: string,
+            reply: FastifyReply
+        ): Promise<boolean> => {
+            const role = await getProjectRole(db, projectId, userId);
+            if (!role) {
+                reply.code(404).send({ error: 'not_found' });
+                return false;
+            }
+            if (!canWrite(role)) {
+                reply.code(403).send({ error: 'forbidden' });
+                return false;
+            }
+            return true;
+        };
+
+        app.get('/connections', async (req, reply) => {
+            const { projectId } = listQuery.parse(req.query);
+            if (!(await requireProjectWriter(projectId, req.user!.id, reply))) {
+                return;
+            }
             const rows = await db
                 .select()
                 .from(savedConnections)
-                .where(eq(savedConnections.ownerId, req.user!.id));
+                .where(eq(savedConnections.projectId, projectId));
             return rows.map(summarize);
         });
 
         app.post('/connections', async (req, reply) => {
             const body = saveBody.parse(req.body);
+            if (
+                !(await requireProjectWriter(
+                    body.projectId,
+                    req.user!.id,
+                    reply
+                ))
+            ) {
+                return;
+            }
             if (!box) {
                 return reply
                     .code(501)
@@ -245,7 +280,7 @@ export const introspectRoutes =
                 .from(savedConnections)
                 .where(
                     and(
-                        eq(savedConnections.ownerId, req.user!.id),
+                        eq(savedConnections.projectId, body.projectId),
                         eq(savedConnections.name, body.name)
                     )
                 );
@@ -255,6 +290,7 @@ export const introspectRoutes =
             const [row] = await db
                 .insert(savedConnections)
                 .values({
+                    projectId: body.projectId,
                     ownerId: req.user!.id,
                     name: body.name,
                     dialect: body.dialect,
@@ -272,18 +308,23 @@ export const introspectRoutes =
 
         app.delete('/connections/:id', async (req, reply) => {
             const { id } = z.object({ id: uuid }).parse(req.params);
-            const gone = await db
-                .delete(savedConnections)
-                .where(
-                    and(
-                        eq(savedConnections.id, id),
-                        eq(savedConnections.ownerId, req.user!.id)
-                    )
-                )
-                .returning({ id: savedConnections.id });
-            if (gone.length === 0) {
-                return reply.code(404).send({ error: 'not_found' });
+            const [conn] = await db
+                .select({ projectId: savedConnections.projectId })
+                .from(savedConnections)
+                .where(eq(savedConnections.id, id));
+            if (!conn) return reply.code(404).send({ error: 'not_found' });
+            if (
+                !(await requireProjectWriter(
+                    conn.projectId,
+                    req.user!.id,
+                    reply
+                ))
+            ) {
+                return;
             }
+            await db
+                .delete(savedConnections)
+                .where(eq(savedConnections.id, id));
             return reply.code(204).send();
         });
     };
