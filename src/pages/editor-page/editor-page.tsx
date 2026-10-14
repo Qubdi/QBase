@@ -9,6 +9,7 @@ import { StorageProvider } from '@/context/storage-context/storage-provider';
 import { ConfigProvider } from '@/context/config-context/config-provider';
 import { RedoUndoStackProvider } from '@/context/history-context/redo-undo-stack-provider';
 import { DiagramAccessGate } from '@/components/qubdi/diagram-access';
+import { ServerAutosave } from '@/components/qubdi/server-autosave';
 import { HistoryProvider } from '@/context/history-context/history-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { ReactFlowProvider } from '@xyflow/react';
@@ -72,6 +73,7 @@ const EditorPageComponent: React.FC = () => {
                     )}
                 </Suspense>
             </section>
+            <ServerAutosave />
             <Toaster />
         </>
     );

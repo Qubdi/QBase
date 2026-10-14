@@ -6,6 +6,7 @@ import { DriftControl } from '@/components/qubdi/drift-control';
 import { LintControl } from '@/components/qubdi/lint-control';
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/logo/logo';
+import { ServerSaveStatus } from '@/components/qubdi/server-autosave';
 import { DiagramName } from './diagram-name';
 import { LastSaved } from './last-saved';
 import { LanguageNav } from './language-nav/language-nav';
@@ -26,6 +27,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
             </div>
             <DiagramName />
             <div className="hidden flex-1 items-center justify-end gap-2 sm:flex">
+                <ServerSaveStatus />
                 <LastSaved />
                 <LintControl />
                 <DriftControl />
