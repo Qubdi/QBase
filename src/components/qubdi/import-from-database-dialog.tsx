@@ -8,6 +8,7 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/components/input/input';
 import { useStorage } from '@/hooks/use-storage';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -40,9 +41,6 @@ export interface ImportFromDatabaseDialogProps {
 }
 
 type Step = 'connect' | 'select' | 'preview';
-
-const selectClass =
-    'h-9 rounded-md border border-input bg-background px-2 text-sm';
 
 const DEFAULT_PORT: Record<DbDialect, string> = {
     postgresql: '5432',
@@ -228,12 +226,10 @@ export const ImportFromDatabaseDialog: React.FC<
                         data-testid="db-connect-form"
                     >
                         {saved.length > 0 ? (
-                            <select
+                            <OptionSelect
                                 aria-label="Saved connection"
-                                className={selectClass}
                                 value={savedId}
-                                onChange={(e) => {
-                                    const id = e.target.value;
+                                onValueChange={(id) => {
                                     setSavedId(id);
                                     const s = saved.find((x) => x.id === id);
                                     if (s) {
@@ -250,33 +246,37 @@ export const ImportFromDatabaseDialog: React.FC<
                                         });
                                     }
                                 }}
-                            >
-                                <option value="">New connection</option>
-                                {saved.map((s) => (
-                                    <option key={s.id} value={s.id}>
-                                        {s.name}
-                                    </option>
-                                ))}
-                            </select>
+                                options={[
+                                    { value: '', label: 'New connection' },
+                                    ...saved.map((s) => ({
+                                        value: s.id,
+                                        label: s.name,
+                                    })),
+                                ]}
+                            />
                         ) : null}
                         <div className="flex gap-2">
-                            <select
+                            <OptionSelect
                                 aria-label="Database type"
-                                className={selectClass}
+                                className="w-40 shrink-0"
                                 value={form.dialect}
                                 disabled={!!savedId}
-                                onChange={(e) => {
-                                    const d = e.target.value as DbDialect;
+                                onValueChange={(v) => {
+                                    const d = v as DbDialect;
                                     setForm((f) => ({
                                         ...f,
                                         dialect: d,
                                         port: DEFAULT_PORT[d],
                                     }));
                                 }}
-                            >
-                                <option value="postgresql">PostgreSQL</option>
-                                <option value="sqlserver">SQL Server</option>
-                            </select>
+                                options={[
+                                    {
+                                        value: 'postgresql',
+                                        label: 'PostgreSQL',
+                                    },
+                                    { value: 'sqlserver', label: 'SQL Server' },
+                                ]}
+                            />
                             <Input
                                 placeholder="Host"
                                 aria-label="Host"
