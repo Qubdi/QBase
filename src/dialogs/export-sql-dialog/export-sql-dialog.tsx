@@ -204,9 +204,9 @@ export const ExportSQLDialog: React.FC<ExportSQLDialogProps> = ({
                             components={[
                                 <a
                                     key={0}
-                                    href="mailto:support@chartdb.io"
+                                    href="mailto:support@qubdi.dev"
                                     target="_blank"
-                                    className="text-pink-600 hover:underline"
+                                    className="text-teal-600 hover:underline"
                                     rel="noreferrer"
                                 />,
                             ]}
@@ -218,10 +218,10 @@ export const ExportSQLDialog: React.FC<ExportSQLDialogProps> = ({
                             components={[
                                 <a
                                     key={0}
-                                    href="https://github.com/chartdb/chartdb"
+                                    href="https://github.com/qubdi/qubdidb"
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-pink-600 hover:underline"
+                                    className="text-teal-600 hover:underline"
                                 />,
                             ]}
                         />

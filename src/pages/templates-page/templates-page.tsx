@@ -1,7 +1,6 @@
 import React from 'react';
-import ChartDBLogo from '@/assets/logo-light.png';
-import ChartDBDarkLogo from '@/assets/logo-dark.png';
-import { useTheme } from '@/hooks/use-theme';
+import { Logo } from '@/components/logo/logo';
+import { Link } from 'react-router-dom';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Component, Star } from 'lucide-react';
@@ -18,7 +17,6 @@ export interface TemplatesPageLoaderData {
 }
 
 const TemplatesPageComponent: React.FC = () => {
-    const { effectiveTheme } = useTheme();
     const data = useLoaderData() as TemplatesPageLoaderData;
 
     const { templates, allTags } = data ?? {};
@@ -41,21 +39,9 @@ const TemplatesPageComponent: React.FC = () => {
                 <nav className="flex h-12 shrink-0 flex-row items-center justify-between border-b px-4">
                     <div className="flex flex-1 justify-start gap-x-3">
                         <div className="flex items-center font-primary">
-                            <a
-                                href="https://chartdb.io"
-                                className="cursor-pointer"
-                                rel="noreferrer"
-                            >
-                                <img
-                                    src={
-                                        effectiveTheme === 'light'
-                                            ? ChartDBLogo
-                                            : ChartDBDarkLogo
-                                    }
-                                    alt="chartDB"
-                                    className="h-4 max-w-fit"
-                                />
-                            </a>
+                            <Link to="/">
+                                <Logo />
+                            </Link>
                         </div>
                     </div>
                     <div className="flex flex-1 justify-end">
@@ -92,7 +78,7 @@ const TemplatesPageComponent: React.FC = () => {
                     {!templates ? (
                         <Spinner
                             size={'large'}
-                            className="mt-20 text-pink-600"
+                            className="mt-20 text-teal-600"
                         />
                     ) : (
                         <div className="mt-6 flex w-full flex-col-reverse gap-4 md:flex-row">

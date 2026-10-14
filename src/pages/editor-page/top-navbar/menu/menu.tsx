@@ -140,7 +140,7 @@ export const Menu: React.FC<MenuProps> = () => {
     const emojiAI = '✨';
 
     return (
-        <Menubar className="h-8 border-none py-2 shadow-none md:h-10 md:py-0">
+        <Menubar className="h-8 items-center gap-0.5 border-none bg-transparent p-0 shadow-none md:h-9">
             <MenubarMenu>
                 <MenubarTrigger>{t('menu.actions.actions')}</MenubarTrigger>
                 <MenubarContent>
