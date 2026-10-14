@@ -15,6 +15,7 @@ import { databaseTypeToLabelMap } from '@/lib/databases';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { errorMessage } from '@/lib/qubdi/api';
 import { emptyDiagram } from '@/lib/qubdi/new-diagram';
+import { projectDiagramPath } from '@/lib/qubdi/project-path';
 import { generateId } from '@/lib/utils';
 
 export interface NewDiagramDialogProps {
@@ -22,6 +23,9 @@ export interface NewDiagramDialogProps {
     onOpenChange: (open: boolean) => void;
     projectId: string;
     projectName: string;
+    projectSlug: string;
+    /** Shows an "Import from database" shortcut when given. */
+    onImport?: () => void;
 }
 
 const selectClass =
@@ -32,6 +36,8 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
     onOpenChange,
     projectId,
     projectName,
+    projectSlug,
+    onImport,
 }) => {
     const { addDiagram, deleteDiagram } = useStorage();
     const { syncDiagram } = useQubdi();
@@ -51,10 +57,10 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
         try {
             await addDiagram({ diagram });
             // created in the project right away: nothing exists outside one
-            await syncDiagram(diagram, projectId);
+            const remoteId = await syncDiagram(diagram, projectId);
             onOpenChange(false);
             setName('');
-            navigate(`/diagrams/${diagram.id}`);
+            navigate(projectDiagramPath(projectSlug, remoteId));
         } catch (err) {
             // do not leave a local diagram that is not in any project behind
             await deleteDiagram(diagram.id).catch(() => undefined);
@@ -105,6 +111,15 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
                     <Button type="submit" disabled={busy}>
                         {busy ? 'Creating…' : 'Create diagram'}
                     </Button>
+                    {onImport ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onImport}
+                        >
+                            Import from database…
+                        </Button>
+                    ) : null}
                 </form>
             </DialogContent>
         </Dialog>

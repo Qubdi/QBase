@@ -11,6 +11,7 @@ import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { useStorage } from '@/hooks/use-storage';
 import { useQubdi } from '@/hooks/use-qubdi';
+import { projectDiagramPath } from '@/lib/qubdi/project-path';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import {
     api,
@@ -35,6 +36,7 @@ export interface ImportFromDatabaseDialogProps {
     onOpenChange: (open: boolean) => void;
     /** The new diagram, and the connections used, belong to this project. */
     projectId: string;
+    projectSlug: string;
 }
 
 type Step = 'connect' | 'select' | 'preview';
@@ -61,7 +63,7 @@ const emptyForm = {
 
 export const ImportFromDatabaseDialog: React.FC<
     ImportFromDatabaseDialogProps
-> = ({ open, onOpenChange, projectId }) => {
+> = ({ open, onOpenChange, projectId, projectSlug }) => {
     const { addDiagram } = useStorage();
     const { syncDiagram } = useQubdi();
     const navigate = useNavigate();
@@ -162,7 +164,7 @@ export const ImportFromDatabaseDialog: React.FC<
             );
             await addDiagram({ diagram });
             // nothing lives outside a project: create it on the server right away
-            await syncDiagram(diagram, projectId);
+            const remoteId = await syncDiagram(diagram, projectId);
             // remember where this diagram came from so re-sync is one click;
             // passwords are never stored in the browser
             const usedSaved = savedId || justSavedId;
@@ -182,7 +184,7 @@ export const ImportFromDatabaseDialog: React.FC<
                 lastSyncedAt: new Date().toISOString(),
             });
             onOpenChange(false);
-            navigate(`/diagrams/${diagram.id}`);
+            navigate(projectDiagramPath(projectSlug, remoteId));
         } catch (err) {
             setError(errorMessage(err));
         } finally {
