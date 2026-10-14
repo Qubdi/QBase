@@ -6,6 +6,8 @@ export interface Config {
     port: number;
     corsOrigin: string | null;
     sessionDays: number;
+    /** pino level: fatal, error, warn, info, debug, trace or silent */
+    logLevel: string;
     /** most database connections the pool opens at once */
     dbPoolMax: number;
     /** max requests per minute per IP on the public share routes */
@@ -26,6 +28,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         port: Number(env.PORT ?? 3001),
         corsOrigin: env.CORS_ORIGIN ?? null,
         sessionDays: Number(env.SESSION_DAYS ?? 30),
+        logLevel: env.LOG_LEVEL ?? 'info',
         dbPoolMax: Number(env.DB_POOL_MAX ?? 10),
         shareRateLimit: Number(env.SHARE_RATE_LIMIT ?? 60),
         introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')

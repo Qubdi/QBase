@@ -719,7 +719,10 @@ describe('drift scheduler', () => {
 
     const deps = () => ({
         db: ctx.db,
-        config: { ...loadConfig({}), connectionKey: 'a-long-enough-connection-key' },
+        config: {
+            ...loadConfig({ LOG_LEVEL: 'silent' }),
+            connectionKey: 'a-long-enough-connection-key',
+        },
         factory,
     });
     const configure = async (diagramId: string, over: object = {}) => {

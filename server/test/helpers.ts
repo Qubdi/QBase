@@ -25,7 +25,7 @@ export async function createTestApp(
     reset = true
 ): Promise<TestCtx> {
     const config = {
-        ...loadConfig({}),
+        ...loadConfig({ LOG_LEVEL: 'silent' }),
         databaseUrl: TEST_URL,
         ...overrides,
     };

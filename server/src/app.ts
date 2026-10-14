@@ -39,7 +39,8 @@ export interface AppDeps {
 
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const app = Fastify({
-        logger: false,
+        logger:
+            config.logLevel === 'silent' ? false : { level: config.logLevel },
         bodyLimit: 50 * 1024 * 1024,
         routerOptions: { maxParamLength: 1000 },
     });
@@ -68,13 +69,15 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         req.user = await getSessionUser(db, req.cookies[SESSION_COOKIE]);
     });
 
-    app.setErrorHandler((err, _req, reply) => {
+    app.setErrorHandler((err, req, reply) => {
         if (err instanceof ZodError) {
             return reply
                 .code(400)
                 .send({ error: 'invalid_request', issues: err.issues });
         }
         const status = (err as { statusCode?: number }).statusCode ?? 500;
+        // unexpected failures: log them with the request id, show the client nothing
+        if (status >= 500) req.log.error({ err }, 'request failed');
         return reply
             .code(status)
             .send({
