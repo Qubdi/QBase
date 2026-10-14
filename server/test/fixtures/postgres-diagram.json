@@ -1,0 +1,433 @@
+{
+ "title": "Shop",
+ "content": {
+  "id": "8k55potxypfh",
+  "name": "Shop",
+  "databaseType": "postgresql",
+  "tables": [
+   {
+    "id": "xswsvwpazb82h8drw9bej8jwn",
+    "name": "customers",
+    "schema": "public",
+    "x": 100,
+    "y": 100,
+    "fields": [
+     {
+      "id": "zef8lejecaxj5qbjumdn31x7z",
+      "name": "id",
+      "type": {
+       "id": "bigint",
+       "name": "bigint"
+      },
+      "primaryKey": true,
+      "unique": true,
+      "nullable": false,
+      "increment": true,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "9d4llwebo226r3ueqt9xmd4cn",
+      "name": "email",
+      "type": {
+       "id": "varchar",
+       "name": "varchar"
+      },
+      "primaryKey": false,
+      "unique": true,
+      "nullable": false,
+      "characterMaximumLength": "120",
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345,
+      "comments": "Login email"
+     },
+     {
+      "id": "8tcss9jv6iq4r4f5ksjuezsl6",
+      "name": "full_name",
+      "type": {
+       "id": "text",
+       "name": "text"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": true,
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "ru13wvcwmjt1t5sm4l7yrlrxp",
+      "name": "balance",
+      "type": {
+       "id": "numeric",
+       "name": "numeric"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": false,
+      "precision": 10,
+      "scale": 2,
+      "default": "0",
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "php81zod6vvc0b7bjokb0las6",
+      "name": "tags",
+      "type": {
+       "id": "int",
+       "name": "int"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": true,
+      "increment": false,
+      "isArray": true,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "32iawhn8elnbdt21dm7hrxgmo",
+      "name": "created_at",
+      "type": {
+       "id": "timestamp",
+       "name": "timestamp"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": false,
+      "precision": 3,
+      "default": "now()",
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     }
+    ],
+    "indexes": [
+     {
+      "id": "b1vbrdpcjl8mdbl9tsw219dja",
+      "name": "customers_pkey",
+      "unique": true,
+      "fieldIds": [
+       "zef8lejecaxj5qbjumdn31x7z"
+      ],
+      "createdAt": 1791932982345,
+      "isPrimaryKey": true
+     },
+     {
+      "id": "448h6apnp466h1hfxly3zvb9j",
+      "name": "customers_email_key",
+      "unique": true,
+      "fieldIds": [
+       "9d4llwebo226r3ueqt9xmd4cn"
+      ],
+      "createdAt": 1791932982345,
+      "type": "btree"
+     },
+     {
+      "id": "uy4ynhqr12blfyaryz7w4g10l",
+      "name": "customers_email_lower_idx",
+      "unique": false,
+      "fieldIds": [],
+      "createdAt": 1791932982345,
+      "type": "btree"
+     }
+    ],
+    "color": "#8eb7ff",
+    "isView": false,
+    "isMaterializedView": false,
+    "createdAt": 1791932982345,
+    "comments": "People who buy things"
+   },
+   {
+    "id": "18e008i8zs9zh0u6z0eudgc8d",
+    "name": "order_items",
+    "schema": "shop",
+    "x": 524,
+    "y": 100,
+    "fields": [
+     {
+      "id": "mi0y4cdsc01ho4pqy2y51knlo",
+      "name": "order_id",
+      "type": {
+       "id": "int",
+       "name": "int"
+      },
+      "primaryKey": true,
+      "unique": false,
+      "nullable": false,
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "m19a2pgqpt5d3qswtpsxxmc2j",
+      "name": "line_no",
+      "type": {
+       "id": "smallint",
+       "name": "smallint"
+      },
+      "primaryKey": true,
+      "unique": false,
+      "nullable": false,
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "2czn3qijt5t63ppvklgagc14o",
+      "name": "sku",
+      "type": {
+       "id": "varchar",
+       "name": "varchar"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": false,
+      "characterMaximumLength": "40",
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "pp37cq7v0wxzat2bqb6xp70mh",
+      "name": "qty",
+      "type": {
+       "id": "int",
+       "name": "int"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": false,
+      "default": "1",
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     }
+    ],
+    "indexes": [
+     {
+      "id": "p5jie5yojdxufvypvym2o9gmv",
+      "name": "order_items_pkey",
+      "unique": true,
+      "fieldIds": [
+       "mi0y4cdsc01ho4pqy2y51knlo",
+       "m19a2pgqpt5d3qswtpsxxmc2j"
+      ],
+      "createdAt": 1791932982345,
+      "isPrimaryKey": true
+     }
+    ],
+    "color": "#8eb7ff",
+    "isView": false,
+    "isMaterializedView": false,
+    "createdAt": 1791932982345
+   },
+   {
+    "id": "gcirdqn20zovtjxp8f7ia93p0",
+    "name": "orders",
+    "schema": "shop",
+    "x": 100,
+    "y": 100,
+    "fields": [
+     {
+      "id": "4wxyo8m1gafr6z25wbrck7n05",
+      "name": "id",
+      "type": {
+       "id": "int",
+       "name": "int"
+      },
+      "primaryKey": true,
+      "unique": true,
+      "nullable": false,
+      "default": "nextval('shop.orders_id_seq'::regclass)",
+      "increment": true,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "2k6i9kc7g5slqj0llmk71k375",
+      "name": "customer_id",
+      "type": {
+       "id": "bigint",
+       "name": "bigint"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": false,
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "iswqd8m5pdjtwvqmmkzo4a634",
+      "name": "status",
+      "type": {
+       "id": "shop.order_status",
+       "name": "shop.order_status"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": false,
+      "default": "'new'::shop.order_status",
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "8ddcn4m2x0ptd50jui60m2jzv",
+      "name": "placed_at",
+      "type": {
+       "id": "timestamptz",
+       "name": "timestamptz"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": false,
+      "default": "now()",
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "26g3nuxxrt9vo15f1yfc7r5ex",
+      "name": "note",
+      "type": {
+       "id": "char",
+       "name": "char"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": true,
+      "characterMaximumLength": "8",
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     }
+    ],
+    "indexes": [
+     {
+      "id": "a6yt07g5lphfia70zsqvmanti",
+      "name": "orders_pkey",
+      "unique": true,
+      "fieldIds": [
+       "4wxyo8m1gafr6z25wbrck7n05"
+      ],
+      "createdAt": 1791932982345,
+      "isPrimaryKey": true
+     },
+     {
+      "id": "aduo86u9l539n66ypdswtu02h",
+      "name": "orders_placed_idx",
+      "unique": false,
+      "fieldIds": [
+       "8ddcn4m2x0ptd50jui60m2jzv"
+      ],
+      "createdAt": 1791932982345,
+      "type": "btree"
+     }
+    ],
+    "color": "#8eb7ff",
+    "isView": false,
+    "isMaterializedView": false,
+    "createdAt": 1791932982345
+   },
+   {
+    "id": "36g1k7zlnf0kddzy046yelpkw",
+    "name": "paid_orders",
+    "schema": "shop",
+    "x": 100,
+    "y": 502,
+    "fields": [
+     {
+      "id": "fdlrxn61jh9yabxgiauz49c4v",
+      "name": "id",
+      "type": {
+       "id": "int",
+       "name": "int"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": true,
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     },
+     {
+      "id": "bt52y8jwr4pblovwmmmweun5k",
+      "name": "customer_id",
+      "type": {
+       "id": "bigint",
+       "name": "bigint"
+      },
+      "primaryKey": false,
+      "unique": false,
+      "nullable": true,
+      "increment": false,
+      "isArray": false,
+      "createdAt": 1791932982345
+     }
+    ],
+    "indexes": [],
+    "color": "#b0b0b0",
+    "isView": true,
+    "isMaterializedView": false,
+    "createdAt": 1791932982345
+   }
+  ],
+  "relationships": [
+   {
+    "id": "w2iffysqlz417hb61xh5mvpoa",
+    "name": "items_order_fk",
+    "sourceSchema": "shop",
+    "targetSchema": "shop",
+    "sourceTableId": "gcirdqn20zovtjxp8f7ia93p0",
+    "targetTableId": "18e008i8zs9zh0u6z0eudgc8d",
+    "sourceFieldId": "4wxyo8m1gafr6z25wbrck7n05",
+    "targetFieldId": "mi0y4cdsc01ho4pqy2y51knlo",
+    "sourceCardinality": "one",
+    "targetCardinality": "many",
+    "createdAt": 1791932982345
+   },
+   {
+    "id": "7gtlz6ovx4ndkkm3dcc15ius7",
+    "name": "orders_customer_fk",
+    "sourceSchema": "public",
+    "targetSchema": "shop",
+    "sourceTableId": "xswsvwpazb82h8drw9bej8jwn",
+    "targetTableId": "gcirdqn20zovtjxp8f7ia93p0",
+    "sourceFieldId": "zef8lejecaxj5qbjumdn31x7z",
+    "targetFieldId": "2k6i9kc7g5slqj0llmk71k375",
+    "sourceCardinality": "one",
+    "targetCardinality": "many",
+    "createdAt": 1791932982345
+   }
+  ],
+  "dependencies": [
+   {
+    "id": "y3d7ol8imt8wt72eusel62u0v",
+    "schema": "shop",
+    "tableId": "gcirdqn20zovtjxp8f7ia93p0",
+    "dependentSchema": "shop",
+    "dependentTableId": "36g1k7zlnf0kddzy046yelpkw",
+    "createdAt": 1791932982410
+   }
+  ],
+  "customTypes": [
+   {
+    "id": "kefoh6m6r0em7lq7ippn0g3cn",
+    "schema": "shop",
+    "name": "order_status",
+    "kind": "enum",
+    "values": [
+     "new",
+     "paid",
+     "shipped"
+    ]
+   }
+  ],
+  "createdAt": "2026-10-13T23:09:42.411Z",
+  "updatedAt": "2026-10-13T23:09:42.411Z"
+ }
+}
