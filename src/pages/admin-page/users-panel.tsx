@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/button/button';
 import { Badge } from '@/components/badge/badge';
 import { Input } from '@/components/input/input';
@@ -27,14 +27,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/dialog/dialog';
+import { ListPager } from '@/components/qubdi/list-pager';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { api, errorMessage, type AdminUser } from '@/lib/qubdi/api';
+
+const PAGE_SIZE = 10;
 
 export interface UsersPanelProps {
     currentUserId: string;
 }
 
 export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
-    const [users, setUsers] = useState<AdminUser[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -44,24 +47,18 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
     const [newPassword, setNewPassword] = useState('');
     const [deleteFor, setDeleteFor] = useState<AdminUser | null>(null);
 
-    const reload = useCallback(async () => {
-        try {
-            setUsers(await api.adminListUsers());
-        } catch (e) {
-            setError(errorMessage(e));
-        }
-    }, []);
-
-    useEffect(() => {
-        void reload();
-    }, [reload]);
+    // a fixed page size keeps the panel the same height however many users exist
+    const list = usePagedList(
+        ({ page, limit, q }) => api.adminListUsers({ page, limit, q }),
+        { limit: PAGE_SIZE }
+    );
 
     const run = async (fn: () => Promise<unknown>) => {
         setError(null);
         setBusy(true);
         try {
             await fn();
-            await reload();
+            list.reload();
         } catch (e) {
             setError(errorMessage(e));
         } finally {
@@ -134,108 +131,136 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                 </p>
             ) : null}
 
-            <div className="rounded-xl border bg-card shadow-sm">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead className="text-right">
-                                Projects
-                            </TableHead>
-                            <TableHead className="text-right">
-                                Actions
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {users === null ? (
+            {list.error ? (
+                <p role="alert" className="text-sm text-destructive">
+                    {list.error}
+                </p>
+            ) : null}
+
+            <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm">
+                <div className="max-h-[26rem] min-h-40 overflow-y-auto">
+                    <Table>
+                        <TableHeader className="sticky top-0 z-10 bg-card">
                             <TableRow>
-                                <TableCell
-                                    colSpan={4}
-                                    className="text-muted-foreground"
-                                >
-                                    Loading…
-                                </TableCell>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead className="text-right">
+                                    Projects
+                                </TableHead>
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
                             </TableRow>
-                        ) : (
-                            users.map((u) => {
-                                const self = u.id === currentUserId;
-                                return (
-                                    <TableRow key={u.id}>
-                                        <TableCell className="font-medium">
-                                            {u.email}
-                                            {self ? (
-                                                <span className="ml-2 text-xs text-muted-foreground">
-                                                    (you)
-                                                </span>
-                                            ) : null}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={
-                                                    u.isAdmin
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {u.isAdmin ? 'Admin' : 'Member'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {u.projects}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    disabled={busy || self}
-                                                    onClick={() =>
-                                                        run(() =>
-                                                            api.adminUpdateUser(
-                                                                u.id,
-                                                                {
-                                                                    isAdmin:
-                                                                        !u.isAdmin,
-                                                                }
-                                                            )
-                                                        )
+                        </TableHeader>
+                        <TableBody>
+                            {list.initialLoading ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={4}
+                                        className="text-muted-foreground"
+                                    >
+                                        Loading…
+                                    </TableCell>
+                                </TableRow>
+                            ) : list.items.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={4}
+                                        className="text-muted-foreground"
+                                    >
+                                        No users yet.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                list.items.map((u) => {
+                                    const self = u.id === currentUserId;
+                                    return (
+                                        <TableRow key={u.id}>
+                                            <TableCell className="font-medium">
+                                                {u.email}
+                                                {self ? (
+                                                    <span className="ml-2 text-xs text-muted-foreground">
+                                                        (you)
+                                                    </span>
+                                                ) : null}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={
+                                                        u.isAdmin
+                                                            ? 'default'
+                                                            : 'secondary'
                                                     }
                                                 >
                                                     {u.isAdmin
-                                                        ? 'Remove admin'
-                                                        : 'Make admin'}
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setNewPassword('');
-                                                        setResetFor(u);
-                                                    }}
-                                                >
-                                                    Reset password
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-destructive hover:text-destructive"
-                                                    disabled={busy || self}
-                                                    onClick={() =>
-                                                        setDeleteFor(u)
-                                                    }
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })
-                        )}
-                    </TableBody>
-                </Table>
+                                                        ? 'Admin'
+                                                        : 'Member'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {u.projects}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        disabled={busy || self}
+                                                        onClick={() =>
+                                                            run(() =>
+                                                                api.adminUpdateUser(
+                                                                    u.id,
+                                                                    {
+                                                                        isAdmin:
+                                                                            !u.isAdmin,
+                                                                    }
+                                                                )
+                                                            )
+                                                        }
+                                                    >
+                                                        {u.isAdmin
+                                                            ? 'Remove admin'
+                                                            : 'Make admin'}
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setNewPassword('');
+                                                            setResetFor(u);
+                                                        }}
+                                                    >
+                                                        Reset password
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-destructive hover:text-destructive"
+                                                        disabled={busy || self}
+                                                        onClick={() =>
+                                                            setDeleteFor(u)
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+                <ListPager
+                    page={list.page}
+                    pageCount={list.pageCount}
+                    limit={list.limit}
+                    total={list.total}
+                    onPageChange={list.setPage}
+                    disabled={list.loading}
+                    noun="users"
+                />
             </div>
 
             <Dialog
