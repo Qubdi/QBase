@@ -28,7 +28,7 @@ import {
     type ProjectRole,
 } from '@/lib/qubdi/api';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 5;
 
 const ROLE_OPTIONS = [
     { value: 'viewer', label: 'Viewer' },
