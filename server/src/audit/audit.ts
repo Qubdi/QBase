@@ -6,6 +6,8 @@ export type AuditAction =
     | 'user.create'
     | 'user.update'
     | 'user.delete'
+    | 'user.disable'
+    | 'user.enable'
     | 'project.create'
     | 'project.update'
     | 'project.delete'
