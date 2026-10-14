@@ -209,6 +209,13 @@ export const CommentsControl: React.FC = () => {
                                     state.focus?.type === c.targetType &&
                                     state.focus.id === c.targetId
                                 }
+                                // the server allows the author and admins; anyone
+                                // else may only resolve
+                                canChange={
+                                    !!user &&
+                                    (user.isAdmin ||
+                                        c.authorEmail === user.email)
+                                }
                                 editing={editing?.id === c.id ? editing : null}
                                 setEditing={setEditing}
                                 onSave={(body) =>
@@ -242,6 +249,7 @@ interface CommentItemProps {
     comment: EditorComment;
     label: string;
     focused: boolean;
+    canChange: boolean;
     editing: { id: string; body: string } | null;
     setEditing: (e: { id: string; body: string } | null) => void;
     onSave: (body: string) => void;
@@ -253,6 +261,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     comment: c,
     label,
     focused,
+    canChange,
     editing,
     setEditing,
     onSave,
@@ -319,16 +328,26 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     <Button variant="ghost" size="sm" onClick={onResolve}>
                         {c.resolved ? 'Reopen' : 'Resolve'}
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditing({ id: c.id, body: c.body })}
-                    >
-                        Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={onDelete}>
-                        Delete
-                    </Button>
+                    {canChange ? (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                    setEditing({ id: c.id, body: c.body })
+                                }
+                            >
+                                Edit
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onDelete}
+                            >
+                                Delete
+                            </Button>
+                        </>
+                    ) : null}
                 </span>
             )}
         </div>
