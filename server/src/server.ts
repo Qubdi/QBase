@@ -1,6 +1,7 @@
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
+import { startMaintenance } from './maintenance.js';
 import { startDriftScheduler } from './drift/service.js';
 import { defaultIntrospectorFactory } from './introspect/routes.js';
 
@@ -25,6 +26,9 @@ const stopScheduler = startDriftScheduler({
 await app.listen({ port: config.port, host: config.host });
 console.log(`QubdiDB server listening on :${config.port}`);
 
+// drops expired sessions and old audit rows
+const stopMaintenance = startMaintenance({ db, config });
+
 // Docker and process managers stop the server with SIGTERM: finish what is
 // running, close the streams, then release the database connections.
 let stopping = false;
@@ -36,6 +40,7 @@ const shutdown = async (signal: string) => {
     setTimeout(() => process.exit(1), 10_000).unref();
     try {
         await stopScheduler();
+        await stopMaintenance();
         await app.close();
         await pool.end();
         process.exit(0);

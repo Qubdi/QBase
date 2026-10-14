@@ -11,6 +11,8 @@ export interface Config {
      * true, a hop count, or a list of addresses. False = use the socket's.
      */
     trustProxy: boolean | number | string[];
+    /** audit rows older than this many days are deleted; 0 keeps them all */
+    auditRetentionDays: number;
     /** most live (SSE) viewers one share link may have open at once */
     sseMaxPerLink: number;
     /** pino level: fatal, error, warn, info, debug, trace or silent */
@@ -48,6 +50,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         port: Number(env.PORT ?? 3001),
         corsOrigin: env.CORS_ORIGIN ?? null,
         sessionDays: Number(env.SESSION_DAYS ?? 30),
+        auditRetentionDays: Number(env.AUDIT_RETENTION_DAYS ?? 365),
         sseMaxPerLink: Number(env.SSE_MAX_PER_LINK ?? 100),
         trustProxy: parseTrustProxy(env.TRUST_PROXY),
         logLevel: env.LOG_LEVEL ?? 'info',
