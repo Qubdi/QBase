@@ -11,7 +11,7 @@ and schema lint.
 | Part | Where | Stack |
 | --- | --- | --- |
 | Editor | `src/` | React 18, TypeScript, Vite, Tailwind, `@xyflow/react`, Dexie |
-| Backend (optional) | `server/` | Node 22, Fastify, Drizzle, PostgreSQL |
+| Backend (optional) | `server/` | Node 24, Fastify, Drizzle, PostgreSQL |
 | Shared logic | `shared/` | Pure TypeScript with no dependencies: `reconcile`, drift classification, `lint` |
 
 ## Features
