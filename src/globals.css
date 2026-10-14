@@ -229,7 +229,10 @@
         *::after {
             animation-duration: 0.01ms !important;
             animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
+            /* Turn transitions off. Shortening them instead (a tiny duration) makes every
+               element transition every property by default, including a relationship
+               line's shape, so the line froze and jumped while a table was dragged. */
+            transition: none !important;
             scroll-behavior: auto !important;
         }
     }
