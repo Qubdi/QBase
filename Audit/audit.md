@@ -1,7 +1,7 @@
 # QubdiDB — Audit
 
-**rev** 2 · **date** 2026-10-14
-**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (151 files, 1343 tests), npm audit · server tests not run (no Postgres) · no secret read
+**rev** 3 · **date** 2026-10-14
+**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (152 files, 1385 tests), npm audit · server tests not run (no Postgres) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
@@ -9,8 +9,8 @@
 | Security & secrets | 12 | 0 | 1 | 3 | 0 |
 | Repository | 14 | 0 | 2 | 1 | 0 |
 | Server | 19 | 0 | 0 | 0 | 0 |
-| Client | 4 | 0 | 0 | 2 | 0 |
-| **Total** | 49 | 0 | 3 | 6 | 0 |
+| Client | 3 | 0 | 0 | 3 | 0 |
+| **Total** | 48 | 0 | 3 | 7 | 0 |
 
 ## Act first
 
@@ -88,7 +88,6 @@
 |----|-----|---------|-------|-----|
 | CLI-001 | Med | Autosave serialises the whole diagram on every change | `src/components/qubdi/server-autosave.tsx:39` | Compare a revision counter instead of JSON |
 | CLI-002 | Med | Leave-page save uses plain `fetch`; the browser may cancel it | `src/components/qubdi/server-autosave.tsx:48` | Send with `keepalive` on `pagehide` |
-| CLI-003 | Med | SQL import validators for MySQL, SQLite and SQL Server are stubs | `src/lib/data/sql-import/validators/mysql-validator.ts:37` | Implement the validators or remove the stubs |
 | CLI-006 | Low | 16 lint suppressions and `any` casts remain in app code | `src/` | Remove them as files are touched |
 
 ---
@@ -101,6 +100,7 @@
 | SEC-003 | Security & secrets | `VITE_OPENAI_API_KEY` baked into the JS bundle; build args removed |
 | SEC-011 | Security & secrets | Cross-dialect SQL export sent the schema to an external LLM; AI export removed |
 | REPO-011 | Repository | README denied GitHub integration while UI linked GitHub; links removed |
+| CLI-003 | Client | SQL import validators for MySQL, SQLite and SQL Server were stubs; now implemented |
 | CLI-004 | Client | Star-us dialog and its GIF were never opened; deleted with i18n keys |
 | CLI-005 | Client | Hard-coded `qubdi.example` in template pages; host now from `VITE_HOST_URL` |
 
@@ -126,3 +126,4 @@
 |-----|------|--------|
 | 1 | 2026-10-14 | First pass: 55 new, 0 fixed, 0 dropped |
 | 2 | 2026-10-14 | 0 new, 6 fixed, 0 dropped; 5 findings re-anchored or recounted |
+| 3 | 2026-10-14 | 0 new, 1 fixed, 0 dropped |
