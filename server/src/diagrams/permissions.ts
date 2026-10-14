@@ -1,17 +1,12 @@
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import {
-    diagramMembers,
-    diagrams,
-    projectMembers,
-    users,
-} from '../db/schema.js';
+import { diagrams, projectMembers, users } from '../db/schema.js';
 
 export type Role = 'owner' | 'editor' | 'viewer';
 
 export const canWrite = (role: Role) => role === 'owner' || role === 'editor';
 
-/** The project a diagram belongs to, or null for a standalone diagram. */
+/** The project a diagram belongs to (every diagram has one). */
 export async function getDiagramProject(
     db: Db,
     diagramId: string
@@ -24,9 +19,8 @@ export async function getDiagramProject(
 }
 
 /**
- * Role of a user on a diagram. Diagrams inside a project are governed by the
- * project: admins are owners, everyone else gets their project role. Standalone
- * diagrams keep per-diagram membership.
+ * Role of a user on a diagram. Access comes only from the diagram's project:
+ * admins are owners, everyone else gets the role an admin granted them there.
  */
 export async function getRole(
     db: Db,
@@ -34,17 +28,8 @@ export async function getRole(
     userId: string
 ): Promise<Role | null> {
     const projectId = await getDiagramProject(db, diagramId);
-    if (projectId) return getProjectRole(db, projectId, userId);
-    const rows = await db
-        .select({ role: diagramMembers.role })
-        .from(diagramMembers)
-        .where(
-            and(
-                eq(diagramMembers.diagramId, diagramId),
-                eq(diagramMembers.userId, userId)
-            )
-        );
-    return rows[0]?.role ?? null;
+    if (!projectId) return null;
+    return getProjectRole(db, projectId, userId);
 }
 
 /** Admins are owners of every project; others get their granted role. */

@@ -1,15 +1,9 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import type { Db } from '../db/client.js';
-import {
-    diagramMembers,
-    diagrams,
-    projectMembers,
-    snapshots,
-    users,
-} from '../db/schema.js';
+import { diagrams, projectMembers, snapshots, users } from '../db/schema.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import {
     latestSnapshot,
@@ -26,7 +20,8 @@ const versionParam = z.object({
 const createBody = z.object({
     title: z.string().trim().min(1).max(200),
     content: z.record(z.unknown()),
-    projectId: z.string().uuid().optional(),
+    // every diagram lives in a project
+    projectId: z.string().uuid(),
 });
 
 const updateBody = z
@@ -65,20 +60,12 @@ export const diagramRoutes =
                 ownerId: diagrams.ownerId,
                 projectId: diagrams.projectId,
             };
-            // standalone diagrams: per-diagram membership
-            const own = await db
-                .select({ ...select, role: diagramMembers.role })
-                .from(diagramMembers)
-                .innerJoin(diagrams, eq(diagrams.id, diagramMembers.diagramId))
-                .where(eq(diagramMembers.userId, me.id));
-            // project diagrams: admins see all, others via their project role
-            const inProjects = me.isAdmin
-                ? (
-                      await db
-                          .select(select)
-                          .from(diagrams)
-                          .where(sql`${diagrams.projectId} is not null`)
-                  ).map((d) => ({ ...d, role: 'owner' as const }))
+            // admins see every project's diagrams; others only their projects'
+            const rows = me.isAdmin
+                ? (await db.select(select).from(diagrams)).map((d) => ({
+                      ...d,
+                      role: 'owner' as const,
+                  }))
                 : await db
                       .select({ ...select, role: projectMembers.role })
                       .from(projectMembers)
@@ -87,9 +74,7 @@ export const diagramRoutes =
                           eq(diagrams.projectId, projectMembers.projectId)
                       )
                       .where(eq(projectMembers.userId, me.id));
-            const rows = [...own, ...inProjects].sort(
-                (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
-            );
+            rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
             // viewers must not learn about unpublished renames
             return Promise.all(
                 rows.map(async (r) => {
@@ -107,40 +92,27 @@ export const diagramRoutes =
         app.post('/', async (req, reply) => {
             const body = createBody.parse(req.body);
             const userId = req.user!.id;
-            if (body.projectId) {
-                // creating inside a project needs write access there; strangers get 404
-                const projectRole = await getProjectRole(
-                    db,
-                    body.projectId,
-                    userId
-                );
-                if (!projectRole) {
-                    return reply.code(404).send({ error: 'not_found' });
-                }
-                if (!canWrite(projectRole)) {
-                    return reply.code(403).send({ error: 'forbidden' });
-                }
+            // creating needs write access in the project; strangers get 404
+            const projectRole = await getProjectRole(
+                db,
+                body.projectId,
+                userId
+            );
+            if (!projectRole) {
+                return reply.code(404).send({ error: 'not_found' });
             }
-            const diagram = await db.transaction(async (tx) => {
-                const [d] = await tx
-                    .insert(diagrams)
-                    .values({
-                        ownerId: userId,
-                        projectId: body.projectId ?? null,
-                        title: body.title,
-                        content: body.content,
-                    })
-                    .returning();
-                // project diagrams take their access from the project
-                if (!body.projectId) {
-                    await tx.insert(diagramMembers).values({
-                        diagramId: d.id,
-                        userId,
-                        role: 'owner',
-                    });
-                }
-                return d;
-            });
+            if (!canWrite(projectRole)) {
+                return reply.code(403).send({ error: 'forbidden' });
+            }
+            const [diagram] = await db
+                .insert(diagrams)
+                .values({
+                    ownerId: userId,
+                    projectId: body.projectId,
+                    title: body.title,
+                    content: body.content,
+                })
+                .returning();
             await audit(db, {
                 userId,
                 action: 'diagram.create',

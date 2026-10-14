@@ -147,16 +147,11 @@ export const adminRoutes =
                 .where(eq(users.id, id));
             if (!target) return reply.code(404).send({ error: 'not_found' });
             await db.transaction(async (tx) => {
-                // owner_id cascades; keep project diagrams alive for the team
+                // owner_id cascades; keep the team's diagrams alive
                 await tx
                     .update(diagrams)
                     .set({ ownerId: req.user!.id })
-                    .where(
-                        and(
-                            eq(diagrams.ownerId, id),
-                            sql`${diagrams.projectId} is not null`
-                        )
-                    );
+                    .where(eq(diagrams.ownerId, id));
                 await tx.delete(sessions).where(eq(sessions.userId, id));
                 await tx.delete(users).where(eq(users.id, id));
             });
