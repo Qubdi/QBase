@@ -62,6 +62,15 @@ export interface RemoteDiagramSummary {
     /** set when the diagram lives in a project; access then follows the project */
     projectId?: string | null;
     role: MemberRole;
+    // what the list shows about the diagram (read from its content; for
+    // viewers, from the published copy). Missing on very old servers.
+    ownerEmail?: string | null;
+    databaseType?: string | null;
+    databaseEdition?: string | null;
+    tableCount?: number;
+    relationshipCount?: number;
+    /** when the diagram was first created */
+    createdAt?: string | null;
 }
 
 export interface RemoteDiagram extends RemoteDiagramSummary {
