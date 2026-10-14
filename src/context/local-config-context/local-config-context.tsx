@@ -23,9 +23,6 @@ export interface LocalConfigContext {
     githubRepoOpened: boolean;
     setGithubRepoOpened: (githubRepoOpened: boolean) => void;
 
-    starUsDialogLastOpen: number;
-    setStarUsDialogLastOpen: (lastOpen: number) => void;
-
     showMiniMapOnCanvas: boolean;
     setShowMiniMapOnCanvas: (showMiniMapOnCanvas: boolean) => void;
 }
@@ -48,9 +45,6 @@ export const LocalConfigContext = createContext<LocalConfigContext>({
 
     githubRepoOpened: false,
     setGithubRepoOpened: emptyFn,
-
-    starUsDialogLastOpen: 0,
-    setStarUsDialogLastOpen: emptyFn,
 
     showMiniMapOnCanvas: false,
     setShowMiniMapOnCanvas: emptyFn,
