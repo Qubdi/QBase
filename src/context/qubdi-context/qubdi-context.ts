@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { RemoteUser } from '@/lib/qubdi/api';
+import type { RemoteUser, RequestOptions } from '@/lib/qubdi/api';
 import type { Diagram } from '@/lib/domain/diagram';
 
 export interface QubdiContext {
@@ -13,7 +13,11 @@ export interface QubdiContext {
      * Uploads the local diagram; returns the server diagram id. An unbound
      * diagram needs a `projectId` to be created in; without one this rejects.
      */
-    syncDiagram: (diagram: Diagram, projectId?: string) => Promise<string>;
+    syncDiagram: (
+        diagram: Diagram,
+        projectId?: string,
+        options?: RequestOptions
+    ) => Promise<string>;
     remoteIdFor: (localId: string) => string | undefined;
 }
 

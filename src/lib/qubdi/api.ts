@@ -247,6 +247,14 @@ export interface CatalogResponse {
 
 type FetchLike = typeof fetch;
 
+/** Browsers cap the body of a keepalive request at 64 KiB. */
+export const KEEPALIVE_BODY_LIMIT = 60_000;
+
+export interface RequestOptions {
+    /** Let the request finish even if the page is closing (small bodies only). */
+    keepalive?: boolean;
+}
+
 export function createApi(
     baseUrl: string = QUBDI_BACKEND_URL,
     fetchImpl: FetchLike = (...args) => fetch(...args)
@@ -254,8 +262,10 @@ export function createApi(
     async function request<T>(
         method: string,
         path: string,
-        body?: unknown
+        body?: unknown,
+        options?: RequestOptions
     ): Promise<T> {
+        const json = body === undefined ? undefined : JSON.stringify(body);
         const res = await fetchImpl(`${baseUrl}${path}`, {
             method,
             credentials: 'include',
@@ -263,7 +273,12 @@ export function createApi(
                 body === undefined
                     ? {}
                     : { 'content-type': 'application/json' },
-            body: body === undefined ? undefined : JSON.stringify(body),
+            body: json,
+            // an oversized keepalive request would be rejected outright
+            ...(options?.keepalive &&
+            (json?.length ?? 0) <= KEEPALIVE_BODY_LIMIT
+                ? { keepalive: true }
+                : {}),
         });
         if (res.status === 204) return undefined as T;
         const data = await res.json().catch(() => ({}));
@@ -366,8 +381,9 @@ export function createApi(
                 title?: string;
                 content?: Record<string, unknown>;
                 autoPublish?: boolean;
-            }
-        ) => request<RemoteDiagram>('PUT', `/diagrams/${id}`, patch),
+            },
+            options?: RequestOptions
+        ) => request<RemoteDiagram>('PUT', `/diagrams/${id}`, patch, options),
         publish: (id: string, note?: string) =>
             request<{
                 version: number;

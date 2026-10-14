@@ -29,6 +29,8 @@ export const ServerAutosave: React.FC = () => {
     const saverRef = useRef<Autosaver<Diagram> | null>(null);
     const syncRef = useRef(syncDiagram);
     syncRef.current = syncDiagram;
+    // set while the page is closing, so the final save survives the unload
+    const leavingRef = useRef(false);
 
     const canSave = access.status === 'editor' && !!diagramId;
 
@@ -38,16 +40,27 @@ export const ServerAutosave: React.FC = () => {
             delayMs: AUTOSAVE_DELAY_MS,
             serialize: (d) => JSON.stringify(d),
             save: async (d) => {
-                await syncRef.current(d);
+                await syncRef.current(d, undefined, {
+                    keepalive: leavingRef.current,
+                });
             },
             onStatus: (status) =>
                 setSaveStatus(status, () => void saver.flush()),
         });
         saverRef.current = saver;
-        const flushOnLeave = () => void saver.flush();
+        const flushOnLeave = () => {
+            leavingRef.current = true;
+            void saver.flush();
+        };
+        // the page may come back from the back/forward cache
+        const resumed = () => {
+            leavingRef.current = false;
+        };
         window.addEventListener('pagehide', flushOnLeave);
+        window.addEventListener('pageshow', resumed);
         return () => {
             window.removeEventListener('pagehide', flushOnLeave);
+            window.removeEventListener('pageshow', resumed);
             // leaving the diagram: send what is still pending
             void saver.flush().finally(() => saver.dispose());
             saverRef.current = null;

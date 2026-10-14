@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { qubdiContext, type QubdiContext } from './qubdi-context';
-import { api, ApiError, type RemoteUser } from '@/lib/qubdi/api';
+import {
+    api,
+    ApiError,
+    type RemoteUser,
+    type RequestOptions,
+} from '@/lib/qubdi/api';
 import { QUBDI_BACKEND_ENABLED } from '@/lib/qubdi/config';
 import {
     clearRemoteId,
@@ -41,15 +46,20 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
     }, []);
 
     const syncDiagram = useCallback(
-        async (diagram: Diagram, projectId?: string) => {
+        async (
+            diagram: Diagram,
+            projectId?: string,
+            options?: RequestOptions
+        ) => {
             const content = diagramToServerContent(diagram);
             const remoteId = getRemoteId(diagram.id);
             if (remoteId) {
                 try {
-                    const updated = await api.updateDiagram(remoteId, {
-                        title: diagram.name,
-                        content,
-                    });
+                    const updated = await api.updateDiagram(
+                        remoteId,
+                        { title: diagram.name, content },
+                        options
+                    );
                     return updated.id;
                 } catch (e) {
                     // deleted or access revoked on the server: fall through and re-create
