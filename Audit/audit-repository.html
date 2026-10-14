@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 1</b></div>
-  <h1>15 open, 2 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 2</b></div>
+  <h1>14 open, 2 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-14</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (151 files, 1343 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
@@ -36,7 +36,7 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">15 open &middot; 0 Crit &middot; 2 High &middot; 7 Med &middot; 6 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">14 open &middot; 0 Crit &middot; 2 High &middot; 7 Med &middot; 5 Low. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -45,17 +45,16 @@
         <tr><td class="svc-name">REPO-002</td><td><span class="pill crit">High</span></td><td class="wrap-cell"><code>.dockerignore</code> misses <code>server/node_modules</code> and <code>server/.env</code>; both enter the server image</td><td><code>.dockerignore:2</code></td><td class="wrap-cell">Use <code>**/node_modules</code> and <code>**/.env*</code> patterns</td></tr>
         <tr><td class="svc-name">REPO-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">ESLint ignores <code>server/**</code>; backend is never linted</td><td><code>eslint.config.mjs:25</code></td><td class="wrap-cell">Lint <code>server/</code> with its own config</td></tr>
         <tr><td class="svc-name">REPO-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish workflow builds only the UI image; server has no image or release</td><td><code>.github/workflows/publish.yaml:62</code></td><td class="wrap-cell">Add a server image build and push</td></tr>
-        <tr><td class="svc-name">REPO-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Client has 15 high npm advisories incl. <code>react-router-dom</code>, <code>postcss</code>, <code>nanoid</code></td><td><code>package.json:71</code></td><td class="wrap-cell">Run <code>npm audit fix</code>; upgrade <code>react-router-dom</code></td></tr>
+        <tr><td class="svc-name">REPO-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Client has 24 high and 3 critical npm advisories incl. <code>react-router-dom</code>, <code>vitest</code></td><td><code>package.json:69</code></td><td class="wrap-cell">Run <code>npm audit fix</code>; upgrade <code>react-router-dom</code></td></tr>
         <tr><td class="svc-name">REPO-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Server <code>drizzle-orm</code> carries a high npm advisory</td><td><code>server/package.json:19</code></td><td class="wrap-cell">Upgrade <code>drizzle-orm</code>; rerun <code>npm audit</code></td></tr>
         <tr><td class="svc-name">REPO-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Workflow actions pinned to mutable tags, not commit SHAs</td><td><code>.github/workflows/ci.yaml:13</code></td><td class="wrap-cell">Pin every <code>uses:</code> to a full SHA</td></tr>
         <tr><td class="svc-name">REPO-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No update bot config, <code>SECURITY.md</code> or <code>CODEOWNERS</code></td><td><code>.github/</code></td><td class="wrap-cell">Add Dependabot config, <code>SECURITY.md</code>, <code>CODEOWNERS</code></td></tr>
         <tr><td class="svc-name">REPO-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">CI runs no <code>npm audit</code>, secret scan or Docker build</td><td><code>.github/workflows/ci.yaml:1</code></td><td class="wrap-cell">Add audit, gitleaks and <code>docker build</code> steps</td></tr>
         <tr><td class="svc-name">REPO-010</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">README lists <code>OLD/</code>, which does not exist; configs still ignore it</td><td><code>README.md:16</code></td><td class="wrap-cell">Remove it from README, eslint and vitest configs</td></tr>
-        <tr><td class="svc-name">REPO-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">README denies GitHub integration; star and export dialogs link GitHub</td><td><code>README.md:29</code></td><td class="wrap-cell">Remove the links or reword README</td></tr>
         <tr><td class="svc-name">REPO-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Node 24 in <code>.nvmrc</code> and CI; Node 22 in server image and README</td><td><code>server/Dockerfile:3</code></td><td class="wrap-cell">Align on one Node version</td></tr>
         <tr><td class="svc-name">REPO-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>public/sitemap.xml</code> lists placeholder <code>qubdi.example</code> while robots blocks all</td><td><code>public/sitemap.xml:4</code></td><td class="wrap-cell">Delete the sitemap or set the real host</td></tr>
         <tr><td class="svc-name">REPO-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Root version 1.20.1 and server 0.1.0 disagree; release-please bumps root only</td><td><code>.github/workflows/release.yaml:20</code></td><td class="wrap-cell">Version both packages together</td></tr>
-        <tr><td class="svc-name">REPO-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">UI image bakes the backend URL at build; compose uses <code>localhost:3001</code></td><td><code>docker-compose.yml:36</code></td><td class="wrap-cell">Serve backend URL through runtime <code>config.js</code></td></tr>
+        <tr><td class="svc-name">REPO-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">UI image bakes the backend URL at build; compose uses <code>localhost:3001</code></td><td><code>docker-compose.yml:40</code></td><td class="wrap-cell">Serve backend URL through runtime <code>config.js</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -63,12 +62,12 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (0)</summary>
+  <details><summary>Fixed (1)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
-
+        <tr><td class="svc-name">REPO-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README denied GitHub integration while UI linked GitHub; links removed</td></tr>
       </tbody>
     </table>
   </div>

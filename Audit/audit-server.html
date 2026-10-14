@@ -8,7 +8,7 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 1</b></div>
+  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 2</b></div>
   <h1>19 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-14</span>
@@ -45,7 +45,7 @@
         <tr><td class="svc-name">SRV-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SSE connections uncapped; unbounded listeners, one DB query per viewer per publish</td><td><code>server/src/events.ts:5</code></td><td class="wrap-cell">Cap connections per link; cache the link lookup</td></tr>
         <tr><td class="svc-name">SRV-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Pg pool sets no <code>error</code> handler, <code>max</code> or timeouts</td><td><code>server/src/db/client.ts:9</code></td><td class="wrap-cell">Add pool error handler, size limit and timeouts</td></tr>
         <tr><td class="svc-name">SRV-010</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Logger disabled; 500 errors return without any log line</td><td><code>server/src/app.ts:42</code></td><td class="wrap-cell">Enable Fastify logger; log errors with request id</td></tr>
-        <tr><td class="svc-name">SRV-011</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No SIGTERM handler; pool, scheduler and SSE streams never drain</td><td><code>server/src/server.ts:18</code></td><td class="wrap-cell">Handle SIGTERM; close app and pool</td></tr>
+        <tr><td class="svc-name">SRV-011</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No SIGTERM handler; pool, scheduler and SSE streams never drain</td><td><code>server/src/server.ts:25</code></td><td class="wrap-cell">Handle SIGTERM; close app and pool</td></tr>
         <tr><td class="svc-name">SRV-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Share rate limit keys on <code>req.ip</code>; no <code>trustProxy</code>, so proxies share one bucket</td><td><code>server/src/share/routes.ts:213</code></td><td class="wrap-cell">Add a <code>trustProxy</code> setting</td></tr>
         <tr><td class="svc-name">SRV-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Last-admin guard reads then writes; concurrent demotions can leave none</td><td><code>server/src/admin/routes.ts:155</code></td><td class="wrap-cell">Check inside a locking transaction</td></tr>
         <tr><td class="svc-name">SRV-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Viewer diagram list runs one snapshot query per row</td><td><code>server/src/diagrams/routes.ts:88</code></td><td class="wrap-cell">Join the latest snapshot in one query</td></tr>

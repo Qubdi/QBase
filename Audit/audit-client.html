@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 1</b></div>
-  <h1>6 open.</h1>
+  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 2</b></div>
+  <h1>4 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-14</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (151 files, 1343 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
@@ -30,7 +30,7 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">6 open &middot; 0 Crit &middot; 0 High &middot; 3 Med &middot; 3 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">4 open &middot; 0 Crit &middot; 0 High &middot; 3 Med &middot; 1 Low. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -38,9 +38,7 @@
         <tr><td class="svc-name">CLI-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Autosave serialises the whole diagram on every change</td><td><code>src/components/qubdi/server-autosave.tsx:39</code></td><td class="wrap-cell">Compare a revision counter instead of JSON</td></tr>
         <tr><td class="svc-name">CLI-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Leave-page save uses plain <code>fetch</code>; the browser may cancel it</td><td><code>src/components/qubdi/server-autosave.tsx:48</code></td><td class="wrap-cell">Send with <code>keepalive</code> on <code>pagehide</code></td></tr>
         <tr><td class="svc-name">CLI-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL import validators for MySQL, SQLite and SQL Server are stubs</td><td><code>src/lib/data/sql-import/validators/mysql-validator.ts:37</code></td><td class="wrap-cell">Implement the validators or remove the stubs</td></tr>
-        <tr><td class="svc-name">CLI-004</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Star-us dialog and its GIF are never opened</td><td><code>src/context/dialog-context/dialog-provider.tsx:219</code></td><td class="wrap-cell">Delete dialog, asset and i18n keys</td></tr>
-        <tr><td class="svc-name">CLI-005</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Hard-coded placeholder host <code>qubdi.example</code> in template pages</td><td><code>src/pages/templates-page/templates-page-helmet.tsx:11</code></td><td class="wrap-cell">Read the host from config</td></tr>
-        <tr><td class="svc-name">CLI-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">27 lint/TS suppressions and 12 <code>any</code> casts across app code</td><td><code>src/</code></td><td class="wrap-cell">Remove suppressions and casts as files are touched</td></tr>
+        <tr><td class="svc-name">CLI-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">16 lint suppressions and <code>any</code> casts remain in app code</td><td><code>src/</code></td><td class="wrap-cell">Remove them as files are touched</td></tr>
       </tbody>
     </table>
   </div>
@@ -48,12 +46,13 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (0)</summary>
+  <details><summary>Fixed (2)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
-
+        <tr><td class="svc-name">CLI-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Star-us dialog and its GIF were never opened; deleted with i18n keys</td></tr>
+        <tr><td class="svc-name">CLI-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Hard-coded <code>qubdi.example</code> in template pages; host now from <code>VITE_HOST_URL</code></td></tr>
       </tbody>
     </table>
   </div>
