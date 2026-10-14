@@ -4,6 +4,8 @@ import { Input } from '@/components/input/input';
 import { Link } from 'react-router-dom';
 import { projectHomePath } from '@/lib/qubdi/project-path';
 import { ListPager } from '@/components/qubdi/list-pager';
+import { SearchInput } from '@/components/qubdi/search-input';
+import { UserPicker } from '@/components/qubdi/user-picker';
 import { usePagedList } from '@/hooks/use-paged-list';
 import { cn } from '@/lib/utils';
 import {
@@ -36,7 +38,6 @@ const roleHelp: Record<ProjectRole, string> = {
 };
 
 export const ProjectsPanel: React.FC = () => {
-    const [users, setUsers] = useState<AdminUser[]>([]);
     const [members, setMembers] = useState<ProjectMember[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     // the chosen project can sit on another page or be filtered out of the list
@@ -49,7 +50,7 @@ export const ProjectsPanel: React.FC = () => {
     const [description, setDescription] = useState('');
     const [editName, setEditName] = useState('');
     const [editDescription, setEditDescription] = useState('');
-    const [assignUserId, setAssignUserId] = useState('');
+    const [assignUser, setAssignUser] = useState<AdminUser | null>(null);
     const [assignRole, setAssignRole] = useState<ProjectRole>('viewer');
     const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -90,12 +91,6 @@ export const ProjectsPanel: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        api.adminListUsers({ limit: 100 })
-            .then((page) => setUsers(page.items))
-            .catch((e) => setError(errorMessage(e)));
-    }, []);
-
-    useEffect(() => {
         void reloadMembers(selectedId);
     }, [selectedId, reloadMembers]);
 
@@ -118,8 +113,9 @@ export const ProjectsPanel: React.FC = () => {
         }
     };
 
-    const assignable = users.filter(
-        (u) => !members.some((m) => m.userId === u.id)
+    const memberIds = useMemo(
+        () => new Set(members.map((m) => m.userId)),
+        [members]
     );
 
     return (
@@ -168,6 +164,12 @@ export const ProjectsPanel: React.FC = () => {
                     </p>
                 ) : null}
                 <div className="flex flex-col gap-2">
+                    <SearchInput
+                        value={list.query}
+                        onChange={list.setQuery}
+                        placeholder="Search projects…"
+                        label="Search projects"
+                    />
                     <ul
                         className="flex max-h-[22rem] min-h-32 flex-col gap-1 overflow-y-auto"
                         aria-label="Projects"
@@ -179,7 +181,9 @@ export const ProjectsPanel: React.FC = () => {
                             </li>
                         ) : list.items.length === 0 ? (
                             <li className="text-sm text-muted-foreground">
-                                No projects yet. Create the first one above.
+                                {list.query
+                                    ? `No projects match "${list.query}".`
+                                    : 'No projects yet. Create the first one above.'}
                             </li>
                         ) : (
                             list.items.map((p) => (
@@ -329,36 +333,24 @@ export const ProjectsPanel: React.FC = () => {
                                 className="flex flex-col gap-2 md:flex-row"
                                 onSubmit={(e) => {
                                     e.preventDefault();
-                                    if (!assignUserId) return;
+                                    if (!assignUser) return;
                                     void run(async () => {
                                         await api.adminSetProjectMember(
                                             selected.id,
-                                            assignUserId,
+                                            assignUser.id,
                                             assignRole
                                         );
-                                        setAssignUserId('');
+                                        setAssignUser(null);
                                     });
                                 }}
                             >
-                                <select
-                                    className={cn(selectClass, 'md:flex-1')}
-                                    aria-label="User to assign"
-                                    value={assignUserId}
-                                    onChange={(e) =>
-                                        setAssignUserId(e.target.value)
-                                    }
-                                >
-                                    <option value="">
-                                        {assignable.length === 0
-                                            ? 'Everyone is already assigned'
-                                            : 'Choose a user…'}
-                                    </option>
-                                    {assignable.map((u) => (
-                                        <option key={u.id} value={u.id}>
-                                            {u.email}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="md:flex-1">
+                                    <UserPicker
+                                        selected={assignUser}
+                                        onSelect={setAssignUser}
+                                        excludeIds={memberIds}
+                                    />
+                                </div>
                                 <select
                                     className={selectClass}
                                     aria-label="Permission for new member"
@@ -374,7 +366,7 @@ export const ProjectsPanel: React.FC = () => {
                                 </select>
                                 <Button
                                     type="submit"
-                                    disabled={busy || !assignUserId}
+                                    disabled={busy || !assignUser}
                                 >
                                     Assign
                                 </Button>

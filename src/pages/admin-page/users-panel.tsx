@@ -28,6 +28,7 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { ListPager } from '@/components/qubdi/list-pager';
+import { SearchInput } from '@/components/qubdi/search-input';
 import { usePagedList } from '@/hooks/use-paged-list';
 import { api, errorMessage, type AdminUser } from '@/lib/qubdi/api';
 
@@ -138,6 +139,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
             ) : null}
 
             <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm">
+                <SearchInput
+                    value={list.query}
+                    onChange={list.setQuery}
+                    placeholder="Search users by email…"
+                    label="Search users"
+                />
                 <div className="max-h-[26rem] min-h-40 overflow-y-auto">
                     <Table>
                         <TableHeader className="sticky top-0 z-10 bg-card">
@@ -168,7 +175,9 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                         colSpan={4}
                                         className="text-muted-foreground"
                                     >
-                                        No users yet.
+                                        {list.query
+                                            ? `No users match "${list.query}".`
+                                            : 'No users yet.'}
                                     </TableCell>
                                 </TableRow>
                             ) : (
