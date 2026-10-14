@@ -2,6 +2,39 @@
 
 Open work, newest first. Tick an item when it ships and note the commit.
 
+## Open: dragging a table freezes the relationship lines
+
+Reported by the user: when a table is dragged, slowly or fast, the relationship lines
+freeze, then jump to the new spot. Seen on the Docker app and on the local build
+(`/diagrams/monica_db`, the 89-table monica template). The original ChartDB
+(app.chartdb.io) feels smoother on the same template.
+
+Done so far (each measured with scripted drags in headless Chrome; the freeze is still
+reported, so these are not the whole answer):
+
+- Context menus compare the selection by content (`d3dbc37`)
+- Connection handles mounted only where used (`5ff1ab2`, `6ea5c10`)
+- Lines keep their side unless another is clearly closer (`203e16a`)
+- Light static table shadow instead of an animated one (`4b01519`)
+- Side panels stop re-rendering on every pan (`afdadce`)
+- Stable overlap debounce; hover reported only while drawing a line (`ebca763`)
+
+Still to do:
+
+- [ ] Reproduce what the user sees. The scripted tests measure frame times and read the
+      line's `d` attribute; they may not catch what is on screen. Get a screen recording or
+      a Chrome Performance trace of a real drag on the user's machine (their window is
+      2560×1271).
+- [ ] Profile the case that is still slower than the original: a fast drag that reaches the
+      viewport edge (auto-pan). Ours has 300–500 ms frames, the original 130–220 ms.
+- [ ] Check the drag-end burst (`updateTablesState` rebuilds relationships and all nodes on
+      mouse up).
+- [ ] Check the edge rebuild effect in `canvas.tsx` (100 ms timeout) and the memoized
+      `getInternalNode` in `relationship-edge.tsx` for stale positions during a drag.
+- [ ] `CommentMarker`: one store subscription per field that re-renders on any comment change;
+      select per target instead.
+- [ ] When fixed, re-measure against app.chartdb.io and have the user confirm by hand.
+
 ## In progress: project workspace URLs
 
 Choosing a project goes straight to its workspace, `/<project>/diagrams/`, with no
