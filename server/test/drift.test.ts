@@ -116,7 +116,7 @@ describe('drift detection', () => {
             method: 'POST',
             url: '/introspect/connections',
             headers: as(owner),
-            payload: { ...conn(), name: 'prod' },
+            payload: { ...conn(), projectId: await projectFor(ctx.app), name: 'prod' },
         });
         connectionId = saved.json().id;
     });
@@ -184,12 +184,18 @@ describe('drift detection', () => {
             expect((await put(owner, settings({ connectionId: '00000000-0000-4000-8000-000000000000' }))).json().error).toBe('connection_not_found');
         });
 
-        it("will not use another user's saved connection", async () => {
+        it("will not use another project's saved connection", async () => {
+            const otherProject = await ctx.app.inject({
+                method: 'POST',
+                url: '/admin/projects',
+                headers: as(owner),
+                payload: { name: `Elsewhere ${Math.random()}` },
+            });
             const theirs = await ctx.app.inject({
                 method: 'POST',
                 url: '/introspect/connections',
-                headers: as(editor),
-                payload: { ...conn(), name: 'editors' },
+                headers: as(owner),
+                payload: { ...conn(), name: 'elsewhere', projectId: otherProject.json().id },
             });
             const res = await put(owner, settings({ connectionId: theirs.json().id }));
             expect(res.statusCode).toBe(400);
@@ -402,7 +408,7 @@ describe('drift detection', () => {
                 method: 'POST',
                 url: '/introspect/connections',
                 headers: as(owner),
-                payload: { ...conn(), name: 'temp' },
+                payload: { ...conn(), projectId: await projectFor(ctx.app), name: 'temp' },
             });
             await put(owner, settings({ enabled: false, connectionId: tmp.json().id }));
             await ctx.app.inject({ method: 'DELETE', url: `/introspect/connections/${tmp.json().id}`, headers: as(owner) });
@@ -563,7 +569,7 @@ describe('drift webhooks', () => {
         owner = await registerUser(ctx.app, 'hook@example.com');
         diagramId = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })).json().id;
         connectionId = (
-            await ctx.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(owner), payload: { ...conn(), name: 'c' } })
+            await ctx.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(owner), payload: { ...conn(), projectId: await projectFor(ctx.app), name: 'c' } })
         ).json().id;
     });
     afterAll(async () => {
@@ -666,7 +672,7 @@ describe('drift webhooks', () => {
             await grant(strict.app, u, 'editor');
             const id = (await strict.app.inject({ method: 'POST', url: '/diagrams', headers: as(u), payload: { ...diagramFixture, projectId: await projectFor(strict.app) } })).json().id;
             const cid = (
-                await strict.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(u), payload: { ...conn(), name: 'c' } })
+                await strict.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(u), payload: { ...conn(), projectId: await projectFor(strict.app), name: 'c-strict' } })
             ).json().id;
             await strict.app.inject({
                 method: 'PUT',
@@ -718,7 +724,7 @@ describe('drift scheduler', () => {
     });
     const configure = async (diagramId: string, over: object = {}) => {
         const cid = (
-            await ctx.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(owner), payload: { ...conn(), name: `c-${diagramId.slice(0, 6)}-${Math.random()}` } })
+            await ctx.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(owner), payload: { ...conn(), projectId: await projectFor(ctx.app), name: `c-${diagramId.slice(0, 6)}-${Math.random()}` } })
         ).json().id;
         const res = await ctx.app.inject({
             method: 'PUT',

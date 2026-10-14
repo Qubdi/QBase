@@ -10,7 +10,15 @@ import type {
     IntrospectorFactory,
 } from '../src/introspect/types.js';
 import { resetSampleDatabase, SAMPLE_DB } from './introspect-pg-fixture.js';
-import { as, registerUser, createTestApp, type TestCtx, type TestUser } from './helpers.js';
+import {
+    as,
+    registerUser,
+    createTestApp,
+    grant,
+    projectFor,
+    type TestCtx,
+    type TestUser,
+} from './helpers.js';
 
 const meta = (): DatabaseMetadata => ({
     database_name: 'fake',
@@ -83,6 +91,7 @@ describe('introspect HTTP layer (fake driver)', () => {
         );
         alice = await registerUser(ctx.app, 'alice@example.com');
         bob = await registerUser(ctx.app, 'bob@example.com');
+        await grant(ctx.app, bob, 'editor');
     });
     afterAll(() => ctx.close());
 
@@ -210,7 +219,11 @@ describe('introspect HTTP layer (fake driver)', () => {
         it('applies to /introspect and to saved connections too', async () => {
             const res = await post(alice, '/introspect', { connection: conn({ host: '10.0.0.1' }) });
             expect(res.statusCode).toBe(400);
-            const made = await post(alice, '/introspect/connections', { ...conn({ host: '10.0.0.1' }), name: 'internal' });
+            const made = await post(alice, '/introspect/connections', {
+                ...conn({ host: '10.0.0.1' }),
+                name: 'internal',
+                projectId: await projectFor(ctx.app),
+            });
             expect(made.statusCode).toBe(201); // saving is allowed; using it is what is blocked
             const used = await post(alice, '/introspect/catalog', { savedConnectionId: made.json().id });
             expect(used.statusCode).toBe(400);
@@ -252,18 +265,48 @@ describe('introspect HTTP layer (fake driver)', () => {
         });
     });
 
-    describe('saved connections', () => {
+    describe('saved connections (per project)', () => {
         let savedId: string;
+        let projectId: string;
+        let otherProjectId: string;
+        let carol: TestUser; // viewer in the project
+        let dave: TestUser; // editor in another project only
+
+        const save = (u: TestUser, name: string, project = projectId) =>
+            post(u, '/introspect/connections', { ...conn(), name, projectId: project });
+        const list = (u: TestUser, project = projectId) =>
+            ctx.app.inject({ url: `/introspect/connections?projectId=${project}`, headers: as(u) });
+
+        beforeAll(async () => {
+            projectId = await projectFor(ctx.app);
+            carol = await registerUser(ctx.app, 'carol@example.com');
+            await grant(ctx.app, carol, 'viewer');
+            dave = await registerUser(ctx.app, 'dave@example.com');
+            const other = await ctx.app.inject({
+                method: 'POST',
+                url: '/admin/projects',
+                headers: as(alice),
+                payload: { name: 'Other project' },
+            });
+            otherProjectId = other.json().id;
+            await ctx.app.inject({
+                method: 'PUT',
+                url: `/admin/projects/${otherProjectId}/members/${dave.id}`,
+                headers: as(alice),
+                payload: { role: 'editor' },
+            });
+        });
 
         it('refuses to save when no encryption key is configured', async () => {
             const nokey = await createTestApp({}, undefined, false);
             try {
                 const u = await registerUser(nokey.app, 'nokey@example.com');
+                await grant(nokey.app, u, 'editor');
                 const res = await nokey.app.inject({
                     method: 'POST',
                     url: '/introspect/connections',
                     headers: as(u),
-                    payload: { ...conn(), name: 'x' },
+                    payload: { ...conn(), name: 'x', projectId },
                 });
                 expect(res.statusCode).toBe(501);
                 expect(res.json().error).toBe('encryption_not_configured');
@@ -272,8 +315,15 @@ describe('introspect HTTP layer (fake driver)', () => {
             }
         });
 
+        it('requires a project to save or list connections', async () => {
+            const noProject = await post(alice, '/introspect/connections', { ...conn(), name: 'x' });
+            expect(noProject.statusCode).toBe(400);
+            const noList = await ctx.app.inject({ url: '/introspect/connections', headers: as(alice) });
+            expect(noList.statusCode).toBe(400);
+        });
+
         it('saves a connection without ever returning or storing the plaintext password', async () => {
-            const res = await post(alice, '/introspect/connections', { ...conn(), name: 'prod replica' });
+            const res = await save(bob, 'prod replica');
             expect(res.statusCode).toBe(201);
             savedId = res.json().id;
             expect(res.body).not.toContain('p@ss-w0rd-SECRET');
@@ -283,30 +333,38 @@ describe('introspect HTTP layer (fake driver)', () => {
                 .select()
                 .from(savedConnections)
                 .where(eq(savedConnections.id, savedId));
+            expect(row.projectId).toBe(projectId);
             expect(row.passwordEnc).not.toContain('p@ss-w0rd-SECRET');
             expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc)).toBe('p@ss-w0rd-SECRET');
 
-            const list = await ctx.app.inject({ url: '/introspect/connections', headers: as(alice) });
-            expect(list.body).not.toContain('p@ss-w0rd-SECRET');
-            expect(list.body).not.toContain('passwordEnc');
-            expect(list.body).not.toContain('password_enc');
-            expect(list.json()).toHaveLength(1);
+            const res2 = await list(bob);
+            expect(res2.body).not.toContain('p@ss-w0rd-SECRET');
+            expect(res2.body).not.toContain('passwordEnc');
+            expect(res2.body).not.toContain('password_enc');
+            expect(res2.json().map((c: { id: string }) => c.id)).toContain(savedId);
         });
 
-        it('rejects duplicate names per user but allows the same name for another user', async () => {
-            expect((await post(alice, '/introspect/connections', { ...conn(), name: 'prod replica' })).statusCode).toBe(409);
-            expect((await post(bob, '/introspect/connections', { ...conn(), name: 'prod replica' })).statusCode).toBe(201);
+        it('shares a connection with the admin and every editor of the project', async () => {
+            const seenByAdmin = await list(alice);
+            expect(seenByAdmin.json().map((c: { id: string }) => c.id)).toContain(savedId);
+            const res = await post(alice, '/introspect/catalog', { savedConnectionId: savedId });
+            expect(res.statusCode).toBe(200);
+        });
+
+        it('rejects duplicate names within a project but allows them in another', async () => {
+            expect((await save(bob, 'prod replica')).statusCode).toBe(409);
+            expect((await save(dave, 'prod replica', otherProjectId)).statusCode).toBe(201);
         });
 
         it('introspects through a saved connection using the decrypted password', async () => {
-            const res = await post(alice, '/introspect', { savedConnectionId: savedId });
+            const res = await post(bob, '/introspect', { savedConnectionId: savedId });
             expect(res.statusCode).toBe(200);
             expect(calls.at(-1)!.params.password).toBe('p@ss-w0rd-SECRET');
             expect(calls.at(-1)!.params.database).toBe('shop');
         });
 
         it('lets a request override the saved password without storing it', async () => {
-            await post(alice, '/introspect/catalog', { savedConnectionId: savedId, password: 'other-pass' });
+            await post(bob, '/introspect/catalog', { savedConnectionId: savedId, password: 'other-pass' });
             expect(calls.at(-1)!.params.password).toBe('other-pass');
             const [row] = await ctx.db
                 .select()
@@ -315,19 +373,44 @@ describe('introspect HTTP layer (fake driver)', () => {
             expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc)).toBe('p@ss-w0rd-SECRET');
         });
 
-        it("keeps users' saved connections private", async () => {
-            const bobList = (await ctx.app.inject({ url: '/introspect/connections', headers: as(bob) })).json();
-            expect(bobList.every((c: { id: string }) => c.id !== savedId)).toBe(true);
-            const use = await post(bob, '/introspect/catalog', { savedConnectionId: savedId });
-            expect(use.statusCode).toBe(404);
-            const del = await ctx.app.inject({ method: 'DELETE', url: `/introspect/connections/${savedId}`, headers: as(bob) });
+        it('keeps projects independent: other projects cannot see, use or delete it', async () => {
+            // dave only belongs to the other project
+            expect((await list(dave)).statusCode).toBe(404);
+            expect((await post(dave, '/introspect/catalog', { savedConnectionId: savedId })).statusCode).toBe(404);
+            const del = await ctx.app.inject({ method: 'DELETE', url: `/introspect/connections/${savedId}`, headers: as(dave) });
             expect(del.statusCode).toBe(404);
+            expect((await save(dave, 'sneaky')).statusCode).toBe(404);
+            const own = (await list(dave, otherProjectId)).json();
+            expect(own.every((c: { id: string }) => c.id !== savedId)).toBe(true);
+        });
+
+        it('does not let viewers list, use, save or delete connections', async () => {
+            expect((await list(carol)).statusCode).toBe(403);
+            expect((await save(carol, 'viewer-made')).statusCode).toBe(403);
+            expect((await post(carol, '/introspect/catalog', { savedConnectionId: savedId })).statusCode).toBe(404);
+            const del = await ctx.app.inject({ method: 'DELETE', url: `/introspect/connections/${savedId}`, headers: as(carol) });
+            expect(del.statusCode).toBe(403);
+        });
+
+        it('keeps a connection when the user who saved it is deleted', async () => {
+            const temp = await registerUser(ctx.app, 'temp@example.com');
+            await grant(ctx.app, temp, 'editor');
+            const made = await save(temp, 'by temp');
+            expect(made.statusCode).toBe(201);
+            const del = await ctx.app.inject({ method: 'DELETE', url: `/admin/users/${temp.id}`, headers: as(alice) });
+            expect(del.statusCode).toBe(204);
+            const [row] = await ctx.db
+                .select()
+                .from(savedConnections)
+                .where(eq(savedConnections.id, made.json().id));
+            expect(row).toBeDefined();
+            expect(row.ownerId).toBeNull();
         });
 
         it('deletes a saved connection', async () => {
-            const del = await ctx.app.inject({ method: 'DELETE', url: `/introspect/connections/${savedId}`, headers: as(alice) });
+            const del = await ctx.app.inject({ method: 'DELETE', url: `/introspect/connections/${savedId}`, headers: as(bob) });
             expect(del.statusCode).toBe(204);
-            expect((await post(alice, '/introspect/catalog', { savedConnectionId: savedId })).statusCode).toBe(404);
+            expect((await post(bob, '/introspect/catalog', { savedConnectionId: savedId })).statusCode).toBe(404);
         });
 
         it('404s for an unknown saved connection', async () => {
