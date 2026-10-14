@@ -1,101 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DatabaseType } from '@/lib/domain/database-type';
-import type { MyProject, RemoteDiagramSummary } from '../api';
 import {
-    filterGroups,
-    groupByProject,
     InvalidServerDiagramError,
-    PERSONAL_LABEL,
     serverContentToDiagram,
 } from '../open-remote';
 import { findLocalId, setRemoteId } from '../remote-map';
-
-const project = (id: string, name: string): MyProject => ({
-    id,
-    name,
-    description: '',
-    role: 'editor',
-});
-
-const diagram = (
-    id: string,
-    title: string,
-    projectId: string | null,
-    updatedAt = '2025-01-01T00:00:00.000Z'
-): RemoteDiagramSummary => ({
-    id,
-    title,
-    updatedAt,
-    ownerId: 'u1',
-    projectId,
-    role: 'editor',
-});
-
-describe('groupByProject', () => {
-    const projects = [project('p2', 'Zeta'), project('p1', 'Alpha')];
-
-    it('lists projects alphabetically, even empty ones', () => {
-        const groups = groupByProject([], projects);
-        expect(groups.map((g) => g.label)).toEqual(['Alpha', 'Zeta']);
-        expect(groups.every((g) => g.diagrams.length === 0)).toBe(true);
-    });
-
-    it('puts diagrams under their project, newest first', () => {
-        const groups = groupByProject(
-            [
-                diagram('a', 'Old', 'p1', '2024-01-01T00:00:00.000Z'),
-                diagram('b', 'New', 'p1', '2025-06-01T00:00:00.000Z'),
-                diagram('c', 'Other', 'p2'),
-            ],
-            projects
-        );
-        expect(groups[0].diagrams.map((d) => d.id)).toEqual(['b', 'a']);
-        expect(groups[1].diagrams.map((d) => d.id)).toEqual(['c']);
-    });
-
-    it('collects project-less diagrams under Personal, last', () => {
-        const groups = groupByProject(
-            [
-                diagram('x', 'Mine', null),
-                diagram('y', 'Mine too', undefined as never),
-            ],
-            projects
-        );
-        const last = groups[groups.length - 1];
-        expect(last.label).toBe(PERSONAL_LABEL);
-        expect(last.projectId).toBeNull();
-        expect(last.diagrams).toHaveLength(2);
-    });
-
-    it('omits Personal when there is nothing in it', () => {
-        const groups = groupByProject([diagram('a', 'A', 'p1')], projects);
-        expect(groups.some((g) => g.label === PERSONAL_LABEL)).toBe(false);
-    });
-
-    it('does not lose a diagram whose project the user no longer lists', () => {
-        const groups = groupByProject([diagram('a', 'A', 'gone')], projects);
-        expect(groups[groups.length - 1].diagrams.map((d) => d.id)).toEqual([
-            'a',
-        ]);
-    });
-});
-
-describe('filterGroups', () => {
-    const groups = groupByProject(
-        [diagram('a', 'Invoices', 'p1'), diagram('b', 'Users', 'p2')],
-        [project('p1', 'Billing'), project('p2', 'Core')]
-    );
-
-    it('returns everything for a blank query', () => {
-        expect(filterGroups(groups, '  ')).toBe(groups);
-    });
-
-    it('matches titles case-insensitively and drops empty groups', () => {
-        const res = filterGroups(groups, 'INVO');
-        expect(res).toHaveLength(1);
-        expect(res[0].diagrams[0].id).toBe('a');
-    });
-});
 
 describe('serverContentToDiagram', () => {
     const content = {

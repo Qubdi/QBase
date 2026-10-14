@@ -4,6 +4,7 @@ import { PublishControl } from '@/components/qubdi/publish-control';
 import { CommentsControl } from '@/components/qubdi/comments-control';
 import { DriftControl } from '@/components/qubdi/drift-control';
 import { LintControl } from '@/components/qubdi/lint-control';
+import { Link } from 'react-router-dom';
 import { Logo } from '@/components/logo/logo';
 import { DiagramName } from './diagram-name';
 import { LastSaved } from './last-saved';
@@ -17,7 +18,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
         <nav className="flex flex-col justify-between border-b bg-background/80 px-3 shadow-sm backdrop-blur md:h-12 md:flex-row md:items-center md:px-4">
             <div className="flex flex-1 flex-col justify-between md:flex-row md:items-center md:justify-normal md:gap-x-3">
                 <div className="flex h-10 items-center justify-between font-primary md:h-12">
-                    <Logo />
+                    <Link to="/" className="flex h-full items-center">
+                        <Logo />
+                    </Link>
                 </div>
                 <Menu />
             </div>

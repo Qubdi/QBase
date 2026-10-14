@@ -27,6 +27,7 @@ import { useLayout } from '@/hooks/use-layout';
 import { useTheme } from '@/hooks/use-theme';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import { useNavigate } from 'react-router-dom';
+import { QUBDI_BACKEND_ENABLED } from '@/lib/qubdi/config';
 import { useAlert } from '@/context/alert-context/alert-context';
 
 export interface MenuProps {}
@@ -72,12 +73,15 @@ export const Menu: React.FC<MenuProps> = () => {
         navigate('/');
     }, [deleteDiagram, navigate]);
 
+    // with a server, diagrams are created and opened from a project
     const createNewDiagram = () => {
-        openCreateDiagramDialog();
+        if (QUBDI_BACKEND_ENABLED) navigate('/');
+        else openCreateDiagramDialog();
     };
 
     const openDiagram = () => {
-        openOpenDiagramDialog();
+        if (QUBDI_BACKEND_ENABLED) navigate('/');
+        else openOpenDiagramDialog();
     };
 
     const exportSVG = useCallback(() => {
