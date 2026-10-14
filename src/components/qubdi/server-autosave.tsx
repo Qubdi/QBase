@@ -9,6 +9,7 @@ import {
     type Autosaver,
 } from '@/lib/qubdi/autosave';
 import type { Diagram } from '@/lib/domain/diagram';
+import { createRevisionTracker } from '@/lib/qubdi/revision';
 import {
     resetSaveStatus,
     setSaveStatus,
@@ -16,6 +17,11 @@ import {
 } from '@/lib/qubdi/save-status-store';
 import { useDiagramAccess } from './diagram-access-context';
 import { useEditorDiagramId } from './workspace-context';
+
+interface Revision {
+    diagram: Diagram;
+    revision: number;
+}
 
 /**
  * Saves the open diagram to its project on the server as it changes. Renders
@@ -26,7 +32,8 @@ export const ServerAutosave: React.FC = () => {
     const { access } = useDiagramAccess();
     const { syncDiagram } = useQubdi();
     const { currentDiagram } = useDiagram();
-    const saverRef = useRef<Autosaver<Diagram> | null>(null);
+    const saverRef = useRef<Autosaver<Revision> | null>(null);
+    const revisionOf = useRef(createRevisionTracker()).current;
     const syncRef = useRef(syncDiagram);
     syncRef.current = syncDiagram;
     // set while the page is closing, so the final save survives the unload
@@ -36,11 +43,12 @@ export const ServerAutosave: React.FC = () => {
 
     useEffect(() => {
         if (!canSave) return;
-        const saver = createAutosaver<Diagram>({
+        const saver = createAutosaver<Revision>({
             delayMs: AUTOSAVE_DELAY_MS,
-            serialize: (d) => JSON.stringify(d),
-            save: async (d) => {
-                await syncRef.current(d, undefined, {
+            // a revision number, so no change has to serialise the diagram
+            serialize: (v) => String(v.revision),
+            save: async ({ diagram }) => {
+                await syncRef.current(diagram, undefined, {
                     keepalive: leavingRef.current,
                 });
             },
@@ -71,9 +79,12 @@ export const ServerAutosave: React.FC = () => {
     useEffect(() => {
         // ignore the empty placeholder shown while another diagram is loading
         if (saverRef.current && currentDiagram.id === diagramId) {
-            saverRef.current.update(currentDiagram);
+            saverRef.current.update({
+                diagram: currentDiagram,
+                revision: revisionOf(currentDiagram),
+            });
         }
-    }, [currentDiagram, diagramId]);
+    }, [currentDiagram, diagramId, revisionOf]);
 
     return null;
 };
