@@ -311,10 +311,10 @@ function extractTablesFromAST(
     const tablesMap = new Map<string, { schema: string; tableName: string }>();
     const visitedNodes = new Set();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function traverse(node: any) {
-        if (!node || visitedNodes.has(node)) return;
-        visitedNodes.add(node);
+    function traverse(value: unknown) {
+        if (!value || visitedNodes.has(value)) return;
+        const node = value as Record<string, unknown>;
+        visitedNodes.add(value);
 
         if (Array.isArray(node)) {
             node.forEach(traverse);
@@ -324,11 +324,15 @@ function extractTablesFromAST(
                 Object.hasOwnProperty.call(node, 'table') &&
                 typeof node.table === 'string'
             ) {
-                let schema = node.db || node.schema;
+                const rawSchema = (node.db || node.schema) as
+                    | string
+                    | null
+                    | undefined;
                 const tableName = node.table;
                 if (tableName) {
                     // Assign default schema if undefined
-                    schema = schemaNameToDomainSchemaName(schema) || '';
+                    const schema =
+                        schemaNameToDomainSchemaName(rawSchema) || '';
                     const key = `${schema}.${tableName}`;
                     if (!tablesMap.has(key)) {
                         tablesMap.set(key, { schema, tableName });
