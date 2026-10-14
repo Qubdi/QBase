@@ -6,6 +6,8 @@ export interface Config {
     port: number;
     corsOrigin: string | null;
     sessionDays: number;
+    /** most database connections the pool opens at once */
+    dbPoolMax: number;
     /** max requests per minute per IP on the public share routes */
     shareRateLimit: number;
     /** hostnames, IPs or IPv4 CIDRs that introspection may reach even if private */
@@ -24,6 +26,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         port: Number(env.PORT ?? 3001),
         corsOrigin: env.CORS_ORIGIN ?? null,
         sessionDays: Number(env.SESSION_DAYS ?? 30),
+        dbPoolMax: Number(env.DB_POOL_MAX ?? 10),
         shareRateLimit: Number(env.SHARE_RATE_LIMIT ?? 60),
         introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')
             .split(',')

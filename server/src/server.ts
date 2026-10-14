@@ -12,7 +12,7 @@ try {
 }
 
 const config = loadConfig();
-const { db } = createDb(config.databaseUrl);
+const { db } = createDb(config.databaseUrl, { max: config.dbPoolMax });
 await runMigrations(db);
 
 const app = buildApp({ config, db });
