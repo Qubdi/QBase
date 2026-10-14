@@ -12,15 +12,37 @@ try {
 }
 
 const config = loadConfig();
-const { db } = createDb(config.databaseUrl, { max: config.dbPoolMax });
+const { db, pool } = createDb(config.databaseUrl, { max: config.dbPoolMax });
 await runMigrations(db);
 
 const app = buildApp({ config, db });
 // scheduled drift checks run inside this process
-startDriftScheduler({
+const stopScheduler = startDriftScheduler({
     db,
     config,
     factory: defaultIntrospectorFactory,
 });
 await app.listen({ port: config.port, host: config.host });
 console.log(`QubdiDB server listening on :${config.port}`);
+
+// Docker and process managers stop the server with SIGTERM: finish what is
+// running, close the streams, then release the database connections.
+let stopping = false;
+const shutdown = async (signal: string) => {
+    if (stopping) return;
+    stopping = true;
+    console.log(`${signal} received, shutting down`);
+    // a stuck request must not keep the process alive for ever
+    setTimeout(() => process.exit(1), 10_000).unref();
+    try {
+        await stopScheduler();
+        await app.close();
+        await pool.end();
+        process.exit(0);
+    } catch (err) {
+        console.error('Shutdown failed:', err);
+        process.exit(1);
+    }
+};
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));

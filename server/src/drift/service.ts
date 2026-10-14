@@ -305,21 +305,27 @@ export async function runDueChecks(
     return ran;
 }
 
-/** Starts the in-process scheduler; returns a function that stops it. */
+/**
+ * Starts the in-process scheduler. The returned function stops it and waits
+ * for a check that is already running.
+ */
 export function startDriftScheduler(
     deps: DriftDeps,
     intervalMs = 30_000
-): () => void {
-    let busy = false;
+): () => Promise<void> {
+    let current: Promise<void> | null = null;
     const timer = setInterval(() => {
-        if (busy) return;
-        busy = true;
-        runDueChecks(deps)
+        if (current) return;
+        current = runDueChecks(deps)
+            .then(() => undefined)
             .catch(() => undefined)
             .finally(() => {
-                busy = false;
+                current = null;
             });
     }, intervalMs);
     timer.unref();
-    return () => clearInterval(timer);
+    return async () => {
+        clearInterval(timer);
+        await current;
+    };
 }

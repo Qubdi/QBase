@@ -39,6 +39,8 @@ export interface AppDeps {
 
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const app = Fastify({
+        // closing the server also ends open SSE streams instead of waiting on them
+        forceCloseConnections: true,
         logger:
             config.logLevel === 'silent' ? false : { level: config.logLevel },
         bodyLimit: 50 * 1024 * 1024,
