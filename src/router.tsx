@@ -18,6 +18,15 @@ const routes: RouteObject[] = [
         },
     })),
     {
+        path: 'admin',
+        async lazy() {
+            const { AdminPage } = await import('./pages/admin-page/admin-page');
+            return {
+                element: <AdminPage />,
+            };
+        },
+    },
+    {
         path: 's/:token',
         async lazy() {
             const { ShareViewerPage } =
