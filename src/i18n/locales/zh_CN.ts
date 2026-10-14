@@ -378,8 +378,6 @@ export const zh_CN: LanguageTranslation = {
             error: {
                 message:
                     '生成 SQL 脚本时出错。请稍后再试，或者 <0>联系我们</0>。',
-                description:
-                    '随时使用您的 OPENAI_TOKEN，在<0>这里</0>查看手册。',
             },
         },
 

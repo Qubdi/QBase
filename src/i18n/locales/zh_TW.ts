@@ -377,8 +377,6 @@ export const zh_TW: LanguageTranslation = {
             error: {
                 message:
                     '生成 SQL 腳本時發生錯誤。稍後再試，或<0>聯繫我們</0>。',
-                description:
-                    '可以自由使用 OPENAI_TOKEN，詳細說明可參考<0>此處</0>。',
             },
         },
 

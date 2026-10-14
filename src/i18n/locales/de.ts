@@ -389,8 +389,6 @@ export const de: LanguageTranslation = {
             error: {
                 message:
                     'Fehler beim Generieren des SQL-Skripts. Bitte versuchen Sie es später erneut oder <0>kontaktieren Sie uns</0>.',
-                description:
-                    'Verwenden Sie Ihren OPENAI_TOKEN, siehe Anleitung <0>hier</0>.',
             },
         },
 

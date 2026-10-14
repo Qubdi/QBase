@@ -384,8 +384,6 @@ export const vi: LanguageTranslation = {
             error: {
                 message:
                     'Lỗi khi tạo SQL. Vui lòng thử lại sau hoặc <0>liên hệ với chúng tôi</0>.',
-                description:
-                    'Bạn có thể sử dụng OPENAI_TOKEN, xem hướng dẫn <0>tại đây</0>.',
             },
         },
 

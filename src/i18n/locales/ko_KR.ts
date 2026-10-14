@@ -384,8 +384,6 @@ export const ko_KR: LanguageTranslation = {
             error: {
                 message:
                     'SQL 생성에 실패하였습니다. 잠시후 다시 시도해주세요 계속해서 증상이 발생하는 경우 <0>우리에게 연락해주세요</0>.',
-                description:
-                    '당신의 OPENAI_TOKEN가 있는 경우, <0>여기에서</0> 메뉴얼을 참고하여 사용하실 수 있습니다.',
             },
         },
 

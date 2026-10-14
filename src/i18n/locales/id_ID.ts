@@ -384,8 +384,6 @@ export const id_ID: LanguageTranslation = {
             error: {
                 message:
                     'Kesalahan saat menghasilkan skrip SQL. Silakan coba lagi nanti atau <0>hubungi kami</0>.',
-                description:
-                    'Silakan gunakan OPENAI_TOKEN Anda, lihat petunjuk <0>di sini</0>.',
             },
         },
 

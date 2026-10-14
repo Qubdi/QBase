@@ -388,8 +388,6 @@ export const pt_BR: LanguageTranslation = {
             error: {
                 message:
                     'Erro ao gerar o script SQL. Tente novamente mais tarde ou <0>entre em contato conosco</0>.',
-                description:
-                    'Sinta-se à vontade para usar seu OPENAI_TOKEN, veja o manual <0>aqui</0>.',
             },
         },
 

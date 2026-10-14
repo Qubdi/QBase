@@ -389,8 +389,6 @@ export const ja: LanguageTranslation = {
             error: {
                 message:
                     'SQLスクリプトの生成中にエラーが発生しました。後でもう一度試すか、<0>お問い合わせください</0>。',
-                description:
-                    'OPENAI_TOKENを自由に使用して、マニュアルを<0>こちら</0>で確認してください。',
             },
         },
 

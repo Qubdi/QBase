@@ -381,8 +381,6 @@ export const hr: LanguageTranslation = {
             error: {
                 message:
                     'Greška pri generiranju SQL skripte. Molimo pokušajte ponovno kasnije ili <0>kontaktirajte nas</0>.',
-                description:
-                    'Slobodno koristite svoj OPENAI_TOKEN, pogledajte priručnik <0>ovdje</0>.',
             },
         },
 
