@@ -13,8 +13,6 @@ import {
     uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
-export const memberRole = pgEnum('member_role', ['owner', 'editor', 'viewer']);
-
 export const projectRole = pgEnum('project_role', ['editor', 'viewer']);
 
 export const shareAccess = pgEnum('share_access', [
@@ -88,10 +86,10 @@ export const diagrams = pgTable('diagrams', {
     ownerId: uuid('owner_id')
         .notNull()
         .references(() => users.id, { onDelete: 'cascade' }),
-    // when set, access comes from project_members instead of diagram_members
-    projectId: uuid('project_id').references(() => projects.id, {
-        onDelete: 'restrict',
-    }),
+    // every diagram lives in exactly one project; access comes from the project
+    projectId: uuid('project_id')
+        .notNull()
+        .references(() => projects.id, { onDelete: 'restrict' }),
     title: text('title').notNull(),
     content: jsonb('content').notNull(),
     autoPublish: boolean('auto_publish').notNull().default(false),
@@ -123,23 +121,6 @@ export const snapshots = pgTable(
     },
     (t) => [
         uniqueIndex('snapshots_diagram_version_idx').on(t.diagramId, t.version),
-    ]
-);
-
-export const diagramMembers = pgTable(
-    'diagram_members',
-    {
-        diagramId: uuid('diagram_id')
-            .notNull()
-            .references(() => diagrams.id, { onDelete: 'cascade' }),
-        userId: uuid('user_id')
-            .notNull()
-            .references(() => users.id, { onDelete: 'cascade' }),
-        role: memberRole('role').notNull(),
-    },
-    (t) => [
-        primaryKey({ columns: [t.diagramId, t.userId] }),
-        index('diagram_members_user_idx').on(t.userId),
     ]
 );
 
