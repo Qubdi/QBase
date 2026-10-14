@@ -31,7 +31,7 @@ UUID and no separate project page. Diagrams are created inside the workspace.
    - Prefer server-side paging (`?page=&limit=` with a total count) so it scales.
 2. ✅ **Search bars.** (done: users, projects and the assign picker) Search users (by email) and projects (by name) in the admin panel.
    - Server-side `?q=` so search works across pages; debounce the input.
-3. **User status.** Users can be non-active.
+3. ✅ **User status.** (done: server + admin UI; disabled users cannot sign in) Users can be non-active.
    - Add a status (active / disabled) to users; show it in the admin Users list and let an
      admin toggle it.
    - A disabled user cannot sign in, their existing sessions are revoked, and they cannot use
