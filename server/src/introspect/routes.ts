@@ -91,7 +91,12 @@ export const safeMessage = (err: unknown, secrets: string[]): string => {
 };
 
 export const introspectRoutes =
-    ({ db, config, factory = defaultIntrospectorFactory, lookup }: IntrospectDeps): FastifyPluginAsync =>
+    ({
+        db,
+        config,
+        factory = defaultIntrospectorFactory,
+        lookup,
+    }: IntrospectDeps): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -132,7 +137,9 @@ export const introspectRoutes =
             let password = body.password;
             if (password === undefined) {
                 if (!box) {
-                    reply.code(501).send({ error: 'encryption_not_configured' });
+                    reply
+                        .code(501)
+                        .send({ error: 'encryption_not_configured' });
                     return null;
                 }
                 password = box.decrypt(saved.passwordEnc);
@@ -169,7 +176,12 @@ export const introspectRoutes =
                 }
             } catch (err) {
                 if (err instanceof ForbiddenTargetError) {
-                    reply.code(400).send({ error: 'target_blocked', message: err.message });
+                    reply
+                        .code(400)
+                        .send({
+                            error: 'target_blocked',
+                            message: err.message,
+                        });
                 } else if (err instanceof UnsafeSqlError) {
                     reply.code(500).send({ error: 'internal_error' });
                 } else {
@@ -186,9 +198,15 @@ export const introspectRoutes =
             const body = requestConnection.parse(req.body);
             const params = await resolveParams(body, req.user!.id, reply);
             if (!params) return;
-            const schemas = await withIntrospector(params, reply, (i) => i.catalog());
+            const schemas = await withIntrospector(params, reply, (i) =>
+                i.catalog()
+            );
             if (!schemas) return;
-            return { dialect: params.dialect, database: params.database, schemas };
+            return {
+                dialect: params.dialect,
+                database: params.database,
+                schemas,
+            };
         });
 
         app.post('/', async (req, reply) => {
@@ -218,7 +236,9 @@ export const introspectRoutes =
         app.post('/connections', async (req, reply) => {
             const body = saveBody.parse(req.body);
             if (!box) {
-                return reply.code(501).send({ error: 'encryption_not_configured' });
+                return reply
+                    .code(501)
+                    .send({ error: 'encryption_not_configured' });
             }
             const dup = await db
                 .select({ id: savedConnections.id })
