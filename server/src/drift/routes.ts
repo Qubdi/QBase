@@ -2,7 +2,6 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
-import type { Db } from '../db/client.js';
 import { driftReports, driftSettings, savedConnections } from '../db/schema.js';
 import {
     canWrite,

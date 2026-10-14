@@ -10,6 +10,7 @@
         "lint:diagram": "tsx src/cli/lint.ts",
         "build": "tsc -p tsconfig.build.json && node scripts/copy-migrations.mjs",
         "typecheck": "tsc -p tsconfig.json --noEmit",
+        "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
         "db:generate": "drizzle-kit generate",
         "test": "vitest run",
         "test:watch": "vitest"
@@ -25,12 +26,15 @@
         "zod": "^3.25.0"
     },
     "devDependencies": {
+        "@eslint/js": "^9.39.5",
         "@types/mssql": "^12.3.0",
         "@types/node": "^22.15.0",
         "@types/pg": "^8.15.0",
         "drizzle-kit": "^0.31.0",
+        "eslint": "^9.39.5",
         "tsx": "^4.20.0",
         "typescript": "^5.8.0",
+        "typescript-eslint": "^8.71.2",
         "vitest": "^3.2.0"
     }
 }

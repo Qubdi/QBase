@@ -2,7 +2,7 @@ import { and, count, eq, ilike, or, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import type { Db } from '../db/client.js';
-import { diagrams, projectMembers, projects } from '../db/schema.js';
+import { projectMembers, projects } from '../db/schema.js';
 import { getProjectRole } from '../diagrams/permissions.js';
 import {
     containsPattern,
