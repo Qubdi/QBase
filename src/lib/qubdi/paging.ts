@@ -13,14 +13,20 @@ export interface ListParams {
     q?: string;
 }
 
-/** `?page=2&limit=10&q=ann`, leaving out whatever is not set. */
-export function listQuery(params?: ListParams): string {
+/** `?page=2&limit=10&q=ann`, leaving out whatever is not set. `extra` adds more filters. */
+export function listQuery(
+    params?: ListParams,
+    extra?: Record<string, string | undefined>
+): string {
     const search = new URLSearchParams();
     if (params?.page && params.page > 1)
         search.set('page', String(params.page));
     if (params?.limit) search.set('limit', String(params.limit));
     const q = params?.q?.trim();
     if (q) search.set('q', q);
+    for (const [key, value] of Object.entries(extra ?? {})) {
+        if (value) search.set(key, value);
+    }
     const text = search.toString();
     return text ? `?${text}` : '';
 }

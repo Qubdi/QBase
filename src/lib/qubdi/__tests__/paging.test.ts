@@ -15,6 +15,14 @@ describe('listQuery', () => {
         expect(listQuery({ limit: 5 })).toBe('?limit=5');
     });
 
+    it('adds extra filters, leaving out the empty ones', () => {
+        expect(listQuery({ limit: 10 }, { status: 'disabled' })).toBe(
+            '?limit=10&status=disabled'
+        );
+        expect(listQuery({}, { status: '' })).toBe('');
+        expect(listQuery({}, { status: undefined })).toBe('');
+    });
+
     it('encodes the search text', () => {
         expect(listQuery({ q: 'a&b c' })).toBe('?q=a%26b+c');
         expect(listQuery({ q: '50%' })).toBe('?q=50%25');

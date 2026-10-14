@@ -6,6 +6,8 @@ export interface PagedFetch {
     page: number;
     limit: number;
     q: string;
+    /** an extra criterion such as a status filter; '' means none */
+    filter: string;
 }
 
 /**
@@ -16,11 +18,11 @@ export interface PagedFetch {
  */
 export function usePagedList<T>(
     fetchPage: (params: PagedFetch) => Promise<Page<T>>,
-    options: { limit: number; debounceMs?: number }
+    options: { limit: number; debounceMs?: number; filter?: string }
 ) {
-    const { limit, debounceMs = 300 } = options;
+    const { limit, debounceMs = 300, filter = '' } = options;
     const [query, setQuery] = useState('');
-    const [committed, setCommitted] = useState({ q: '', page: 1 });
+    const [committed, setCommitted] = useState({ q: '', page: 1, filter });
     const [data, setData] = useState<Page<T> | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -32,16 +34,28 @@ export function usePagedList<T>(
     useEffect(() => {
         const timer = setTimeout(() => {
             const q = query.trim();
-            setCommitted((c) => (c.q === q ? c : { q, page: 1 }));
+            setCommitted((c) => (c.q === q ? c : { ...c, q, page: 1 }));
         }, debounceMs);
         return () => clearTimeout(timer);
     }, [query, debounceMs]);
+
+    // a different filter shows a different list: start again at page 1
+    useEffect(() => {
+        setCommitted((c) =>
+            c.filter === filter ? c : { ...c, filter, page: 1 }
+        );
+    }, [filter]);
 
     useEffect(() => {
         let stale = false;
         setLoading(true);
         fetchRef
-            .current({ page: committed.page, limit, q: committed.q })
+            .current({
+                page: committed.page,
+                limit,
+                q: committed.q,
+                filter: committed.filter,
+            })
             .then((loaded) => {
                 if (stale) return;
                 const back = pageToFallBackTo(committed.page, limit, loaded);

@@ -78,7 +78,12 @@ describe('usePagedList', () => {
         expect(fetcher).toHaveBeenCalledTimes(1); // still only the first page
         await wait(150);
         expect(fetcher).toHaveBeenCalledTimes(2);
-        expect(calls.at(-1)).toEqual({ page: 1, limit: 10, q: 'row-2' });
+        expect(calls.at(-1)).toEqual({
+            page: 1,
+            limit: 10,
+            q: 'row-2',
+            filter: '',
+        });
         expect(result.current.total).toBe(7); // row-2 and row-20 to row-25
         expect(result.current.query).toBe('row-2');
     });
@@ -150,6 +155,36 @@ describe('usePagedList', () => {
         await flush();
         expect(result.current.page).toBe(1);
         expect(result.current.items).toHaveLength(5);
+    });
+
+    it('passes the filter to the fetcher and restarts at page 1 when it changes', async () => {
+        const { fetcher, calls } = makeFetcher();
+        const { result, rerender } = renderHook(
+            ({ filter }) => usePagedList(fetcher, { limit: 10, filter }),
+            { initialProps: { filter: '' } }
+        );
+        await flush();
+        act(() => result.current.setPage(3));
+        await flush();
+        expect(result.current.page).toBe(3);
+        rerender({ filter: 'disabled' });
+        await flush();
+        expect(result.current.page).toBe(1);
+        expect(calls.at(-1)).toEqual({
+            page: 1,
+            limit: 10,
+            q: '',
+            filter: 'disabled',
+        });
+    });
+
+    it('does not fetch twice for the filter it started with', async () => {
+        const { fetcher } = makeFetcher();
+        renderHook(() =>
+            usePagedList(fetcher, { limit: 10, filter: 'active' })
+        );
+        await flush();
+        expect(fetcher).toHaveBeenCalledTimes(1);
     });
 
     it('fetches again on reload', async () => {
