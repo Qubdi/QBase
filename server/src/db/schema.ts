@@ -39,6 +39,8 @@ export const users = pgTable('users', {
     email: text('email').notNull().unique(),
     passwordHash: text('password_hash').notNull(),
     isAdmin: boolean('is_admin').notNull().default(false),
+    // a disabled user cannot sign in; their data and assignments stay
+    isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true })
         .notNull()
         .defaultNow(),

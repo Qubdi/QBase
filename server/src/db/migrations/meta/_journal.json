@@ -78,6 +78,13 @@
       "when": 1791981904558,
       "tag": "0010_project_slug",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791983501371,
+      "tag": "0011_user_status",
+      "breakpoints": true
     }
   ]
 }
