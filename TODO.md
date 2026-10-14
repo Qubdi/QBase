@@ -45,7 +45,7 @@ UUID and no separate project page. Diagrams are created inside the workspace.
      `GET /projects` for non-admins; add a test that proves it and check the UI never shows
      others. Open question: should admins also see only assigned projects here, or all
      (current behaviour)?
-5. **Dropdown UI.** The dropdowns look inconsistent and need a design pass.
+5. ✅ **Dropdown UI.** (done: all 15 native selects replaced; Select and dropdown menus restyled) The dropdowns look inconsistent and need a design pass.
    - Native `<select>` elements are used in the admin panel (role pickers, "user to assign"),
      the new-diagram dialog (database type), the access banner (move into project) and the
      members dialog. Replace them with the app's styled Select (Radix) so they match both
