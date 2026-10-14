@@ -238,6 +238,7 @@ describe('admin panel and projects', () => {
                 .json()
                 .find((d: { id: string }) => d.id === diagramId);
             expect(row.role).toBe('editor');
+            expect(row.projectId).toBe(projectId);
         });
 
         it('gives viewers only published content', async () => {
