@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import {
     Dialog,
     DialogContent,
@@ -28,8 +29,10 @@ export interface NewDiagramDialogProps {
     onImport?: () => void;
 }
 
-const selectClass =
-    'h-9 w-full rounded-md border border-input bg-background px-2 text-sm';
+const DATABASE_OPTIONS = Object.values(DatabaseType).map((t) => ({
+    value: t,
+    label: databaseTypeToLabelMap[t],
+}));
 
 export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
     open,
@@ -89,20 +92,14 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
                         maxLength={200}
                         autoFocus
                     />
-                    <select
-                        className={selectClass}
+                    <OptionSelect
                         aria-label="Database type"
                         value={databaseType}
-                        onChange={(e) =>
-                            setDatabaseType(e.target.value as DatabaseType)
+                        onValueChange={(v) =>
+                            setDatabaseType(v as DatabaseType)
                         }
-                    >
-                        {Object.values(DatabaseType).map((t) => (
-                            <option key={t} value={t}>
-                                {databaseTypeToLabelMap[t]}
-                            </option>
-                        ))}
-                    </select>
+                        options={DATABASE_OPTIONS}
+                    />
                     {error ? (
                         <p role="alert" className="text-sm text-destructive">
                             {error}
