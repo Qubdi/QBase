@@ -3,8 +3,8 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import type { Db } from '../db/client.js';
-import { diagramMembers, users } from '../db/schema.js';
-import { getRole } from '../diagrams/permissions.js';
+import { diagramMembers, projectMembers, users } from '../db/schema.js';
+import { getDiagramProject, getRole } from '../diagrams/permissions.js';
 
 const diagramParam = z.object({ id: z.string().uuid() });
 const memberParam = z.object({
@@ -30,6 +30,18 @@ export const memberRoutes =
             const { id } = diagramParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
+            const projectId = await getDiagramProject(db, id);
+            if (projectId) {
+                return db
+                    .select({
+                        userId: users.id,
+                        email: users.email,
+                        role: projectMembers.role,
+                    })
+                    .from(projectMembers)
+                    .innerJoin(users, eq(users.id, projectMembers.userId))
+                    .where(eq(projectMembers.projectId, projectId));
+            }
             return db
                 .select({
                     userId: users.id,
@@ -47,6 +59,9 @@ export const memberRoutes =
             if (!role) return reply.code(404).send({ error: 'not_found' });
             if (role !== 'owner') {
                 return reply.code(403).send({ error: 'forbidden' });
+            }
+            if (await getDiagramProject(db, id)) {
+                return reply.code(400).send({ error: 'managed_by_project' });
             }
             const body = addBody.parse(req.body);
             const [target] = await db
@@ -83,6 +98,9 @@ export const memberRoutes =
             if (role !== 'owner') {
                 return reply.code(403).send({ error: 'forbidden' });
             }
+            if (await getDiagramProject(db, id)) {
+                return reply.code(400).send({ error: 'managed_by_project' });
+            }
             const targetRole = await getRole(db, id, userId);
             if (!targetRole) {
                 return reply.code(404).send({ error: 'member_not_found' });
@@ -114,6 +132,9 @@ export const memberRoutes =
             if (!role) return reply.code(404).send({ error: 'not_found' });
             if (role !== 'owner') {
                 return reply.code(403).send({ error: 'forbidden' });
+            }
+            if (await getDiagramProject(db, id)) {
+                return reply.code(400).send({ error: 'managed_by_project' });
             }
             const targetRole = await getRole(db, id, userId);
             if (!targetRole) {

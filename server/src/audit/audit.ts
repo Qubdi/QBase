@@ -3,6 +3,14 @@ import { auditLog } from '../db/schema.js';
 
 export type AuditAction =
     | 'user.register'
+    | 'user.create'
+    | 'user.update'
+    | 'user.delete'
+    | 'project.create'
+    | 'project.update'
+    | 'project.delete'
+    | 'project.member_set'
+    | 'project.member_remove'
     | 'diagram.create'
     | 'diagram.update'
     | 'diagram.delete'
