@@ -1,22 +1,20 @@
 # QubdiDB — Audit
 
-**rev** 7 · **date** 2026-10-14
-**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (154 files, 1395 tests), npm audit · server tests run against Postgres (27 files, 466 tests, SQL Server tests skipped) · no secret read
+**rev** 8 · **date** 2026-10-14
+**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (155 files, 1399 tests), npm audit · server tests run against Postgres (27 files, 466 tests, SQL Server tests skipped) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 12 | 0 | 1 | 3 | 0 |
-| Repository | 14 | 0 | 2 | 1 | 0 |
+| Repository | 2 | 0 | 0 | 13 | 0 |
 | Server | 0 | 0 | 0 | 19 | 0 |
 | Client | 0 | 0 | 0 | 5 | 1 |
-| **Total** | 26 | 0 | 3 | 28 | 1 |
+| **Total** | 14 | 0 | 1 | 40 | 1 |
 
 ## Act first
 
 - `SEC-001` — `/auth/login` and `/auth/register` accept unlimited guesses.
-- `REPO-001` — CI never builds or tests `server/`.
-- `REPO-002` — `.dockerignore` lets host `server/node_modules` into the server image.
 
 ---
 
@@ -43,20 +41,8 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-001 | High | CI never typechecks or tests `server/`; backend changes merge untested | `.github/workflows/ci.yaml:30` | Add server `tsc` and vitest job with a Postgres service |
-| REPO-002 | High | `.dockerignore` misses `server/node_modules` and `server/.env`; both enter the server image | `.dockerignore:2` | Use `**/node_modules` and `**/.env*` patterns |
-| REPO-003 | Med | ESLint ignores `server/**`; backend is never linted | `eslint.config.mjs:25` | Lint `server/` with its own config |
-| REPO-004 | Med | Publish workflow builds only the UI image; server has no image or release | `.github/workflows/publish.yaml:62` | Add a server image build and push |
-| REPO-005 | Med | Client has 24 high and 3 critical npm advisories incl. `react-router-dom`, `vitest` | `package.json:69` | Run `npm audit fix`; upgrade `react-router-dom` |
-| REPO-006 | Med | Server `drizzle-orm` carries a high npm advisory | `server/package.json:19` | Upgrade `drizzle-orm`; rerun `npm audit` |
-| REPO-007 | Med | Workflow actions pinned to mutable tags, not commit SHAs | `.github/workflows/ci.yaml:13` | Pin every `uses:` to a full SHA |
-| REPO-008 | Med | No update bot config, `SECURITY.md` or `CODEOWNERS` | `.github/` | Add Dependabot config, `SECURITY.md`, `CODEOWNERS` |
-| REPO-009 | Med | CI runs no `npm audit`, secret scan or Docker build | `.github/workflows/ci.yaml:1` | Add audit, gitleaks and `docker build` steps |
-| REPO-010 | Low | README lists `OLD/`, which does not exist; configs still ignore it | `README.md:16` | Remove it from README, eslint and vitest configs |
-| REPO-012 | Low | Node 24 in `.nvmrc` and CI; Node 22 in server image and README | `server/Dockerfile:15` | Align on one Node version |
-| REPO-013 | Low | `public/sitemap.xml` lists placeholder `qubdi.example` while robots blocks all | `public/sitemap.xml:4` | Delete the sitemap or set the real host |
-| REPO-014 | Low | Root version 1.20.1 and server 0.1.0 disagree; release-please bumps root only | `.github/workflows/release.yaml:20` | Version both packages together |
-| REPO-015 | Low | UI image bakes the backend URL at build; compose uses `localhost:3001` | `docker-compose.yml:40` | Serve backend URL through runtime `config.js` |
+| REPO-005 | Med | 6 high npm advisories remain, all in the Tailwind 3 toolchain | `package.json:112` | Migrate to Tailwind 4; rerun `npm audit` |
+| REPO-008 | Med | No `CODEOWNERS` file | `.github/` | Add `.github/CODEOWNERS` with the maintainers' GitHub handle |
 
 ---
 
@@ -68,6 +54,18 @@
 | SEC-003 | Security & secrets | `VITE_OPENAI_API_KEY` baked into the JS bundle; build args removed |
 | SEC-011 | Security & secrets | Cross-dialect SQL export sent the schema to an external LLM; AI export removed |
 | REPO-011 | Repository | README denied GitHub integration while UI linked GitHub; links removed |
+| REPO-001 | Repository | CI never built or tested `server/`; now lint, typecheck, build and tests on Postgres |
+| REPO-002 | Repository | `.dockerignore` let `server/node_modules` and `server/.env` into images; patterns match at any depth |
+| REPO-003 | Repository | ESLint ignored `server/`; it now has its own config and `npm run lint` |
+| REPO-004 | Repository | Publish workflow built only the UI image; it now also pushes the server image |
+| REPO-006 | Repository | Server `drizzle-orm` high advisory; upgraded to 0.45.4, vitest to 5 |
+| REPO-007 | Repository | Workflow actions pinned to mutable tags; all pinned to full commit SHAs |
+| REPO-009 | Repository | CI ran no `npm audit`, secret scan or Docker build; all three added |
+| REPO-010 | Repository | README and configs listed a missing `OLD/` folder; removed |
+| REPO-012 | Repository | Node 24 in CI but 22 in the server image and README; all on 24, `engines` added |
+| REPO-013 | Repository | Placeholder `public/sitemap.xml` while robots blocks all; sitemap deleted |
+| REPO-014 | Repository | Root and server versions disagreed; release-please now bumps both |
+| REPO-015 | Repository | UI image baked the backend URL at build; now served at run time via `/config.js` |
 | SRV-001 | Server | `PUT /diagrams/:id` was last-write-wins; a save on an older copy now gets 409 |
 | SRV-002 | Server | Version fetch loaded every snapshot; now filtered in SQL |
 | SRV-003 | Server | No snapshot retention; `SNAPSHOT_KEEP` prunes at publish and on a timer |
@@ -121,3 +119,4 @@
 | 5 | 2026-10-14 | 0 new, 0 fixed, 1 accepted (CLI-006 cut from 27 suppressions and 12 casts to 10) |
 | 6 | 2026-10-14 | 0 new, 1 fixed, 0 dropped |
 | 7 | 2026-10-14 | 0 new, 19 fixed, 0 dropped; 2 findings re-anchored |
+| 8 | 2026-10-14 | 0 new, 12 fixed, 0 dropped; 2 findings narrowed |
