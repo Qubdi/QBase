@@ -39,7 +39,7 @@ import {
 } from './table-node/table-node';
 import type { RelationshipEdgeType } from './relationship-edge/relationship-edge';
 import { RelationshipEdge } from './relationship-edge/relationship-edge';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import {
     LEFT_HANDLE_ID_PREFIX,
     TARGET_ID_PREFIX,
@@ -77,7 +77,7 @@ import {
 } from './canvas-utils';
 import type { Graph } from '@/lib/graph';
 import { removeVertex } from '@/lib/graph';
-import type { ChartDBEvent } from '@/context/chartdb-context/chartdb-context';
+import type { DiagramEvent } from '@/context/diagram-context/diagram-context';
 import { cn, debounce, getOperatingSystem } from '@/lib/utils';
 import type { DependencyEdgeType } from './dependency-edge/dependency-edge';
 import { DependencyEdge } from './dependency-edge/dependency-edge';
@@ -306,7 +306,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         highlightedCustomType,
         highlightCustomTypeId,
         createTable,
-    } = useChartDB();
+    } = useDiagram();
     const { showSidePanel } = useLayout();
     const { effectiveTheme } = useTheme();
     const { scrollAction, showDBViews, showMiniMapOnCanvas } = useLocalConfig();
@@ -1351,7 +1351,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
     );
 
     const eventConsumer = useCallback(
-        (event: ChartDBEvent) => {
+        (event: DiagramEvent) => {
             let newOverlappingGraph: Graph<string> = overlapGraph;
             if (event.action === 'add_tables') {
                 for (const table of event.data.tables) {

@@ -14,7 +14,7 @@ import {
     SortableContext,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useChartDB } from '@/hooks/use-chartdb.ts';
+import { useDiagram } from '@/hooks/use-diagram.ts';
 import type { DBCustomType } from '@/lib/domain/db-custom-type';
 import { CustomTypeListItem } from './custom-type-list-item/custom-type-list-item';
 
@@ -23,7 +23,7 @@ export interface CustomTypeProps {
 }
 
 export const CustomTypeList: React.FC<CustomTypeProps> = ({ customTypes }) => {
-    const { updateCustomType } = useChartDB();
+    const { updateCustomType } = useDiagram();
 
     const { openCustomTypeFromSidebar, openedCustomTypeInSidebar } =
         useLayout();

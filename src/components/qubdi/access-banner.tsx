@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { OptionSelect } from '@/components/option-select/option-select';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { isLocked, lockedReason } from '@/lib/qubdi/access';
 import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';
@@ -12,7 +12,7 @@ import { useDiagramAccess } from './diagram-access-context';
 export const AccessBanner: React.FC = () => {
     const { access, refresh } = useDiagramAccess();
     const { syncDiagram } = useQubdi();
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram } = useDiagram();
     const [projects, setProjects] = useState<MyProject[]>([]);
     const [choice, setChoice] = useState('');
     const [busy, setBusy] = useState(false);

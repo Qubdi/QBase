@@ -10,7 +10,7 @@ import { Button } from '@/components/button/button';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/components/input/input';
 import { useToast } from '@/components/toast/use-toast';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { getProjectId } from '@/lib/qubdi/remote-map';
 import { useQubdi } from '@/hooks/use-qubdi';
 import {
@@ -71,7 +71,7 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
     onOpenChange,
     onBadgeChange,
 }) => {
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram } = useDiagram();
     const { syncDiagram, remoteIdFor } = useQubdi();
     const { toast } = useToast();
     const [overview, setOverview] = useState<DriftOverview | null>(null);

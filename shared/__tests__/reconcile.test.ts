@@ -70,7 +70,7 @@ const kinds = (cs: ReturnType<typeof reconcile>) =>
     cs.changes.map((c) => c.kind);
 
 describe('canonicalType', () => {
-    it('folds synonyms, spacing, case and ChartDB-style ids together', () => {
+    it('folds synonyms, spacing, case and QubdiDB-style ids together', () => {
         expect(canonicalType('INT4')).toBe('integer');
         expect(canonicalType('character varying')).toBe('varchar');
         expect(canonicalType('character_varying')).toBe('varchar');
@@ -353,7 +353,7 @@ describe('diagramToDesc', () => {
         ]);
     });
 
-    it('flips ChartDB relationship direction and skips dangling ones', () => {
+    it('flips QubdiDB relationship direction and skips dangling ones', () => {
         expect(d.relationships).toEqual([
             {
                 id: 'r1',

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import {
     AUTOSAVE_DELAY_MS,
@@ -25,7 +25,7 @@ export const ServerAutosave: React.FC = () => {
     const diagramId = useEditorDiagramId();
     const { access } = useDiagramAccess();
     const { syncDiagram } = useQubdi();
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram } = useDiagram();
     const saverRef = useRef<Autosaver<Diagram> | null>(null);
     const syncRef = useRef(syncDiagram);
     syncRef.current = syncDiagram;

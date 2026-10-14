@@ -28,7 +28,7 @@ import {
 import { Badge } from '@/components/badge/badge';
 import { Canvas } from '../editor-page/canvas/canvas';
 import { ReactFlowProvider } from '@xyflow/react';
-import { ChartDBProvider } from '@/context/chartdb-context/chartdb-provider';
+import { DiagramProvider } from '@/context/diagram-context/diagram-provider';
 import { Helmet } from 'react-helmet-async';
 import { APP_URL, HOST_URL } from '@/lib/env';
 import { Link } from '@/components/link/link';
@@ -63,10 +63,10 @@ const TemplatePageComponent: React.FC = () => {
             <Helmet>
                 {template ? (
                     <>
-                        {HOST_URL !== 'https://chartdb.io' ? (
+                        {HOST_URL !== 'https://qubdi.example' ? (
                             <link
                                 rel="canonical"
-                                href={`https://chartdb.io/templates/${templateSlug}`}
+                                href={`https://qubdi.example/templates/${templateSlug}`}
                             />
                         ) : null}
                         <title>
@@ -260,7 +260,7 @@ const TemplatePageComponent: React.FC = () => {
                             </div>
                             <div className="flex min-h-96 overflow-hidden rounded border md:flex-1 md:rounded-lg">
                                 <div className="size-full">
-                                    <ChartDBProvider
+                                    <DiagramProvider
                                         diagram={template.diagram}
                                         readonly
                                     >
@@ -269,7 +269,7 @@ const TemplatePageComponent: React.FC = () => {
                                                 template.diagram.tables ?? []
                                             }
                                         />
-                                    </ChartDBProvider>
+                                    </DiagramProvider>
                                 </div>
                             </div>
                         </div>

@@ -8,7 +8,7 @@ export interface TemplatesPageHelmetProps {
     isFeatured: boolean;
 }
 
-const CHARTDB_HOST_URL = 'https://chartdb.io';
+const APP_HOST_URL = 'https://qubdi.example';
 export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
     tag,
     isFeatured,
@@ -28,11 +28,11 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
             suffix += '/featured';
         }
 
-        return `${CHARTDB_HOST_URL}${suffix}`;
+        return `${APP_HOST_URL}${suffix}`;
     }, [isFeatured, formattedUrlTag]);
 
     const needCanonical =
-        HOST_URL !== CHARTDB_HOST_URL || (tag && formattedUrlTag !== tagParam);
+        HOST_URL !== APP_HOST_URL || (tag && formattedUrlTag !== tagParam);
 
     return (
         <Helmet>
@@ -104,7 +104,7 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
                     content="Discover a collection of real-world database schema diagrams, featuring example applications and popular open-source projects."
                 />
             )}
-            <meta property="og:image" content={`${HOST_URL}/chartdb.png`} />
+            <meta property="og:image" content={`${HOST_URL}/qubdidb.png`} />
             <meta property="og:type" content="website" />
             <meta property="og:site_name" content="QubdiDB" />
 
@@ -132,10 +132,10 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
                 />
             )}
 
-            <meta name="twitter:image" content={`${HOST_URL}/chartdb.png`} />
+            <meta name="twitter:image" content={`${HOST_URL}/qubdidb.png`} />
             <meta name="twitter:card" content="summary_large_image" />
-            <meta name="twitter:site" content="@ChartDB_io" />
-            <meta name="twitter:creator" content="@ChartDB_io" />
+            <meta name="twitter:site" content="@QubdiDB" />
+            <meta name="twitter:creator" content="@QubdiDB" />
         </Helmet>
     );
 };

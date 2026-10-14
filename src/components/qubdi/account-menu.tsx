@@ -19,7 +19,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/dropdown-menu/dropdown-menu';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
@@ -30,7 +30,7 @@ import { ShareDialog } from './share-dialog';
 
 export const AccountMenu: React.FC = () => {
     const { enabled, user, logout, syncDiagram, remoteIdFor } = useQubdi();
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram } = useDiagram();
     const navigate = useNavigate();
     const [authOpen, setAuthOpen] = useState(false);
     const [membersOpen, setMembersOpen] = useState(false);

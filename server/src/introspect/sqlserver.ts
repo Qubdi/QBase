@@ -110,7 +110,7 @@ export interface MssqlColumnShape {
     precision: { precision: number | null; scale: number | null } | null;
 }
 
-/** sys.columns stores bytes for n* types and -1 for MAX; translate to what ChartDB expects. */
+/** sys.columns stores bytes for n* types and -1 for MAX; translate to what QubdiDB expects. */
 export function mssqlColumnShape(
     type: string,
     maxLength: number,
@@ -157,7 +157,7 @@ export interface FkRow {
     ord: number;
 }
 
-/** ChartDB shows fk_def as text; build the PostgreSQL-style definition including actions. */
+/** QubdiDB shows fk_def as text; build the PostgreSQL-style definition including actions. */
 export function buildFkDefs(rows: FkRow[]): DatabaseMetadata['fk_info'] {
     const groups = new Map<string, FkRow[]>();
     for (const r of rows) {
@@ -264,7 +264,7 @@ export class SqlServerIntrospector implements Introspector {
         return {
             database_name: String(server.database_name),
             version: String(server.version).split('\n')[0].trim(),
-            // like ChartDB's own scripts, views are listed as tables too
+            // like QubdiDB's own scripts, views are listed as tables too
             // (type VIEW); the views list only carries their definitions
             tables: [
                 ...tables.map((t) => ({

@@ -148,7 +148,7 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
-# Extras from the ChartDB base
+# Extras
 dist-ssr
 *.local
 .vscode/*

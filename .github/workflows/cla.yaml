@@ -22,12 +22,12 @@ jobs:
         uses: contributor-assistant/github-action@v2.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.CHARTDB_CLA_SIGNATURES_PAT }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_SIGNATURES_PAT }}
         with:
-          remote-organization-name: 'chartdb'
+          remote-organization-name: 'qubdi'
           remote-repository-name: 'cla-signatures'
           path-to-signatures: 'signatures/version1/cla.json'
-          path-to-document: 'https://github.com/chartdb/chartdb/blob/main/CLA.md'
+          path-to-document: 'https://github.com/qubdi/qubdidb/blob/main/CLA.md'
           # branch should not be protected
           branch: 'main'
           allowlist: 

@@ -5,7 +5,7 @@ Open work, newest first. Tick an item when it ships and note the commit.
 ## ✅ Done: dragging a table froze the relationship lines (`1582178`)
 
 The user reported that while a table was dragged, its relationship line froze and then jumped
-to the new spot. The original ChartDB was smooth in the same browser.
+to the new spot. The editor was smooth in the same browser before the reduced-motion change.
 
 **Cause:** the reduced-motion CSS in `globals.css` set `transition-duration: 0.01ms` on
 every element. The default `transition-property` is `all`, so every element (including each

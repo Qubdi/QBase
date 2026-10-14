@@ -1,5 +1,5 @@
 import type { DBTable } from '@/lib/domain/db-table';
-import type { ChartDBContext } from '../chartdb-context/chartdb-context';
+import type { DiagramContext } from '../diagram-context/diagram-context';
 import type { DBField } from '@/lib/domain/db-field';
 import type { DBIndex } from '@/lib/domain/db-index';
 import type { DBCheckConstraint } from '@/lib/domain/db-check-constraint';
@@ -10,7 +10,7 @@ import type { DBCustomType } from '@/lib/domain/db-custom-type';
 import type { Note } from '@/lib/domain/note';
 import type { Diagram } from '@/lib/domain/diagram';
 
-type Action = keyof ChartDBContext;
+type Action = keyof DiagramContext;
 
 type RedoUndoActionBase<T extends Action, RD, UD> = {
     action: T;

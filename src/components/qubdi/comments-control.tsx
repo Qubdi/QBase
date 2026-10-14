@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Eye, EyeOff, MessageSquare, X } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { OptionSelect } from '@/components/option-select/option-select';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import {
@@ -20,7 +20,7 @@ import { buildViewerGraph } from '@/lib/qubdi/viewer-model';
 /** Toolbar button plus the editor's comments panel. Only active when signed in. */
 export const CommentsControl: React.FC = () => {
     const { enabled, user, remoteIdFor, syncDiagram } = useQubdi();
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram } = useDiagram();
     const state = useCommentsState();
     const remoteId = remoteIdFor(currentDiagram.id);
     const [error, setError] = useState<string | null>(null);

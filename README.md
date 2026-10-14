@@ -1,7 +1,7 @@
 # QubdiDB
 
-Database schema diagrams you can keep on your own server. QubdiDB is a fork of
-the ChartDB editor (AGPL-3.0) with an optional self-hosted backend. The editor
+Database schema diagrams you can keep on your own server. QubdiDB is an AGPL-3.0
+diagram editor with an optional self-hosted backend. The editor
 still works fully offline in the browser; the backend adds accounts, published
 versions, share links, comments, live-database import, re-sync, drift detection
 and schema lint.

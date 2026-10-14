@@ -15,7 +15,7 @@ import { Table, Workflow } from 'lucide-react';
 import { useLayout } from '@/hooks/use-layout';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { supportsCustomTypes } from '@/lib/domain/database-capabilities';
 import { useDialog } from '@/hooks/use-dialog';
 import { Separator } from '@/components/separator/separator';
@@ -39,7 +39,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
     } = useLayout();
     const { t } = useTranslation();
     const { isMd: isDesktop } = useBreakpoint('md');
-    const { databaseType } = useChartDB();
+    const { databaseType } = useDiagram();
     const { openCreateDiagramDialog, openOpenDiagramDialog } = useDialog();
 
     const diagramItems: SidebarItem[] = useMemo(

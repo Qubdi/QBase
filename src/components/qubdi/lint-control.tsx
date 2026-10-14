@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ListChecks, Settings2, X } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useToast } from '@/components/toast/use-toast';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useFocusOn } from '@/hooks/use-focus-on';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api } from '@/lib/qubdi/api';
@@ -37,8 +37,8 @@ const SEVERITY_TITLE: Record<LintSeverity, string> = {
 
 /** Schema lint: a count badge in the toolbar and a panel of findings. Works offline. */
 export const LintControl: React.FC = () => {
-    const chartdb = useChartDB();
-    const { currentDiagram, databaseType } = chartdb;
+    const diagram = useDiagram();
+    const { currentDiagram, databaseType } = diagram;
     const { remoteIdFor, user } = useQubdi();
     const { focusOnTable } = useFocusOn();
     const { toast } = useToast();
@@ -85,7 +85,7 @@ export const LintControl: React.FC = () => {
 
     const applyFix = async (finding: Finding) => {
         if (!finding.fix) return;
-        const ops = planFix(finding.fix, chartdb.tables, databaseType);
+        const ops = planFix(finding.fix, diagram.tables, databaseType);
         if (!ops) {
             toast({
                 title: 'This fix no longer applies',
@@ -97,13 +97,13 @@ export const LintControl: React.FC = () => {
         // each operation goes through the editor's own undoable actions
         for (const op of ops) {
             if (op.kind === 'addIndex')
-                await chartdb.addIndex(op.tableId, op.index);
+                await diagram.addIndex(op.tableId, op.index);
             if (op.kind === 'removeIndex')
-                await chartdb.removeIndex(op.tableId, op.indexId);
+                await diagram.removeIndex(op.tableId, op.indexId);
             if (op.kind === 'updateField')
-                await chartdb.updateField(op.tableId, op.fieldId, op.patch);
+                await diagram.updateField(op.tableId, op.fieldId, op.patch);
             if (op.kind === 'updateTable')
-                await chartdb.updateTable(op.tableId, op.patch);
+                await diagram.updateTable(op.tableId, op.patch);
         }
         toast({ title: 'Fix applied' });
     };

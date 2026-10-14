@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { Toaster } from '@/components/toast/toaster';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { FullScreenLoaderProvider } from '@/context/full-screen-spinner-context/full-screen-spinner-provider';
@@ -34,7 +34,7 @@ export const EditorMobileLayoutLazy = React.lazy(
 );
 
 const EditorPageComponent: React.FC = () => {
-    const { diagramName } = useChartDB();
+    const { diagramName } = useDiagram();
     const { isMd: isDesktop } = useBreakpoint('md');
     const { initialDiagram } = useDiagramLoader();
 

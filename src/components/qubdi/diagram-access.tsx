@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/button/button';
 import { Logo } from '@/components/logo/logo';
 import { Spinner } from '@/components/spinner/spinner';
-import { ChartDBProvider } from '@/context/chartdb-context/chartdb-provider';
+import { DiagramProvider } from '@/context/diagram-context/diagram-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useStorage } from '@/hooks/use-storage';
 import { isLocked, resolveAccess, type AccessState } from '@/lib/qubdi/access';
@@ -217,11 +217,11 @@ const WorkspaceGate: React.FC<React.PropsWithChildren> = ({ children }) => {
     return (
         <WorkspaceContext.Provider value={resolution.workspace}>
             <DiagramAccessContext.Provider value={value!}>
-                <ChartDBProvider
+                <DiagramProvider
                     readonly={isLocked(resolution.access) || undefined}
                 >
                     {children}
-                </ChartDBProvider>
+                </DiagramProvider>
             </DiagramAccessContext.Provider>
         </WorkspaceContext.Provider>
     );
@@ -314,9 +314,9 @@ const LegacyGate: React.FC<React.PropsWithChildren> = ({ children }) => {
 
     return (
         <DiagramAccessContext.Provider value={value}>
-            <ChartDBProvider readonly={isLocked(value.access) || undefined}>
+            <DiagramProvider readonly={isLocked(value.access) || undefined}>
                 {children}
-            </ChartDBProvider>
+            </DiagramProvider>
         </DiagramAccessContext.Provider>
     );
 };
@@ -332,7 +332,7 @@ export const DiagramAccessGate: React.FC<React.PropsWithChildren> = ({
     const { enabled } = useQubdi();
     const { projectSlug } = useParams<{ projectSlug: string }>();
 
-    if (!enabled) return <ChartDBProvider>{children}</ChartDBProvider>;
+    if (!enabled) return <DiagramProvider>{children}</DiagramProvider>;
     if (projectSlug) return <WorkspaceGate>{children}</WorkspaceGate>;
     return <LegacyGate>{children}</LegacyGate>;
 };
