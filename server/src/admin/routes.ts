@@ -1,10 +1,11 @@
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, count, eq, ne, or, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
+import { slugFor } from '../projects/slug.js';
 import {
     diagrams,
     projectMembers,
@@ -166,6 +167,7 @@ export const adminRoutes =
                 .select({
                     id: projects.id,
                     name: projects.name,
+                    slug: projects.slug,
                     description: projects.description,
                     createdAt: projects.createdAt,
                     members: sql<number>`(select count(*)::int from ${projectMembers} where ${projectMembers.projectId} = ${projects.id})`,
@@ -177,16 +179,24 @@ export const adminRoutes =
 
         app.post('/projects', async (req, reply) => {
             const body = projectBody.parse(req.body);
+            // the name also becomes the project's URL (/Name/diagrams)
+            const check = slugFor(body.name);
+            if (!check.ok) return reply.code(400).send({ error: check.error });
             const taken = await db
                 .select({ id: projects.id })
                 .from(projects)
-                .where(eq(projects.name, body.name));
+                .where(
+                    or(
+                        eq(projects.name, body.name),
+                        sql`lower(${projects.slug}) = ${check.slug.toLowerCase()}`
+                    )
+                );
             if (taken.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
             const [p] = await db
                 .insert(projects)
-                .values({ ...body, createdBy: req.user!.id })
+                .values({ ...body, slug: check.slug, createdBy: req.user!.id })
                 .returning();
             await audit(db, {
                 userId: req.user!.id,
@@ -198,18 +208,32 @@ export const adminRoutes =
         app.patch('/projects/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const body = projectPatchBody.parse(req.body);
+            let slug: string | undefined;
             if (body.name !== undefined) {
+                const check = slugFor(body.name);
+                if (!check.ok) {
+                    return reply.code(400).send({ error: check.error });
+                }
+                slug = check.slug;
                 const clash = await db
                     .select({ id: projects.id })
                     .from(projects)
-                    .where(eq(projects.name, body.name));
-                if (clash.some((c) => c.id !== id)) {
+                    .where(
+                        and(
+                            ne(projects.id, id),
+                            or(
+                                eq(projects.name, body.name),
+                                sql`lower(${projects.slug}) = ${check.slug.toLowerCase()}`
+                            )
+                        )
+                    );
+                if (clash.length > 0) {
                     return reply.code(409).send({ error: 'name_taken' });
                 }
             }
             const [p] = await db
                 .update(projects)
-                .set(body)
+                .set(slug ? { ...body, slug } : body)
                 .where(eq(projects.id, id))
                 .returning();
             if (!p) return reply.code(404).send({ error: 'not_found' });

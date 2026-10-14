@@ -31,6 +31,7 @@ export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
     const base = {
         id: d.id,
         ownerId: d.ownerId,
+        projectId: d.projectId,
         role,
         publishedVersion: last?.version ?? null,
         publishedAt: last?.publishedAt ?? null,

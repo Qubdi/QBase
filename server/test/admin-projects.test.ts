@@ -274,6 +274,75 @@ describe('admin panel and projects', () => {
         });
     });
 
+    describe('project URLs (slugs)', () => {
+        const create = (name: string) =>
+            call('POST', '/admin/projects', admin, { name });
+
+        it('gives every project a URL piece built from its name', async () => {
+            const res = await create('Merme Team');
+            expect(res.statusCode).toBe(201);
+            expect(res.json().slug).toBe('Merme-Team');
+            const first = (await call('GET', '/admin/projects', admin))
+                .json()
+                .find((p: { id: string }) => p.id === projectId);
+            expect(first.slug).toBe('Billing');
+        });
+
+        it('shows the slug to members, so the app can build /Billing/diagrams', async () => {
+            const mine = await call('GET', '/projects', viewer);
+            expect(mine.json()[0]).toMatchObject({ id: projectId, slug: 'Billing' });
+            const all = await call('GET', '/projects', admin);
+            expect(all.json().every((p: { slug: string }) => !!p.slug)).toBe(true);
+        });
+
+        it('rejects names that cannot be a URL or that shadow an app path', async () => {
+            expect((await create('???')).json().error).toBe('invalid_name');
+            for (const name of ['admin', 'Diagrams', 'S', 'templates']) {
+                const res = await create(name);
+                expect(res.statusCode, name).toBe(400);
+                expect(res.json().error, name).toBe('reserved_name');
+            }
+        });
+
+        it('refuses a name whose URL is already taken, ignoring case and spacing', async () => {
+            for (const name of ['billing', 'BILLING', ' Billing ', 'Merme  Team']) {
+                const res = await create(name);
+                expect(res.statusCode, name).toBe(409);
+            }
+        });
+
+        it('changes the URL when the project is renamed, and frees the old one', async () => {
+            const p = (await create('Old Name')).json();
+            const renamed = await call('PATCH', `/admin/projects/${p.id}`, admin, {
+                name: 'New Name',
+            });
+            expect(renamed.statusCode).toBe(200);
+            expect(renamed.json().slug).toBe('New-Name');
+            expect((await create('Old Name')).statusCode).toBe(201);
+        });
+
+        it('lets a project keep its own URL when only the description changes', async () => {
+            const res = await call('PATCH', `/admin/projects/${projectId}`, admin, {
+                description: 'Billing schemas (updated)',
+            });
+            expect(res.statusCode).toBe(200);
+            expect(res.json().slug).toBe('Billing');
+        });
+
+        it('rejects renaming a project onto another project’s URL', async () => {
+            const p = (await create('Rename Me')).json();
+            const res = await call('PATCH', `/admin/projects/${p.id}`, admin, {
+                name: 'billing',
+            });
+            expect(res.statusCode).toBe(409);
+        });
+
+        it('tells diagrams which project they are in', async () => {
+            const res = await call('GET', `/diagrams/${diagramId}`, editor);
+            expect(res.json().projectId).toBe(projectId);
+        });
+    });
+
     describe('cleanup rules', () => {
         it('refuses to delete a project that still has diagrams', async () => {
             const res = await call('DELETE', `/admin/projects/${projectId}`, admin);

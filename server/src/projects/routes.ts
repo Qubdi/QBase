@@ -19,6 +19,7 @@ export const projectRoutes =
                     .select({
                         id: projects.id,
                         name: projects.name,
+                        slug: projects.slug,
                         description: projects.description,
                     })
                     .from(projects)
@@ -29,6 +30,7 @@ export const projectRoutes =
                 .select({
                     id: projects.id,
                     name: projects.name,
+                    slug: projects.slug,
                     description: projects.description,
                     role: projectMembers.role,
                 })
