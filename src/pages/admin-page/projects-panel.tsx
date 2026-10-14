@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
+import { Link } from 'react-router-dom';
+import { projectHomePath } from '@/lib/qubdi/project-path';
 import { cn } from '@/lib/utils';
 import {
     AlertDialog,
@@ -211,9 +213,26 @@ export const ProjectsPanel: React.FC = () => {
                                 );
                             }}
                         >
-                            <h2 className="font-primary text-base font-semibold">
-                                Project details
-                            </h2>
+                            <div className="flex items-center justify-between gap-2">
+                                <h2 className="font-primary text-base font-semibold">
+                                    Project details
+                                </h2>
+                                <Button
+                                    asChild
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                >
+                                    <Link to={projectHomePath(selected.slug)}>
+                                        Open workspace
+                                    </Link>
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Web address:{' '}
+                                <code>{projectHomePath(selected.slug)}</code>.
+                                Renaming the project changes it.
+                            </p>
                             <Input
                                 aria-label="Project name"
                                 value={editName}

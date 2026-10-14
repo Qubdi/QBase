@@ -11,6 +11,7 @@ import { StorageProvider } from '@/context/storage-context/storage-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';
+import { projectHomePath } from '@/lib/qubdi/project-path';
 
 const roleLabel = (role: MyProject['role']) =>
     role === 'owner' ? 'Admin' : role === 'editor' ? 'Editor' : 'Viewer';
@@ -83,7 +84,7 @@ const Projects: React.FC = () => {
                     {projects.map((p) => (
                         <li key={p.id}>
                             <Link
-                                to={`/projects/${p.id}`}
+                                to={projectHomePath(p.slug)}
                                 className="flex h-full flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
                             >
                                 <div className="flex items-start justify-between gap-2">
