@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -245,11 +245,15 @@ export const diagramRoutes =
             const { id, version } = versionParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
-            const rows = await db
+            const [snap] = await db
                 .select()
                 .from(snapshots)
-                .where(eq(snapshots.diagramId, id));
-            const snap = rows.find((s) => s.version === version);
+                .where(
+                    and(
+                        eq(snapshots.diagramId, id),
+                        eq(snapshots.version, version)
+                    )
+                );
             if (!snap) return reply.code(404).send({ error: 'not_found' });
             return {
                 version: snap.version,
