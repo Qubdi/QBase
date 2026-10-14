@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/components/input/input';
 import { api, errorMessage, type RemoteMember } from '@/lib/qubdi/api';
 
@@ -18,8 +19,10 @@ export interface MembersDialogProps {
     currentUserId: string;
 }
 
-const selectClass =
-    'h-9 rounded-md border border-input bg-background px-2 text-sm';
+const ROLE_OPTIONS = [
+    { value: 'viewer', label: 'Viewer' },
+    { value: 'editor', label: 'Editor' },
+];
 
 export const MembersDialog: React.FC<MembersDialogProps> = ({
     open,
@@ -98,29 +101,24 @@ export const MembersDialog: React.FC<MembersDialogProps> = ({
                                         </span>
                                     ) : (
                                         <span className="flex items-center gap-2">
-                                            <select
-                                                className={selectClass}
+                                            <OptionSelect
+                                                size="sm"
+                                                className="w-28"
                                                 aria-label={`Role for ${m.email}`}
                                                 value={m.role}
-                                                onChange={(e) =>
-                                                    run(() =>
+                                                onValueChange={(v) =>
+                                                    void run(() =>
                                                         api.changeMemberRole(
                                                             remoteId,
                                                             m.userId,
-                                                            e.target.value as
+                                                            v as
                                                                 | 'editor'
                                                                 | 'viewer'
                                                         )
                                                     )
                                                 }
-                                            >
-                                                <option value="editor">
-                                                    editor
-                                                </option>
-                                                <option value="viewer">
-                                                    viewer
-                                                </option>
-                                            </select>
+                                                options={ROLE_OPTIONS}
+                                            />
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -162,21 +160,15 @@ export const MembersDialog: React.FC<MembersDialogProps> = ({
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                 />
-                                <select
-                                    className={selectClass}
+                                <OptionSelect
+                                    className="w-28 shrink-0"
                                     aria-label="New member role"
                                     value={role}
-                                    onChange={(e) =>
-                                        setRole(
-                                            e.target.value as
-                                                | 'editor'
-                                                | 'viewer'
-                                        )
+                                    onValueChange={(v) =>
+                                        setRole(v as 'editor' | 'viewer')
                                     }
-                                >
-                                    <option value="viewer">viewer</option>
-                                    <option value="editor">editor</option>
-                                </select>
+                                    options={ROLE_OPTIONS}
+                                />
                                 <Button type="submit">Add</Button>
                             </form>
                         ) : null}
