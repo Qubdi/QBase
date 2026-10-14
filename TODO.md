@@ -19,7 +19,7 @@ UUID and no separate project page. Diagrams are created inside the workspace.
 - [x] Editor: project-aware Open and Create dialogs (list the project's server diagrams, create
       on the server, import from database) replace the local ones
 - [x] Home and admin panel link to `/<slug>/diagrams`
-- [ ] Rebuild Docker and smoke-test
+- [x] Rebuild Docker and smoke-test (migration applied to the live DB; URLs are served)
 
 ## Backlog: admin panel and home page
 
