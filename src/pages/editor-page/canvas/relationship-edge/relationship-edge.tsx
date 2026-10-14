@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
+import { chooseSides, type Sides } from './relationship-edge-sides';
 import { createPortal } from 'react-dom';
 import type { Edge, EdgeProps } from '@xyflow/react';
 import { getSmoothStepPath, Position, useReactFlow } from '@xyflow/react';
@@ -243,36 +244,16 @@ export const RelationshipEdge: React.FC<EdgeProps<RelationshipEdgeType>> =
             const targetLeftX = targetX - 1;
             const targetRightX = targetX + targetWidth + 10;
 
+            // keep the sides the line already uses unless another pair is clearly closer,
+            // so it does not flip from side to side while a table is being dragged
+            const previousSidesRef = useRef<Sides | null>(null);
             const { sourceSide, targetSide } = useMemo(() => {
-                const distances = {
-                    leftToLeft: Math.abs(sourceLeftX - targetLeftX),
-                    leftToRight: Math.abs(sourceLeftX - targetRightX),
-                    rightToLeft: Math.abs(sourceRightX - targetLeftX),
-                    rightToRight: Math.abs(sourceRightX - targetRightX),
-                };
-
-                const minDistance = Math.min(
-                    distances.leftToLeft,
-                    distances.leftToRight,
-                    distances.rightToLeft,
-                    distances.rightToRight
+                const sides = chooseSides(
+                    { sourceLeftX, sourceRightX, targetLeftX, targetRightX },
+                    previousSidesRef.current
                 );
-
-                const minDistanceKey = Object.keys(distances).find(
-                    (key) =>
-                        distances[key as keyof typeof distances] === minDistance
-                ) as keyof typeof distances;
-
-                switch (minDistanceKey) {
-                    case 'leftToRight':
-                        return { sourceSide: 'left', targetSide: 'right' };
-                    case 'rightToLeft':
-                        return { sourceSide: 'right', targetSide: 'left' };
-                    case 'rightToRight':
-                        return { sourceSide: 'right', targetSide: 'right' };
-                    default:
-                        return { sourceSide: 'left', targetSide: 'left' };
-                }
+                previousSidesRef.current = sides;
+                return sides;
             }, [sourceLeftX, sourceRightX, targetLeftX, targetRightX]);
 
             const edgePath = useMemo(() => {
