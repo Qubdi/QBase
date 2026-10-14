@@ -11,9 +11,17 @@ const routes: RouteObject[] = [
         async lazy() {
             const { EditorPage } =
                 await import('./pages/editor-page/editor-page');
+            const { AdminLandingRedirect } =
+                await import('./components/qubdi/admin-landing-redirect');
 
             return {
-                element: <EditorPage />,
+                element: (
+                    <>
+                        {/* only the home route: deep links open as asked */}
+                        {path === '' ? <AdminLandingRedirect /> : null}
+                        <EditorPage />
+                    </>
+                ),
             };
         },
     })),

@@ -7,6 +7,7 @@ import {
     getRemoteId,
     setRemoteId,
 } from '@/lib/qubdi/remote-map';
+import { resetAdminLanding } from '@/lib/qubdi/admin-landing';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/lib/domain/diagram';
 
@@ -34,6 +35,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
 
     const logout = useCallback(async () => {
         await api.logout().catch(() => undefined);
+        resetAdminLanding();
         setUser(null);
     }, []);
 
