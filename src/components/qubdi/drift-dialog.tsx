@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/components/input/input';
 import { useToast } from '@/components/toast/use-toast';
 import { useChartDB } from '@/hooks/use-chartdb';
@@ -37,9 +38,6 @@ export interface DriftDialogProps {
 }
 
 export const OPEN_RESYNC_EVENT = 'qubdi:open-resync';
-
-const selectClass =
-    'h-9 rounded-md border border-input bg-background px-2 text-sm';
 
 const ChangeList: React.FC<{ title: string; items: DriftItem[] }> = ({
     title,
@@ -215,43 +213,41 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                         Check on a schedule
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
-                        <select
+                        <OptionSelect
                             aria-label="Schedule"
-                            className={selectClass}
+                            className="w-44"
                             value={preset}
-                            onChange={(e) => {
+                            onValueChange={(id) => {
                                 const p = SCHEDULE_PRESETS.find(
-                                    (x) => x.id === e.target.value
+                                    (x) => x.id === id
                                 );
                                 if (p) setSchedule(p.cron);
                             }}
-                        >
-                            {SCHEDULE_PRESETS.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.label}
-                                </option>
-                            ))}
-                            <option value="custom">Custom…</option>
-                        </select>
+                            options={[
+                                ...SCHEDULE_PRESETS.map((p) => ({
+                                    value: p.id,
+                                    label: p.label,
+                                })),
+                                { value: 'custom', label: 'Custom…' },
+                            ]}
+                        />
                         <Input
                             aria-label="Cron expression"
                             className="w-40 font-mono"
                             value={schedule}
                             onChange={(e) => setSchedule(e.target.value)}
                         />
-                        <select
+                        <OptionSelect
                             aria-label="Saved connection"
-                            className={selectClass}
+                            className="w-56"
+                            placeholder="Choose a saved connection"
                             value={connectionId}
-                            onChange={(e) => setConnectionId(e.target.value)}
-                        >
-                            <option value="">Choose a saved connection</option>
-                            {connections.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
+                            onValueChange={setConnectionId}
+                            options={connections.map((c) => ({
+                                value: c.id,
+                                label: c.name,
+                            }))}
+                        />
                     </div>
                     <Input
                         aria-label="Webhook URL"
