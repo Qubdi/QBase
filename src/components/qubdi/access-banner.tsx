@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { isLocked, lockedReason } from '@/lib/qubdi/access';
 import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';
 import { useDiagramAccess } from './diagram-access-context';
-
-const selectClass =
-    'h-8 rounded-md border border-input bg-background px-2 text-sm';
 
 /** Explains why the open diagram is read-only and, if it can, how to fix it. */
 export const AccessBanner: React.FC = () => {
@@ -66,19 +64,18 @@ export const AccessBanner: React.FC = () => {
             <span className="flex-1">{reason}</span>
             {unbound && writable.length > 0 ? (
                 <span className="flex items-center gap-2">
-                    <select
-                        className={selectClass}
+                    <OptionSelect
+                        size="sm"
+                        className="w-56"
                         aria-label="Project to move this diagram into"
+                        placeholder="Choose a project…"
                         value={choice}
-                        onChange={(e) => setChoice(e.target.value)}
-                    >
-                        <option value="">Choose a project…</option>
-                        {writable.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </select>
+                        onValueChange={setChoice}
+                        options={writable.map((p) => ({
+                            value: p.id,
+                            label: p.name,
+                        }))}
+                    />
                     <Button
                         size="sm"
                         disabled={!choice || busy}
