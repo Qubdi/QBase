@@ -16,6 +16,8 @@ export type ProjectRole = 'editor' | 'viewer';
 export interface MyProject {
     id: string;
     name: string;
+    /** the project's URL piece: /<slug>/diagrams */
+    slug: string;
     description: string;
     role: MemberRole;
 }
@@ -32,6 +34,7 @@ export interface AdminUser {
 export interface AdminProject {
     id: string;
     name: string;
+    slug: string;
     description: string;
     createdAt: string;
     members: number;
@@ -545,6 +548,10 @@ export const errorMessage = (e: unknown): string => {
             no_project:
                 'Open this diagram from a project before saving it to the server.',
             last_admin: 'There must be at least one admin.',
+            invalid_name:
+                'Use letters or numbers in the project name; it becomes its web address.',
+            reserved_name:
+                'That name is used by the app itself. Choose another one.',
             cannot_delete_self: 'You cannot delete your own account.',
             project_not_empty:
                 'This project still has diagrams. Delete them first.',
