@@ -8,6 +8,9 @@ export const ADMIN_URL =
     'postgres://qubdidb:qubdidb@localhost:5433/postgres';
 export const TEST_URL = `postgres://qubdidb:qubdidb@localhost:5433/${TEST_DB}`;
 
+// the first user on a fresh database is the admin; they create everyone else
+let adminCookie: string | null = null;
+
 export interface TestCtx {
     app: FastifyInstance;
     db: ReturnType<typeof createDb>['db'];
@@ -27,8 +30,9 @@ export async function createTestApp(
     };
     const { db, pool } = createDb(TEST_URL);
     if (reset) {
+        adminCookie = null;
         await pool.query(
-        'truncate table audit_log, sessions, diagram_members, diagrams, saved_connections, drift_settings, drift_reports, users restart identity cascade'
+        'truncate table audit_log, sessions, project_members, projects, diagram_members, diagrams, saved_connections, drift_settings, drift_reports, users restart identity cascade'
         );
     }
     const app = buildApp({ config, db, introspect });
@@ -54,6 +58,21 @@ export async function registerUser(
     email: string,
     password = 'password123'
 ): Promise<TestUser> {
+    if (adminCookie) {
+        // self sign-up is closed: an admin creates the account, then it signs in
+        const created = await app.inject({
+            method: 'POST',
+            url: '/admin/users',
+            headers: { cookie: adminCookie },
+            payload: { email, password },
+        });
+        if (created.statusCode !== 201) {
+            throw new Error(
+                `create user failed: ${created.statusCode} ${created.body}`
+            );
+        }
+        return loginUser(app, email, password);
+    }
     const res = await app.inject({
         method: 'POST',
         url: '/auth/register',
@@ -61,6 +80,25 @@ export async function registerUser(
     });
     if (res.statusCode !== 201) {
         throw new Error(`register failed: ${res.statusCode} ${res.body}`);
+    }
+    const set = res.cookies.find((c) => c.name === 'qubdidb_session')!;
+    const cookie = `qubdidb_session=${set.value}`;
+    adminCookie = cookie;
+    return { id: res.json().id, email, cookie };
+}
+
+export async function loginUser(
+    app: FastifyInstance,
+    email: string,
+    password = 'password123'
+): Promise<TestUser> {
+    const res = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password },
+    });
+    if (res.statusCode !== 200) {
+        throw new Error(`login failed: ${res.statusCode} ${res.body}`);
     }
     const set = res.cookies.find((c) => c.name === 'qubdidb_session')!;
     return {

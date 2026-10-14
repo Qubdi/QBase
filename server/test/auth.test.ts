@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog, sessions, users } from '../src/db/schema.js';
-import { as, createTestApp, registerUser, type TestCtx } from './helpers.js';
+import {
+    as,
+    createTestApp,
+    loginUser,
+    registerUser,
+    type TestCtx,
+} from './helpers.js';
 
 describe('auth', () => {
     let ctx: TestCtx;
@@ -25,25 +31,29 @@ describe('auth', () => {
     });
 
     it('rejects duplicate emails and weak passwords', async () => {
+        const admin = await loginUser(ctx.app, 'a@example.com');
         await registerUser(ctx.app, 'dup@example.com');
         const dup = await ctx.app.inject({
             method: 'POST',
-            url: '/auth/register',
+            url: '/admin/users',
+            headers: as(admin),
             payload: { email: 'DUP@example.com', password: 'password123' },
         });
         expect(dup.statusCode).toBe(409);
         const weak = await ctx.app.inject({
             method: 'POST',
-            url: '/auth/register',
+            url: '/admin/users',
+            headers: as(admin),
             payload: { email: 'weak@example.com', password: 'short' },
         });
         expect(weak.statusCode).toBe(400);
     });
 
     it('sets an httpOnly SameSite=Lax cookie and stores only a hash', async () => {
+        await registerUser(ctx.app, 'cookie@example.com');
         const res = await ctx.app.inject({
             method: 'POST',
-            url: '/auth/register',
+            url: '/auth/login',
             payload: { email: 'cookie@example.com', password: 'password123' },
         });
         const c = res.cookies.find((x) => x.name === 'qubdidb_session')!;
@@ -163,20 +173,26 @@ describe('auth', () => {
         expect(res.statusCode).toBe(401);
     });
 
-    it('writes an audit row on register', async () => {
-        const u = await registerUser(ctx.app, 'audit@example.com');
+    it('writes audit rows for self-registration and admin-created users', async () => {
+        const [first] = await ctx.db.select().from(users).limit(1);
+        await registerUser(ctx.app, 'audit@example.com');
         const rows = await ctx.db.select().from(auditLog);
+        expect(rows.some((r) => r.action === 'user.register')).toBe(true);
         expect(
-            rows.some((r) => r.userId === u.id && r.action === 'user.register')
+            rows.some((r) => r.userId === first.id && r.action === 'user.create')
         ).toBe(true);
     });
 });
 
-describe('signup flag', () => {
-    it('blocks further sign-ups but still allows the very first user', async () => {
-        const ctx = await createTestApp({ allowSignup: false });
+describe('closed signup', () => {
+    it('lets only the very first account self-register', async () => {
+        const ctx = await createTestApp();
         try {
+            const before = await ctx.app.inject({ url: '/auth/setup-status' });
+            expect(before.json().needsSetup).toBe(true);
             await registerUser(ctx.app, 'first@example.com');
+            const after = await ctx.app.inject({ url: '/auth/setup-status' });
+            expect(after.json().needsSetup).toBe(false);
             const res = await ctx.app.inject({
                 method: 'POST',
                 url: '/auth/register',
