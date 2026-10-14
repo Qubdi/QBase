@@ -4,24 +4,42 @@ import { createBrowserRouter } from 'react-router-dom';
 import type { TemplatePageLoaderData } from './pages/template-page/template-page';
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
+import { QUBDI_BACKEND_ENABLED } from './lib/qubdi/config';
 
 const routes: RouteObject[] = [
-    ...['', 'diagrams/:diagramId'].map((path) => ({
+    // With a server the home route is the project picker (nothing exists
+    // outside a project); in local mode it stays the editor.
+    ...(QUBDI_BACKEND_ENABLED
+        ? [
+              {
+                  path: '',
+                  async lazy() {
+                      const { HomePage } =
+                          await import('./pages/home-page/home-page');
+                      return { element: <HomePage /> };
+                  },
+              },
+              {
+                  path: 'projects/:projectId',
+                  async lazy() {
+                      const { ProjectPage } =
+                          await import('./pages/project-page/project-page');
+                      return { element: <ProjectPage /> };
+                  },
+              },
+          ]
+        : []),
+    ...(QUBDI_BACKEND_ENABLED
+        ? ['diagrams/:diagramId']
+        : ['', 'diagrams/:diagramId']
+    ).map((path) => ({
         path,
         async lazy() {
             const { EditorPage } =
                 await import('./pages/editor-page/editor-page');
-            const { AdminLandingRedirect } =
-                await import('./components/qubdi/admin-landing-redirect');
 
             return {
-                element: (
-                    <>
-                        {/* only the home route: deep links open as asked */}
-                        {path === '' ? <AdminLandingRedirect /> : null}
-                        <EditorPage />
-                    </>
-                ),
+                element: <EditorPage />,
             };
         },
     })),
