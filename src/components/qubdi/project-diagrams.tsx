@@ -4,19 +4,16 @@ import { Badge } from '@/components/badge/badge';
 import { Button } from '@/components/button/button';
 import { useStorage } from '@/hooks/use-storage';
 import { api, errorMessage, type RemoteDiagramSummary } from '@/lib/qubdi/api';
-import { serverContentToDiagram } from '@/lib/qubdi/open-remote';
-import {
-    clearRemoteId,
-    findLocalId,
-    setProjectId,
-    setRemoteId,
-} from '@/lib/qubdi/remote-map';
-import { generateId } from '@/lib/utils';
+import { projectDiagramPath } from '@/lib/qubdi/project-path';
+import { clearRemoteId, findLocalId } from '@/lib/qubdi/remote-map';
 
 export interface ProjectDiagramsProps {
     diagrams: RemoteDiagramSummary[];
-    /** Called after a diagram was deleted so the page can reload its list. */
+    projectSlug: string;
+    /** Called after a diagram was deleted so the caller can reload its list. */
     onChanged?: () => void;
+    /** Called just before navigating, e.g. to close a dialog. */
+    onNavigate?: () => void;
 }
 
 const roleLabel = (role: RemoteDiagramSummary['role']) =>
@@ -25,9 +22,11 @@ const roleLabel = (role: RemoteDiagramSummary['role']) =>
 /** The diagrams of one project, with a way to open each in the editor. */
 export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
     diagrams,
+    projectSlug,
     onChanged,
+    onNavigate,
 }) => {
-    const { addDiagram, deleteDiagram, listDiagrams } = useStorage();
+    const { deleteDiagram, listDiagrams } = useStorage();
     const navigate = useNavigate();
     const [localIds, setLocalIds] = useState<Set<string>>(new Set());
     const [error, setError] = useState<string | null>(null);
@@ -50,62 +49,26 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
         [localIds]
     );
 
-    const download = async (
-        d: RemoteDiagramSummary,
-        localId: string,
-        replace: boolean
-    ) => {
-        const remote = await api.getDiagram(d.id);
-        if (!remote.content) {
-            throw new Error(
-                'This diagram has not been published yet. Ask an editor to publish it.'
-            );
-        }
-        const diagram = serverContentToDiagram(remote.content, {
-            localId,
-            name: remote.title,
-        });
-        if (replace) await deleteDiagram(localId);
-        await addDiagram({ diagram });
-        setRemoteId(localId, d.id);
-        if (d.projectId) setProjectId(localId, d.projectId);
-        return diagram.id;
+    const fail = (e: unknown) => setError(errorMessage(e));
+
+    // opening never downloads here: the diagram's URL does that on arrival
+    const open = (d: RemoteDiagramSummary) => {
+        onNavigate?.();
+        navigate(projectDiagramPath(projectSlug, d.id));
     };
 
-    const fail = (e: unknown) =>
-        setError(
-            e instanceof Error && !('code' in e) ? e.message : errorMessage(e)
-        );
-
-    const open = async (d: RemoteDiagramSummary) => {
-        setError(null);
-        const existing = localCopy(d.id);
-        if (existing) {
-            navigate(`/diagrams/${existing}`);
-            return;
-        }
-        setBusyId(d.id);
-        try {
-            navigate(`/diagrams/${await download(d, generateId(), false)}`);
-        } catch (e) {
-            fail(e);
-        } finally {
-            setBusyId(null);
-        }
-    };
-
+    // drop this browser's copy; opening the URL again fetches the server version
     const getLatest = async (d: RemoteDiagramSummary) => {
         const existing = localCopy(d.id);
         if (!existing) return;
-        setError(null);
         setBusyId(d.id);
         try {
-            await download(d, existing, true);
-            // the editor caches the open diagram, so load it fresh from storage
-            window.location.assign(`/diagrams/${existing}`);
+            await deleteDiagram(existing);
+            clearRemoteId(existing);
+            // the editor caches the open diagram, so reload the page itself
+            window.location.assign(projectDiagramPath(projectSlug, d.id));
         } catch (e) {
             fail(e);
-        } finally {
             setBusyId(null);
             setConfirmId(null);
         }
@@ -222,9 +185,9 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                                 <Button
                                     size="sm"
                                     disabled={busy}
-                                    onClick={() => void open(d)}
+                                    onClick={() => open(d)}
                                 >
-                                    {busy ? 'Opening…' : 'Open'}
+                                    Open
                                 </Button>
                             </div>
                         </li>
