@@ -2,7 +2,11 @@ import http from 'node:http';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
-import { runDueChecks } from '../src/drift/service.js';
+import {
+    CLAIM_LEASE_MS,
+    claimDueChecks,
+    runDueChecks,
+} from '../src/drift/service.js';
 import type {
     DatabaseMetadata,
     Introspector,
@@ -796,5 +800,32 @@ describe('drift scheduler', () => {
 
     it('does nothing when nothing is configured', async () => {
         expect(await runDueChecks(deps(), new Date())).toBe(0);
+    });
+
+    describe('several servers at once', () => {
+        it('lets exactly one of two racing schedulers take each due check', async () => {
+            for (const id of ids) await configure(id);
+            for (const id of ids) await setNext(id, new Date(0));
+            const now = new Date('2026-03-10T12:00:00Z');
+            const [a, b] = await Promise.all([
+                runDueChecks(deps(), now),
+                runDueChecks(deps(), now),
+            ]);
+            // three diagrams were due: each ran once, none twice
+            expect(a + b).toBe(3);
+            for (const id of ids) expect(await reports(id)).toHaveLength(1);
+        });
+
+        it('hides a claimed check from other servers until the lease ends', async () => {
+            await configure(ids[0]);
+            await setNext(ids[0], new Date(0));
+            const now = new Date('2026-03-10T12:00:00Z');
+            expect(await claimDueChecks(ctx.db, now)).toEqual([ids[0]]);
+            // a second server sees nothing due, even before the check finished
+            expect(await claimDueChecks(ctx.db, now)).toEqual([]);
+            // the claiming server died: after the lease the check is up again
+            const later = new Date(now.getTime() + CLAIM_LEASE_MS + 1000);
+            expect(await claimDueChecks(ctx.db, later)).toEqual([ids[0]]);
+        });
     });
 });

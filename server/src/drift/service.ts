@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, lte, or, isNull } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import {
@@ -280,23 +280,62 @@ export async function runDriftCheck(
     }
 }
 
+/**
+ * How long a claimed check is reserved for the process that claimed it. A
+ * finished check moves `next_run_at` to its next cron time well before this;
+ * if the process dies mid-check, the diagram is picked up again after it.
+ */
+export const CLAIM_LEASE_MS = 10 * 60_000;
+
+/**
+ * Claims the checks that are due, in one statement. `FOR UPDATE SKIP LOCKED`
+ * makes servers running side by side take different rows, and pushing
+ * `next_run_at` into the future hides a claimed row from the others.
+ */
+export async function claimDueChecks(
+    db: Db,
+    now: Date,
+    limit = 20
+): Promise<string[]> {
+    const leaseEnds = new Date(now.getTime() + CLAIM_LEASE_MS);
+    const res = await db.execute<{ diagram_id: string }>(sql`
+        update drift_settings
+        set next_run_at = ${leaseEnds}
+        where diagram_id in (
+            select diagram_id from drift_settings
+            where enabled
+              and connection_id is not null
+              and (next_run_at is null or next_run_at <= ${now})
+            order by next_run_at nulls first
+            limit ${limit}
+            for update skip locked
+        )
+        returning diagram_id
+    `);
+    return res.rows.map((r) => r.diagram_id);
+}
+
 /** Runs every enabled check whose time has come. Returns how many ran. */
 export async function runDueChecks(
     deps: DriftDeps,
     now: Date = new Date()
 ): Promise<number> {
-    const due = await deps.db
-        .select({ diagramId: driftSettings.diagramId })
-        .from(driftSettings)
-        .where(
-            and(
-                eq(driftSettings.enabled, true),
-                isNotNull(driftSettings.connectionId),
-                or(isNull(driftSettings.nextRunAt), lte(driftSettings.nextRunAt, now))
-            )
-        );
     let ran = 0;
-    for (const { diagramId } of due) {
+    for (;;) {
+        const claimed = await claimDueChecks(deps.db, now);
+        if (claimed.length === 0) break;
+        ran += await runClaimed(deps, claimed, now);
+    }
+    return ran;
+}
+
+async function runClaimed(
+    deps: DriftDeps,
+    claimed: string[],
+    now: Date
+): Promise<number> {
+    let ran = 0;
+    for (const diagramId of claimed) {
         // one diagram failing must not stop the others
         try {
             const r = await runDriftCheck(deps, diagramId, 'schedule', now);
