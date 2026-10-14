@@ -10,11 +10,47 @@ export interface RemoteUser {
     isAdmin: boolean;
 }
 
+export type ProjectRole = 'editor' | 'viewer';
+
+/** A project the signed-in user can work in. Admins are 'owner' everywhere. */
+export interface MyProject {
+    id: string;
+    name: string;
+    description: string;
+    role: MemberRole;
+}
+
+export interface AdminUser {
+    id: string;
+    email: string;
+    isAdmin: boolean;
+    createdAt: string;
+    /** number of projects the user is assigned to */
+    projects: number;
+}
+
+export interface AdminProject {
+    id: string;
+    name: string;
+    description: string;
+    createdAt: string;
+    members: number;
+    diagrams: number;
+}
+
+export interface ProjectMember {
+    userId: string;
+    email: string;
+    role: ProjectRole;
+}
+
 export interface RemoteDiagramSummary {
     id: string;
     title: string;
     updatedAt: string;
     ownerId: string;
+    /** set when the diagram lives in a project; access then follows the project */
+    projectId?: string | null;
     role: MemberRole;
 }
 
@@ -223,6 +259,8 @@ export function createApi(
     }
 
     return {
+        setupStatus: () =>
+            request<{ needsSetup: boolean }>('GET', '/auth/setup-status'),
         register: (email: string, password: string) =>
             request<RemoteUser>('POST', '/auth/register', { email, password }),
         login: (email: string, password: string) =>
@@ -236,8 +274,60 @@ export function createApi(
             }),
 
         listDiagrams: () => request<RemoteDiagramSummary[]>('GET', '/diagrams'),
-        createDiagram: (title: string, content: Record<string, unknown>) =>
-            request<RemoteDiagram>('POST', '/diagrams', { title, content }),
+        createDiagram: (
+            title: string,
+            content: Record<string, unknown>,
+            projectId?: string
+        ) =>
+            request<RemoteDiagram>('POST', '/diagrams', {
+                title,
+                content,
+                ...(projectId ? { projectId } : {}),
+            }),
+        listProjects: () => request<MyProject[]>('GET', '/projects'),
+
+        // admin panel (admins only; everyone else gets a 404)
+        adminListUsers: () => request<AdminUser[]>('GET', '/admin/users'),
+        adminCreateUser: (body: {
+            email: string;
+            password: string;
+            isAdmin?: boolean;
+        }) => request<AdminUser>('POST', '/admin/users', body),
+        adminUpdateUser: (
+            id: string,
+            body: { password?: string; isAdmin?: boolean }
+        ) =>
+            request<{ id: string; isAdmin: boolean }>(
+                'PATCH',
+                `/admin/users/${id}`,
+                body
+            ),
+        adminDeleteUser: (id: string) =>
+            request<void>('DELETE', `/admin/users/${id}`),
+        adminListProjects: () =>
+            request<AdminProject[]>('GET', '/admin/projects'),
+        adminCreateProject: (body: { name: string; description?: string }) =>
+            request<AdminProject>('POST', '/admin/projects', body),
+        adminUpdateProject: (
+            id: string,
+            body: { name?: string; description?: string }
+        ) => request<AdminProject>('PATCH', `/admin/projects/${id}`, body),
+        adminDeleteProject: (id: string) =>
+            request<void>('DELETE', `/admin/projects/${id}`),
+        adminListProjectMembers: (id: string) =>
+            request<ProjectMember[]>('GET', `/admin/projects/${id}/members`),
+        adminSetProjectMember: (
+            id: string,
+            userId: string,
+            role: ProjectRole
+        ) =>
+            request<ProjectMember>(
+                'PUT',
+                `/admin/projects/${id}/members/${userId}`,
+                { role }
+            ),
+        adminRemoveProjectMember: (id: string, userId: string) =>
+            request<void>('DELETE', `/admin/projects/${id}/members/${userId}`),
         getDiagram: (id: string) =>
             request<RemoteDiagram>('GET', `/diagrams/${id}`),
         updateDiagram: (
@@ -431,7 +521,8 @@ export const errorMessage = (e: unknown): string => {
         const map: Record<string, string> = {
             invalid_credentials: 'Wrong email or password.',
             email_taken: 'That email is already registered.',
-            signup_disabled: 'Sign-ups are disabled on this server.',
+            signup_disabled:
+                'Accounts are created by an admin. Ask yours for access.',
             invalid_request: 'Please check the values you entered.',
             wrong_password: 'Current password is incorrect.',
             user_not_found: 'No account with that email exists yet.',
@@ -440,13 +531,19 @@ export const errorMessage = (e: unknown): string => {
             not_found: 'Not found.',
             encryption_not_configured:
                 'This server cannot store passwords (CONNECTION_KEY is not set).',
-            name_taken: 'You already saved a connection with that name.',
+            name_taken: 'That name is already in use.',
             invalid_schedule: 'That schedule is not a valid cron expression.',
             invalid_webhook: 'That webhook URL is not valid.',
             connection_required: 'Choose a saved connection to enable checks.',
             connection_not_found: 'That saved connection does not exist.',
             not_configured: 'Save the drift settings first.',
             already_running: 'A check is already running.',
+            last_admin: 'There must be at least one admin.',
+            cannot_delete_self: 'You cannot delete your own account.',
+            project_not_empty:
+                'This project still has diagrams. Delete them first.',
+            managed_by_project:
+                'Access is managed by the project. Ask an admin to change it.',
         };
         if (e.code === 'target_blocked' || e.code === 'connection_failed') {
             return e.detail ?? `Request failed (${e.code}).`;
