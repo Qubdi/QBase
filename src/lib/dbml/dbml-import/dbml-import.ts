@@ -574,45 +574,37 @@ export const importDBMLToDiagram = async (
                             table.indexes?.map((dbmlIndex) => {
                                 let indexColumns: string[];
 
+                                // "columns" can be a string in some DBML versions
+                                const rawColumns = dbmlIndex.columns as
+                                    | string
+                                    | (string | { value: string })[];
+
                                 // Handle both string and array formats
-                                if (typeof dbmlIndex.columns === 'string') {
+                                if (typeof rawColumns === 'string') {
                                     // Handle composite index case "(col1, col2)"
-                                    // @ts-expect-error "columns" can be a string in some DBML versions
-                                    if (dbmlIndex.columns.includes('(')) {
-                                        const columnsStr: string =
-                                            // @ts-expect-error "columns" can be a string in some DBML versions
-                                            dbmlIndex.columns.replace(
-                                                /[()]/g,
-                                                ''
-                                            );
-                                        indexColumns = columnsStr
+                                    if (rawColumns.includes('(')) {
+                                        indexColumns = rawColumns
+                                            .replace(/[()]/g, '')
                                             .split(',')
                                             .map((c) => c.trim());
                                     } else {
                                         // Single column as string
-
-                                        indexColumns = [
-                                            // @ts-expect-error "columns" can be a string in some DBML versions
-                                            dbmlIndex.columns.trim(),
-                                        ];
+                                        indexColumns = [rawColumns.trim()];
                                     }
                                 } else {
                                     // Handle array of columns
-                                    indexColumns = dbmlIndex.columns.map(
-                                        (col) => {
-                                            if (typeof col === 'string') {
-                                                // @ts-expect-error "columns" can be a string in some DBML versions
-                                                return col.trim();
-                                            } else if (
-                                                typeof col === 'object' &&
-                                                'value' in col
-                                            ) {
-                                                return col.value.trim();
-                                            } else {
-                                                return String(col).trim();
-                                            }
+                                    indexColumns = rawColumns.map((col) => {
+                                        if (typeof col === 'string') {
+                                            return col.trim();
+                                        } else if (
+                                            typeof col === 'object' &&
+                                            'value' in col
+                                        ) {
+                                            return col.value.trim();
+                                        } else {
+                                            return String(col).trim();
                                         }
-                                    );
+                                    });
                                 }
 
                                 // For PK indexes, only use the name if explicitly provided
