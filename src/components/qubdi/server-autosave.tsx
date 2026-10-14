@@ -3,7 +3,11 @@ import { AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { createAutosaver, type Autosaver } from '@/lib/qubdi/autosave';
+import {
+    AUTOSAVE_DELAY_MS,
+    createAutosaver,
+    type Autosaver,
+} from '@/lib/qubdi/autosave';
 import type { Diagram } from '@/lib/domain/diagram';
 import {
     resetSaveStatus,
@@ -12,8 +16,6 @@ import {
 } from '@/lib/qubdi/save-status-store';
 import { useDiagramAccess } from './diagram-access-context';
 import { useEditorDiagramId } from './workspace-context';
-
-const AUTOSAVE_DELAY_MS = 1500;
 
 /**
  * Saves the open diagram to its project on the server as it changes. Renders
@@ -86,6 +88,28 @@ export const ServerSaveStatus: React.FC = () => {
                         onClick={retry}
                     >
                         Retry
+                    </Button>
+                ) : null}
+            </span>
+        );
+    }
+
+    if (status === 'pending') {
+        return (
+            <span
+                className="flex items-center gap-1 text-xs text-muted-foreground"
+                role="status"
+            >
+                <span className="size-2 rounded-full bg-amber-500" />
+                Unsaved changes
+                {retry ? (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={retry}
+                    >
+                        Save now
                     </Button>
                 ) : null}
             </span>
