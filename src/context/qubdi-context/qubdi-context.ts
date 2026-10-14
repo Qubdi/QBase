@@ -1,0 +1,27 @@
+import { createContext } from 'react';
+import type { RemoteUser } from '@/lib/qubdi/api';
+import type { Diagram } from '@/lib/domain/diagram';
+
+export interface QubdiContext {
+    enabled: boolean;
+    /** undefined while the first /auth/me call is in flight */
+    user: RemoteUser | null | undefined;
+    login: (email: string, password: string) => Promise<void>;
+    register: (email: string, password: string) => Promise<void>;
+    logout: () => Promise<void>;
+    /** Uploads the local diagram; returns the server diagram id. */
+    syncDiagram: (diagram: Diagram) => Promise<string>;
+    remoteIdFor: (localId: string) => string | undefined;
+}
+
+const reject = () => Promise.reject(new Error('QubdiProvider missing'));
+
+export const qubdiContext = createContext<QubdiContext>({
+    enabled: false,
+    user: null,
+    login: reject,
+    register: reject,
+    logout: reject,
+    syncDiagram: reject,
+    remoteIdFor: () => undefined,
+});

@@ -1,0 +1,432 @@
+{
+  "database_name": "qubdidb_sample",
+  "version": "PostgreSQL 16.15",
+  "tables": [
+    {
+      "schema": "public",
+      "table": "customers",
+      "rows": 0,
+      "type": "BASE TABLE",
+      "comment": "People who buy things"
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "rows": 0,
+      "type": "BASE TABLE"
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "rows": 0,
+      "type": "BASE TABLE"
+    },
+    {
+      "schema": "shop",
+      "table": "paid_orders",
+      "type": "VIEW"
+    }
+  ],
+  "views": [
+    {
+      "schema": "shop",
+      "view_name": "paid_orders",
+      "view_definition": "Q1JFQVRFIFZJRVcgc2hvcC5wYWlkX29yZGVycyBBUyBTRUxFQ1QgaWQsCiAgICBjdXN0b21lcl9pZAogICBGUk9NIHNob3Aub3JkZXJzCiAgV0hFUkUgbm90ZSBJUyBOT1QgTlVMTA=="
+    }
+  ],
+  "columns": [
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "id",
+      "type": "bigint",
+      "ordinal_position": 1,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": true,
+      "is_array": false
+    },
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "email",
+      "type": "character varying",
+      "ordinal_position": 2,
+      "nullable": false,
+      "character_maximum_length": "120",
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": "Login email",
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "full_name",
+      "type": "text",
+      "ordinal_position": 3,
+      "nullable": true,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "balance",
+      "type": "numeric",
+      "ordinal_position": 4,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": {
+        "precision": 10,
+        "scale": 2
+      },
+      "default": "0",
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "tags",
+      "type": "integer",
+      "ordinal_position": 5,
+      "nullable": true,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": true
+    },
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "ordinal_position": 6,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": {
+        "precision": 3,
+        "scale": null
+      },
+      "default": "now()",
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "name": "order_id",
+      "type": "integer",
+      "ordinal_position": 1,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "name": "line_no",
+      "type": "smallint",
+      "ordinal_position": 2,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "name": "sku",
+      "type": "character varying",
+      "ordinal_position": 3,
+      "nullable": false,
+      "character_maximum_length": "40",
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "name": "qty",
+      "type": "integer",
+      "ordinal_position": 4,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": "1",
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "name": "id",
+      "type": "integer",
+      "ordinal_position": 1,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": "nextval('shop.orders_id_seq'::regclass)",
+      "collation": null,
+      "comment": null,
+      "is_identity": true,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "name": "customer_id",
+      "type": "bigint",
+      "ordinal_position": 2,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "name": "status",
+      "type": "shop.order_status",
+      "ordinal_position": 3,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": "'new'::shop.order_status",
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "name": "placed_at",
+      "type": "timestamp with time zone",
+      "ordinal_position": 4,
+      "nullable": false,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": "now()",
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "name": "note",
+      "type": "character",
+      "ordinal_position": 5,
+      "nullable": true,
+      "character_maximum_length": "8",
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "paid_orders",
+      "name": "id",
+      "type": "integer",
+      "ordinal_position": 1,
+      "nullable": true,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    },
+    {
+      "schema": "shop",
+      "table": "paid_orders",
+      "name": "customer_id",
+      "type": "bigint",
+      "ordinal_position": 2,
+      "nullable": true,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null,
+      "collation": null,
+      "comment": null,
+      "is_identity": false,
+      "is_array": false
+    }
+  ],
+  "pk_info": [
+    {
+      "schema": "public",
+      "table": "customers",
+      "column": "id",
+      "pk_def": "PRIMARY KEY (id)"
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "column": "order_id",
+      "pk_def": "PRIMARY KEY (order_id, line_no)"
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "column": "line_no",
+      "pk_def": "PRIMARY KEY (order_id, line_no)"
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "column": "id",
+      "pk_def": "PRIMARY KEY (id)"
+    }
+  ],
+  "fk_info": [
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "column": "order_id",
+      "foreign_key_name": "items_order_fk",
+      "reference_schema": "shop",
+      "reference_table": "orders",
+      "reference_column": "id",
+      "fk_def": "FOREIGN KEY (order_id) REFERENCES shop.orders(id) ON DELETE RESTRICT"
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "column": "customer_id",
+      "foreign_key_name": "orders_customer_fk",
+      "reference_schema": "public",
+      "reference_table": "customers",
+      "reference_column": "id",
+      "fk_def": "FOREIGN KEY (customer_id) REFERENCES customers(id) ON UPDATE SET NULL ON DELETE CASCADE"
+    }
+  ],
+  "indexes": [
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "customers_email_key",
+      "column": "email",
+      "index_type": "btree",
+      "unique": true,
+      "direction": "ASC",
+      "column_position": 1
+    },
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "customers_email_lower_idx",
+      "column": "lower(email::text)",
+      "index_type": "btree",
+      "unique": false,
+      "direction": "ASC",
+      "column_position": 1
+    },
+    {
+      "schema": "public",
+      "table": "customers",
+      "name": "customers_pkey",
+      "column": "id",
+      "index_type": "btree",
+      "unique": true,
+      "direction": "ASC",
+      "column_position": 1
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "name": "order_items_pkey",
+      "column": "order_id",
+      "index_type": "btree",
+      "unique": true,
+      "direction": "ASC",
+      "column_position": 1
+    },
+    {
+      "schema": "shop",
+      "table": "order_items",
+      "name": "order_items_pkey",
+      "column": "line_no",
+      "index_type": "btree",
+      "unique": true,
+      "direction": "ASC",
+      "column_position": 2
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "name": "orders_pkey",
+      "column": "id",
+      "index_type": "btree",
+      "unique": true,
+      "direction": "ASC",
+      "column_position": 1
+    },
+    {
+      "schema": "shop",
+      "table": "orders",
+      "name": "orders_placed_idx",
+      "column": "placed_at",
+      "index_type": "btree",
+      "unique": false,
+      "direction": "DESC",
+      "column_position": 1
+    }
+  ],
+  "custom_types": [
+    {
+      "schema": "shop",
+      "type": "order_status",
+      "kind": "enum",
+      "values": [
+        "new",
+        "paid",
+        "shipped"
+      ]
+    }
+  ]
+}

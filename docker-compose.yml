@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: qubdidb
+      POSTGRES_PASSWORD: qubdidb
+      POSTGRES_DB: qubdidb
+    ports:
+      - "5433:5432"
+    volumes:
+      - qubdidb-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qubdidb"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://qubdidb:qubdidb@db:5432/qubdidb
+      SESSION_SECRET: change-me
+      ALLOW_SIGNUP: "true"
+      PORT: "3001"
+      CORS_ORIGIN: http://localhost:8080
+    ports:
+      - "3001:3001"
+
+  ui:
+    build:
+      context: .
+      args:
+        VITE_QUBDI_BACKEND_URL: http://localhost:3001
+    depends_on:
+      - server
+    ports:
+      - "8080:80"
+
+  # Optional: only needed to run the SQL Server introspection tests.
+  #   docker compose --profile mssql up -d mssql
+  mssql:
+    profiles: ["mssql"]
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Qubdi_Strong_Pass1"
+    ports:
+      - "14333:1433"
+
+volumes:
+  qubdidb-data:
