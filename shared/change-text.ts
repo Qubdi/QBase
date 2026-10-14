@@ -3,7 +3,7 @@ import type {
     ChangeKind,
     FieldChange,
     PossibleRename,
-} from './reconcile';
+} from './reconcile.js';
 
 const show = (v: unknown): string =>
     v === null || v === undefined || v === '' ? 'none' : String(v);

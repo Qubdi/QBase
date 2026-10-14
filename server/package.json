@@ -5,9 +5,11 @@
     "type": "module",
     "scripts": {
         "dev": "tsx watch src/server.ts",
-        "start": "tsx src/server.ts",
+        "prestart": "npm run build",
+        "start": "node dist/server/src/server.js",
         "lint:diagram": "tsx src/cli/lint.ts",
-        "build": "tsc -p tsconfig.json --noEmit",
+        "build": "tsc -p tsconfig.build.json && node scripts/copy-migrations.mjs",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
         "db:generate": "drizzle-kit generate",
         "test": "vitest run",
         "test:watch": "vitest"

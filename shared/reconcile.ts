@@ -4,7 +4,7 @@ import type {
     RelationshipDesc,
     SchemaDesc,
     TableDesc,
-} from './schema-desc';
+} from './schema-desc.js';
 
 // reconcile(diagram, database) answers: what would have to change in the
 // diagram for it to match the database? It is pure and has no dependencies, so

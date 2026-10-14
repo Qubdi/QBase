@@ -39,7 +39,8 @@ cd server
 npm install
 CONNECTION_KEY="a-long-random-secret" \
 INTROSPECT_ALLOW_HOSTS="" \
-npm start                      # http://localhost:3001
+npm start                      # compiles to dist/, then runs it: http://localhost:3001
+                               # (npm run dev restarts on file changes instead)
 
 # 3. editor (from the repository root)
 npm install
