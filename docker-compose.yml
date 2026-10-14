@@ -37,8 +37,10 @@ services:
     build:
       context: .
       args:
-        VITE_QUBDI_BACKEND_URL: ${VITE_QUBDI_BACKEND_URL:-http://localhost:3001}
         VITE_HOST_URL: ${VITE_HOST_URL:-}
+    environment:
+      # read by the browser at run time through /config.js
+      QUBDI_BACKEND_URL: ${QUBDI_BACKEND_URL:-http://localhost:3001}
     depends_on:
       - server
     ports:
