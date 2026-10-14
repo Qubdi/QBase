@@ -18,7 +18,9 @@ import {
     introspectRoutes,
     type IntrospectDeps,
 } from './introspect/routes.js';
+import { adminRoutes } from './admin/routes.js';
 import { diagramRoutes } from './diagrams/routes.js';
+import { projectRoutes } from './projects/routes.js';
 import { memberRoutes } from './members/routes.js';
 import { publicShareRoutes, shareManagementRoutes } from './share/routes.js';
 
@@ -86,6 +88,8 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.get('/health', async () => ({ ok: true }));
 
     app.register(authRoutes(db, config), { prefix: '/auth' });
+    app.register(adminRoutes(db), { prefix: '/admin' });
+    app.register(projectRoutes(db), { prefix: '/projects' });
     app.register(diagramRoutes(db), { prefix: '/diagrams' });
     app.register(memberRoutes(db), { prefix: '/diagrams' });
     app.register(introspectRoutes({ db, config, ...introspect }), {
