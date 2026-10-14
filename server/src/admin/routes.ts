@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, ne, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, lte, ne, or, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -13,6 +13,7 @@ import {
 } from '../lib/paging.js';
 import { slugFor } from '../projects/slug.js';
 import {
+    auditLog,
     diagrams,
     projectMembers,
     projects,
@@ -66,6 +67,14 @@ const projectPatchBody = z
 
 const roleBody = z.object({ role: z.enum(['editor', 'viewer']) });
 
+const auditQuery = z.object({
+    action: z.string().trim().max(60).optional(),
+    userId: z.string().uuid().optional(),
+    diagramId: z.string().uuid().optional(),
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional(),
+});
+
 /** Everything under /admin is admin-only; non-admins get a 404, not a 403. */
 export const adminRoutes =
     (db: Db): FastifyPluginAsync =>
@@ -77,6 +86,41 @@ export const adminRoutes =
             if (!req.user.isAdmin) {
                 return reply.code(404).send({ error: 'not_found' });
             }
+        });
+
+        // ---- audit log ----
+
+        // newest first; filter with ?action=&userId=&diagramId=&from=&to=
+        app.get('/audit', async (req) => {
+            const paging = pagingQuery.parse(req.query);
+            const f = auditQuery.parse(req.query);
+            const where = and(
+                f.action ? eq(auditLog.action, f.action) : undefined,
+                f.userId ? eq(auditLog.userId, f.userId) : undefined,
+                f.diagramId ? eq(auditLog.diagramId, f.diagramId) : undefined,
+                f.from ? gte(auditLog.at, f.from) : undefined,
+                f.to ? lte(auditLog.at, f.to) : undefined
+            );
+            const [{ value: total }] = await db
+                .select({ value: count() })
+                .from(auditLog)
+                .where(where);
+            const items = await db
+                .select({
+                    id: auditLog.id,
+                    at: auditLog.at,
+                    action: auditLog.action,
+                    userId: auditLog.userId,
+                    userEmail: users.email,
+                    diagramId: auditLog.diagramId,
+                })
+                .from(auditLog)
+                .leftJoin(users, eq(users.id, auditLog.userId))
+                .where(where)
+                .orderBy(desc(auditLog.at), desc(auditLog.id))
+                .limit(paging.limit)
+                .offset(offsetOf(paging));
+            return pageOf(items, total, paging);
         });
 
         // ---- users ----

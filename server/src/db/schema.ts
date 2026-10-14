@@ -135,14 +135,23 @@ export const snapshots = pgTable(
     ]
 );
 
-export const auditLog = pgTable('audit_log', {
-    id: serial('id').primaryKey(),
-    // no FKs: audit rows must outlive deleted users and diagrams
-    userId: uuid('user_id'),
-    action: text('action').notNull(),
-    diagramId: uuid('diagram_id'),
-    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const auditLog = pgTable(
+    'audit_log',
+    {
+        id: serial('id').primaryKey(),
+        // no FKs: audit rows must outlive deleted users and diagrams
+        userId: uuid('user_id'),
+        action: text('action').notNull(),
+        diagramId: uuid('diagram_id'),
+        at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [
+        // newest-first reads and the retention delete
+        index('audit_log_at_idx').on(t.at),
+        index('audit_log_diagram_at_idx').on(t.diagramId, t.at),
+        index('audit_log_user_at_idx').on(t.userId, t.at),
+    ]
+);
 
 export const shareLinks = pgTable('share_links', {
     id: uuid('id').primaryKey().defaultRandom(),
