@@ -3,6 +3,8 @@ import { AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
+import { api, ApiError } from '@/lib/qubdi/api';
+import { setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 import {
     AUTOSAVE_DELAY_MS,
     createAutosaver,
@@ -36,6 +38,9 @@ export const ServerAutosave: React.FC = () => {
     const revisionOf = useRef(createRevisionTracker()).current;
     const syncRef = useRef(syncDiagram);
     syncRef.current = syncDiagram;
+    // the saver outlives renders: it reads the latest access from here
+    const accessRef = useRef(access);
+    accessRef.current = access;
     // set while the page is closing, so the final save survives the unload
     const leavingRef = useRef(false);
 
@@ -52,8 +57,28 @@ export const ServerAutosave: React.FC = () => {
                     keepalive: leavingRef.current,
                 });
             },
-            onStatus: (status) =>
-                setSaveStatus(status, () => void saver.flush()),
+            onStatus: (status, error) => {
+                const retry = () => void saver.flush();
+                const current = accessRef.current;
+                const conflict =
+                    error instanceof ApiError &&
+                    error.status === 409 &&
+                    current.status === 'editor';
+                // "Overwrite": take the server's current version as the base,
+                // so the next save goes on top of it
+                const overwrite =
+                    conflict && current.status === 'editor'
+                        ? () =>
+                              void api
+                                  .getDiagram(current.remoteId)
+                                  .then((d) => {
+                                      setBaseUpdatedAt(diagramId, d.updatedAt);
+                                      return saver.flush();
+                                  })
+                                  .catch(() => undefined)
+                        : null;
+                setSaveStatus(status, retry, overwrite);
+            },
         });
         saverRef.current = saver;
         const flushOnLeave = () => {
@@ -93,10 +118,30 @@ export const ServerAutosave: React.FC = () => {
 export const ServerSaveStatus: React.FC = () => {
     const { enabled } = useQubdi();
     const { access } = useDiagramAccess();
-    const { status, retry } = useSaveStatus();
+    const { status, retry, overwrite } = useSaveStatus();
 
     if (!enabled || access.status !== 'editor' || status === 'idle') {
         return null;
+    }
+
+    if (status === 'error' && overwrite) {
+        return (
+            <span
+                className="flex items-center gap-1 text-xs text-destructive"
+                role="alert"
+            >
+                <AlertTriangle className="size-3.5" />
+                Someone else saved a newer version
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={overwrite}
+                >
+                    Overwrite with mine
+                </Button>
+            </span>
+        );
     }
 
     if (status === 'error') {

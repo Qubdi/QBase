@@ -13,6 +13,7 @@ import {
     setProjectId,
     setRemoteId,
 } from '@/lib/qubdi/remote-map';
+import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 import { resetAdminLanding } from '@/lib/qubdi/admin-landing';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/lib/domain/diagram';
@@ -55,11 +56,21 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
             const remoteId = getRemoteId(diagram.id);
             if (remoteId) {
                 try {
+                    // A copy that predates conflict checking has no base yet:
+                    // adopt the server's current one, once.
+                    const base =
+                        getBaseUpdatedAt(diagram.id) ??
+                        (await api.getDiagram(remoteId)).updatedAt;
                     const updated = await api.updateDiagram(
                         remoteId,
-                        { title: diagram.name, content },
+                        {
+                            title: diagram.name,
+                            content,
+                            baseUpdatedAt: base,
+                        },
                         options
                     );
+                    setBaseUpdatedAt(diagram.id, updated.updatedAt);
                     return updated.id;
                 } catch (e) {
                     // deleted or access revoked on the server: fall through and re-create
@@ -75,6 +86,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                 projectId
             );
             setRemoteId(diagram.id, created.id);
+            setBaseUpdatedAt(diagram.id, created.updatedAt);
             setProjectId(diagram.id, projectId);
             return created.id;
         },

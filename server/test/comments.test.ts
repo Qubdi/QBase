@@ -7,6 +7,7 @@ import {
     projectFor,
     registerUser,
     type TestCtx,
+    withBase,
     type TestUser,
     grant,
 } from './helpers.js';
@@ -39,12 +40,12 @@ describe('comments', () => {
     let id: string;
     let token: string;
 
-    const setContent = (c: object, title = 'Shop') =>
+    const setContent = async (c: object, title = 'Shop') =>
         ctx.app.inject({
             method: 'PUT',
             url: `/diagrams/${id}`,
             headers: as(owner),
-            payload: { title, content: c },
+            payload: await withBase(ctx.app, owner, id, { title, content: c }),
         });
     const publish = async () =>
         (

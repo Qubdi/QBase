@@ -8,6 +8,7 @@ import {
     registerUser,
     sampleContent,
     type TestCtx,
+    withBase,
     type TestUser,
     grant,
 } from './helpers.js';
@@ -29,12 +30,12 @@ describe('published snapshots', () => {
         });
     const get = (u: TestUser, diagramId = id) =>
         ctx.app.inject({ url: `/diagrams/${diagramId}`, headers: as(u) });
-    const edit = (u: TestUser, patch: object, diagramId = id) =>
+    const edit = async (u: TestUser, patch: object, diagramId = id) =>
         ctx.app.inject({
             method: 'PUT',
             url: `/diagrams/${diagramId}`,
             headers: as(u),
-            payload: patch,
+            payload: await withBase(ctx.app, u, diagramId, patch),
         });
 
     beforeAll(async () => {

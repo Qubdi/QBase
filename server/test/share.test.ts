@@ -8,6 +8,7 @@ import {
     registerUser,
     sampleContent,
     type TestCtx,
+    withBase,
     type TestUser,
     grant,
 } from './helpers.js';
@@ -209,10 +210,10 @@ describe('share links', () => {
                 method: 'PUT',
                 url: `/diagrams/${id}`,
                 headers: as(owner),
-                payload: {
+                payload: await withBase(ctx.app, owner, id, {
                     title: 'Draft title',
                     content: { ...sampleContent, name: 'Draft' },
-                },
+                }),
             });
             const res = await open(token);
             expect(res.statusCode).toBe(200);

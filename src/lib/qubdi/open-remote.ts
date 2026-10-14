@@ -1,5 +1,6 @@
 import { diagramSchema, type Diagram } from '@/lib/domain/diagram';
 import { findLocalId, setProjectId, setRemoteId } from './remote-map';
+import { setBaseUpdatedAt } from './remote-version';
 export class InvalidServerDiagramError extends Error {
     constructor() {
         super('The server copy of this diagram could not be read.');
@@ -48,9 +49,11 @@ export interface EnsureLocalCopyArgs {
     projectId: string;
     /** ids of the diagrams already stored in this browser */
     localIds: ReadonlySet<string>;
-    fetchRemote: (
-        remoteId: string
-    ) => Promise<{ title: string; content: Record<string, unknown> | null }>;
+    fetchRemote: (remoteId: string) => Promise<{
+        title: string;
+        content: Record<string, unknown> | null;
+        updatedAt?: string;
+    }>;
     addDiagram: (diagram: Diagram) => Promise<void>;
     newId: () => string;
 }
@@ -77,5 +80,6 @@ export async function ensureLocalCopy(
     await args.addDiagram(diagram);
     setRemoteId(localId, args.remoteId);
     setProjectId(localId, args.projectId);
+    if (remote.updatedAt) setBaseUpdatedAt(localId, remote.updatedAt);
     return { localId, created: true };
 }

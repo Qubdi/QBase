@@ -1,3 +1,5 @@
+import { clearBaseUpdatedAt } from './remote-version';
+
 // Remembers which server diagram a local (Dexie) diagram is synced to.
 // Per-browser convenience only; the server stays the source of truth.
 const KEY = 'qubdidb.remote-map';
@@ -28,6 +30,7 @@ export const setRemoteId = (localId: string, remoteId: string) => {
 };
 
 export const clearRemoteId = (localId: string) => {
+    clearBaseUpdatedAt(localId);
     const map = read();
     delete map[localId];
     try {

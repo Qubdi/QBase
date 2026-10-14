@@ -152,6 +152,24 @@ export async function grant(
 
 export const as = (user: TestUser) => ({ cookie: user.cookie });
 
+/**
+ * A content save must say which copy it is based on. This adds the diagram's
+ * current `updatedAt`, as the editor does, for tests that just want to save.
+ */
+export async function withBase<T extends object>(
+    app: FastifyInstance,
+    user: TestUser,
+    id: string,
+    payload: T
+): Promise<T & { baseUpdatedAt?: string }> {
+    if (!('content' in payload)) return payload;
+    const current = await app.inject({
+        url: `/diagrams/${id}`,
+        headers: as(user),
+    });
+    return { ...payload, baseUpdatedAt: current.json().updatedAt };
+}
+
 export const sampleContent = {
     id: 'local-1',
     name: 'Shop',

@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -51,6 +51,12 @@ const updateBody = z
         title: z.string().trim().min(1).max(200).optional(),
         content: diagramContent.optional(),
         autoPublish: z.boolean().optional(),
+        /**
+         * The `updatedAt` of the copy this edit is based on. Saving content
+         * needs it, so a save made on top of someone else's newer one is
+         * refused instead of silently replacing it.
+         */
+        baseUpdatedAt: z.coerce.date().optional(),
     })
     .refine(
         (b) =>
@@ -58,7 +64,11 @@ const updateBody = z
             b.content !== undefined ||
             b.autoPublish !== undefined,
         { message: 'nothing to update' }
-    );
+    )
+    .refine((b) => b.content === undefined || b.baseUpdatedAt !== undefined, {
+        message: 'baseUpdatedAt is required when saving content',
+        path: ['baseUpdatedAt'],
+    });
 
 const publishBody = z
     .object({ note: z.string().trim().max(500).optional() })
@@ -182,12 +192,35 @@ export const diagramRoutes =
             if (!canWrite(role)) {
                 return reply.code(403).send({ error: 'forbidden' });
             }
-            const body = updateBody.parse(req.body);
+            const { baseUpdatedAt, ...changes } = updateBody.parse(req.body);
+            // the compare and the write are one statement, so two saves based
+            // on the same copy cannot both win. Times are compared to the
+            // millisecond: that is all JSON carries.
             const [d] = await db
                 .update(diagrams)
-                .set({ ...body, updatedAt: new Date() })
-                .where(eq(diagrams.id, id))
+                .set({ ...changes, updatedAt: new Date() })
+                .where(
+                    and(
+                        eq(diagrams.id, id),
+                        changes.content !== undefined && baseUpdatedAt
+                            ? sql`date_trunc('milliseconds', ${diagrams.updatedAt}) = ${baseUpdatedAt}`
+                            : undefined
+                    )
+                )
                 .returning();
+            if (!d) {
+                // the diagram exists (checked above), so the base was stale
+                const [current] = await db
+                    .select({ updatedAt: diagrams.updatedAt })
+                    .from(diagrams)
+                    .where(eq(diagrams.id, id));
+                return reply.code(409).send({
+                    error: 'conflict',
+                    message:
+                        'Someone else saved this diagram after the copy you started from.',
+                    updatedAt: current?.updatedAt ?? null,
+                });
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'diagram.update',

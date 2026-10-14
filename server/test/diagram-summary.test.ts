@@ -7,6 +7,7 @@ import {
     projectFor,
     registerUser,
     type TestCtx,
+    withBase,
     type TestUser,
 } from './helpers.js';
 
@@ -78,12 +79,12 @@ describe('diagram list summary', () => {
             })
         ).json().id as string;
 
-    const put = (who: TestUser, id: string, content: object) =>
+    const put = async (who: TestUser, id: string, content: object) =>
         ctx.app.inject({
             method: 'PUT',
             url: `/diagrams/${id}`,
             headers: as(who),
-            payload: { content },
+            payload: await withBase(ctx.app, who, id, { content }),
         });
 
     beforeAll(async () => {

@@ -64,6 +64,21 @@ describe('ServerSaveStatus', () => {
         expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
     });
 
+    it('says when someone else saved first and offers to overwrite', () => {
+        const overwrite = vi.fn();
+        show();
+        act(() => setSaveStatus('error', vi.fn(), overwrite));
+        expect(screen.getByRole('alert').textContent).toContain(
+            'Someone else saved a newer version'
+        );
+        // a plain failure is not the same thing
+        expect(screen.queryByText(/Not saved/)).toBeNull();
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Overwrite with mine' })
+        );
+        expect(overwrite).toHaveBeenCalledTimes(1);
+    });
+
     it('does not offer Save now once the save has started', () => {
         show();
         act(() => setSaveStatus('saving', vi.fn()));

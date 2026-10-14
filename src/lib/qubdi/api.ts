@@ -381,6 +381,8 @@ export function createApi(
                 title?: string;
                 content?: Record<string, unknown>;
                 autoPublish?: boolean;
+                /** `updatedAt` of the server copy the content is based on */
+                baseUpdatedAt?: string;
             },
             options?: RequestOptions
         ) => request<RemoteDiagram>('PUT', `/diagrams/${id}`, patch, options),

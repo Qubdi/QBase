@@ -7,6 +7,7 @@ import {
     registerUser,
     sampleContent,
     type TestCtx,
+    withBase,
     type TestUser,
     grant,
     projectFor,
@@ -202,7 +203,10 @@ describe('diagrams and permissions', () => {
             method: 'PUT',
             url: `/diagrams/${diagramId}`,
             headers: as(editor),
-            payload: { title: 'Edited', content: { ...sampleContent, name: 'X' } },
+            payload: await withBase(ctx.app, editor, diagramId, {
+                title: 'Edited',
+                content: { ...sampleContent, name: 'X' },
+            }),
         });
         expect(put.statusCode).toBe(200);
         expect(put.json().title).toBe('Edited');
@@ -315,5 +319,100 @@ describe('request body limits', () => {
         } finally {
             await ctx.close();
         }
+    });
+});
+
+describe('saving content on top of another save', () => {
+    let ctx: TestCtx;
+    let a: TestUser;
+    let b: TestUser;
+    let id: string;
+
+    const save = (
+        who: TestUser,
+        content: object,
+        baseUpdatedAt?: string | null
+    ) =>
+        ctx.app.inject({
+            method: 'PUT',
+            url: `/diagrams/${id}`,
+            headers: as(who),
+            payload: {
+                content,
+                ...(baseUpdatedAt === undefined ? {} : { baseUpdatedAt }),
+            },
+        });
+    const current = async (who: TestUser): Promise<string> =>
+        (
+            await ctx.app.inject({
+                url: `/diagrams/${id}`,
+                headers: as(who),
+            })
+        ).json().updatedAt;
+
+    beforeAll(async () => {
+        ctx = await createTestApp();
+        a = await registerUser(ctx.app, 'a@example.com');
+        b = await registerUser(ctx.app, 'b@example.com');
+        id = await createDiagram(ctx.app, a);
+        await grant(ctx.app, b, 'editor');
+    });
+    afterAll(() => ctx.close());
+
+    it('needs the base when content is saved', async () => {
+        const res = await save(a, { ...sampleContent, name: 'no base' });
+        expect(res.statusCode).toBe(400);
+    });
+
+    it('accepts a save based on the current copy and hands back the new updatedAt', async () => {
+        const base = await current(a);
+        const res = await save(a, { ...sampleContent, name: 'one' }, base);
+        expect(res.statusCode).toBe(200);
+        expect(res.json().content.name).toBe('one');
+        expect(res.json().updatedAt).not.toBe(base);
+        expect(await current(a)).toBe(res.json().updatedAt);
+    });
+
+    it('refuses a save based on an older copy and leaves the newer one alone', async () => {
+        const base = await current(a);
+        // b saves first, from the same starting point
+        expect(
+            (await save(b, { ...sampleContent, name: 'from b' }, base)).statusCode
+        ).toBe(200);
+        // a still holds the old copy
+        const stale = await save(a, { ...sampleContent, name: 'from a' }, base);
+        expect(stale.statusCode).toBe(409);
+        expect(stale.json()).toMatchObject({ error: 'conflict' });
+        expect(stale.json().updatedAt).toBe(await current(a));
+        const stored = await ctx.app.inject({
+            url: `/diagrams/${id}`,
+            headers: as(a),
+        });
+        expect(stored.json().content.name).toBe('from b');
+    });
+
+    it('lets the loser overwrite on purpose by saving on top of the latest copy', async () => {
+        const res = await save(a, { ...sampleContent, name: 'a again' }, await current(a));
+        expect(res.statusCode).toBe(200);
+        expect(res.json().content.name).toBe('a again');
+    });
+
+    it('lets only one of two simultaneous saves from the same copy win', async () => {
+        const base = await current(a);
+        const [r1, r2] = await Promise.all([
+            save(a, { ...sampleContent, name: 'race a' }, base),
+            save(b, { ...sampleContent, name: 'race b' }, base),
+        ]);
+        expect([r1.statusCode, r2.statusCode].sort()).toEqual([200, 409]);
+    });
+
+    it('does not ask for a base when only the title changes', async () => {
+        const res = await ctx.app.inject({
+            method: 'PUT',
+            url: `/diagrams/${id}`,
+            headers: as(a),
+            payload: { title: 'renamed' },
+        });
+        expect(res.statusCode).toBe(200);
     });
 });

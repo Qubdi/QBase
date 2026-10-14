@@ -11,6 +11,7 @@ import {
     createTestApp,
     registerUser,
     type TestCtx,
+    withBase,
     type TestUser,
     grant,
     projectFor,
@@ -36,8 +37,8 @@ describe('lint API', () => {
     let id: string;
 
     const get = (u: TestUser, url: string) => ctx.app.inject({ url, headers: as(u) });
-    const setContent = (c: object) =>
-        ctx.app.inject({ method: 'PUT', url: `/diagrams/${id}`, headers: as(owner), payload: { content: c } });
+    const setContent = async (c: object) =>
+        ctx.app.inject({ method: 'PUT', url: `/diagrams/${id}`, headers: as(owner), payload: await withBase(ctx.app, owner, id, { content: c }) });
 
     beforeAll(async () => {
         ctx = await createTestApp();

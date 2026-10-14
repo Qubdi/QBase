@@ -20,6 +20,7 @@ import {
     createTestApp,
     registerUser,
     type TestCtx,
+    withBase,
     type TestUser,
     grant,
     projectFor,
@@ -370,7 +371,7 @@ describe('drift detection', () => {
             const content = clone(diagramFixture.content) as { tables: Array<{ id: string; name: string }> };
             const customers = content.tables.find((t) => t.name === 'customers')!;
             customers.name = 'clients';
-            await ctx.app.inject({ method: 'PUT', url: `/diagrams/${diagramId}`, headers: as(owner), payload: { content } });
+            await ctx.app.inject({ method: 'PUT', url: `/diagrams/${diagramId}`, headers: as(owner), payload: await withBase(ctx.app, owner, diagramId, { content }) });
             try {
                 const without = (await check()).json();
                 expect(without.status).toBe('drifted');
@@ -378,7 +379,7 @@ describe('drift detection', () => {
                 const withKeys = (await check()).json();
                 expect(withKeys.status).toBe('clean');
             } finally {
-                await ctx.app.inject({ method: 'PUT', url: `/diagrams/${diagramId}`, headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } });
+                await ctx.app.inject({ method: 'PUT', url: `/diagrams/${diagramId}`, headers: as(owner), payload: await withBase(ctx.app, owner, diagramId, { ...diagramFixture, projectId: await projectFor(ctx.app) }) });
             }
         });
     });
