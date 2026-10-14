@@ -1,4 +1,7 @@
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+/** How long the editor waits after the last change before saving to the server. */
+export const AUTOSAVE_DELAY_MS = 10_000;
+
+export type SaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
 export interface AutosaverOptions<T> {
     /** How long edits must pause before they are sent. */
@@ -30,6 +33,7 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let running: Promise<void> | null = null;
     let disposed = false;
+    let pending = false;
 
     const clear = () => {
         if (timer !== undefined) clearTimeout(timer);
@@ -40,6 +44,7 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
         if (running) return running;
         if (!latest || latest.key === baseline) return Promise.resolve();
         const attempt = latest;
+        pending = false;
         onStatus('saving');
         running = save(attempt.value)
             .then(
@@ -73,9 +78,19 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
             }
             if (key === baseline) {
                 clear();
+                // edits that were undone: nothing is waiting any more
+                if (pending) {
+                    pending = false;
+                    onStatus('saved');
+                }
                 return;
             }
             clear();
+            // tell the user there is something to save while we wait
+            if (!pending) {
+                pending = true;
+                onStatus('pending');
+            }
             timer = setTimeout(() => void run(), delayMs);
         },
         flush() {

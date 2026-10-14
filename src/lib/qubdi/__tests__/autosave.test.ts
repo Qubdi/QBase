@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createAutosaver, type SaveStatus } from '../autosave';
+import {
+    AUTOSAVE_DELAY_MS,
+    createAutosaver,
+    type SaveStatus,
+} from '../autosave';
 
 const setup = (
     save: (v: { n: number }) => Promise<void> = () => Promise.resolve()
@@ -37,7 +41,7 @@ describe('createAutosaver', () => {
         expect(saved).toEqual([]);
         await vi.advanceTimersByTimeAsync(1);
         expect(saved).toEqual([2]);
-        expect(statuses).toEqual(['saving', 'saved']);
+        expect(statuses).toEqual(['pending', 'saving', 'saved']);
     });
 
     it('sends only the latest value after a burst of edits', async () => {
@@ -142,5 +146,64 @@ describe('createAutosaver', () => {
         saver.update({ n: 3 });
         await vi.advanceTimersByTimeAsync(5000);
         expect(saved).toEqual([]);
+    });
+
+    describe('waiting to save', () => {
+        it('waits ten seconds by default', () => {
+            expect(AUTOSAVE_DELAY_MS).toBe(10_000);
+        });
+
+        it('says changes are pending as soon as there is something to save', async () => {
+            const { saver, statuses } = setup();
+            saver.update({ n: 1 });
+            expect(statuses).toEqual([]); // the baseline is not a change
+            saver.update({ n: 2 });
+            expect(statuses).toEqual(['pending']);
+        });
+
+        it('says it once for a burst of edits, not once per edit', async () => {
+            const { saver, statuses } = setup();
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            saver.update({ n: 3 });
+            saver.update({ n: 4 });
+            expect(statuses.filter((s) => s === 'pending')).toHaveLength(1);
+        });
+
+        it('goes back to saved when the edits were undone before saving', async () => {
+            const { saver, saved, statuses } = setup();
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            saver.update({ n: 1 });
+            expect(statuses).toEqual(['pending', 'saved']);
+            await vi.advanceTimersByTimeAsync(5000);
+            expect(saved).toEqual([]);
+        });
+
+        it('shows pending again for the next edit after a save', async () => {
+            const { saver, statuses } = setup();
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            await vi.advanceTimersByTimeAsync(1000);
+            saver.update({ n: 3 });
+            expect(statuses).toEqual(['pending', 'saving', 'saved', 'pending']);
+        });
+
+        it('shows saving, not pending, once the request has started', async () => {
+            const { saver, statuses } = setup();
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(statuses.slice(-2)).toEqual(['saving', 'saved']);
+        });
+
+        it('can be saved right away instead of waiting', async () => {
+            const { saver, saved, statuses } = setup();
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            await saver.flush();
+            expect(saved).toEqual([2]);
+            expect(statuses).toEqual(['pending', 'saving', 'saved']);
+        });
     });
 });
