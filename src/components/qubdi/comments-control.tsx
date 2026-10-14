@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Eye, EyeOff, MessageSquare, X } from 'lucide-react';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, errorMessage } from '@/lib/qubdi/api';
@@ -143,29 +144,22 @@ export const CommentsControl: React.FC = () => {
                             });
                         }}
                     >
-                        <select
+                        <OptionSelect
                             aria-label="Comment target"
-                            className="h-9 rounded-md border border-input bg-background px-2"
+                            className="w-full"
+                            placeholder="Choose a table, field or relationship…"
                             value={pick}
-                            onChange={(e) => setPick(e.target.value)}
-                            required
-                        >
-                            <option value="">
-                                Choose a table, field or relationship…
-                            </option>
-                            {options.map((o) => (
-                                <option
-                                    key={targetKey(o.type, o.id)}
-                                    value={targetKey(o.type, o.id)}
-                                >
-                                    {o.type === 'table'
+                            onValueChange={setPick}
+                            options={options.map((o) => ({
+                                value: targetKey(o.type, o.id),
+                                label:
+                                    o.type === 'table'
                                         ? `Table · ${o.label}`
                                         : o.type === 'field'
                                           ? `Field · ${o.label}`
-                                          : `Relationship · ${o.label}`}
-                                </option>
-                            ))}
-                        </select>
+                                          : `Relationship · ${o.label}`,
+                            }))}
+                        />
                         <textarea
                             aria-label="New comment"
                             className="min-h-16 rounded-md border border-input bg-background p-2"
