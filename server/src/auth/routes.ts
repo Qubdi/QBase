@@ -92,6 +92,9 @@ export const authRoutes =
             ) {
                 return reply.code(401).send({ error: 'invalid_credentials' });
             }
+            if (!user.isActive) {
+                return reply.code(403).send({ error: 'account_disabled' });
+            }
             await startSession(reply, user.id);
             return { id: user.id, email: user.email, isAdmin: user.isAdmin };
         });
