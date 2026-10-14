@@ -348,7 +348,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
         const tableClassName = useMemo(
             () =>
                 cn(
-                    'flex w-full flex-col overflow-hidden rounded-xl border bg-card shadow-md transition-[transform,box-shadow] duration-300 hover:shadow-lg',
+                    'flex w-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm',
                     table.isView ? 'border-dashed' : '',
                     selected || isTarget || isPartOfCreatingRelationship
                         ? 'border-primary ring-2 ring-primary/25'
