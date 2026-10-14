@@ -119,7 +119,7 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         }),
         { prefix: '/diagrams' }
     );
-    app.register(lintRoutes(db));
+    app.register(lintRoutes(db, config));
     app.register(commentRoutes(db), { prefix: '/diagrams' });
     app.register(shareManagementRoutes(db), { prefix: '/diagrams' });
     app.register(publicShareRoutes(db, config), { prefix: '/s' });

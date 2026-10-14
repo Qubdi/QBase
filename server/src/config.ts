@@ -11,6 +11,10 @@ export interface Config {
      * true, a hop count, or a list of addresses. False = use the socket's.
      */
     trustProxy: boolean | number | string[];
+    /** lint calls a minute per user (linting runs synchronously) */
+    lintRateLimit: number;
+    /** connections to customers' databases a minute per user (introspection, drift checks) */
+    outboundRateLimit: number;
     /** largest request body on ordinary routes, in bytes */
     bodyLimit: number;
     /** largest request body on the routes that carry a whole diagram, in bytes */
@@ -54,6 +58,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         port: Number(env.PORT ?? 3001),
         corsOrigin: env.CORS_ORIGIN ?? null,
         sessionDays: Number(env.SESSION_DAYS ?? 30),
+        lintRateLimit: Number(env.LINT_RATE_LIMIT ?? 30),
+        outboundRateLimit: Number(env.OUTBOUND_RATE_LIMIT ?? 20),
         bodyLimit: Number(env.BODY_LIMIT_KB ?? 1024) * 1024,
         diagramBodyLimit: Number(env.DIAGRAM_BODY_LIMIT_MB ?? 50) * 1024 * 1024,
         auditRetentionDays: Number(env.AUDIT_RETENTION_DAYS ?? 365),

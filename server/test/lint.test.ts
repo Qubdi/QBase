@@ -319,3 +319,44 @@ describe('lint CLI', () => {
         });
     });
 });
+
+describe('lint route limits', () => {
+    const post = (ctx: TestCtx, user: TestUser, diagram: object) =>
+        ctx.app.inject({
+            method: 'POST',
+            url: '/lint',
+            headers: as(user),
+            payload: { diagram },
+        });
+
+    it('limits /lint per user, not per address', async () => {
+        const ctx = await createTestApp({ lintRateLimit: 2 });
+        try {
+            const a = await registerUser(ctx.app, 'a@example.com');
+            const b = await registerUser(ctx.app, 'b@example.com');
+            const codes = [];
+            for (let i = 0; i < 3; i++) {
+                codes.push((await post(ctx, a, { tables: [] })).statusCode);
+            }
+            expect(codes).toEqual([200, 200, 429]);
+            // another user from the same address has their own allowance
+            expect((await post(ctx, b, { tables: [] })).statusCode).toBe(200);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('refuses a diagram over the size cap', async () => {
+        const ctx = await createTestApp({ bodyLimit: 1024 * 1024 });
+        try {
+            const user = await registerUser(ctx.app, 'a@example.com');
+            const res = await post(ctx, user, {
+                tables: [],
+                filler: 'x'.repeat(6 * 1024 * 1024),
+            });
+            expect(res.statusCode).toBe(413);
+        } finally {
+            await ctx.close();
+        }
+    });
+});
