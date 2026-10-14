@@ -67,6 +67,36 @@ const projectPatchBody = z
 
 const roleBody = z.object({ role: z.enum(['editor', 'viewer']) });
 
+/** Same number on every call: all changes to who is an admin queue behind it. */
+export const ADMIN_SET_LOCK = 748_201;
+
+/**
+ * Runs `fn` in a transaction that holds the admin-set lock until it commits,
+ * so "is there another admin left?" cannot be answered by one request while
+ * another is removing that admin.
+ */
+const withAdminSetLock = <T>(db: Db, fn: (tx: Tx) => Promise<T>) =>
+    db.transaction(async (tx) => {
+        await tx.execute(sql`select pg_advisory_xact_lock(${ADMIN_SET_LOCK})`);
+        return fn(tx);
+    });
+
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
+    const [{ value }] = await tx
+        .select({ value: count() })
+        .from(users)
+        .where(
+            and(
+                eq(users.isAdmin, true),
+                eq(users.isActive, true),
+                ne(users.id, exceptId)
+            )
+        );
+    return value;
+};
+
 const auditQuery = z.object({
     action: z.string().trim().max(60).optional(),
     userId: z.string().uuid().optional(),
@@ -187,27 +217,8 @@ export const adminRoutes =
         app.patch('/users/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const body = updateUserBody.parse(req.body);
-            const [target] = await db
-                .select()
-                .from(users)
-                .where(eq(users.id, id));
-            if (!target) return reply.code(404).send({ error: 'not_found' });
             if (body.isActive === false && id === req.user!.id) {
                 return reply.code(400).send({ error: 'cannot_disable_self' });
-            }
-            // there must always be an admin who can still sign in
-            const losesAdminAccess =
-                target.isAdmin &&
-                target.isActive &&
-                (body.isAdmin === false || body.isActive === false);
-            if (losesAdminAccess) {
-                const [{ value: admins }] = await db
-                    .select({ value: count() })
-                    .from(users)
-                    .where(and(eq(users.isAdmin, true), eq(users.isActive, true)));
-                if (admins <= 1) {
-                    return reply.code(400).send({ error: 'last_admin' });
-                }
             }
             const patch: Partial<typeof users.$inferInsert> = {};
             if (body.isAdmin !== undefined) patch.isAdmin = body.isAdmin;
@@ -215,7 +226,31 @@ export const adminRoutes =
             if (body.password !== undefined) {
                 patch.passwordHash = await hashPassword(body.password);
             }
-            await db.update(users).set(patch).where(eq(users.id, id));
+            // the check and the write happen under one lock, so two admins
+            // demoting each other at once cannot leave nobody
+            const outcome = await withAdminSetLock(db, async (tx) => {
+                const [target] = await tx
+                    .select()
+                    .from(users)
+                    .where(eq(users.id, id));
+                if (!target) return { error: 'not_found' as const };
+                // there must always be an admin who can still sign in
+                const losesAdminAccess =
+                    target.isAdmin &&
+                    target.isActive &&
+                    (body.isAdmin === false || body.isActive === false);
+                if (losesAdminAccess && (await otherActiveAdmins(tx, id)) < 1) {
+                    return { error: 'last_admin' as const };
+                }
+                await tx.update(users).set(patch).where(eq(users.id, id));
+                return { target };
+            });
+            if ('error' in outcome) {
+                return outcome.error === 'not_found'
+                    ? reply.code(404).send({ error: 'not_found' })
+                    : reply.code(400).send({ error: 'last_admin' });
+            }
+            const { target } = outcome;
             if (body.password !== undefined || body.isActive === false) {
                 // a reset password, or a disabled account, ends every session
                 await destroyOtherSessions(db, id, undefined);
@@ -242,12 +277,20 @@ export const adminRoutes =
             if (id === req.user!.id) {
                 return reply.code(400).send({ error: 'cannot_delete_self' });
             }
-            const [target] = await db
-                .select()
-                .from(users)
-                .where(eq(users.id, id));
-            if (!target) return reply.code(404).send({ error: 'not_found' });
-            await db.transaction(async (tx) => {
+            const outcome = await withAdminSetLock(db, async (tx) => {
+                const [target] = await tx
+                    .select()
+                    .from(users)
+                    .where(eq(users.id, id));
+                if (!target) return { error: 'not_found' as const };
+                // two admins deleting each other at once must not leave nobody
+                if (
+                    target.isAdmin &&
+                    target.isActive &&
+                    (await otherActiveAdmins(tx, id)) < 1
+                ) {
+                    return { error: 'last_admin' as const };
+                }
                 // owner_id cascades; keep the team's diagrams alive
                 await tx
                     .update(diagrams)
@@ -255,7 +298,14 @@ export const adminRoutes =
                     .where(eq(diagrams.ownerId, id));
                 await tx.delete(sessions).where(eq(sessions.userId, id));
                 await tx.delete(users).where(eq(users.id, id));
+                return {};
             });
+            if (outcome.error === 'not_found') {
+                return reply.code(404).send({ error: 'not_found' });
+            }
+            if (outcome.error === 'last_admin') {
+                return reply.code(400).send({ error: 'last_admin' });
+            }
             await audit(db, { userId: req.user!.id, action: 'user.delete' });
             return reply.code(204).send();
         });
