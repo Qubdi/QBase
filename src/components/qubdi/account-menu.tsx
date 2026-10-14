@@ -102,6 +102,17 @@ export const AccountMenu: React.FC = () => {
 
     return (
         <>
+            {user.isAdmin ? (
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => navigate('/admin')}
+                >
+                    <ShieldCheck className="size-4" />
+                    Admin
+                </Button>
+            ) : null}
             <DropdownMenu onOpenChange={loadProjects}>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-1">
