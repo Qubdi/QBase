@@ -10,15 +10,15 @@ UUID and no separate project page. Diagrams are created inside the workspace.
 - [x] Server: project slug (unique ignoring case, reserved paths rejected) + migration
 - [x] Server: `projectId` on diagram responses
 - [x] Client: `slug` on project types, `project-path` helpers (tested)
-- [ ] Client: `ensureLocalCopy` (open a server diagram as a local copy)
-- [ ] Workspace gate: resolve `/<project>/diagrams[/<server diagram id>]`, check role, 404 for
+- [x] Client: `ensureLocalCopy` (open a server diagram as a local copy)
+- [x] Workspace gate: resolve `/<project>/diagrams[/<server diagram id>]`, check role, 404 for
       another project's diagram
-- [ ] Routes: `/:projectSlug/diagrams`, `/:projectSlug/diagrams/:diagramId`; redirect old
+- [x] Routes: `/:projectSlug/diagrams`, `/:projectSlug/diagrams/:diagramId`; redirect old
       `/diagrams/<localId>` links; remove `/projects/:id` and the project page
-- [ ] Editor: loader, autosave and access gate read the diagram from the workspace
-- [ ] Editor: project-aware Open and Create dialogs (list the project's server diagrams, create
+- [x] Editor: loader, autosave and access gate read the diagram from the workspace
+- [x] Editor: project-aware Open and Create dialogs (list the project's server diagrams, create
       on the server, import from database) replace the local ones
-- [ ] Home and admin panel link to `/<slug>/diagrams`
+- [x] Home and admin panel link to `/<slug>/diagrams`
 - [ ] Rebuild Docker and smoke-test
 
 ## Backlog: admin panel and home page
