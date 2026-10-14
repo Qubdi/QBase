@@ -22,6 +22,7 @@ import { adminRoutes } from './admin/routes.js';
 import { diagramRoutes } from './diagrams/routes.js';
 import { projectRoutes } from './projects/routes.js';
 import { memberRoutes } from './members/routes.js';
+import { sharedUserLimit } from './lib/rate-key.js';
 import { publicShareRoutes, shareManagementRoutes } from './share/routes.js';
 
 declare module 'fastify' {
@@ -107,7 +108,9 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.register(projectRoutes(db), { prefix: '/projects' });
     app.register(diagramRoutes(db, config), { prefix: '/diagrams' });
     app.register(memberRoutes(db), { prefix: '/diagrams' });
-    app.register(introspectRoutes({ db, config, ...introspect }), {
+    // introspection and manual drift checks draw from one allowance per user
+    const outboundLimit = sharedUserLimit(config.outboundRateLimit);
+    app.register(introspectRoutes({ db, config, outboundLimit, ...introspect }), {
         prefix: '/introspect',
     });
     app.register(
@@ -116,6 +119,7 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
             config,
             factory: introspect?.factory ?? defaultIntrospectorFactory,
             lookup: introspect?.lookup,
+            outboundLimit,
         }),
         { prefix: '/diagrams' }
     );

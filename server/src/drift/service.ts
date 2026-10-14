@@ -20,6 +20,7 @@ import type {
     IntrospectorFactory,
 } from '../introspect/types.js';
 import { nextCronRun } from '../lib/cron.js';
+import type { RequestHook } from '../lib/rate-key.js';
 import { postJson } from './webhook.js';
 import {
     countBySeverity,
@@ -43,6 +44,8 @@ export interface DriftDeps {
     config: Config;
     factory: IntrospectorFactory;
     lookup?: LookupAll;
+    /** per-user allowance for manual checks (scheduled checks are not limited) */
+    outboundLimit?: RequestHook;
 }
 
 export type ReportRow = typeof driftReports.$inferSelect;

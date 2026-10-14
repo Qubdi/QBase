@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import type { Config } from '../config.js';
+import type { RequestHook } from '../lib/rate-key.js';
 import type { Db } from '../db/client.js';
 import { savedConnections } from '../db/schema.js';
 import { canWrite, getProjectRole } from '../diagrams/permissions.js';
@@ -71,6 +72,8 @@ export interface IntrospectDeps {
     config: Config;
     factory?: IntrospectorFactory;
     lookup?: LookupAll;
+    /** per-user allowance for routes that open connections to other databases */
+    outboundLimit?: RequestHook;
 }
 
 const summarize = (c: typeof savedConnections.$inferSelect) => ({
@@ -101,6 +104,7 @@ export const introspectRoutes =
         config,
         factory = defaultIntrospectorFactory,
         lookup,
+        outboundLimit,
     }: IntrospectDeps): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
@@ -198,7 +202,11 @@ export const introspectRoutes =
             }
         };
 
-        app.post('/catalog', async (req, reply) => {
+        // every route that opens a connection to a customer's database shares
+        // one per-user allowance
+        const outbound = outboundLimit ? { onRequest: outboundLimit } : {};
+
+        app.post('/catalog', outbound, async (req, reply) => {
             const body = requestConnection.parse(req.body);
             const params = await resolveParams(body, req.user!.id, reply);
             if (!params) return;
@@ -213,7 +221,7 @@ export const introspectRoutes =
             };
         });
 
-        app.post('/', async (req, reply) => {
+        app.post('/', outbound, async (req, reply) => {
             const body = introspectBody.parse(req.body);
             const params = await resolveParams(body, req.user!.id, reply);
             if (!params) return;

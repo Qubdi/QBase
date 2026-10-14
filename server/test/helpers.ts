@@ -25,7 +25,12 @@ export async function createTestApp(
     reset = true
 ): Promise<TestCtx> {
     const config = {
-        ...loadConfig({ LOG_LEVEL: 'silent' }),
+        // tests make many calls; the limits are exercised with explicit overrides
+        ...loadConfig({
+            LOG_LEVEL: 'silent',
+            LINT_RATE_LIMIT: '100000',
+            OUTBOUND_RATE_LIMIT: '100000',
+        }),
         databaseUrl: TEST_URL,
         ...overrides,
     };

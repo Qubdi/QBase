@@ -57,6 +57,10 @@ export const driftRoutes =
     (deps: DriftDeps): FastifyPluginAsync =>
     async (app) => {
         const { db } = deps;
+        // shares its allowance with the introspection routes
+        const outbound = deps.outboundLimit
+            ? { onRequest: deps.outboundLimit }
+            : {};
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -169,7 +173,7 @@ export const driftRoutes =
             return presentSettings(row);
         });
 
-        app.post('/:id/drift/check', async (req, reply) => {
+        app.post('/:id/drift/check', outbound, async (req, reply) => {
             const { id } = diagramParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const [settings] = await db

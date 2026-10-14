@@ -156,6 +156,36 @@ describe('introspect HTTP layer (fake driver)', () => {
         }
     });
 
+    describe('outbound rate limit', () => {
+        it('shares one per-user allowance across the connection routes', async () => {
+            const calls2: Call[] = [];
+            const limited = await createTestApp(
+                { outboundRateLimit: 2 },
+                { factory: fakeFactory(calls2), lookup: async () => [{ address: '93.184.216.34', family: 4 }] },
+                false
+            );
+            try {
+                const send = (u: TestUser, url: string) =>
+                    limited.app.inject({
+                        method: 'POST',
+                        url,
+                        headers: as(u),
+                        payload: { connection: conn() },
+                    });
+                expect((await send(alice, '/introspect/catalog')).statusCode).toBe(200);
+                expect((await send(alice, '/introspect')).statusCode).toBe(200);
+                // third call, other route: same allowance
+                expect((await send(alice, '/introspect/catalog')).statusCode).toBe(429);
+                // nothing was opened for the refused call
+                expect(calls2).toHaveLength(2);
+                // another user is unaffected
+                expect((await send(bob, '/introspect/catalog')).statusCode).toBe(200);
+            } finally {
+                await limited.close();
+            }
+        });
+    });
+
     describe('credentials are used for the request only', () => {
         it('stores nothing when a connection is used without saving', async () => {
             await post(alice, '/introspect', { connection: conn() });
