@@ -1,0 +1,112 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/button/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/dialog/dialog';
+import { Input } from '@/components/input/input';
+import { useQubdi } from '@/hooks/use-qubdi';
+import { useStorage } from '@/hooks/use-storage';
+import { databaseTypeToLabelMap } from '@/lib/databases';
+import { DatabaseType } from '@/lib/domain/database-type';
+import { errorMessage } from '@/lib/qubdi/api';
+import { emptyDiagram } from '@/lib/qubdi/new-diagram';
+import { generateId } from '@/lib/utils';
+
+export interface NewDiagramDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    projectId: string;
+    projectName: string;
+}
+
+const selectClass =
+    'h-9 w-full rounded-md border border-input bg-background px-2 text-sm';
+
+export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
+    open,
+    onOpenChange,
+    projectId,
+    projectName,
+}) => {
+    const { addDiagram, deleteDiagram } = useStorage();
+    const { syncDiagram } = useQubdi();
+    const navigate = useNavigate();
+    const [name, setName] = useState('');
+    const [databaseType, setDatabaseType] = useState<DatabaseType>(
+        DatabaseType.POSTGRESQL
+    );
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const create = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setBusy(true);
+        setError(null);
+        const diagram = emptyDiagram({ id: generateId(), name, databaseType });
+        try {
+            await addDiagram({ diagram });
+            // created in the project right away: nothing exists outside one
+            await syncDiagram(diagram, projectId);
+            onOpenChange(false);
+            setName('');
+            navigate(`/diagrams/${diagram.id}`);
+        } catch (err) {
+            // do not leave a local diagram that is not in any project behind
+            await deleteDiagram(diagram.id).catch(() => undefined);
+            setError(errorMessage(err));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-sm" showClose>
+                <DialogHeader>
+                    <DialogTitle>New diagram</DialogTitle>
+                    <DialogDescription>
+                        It will be created in {projectName}, and everyone
+                        assigned there can open it.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={create} className="flex flex-col gap-3">
+                    <Input
+                        aria-label="Diagram name"
+                        placeholder="Diagram name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        maxLength={200}
+                        autoFocus
+                    />
+                    <select
+                        className={selectClass}
+                        aria-label="Database type"
+                        value={databaseType}
+                        onChange={(e) =>
+                            setDatabaseType(e.target.value as DatabaseType)
+                        }
+                    >
+                        {Object.values(DatabaseType).map((t) => (
+                            <option key={t} value={t}>
+                                {databaseTypeToLabelMap[t]}
+                            </option>
+                        ))}
+                    </select>
+                    {error ? (
+                        <p role="alert" className="text-sm text-destructive">
+                            {error}
+                        </p>
+                    ) : null}
+                    <Button type="submit" disabled={busy}>
+                        {busy ? 'Creating…' : 'Create diagram'}
+                    </Button>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+};
