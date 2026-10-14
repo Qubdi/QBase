@@ -3,6 +3,8 @@ import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { Link } from 'react-router-dom';
 import { projectHomePath } from '@/lib/qubdi/project-path';
+import { ListPager } from '@/components/qubdi/list-pager';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { cn } from '@/lib/utils';
 import {
     AlertDialog,
@@ -23,6 +25,8 @@ import {
     type ProjectRole,
 } from '@/lib/qubdi/api';
 
+const PAGE_SIZE = 8;
+
 const selectClass =
     'h-9 rounded-md border border-input bg-background px-2 text-sm';
 
@@ -32,10 +36,13 @@ const roleHelp: Record<ProjectRole, string> = {
 };
 
 export const ProjectsPanel: React.FC = () => {
-    const [projects, setProjects] = useState<AdminProject[] | null>(null);
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [members, setMembers] = useState<ProjectMember[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    // the chosen project can sit on another page or be filtered out of the list
+    const [selectedCache, setSelectedCache] = useState<AdminProject | null>(
+        null
+    );
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const [name, setName] = useState('');
@@ -46,24 +53,29 @@ export const ProjectsPanel: React.FC = () => {
     const [assignRole, setAssignRole] = useState<ProjectRole>('viewer');
     const [confirmDelete, setConfirmDelete] = useState(false);
 
-    const selected = useMemo(
-        () => projects?.find((p) => p.id === selectedId) ?? null,
-        [projects, selectedId]
+    // a fixed page size keeps the list the same height however many projects exist
+    const list = usePagedList(
+        ({ page, limit, q }) => api.adminListProjects({ page, limit, q }),
+        { limit: PAGE_SIZE }
     );
 
-    const reloadProjects = useCallback(async () => {
-        try {
-            const list = await api.adminListProjects();
-            setProjects(list);
-            setSelectedId((cur) =>
-                cur && list.some((p) => p.id === cur)
-                    ? cur
-                    : (list[0]?.id ?? null)
-            );
-        } catch (e) {
-            setError(errorMessage(e));
-        }
+    const choose = useCallback((p: AdminProject | null) => {
+        setSelectedId(p?.id ?? null);
+        setSelectedCache(p);
     }, []);
+
+    // the fresh copy from the list wins; the cache covers other pages
+    const selected = useMemo(
+        () =>
+            list.items.find((p) => p.id === selectedId) ??
+            (selectedCache?.id === selectedId ? selectedCache : null),
+        [list.items, selectedId, selectedCache]
+    );
+
+    // open the first project once the list arrives
+    useEffect(() => {
+        if (!selectedId && list.items.length > 0) choose(list.items[0]);
+    }, [selectedId, list.items, choose]);
 
     const reloadMembers = useCallback(async (id: string | null) => {
         if (!id) {
@@ -78,11 +90,10 @@ export const ProjectsPanel: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        void reloadProjects();
-        api.adminListUsers()
-            .then(setUsers)
+        api.adminListUsers({ limit: 100 })
+            .then((page) => setUsers(page.items))
             .catch((e) => setError(errorMessage(e)));
-    }, [reloadProjects]);
+    }, []);
 
     useEffect(() => {
         void reloadMembers(selectedId);
@@ -98,7 +109,8 @@ export const ProjectsPanel: React.FC = () => {
         setBusy(true);
         try {
             await fn();
-            await Promise.all([reloadProjects(), reloadMembers(selectedId)]);
+            list.reload();
+            await reloadMembers(selectedId);
         } catch (e) {
             setError(errorMessage(e));
         } finally {
@@ -125,7 +137,7 @@ export const ProjectsPanel: React.FC = () => {
                             });
                             setName('');
                             setDescription('');
-                            setSelectedId(p.id);
+                            choose(p);
                         });
                     }}
                 >
@@ -150,46 +162,62 @@ export const ProjectsPanel: React.FC = () => {
                     </Button>
                 </form>
 
-                <ul
-                    className="flex flex-col gap-1"
-                    aria-label="Projects"
-                    data-testid="project-list"
-                >
-                    {projects === null ? (
-                        <li className="text-sm text-muted-foreground">
-                            Loading…
-                        </li>
-                    ) : projects.length === 0 ? (
-                        <li className="text-sm text-muted-foreground">
-                            No projects yet. Create the first one above.
-                        </li>
-                    ) : (
-                        projects.map((p) => (
-                            <li key={p.id}>
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedId(p.id)}
-                                    className={cn(
-                                        'flex w-full flex-col items-start rounded-lg border px-3 py-2 text-left text-sm',
-                                        p.id === selectedId
-                                            ? 'border-primary bg-accent text-accent-foreground'
-                                            : 'border-transparent hover:bg-muted'
-                                    )}
-                                >
-                                    <span className="font-medium">
-                                        {p.name}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {p.members} member
-                                        {p.members === 1 ? '' : 's'} ·{' '}
-                                        {p.diagrams} diagram
-                                        {p.diagrams === 1 ? '' : 's'}
-                                    </span>
-                                </button>
+                {list.error ? (
+                    <p role="alert" className="text-sm text-destructive">
+                        {list.error}
+                    </p>
+                ) : null}
+                <div className="flex flex-col gap-2">
+                    <ul
+                        className="flex max-h-[22rem] min-h-32 flex-col gap-1 overflow-y-auto"
+                        aria-label="Projects"
+                        data-testid="project-list"
+                    >
+                        {list.initialLoading ? (
+                            <li className="text-sm text-muted-foreground">
+                                Loading…
                             </li>
-                        ))
-                    )}
-                </ul>
+                        ) : list.items.length === 0 ? (
+                            <li className="text-sm text-muted-foreground">
+                                No projects yet. Create the first one above.
+                            </li>
+                        ) : (
+                            list.items.map((p) => (
+                                <li key={p.id}>
+                                    <button
+                                        type="button"
+                                        onClick={() => choose(p)}
+                                        className={cn(
+                                            'flex w-full flex-col items-start rounded-lg border px-3 py-2 text-left text-sm',
+                                            p.id === selectedId
+                                                ? 'border-primary bg-accent text-accent-foreground'
+                                                : 'border-transparent hover:bg-muted'
+                                        )}
+                                    >
+                                        <span className="font-medium">
+                                            {p.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {p.members} member
+                                            {p.members === 1 ? '' : 's'} ·{' '}
+                                            {p.diagrams} diagram
+                                            {p.diagrams === 1 ? '' : 's'}
+                                        </span>
+                                    </button>
+                                </li>
+                            ))
+                        )}
+                    </ul>
+                    <ListPager
+                        page={list.page}
+                        pageCount={list.pageCount}
+                        limit={list.limit}
+                        total={list.total}
+                        onPageChange={list.setPage}
+                        disabled={list.loading}
+                        noun="projects"
+                    />
+                </div>
             </div>
 
             <div className="flex flex-col gap-4">
@@ -205,12 +233,20 @@ export const ProjectsPanel: React.FC = () => {
                             aria-label="Project details"
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                void run(() =>
-                                    api.adminUpdateProject(selected.id, {
-                                        name: editName,
-                                        description: editDescription,
-                                    })
-                                );
+                                void run(async () => {
+                                    const updated =
+                                        await api.adminUpdateProject(
+                                            selected.id,
+                                            {
+                                                name: editName,
+                                                description: editDescription,
+                                            }
+                                        );
+                                    // keep the shown copy right when it is not on this page
+                                    setSelectedCache((c) =>
+                                        c ? { ...c, ...updated } : c
+                                    );
+                                });
                             }}
                         >
                             <div className="flex items-center justify-between gap-2">
@@ -410,7 +446,7 @@ export const ProjectsPanel: React.FC = () => {
                             </ul>
                         </section>
                     </>
-                ) : projects !== null ? (
+                ) : !list.initialLoading ? (
                     <p className="text-sm text-muted-foreground">
                         Select or create a project to manage who can access it.
                     </p>
@@ -432,9 +468,12 @@ export const ProjectsPanel: React.FC = () => {
                         <AlertDialogAction
                             onClick={() => {
                                 if (selected) {
-                                    void run(() =>
-                                        api.adminDeleteProject(selected.id)
-                                    );
+                                    void run(async () => {
+                                        await api.adminDeleteProject(
+                                            selected.id
+                                        );
+                                        choose(null);
+                                    });
                                 }
                             }}
                         >
