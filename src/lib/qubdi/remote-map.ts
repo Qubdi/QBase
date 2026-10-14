@@ -36,3 +36,7 @@ export const clearRemoteId = (localId: string) => {
         // ignore
     }
 };
+
+/** The local diagram already synced to a server diagram, if any. */
+export const findLocalId = (remoteId: string): string | undefined =>
+    Object.entries(read()).find(([, remote]) => remote === remoteId)?.[0];
