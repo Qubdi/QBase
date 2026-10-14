@@ -56,7 +56,6 @@ Schema lint works either way.
 | `DATABASE_URL` | `postgres://qubdidb:qubdidb@localhost:5433/qubdidb` | Where QubdiDB stores its own data |
 | `PORT` | `3001` | HTTP port |
 | `SESSION_SECRET` | dev value | Set this in production |
-| `ALLOW_SIGNUP` | `true` | The first account always works and becomes admin; set `false` to close sign-ups after that |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
 | `CONNECTION_KEY` | unset | Encrypts saved database passwords. Saving connections and scheduled drift checks need it |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default |
