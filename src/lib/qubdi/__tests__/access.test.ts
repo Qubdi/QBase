@@ -56,6 +56,7 @@ describe('resolveAccess', () => {
 describe('isLocked', () => {
     it('locks everything except edit access and local mode', () => {
         expect(isLocked({ status: 'unbound' })).toBe(true);
+        expect(isLocked({ status: 'no_diagram', projectId: 'p' })).toBe(true);
         expect(isLocked({ status: 'lost' })).toBe(true);
         expect(isLocked({ status: 'error' })).toBe(true);
         expect(
@@ -81,6 +82,10 @@ describe('lockedReason', () => {
                 'Billing'
             )
         ).toMatch(/view-only access to Billing/);
+        // no banner while the user is still choosing a diagram
+        expect(
+            lockedReason({ status: 'no_diagram', projectId: 'p' })
+        ).toBeNull();
         expect(lockedReason({ status: 'off' })).toBeNull();
         expect(
             lockedReason({ status: 'editor', projectId: 'p', remoteId: 'r' })

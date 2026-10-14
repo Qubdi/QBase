@@ -10,6 +10,8 @@ export type AccessState =
     | { status: 'off' }
     | { status: 'loading' }
     | { status: 'signed_out' }
+    /** inside a project workspace, before any diagram is chosen */
+    | { status: 'no_diagram'; projectId: string }
     /** a local diagram that is not in any project */
     | { status: 'unbound' }
     /** bound to the server, but the server no longer lets this user see it */
@@ -36,6 +38,7 @@ export function resolveAccess(
 
 /** The editor must not change or store anything in these states. */
 export const isLocked = (a: AccessState): boolean =>
+    a.status === 'no_diagram' ||
     a.status === 'unbound' ||
     a.status === 'lost' ||
     a.status === 'viewer' ||
