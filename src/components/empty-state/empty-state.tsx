@@ -1,8 +1,6 @@
 import React, { forwardRef, useMemo } from 'react';
-import EmptyStateImage from '@/assets/empty_state.png';
-import EmptyStateImageDark from '@/assets/empty_state_dark.png';
+import { EmptyIllustration } from './empty-illustration';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/hooks/use-theme';
 import {
     Empty,
     EmptyContent,
@@ -57,22 +55,12 @@ export const EmptyState = forwardRef<
         },
         ref
     ) => {
-        const { effectiveTheme } = useTheme();
-
         // Determine if we have any actions to show
         const hasActions = useMemo(
             () => !!(primaryAction || secondaryAction),
             [primaryAction, secondaryAction]
         );
         const hasFooterAction = useMemo(() => !!footerAction, [footerAction]);
-
-        const emptyStateImage = useMemo(
-            () =>
-                effectiveTheme === 'dark'
-                    ? EmptyStateImageDark
-                    : EmptyStateImage,
-            [effectiveTheme]
-        );
 
         return (
             <div
@@ -84,12 +72,10 @@ export const EmptyState = forwardRef<
             >
                 <Empty>
                     <EmptyHeader>
-                        <EmptyMedia variant="icon">
+                        <EmptyMedia variant="default">
                             {/* <Group /> */}
-                            <img
-                                src={emptyStateImage}
-                                alt="Empty state"
-                                className={cn('p-2', imageClassName)}
+                            <EmptyIllustration
+                                className={cn('h-24 w-32', imageClassName)}
                             />
                         </EmptyMedia>
                         <EmptyTitle className={titleClassName}>
