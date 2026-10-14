@@ -75,6 +75,47 @@ describe('diagrams and permissions', () => {
         expect(res.statusCode).toBe(400);
     });
 
+    it('rejects content whose collections or scalars have the wrong type', async () => {
+        const project = await projectFor(ctx.app);
+        for (const content of [
+            { tables: 'not-a-list' },
+            { relationships: { a: 1 } },
+            { name: 42 },
+            { databaseType: ['postgresql'] },
+        ]) {
+            const res = await ctx.app.inject({
+                method: 'POST',
+                url: '/diagrams',
+                headers: as(owner),
+                payload: { title: 'Bad', content, projectId: project },
+            });
+            expect(res.statusCode).toBe(400);
+        }
+        const res = await ctx.app.inject({
+            method: 'PUT',
+            url: `/diagrams/${diagramId}`,
+            headers: as(owner),
+            payload: { content: { tables: 'nope' } },
+        });
+        expect(res.statusCode).toBe(400);
+    });
+
+    it('keeps unknown keys in the content', async () => {
+        const project = await projectFor(ctx.app);
+        const res = await ctx.app.inject({
+            method: 'POST',
+            url: '/diagrams',
+            headers: as(owner),
+            payload: {
+                title: 'Extra',
+                content: { ...sampleContent, somethingNew: { a: 1 } },
+                projectId: project,
+            },
+        });
+        expect(res.statusCode).toBe(201);
+        expect(res.json().content.somethingNew).toEqual({ a: 1 });
+    });
+
     it('lets every member read, with their role', async () => {
         for (const [u, role] of [
             [owner, 'owner'],
@@ -221,5 +262,58 @@ describe('diagrams and permissions', () => {
             'diagram.delete',
         ]);
         expect(rows.every((r) => r.userId === owner.id)).toBe(true);
+    });
+});
+
+describe('request body limits', () => {
+    const big = (kb: number) => 'x'.repeat(kb * 1024);
+
+    it('refuses a large body on ordinary routes', async () => {
+        const ctx = await createTestApp({ bodyLimit: 2 * 1024 });
+        try {
+            const res = await ctx.app.inject({
+                method: 'POST',
+                url: '/auth/login',
+                payload: { email: 'a@example.com', password: big(4) },
+            });
+            expect(res.statusCode).toBe(413);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('lets the diagram routes take a body past the ordinary limit', async () => {
+        const ctx = await createTestApp({
+            bodyLimit: 2 * 1024,
+            diagramBodyLimit: 64 * 1024,
+        });
+        try {
+            const owner = await registerUser(ctx.app, 'o@example.com');
+            const project = await projectFor(ctx.app);
+            const ok = await ctx.app.inject({
+                method: 'POST',
+                url: '/diagrams',
+                headers: as(owner),
+                payload: {
+                    title: 'Large',
+                    content: { ...sampleContent, note: big(8) },
+                    projectId: project,
+                },
+            });
+            expect(ok.statusCode).toBe(201);
+            const tooBig = await ctx.app.inject({
+                method: 'POST',
+                url: '/diagrams',
+                headers: as(owner),
+                payload: {
+                    title: 'Huge',
+                    content: { ...sampleContent, note: big(100) },
+                    projectId: project,
+                },
+            });
+            expect(tooBig.statusCode).toBe(413);
+        } finally {
+            await ctx.close();
+        }
     });
 });

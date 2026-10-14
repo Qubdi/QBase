@@ -2,6 +2,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
+import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, snapshots, users } from '../db/schema.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
@@ -18,9 +19,29 @@ const versionParam = z.object({
     version: z.coerce.number().int().positive(),
 });
 
+/**
+ * A diagram's content is the editor's own JSON, so unknown keys pass through.
+ * What the server relies on is checked: the known collections are arrays and
+ * the known scalars are strings.
+ */
+const diagramContent = z
+    .object({
+        id: z.string().max(200).optional(),
+        name: z.string().max(500).optional(),
+        databaseType: z.string().max(50).optional(),
+        databaseEdition: z.string().max(50).optional(),
+        tables: z.array(z.unknown()).optional(),
+        relationships: z.array(z.unknown()).optional(),
+        dependencies: z.array(z.unknown()).optional(),
+        areas: z.array(z.unknown()).optional(),
+        customTypes: z.array(z.unknown()).optional(),
+        notes: z.array(z.unknown()).optional(),
+    })
+    .passthrough();
+
 const createBody = z.object({
     title: z.string().trim().min(1).max(200),
-    content: z.record(z.unknown()),
+    content: diagramContent,
     // every diagram lives in a project
     projectId: z.string().uuid(),
 });
@@ -28,7 +49,7 @@ const createBody = z.object({
 const updateBody = z
     .object({
         title: z.string().trim().min(1).max(200).optional(),
-        content: z.record(z.unknown()).optional(),
+        content: diagramContent.optional(),
         autoPublish: z.boolean().optional(),
     })
     .refine(
@@ -44,7 +65,7 @@ const publishBody = z
     .default({});
 
 export const diagramRoutes =
-    (db: Db): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit'>): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -103,7 +124,7 @@ export const diagramRoutes =
             });
         });
 
-        app.post('/', async (req, reply) => {
+        app.post('/', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {
             const body = createBody.parse(req.body);
             const userId = req.user!.id;
             // creating needs write access in the project; strangers get 404
@@ -154,7 +175,7 @@ export const diagramRoutes =
             return presentDiagram(db, d, role);
         });
 
-        app.put('/:id', async (req, reply) => {
+        app.put('/:id', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });

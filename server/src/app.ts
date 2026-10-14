@@ -52,7 +52,8 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
                 : config.trustProxy,
         logger:
             config.logLevel === 'silent' ? false : { level: config.logLevel },
-        bodyLimit: 50 * 1024 * 1024,
+        // small by default; the routes that carry a whole diagram raise it
+        bodyLimit: config.bodyLimit,
         routerOptions: { maxParamLength: 1000 },
     });
 
@@ -104,7 +105,7 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.register(authRoutes(db, config), { prefix: '/auth' });
     app.register(adminRoutes(db), { prefix: '/admin' });
     app.register(projectRoutes(db), { prefix: '/projects' });
-    app.register(diagramRoutes(db), { prefix: '/diagrams' });
+    app.register(diagramRoutes(db, config), { prefix: '/diagrams' });
     app.register(memberRoutes(db), { prefix: '/diagrams' });
     app.register(introspectRoutes({ db, config, ...introspect }), {
         prefix: '/introspect',
