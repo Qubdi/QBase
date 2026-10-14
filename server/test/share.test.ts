@@ -390,3 +390,42 @@ describe('share rate limit', () => {
         }
     });
 });
+
+describe('share rate limit behind a proxy', () => {
+    const hit = (
+        ctx: TestCtx,
+        forwardedFor: string
+    ): Promise<number> =>
+        ctx.app
+            .inject({
+                url: `/s/${'A'.repeat(22)}`,
+                headers: { 'x-forwarded-for': forwardedFor },
+            })
+            .then((r) => r.statusCode);
+
+    it('keys on the proxy address when no proxy is trusted', async () => {
+        const ctx = await createTestApp({ shareRateLimit: 2 });
+        try {
+            expect(await hit(ctx, '1.1.1.1')).toBe(404);
+            expect(await hit(ctx, '2.2.2.2')).toBe(404);
+            // different visitors, one bucket
+            expect(await hit(ctx, '3.3.3.3')).toBe(429);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('keys on the visitor address when the proxy is trusted', async () => {
+        const ctx = await createTestApp({
+            shareRateLimit: 1,
+            trustProxy: true,
+        });
+        try {
+            expect(await hit(ctx, '1.1.1.1')).toBe(404);
+            expect(await hit(ctx, '2.2.2.2')).toBe(404);
+            expect(await hit(ctx, '1.1.1.1')).toBe(429);
+        } finally {
+            await ctx.close();
+        }
+    });
+});

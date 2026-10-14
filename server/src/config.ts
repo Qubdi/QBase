@@ -6,6 +6,11 @@ export interface Config {
     port: number;
     corsOrigin: string | null;
     sessionDays: number;
+    /**
+     * Which proxies to trust for the client address (Fastify `trustProxy`):
+     * true, a hop count, or a list of addresses. False = use the socket's.
+     */
+    trustProxy: boolean | number | string[];
     /** pino level: fatal, error, warn, info, debug, trace or silent */
     logLevel: string;
     /** most database connections the pool opens at once */
@@ -18,6 +23,19 @@ export interface Config {
     connectionKey: string | null;
 }
 
+export function parseTrustProxy(
+    value: string | undefined
+): boolean | number | string[] {
+    const v = value?.trim();
+    if (!v || v === 'false') return false;
+    if (v === 'true') return true;
+    if (/^\d+$/.test(v)) return Number(v);
+    return v
+        .split(',')
+        .map((a) => a.trim())
+        .filter(Boolean);
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     return {
         databaseUrl:
@@ -28,6 +46,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         port: Number(env.PORT ?? 3001),
         corsOrigin: env.CORS_ORIGIN ?? null,
         sessionDays: Number(env.SESSION_DAYS ?? 30),
+        trustProxy: parseTrustProxy(env.TRUST_PROXY),
         logLevel: env.LOG_LEVEL ?? 'info',
         dbPoolMax: Number(env.DB_POOL_MAX ?? 10),
         shareRateLimit: Number(env.SHARE_RATE_LIMIT ?? 60),
