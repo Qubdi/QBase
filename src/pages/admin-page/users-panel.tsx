@@ -30,7 +30,12 @@ import {
 import { ListPager } from '@/components/qubdi/list-pager';
 import { SearchInput } from '@/components/qubdi/search-input';
 import { usePagedList } from '@/hooks/use-paged-list';
-import { api, errorMessage, type AdminUser } from '@/lib/qubdi/api';
+import {
+    api,
+    errorMessage,
+    type AdminUser,
+    type UserStatus,
+} from '@/lib/qubdi/api';
 
 const PAGE_SIZE = 10;
 
@@ -49,9 +54,16 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
     const [deleteFor, setDeleteFor] = useState<AdminUser | null>(null);
 
     // a fixed page size keeps the panel the same height however many users exist
+    const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
     const list = usePagedList(
-        ({ page, limit, q }) => api.adminListUsers({ page, limit, q }),
-        { limit: PAGE_SIZE }
+        ({ page, limit, q, filter }) =>
+            api.adminListUsers({
+                page,
+                limit,
+                q,
+                status: filter ? (filter as UserStatus) : undefined,
+            }),
+        { limit: PAGE_SIZE, filter: statusFilter === 'all' ? '' : statusFilter }
     );
 
     const run = async (fn: () => Promise<unknown>) => {
@@ -139,18 +151,46 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
             ) : null}
 
             <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm">
-                <SearchInput
-                    value={list.query}
-                    onChange={list.setQuery}
-                    placeholder="Search users by email…"
-                    label="Search users"
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <SearchInput
+                        className="flex-1"
+                        value={list.query}
+                        onChange={list.setQuery}
+                        placeholder="Search users by email…"
+                        label="Search users"
+                    />
+                    <div
+                        role="group"
+                        aria-label="Filter by status"
+                        className="flex shrink-0 gap-1"
+                    >
+                        {(['all', 'active', 'disabled'] as const).map((s) => (
+                            <Button
+                                key={s}
+                                type="button"
+                                size="sm"
+                                variant={
+                                    statusFilter === s ? 'secondary' : 'ghost'
+                                }
+                                aria-pressed={statusFilter === s}
+                                onClick={() => setStatusFilter(s)}
+                            >
+                                {s === 'all'
+                                    ? 'All'
+                                    : s === 'active'
+                                      ? 'Active'
+                                      : 'Disabled'}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
                 <div className="max-h-[26rem] min-h-40 overflow-y-auto">
                     <Table>
                         <TableHeader className="sticky top-0 z-10 bg-card">
                             <TableRow>
                                 <TableHead>Email</TableHead>
                                 <TableHead>Role</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead className="text-right">
                                     Projects
                                 </TableHead>
@@ -163,7 +203,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             {list.initialLoading ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={4}
+                                        colSpan={5}
                                         className="text-muted-foreground"
                                     >
                                         Loading…
@@ -172,19 +212,28 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             ) : list.items.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={4}
+                                        colSpan={5}
                                         className="text-muted-foreground"
                                     >
                                         {list.query
                                             ? `No users match "${list.query}".`
-                                            : 'No users yet.'}
+                                            : statusFilter !== 'all'
+                                              ? `No ${statusFilter} users.`
+                                              : 'No users yet.'}
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 list.items.map((u) => {
                                     const self = u.id === currentUserId;
                                     return (
-                                        <TableRow key={u.id}>
+                                        <TableRow
+                                            key={u.id}
+                                            className={
+                                                u.isActive
+                                                    ? undefined
+                                                    : 'text-muted-foreground'
+                                            }
+                                        >
                                             <TableCell className="font-medium">
                                                 {u.email}
                                                 {self ? (
@@ -204,6 +253,19 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                     {u.isAdmin
                                                         ? 'Admin'
                                                         : 'Member'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={
+                                                        u.isActive
+                                                            ? 'outline'
+                                                            : 'destructive'
+                                                    }
+                                                >
+                                                    {u.isActive
+                                                        ? 'Active'
+                                                        : 'Disabled'}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -230,6 +292,26 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         {u.isAdmin
                                                             ? 'Remove admin'
                                                             : 'Make admin'}
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        disabled={busy || self}
+                                                        onClick={() =>
+                                                            run(() =>
+                                                                api.adminUpdateUser(
+                                                                    u.id,
+                                                                    {
+                                                                        isActive:
+                                                                            !u.isActive,
+                                                                    }
+                                                                )
+                                                            )
+                                                        }
+                                                    >
+                                                        {u.isActive
+                                                            ? 'Disable'
+                                                            : 'Enable'}
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
