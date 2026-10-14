@@ -12,10 +12,7 @@ import {
     ensureLocalCopy,
     UnpublishedDiagramError,
 } from '@/lib/qubdi/open-remote';
-import {
-    findProjectBySlug,
-    projectDiagramPath,
-} from '@/lib/qubdi/project-path';
+import { projectDiagramPath } from '@/lib/qubdi/project-path';
 import {
     getProjectId,
     getRemoteId,
@@ -102,7 +99,14 @@ function useWorkspaceResolution(
         setState({ kind: 'loading' });
 
         (async () => {
-            const project = findProjectBySlug(await api.listProjects(), slug);
+            // the server answers 404 for a project that is missing or not the user's
+            const project = slug
+                ? await api.getProject(slug).catch((e: unknown) => {
+                      if (e instanceof ApiError && e.status === 404)
+                          return null;
+                      throw e;
+                  })
+                : null;
             if (!project) return done({ kind: 'project_missing' });
 
             if (!remoteDiagramId) {
@@ -290,11 +294,11 @@ const LegacyGate: React.FC<React.PropsWithChildren> = ({ children }) => {
     useEffect(() => {
         if (!projectId || !remoteId) return;
         let cancelled = false;
-        api.listProjects()
-            .then((projects) => {
-                const p = projects.find((x) => x.id === projectId);
-                if (!cancelled && p)
+        api.getProject(projectId)
+            .then((p) => {
+                if (!cancelled) {
                     setTarget(projectDiagramPath(p.slug, remoteId));
+                }
             })
             .catch(() => undefined)
             .finally(() => !cancelled && setLookedUp(true));

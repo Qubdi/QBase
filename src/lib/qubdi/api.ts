@@ -1,6 +1,7 @@
 import { QUBDI_BACKEND_URL } from './config';
 import type { EditorComment } from './comments-store';
 import type { LintConfig } from '../../../shared/lint';
+import { listQuery, type ListParams, type Page } from './paging';
 
 export type MemberRole = 'owner' | 'editor' | 'viewer';
 
@@ -19,6 +20,8 @@ export interface MyProject {
     /** the project's URL piece: /<slug>/diagrams */
     slug: string;
     description: string;
+    /** how many diagrams the project holds */
+    diagramCount: number;
     role: MemberRole;
 }
 
@@ -287,10 +290,15 @@ export function createApi(
                 content,
                 projectId,
             }),
-        listProjects: () => request<MyProject[]>('GET', '/projects'),
+        listProjects: (params?: ListParams) =>
+            request<Page<MyProject>>('GET', `/projects${listQuery(params)}`),
+        /** One project by its web address or id; 404 unless the user may see it. */
+        getProject: (ref: string) =>
+            request<MyProject>('GET', `/projects/${encodeURIComponent(ref)}`),
 
         // admin panel (admins only; everyone else gets a 404)
-        adminListUsers: () => request<AdminUser[]>('GET', '/admin/users'),
+        adminListUsers: (params?: ListParams) =>
+            request<Page<AdminUser>>('GET', `/admin/users${listQuery(params)}`),
         adminCreateUser: (body: {
             email: string;
             password: string;
@@ -307,8 +315,11 @@ export function createApi(
             ),
         adminDeleteUser: (id: string) =>
             request<void>('DELETE', `/admin/users/${id}`),
-        adminListProjects: () =>
-            request<AdminProject[]>('GET', '/admin/projects'),
+        adminListProjects: (params?: ListParams) =>
+            request<Page<AdminProject>>(
+                'GET',
+                `/admin/projects${listQuery(params)}`
+            ),
         adminCreateProject: (body: { name: string; description?: string }) =>
             request<AdminProject>('POST', '/admin/projects', body),
         adminUpdateProject: (

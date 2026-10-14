@@ -28,8 +28,8 @@ export const AccessBanner: React.FC = () => {
 
     useEffect(() => {
         if (!unbound && !projectId) return;
-        api.listProjects()
-            .then(setProjects)
+        api.listProjects({ limit: 100 })
+            .then((page) => setProjects(page.items))
             .catch(() => setProjects([]));
     }, [unbound, projectId]);
 
