@@ -102,7 +102,7 @@ describe('admin panel and projects', () => {
             const res = await call('GET', '/admin/users', admin);
             const row = res
                 .json()
-                .find((u: { email: string }) => u.email === 'editor@example.com');
+                .items.find((u: { email: string }) => u.email === 'editor@example.com');
             expect(row.projects).toBe(1);
         });
 
@@ -148,12 +148,15 @@ describe('admin panel and projects', () => {
 
         it('shows each user only the projects they were assigned', async () => {
             const mine = await call('GET', '/projects', viewer);
-            expect(mine.json()).toEqual([
+            expect(mine.json().items).toEqual([
                 expect.objectContaining({ id: projectId, role: 'viewer' }),
             ]);
-            expect((await call('GET', '/projects', stranger)).json()).toEqual([]);
+            expect(mine.json().total).toBe(1);
+            expect((await call('GET', '/projects', stranger)).json().items).toEqual(
+                []
+            );
             const all = await call('GET', '/projects', admin);
-            expect(all.json().length).toBeGreaterThanOrEqual(1);
+            expect(all.json().items.length).toBeGreaterThanOrEqual(1);
         });
 
         it('changes a role by assigning again, and removes access on unassign', async () => {
@@ -284,15 +287,18 @@ describe('admin panel and projects', () => {
             expect(res.json().slug).toBe('Merme-Team');
             const first = (await call('GET', '/admin/projects', admin))
                 .json()
-                .find((p: { id: string }) => p.id === projectId);
+                .items.find((p: { id: string }) => p.id === projectId);
             expect(first.slug).toBe('Billing');
         });
 
         it('shows the slug to members, so the app can build /Billing/diagrams', async () => {
             const mine = await call('GET', '/projects', viewer);
-            expect(mine.json()[0]).toMatchObject({ id: projectId, slug: 'Billing' });
+            expect(mine.json().items[0]).toMatchObject({
+                id: projectId,
+                slug: 'Billing',
+            });
             const all = await call('GET', '/projects', admin);
-            expect(all.json().every((p: { slug: string }) => !!p.slug)).toBe(true);
+            expect(all.json().items.every((p: { slug: string }) => !!p.slug)).toBe(true);
         });
 
         it('rejects names that cannot be a URL or that shadow an app path', async () => {
