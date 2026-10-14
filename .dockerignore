@@ -1,7 +1,7 @@
-# Ignore node_modules and build directories
-node_modules
-dist
-build
+# Ignore node_modules and build directories, at any depth (server/ has its own)
+**/node_modules
+**/dist
+**/build
 
 # Ignore logs
 npm-debug.log*
@@ -9,10 +9,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Ignore local environment files
-.env
-.env.local
-.env.*.local
+# Ignore local environment files at any depth (server/.env holds secrets)
+**/.env
+**/.env.*
 
 # Ignore Dockerfile and Docker Compose files
 Dockerfile
@@ -27,10 +26,10 @@ docker-compose.yml
 .idea/
 
 # Ignore tests and documentation
-__tests__/
-test/
-tests/
-spec/
+**/__tests__/
+**/test/
+**/tests/
+**/spec/
 *.md
 
 # Ignore temporary files
