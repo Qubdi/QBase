@@ -6,6 +6,10 @@ import React, {
     useState,
 } from 'react';
 import {
+    planFieldHandles,
+    scheduleOncePerFrame,
+} from './table-node-field-handles';
+import {
     Handle,
     Position,
     useConnection,
@@ -146,6 +150,32 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
             return count;
         }, [targetEdgeCount, relationships, tableNodeId, field.id]);
 
+        // a relationship line starts at this field: it needs source handles
+        const isRelationshipSource = useMemo(
+            () => relationships.some((rel) => rel.sourceFieldId === field.id),
+            [relationships, field.id]
+        );
+
+        const handlePlan = useMemo(
+            () =>
+                planFieldHandles({
+                    isConnectable,
+                    focused,
+                    isRelationshipSource,
+                    connectionInProgress: connection.inProgress,
+                    isTarget: !!(isTarget || false),
+                    numberOfEdgesToField,
+                }),
+            [
+                isConnectable,
+                focused,
+                isRelationshipSource,
+                connection.inProgress,
+                isTarget,
+                numberOfEdgesToField,
+            ]
+        );
+
         const isForeignKey = useMemo(() => {
             return relationships.some((rel) => {
                 // FK placement logic:
@@ -171,23 +201,16 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
             });
         }, [relationships, tableNodeId, field.id]);
 
-        const previousNumberOfEdgesToFieldRef = useRef<number | null>(null);
+        // React Flow learns where handles are only when told to measure, so do it
+        // whenever the handles this field needs change (first render, a line is
+        // added or removed, the table is focused). One measure per table per frame.
+        const previousLayoutKeyRef = useRef<string | null>(null);
 
         useEffect(() => {
-            // Always update on first render, then only when count changes
-            if (
-                previousNumberOfEdgesToFieldRef.current === null ||
-                previousNumberOfEdgesToFieldRef.current !== numberOfEdgesToField
-            ) {
-                // Use requestAnimationFrame for immediate but batched update
-                const frameId = requestAnimationFrame(() => {
-                    updateNodeInternals(tableNodeId);
-                    previousNumberOfEdgesToFieldRef.current =
-                        numberOfEdgesToField;
-                });
-                return () => cancelAnimationFrame(frameId);
-            }
-        }, [tableNodeId, updateNodeInternals, numberOfEdgesToField]);
+            if (previousLayoutKeyRef.current === handlePlan.layoutKey) return;
+            previousLayoutKeyRef.current = handlePlan.layoutKey;
+            scheduleOncePerFrame(tableNodeId, updateNodeInternals);
+        }, [tableNodeId, updateNodeInternals, handlePlan.layoutKey]);
 
         const {
             checkIfFieldRemoved,
@@ -368,7 +391,7 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                     }
                 )}
             >
-                {isConnectable ? (
+                {handlePlan.source ? (
                     <>
                         <Handle
                             id={`${RIGHT_HANDLE_ID_PREFIX}${field.id}`}
@@ -384,32 +407,23 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                         />
                     </>
                 ) : null}
-                {(!connection.inProgress || isTarget) && isConnectable && (
-                    <>
-                        {Array.from(
-                            { length: numberOfEdgesToField },
-                            (_, index) => index
-                        ).map((index) => (
-                            <Handle
-                                id={`${TARGET_ID_PREFIX}${index}_${field.id}`}
-                                key={`${TARGET_ID_PREFIX}${index}_${field.id}`}
-                                className={`!invisible`}
-                                position={Position.Left}
-                                type="target"
-                            />
-                        ))}
-                        <Handle
-                            id={`${TARGET_ID_PREFIX}${numberOfEdgesToField}_${field.id}`}
-                            className={
-                                isTarget
-                                    ? '!absolute !left-0 !top-0 !h-full !w-full !transform-none !rounded-none !border-none !opacity-0'
-                                    : `!invisible`
-                            }
-                            position={Position.Left}
-                            type="target"
-                        />
-                    </>
-                )}
+                {Array.from({ length: handlePlan.targets }, (_, index) => (
+                    <Handle
+                        id={`${TARGET_ID_PREFIX}${index}_${field.id}`}
+                        key={`${TARGET_ID_PREFIX}${index}_${field.id}`}
+                        className={`!invisible`}
+                        position={Position.Left}
+                        type="target"
+                    />
+                ))}
+                {handlePlan.dropZone ? (
+                    <Handle
+                        id={`${TARGET_ID_PREFIX}${numberOfEdgesToField}_${field.id}`}
+                        className="!absolute !left-0 !top-0 !h-full !w-full !transform-none !rounded-none !border-none !opacity-0"
+                        position={Position.Left}
+                        type="target"
+                    />
+                ) : null}
                 <div
                     className={cn('flex items-center gap-1 min-w-0 text-left', {
                         'font-semibold': field.primaryKey || field.unique,
