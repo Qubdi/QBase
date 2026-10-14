@@ -184,9 +184,14 @@ export const savedConnections = pgTable(
     'saved_connections',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        ownerId: uuid('owner_id')
+        // connections belong to a project and are usable by its editors
+        projectId: uuid('project_id')
             .notNull()
-            .references(() => users.id, { onDelete: 'cascade' }),
+            .references(() => projects.id, { onDelete: 'cascade' }),
+        // who saved it; the connection outlives that user
+        ownerId: uuid('owner_id').references(() => users.id, {
+            onDelete: 'set null',
+        }),
         name: text('name').notNull(),
         dialect: text('dialect').notNull(),
         host: text('host').notNull(),
@@ -203,7 +208,12 @@ export const savedConnections = pgTable(
             .notNull()
             .defaultNow(),
     },
-    (t) => [uniqueIndex('saved_connections_owner_name_idx').on(t.ownerId, t.name)]
+    (t) => [
+        uniqueIndex('saved_connections_project_name_idx').on(
+            t.projectId,
+            t.name
+        ),
+    ]
 );
 
 export const driftSettings = pgTable('drift_settings', {

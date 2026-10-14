@@ -64,6 +64,13 @@
       "when": 1791979554260,
       "tag": "0008_require_project",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791980061112,
+      "tag": "0009_connections_per_project",
+      "breakpoints": true
     }
   ]
 }
