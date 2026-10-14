@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 4</b></div>
-  <h1>2 open.</h1>
+  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 5</b></div>
+  <h1>1 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-14</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (152 files, 1388 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
@@ -30,13 +30,12 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">2 open &middot; 0 Crit &middot; 0 High &middot; 1 Med &middot; 1 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 0 Crit &middot; 0 High &middot; 1 Med &middot; 0 Low. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
         <tr><td class="svc-name">CLI-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Autosave serialises the whole diagram on every change</td><td><code>src/components/qubdi/server-autosave.tsx:39</code></td><td class="wrap-cell">Compare a revision counter instead of JSON</td></tr>
-        <tr><td class="svc-name">CLI-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">16 lint suppressions and <code>any</code> casts remain in app code</td><td><code>src/</code></td><td class="wrap-cell">Remove them as files are touched</td></tr>
       </tbody>
     </table>
   </div>
@@ -57,12 +56,12 @@
     </table>
   </div>
   </details>
-  <details><summary>Accepted (0)</summary>
+  <details><summary>Accepted (1)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
       <tbody>
-
+        <tr><td class="svc-name">CLI-006</td><td><span class="pill warn">Accepted</span></td><td class="wrap-cell">10 lint suppressions remain in app code: parser AST typing, hook deps, third-party classes</td><td class="wrap-cell">Each has a stated reason; removing them risks behaviour</td></tr>
       </tbody>
     </table>
   </div>
