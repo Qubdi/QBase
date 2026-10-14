@@ -10,6 +10,7 @@ import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { useToast } from '@/components/toast/use-toast';
 import { useChartDB } from '@/hooks/use-chartdb';
+import { getProjectId } from '@/lib/qubdi/remote-map';
 import { useQubdi } from '@/hooks/use-qubdi';
 import {
     api,
@@ -91,7 +92,12 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         const remoteId = remoteIdFor(currentDiagram.id);
         setError(null);
         try {
-            setConnections(await api.listSavedConnections());
+            const projectId = getProjectId(currentDiagram.id);
+            setConnections(
+                projectId
+                    ? await api.listSavedConnections(projectId).catch(() => [])
+                    : []
+            );
             if (!remoteId) {
                 setOverview(null);
                 setReport(null);

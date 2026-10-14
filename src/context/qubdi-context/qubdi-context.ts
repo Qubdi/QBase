@@ -10,8 +10,8 @@ export interface QubdiContext {
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     /**
-     * Uploads the local diagram; returns the server diagram id. A new
-     * diagram is created inside `projectId` when given, otherwise it is personal.
+     * Uploads the local diagram; returns the server diagram id. An unbound
+     * diagram needs a `projectId` to be created in; without one this rejects.
      */
     syncDiagram: (diagram: Diagram, projectId?: string) => Promise<string>;
     remoteIdFor: (localId: string) => string | undefined;

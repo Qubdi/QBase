@@ -277,12 +277,12 @@ export function createApi(
         createDiagram: (
             title: string,
             content: Record<string, unknown>,
-            projectId?: string
+            projectId: string
         ) =>
             request<RemoteDiagram>('POST', '/diagrams', {
                 title,
                 content,
-                ...(projectId ? { projectId } : {}),
+                projectId,
             }),
         listProjects: () => request<MyProject[]>('GET', '/projects'),
 
@@ -455,10 +455,14 @@ export function createApi(
                 '/introspect',
                 ref
             ),
-        listSavedConnections: () =>
-            request<SavedConnection[]>('GET', '/introspect/connections'),
-        saveConnection: (input: DbConnectionInput & { name: string }) =>
-            request<SavedConnection>('POST', '/introspect/connections', input),
+        listSavedConnections: (projectId: string) =>
+            request<SavedConnection[]>(
+                'GET',
+                `/introspect/connections?projectId=${encodeURIComponent(projectId)}`
+            ),
+        saveConnection: (
+            input: DbConnectionInput & { name: string; projectId: string }
+        ) => request<SavedConnection>('POST', '/introspect/connections', input),
         deleteSavedConnection: (id: string) =>
             request<void>('DELETE', `/introspect/connections/${id}`),
         getLintConfig: (id: string) =>
@@ -538,6 +542,8 @@ export const errorMessage = (e: unknown): string => {
             connection_not_found: 'That saved connection does not exist.',
             not_configured: 'Save the drift settings first.',
             already_running: 'A check is already running.',
+            no_project:
+                'Open this diagram from a project before saving it to the server.',
             last_admin: 'There must be at least one admin.',
             cannot_delete_self: 'You cannot delete your own account.',
             project_not_empty:

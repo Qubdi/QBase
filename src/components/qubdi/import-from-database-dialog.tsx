@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { useStorage } from '@/hooks/use-storage';
+import { useQubdi } from '@/hooks/use-qubdi';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import {
     api,
@@ -32,6 +33,8 @@ import {
 export interface ImportFromDatabaseDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /** The new diagram, and the connections used, belong to this project. */
+    projectId: string;
 }
 
 type Step = 'connect' | 'select' | 'preview';
@@ -58,8 +61,9 @@ const emptyForm = {
 
 export const ImportFromDatabaseDialog: React.FC<
     ImportFromDatabaseDialogProps
-> = ({ open, onOpenChange }) => {
+> = ({ open, onOpenChange, projectId }) => {
     const { addDiagram } = useStorage();
+    const { syncDiagram } = useQubdi();
     const navigate = useNavigate();
     const [step, setStep] = useState<Step>('connect');
     const [form, setForm] = useState(emptyForm);
@@ -77,10 +81,10 @@ export const ImportFromDatabaseDialog: React.FC<
         if (!open) return;
         setStep('connect');
         setError(null);
-        api.listSavedConnections()
+        api.listSavedConnections(projectId)
             .then(setSaved)
             .catch(() => setSaved([]));
-    }, [open]);
+    }, [open, projectId]);
 
     const set = <K extends keyof typeof emptyForm>(
         key: K,
@@ -117,6 +121,7 @@ export const ImportFromDatabaseDialog: React.FC<
                 const s = await api.saveConnection({
                     ...connection,
                     name: form.saveAs.trim(),
+                    projectId,
                 });
                 setSaved((list) => [...list, s]);
                 setJustSavedId(s.id);
@@ -156,6 +161,8 @@ export const ImportFromDatabaseDialog: React.FC<
                 name.trim() || catalog.database
             );
             await addDiagram({ diagram });
+            // nothing lives outside a project: create it on the server right away
+            await syncDiagram(diagram, projectId);
             // remember where this diagram came from so re-sync is one click;
             // passwords are never stored in the browser
             const usedSaved = savedId || justSavedId;

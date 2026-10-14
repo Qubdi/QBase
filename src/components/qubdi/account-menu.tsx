@@ -32,6 +32,7 @@ import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { ImportFromDatabaseDialog } from './import-from-database-dialog';
 import { MembersDialog } from './members-dialog';
+import { getProjectId } from '@/lib/qubdi/remote-map';
 import { OpenFromServerDialog } from './open-from-server-dialog';
 import { OPEN_RESYNC_EVENT } from './drift-dialog';
 import { ResyncDialog } from './resync-dialog';
@@ -203,10 +204,13 @@ export const AccountMenu: React.FC = () => {
                 open={openServerOpen}
                 onOpenChange={setOpenServerOpen}
             />
-            <ImportFromDatabaseDialog
-                open={importOpen}
-                onOpenChange={setImportOpen}
-            />
+            {getProjectId(currentDiagram.id) ? (
+                <ImportFromDatabaseDialog
+                    open={importOpen}
+                    onOpenChange={setImportOpen}
+                    projectId={getProjectId(currentDiagram.id)!}
+                />
+            ) : null}
             <ResyncDialog open={resyncOpen} onOpenChange={setResyncOpen} />
             <ShareDialog
                 open={shareOpen}

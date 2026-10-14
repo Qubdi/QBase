@@ -5,6 +5,7 @@ import { QUBDI_BACKEND_ENABLED } from '@/lib/qubdi/config';
 import {
     clearRemoteId,
     getRemoteId,
+    setProjectId,
     setRemoteId,
 } from '@/lib/qubdi/remote-map';
 import { resetAdminLanding } from '@/lib/qubdi/admin-landing';
@@ -56,12 +57,15 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                     clearRemoteId(diagram.id);
                 }
             }
+            // nothing exists outside a project
+            if (!projectId) throw new ApiError(400, 'no_project');
             const created = await api.createDiagram(
                 diagram.name,
                 content,
                 projectId
             );
             setRemoteId(diagram.id, created.id);
+            setProjectId(diagram.id, projectId);
             return created.id;
         },
         []
