@@ -9,6 +9,20 @@ freeze, then jump to the new spot. Seen on the Docker app and on the local build
 (`/diagrams/monica_db`, the 89-table monica template). The original ChartDB
 (app.chartdb.io) feels smoother on the same template.
 
+**Key clue (from the user):** with only **2 tables** that reference each other, the table
+itself moves perfectly smoothly but the relationship line lags and jumps. A 2-table diagram
+has almost no rendering work, so this is not a performance problem: the line is not being
+redrawn from the table's live position on every drag step. Start here, not with profiling:
+
+- [ ] Reproduce with a 2-table diagram and record, per animation frame, the table's position
+      and the line end's position as drawn on screen (not only the `d` attribute).
+- [ ] Find where the line reads a stale or delayed position: the edge rebuild effect in
+      `canvas.tsx` (100 ms timeout), the memoized `getInternalNode` / `sourceNode` /
+      `targetNode` in `relationship-edge.tsx`, handle positions only re-measured by
+      `updateNodeInternals` (now scheduled once per frame in `table-node-field-handles.ts`),
+      and the side-keeping logic in `relationship-edge-sides.ts`.
+- [ ] Check against the original ChartDB with the same 2 tables.
+
 Done so far (each measured with scripted drags in headless Chrome; the freeze is still
 reported, so these are not the whole answer):
 
