@@ -54,7 +54,7 @@ Schema lint works either way.
 
 All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 
-- Repository root `.env` (copy `.env.example`): read by `docker compose` and by the editor build. It holds the core database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`), the secrets, ports, and the editor's `VITE_QUBDI_BACKEND_URL` and `VITE_HOST_URL` (public URL for canonical links; unset = none).
+- Repository root `.env` (copy `.env.example`): read by `docker compose` and by the editor build. It holds the core database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`), where it runs (`POSTGRES_HOST`, `POSTGRES_PORT`; point them at another machine to use an existing Postgres), the secrets, and the bind address and port of each service (`*_BIND_IP`, `*_PUBLISH_PORT` / `*_PORT`), and the editor's `VITE_QUBDI_BACKEND_URL` and `VITE_HOST_URL` (public URL for canonical links; unset = none).
 - `server/.env` (copy `server/.env.example`): read by the backend when run outside Docker.
 
 ### Backend settings
@@ -62,6 +62,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `DATABASE_URL` | `postgres://qubdidb:qubdidb@localhost:5433/qubdidb` | Where QubdiDB stores its own data |
+| `HOST` | `0.0.0.0` | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
 | `SESSION_SECRET` | dev value | Set this in production |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |

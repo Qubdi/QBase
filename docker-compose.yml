@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qubdidb}
       POSTGRES_DB: ${POSTGRES_DB:-qubdidb}
     ports:
-      - "${POSTGRES_PORT:-5433}:5432"
+      - "${POSTGRES_BIND_IP:-0.0.0.0}:${POSTGRES_PUBLISH_PORT:-5433}:5432"
     volumes:
       - qubdidb-data:/var/lib/postgresql/data
     healthcheck:
@@ -24,14 +24,14 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-qubdidb}:${POSTGRES_PASSWORD:-qubdidb}@db:5432/${POSTGRES_DB:-qubdidb}
+      DATABASE_URL: postgres://${POSTGRES_USER:-qubdidb}:${POSTGRES_PASSWORD:-qubdidb}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-qubdidb}
       SESSION_SECRET: ${SESSION_SECRET:-change-me}
       CONNECTION_KEY: ${CONNECTION_KEY:-}
       INTROSPECT_ALLOW_HOSTS: ${INTROSPECT_ALLOW_HOSTS:-}
       PORT: "3001"
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
     ports:
-      - "${SERVER_PORT:-3001}:3001"
+      - "${SERVER_BIND_IP:-0.0.0.0}:${SERVER_PORT:-3001}:3001"
 
   ui:
     build:
@@ -42,7 +42,7 @@ services:
     depends_on:
       - server
     ports:
-      - "${UI_PORT:-8080}:80"
+      - "${UI_BIND_IP:-0.0.0.0}:${UI_PORT:-8080}:80"
 
   # Optional: only needed to run the SQL Server introspection tests.
   #   docker compose --profile mssql up -d mssql
@@ -53,7 +53,7 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Qubdi_Strong_Pass1}
     ports:
-      - "14333:1433"
+      - "${MSSQL_BIND_IP:-127.0.0.1}:${MSSQL_PORT:-14333}:1433"
 
 volumes:
   qubdidb-data:

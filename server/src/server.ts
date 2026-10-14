@@ -22,5 +22,5 @@ startDriftScheduler({
     config,
     factory: defaultIntrospectorFactory,
 });
-await app.listen({ port: config.port, host: '0.0.0.0' });
+await app.listen({ port: config.port, host: config.host });
 console.log(`QubdiDB server listening on :${config.port}`);
