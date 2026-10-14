@@ -131,7 +131,7 @@ describe('ensureLocalCopy', () => {
         expect(fetches()).toBe(1);
     });
 
-    it('refuses a viewer’s copy that was never published', async () => {
+    it('refuses a viewerâ€™s copy that was never published', async () => {
         const { args, added } = setup(null);
         await expect(ensureLocalCopy(args())).rejects.toBeInstanceOf(
             UnpublishedDiagramError

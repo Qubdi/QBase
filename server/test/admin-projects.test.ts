@@ -329,7 +329,7 @@ describe('admin panel and projects', () => {
             expect(res.json().slug).toBe('Billing');
         });
 
-        it('rejects renaming a project onto another project’s URL', async () => {
+        it('rejects renaming a project onto another projectâ€™s URL', async () => {
             const p = (await create('Rename Me')).json();
             const res = await call('PATCH', `/admin/projects/${p.id}`, admin, {
                 name: 'billing',
