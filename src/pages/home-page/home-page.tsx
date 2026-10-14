@@ -6,6 +6,7 @@ import { Badge } from '@/components/badge/badge';
 import { AdminLandingRedirect } from '@/components/qubdi/admin-landing-redirect';
 import { AppShell } from '@/components/qubdi/app-shell';
 import { ListPager } from '@/components/qubdi/list-pager';
+import { SearchInput } from '@/components/qubdi/search-input';
 import { Spinner } from '@/components/spinner/spinner';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
@@ -21,7 +22,7 @@ const PAGE_SIZE = 9;
 const roleLabel = (role: MyProject['role']) =>
     role === 'owner' ? 'Admin' : role === 'editor' ? 'Editor' : 'Viewer';
 
-const Projects: React.FC = () => {
+export const ProjectList: React.FC = () => {
     const { user } = useQubdi();
     // the server only returns the projects this user is assigned to (admins: all)
     const list = usePagedList(
@@ -41,8 +42,22 @@ const Projects: React.FC = () => {
                     {list.error}
                 </p>
             ) : null}
+            {/* hidden only when the user has no projects at all */}
+            {list.total > 0 || list.query ? (
+                <SearchInput
+                    className="mb-4 max-w-sm"
+                    value={list.query}
+                    onChange={list.setQuery}
+                    placeholder="Search projects…"
+                    label="Search projects"
+                />
+            ) : null}
             {list.initialLoading ? (
                 <Spinner size="large" className="mx-auto mt-12 text-primary" />
+            ) : list.total === 0 && list.query ? (
+                <p className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+                    No projects match &ldquo;{list.query}&rdquo;.
+                </p>
             ) : list.total === 0 ? (
                 <div className="rounded-xl border border-dashed p-10 text-center">
                     <FolderKanban className="mx-auto mb-3 size-8 text-muted-foreground" />
@@ -122,7 +137,7 @@ export const HomePage: React.FC = () => (
                 {/* admins start on the admin panel, once per session */}
                 <AdminLandingRedirect />
                 <AppShell>
-                    <Projects />
+                    <ProjectList />
                 </AppShell>
             </ThemeProvider>
         </StorageProvider>
