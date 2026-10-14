@@ -1,10 +1,16 @@
-import { and, count, eq, ne, or, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, ne, or, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
+import {
+    containsPattern,
+    offsetOf,
+    pageOf,
+    pagingQuery,
+} from '../lib/paging.js';
 import { slugFor } from '../projects/slug.js';
 import {
     diagrams,
@@ -66,18 +72,31 @@ export const adminRoutes =
 
         // ---- users ----
 
-        app.get('/users', async () =>
-            db
+        // paged and searchable: ?page=1&limit=10&q=ann (q matches the email)
+        app.get('/users', async (req) => {
+            const paging = pagingQuery.parse(req.query);
+            const where = paging.q
+                ? ilike(users.email, containsPattern(paging.q))
+                : undefined;
+            const [{ value: total }] = await db
+                .select({ value: count() })
+                .from(users)
+                .where(where);
+            const items = await db
                 .select({
                     id: users.id,
                     email: users.email,
                     isAdmin: users.isAdmin,
                     createdAt: users.createdAt,
-                    projects: sql<number>`(select count(*)::int from ${projectMembers} where ${projectMembers.userId} = ${users.id})`,
+                    projects: sql<number>`(select count(*)::int from project_members pm where pm.user_id = users.id)`,
                 })
                 .from(users)
-                .orderBy(users.createdAt)
-        );
+                .where(where)
+                .orderBy(users.createdAt, users.id)
+                .limit(paging.limit)
+                .offset(offsetOf(paging));
+            return pageOf(items, total, paging);
+        });
 
         app.post('/users', async (req, reply) => {
             const body = createUserBody.parse(req.body);
@@ -162,20 +181,38 @@ export const adminRoutes =
 
         // ---- projects ----
 
-        app.get('/projects', async () =>
-            db
+        // paged and searchable: q matches the project's name or web address
+        app.get('/projects', async (req) => {
+            const paging = pagingQuery.parse(req.query);
+            const where = paging.q
+                ? or(
+                      ilike(projects.name, containsPattern(paging.q)),
+                      ilike(projects.slug, containsPattern(paging.q))
+                  )
+                : undefined;
+            const [{ value: total }] = await db
+                .select({ value: count() })
+                .from(projects)
+                .where(where);
+            const items = await db
                 .select({
                     id: projects.id,
                     name: projects.name,
                     slug: projects.slug,
                     description: projects.description,
                     createdAt: projects.createdAt,
-                    members: sql<number>`(select count(*)::int from ${projectMembers} where ${projectMembers.projectId} = ${projects.id})`,
-                    diagrams: sql<number>`(select count(*)::int from ${diagrams} where ${diagrams.projectId} = ${projects.id})`,
+                    // table names are explicit: in a one-table select Drizzle prints
+                    // bare column names, which would resolve to the inner table
+                    members: sql<number>`(select count(*)::int from project_members pm where pm.project_id = projects.id)`,
+                    diagrams: sql<number>`(select count(*)::int from diagrams d where d.project_id = projects.id)`,
                 })
                 .from(projects)
-                .orderBy(projects.name)
-        );
+                .where(where)
+                .orderBy(projects.name, projects.id)
+                .limit(paging.limit)
+                .offset(offsetOf(paging));
+            return pageOf(items, total, paging);
+        });
 
         app.post('/projects', async (req, reply) => {
             const body = projectBody.parse(req.body);
