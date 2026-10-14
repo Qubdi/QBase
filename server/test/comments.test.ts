@@ -161,7 +161,7 @@ describe('comments', () => {
         });
 
         it('edits, resolves, unresolves and deletes', async () => {
-            const made = (await add(owner, 'table', 't2', 'first')).json();
+            const made = (await add(editor, 'table', 't2', 'first')).json();
             const url = `/diagrams/${id}/comments/${made.id}`;
             const put = await ctx.app.inject({
                 method: 'PUT',
@@ -195,6 +195,56 @@ describe('comments', () => {
                 (await ctx.app.inject({ method: 'DELETE', url, headers: as(owner) }))
                     .statusCode
             ).toBe(404);
+        });
+
+        it('lets only the author or the owner edit or delete, while any editor may resolve', async () => {
+            const second = await registerUser(ctx.app, 'editor2@example.com');
+            await grant(ctx.app, second, 'editor');
+            const mine = (await add(editor, 'table', 't2', 'mine')).json();
+            const url = `/diagrams/${id}/comments/${mine.id}`;
+
+            // another editor: no edit, no delete, but resolving is shared work
+            const put = await ctx.app.inject({
+                method: 'PUT',
+                url,
+                headers: as(second),
+                payload: { body: 'hijacked' },
+            });
+            expect(put.statusCode).toBe(403);
+            const del = await ctx.app.inject({
+                method: 'DELETE',
+                url,
+                headers: as(second),
+            });
+            expect(del.statusCode).toBe(403);
+            const resolve = await ctx.app.inject({
+                method: 'POST',
+                url: `${url}/resolve`,
+                headers: as(second),
+            });
+            expect(resolve.statusCode).toBe(200);
+
+            // the owner may moderate; the comment survived untouched until now
+            const list = await ctx.app.inject({
+                url: `/diagrams/${id}/comments`,
+                headers: as(owner),
+            });
+            expect(
+                list.json().find((c: { id: string }) => c.id === mine.id).body
+            ).toBe('mine');
+            const ownerPut = await ctx.app.inject({
+                method: 'PUT',
+                url,
+                headers: as(owner),
+                payload: { body: 'moderated' },
+            });
+            expect(ownerPut.statusCode).toBe(200);
+            const ownerDel = await ctx.app.inject({
+                method: 'DELETE',
+                url,
+                headers: as(owner),
+            });
+            expect(ownerDel.statusCode).toBe(204);
         });
 
         it('stops viewers from editing, resolving or deleting', async () => {

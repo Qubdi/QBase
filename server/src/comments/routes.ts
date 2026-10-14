@@ -105,6 +105,18 @@ export const commentRoutes =
             return true;
         };
 
+        /**
+         * Editing or deleting a comment is for its author and the diagram's
+         * owner. Other editors can still reply and resolve.
+         */
+        const mayChange = async (
+            diagramId: string,
+            userId: string,
+            comment: CommentRow
+        ) =>
+            comment.authorId === userId ||
+            (await getRole(db, diagramId, userId)) === 'owner';
+
         const find = async (diagramId: string, commentId: string) => {
             const [c] = await db
                 .select()
@@ -177,8 +189,12 @@ export const commentRoutes =
         app.put('/:id/comments/:commentId', async (req, reply) => {
             const { id, commentId } = commentParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
-            if (!(await find(id, commentId))) {
+            const existing = await find(id, commentId);
+            if (!existing) {
                 return reply.code(404).send({ error: 'not_found' });
+            }
+            if (!(await mayChange(id, req.user!.id, existing))) {
+                return reply.code(403).send({ error: 'forbidden' });
             }
             const input = updateBody.parse(req.body);
             const [row] = await db
@@ -217,8 +233,12 @@ export const commentRoutes =
         app.delete('/:id/comments/:commentId', async (req, reply) => {
             const { id, commentId } = commentParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
-            if (!(await find(id, commentId))) {
+            const existing = await find(id, commentId);
+            if (!existing) {
                 return reply.code(404).send({ error: 'not_found' });
+            }
+            if (!(await mayChange(id, req.user!.id, existing))) {
+                return reply.code(403).send({ error: 'forbidden' });
             }
             await db.delete(comments).where(eq(comments.id, commentId));
             await audit(db, {
