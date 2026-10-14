@@ -50,6 +50,13 @@
       "when": 1791933698673,
       "tag": "0006_certain_meltdown",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791976528723,
+      "tag": "0007_projects",
+      "breakpoints": true
     }
   ]
 }

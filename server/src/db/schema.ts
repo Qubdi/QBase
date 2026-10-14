@@ -15,6 +15,8 @@ import {
 
 export const memberRole = pgEnum('member_role', ['owner', 'editor', 'viewer']);
 
+export const projectRole = pgEnum('project_role', ['editor', 'viewer']);
+
 export const shareAccess = pgEnum('share_access', [
     'anyone',
     'signed_in',
@@ -52,11 +54,44 @@ export const sessions = pgTable('sessions', {
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
 
+export const projects = pgTable('projects', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull().unique(),
+    description: text('description').notNull().default(''),
+    createdBy: uuid('created_by').references(() => users.id, {
+        onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+});
+
+export const projectMembers = pgTable(
+    'project_members',
+    {
+        projectId: uuid('project_id')
+            .notNull()
+            .references(() => projects.id, { onDelete: 'cascade' }),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        role: projectRole('role').notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.projectId, t.userId] }),
+        index('project_members_user_idx').on(t.userId),
+    ]
+);
+
 export const diagrams = pgTable('diagrams', {
     id: uuid('id').primaryKey().defaultRandom(),
     ownerId: uuid('owner_id')
         .notNull()
         .references(() => users.id, { onDelete: 'cascade' }),
+    // when set, access comes from project_members instead of diagram_members
+    projectId: uuid('project_id').references(() => projects.id, {
+        onDelete: 'restrict',
+    }),
     title: text('title').notNull(),
     content: jsonb('content').notNull(),
     autoPublish: boolean('auto_publish').notNull().default(false),
