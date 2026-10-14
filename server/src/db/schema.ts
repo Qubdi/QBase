@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
     index,
     jsonb,
@@ -52,17 +53,25 @@ export const sessions = pgTable('sessions', {
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
 
-export const projects = pgTable('projects', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    name: text('name').notNull().unique(),
-    description: text('description').notNull().default(''),
-    createdBy: uuid('created_by').references(() => users.id, {
-        onDelete: 'set null',
-    }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-        .notNull()
-        .defaultNow(),
-});
+export const projects = pgTable(
+    'projects',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        name: text('name').notNull().unique(),
+        slug: text('slug').notNull(),
+        description: text('description').notNull().default(''),
+        createdBy: uuid('created_by').references(() => users.id, {
+            onDelete: 'set null',
+        }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (t) => [
+        // the URL piece (/Qubdi/diagrams); unique ignoring case
+        uniqueIndex('projects_slug_lower_idx').on(sql`lower(${t.slug})`),
+    ]
+);
 
 export const projectMembers = pgTable(
     'project_members',
