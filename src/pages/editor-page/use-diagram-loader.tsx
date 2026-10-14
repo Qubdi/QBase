@@ -6,11 +6,16 @@ import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
 import { useStorage } from '@/hooks/use-storage';
 import type { Diagram } from '@/lib/domain/diagram';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import {
+    useEditorDiagramId,
+    useWorkspace,
+} from '@/components/qubdi/workspace-context';
 
 export const useDiagramLoader = () => {
     const [initialDiagram, setInitialDiagram] = useState<Diagram | undefined>();
-    const { diagramId } = useParams<{ diagramId: string }>();
+    const diagramId = useEditorDiagramId();
+    const workspace = useWorkspace();
     const { config } = useConfig();
     const { loadDiagram, currentDiagram } = useChartDB();
     const { resetRedoStack, resetUndoStack } = useRedoUndoStack();
@@ -27,6 +32,15 @@ export const useDiagramLoader = () => {
         }
 
         if (currentDiagram?.id === diagramId) {
+            return;
+        }
+
+        // /<project>/diagrams with no diagram yet: let the user pick or create one
+        if (workspace && !diagramId) {
+            if (currentDiagramLoadingRef.current !== '') {
+                currentDiagramLoadingRef.current = '';
+                openOpenDiagramDialog({ canClose: false });
+            }
             return;
         }
 
@@ -86,6 +100,7 @@ export const useDiagramLoader = () => {
         showLoader,
         currentDiagram?.id,
         openOpenDiagramDialog,
+        workspace,
     ]);
 
     return { initialDiagram };

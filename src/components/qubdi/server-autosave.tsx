@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
 import { AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useChartDB } from '@/hooks/use-chartdb';
@@ -12,6 +11,7 @@ import {
     useSaveStatus,
 } from '@/lib/qubdi/save-status-store';
 import { useDiagramAccess } from './diagram-access-context';
+import { useEditorDiagramId } from './workspace-context';
 
 const AUTOSAVE_DELAY_MS = 1500;
 
@@ -20,7 +20,7 @@ const AUTOSAVE_DELAY_MS = 1500;
  * nothing; the navbar shows the result through <ServerSaveStatus />.
  */
 export const ServerAutosave: React.FC = () => {
-    const { diagramId } = useParams<{ diagramId: string }>();
+    const diagramId = useEditorDiagramId();
     const { access } = useDiagramAccess();
     const { syncDiagram } = useQubdi();
     const { currentDiagram } = useChartDB();

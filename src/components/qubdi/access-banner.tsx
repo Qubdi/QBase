@@ -41,6 +41,8 @@ export const AccessBanner: React.FC = () => {
         projects.find((p) => p.id === projectId)?.name
     );
 
+    if (!reason) return null;
+
     const move = async () => {
         if (!choice) return;
         setBusy(true);

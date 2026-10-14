@@ -19,14 +19,18 @@ const routes: RouteObject[] = [
                       return { element: <HomePage /> };
                   },
               },
-              {
-                  path: 'projects/:projectId',
+              // a project's workspace: the editor, scoped to the project
+              ...[
+                  ':projectSlug/diagrams',
+                  ':projectSlug/diagrams/:remoteDiagramId',
+              ].map((path) => ({
+                  path,
                   async lazy() {
-                      const { ProjectPage } =
-                          await import('./pages/project-page/project-page');
-                      return { element: <ProjectPage /> };
+                      const { EditorPage } =
+                          await import('./pages/editor-page/editor-page');
+                      return { element: <EditorPage /> };
                   },
-              },
+              })),
           ]
         : []),
     ...(QUBDI_BACKEND_ENABLED
