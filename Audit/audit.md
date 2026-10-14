@@ -1,7 +1,7 @@
 # QubdiDB — Audit
 
-**rev** 5 · **date** 2026-10-14
-**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (152 files, 1388 tests), npm audit · server tests not run (no Postgres) · no secret read
+**rev** 6 · **date** 2026-10-14
+**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (153 files, 1391 tests), npm audit · server tests not run (no Postgres) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
@@ -9,8 +9,8 @@
 | Security & secrets | 12 | 0 | 1 | 3 | 0 |
 | Repository | 14 | 0 | 2 | 1 | 0 |
 | Server | 19 | 0 | 0 | 0 | 0 |
-| Client | 1 | 0 | 0 | 4 | 1 |
-| **Total** | 46 | 0 | 3 | 8 | 1 |
+| Client | 0 | 0 | 0 | 5 | 1 |
+| **Total** | 45 | 0 | 3 | 9 | 1 |
 
 ## Act first
 
@@ -82,12 +82,6 @@
 | SRV-018 | Low | Any editor can edit or delete another author's comments | `server/src/comments/routes.ts:177` | Limit update and delete to author or owner |
 | SRV-019 | Low | `audit_log` has no read endpoint, index or retention | `server/src/db/schema.ts:138` | Add index, retention job and admin read route |
 
-### Client
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| CLI-001 | Med | Autosave serialises the whole diagram on every change | `src/components/qubdi/server-autosave.tsx:39` | Compare a revision counter instead of JSON |
-
 ---
 
 ## Fixed
@@ -98,6 +92,7 @@
 | SEC-003 | Security & secrets | `VITE_OPENAI_API_KEY` baked into the JS bundle; build args removed |
 | SEC-011 | Security & secrets | Cross-dialect SQL export sent the schema to an external LLM; AI export removed |
 | REPO-011 | Repository | README denied GitHub integration while UI linked GitHub; links removed |
+| CLI-001 | Client | Autosave serialised the whole diagram on every change; now compares a revision number |
 | CLI-002 | Client | Leave-page save used plain `fetch`; now sent with `keepalive` |
 | CLI-003 | Client | SQL import validators for MySQL, SQLite and SQL Server were stubs; now implemented |
 | CLI-004 | Client | Star-us dialog and its GIF were never opened; deleted with i18n keys |
@@ -129,3 +124,4 @@
 | 3 | 2026-10-14 | 0 new, 1 fixed, 0 dropped |
 | 4 | 2026-10-14 | 0 new, 1 fixed, 0 dropped |
 | 5 | 2026-10-14 | 0 new, 0 fixed, 1 accepted (CLI-006 cut from 27 suppressions and 12 casts to 10) |
+| 6 | 2026-10-14 | 0 new, 1 fixed, 0 dropped |
