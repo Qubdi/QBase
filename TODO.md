@@ -39,7 +39,7 @@ UUID and no separate project page. Diagrams are created inside the workspace.
    - Guard rails: an admin cannot disable themselves, and the last active admin cannot be
      disabled.
    - Audit log entries for disable and enable. Optionally filter the list by status.
-4. **Home page (`/`).**
+4. ✅ **Home page (`/`).** (done: paging, search, tests that members only see assigned projects; admins still see all, tell me if that should change)
    - Same unbounded growth as item 1, so paginate it and add the search bar.
    - Users only see the projects they are assigned to. The server already filters
      `GET /projects` for non-admins; add a test that proves it and check the UI never shows
