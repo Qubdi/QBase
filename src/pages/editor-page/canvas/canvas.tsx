@@ -114,6 +114,7 @@ import {
 } from '@/lib/utils/area-utils';
 import { CanvasFilter } from './canvas-filter/canvas-filter';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { useTableClipboard } from '@/hooks/use-table-clipboard';
 import { ShowAllButton } from './show-all-button';
 import { useIsLostInCanvas } from './hooks/use-is-lost-in-canvas';
 import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
@@ -304,6 +305,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         updateNote,
         highlightedCustomType,
         highlightCustomTypeId,
+        createTable,
     } = useChartDB();
     const { showSidePanel } = useLayout();
     const { effectiveTheme } = useTheme();
@@ -1520,6 +1522,17 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         },
         []
     );
+
+    // Ctrl/Cmd+C and Ctrl/Cmd+V copy and paste the selected tables (no relationships)
+    useTableClipboard({
+        tables,
+        selectedIds: selectedTableIds,
+        areaIds: areas.map((a) => a.id),
+        databaseType,
+        readonly,
+        createTable,
+        notify: (title, description) => toast({ title, description }),
+    });
 
     // Handle mouse move to update cursor position for floating edge
     const { screenToFlowPosition } = useReactFlow();
