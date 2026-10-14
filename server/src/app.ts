@@ -37,12 +37,19 @@ export interface AppDeps {
     introspect?: Pick<IntrospectDeps, 'factory' | 'lookup'>;
 }
 
+/** Trust the nearest `hops` proxies (Fastify's types only take a function here). */
+const trustHops = (hops: number) => (_address: string, hop: number) =>
+    hop < hops;
+
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const app = Fastify({
         // closing the server also ends open SSE streams instead of waiting on them
         forceCloseConnections: true,
         // behind a reverse proxy req.ip is the proxy's, unless it is trusted
-        trustProxy: config.trustProxy,
+        trustProxy:
+            typeof config.trustProxy === 'number'
+                ? trustHops(config.trustProxy)
+                : config.trustProxy,
         logger:
             config.logLevel === 'silent' ? false : { level: config.logLevel },
         bodyLimit: 50 * 1024 * 1024,

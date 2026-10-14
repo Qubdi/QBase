@@ -415,6 +415,17 @@ describe('share rate limit behind a proxy', () => {
         }
     });
 
+    it('trusts a number of proxy hops', async () => {
+        const ctx = await createTestApp({ shareRateLimit: 1, trustProxy: 1 });
+        try {
+            expect(await hit(ctx, '1.1.1.1')).toBe(404);
+            expect(await hit(ctx, '2.2.2.2')).toBe(404);
+            expect(await hit(ctx, '1.1.1.1')).toBe(429);
+        } finally {
+            await ctx.close();
+        }
+    });
+
     it('keys on the visitor address when the proxy is trusted', async () => {
         const ctx = await createTestApp({
             shareRateLimit: 1,
