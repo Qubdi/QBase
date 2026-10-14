@@ -5,6 +5,7 @@ import { audit } from '../audit/audit.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, snapshots, users } from '../db/schema.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
+import { diagramStats, statsColumns } from './summary.js';
 import {
     latestSnapshot,
     presentDiagram,
@@ -58,11 +59,18 @@ export const diagramRoutes =
                 title: diagrams.title,
                 updatedAt: diagrams.updatedAt,
                 ownerId: diagrams.ownerId,
+                ownerEmail: users.email,
                 projectId: diagrams.projectId,
+                ...statsColumns,
             };
             // admins see every project's diagrams; others only their projects'
             const rows = me.isAdmin
-                ? (await db.select(select).from(diagrams)).map((d) => ({
+                ? (
+                      await db
+                          .select(select)
+                          .from(diagrams)
+                          .leftJoin(users, eq(users.id, diagrams.ownerId))
+                  ).map((d) => ({
                       ...d,
                       role: 'owner' as const,
                   }))
@@ -73,6 +81,7 @@ export const diagramRoutes =
                           diagrams,
                           eq(diagrams.projectId, projectMembers.projectId)
                       )
+                      .leftJoin(users, eq(users.id, diagrams.ownerId))
                       .where(eq(projectMembers.userId, me.id));
             rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
             // viewers must not learn about unpublished renames
@@ -84,6 +93,9 @@ export const diagramRoutes =
                         ...r,
                         title: last?.title ?? r.title,
                         updatedAt: last?.publishedAt ?? r.updatedAt,
+                        // the numbers describe what the viewer can open: the published copy
+                        // (nothing published yet: nothing to describe)
+                        ...diagramStats(last?.content),
                     };
                 })
             );
