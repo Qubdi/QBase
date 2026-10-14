@@ -1,0 +1,121 @@
+<meta charset="utf-8">
+<title>QubdiDB &mdash; Server Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 1</b></div>
+  <h1>19 open.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> 2026-10-14</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (151 files, 1343 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <span class="here">Server (this file)</span>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="reg" class="dev-sector">
+  <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
+  <p class="section-note">19 open &middot; 0 Crit &middot; 0 High &middot; 11 Med &middot; 8 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">SRV-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>PUT /diagrams/:id</code> is last-write-wins; concurrent editors silently overwrite</td><td><code>server/src/diagrams/routes.ts:155</code></td><td class="wrap-cell">Require matching <code>updatedAt</code>; return 409 on conflict</td></tr>
+        <tr><td class="svc-name">SRV-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Version fetch loads every snapshot's content, then filters in JS</td><td><code>server/src/diagrams/routes.ts:252</code></td><td class="wrap-cell">Add <code>version</code> to the SQL <code>WHERE</code></td></tr>
+        <tr><td class="svc-name">SRV-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Auto-publish stores full content per save; no snapshot retention or cap</td><td><code>server/src/diagrams/routes.ts:173</code></td><td class="wrap-cell">Add a snapshot retention limit</td></tr>
+        <tr><td class="svc-name">SRV-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">50 MB body limit on every route; diagram <code>content</code> has no schema</td><td><code>server/src/app.ts:43</code></td><td class="wrap-cell">Lower global limit; raise it only on diagram routes</td></tr>
+        <tr><td class="svc-name">SRV-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>/lint</code> runs synchronously on any signed-in user's body</td><td><code>server/src/lint/routes.ts:38</code></td><td class="wrap-cell">Cap input size; rate-limit the route</td></tr>
+        <tr><td class="svc-name">SRV-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Introspect and drift-check routes have no rate limit</td><td><code>server/src/introspect/routes.ts:201</code></td><td class="wrap-cell">Add per-user rate limit on outbound connection routes</td></tr>
+        <tr><td class="svc-name">SRV-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Drift scheduler runs in-process; <code>running</code> set is per process</td><td><code>server/src/drift/service.ts:58</code></td><td class="wrap-cell">Claim runs in SQL with <code>FOR UPDATE SKIP LOCKED</code></td></tr>
+        <tr><td class="svc-name">SRV-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SSE connections uncapped; unbounded listeners, one DB query per viewer per publish</td><td><code>server/src/events.ts:5</code></td><td class="wrap-cell">Cap connections per link; cache the link lookup</td></tr>
+        <tr><td class="svc-name">SRV-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Pg pool sets no <code>error</code> handler, <code>max</code> or timeouts</td><td><code>server/src/db/client.ts:9</code></td><td class="wrap-cell">Add pool error handler, size limit and timeouts</td></tr>
+        <tr><td class="svc-name">SRV-010</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Logger disabled; 500 errors return without any log line</td><td><code>server/src/app.ts:42</code></td><td class="wrap-cell">Enable Fastify logger; log errors with request id</td></tr>
+        <tr><td class="svc-name">SRV-011</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No SIGTERM handler; pool, scheduler and SSE streams never drain</td><td><code>server/src/server.ts:18</code></td><td class="wrap-cell">Handle SIGTERM; close app and pool</td></tr>
+        <tr><td class="svc-name">SRV-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Share rate limit keys on <code>req.ip</code>; no <code>trustProxy</code>, so proxies share one bucket</td><td><code>server/src/share/routes.ts:213</code></td><td class="wrap-cell">Add a <code>trustProxy</code> setting</td></tr>
+        <tr><td class="svc-name">SRV-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Last-admin guard reads then writes; concurrent demotions can leave none</td><td><code>server/src/admin/routes.ts:155</code></td><td class="wrap-cell">Check inside a locking transaction</td></tr>
+        <tr><td class="svc-name">SRV-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Viewer diagram list runs one snapshot query per row</td><td><code>server/src/diagrams/routes.ts:88</code></td><td class="wrap-cell">Join the latest snapshot in one query</td></tr>
+        <tr><td class="svc-name">SRV-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Expired sessions are never deleted</td><td><code>server/src/auth/sessions.ts:42</code></td><td class="wrap-cell">Purge expired rows on a timer</td></tr>
+        <tr><td class="svc-name">SRV-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>AuditAction</code> lists three <code>member.*</code> actions no code emits</td><td><code>server/src/audit/audit.ts:32</code></td><td class="wrap-cell">Remove the unused actions</td></tr>
+        <tr><td class="svc-name">SRV-017</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Production starts through <code>tsx</code>; <code>build</code> only typechecks</td><td><code>server/package.json:8</code></td><td class="wrap-cell">Compile to JS and run with <code>node</code></td></tr>
+        <tr><td class="svc-name">SRV-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Any editor can edit or delete another author's comments</td><td><code>server/src/comments/routes.ts:177</code></td><td class="wrap-cell">Limit update and delete to author or owner</td></tr>
+        <tr><td class="svc-name">SRV-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>audit_log</code> has no read endpoint, index or retention</td><td><code>server/src/db/schema.ts:138</code></td><td class="wrap-cell">Add index, retention job and admin read route</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="closed" class="dev-sector">
+  <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
+  <details><summary>Fixed (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <details><summary>Accepted (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <span class="here">Server (this file)</span>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qubdidb-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

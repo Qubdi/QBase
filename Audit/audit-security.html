@@ -1,0 +1,123 @@
+<meta charset="utf-8">
+<title>QubdiDB &mdash; Security & secrets Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 1</b></div>
+  <h1>15 open, 2 High.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> 2026-10-14</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (151 files, 1343 tests), npm audit · server tests not run (no Postgres) · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+  <div class="note crit">
+    <span class="pill crit">Act first</span>
+    <span><ul class="body">
+      <li><code>SEC-001</code> — <code>/auth/login</code> and <code>/auth/register</code> accept unlimited guesses.</li>
+      <li><code>SEC-002</code> — <code>/config.js</code> hands the OpenAI key to every visitor.</li>
+    </ul></span>
+  </div>
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <span class="here">Security &amp; secrets (this file)</span>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="reg" class="sec-sector">
+  <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
+  <p class="section-note">15 open &middot; 0 Crit &middot; 2 High &middot; 9 Med &middot; 4 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">No rate limit or lockout on <code>/auth/login</code> and <code>/auth/register</code></td><td><code>server/src/app.ts:48</code></td><td class="wrap-cell">Add per-IP and per-email rate limit to auth routes</td></tr>
+        <tr><td class="svc-name">SEC-002</td><td><span class="pill crit">High</span></td><td class="wrap-cell"><code>/config.js</code> serves <code>OPENAI_API_KEY</code> to every unauthenticated visitor</td><td><code>default.conf.template:14</code></td><td class="wrap-cell">Proxy LLM calls through the server; drop browser key</td></tr>
+        <tr><td class="svc-name">SEC-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>VITE_OPENAI_API_KEY</code> baked into the shipped JS bundle at build</td><td><code>Dockerfile:18</code></td><td class="wrap-cell">Remove the build arg; use the server-side proxy</td></tr>
+        <tr><td class="svc-name">SEC-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Any signed-in user can open DB connections via <code>/introspect</code>, no project role</td><td><code>server/src/introspect/routes.ts:216</code></td><td class="wrap-cell">Require project writer role for inline connections</td></tr>
+        <tr><td class="svc-name">SEC-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Session cookie has no <code>secure</code> flag</td><td><code>server/src/auth/routes.ts:35</code></td><td class="wrap-cell">Set <code>secure</code> behind HTTPS via a config flag</td></tr>
+        <tr><td class="svc-name">SEC-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Login skips argon2 for unknown emails; timing reveals registered accounts</td><td><code>server/src/auth/routes.ts:89</code></td><td class="wrap-cell">Verify against a dummy hash when the user is missing</td></tr>
+        <tr><td class="svc-name">SEC-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No CSP, <code>X-Frame-Options</code> or <code>nosniff</code> headers from nginx or Fastify</td><td><code>default.conf.template:1</code></td><td class="wrap-cell">Add security headers in nginx and the server</td></tr>
+        <tr><td class="svc-name">SEC-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Compose ships default DB password, <code>change-me</code> secret, all-interface ports</td><td><code>docker-compose.yml:6</code></td><td class="wrap-cell">Bind ports to <code>127.0.0.1</code>; read secrets from <code>.env</code></td></tr>
+        <tr><td class="svc-name">SEC-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Audit log omits login, failed login, password change and connection events</td><td><code>server/src/audit/audit.ts:4</code></td><td class="wrap-cell">Add actions; emit them from auth and introspect routes</td></tr>
+        <tr><td class="svc-name">SEC-010</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Audit rows carry no target user, project or connection id</td><td><code>server/src/audit/audit.ts:36</code></td><td class="wrap-cell">Add a <code>targetId</code> column; fill it in admin routes</td></tr>
+        <tr><td class="svc-name">SEC-011</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Cross-dialect SQL export sends the schema to an external LLM</td><td><code>src/lib/data/sql-export/export-sql-script.ts:724</code></td><td class="wrap-cell">Require explicit consent; document it in README</td></tr>
+        <tr><td class="svc-name">SEC-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>SESSION_SECRET</code> defaults to a known value and signs nothing</td><td><code>server/src/config.ts:20</code></td><td class="wrap-cell">Delete the setting, or fail startup when unset</td></tr>
+        <tr><td class="svc-name">SEC-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Server image runs as root</td><td><code>server/Dockerfile:3</code></td><td class="wrap-cell">Add <code>USER node</code></td></tr>
+        <tr><td class="svc-name">SEC-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Google Fonts request leaks visitor IPs; README claims no external services</td><td><code>index.html:9</code></td><td class="wrap-cell">Self-host the fonts</td></tr>
+        <tr><td class="svc-name">SEC-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Net guard classifies 6to4 and Teredo IPv6 ranges as public</td><td><code>server/src/introspect/net-guard.ts:102</code></td><td class="wrap-cell">Classify <code>2002::/16</code> and <code>2001::/32</code> as reserved</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="closed" class="sec-sector">
+  <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
+  <details><summary>Fixed (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <details><summary>Accepted (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <span class="here">Security &amp; secrets (this file)</span>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qubdidb-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>
