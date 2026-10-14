@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     CloudUpload,
     Database,
+    FolderOpen,
     KeyRound,
     LogOut,
     RefreshCw,
@@ -31,6 +32,7 @@ import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { ImportFromDatabaseDialog } from './import-from-database-dialog';
 import { MembersDialog } from './members-dialog';
+import { OpenFromServerDialog } from './open-from-server-dialog';
 import { OPEN_RESYNC_EVENT } from './drift-dialog';
 import { ResyncDialog } from './resync-dialog';
 import { ShareDialog } from './share-dialog';
@@ -46,6 +48,7 @@ export const AccountMenu: React.FC = () => {
     const [passwordOpen, setPasswordOpen] = useState(false);
     const [shareOpen, setShareOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
+    const [openServerOpen, setOpenServerOpen] = useState(false);
     const [resyncOpen, setResyncOpen] = useState(false);
     const [, forceRender] = useState(0);
 
@@ -142,6 +145,10 @@ export const AccountMenu: React.FC = () => {
                             </DropdownMenuSubContent>
                         </DropdownMenuSub>
                     )}
+                    <DropdownMenuItem onClick={() => setOpenServerOpen(true)}>
+                        <FolderOpen className="mr-2 size-4" />
+                        Open from server
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setImportOpen(true)}>
                         <Database className="mr-2 size-4" />
                         Import from database
@@ -180,6 +187,10 @@ export const AccountMenu: React.FC = () => {
                 onOpenChange={setMembersOpen}
                 remoteId={remoteIdFor(currentDiagram.id)}
                 currentUserId={user.id}
+            />
+            <OpenFromServerDialog
+                open={openServerOpen}
+                onOpenChange={setOpenServerOpen}
             />
             <ImportFromDatabaseDialog
                 open={importOpen}
