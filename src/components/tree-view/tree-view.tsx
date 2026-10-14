@@ -226,7 +226,7 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
         ...node.iconProps,
         className: cn(
             'h-3.5 w-3.5 text-muted-foreground flex-none',
-            isSelected && 'text-primary text-white',
+            isSelected && 'text-primary-foreground',
             node.iconProps?.className
         ),
     };
@@ -238,7 +238,7 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                     'flex items-center gap-1.5 px-2 py-1 rounded-lg cursor-pointer group h-6',
                     'transition-colors duration-200',
                     isSelected
-                        ? 'bg-sky-500 border border-sky-600 border dark:bg-sky-600 dark:border-sky-700'
+                        ? 'border border-primary bg-primary text-primary-foreground'
                         : 'hover:bg-gray-200/50 border border-transparent dark:hover:bg-gray-700/50',
                     node.className
                 )}
@@ -297,13 +297,13 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                             (isLoading ? (
                                 <Loader2
                                     className={cn('size-3.5 animate-spin', {
-                                        'text-white': isSelected,
+                                        'text-primary-foreground': isSelected,
                                     })}
                                 />
                             ) : (
                                 <ChevronRight
                                     className={cn('size-3.5', {
-                                        'text-white': isSelected,
+                                        'text-primary-foreground': isSelected,
                                     })}
                                     strokeWidth={2}
                                 />
@@ -316,7 +316,8 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                                 {loadingNodeIds?.includes(node.id) ? (
                                     <Loader2
                                         className={cn('size-3.5 animate-spin', {
-                                            'text-white': isSelected,
+                                            'text-primary-foreground':
+                                                isSelected,
                                         })}
                                     />
                                 ) : (
@@ -340,7 +341,7 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                       ) ? (
                         <Loader2
                             className={cn('size-3.5 animate-spin', {
-                                // 'text-white': isSelected,
+                                // 'text-primary-foreground': isSelected,
                             })}
                         />
                     ) : (
@@ -355,7 +356,7 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                     {...node.labelProps}
                     className={cn(
                         'text-xs truncate min-w-0 flex-1 w-0 flex items-center gap-1.5',
-                        isSelected && 'font-medium text-primary text-white',
+                        isSelected && 'font-medium text-primary-foreground',
                         node.labelProps?.className
                     )}
                     {...(isSelected ? { 'data-selected': true } : {})}
@@ -368,8 +369,8 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                             className={cn(
                                 'flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none',
                                 isSelected
-                                    ? 'bg-sky-400/50 text-white'
-                                    : 'bg-gray-200/50 text-muted-foreground dark:bg-gray-700/50'
+                                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground'
                             )}
                         >
                             {node.suffix}

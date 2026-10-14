@@ -95,7 +95,7 @@ export const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
                                     </span>
                                 </div>
                             ) : (
-                                <div className="font-normal	text-gray-500">
+                                <div className="font-normal	text-muted-foreground">
                                     {placeholder ?? 'Select Item...'}
                                 </div>
                             )}
