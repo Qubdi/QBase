@@ -63,10 +63,10 @@ const TemplatePageComponent: React.FC = () => {
             <Helmet>
                 {template ? (
                     <>
-                        {HOST_URL !== 'https://qubdi.example' ? (
+                        {HOST_URL ? (
                             <link
                                 rel="canonical"
-                                href={`https://qubdi.example/templates/${templateSlug}`}
+                                href={`${HOST_URL}/templates/${templateSlug}`}
                             />
                         ) : null}
                         <title>

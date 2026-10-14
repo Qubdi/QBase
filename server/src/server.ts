@@ -4,6 +4,13 @@ import { createDb, runMigrations } from './db/client.js';
 import { startDriftScheduler } from './drift/service.js';
 import { defaultIntrospectorFactory } from './introspect/routes.js';
 
+// Settings live in server/.env (see .env.example); real environment variables win
+try {
+    process.loadEnvFile();
+} catch {
+    // no .env file: use the environment as is
+}
+
 const config = loadConfig();
 const { db } = createDb(config.databaseUrl);
 await runMigrations(db);

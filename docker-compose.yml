@@ -1,16 +1,17 @@
+# Configuration comes from .env (see .env.example); the defaults suit local development.
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: qubdidb
-      POSTGRES_PASSWORD: qubdidb
-      POSTGRES_DB: qubdidb
+      POSTGRES_USER: ${POSTGRES_USER:-qubdidb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qubdidb}
+      POSTGRES_DB: ${POSTGRES_DB:-qubdidb}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - qubdidb-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U qubdidb"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 3s
       timeout: 3s
       retries: 20
@@ -23,22 +24,25 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://qubdidb:qubdidb@db:5432/qubdidb
-      SESSION_SECRET: change-me
+      DATABASE_URL: postgres://${POSTGRES_USER:-qubdidb}:${POSTGRES_PASSWORD:-qubdidb}@db:5432/${POSTGRES_DB:-qubdidb}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me}
+      CONNECTION_KEY: ${CONNECTION_KEY:-}
+      INTROSPECT_ALLOW_HOSTS: ${INTROSPECT_ALLOW_HOSTS:-}
       PORT: "3001"
-      CORS_ORIGIN: http://localhost:8080
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
     ports:
-      - "3001:3001"
+      - "${SERVER_PORT:-3001}:3001"
 
   ui:
     build:
       context: .
       args:
-        VITE_QUBDI_BACKEND_URL: http://localhost:3001
+        VITE_QUBDI_BACKEND_URL: ${VITE_QUBDI_BACKEND_URL:-http://localhost:3001}
+        VITE_HOST_URL: ${VITE_HOST_URL:-}
     depends_on:
       - server
     ports:
-      - "8080:80"
+      - "${UI_PORT:-8080}:80"
 
   # Optional: only needed to run the SQL Server introspection tests.
   #   docker compose --profile mssql up -d mssql
@@ -47,7 +51,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "Qubdi_Strong_Pass1"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Qubdi_Strong_Pass1}
     ports:
       - "14333:1433"
 

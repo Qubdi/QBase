@@ -43,11 +43,19 @@ npm start                      # http://localhost:3001
 
 # 3. editor (from the repository root)
 npm install
-VITE_QUBDI_BACKEND_URL=http://localhost:3001 npm run dev
+cp .env.example .env           # VITE_QUBDI_BACKEND_URL=http://localhost:3001
+npm run dev
 ```
 
 Without `VITE_QUBDI_BACKEND_URL` the editor runs in local-only mode and shows no account UI.
 Schema lint works either way.
+
+### Configuration
+
+All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
+
+- Repository root `.env` (copy `.env.example`): read by `docker compose` and by the editor build. It holds the core database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`), the secrets, ports, and the editor's `VITE_QUBDI_BACKEND_URL` and `VITE_HOST_URL` (public URL for canonical links; unset = none).
+- `server/.env` (copy `server/.env.example`): read by the backend when run outside Docker.
 
 ### Backend settings
 

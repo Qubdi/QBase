@@ -8,7 +8,6 @@ export interface TemplatesPageHelmetProps {
     isFeatured: boolean;
 }
 
-const APP_HOST_URL = 'https://qubdi.example';
 export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
     tag,
     isFeatured,
@@ -28,11 +27,11 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
             suffix += '/featured';
         }
 
-        return `${APP_HOST_URL}${suffix}`;
+        return `${HOST_URL}${suffix}`;
     }, [isFeatured, formattedUrlTag]);
 
-    const needCanonical =
-        HOST_URL !== APP_HOST_URL || (tag && formattedUrlTag !== tagParam);
+    // Without a configured public host there is nothing to point to
+    const needCanonical = Boolean(HOST_URL);
 
     return (
         <Helmet>
