@@ -29,10 +29,14 @@ export interface AdminUser {
     id: string;
     email: string;
     isAdmin: boolean;
+    /** a disabled user cannot sign in */
+    isActive: boolean;
     createdAt: string;
     /** number of projects the user is assigned to */
     projects: number;
 }
+
+export type UserStatus = 'active' | 'disabled';
 
 export interface AdminProject {
     id: string;
@@ -297,8 +301,11 @@ export function createApi(
             request<MyProject>('GET', `/projects/${encodeURIComponent(ref)}`),
 
         // admin panel (admins only; everyone else gets a 404)
-        adminListUsers: (params?: ListParams) =>
-            request<Page<AdminUser>>('GET', `/admin/users${listQuery(params)}`),
+        adminListUsers: (params?: ListParams & { status?: UserStatus }) =>
+            request<Page<AdminUser>>(
+                'GET',
+                `/admin/users${listQuery(params, { status: params?.status })}`
+            ),
         adminCreateUser: (body: {
             email: string;
             password: string;
@@ -306,9 +313,9 @@ export function createApi(
         }) => request<AdminUser>('POST', '/admin/users', body),
         adminUpdateUser: (
             id: string,
-            body: { password?: string; isAdmin?: boolean }
+            body: { password?: string; isAdmin?: boolean; isActive?: boolean }
         ) =>
-            request<{ id: string; isAdmin: boolean }>(
+            request<{ id: string; isAdmin: boolean; isActive: boolean }>(
                 'PATCH',
                 `/admin/users/${id}`,
                 body
@@ -558,7 +565,10 @@ export const errorMessage = (e: unknown): string => {
             already_running: 'A check is already running.',
             no_project:
                 'Open this diagram from a project before saving it to the server.',
-            last_admin: 'There must be at least one admin.',
+            last_admin: 'There must be at least one admin who can sign in.',
+            cannot_disable_self: 'You cannot disable your own account.',
+            account_disabled:
+                'This account has been disabled. Ask an admin to enable it.',
             invalid_name:
                 'Use letters or numbers in the project name; it becomes its web address.',
             reserved_name:

@@ -8,6 +8,7 @@ const user = (id: string, email: string): AdminUser => ({
     id,
     email,
     isAdmin: false,
+    isActive: true,
     createdAt: '2025-01-01T00:00:00.000Z',
     projects: 0,
 });
