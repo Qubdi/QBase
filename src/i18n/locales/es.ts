@@ -507,7 +507,6 @@ export const es: LanguageTranslation = {
             one_to_one: 'Uno a Uno',
             one_to_many: 'Uno a Muchos',
             many_to_one: 'Muchos a Uno',
-            many_to_many: 'Muchos a Muchos',
         },
 
         canvas_context_menu: {

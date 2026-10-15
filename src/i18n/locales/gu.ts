@@ -504,7 +504,6 @@ export const gu: LanguageTranslation = {
             one_to_one: 'એકથી એક',
             one_to_many: 'એકથી ઘણા',
             many_to_one: 'ઘણા થી એક',
-            many_to_many: 'ઘણાથી ઘણા',
         },
 
         canvas_context_menu: {

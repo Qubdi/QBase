@@ -508,7 +508,6 @@ export const ne: LanguageTranslation = {
             one_to_one: 'एक देखि एक',
             one_to_many: 'एक देखि धेरै',
             many_to_one: 'धेरै देखि एक',
-            many_to_many: 'धेरै देखि धेरै',
         },
 
         canvas_context_menu: {

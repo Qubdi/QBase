@@ -509,7 +509,6 @@ export const te: LanguageTranslation = {
             one_to_one: 'ఒకటి_కీ_ఒకటి',
             one_to_many: 'ఒకటి_కీ_చాలా',
             many_to_one: 'చాలా_కీ_ఒకటి',
-            many_to_many: 'చాలా_కీ_చాలా',
         },
 
         canvas_context_menu: {

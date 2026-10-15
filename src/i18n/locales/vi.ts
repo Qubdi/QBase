@@ -503,7 +503,6 @@ export const vi: LanguageTranslation = {
             one_to_one: 'Quan hệ một-một',
             one_to_many: 'Quan hệ một-nhiều',
             many_to_one: 'Quan hệ nhiều-một',
-            many_to_many: 'Quan hệ nhiều-nhiều',
         },
 
         canvas_context_menu: {

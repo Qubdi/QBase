@@ -514,7 +514,6 @@ export const mr: LanguageTranslation = {
             one_to_one: 'एक ते एक',
             one_to_many: 'एक ते अनेक',
             many_to_one: 'अनेक ते एक',
-            many_to_many: 'अनेक ते अनेक',
         },
 
         canvas_context_menu: {

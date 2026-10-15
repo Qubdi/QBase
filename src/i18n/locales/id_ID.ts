@@ -504,7 +504,6 @@ export const id_ID: LanguageTranslation = {
             one_to_one: 'Satu ke Satu',
             one_to_many: 'Satu ke Banyak',
             many_to_one: 'Banyak ke Satu',
-            many_to_many: 'Banyak ke Banyak',
         },
 
         canvas_context_menu: {

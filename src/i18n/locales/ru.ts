@@ -504,7 +504,6 @@ export const ru: LanguageTranslation = {
             one_to_one: 'Один к одному',
             one_to_many: 'Один ко многим',
             many_to_one: 'Многие к одному',
-            many_to_many: 'Многие ко многим',
         },
 
         canvas_context_menu: {

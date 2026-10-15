@@ -495,7 +495,6 @@ export const tr: LanguageTranslation = {
             one_to_one: 'Bir Bir',
             one_to_many: 'Bir Çok',
             many_to_one: 'Çok Bir',
-            many_to_many: 'Çok Çok',
         },
         canvas_context_menu: {
             new_table: 'Yeni Tablo',

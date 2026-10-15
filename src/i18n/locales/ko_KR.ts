@@ -502,7 +502,6 @@ export const ko_KR: LanguageTranslation = {
             one_to_one: '일대일 (1:1)',
             one_to_many: '일대다 (1:N)',
             many_to_one: '다대일 (N:1)',
-            many_to_many: '다대다 (N:N)',
         },
 
         canvas_context_menu: {

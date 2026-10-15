@@ -508,7 +508,6 @@ export const pt_BR: LanguageTranslation = {
             one_to_one: 'Um para Um',
             one_to_many: 'Um para Muitos',
             many_to_one: 'Muitos para Um',
-            many_to_many: 'Muitos para Muitos',
         },
 
         canvas_context_menu: {

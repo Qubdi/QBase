@@ -509,7 +509,6 @@ export const ja: LanguageTranslation = {
             one_to_one: '1対1',
             one_to_many: '1対多',
             many_to_one: '多対1',
-            many_to_many: '多対多',
         },
 
         canvas_context_menu: {

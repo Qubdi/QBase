@@ -502,7 +502,6 @@ export const fr: LanguageTranslation = {
             one_to_one: 'Un à Un',
             one_to_many: 'Un à Plusieurs',
             many_to_one: 'Plusieurs à Un',
-            many_to_many: 'Plusieurs à Plusieurs',
         },
 
         canvas_context_menu: {

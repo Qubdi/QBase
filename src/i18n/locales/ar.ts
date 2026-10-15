@@ -497,7 +497,6 @@ export const ar: LanguageTranslation = {
             one_to_one: 'واحد إلى واحد',
             one_to_many: 'واحد إلى متعدد',
             many_to_one: 'متعدد إلى واحد',
-            many_to_many: 'متعدد إلى متعدد',
         },
 
         canvas_context_menu: {

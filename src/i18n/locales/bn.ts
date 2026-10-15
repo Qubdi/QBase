@@ -506,7 +506,6 @@ export const bn: LanguageTranslation = {
             one_to_one: 'এক থেকে এক',
             one_to_many: 'এক থেকে অনেক',
             many_to_one: 'অনেক থেকে এক',
-            many_to_many: 'অনেক থেকে অনেক',
         },
 
         canvas_context_menu: {

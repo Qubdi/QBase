@@ -496,7 +496,6 @@ export const zh_TW: LanguageTranslation = {
             one_to_one: '一對一',
             one_to_many: '一對多',
             many_to_one: '多對一',
-            many_to_many: '多對多',
         },
 
         canvas_context_menu: {

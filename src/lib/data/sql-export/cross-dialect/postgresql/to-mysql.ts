@@ -570,16 +570,10 @@ export function exportPostgreSQLToMySQL({
 
                 // Determine which table should have the foreign key based on cardinality
                 // - FK goes on the "many" side when cardinalities differ
-                // - FK goes on target when cardinalities are the same (one:one, many:many)
+                // - FK goes on target when cardinalities are the same (one:one)
                 let fkTable, fkField, refTable, refField;
 
                 if (
-                    r.sourceCardinality === 'many' &&
-                    r.targetCardinality === 'many'
-                ) {
-                    // Many-to-many relationships need a junction table, skip
-                    return '';
-                } else if (
                     r.sourceCardinality === 'many' &&
                     r.targetCardinality === 'one'
                 ) {

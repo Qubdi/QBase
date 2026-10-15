@@ -509,7 +509,6 @@ export const hi: LanguageTranslation = {
             one_to_one: 'एक से एक',
             one_to_many: 'एक से कई',
             many_to_one: 'कई से एक',
-            many_to_many: 'कई से कई',
         },
 
         canvas_context_menu: {
