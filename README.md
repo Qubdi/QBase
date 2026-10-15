@@ -22,7 +22,7 @@ and schema lint.
 4. **Comments** on tables, fields and relationships; carried forward on publish, orphaned ones are flagged.
 5. **Direct import** from PostgreSQL and SQL Server, read-only, with SSRF protection and encrypted saved connections.
 6. **Re-sync** a diagram from its database, keeping layout, colours, areas, notes and descriptions; undoable as one step.
-7. **Drift detection**: scheduled or manual checks, severity classification, badge, optional webhook.
+7. **Drift detection**: check a diagram against its live database on demand, severity classification, badge, optional webhook.
 8. **Schema lint**: 12 rules, per-diagram settings, safe one-click fixes, API endpoint and a CLI for CI.
 
 There are no external services: no analytics, no GitHub integration, no social links.
@@ -66,7 +66,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `PORT` | `3001` | HTTP port |
 | `SESSION_SECRET` | dev value | Set this in production |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
-| `CONNECTION_KEY` | unset | Encrypts saved database passwords. Saving connections and scheduled drift checks need it |
+| `CONNECTION_KEY` | unset | Encrypts saved database passwords (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default |
 | `SHARE_RATE_LIMIT` | `60` | Public share requests per minute per IP |
 
@@ -99,7 +99,6 @@ The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
 - Read-only import: every introspection query is a fixed catalog `SELECT`, checked by a guard
   before it is sent, and PostgreSQL runs inside a read-only transaction. SQL Server has no
   read-only transaction, so use a login that only has read access.
-- Schedules are 5-field cron expressions in UTC.
 - Drift checks compare the server's copy of the diagram, so the editor syncs it first.
 
 QubdiDB is licensed under the AGPL-3.0, like the project it is forked from.

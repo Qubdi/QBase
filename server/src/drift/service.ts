@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import {
@@ -19,7 +19,6 @@ import type {
     ConnectionParams,
     IntrospectorFactory,
 } from '../introspect/types.js';
-import { nextCronRun } from '../lib/cron.js';
 import type { RequestHook } from '../lib/rate-key.js';
 import { postJson } from './webhook.js';
 import {
@@ -44,14 +43,12 @@ export interface DriftDeps {
     config: Config;
     factory: IntrospectorFactory;
     lookup?: LookupAll;
-    /** per-user allowance for manual checks (scheduled checks are not limited) */
+    /** per-user allowance for checks */
     outboundLimit?: RequestHook;
 }
 
 export type ReportRow = typeof driftReports.$inferSelect;
 export type SettingsRow = typeof driftSettings.$inferSelect;
-
-export type Trigger = 'manual' | 'schedule';
 
 export interface SourceKeys {
     tables: Record<string, string>;
@@ -115,7 +112,6 @@ class DriftError extends Error {}
 export async function runDriftCheck(
     deps: DriftDeps,
     diagramId: string,
-    trigger: Trigger,
     now: Date = new Date()
 ): Promise<ReportRow | null> {
     const { db } = deps;
@@ -255,7 +251,7 @@ export async function runDriftCheck(
                 diagramId,
                 runAt: now,
                 status: outcome.status,
-                trigger,
+                trigger: 'manual',
                 changes: items,
                 renameHints: outcome.status === 'error' ? [] : outcome.hints,
                 counts,
@@ -266,108 +262,8 @@ export async function runDriftCheck(
             })
             .returning();
 
-        // keep the schedule moving even after a manual run
-        if (settings.enabled) {
-            const next = nextCronRun(settings.schedule, now);
-            await db
-                .update(driftSettings)
-                .set({ nextRunAt: next })
-                .where(eq(driftSettings.diagramId, diagramId));
-        }
         return report;
     } finally {
         running.delete(diagramId);
     }
-}
-
-/**
- * How long a claimed check is reserved for the process that claimed it. A
- * finished check moves `next_run_at` to its next cron time well before this;
- * if the process dies mid-check, the diagram is picked up again after it.
- */
-export const CLAIM_LEASE_MS = 10 * 60_000;
-
-/**
- * Claims the checks that are due, in one statement. `FOR UPDATE SKIP LOCKED`
- * makes servers running side by side take different rows, and pushing
- * `next_run_at` into the future hides a claimed row from the others.
- */
-export async function claimDueChecks(
-    db: Db,
-    now: Date,
-    limit = 20
-): Promise<string[]> {
-    const leaseEnds = new Date(now.getTime() + CLAIM_LEASE_MS);
-    const res = await db.execute<{ diagram_id: string }>(sql`
-        update drift_settings
-        set next_run_at = ${leaseEnds}
-        where diagram_id in (
-            select diagram_id from drift_settings
-            where enabled
-              and connection_id is not null
-              and (next_run_at is null or next_run_at <= ${now})
-            order by next_run_at nulls first
-            limit ${limit}
-            for update skip locked
-        )
-        returning diagram_id
-    `);
-    return res.rows.map((r) => r.diagram_id);
-}
-
-/** Runs every enabled check whose time has come. Returns how many ran. */
-export async function runDueChecks(
-    deps: DriftDeps,
-    now: Date = new Date()
-): Promise<number> {
-    let ran = 0;
-    for (;;) {
-        const claimed = await claimDueChecks(deps.db, now);
-        if (claimed.length === 0) break;
-        ran += await runClaimed(deps, claimed, now);
-    }
-    return ran;
-}
-
-async function runClaimed(
-    deps: DriftDeps,
-    claimed: string[],
-    now: Date
-): Promise<number> {
-    let ran = 0;
-    for (const diagramId of claimed) {
-        // one diagram failing must not stop the others
-        try {
-            const r = await runDriftCheck(deps, diagramId, 'schedule', now);
-            if (r) ran++;
-        } catch {
-            // the failure is already recorded as an error report where possible
-        }
-    }
-    return ran;
-}
-
-/**
- * Starts the in-process scheduler. The returned function stops it and waits
- * for a check that is already running.
- */
-export function startDriftScheduler(
-    deps: DriftDeps,
-    intervalMs = 30_000
-): () => Promise<void> {
-    let current: Promise<void> | null = null;
-    const timer = setInterval(() => {
-        if (current) return;
-        current = runDueChecks(deps)
-            .then(() => undefined)
-            .catch(() => undefined)
-            .finally(() => {
-                current = null;
-            });
-    }, intervalMs);
-    timer.unref();
-    return async () => {
-        clearInterval(timer);
-        await current;
-    };
 }

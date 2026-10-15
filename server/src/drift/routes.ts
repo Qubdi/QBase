@@ -8,7 +8,6 @@ import {
     getDiagramProject,
     getRole,
 } from '../diagrams/permissions.js';
-import { isValidCron, nextCronRun } from '../lib/cron.js';
 import {
     badgeOf,
     latestReport,
@@ -26,8 +25,6 @@ const reportParam = z.object({
 });
 
 const settingsBody = z.object({
-    enabled: z.boolean(),
-    schedule: z.string().trim().max(100).default('0 3 * * *'),
     connectionId: z.string().uuid().nullable(),
     schemas: z.array(z.string().max(200)).max(200).default([]),
     tables: z.array(z.string().max(400)).max(5000).default([]),
@@ -41,14 +38,11 @@ const settingsBody = z.object({
 });
 
 const presentSettings = (s: typeof driftSettings.$inferSelect) => ({
-    enabled: s.enabled,
-    schedule: s.schedule,
     connectionId: s.connectionId,
     schemas: s.schemas,
     tables: s.tables,
     sourceKeys: s.sourceKeys,
     webhookUrl: s.webhookUrl,
-    nextRunAt: s.nextRunAt,
     updatedAt: s.updatedAt,
 });
 
@@ -104,9 +98,6 @@ export const driftRoutes =
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const body = settingsBody.parse(req.body);
 
-            if (!isValidCron(body.schedule)) {
-                return reply.code(400).send({ error: 'invalid_schedule' });
-            }
             if (body.webhookUrl) {
                 const parsed = parseWebhookUrl(body.webhookUrl);
                 if ('error' in parsed) {
@@ -138,21 +129,13 @@ export const driftRoutes =
                         .send({ error: 'connection_not_found' });
                 }
             }
-            if (body.enabled && !body.connectionId) {
-                return reply.code(400).send({ error: 'connection_required' });
-            }
 
             const values = {
-                enabled: body.enabled,
-                schedule: body.schedule,
                 connectionId: body.connectionId,
                 schemas: body.schemas,
                 tables: body.tables,
                 sourceKeys: body.sourceKeys,
                 webhookUrl: body.webhookUrl || null,
-                nextRunAt: body.enabled
-                    ? nextCronRun(body.schedule, new Date())
-                    : null,
                 updatedBy: req.user!.id,
                 updatedAt: new Date(),
             };
@@ -182,7 +165,10 @@ export const driftRoutes =
             if (!settings) {
                 return reply.code(409).send({ error: 'not_configured' });
             }
-            const report = await runDriftCheck(deps, id, 'manual');
+            if (!settings.connectionId) {
+                return reply.code(400).send({ error: 'connection_required' });
+            }
+            const report = await runDriftCheck(deps, id);
             if (!report) {
                 return reply.code(409).send({ error: 'already_running' });
             }

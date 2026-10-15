@@ -256,9 +256,6 @@ export const driftSettings = pgTable('drift_settings', {
     diagramId: uuid('diagram_id')
         .primaryKey()
         .references(() => diagrams.id, { onDelete: 'cascade' }),
-    enabled: boolean('enabled').notNull().default(false),
-    // 5-field cron expression, UTC
-    schedule: text('schedule').notNull().default('0 3 * * *'),
     connectionId: uuid('connection_id').references(() => savedConnections.id, {
         onDelete: 'set null',
     }),
@@ -269,7 +266,6 @@ export const driftSettings = pgTable('drift_settings', {
         .notNull()
         .default({ tables: {}, columns: {} }),
     webhookUrl: text('webhook_url'),
-    nextRunAt: timestamp('next_run_at', { withTimezone: true }),
     updatedBy: uuid('updated_by').references(() => users.id, {
         onDelete: 'set null',
     }),
