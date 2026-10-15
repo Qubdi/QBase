@@ -191,8 +191,6 @@ export interface DriftBadge {
 }
 
 export interface DriftSettings {
-    enabled: boolean;
-    schedule: string;
     connectionId: string | null;
     schemas: string[];
     tables: string[];
@@ -201,7 +199,6 @@ export interface DriftSettings {
         columns: Record<string, string>;
     };
     webhookUrl: string | null;
-    nextRunAt: string | null;
 }
 
 export interface DriftOverview {
@@ -567,7 +564,7 @@ export function createApi(
             }),
         getDrift: (id: string) =>
             request<DriftOverview>('GET', `/diagrams/${id}/drift`),
-        saveDrift: (id: string, settings: Omit<DriftSettings, 'nextRunAt'>) =>
+        saveDrift: (id: string, settings: DriftSettings) =>
             request<DriftSettings>('PUT', `/diagrams/${id}/drift`, settings),
         checkDrift: (id: string) =>
             request<DriftReport>('POST', `/diagrams/${id}/drift/check`),
@@ -630,7 +627,6 @@ export const errorMessage = (e: unknown): string => {
             encryption_not_configured:
                 'This server cannot store passwords (CONNECTION_KEY is not set).',
             name_taken: 'That name is already in use.',
-            invalid_schedule: 'That schedule is not a valid cron expression.',
             invalid_webhook: 'That webhook URL is not valid.',
             connection_required: 'Choose a saved connection first.',
             connection_not_found: 'That saved connection does not exist.',
