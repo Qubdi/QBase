@@ -22,6 +22,7 @@ import {
     type DbDialect,
     type SavedConnection,
 } from '@/lib/qubdi/api';
+import { DEFAULT_PORT } from '@/lib/qubdi/connection-form';
 import { setSyncState } from '@/lib/qubdi/sync-state';
 import { snapshotSourceKeys } from '@/lib/qubdi/resync';
 import {
@@ -41,11 +42,6 @@ export interface ImportFromDatabaseDialogProps {
 }
 
 type Step = 'connect' | 'select' | 'preview';
-
-const DEFAULT_PORT: Record<DbDialect, string> = {
-    postgresql: '5432',
-    sqlserver: '1433',
-};
 
 const emptyForm = {
     dialect: 'postgresql' as DbDialect,
