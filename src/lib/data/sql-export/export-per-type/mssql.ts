@@ -39,6 +39,10 @@ function parseMSSQLDefault(field: DBField): string {
     } else if (defaultValue.match(/^\(getdate\(\)\)$/i)) {
         // Handle (getdate()) defaults
         return 'getdate()';
+    } else if (defaultValue.match(/^\(\s*[a-z_][\w.]*\s*\(.*\)\s*\)$/is)) {
+        // Handle any other (function()) default, such as (newid()): SQL Server
+        // reports its defaults wrapped in parentheses
+        return defaultValue.replace(/^\(\s*|\s*\)$/g, '');
     } else if (defaultValue.match(/^\('?\*'?\)$/i) || defaultValue === '*') {
         // Handle ('*') or (*) or * defaults - common for "all" values
         return "N'*'";

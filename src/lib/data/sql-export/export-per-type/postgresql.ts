@@ -33,7 +33,8 @@ function parsePostgresDefault(field: DBField): string {
         return '';
     }
 
-    const defaultValue = field.default.trim();
+    // PostgreSQL reports a text default with its cast: 'new'::character varying
+    const defaultValue = stripStringCast(field.default.trim());
 
     // Handle specific PostgreSQL default values
     if (defaultValue.toLowerCase() === 'now()') {
@@ -65,6 +66,11 @@ function parsePostgresDefault(field: DBField): string {
         return defaultValue;
     }
 
+    // Any other call, such as gen_random_uuid(), is an expression and not text
+    if (/^[a-z_][\w.]*\s*\(.*\)$/is.test(defaultValue)) {
+        return defaultValue;
+    }
+
     // If it's a keyword, keep it as is
     if (isKeyword(defaultValue)) {
         return defaultValue;
@@ -82,6 +88,14 @@ function parsePostgresDefault(field: DBField): string {
 
     // For other cases, add quotes
     return `'${defaultValue.replace(/'/g, "''")}'`;
+}
+
+/** `'new'::character varying` -> `'new'`; anything else is left alone. */
+function stripStringCast(value: string): string {
+    const text = value.match(
+        /^('(?:[^']|'')*')::[a-z_][\w\s."[\]]*(\(\d+(,\s*\d+)?\))?$/is
+    );
+    return text ? text[1] : value;
 }
 
 // Map problematic types to PostgreSQL compatible types
@@ -333,9 +347,11 @@ export function exportPostgreSQL({
                             !field.primaryKey && field.unique ? ' UNIQUE' : '';
 
                         // Handle default value using PostgreSQL specific parser
+                        // a serial column already has its default: giving it a second one is an error
                         const defaultValue =
                             field.default &&
-                            !field.default.toLowerCase().includes('identity')
+                            !field.default.toLowerCase().includes('identity') &&
+                            !(serialType && field.default.includes('nextval'))
                                 ? ` DEFAULT ${parsePostgresDefault(field)}`
                                 : '';
 

@@ -145,6 +145,9 @@ function mapMySQLType(typeName: string): string {
         case 'enum':
             return 'VARCHAR(50)'; // Convert ENUM to VARCHAR instead of assuming values
 
+        case 'set':
+            return 'VARCHAR(255)'; // A SET needs its values, which the diagram does not keep
+
         case 'json':
         case 'jsonb':
             return 'JSON'; // MySQL has JSON type since 5.7.8
