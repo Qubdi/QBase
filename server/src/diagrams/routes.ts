@@ -5,6 +5,7 @@ import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, snapshots, users } from '../db/schema.js';
+import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import { diagramStats, statsColumns } from './summary.js';
 import {
@@ -14,6 +15,8 @@ import {
 } from './service.js';
 
 const idParam = z.object({ id: z.string().uuid() });
+/** Names one open editor (a browser tab) for the diagram's edit lock. */
+const editorIdSchema = z.string().min(1).max(100);
 const versionParam = z.object({
     id: z.string().uuid(),
     version: z.coerce.number().int().positive(),
@@ -57,6 +60,11 @@ const updateBody = z
          * refused instead of silently replacing it.
          */
         baseUpdatedAt: z.coerce.date().optional(),
+        /**
+         * The editor making the change. Without one the change is taken to be
+         * the user's own API call, which holds the lock just for itself.
+         */
+        editorId: editorIdSchema.optional(),
     })
     .refine(
         (b) =>
@@ -69,6 +77,8 @@ const updateBody = z
         message: 'baseUpdatedAt is required when saving content',
         path: ['baseUpdatedAt'],
     });
+
+const lockBody = z.object({ editorId: editorIdSchema });
 
 const publishBody = z
     .object({ note: z.string().trim().max(500).optional() })
@@ -192,7 +202,23 @@ export const diagramRoutes =
             if (!canWrite(role)) {
                 return reply.code(403).send({ error: 'forbidden' });
             }
-            const { baseUpdatedAt, ...changes } = updateBody.parse(req.body);
+            const { baseUpdatedAt, editorId, ...changes } = updateBody.parse(
+                req.body
+            );
+            // one editor at a time: saving needs the lock, and takes it when free
+            const lock = await acquireLock(
+                db,
+                id,
+                req.user!.id,
+                editorId ?? `api:${req.user!.id}`
+            );
+            if (!lock.held) {
+                return reply.code(423).send({
+                    error: 'locked',
+                    message: `${lock.holder} is editing this diagram.`,
+                    holder: lock.holder,
+                });
+            }
             // the compare and the write are one statement, so two saves based
             // on the same copy cannot both win. Times are compared to the
             // millisecond: that is all JSON carries.
@@ -241,6 +267,29 @@ export const diagramRoutes =
                 }
             }
             return presentDiagram(db, d, role);
+        });
+
+        // The editor asks for this when it opens the diagram and again every
+        // few seconds. `held: false` means someone else is editing: open read-only.
+        app.post('/:id/lock', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const role = await getRole(db, id, req.user!.id);
+            if (!role) return reply.code(404).send({ error: 'not_found' });
+            if (!canWrite(role)) {
+                return reply.code(403).send({ error: 'forbidden' });
+            }
+            const { editorId } = lockBody.parse(req.body);
+            const lock = await acquireLock(db, id, req.user!.id, editorId);
+            return lock.held
+                ? { held: true }
+                : { held: false, holder: lock.holder };
+        });
+
+        app.delete('/:id/lock', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const { editorId } = lockBody.parse(req.query);
+            await releaseLock(db, id, req.user!.id, editorId);
+            return reply.code(204).send();
         });
 
         app.delete('/:id', async (req, reply) => {

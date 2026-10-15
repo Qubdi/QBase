@@ -111,6 +111,22 @@ export const diagrams = pgTable('diagrams', {
         .defaultNow(),
 });
 
+/**
+ * Who is editing a diagram right now: at most one editor at a time. The editor
+ * renews its lock while the diagram is open; a lock nobody renews runs out.
+ */
+export const diagramLocks = pgTable('diagram_locks', {
+    diagramId: uuid('diagram_id')
+        .primaryKey()
+        .references(() => diagrams.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+        .notNull()
+        .references(() => users.id, { onDelete: 'cascade' }),
+    // one browser tab: the same user in a second tab is a second editor
+    editorId: text('editor_id').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});
+
 export const snapshots = pgTable(
     'snapshots',
     {

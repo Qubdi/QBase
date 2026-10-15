@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { diagrams, sessions } from '../src/db/schema.js';
+import { diagramLocks, diagrams, sessions } from '../src/db/schema.js';
 import {
     as,
     createTestApp,
@@ -199,6 +199,8 @@ describe('admin panel and projects', () => {
         });
 
         it('lets editors write but not viewers', async () => {
+            // the admin's earlier save still holds the diagram's edit lock
+            await ctx.db.delete(diagramLocks);
             const ok = await call('PUT', `/diagrams/${diagramId}`, editor, {
                 title: 'Invoices v2',
             });
