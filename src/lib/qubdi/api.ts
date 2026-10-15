@@ -247,6 +247,13 @@ export interface CatalogResponse {
 
 type FetchLike = typeof fetch;
 
+// Called when a signed-in request is refused as signed out: the session ended,
+// for instance because the account signed in somewhere else.
+let sessionEndedHandler: (() => void) | null = null;
+export const setSessionEndedHandler = (fn: (() => void) | null) => {
+    sessionEndedHandler = fn;
+};
+
 /** Browsers cap the body of a keepalive request at 64 KiB. */
 export const KEEPALIVE_BODY_LIMIT = 60_000;
 
@@ -282,6 +289,10 @@ export function createApi(
         });
         if (res.status === 204) return undefined as T;
         const data = await res.json().catch(() => ({}));
+        // /auth/* answers 401 for ordinary reasons (no session yet, wrong password)
+        if (res.status === 401 && !path.startsWith('/auth/')) {
+            sessionEndedHandler?.();
+        }
         if (!res.ok) {
             throw new ApiError(
                 res.status,
@@ -383,9 +394,25 @@ export function createApi(
                 autoPublish?: boolean;
                 /** `updatedAt` of the server copy the content is based on */
                 baseUpdatedAt?: string;
+                /** the open editor making the change, for the diagram's edit lock */
+                editorId?: string;
             },
             options?: RequestOptions
         ) => request<RemoteDiagram>('PUT', `/diagrams/${id}`, patch, options),
+        /** Only one editor at a time: `held: false` means someone else has it. */
+        acquireLock: (id: string, editorId: string) =>
+            request<{ held: true } | { held: false; holder: string }>(
+                'POST',
+                `/diagrams/${id}/lock`,
+                { editorId }
+            ),
+        releaseLock: (id: string, editorId: string, options?: RequestOptions) =>
+            request<void>(
+                'DELETE',
+                `/diagrams/${id}/lock?editorId=${encodeURIComponent(editorId)}`,
+                undefined,
+                options
+            ),
         publish: (id: string, note?: string) =>
             request<{
                 version: number;
@@ -511,6 +538,25 @@ export function createApi(
         saveConnection: (
             input: DbConnectionInput & { name: string; projectId: string }
         ) => request<SavedConnection>('POST', '/introspect/connections', input),
+        /** Leave `password` out to keep the one already saved. */
+        updateConnection: (
+            id: string,
+            input: Omit<DbConnectionInput, 'password'> & {
+                name: string;
+                password?: string;
+            }
+        ) =>
+            request<SavedConnection>(
+                'PUT',
+                `/introspect/connections/${id}`,
+                input
+            ),
+        /** Whether the server can store connection passwords (CONNECTION_KEY is set). */
+        introspectCapabilities: () =>
+            request<{ savedConnections: boolean }>(
+                'GET',
+                '/introspect/capabilities'
+            ),
         deleteSavedConnection: (id: string) =>
             request<void>('DELETE', `/introspect/connections/${id}`),
         getLintConfig: (id: string) =>
@@ -586,7 +632,7 @@ export const errorMessage = (e: unknown): string => {
             name_taken: 'That name is already in use.',
             invalid_schedule: 'That schedule is not a valid cron expression.',
             invalid_webhook: 'That webhook URL is not valid.',
-            connection_required: 'Choose a saved connection to enable checks.',
+            connection_required: 'Choose a saved connection first.',
             connection_not_found: 'That saved connection does not exist.',
             not_configured: 'Save the drift settings first.',
             already_running: 'A check is already running.',
@@ -608,6 +654,9 @@ export const errorMessage = (e: unknown): string => {
         };
         if (e.code === 'target_blocked' || e.code === 'connection_failed') {
             return e.detail ?? `Request failed (${e.code}).`;
+        }
+        if (e.code === 'locked') {
+            return e.detail ?? 'Someone else is editing this diagram.';
         }
         return map[e.code] ?? `Request failed (${e.code}).`;
     }

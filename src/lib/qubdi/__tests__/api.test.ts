@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     ApiError,
     createApi,
     errorMessage,
     KEEPALIVE_BODY_LIMIT,
+    setSessionEndedHandler,
 } from '../api';
 
 const jsonResponse = (status: number, body: unknown) =>
@@ -120,6 +121,161 @@ describe('qubdi api client', () => {
         ];
         expect(url).toBe('http://srv/diagrams/d1/members/u1');
         expect(init.method).toBe('PATCH');
+    });
+
+    describe('edit lock', () => {
+        it('asks for the lock of a diagram on behalf of one editor', async () => {
+            const fetchMock = vi.fn(async () =>
+                jsonResponse(200, { held: false, holder: 'sam@corp.io' })
+            );
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            await expect(api.acquireLock('d1', 'tab-1')).resolves.toEqual({
+                held: false,
+                holder: 'sam@corp.io',
+            });
+            const [url, init] = fetchMock.mock.calls[0] as unknown as [
+                string,
+                RequestInit,
+            ];
+            expect(url).toBe('http://srv/diagrams/d1/lock');
+            expect(init.method).toBe('POST');
+            expect(JSON.parse(init.body as string)).toEqual({
+                editorId: 'tab-1',
+            });
+        });
+
+        it('lets go of the lock, even as the page closes', async () => {
+            const fetchMock = vi.fn(
+                async () => new Response(null, { status: 204 })
+            );
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            await api.releaseLock('d1', 'tab 1/2', { keepalive: true });
+            const [url, init] = fetchMock.mock.calls[0] as unknown as [
+                string,
+                RequestInit,
+            ];
+            expect(url).toBe(
+                'http://srv/diagrams/d1/lock?editorId=tab%201%2F2'
+            );
+            expect(init.method).toBe('DELETE');
+            expect(init.keepalive).toBe(true);
+        });
+
+        it('says who is editing when a save is refused', () => {
+            expect(
+                errorMessage(
+                    new ApiError(
+                        423,
+                        'locked',
+                        'sam@corp.io is editing this diagram.'
+                    )
+                )
+            ).toBe('sam@corp.io is editing this diagram.');
+            expect(errorMessage(new ApiError(423, 'locked'))).toBe(
+                'Someone else is editing this diagram.'
+            );
+        });
+    });
+
+    describe('saved connections', () => {
+        it('updates one in place, leaving the password out when it is not changing', async () => {
+            const fetchMock = vi.fn(async () =>
+                jsonResponse(200, { id: 'c1' })
+            );
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            await api.updateConnection('c1', {
+                name: 'prod',
+                dialect: 'postgresql',
+                host: 'db.corp.io',
+                database: 'shop',
+                user: 'reader',
+                ssl: false,
+                trustServerCertificate: false,
+            });
+            const [url, init] = fetchMock.mock.calls[0] as unknown as [
+                string,
+                RequestInit,
+            ];
+            expect(url).toBe('http://srv/introspect/connections/c1');
+            expect(init.method).toBe('PUT');
+            expect(JSON.parse(init.body as string)).not.toHaveProperty(
+                'password'
+            );
+        });
+
+        it('asks the server whether it can store passwords', async () => {
+            const fetchMock = vi.fn(async () =>
+                jsonResponse(200, { savedConnections: false })
+            );
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            await expect(api.introspectCapabilities()).resolves.toEqual({
+                savedConnections: false,
+            });
+            expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toBe(
+                'http://srv/introspect/capabilities'
+            );
+        });
+
+        it('asks for a connection when a check has none', () => {
+            expect(errorMessage(new ApiError(400, 'connection_required'))).toBe(
+                'Choose a saved connection first.'
+            );
+        });
+    });
+
+    describe('a session that ended', () => {
+        afterEach(() => setSessionEndedHandler(null));
+
+        const apiAnswering = (status: number) =>
+            createApi('http://srv', (async () =>
+                jsonResponse(status, {
+                    error: 'unauthorized',
+                })) as typeof fetch);
+
+        it('is reported when a signed-in request comes back as signed out', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await expect(
+                apiAnswering(401).listDiagrams()
+            ).rejects.toMatchObject({ status: 401 });
+            expect(ended).toHaveBeenCalledTimes(1);
+        });
+
+        it('is not reported for the sign-in calls, where 401 is an ordinary answer', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await apiAnswering(401)
+                .me()
+                .catch(() => undefined);
+            await apiAnswering(401)
+                .login('a@b.co', 'x')
+                .catch(() => undefined);
+            expect(ended).not.toHaveBeenCalled();
+        });
+
+        it('is not reported for other failures', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await apiAnswering(403)
+                .listDiagrams()
+                .catch(() => undefined);
+            await apiAnswering(500)
+                .listDiagrams()
+                .catch(() => undefined);
+            expect(ended).not.toHaveBeenCalled();
+        });
     });
 
     it('maps error codes to readable messages', () => {
