@@ -3,6 +3,7 @@ import { AccountMenu } from '@/components/qubdi/account-menu';
 import { PublishControl } from '@/components/qubdi/publish-control';
 import { CommentsControl } from '@/components/qubdi/comments-control';
 import { DriftControl } from '@/components/qubdi/drift-control';
+import { GetLatestControl } from '@/components/qubdi/get-latest-control';
 import { LintControl } from '@/components/qubdi/lint-control';
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/logo/logo';
@@ -27,8 +28,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
             </div>
             <DiagramName />
             <div className="hidden flex-1 items-center justify-end gap-2 sm:flex">
-                <ServerSaveStatus />
-                <LastSaved />
+                <ServerSaveStatus fallback={<LastSaved />} />
+                <GetLatestControl />
                 <LintControl />
                 <DriftControl />
                 <CommentsControl />

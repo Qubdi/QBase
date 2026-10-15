@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import TimeAgo from 'timeago-react';
 import { useDiagram } from '@/hooks/use-diagram';
-import { Badge } from '@/components/badge/badge';
 import {
     Tooltip,
     TooltipContent,
@@ -92,20 +91,27 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
 
     return (
         <Tooltip>
-            <TooltipTrigger>
-                <Badge
-                    variant="secondary"
-                    className="flex gap-1.5 whitespace-nowrap"
+            <TooltipTrigger asChild>
+                <span
+                    role="img"
+                    aria-label="Last saved"
+                    tabIndex={0}
+                    className="flex size-8 items-center justify-center rounded-md text-muted-foreground"
                 >
-                    <Save size={16} />
+                    <Save className="size-4" />
+                </span>
+            </TooltipTrigger>
+            <TooltipContent>
+                <div>
+                    Saved{' '}
                     <TimeAgo
                         datetime={currentDiagram.updatedAt}
                         locale={language}
                     />
-                </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-                {currentDiagram.updatedAt.toLocaleString()}
+                </div>
+                <div className="opacity-80">
+                    {currentDiagram.updatedAt.toLocaleString()}
+                </div>
             </TooltipContent>
         </Tooltip>
     );
