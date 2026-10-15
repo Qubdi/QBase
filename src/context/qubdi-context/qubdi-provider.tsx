@@ -6,6 +6,7 @@ import {
     type RemoteUser,
     type RequestOptions,
 } from '@/lib/qubdi/api';
+import { getEditorId } from '@/lib/qubdi/editor-id';
 import { QUBDI_BACKEND_ENABLED } from '@/lib/qubdi/config';
 import {
     clearRemoteId,
@@ -67,6 +68,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                             title: diagram.name,
                             content,
                             baseUpdatedAt: base,
+                            editorId: getEditorId(),
                         },
                         options
                     );

@@ -6,7 +6,12 @@ import { Spinner } from '@/components/spinner/spinner';
 import { DiagramProvider } from '@/context/diagram-context/diagram-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useStorage } from '@/hooks/use-storage';
-import { isLocked, resolveAccess, type AccessState } from '@/lib/qubdi/access';
+import {
+    applyLock,
+    isLocked,
+    resolveAccess,
+    type AccessState,
+} from '@/lib/qubdi/access';
 import { api, ApiError, errorMessage } from '@/lib/qubdi/api';
 import {
     ensureLocalCopy,
@@ -20,6 +25,7 @@ import {
 } from '@/lib/qubdi/remote-map';
 import { generateId } from '@/lib/utils';
 import { AuthDialog } from './auth-dialog';
+import { useEditLock } from './use-edit-lock';
 import {
     DiagramAccessContext,
     type DiagramAccessValue,
@@ -177,13 +183,15 @@ const WorkspaceGate: React.FC<React.PropsWithChildren> = ({ children }) => {
     const resolution = useWorkspaceResolution(projectSlug, remoteDiagramId);
     const navigate = useNavigate();
     const refresh = useCallback(() => navigate(0), [navigate]);
-    const value = useMemo<DiagramAccessValue | null>(
-        () =>
-            resolution.kind === 'ready'
-                ? { access: resolution.access, refresh }
-                : null,
-        [resolution, refresh]
+    const granted = resolution.kind === 'ready' ? resolution.access : null;
+    // only one editor at a time: an editor edits only while holding the lock
+    const lock = useEditLock(
+        user && granted?.status === 'editor' ? granted.remoteId : undefined
     );
+    const value = useMemo<DiagramAccessValue | null>(() => {
+        const access = granted ? applyLock(granted, lock) : null;
+        return access ? { access, refresh } : null;
+    }, [granted, lock, refresh]);
 
     if (user === undefined) return <Loading />;
     if (user === null) return <SignInRequired />;
@@ -214,12 +222,13 @@ const WorkspaceGate: React.FC<React.PropsWithChildren> = ({ children }) => {
             );
     }
 
+    // the edit lock is still being asked for
+    if (!value) return <Loading />;
+
     return (
         <WorkspaceContext.Provider value={resolution.workspace}>
-            <DiagramAccessContext.Provider value={value!}>
-                <DiagramProvider
-                    readonly={isLocked(resolution.access) || undefined}
-                >
+            <DiagramAccessContext.Provider value={value}>
+                <DiagramProvider readonly={isLocked(value.access) || undefined}>
                     {children}
                 </DiagramProvider>
             </DiagramAccessContext.Provider>
