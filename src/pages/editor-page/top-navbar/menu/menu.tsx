@@ -38,12 +38,7 @@ import { useAlert } from '@/context/alert-context/alert-context';
 export interface MenuProps {}
 
 export const Menu: React.FC<MenuProps> = () => {
-    const {
-        clearDiagramData,
-        deleteDiagram,
-        updateDiagramUpdatedAt,
-        databaseType,
-    } = useDiagram();
+    const { clearDiagramData, deleteDiagram, databaseType } = useDiagram();
     const {
         openCreateDiagramDialog,
         openOpenDiagramDialog,
@@ -184,16 +179,6 @@ export const Menu: React.FC<MenuProps> = () => {
                             {
                                 keyboardShortcutsForOS[
                                     KeyboardShortcutAction.OPEN_DIAGRAM
-                                ].keyCombinationLabel
-                            }
-                        </MenubarShortcut>
-                    </MenubarItem>
-                    <MenubarItem onClick={updateDiagramUpdatedAt}>
-                        {t('menu.actions.save')}
-                        <MenubarShortcut>
-                            {
-                                keyboardShortcutsForOS[
-                                    KeyboardShortcutAction.SAVE_DIAGRAM
                                 ].keyCombinationLabel
                             }
                         </MenubarShortcut>
