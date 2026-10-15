@@ -1,8 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { qubdiContext, type QubdiContext } from './qubdi-context';
 import {
     api,
     ApiError,
+    setSessionEndedHandler,
     type RemoteUser,
     type RequestOptions,
 } from '@/lib/qubdi/api';
@@ -26,6 +33,10 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         QUBDI_BACKEND_ENABLED ? undefined : null
     );
 
+    const [sessionEnded, setSessionEnded] = useState(false);
+    const signedIn = useRef(false);
+    signedIn.current = !!user;
+
     useEffect(() => {
         if (!QUBDI_BACKEND_ENABLED) return;
         api.me()
@@ -33,17 +44,32 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
             .catch(() => setUser(null));
     }, []);
 
+    // the server refused a signed-in request as signed out: say so, instead of
+    // leaving the user with pages that quietly stop working
+    useEffect(() => {
+        if (!QUBDI_BACKEND_ENABLED) return;
+        setSessionEndedHandler(() => {
+            if (!signedIn.current) return;
+            setSessionEnded(true);
+            setUser(null);
+        });
+        return () => setSessionEndedHandler(null);
+    }, []);
+
     const login = useCallback(async (email: string, password: string) => {
         setUser(await api.login(email, password));
+        setSessionEnded(false);
     }, []);
 
     const register = useCallback(async (email: string, password: string) => {
         setUser(await api.register(email, password));
+        setSessionEnded(false);
     }, []);
 
     const logout = useCallback(async () => {
         await api.logout().catch(() => undefined);
         resetAdminLanding();
+        setSessionEnded(false);
         setUser(null);
     }, []);
 
@@ -99,13 +125,14 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         () => ({
             enabled: QUBDI_BACKEND_ENABLED,
             user,
+            sessionEnded,
             login,
             register,
             logout,
             syncDiagram,
             remoteIdFor: getRemoteId,
         }),
-        [user, login, register, logout, syncDiagram]
+        [user, sessionEnded, login, register, logout, syncDiagram]
     );
 
     return (

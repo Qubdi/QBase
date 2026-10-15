@@ -25,6 +25,7 @@ import {
 } from '@/lib/qubdi/remote-map';
 import { generateId } from '@/lib/utils';
 import { AuthDialog } from './auth-dialog';
+import { SessionEndedNotice } from './session-ended-notice';
 import { useEditLock } from './use-edit-lock';
 import {
     DiagramAccessContext,
@@ -49,6 +50,7 @@ const SignInRequired: React.FC = () => {
     return (
         <Centered>
             <Logo />
+            <SessionEndedNotice />
             <p className="max-w-sm text-sm text-muted-foreground">
                 Sign in to open your projects. Accounts are created by an admin.
             </p>
