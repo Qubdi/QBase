@@ -31,6 +31,16 @@ export const resetSaveStatus = () => {
     emit();
 };
 
+// The running autosaver lets "Get latest" throw away what it has not sent, so
+// the flush on page leave cannot push those edits back to the server.
+let discard: (() => void) | null = null;
+
+export const registerSaveDiscard = (fn: (() => void) | null) => {
+    discard = fn;
+};
+
+export const discardUnsavedChanges = () => discard?.();
+
 const subscribe = (l: () => void) => {
     listeners.add(l);
     return () => listeners.delete(l);
