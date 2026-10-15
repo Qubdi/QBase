@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createApi, errorMessage } from '../api';
+import {
+    ApiError,
+    createApi,
+    errorMessage,
+    KEEPALIVE_BODY_LIMIT,
+} from '../api';
 
 const jsonResponse = (status: number, body: unknown) =>
     new Response(JSON.stringify(body), {
@@ -8,6 +13,43 @@ const jsonResponse = (status: number, body: unknown) =>
     });
 
 describe('qubdi api client', () => {
+    describe('keepalive', () => {
+        const run = async (
+            content: Record<string, unknown>,
+            options?: { keepalive?: boolean }
+        ) => {
+            const fetchMock = vi.fn(async () =>
+                jsonResponse(200, { id: 'd1' })
+            );
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            await api.updateDiagram('d1', { content }, options);
+            return (
+                fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+            )[1];
+        };
+
+        it('sets keepalive when asked and the body is small', async () => {
+            const init = await run({ a: 1 }, { keepalive: true });
+            expect(init.keepalive).toBe(true);
+        });
+
+        it('leaves keepalive off by default', async () => {
+            const init = await run({ a: 1 });
+            expect(init.keepalive).toBeUndefined();
+        });
+
+        it('drops keepalive for a body over the browser limit', async () => {
+            const init = await run(
+                { big: 'x'.repeat(KEEPALIVE_BODY_LIMIT) },
+                { keepalive: true }
+            );
+            expect(init.keepalive).toBeUndefined();
+        });
+    });
+
     it('sends credentials and a JSON body', async () => {
         const fetchMock = vi.fn(async () =>
             jsonResponse(200, { id: '1', email: 'a@b.co', isAdmin: true })

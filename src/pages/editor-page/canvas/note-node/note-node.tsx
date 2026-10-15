@@ -2,7 +2,7 @@ import React, { useCallback, useState, useRef } from 'react';
 import { NodeResizer, type NodeProps, type Node } from '@xyflow/react';
 import { Pencil, Trash2 } from 'lucide-react';
 import type { Note } from '@/lib/domain/note';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useClickAway, useKeyPressEvent } from 'react-use';
 import { ColorPicker } from '@/components/color-picker/color-picker';
 import { Button } from '@/components/button/button';
@@ -29,7 +29,7 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
     dragging,
 }) => {
     const { note } = data;
-    const { updateNote, removeNote, readonly } = useChartDB();
+    const { updateNote, removeNote, readonly } = useDiagram();
     const [editMode, setEditMode] = useState(false);
     const [content, setContent] = useState(note.content);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -142,7 +142,7 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
             className={cn(
                 'flex h-full flex-col overflow-hidden rounded-[6px] border',
                 selected
-                    ? 'border-pink-600'
+                    ? 'border-teal-600'
                     : 'border-slate-500 dark:border-slate-600'
             )}
             style={{
@@ -163,8 +163,8 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                     minWidth={200}
                     minHeight={150}
                     isVisible={selected}
-                    lineClassName="!border-pink-500"
-                    handleClassName="!h-3 !w-3 !bg-pink-500 !rounded-full"
+                    lineClassName="!border-teal-500"
+                    handleClassName="!h-3 !w-3 !bg-teal-500 !rounded-full"
                 />
             ) : null}
 

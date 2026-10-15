@@ -388,8 +388,6 @@ export const bn: LanguageTranslation = {
             error: {
                 message:
                     'SQL স্ক্রিপ্ট তৈরি করার সময় একটি ত্রুটি ঘটেছে। অনুগ্রহ করে পরে আবার চেষ্টা করুন বা <0>আমাদের সাথে যোগাযোগ করুন</0>।',
-                description:
-                    'আপনার OPENAI_TOKEN ব্যবহার করার জন্য বিনামূল্যে অভিজ্ঞতা নিন, ম্যানুয়াল <0>এখানে দেখুন</0>।',
             },
         },
 
@@ -466,14 +464,6 @@ export const bn: LanguageTranslation = {
             cancel: 'বাতিল করুন',
         },
 
-        star_us_dialog: {
-            title: 'আমাদের উন্নত করতে সাহায্য করুন!',
-            description:
-                'আপনি কি GitHub-এ আমাদের একটি স্টার দিতে পারবেন? এটি মাত্র এক ক্লিক দূরে!',
-            close: 'এখন নয়',
-            confirm: 'অবশ্যই!',
-        },
-
         export_diagram_dialog: {
             title: 'চিত্র রপ্তানি করুন',
             description: 'রপ্তানির জন্য ফরম্যাট নির্বাচন করুন:',
@@ -483,7 +473,7 @@ export const bn: LanguageTranslation = {
             error: {
                 title: 'চিত্র রপ্তানিতে ত্রুটি',
                 description:
-                    'কিছু ভুল হয়েছে। সাহায্যের প্রয়োজন? support@chartdb.io-এ যোগাযোগ করুন।',
+                    'কিছু ভুল হয়েছে। সাহায্যের প্রয়োজন? the Qubdi support team-এ যোগাযোগ করুন।',
             },
         },
 
@@ -495,7 +485,7 @@ export const bn: LanguageTranslation = {
             error: {
                 title: 'চিত্র আমদানিতে ত্রুটি',
                 description:
-                    'ডায়াগ্রাম JSON অবৈধ। অনুগ্রহ করে JSON পরীক্ষা করুন এবং আবার চেষ্টা করুন। সাহায্যের প্রয়োজন? support@chartdb.io-এ যোগাযোগ করুন।',
+                    'ডায়াগ্রাম JSON অবৈধ। অনুগ্রহ করে JSON পরীক্ষা করুন এবং আবার চেষ্টা করুন। সাহায্যের প্রয়োজন? the Qubdi support team-এ যোগাযোগ করুন।',
             },
         },
         // TODO: Translate

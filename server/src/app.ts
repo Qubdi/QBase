@@ -18,8 +18,11 @@ import {
     introspectRoutes,
     type IntrospectDeps,
 } from './introspect/routes.js';
+import { adminRoutes } from './admin/routes.js';
 import { diagramRoutes } from './diagrams/routes.js';
+import { projectRoutes } from './projects/routes.js';
 import { memberRoutes } from './members/routes.js';
+import { sharedUserLimit } from './lib/rate-key.js';
 import { publicShareRoutes, shareManagementRoutes } from './share/routes.js';
 
 declare module 'fastify' {
@@ -35,10 +38,23 @@ export interface AppDeps {
     introspect?: Pick<IntrospectDeps, 'factory' | 'lookup'>;
 }
 
+/** Trust the nearest `hops` proxies (Fastify's types only take a function here). */
+const trustHops = (hops: number) => (_address: string, hop: number) =>
+    hop < hops;
+
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const app = Fastify({
-        logger: false,
-        bodyLimit: 50 * 1024 * 1024,
+        // closing the server also ends open SSE streams instead of waiting on them
+        forceCloseConnections: true,
+        // behind a reverse proxy req.ip is the proxy's, unless it is trusted
+        trustProxy:
+            typeof config.trustProxy === 'number'
+                ? trustHops(config.trustProxy)
+                : config.trustProxy,
+        logger:
+            config.logLevel === 'silent' ? false : { level: config.logLevel },
+        // small by default; the routes that carry a whole diagram raise it
+        bodyLimit: config.bodyLimit,
         routerOptions: { maxParamLength: 1000 },
     });
 
@@ -66,13 +82,15 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         req.user = await getSessionUser(db, req.cookies[SESSION_COOKIE]);
     });
 
-    app.setErrorHandler((err, _req, reply) => {
+    app.setErrorHandler((err, req, reply) => {
         if (err instanceof ZodError) {
             return reply
                 .code(400)
                 .send({ error: 'invalid_request', issues: err.issues });
         }
         const status = (err as { statusCode?: number }).statusCode ?? 500;
+        // unexpected failures: log them with the request id, show the client nothing
+        if (status >= 500) req.log.error({ err }, 'request failed');
         return reply
             .code(status)
             .send({
@@ -86,9 +104,13 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.get('/health', async () => ({ ok: true }));
 
     app.register(authRoutes(db, config), { prefix: '/auth' });
-    app.register(diagramRoutes(db), { prefix: '/diagrams' });
+    app.register(adminRoutes(db), { prefix: '/admin' });
+    app.register(projectRoutes(db), { prefix: '/projects' });
+    app.register(diagramRoutes(db, config), { prefix: '/diagrams' });
     app.register(memberRoutes(db), { prefix: '/diagrams' });
-    app.register(introspectRoutes({ db, config, ...introspect }), {
+    // introspection and manual drift checks draw from one allowance per user
+    const outboundLimit = sharedUserLimit(config.outboundRateLimit);
+    app.register(introspectRoutes({ db, config, outboundLimit, ...introspect }), {
         prefix: '/introspect',
     });
     app.register(
@@ -97,10 +119,11 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
             config,
             factory: introspect?.factory ?? defaultIntrospectorFactory,
             lookup: introspect?.lookup,
+            outboundLimit,
         }),
         { prefix: '/diagrams' }
     );
-    app.register(lintRoutes(db));
+    app.register(lintRoutes(db, config));
     app.register(commentRoutes(db), { prefix: '/diagrams' });
     app.register(shareManagementRoutes(db), { prefix: '/diagrams' });
     app.register(publicShareRoutes(db, config), { prefix: '/s' });

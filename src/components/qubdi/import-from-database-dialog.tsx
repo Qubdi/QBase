@@ -8,8 +8,11 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/components/input/input';
 import { useStorage } from '@/hooks/use-storage';
+import { useQubdi } from '@/hooks/use-qubdi';
+import { projectDiagramPath } from '@/lib/qubdi/project-path';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import {
     api,
@@ -32,12 +35,12 @@ import {
 export interface ImportFromDatabaseDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /** The new diagram, and the connections used, belong to this project. */
+    projectId: string;
+    projectSlug: string;
 }
 
 type Step = 'connect' | 'select' | 'preview';
-
-const selectClass =
-    'h-9 rounded-md border border-input bg-background px-2 text-sm';
 
 const DEFAULT_PORT: Record<DbDialect, string> = {
     postgresql: '5432',
@@ -58,8 +61,9 @@ const emptyForm = {
 
 export const ImportFromDatabaseDialog: React.FC<
     ImportFromDatabaseDialogProps
-> = ({ open, onOpenChange }) => {
+> = ({ open, onOpenChange, projectId, projectSlug }) => {
     const { addDiagram } = useStorage();
+    const { syncDiagram } = useQubdi();
     const navigate = useNavigate();
     const [step, setStep] = useState<Step>('connect');
     const [form, setForm] = useState(emptyForm);
@@ -77,10 +81,10 @@ export const ImportFromDatabaseDialog: React.FC<
         if (!open) return;
         setStep('connect');
         setError(null);
-        api.listSavedConnections()
+        api.listSavedConnections(projectId)
             .then(setSaved)
             .catch(() => setSaved([]));
-    }, [open]);
+    }, [open, projectId]);
 
     const set = <K extends keyof typeof emptyForm>(
         key: K,
@@ -117,6 +121,7 @@ export const ImportFromDatabaseDialog: React.FC<
                 const s = await api.saveConnection({
                     ...connection,
                     name: form.saveAs.trim(),
+                    projectId,
                 });
                 setSaved((list) => [...list, s]);
                 setJustSavedId(s.id);
@@ -156,6 +161,8 @@ export const ImportFromDatabaseDialog: React.FC<
                 name.trim() || catalog.database
             );
             await addDiagram({ diagram });
+            // nothing lives outside a project: create it on the server right away
+            const remoteId = await syncDiagram(diagram, projectId);
             // remember where this diagram came from so re-sync is one click;
             // passwords are never stored in the browser
             const usedSaved = savedId || justSavedId;
@@ -175,7 +182,7 @@ export const ImportFromDatabaseDialog: React.FC<
                 lastSyncedAt: new Date().toISOString(),
             });
             onOpenChange(false);
-            navigate(`/diagrams/${diagram.id}`);
+            navigate(projectDiagramPath(projectSlug, remoteId));
         } catch (err) {
             setError(errorMessage(err));
         } finally {
@@ -219,12 +226,10 @@ export const ImportFromDatabaseDialog: React.FC<
                         data-testid="db-connect-form"
                     >
                         {saved.length > 0 ? (
-                            <select
+                            <OptionSelect
                                 aria-label="Saved connection"
-                                className={selectClass}
                                 value={savedId}
-                                onChange={(e) => {
-                                    const id = e.target.value;
+                                onValueChange={(id) => {
                                     setSavedId(id);
                                     const s = saved.find((x) => x.id === id);
                                     if (s) {
@@ -241,33 +246,37 @@ export const ImportFromDatabaseDialog: React.FC<
                                         });
                                     }
                                 }}
-                            >
-                                <option value="">New connection</option>
-                                {saved.map((s) => (
-                                    <option key={s.id} value={s.id}>
-                                        {s.name}
-                                    </option>
-                                ))}
-                            </select>
+                                options={[
+                                    { value: '', label: 'New connection' },
+                                    ...saved.map((s) => ({
+                                        value: s.id,
+                                        label: s.name,
+                                    })),
+                                ]}
+                            />
                         ) : null}
                         <div className="flex gap-2">
-                            <select
+                            <OptionSelect
                                 aria-label="Database type"
-                                className={selectClass}
+                                className="w-40 shrink-0"
                                 value={form.dialect}
                                 disabled={!!savedId}
-                                onChange={(e) => {
-                                    const d = e.target.value as DbDialect;
+                                onValueChange={(v) => {
+                                    const d = v as DbDialect;
                                     setForm((f) => ({
                                         ...f,
                                         dialect: d,
                                         port: DEFAULT_PORT[d],
                                     }));
                                 }}
-                            >
-                                <option value="postgresql">PostgreSQL</option>
-                                <option value="sqlserver">SQL Server</option>
-                            </select>
+                                options={[
+                                    {
+                                        value: 'postgresql',
+                                        label: 'PostgreSQL',
+                                    },
+                                    { value: 'sqlserver', label: 'SQL Server' },
+                                ]}
+                            />
                             <Input
                                 placeholder="Host"
                                 aria-label="Host"

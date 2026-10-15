@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
+import { chooseSides, type Sides } from './relationship-edge-sides';
 import { createPortal } from 'react-dom';
 import type { Edge, EdgeProps } from '@xyflow/react';
 import { getSmoothStepPath, Position, useReactFlow } from '@xyflow/react';
 import type { DBRelationship, Cardinality } from '@/lib/domain/db-relationship';
 import { RIGHT_HANDLE_ID_PREFIX } from '../table-node/table-node-field';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { cn } from '@/lib/utils';
 import { getCardinalityMarkerId } from '../canvas-utils';
 import { useDiff } from '@/context/diff-context/use-diff';
@@ -40,7 +41,7 @@ export const RelationshipEdge: React.FC<EdgeProps<RelationshipEdgeType>> =
             const { showCardinality } = useLocalConfig();
 
             const { relationships, updateRelationship, removeRelationship } =
-                useChartDB();
+                useDiagram();
             const {
                 editRelationshipPopover,
                 openRelationshipPopover,
@@ -243,36 +244,16 @@ export const RelationshipEdge: React.FC<EdgeProps<RelationshipEdgeType>> =
             const targetLeftX = targetX - 1;
             const targetRightX = targetX + targetWidth + 10;
 
+            // keep the sides the line already uses unless another pair is clearly closer,
+            // so it does not flip from side to side while a table is being dragged
+            const previousSidesRef = useRef<Sides | null>(null);
             const { sourceSide, targetSide } = useMemo(() => {
-                const distances = {
-                    leftToLeft: Math.abs(sourceLeftX - targetLeftX),
-                    leftToRight: Math.abs(sourceLeftX - targetRightX),
-                    rightToLeft: Math.abs(sourceRightX - targetLeftX),
-                    rightToRight: Math.abs(sourceRightX - targetRightX),
-                };
-
-                const minDistance = Math.min(
-                    distances.leftToLeft,
-                    distances.leftToRight,
-                    distances.rightToLeft,
-                    distances.rightToRight
+                const sides = chooseSides(
+                    { sourceLeftX, sourceRightX, targetLeftX, targetRightX },
+                    previousSidesRef.current
                 );
-
-                const minDistanceKey = Object.keys(distances).find(
-                    (key) =>
-                        distances[key as keyof typeof distances] === minDistance
-                ) as keyof typeof distances;
-
-                switch (minDistanceKey) {
-                    case 'leftToRight':
-                        return { sourceSide: 'left', targetSide: 'right' };
-                    case 'rightToLeft':
-                        return { sourceSide: 'right', targetSide: 'left' };
-                    case 'rightToRight':
-                        return { sourceSide: 'right', targetSide: 'right' };
-                    default:
-                        return { sourceSide: 'left', targetSide: 'left' };
-                }
+                previousSidesRef.current = sides;
+                return sides;
             }, [sourceLeftX, sourceRightX, targetLeftX, targetRightX]);
 
             const edgePath = useMemo(() => {
@@ -382,7 +363,7 @@ export const RelationshipEdge: React.FC<EdgeProps<RelationshipEdgeType>> =
                         fill="none"
                         className={cn([
                             'react-flow__edge-path',
-                            `!stroke-2 ${selected ? '!stroke-pink-600' : '!stroke-slate-400'}`,
+                            `!stroke-2 ${selected ? '!stroke-teal-600' : '!stroke-slate-400'}`,
                             {
                                 '!stroke-green-500 !stroke-[3px]':
                                     isDiffNewRelationship,
@@ -414,11 +395,11 @@ export const RelationshipEdge: React.FC<EdgeProps<RelationshipEdgeType>> =
                         >
                             <button
                                 onClick={handleIndicatorClick}
-                                className="relative flex size-6 items-center justify-center rounded-full border-2 border-pink-600 bg-background shadow-lg transition-all hover:scale-110 hover:bg-pink-50"
+                                className="relative flex size-6 items-center justify-center rounded-full border-2 border-teal-600 bg-background shadow-lg transition-all hover:scale-110 hover:bg-teal-50"
                                 title="Edit relationship"
                                 style={{ zIndex: 10 }}
                             >
-                                <EllipsisIcon className="size-4 text-pink-600" />
+                                <EllipsisIcon className="size-4 text-teal-600" />
                             </button>
                         </foreignObject>
                     )}

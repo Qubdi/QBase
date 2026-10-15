@@ -1,7 +1,6 @@
 import { useCallback, useRef } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyFunction = (...args: any[]) => any;
+type AnyFunction = (...args: never[]) => unknown;
 
 export const useDebounce = <T extends AnyFunction>(
     func: T,

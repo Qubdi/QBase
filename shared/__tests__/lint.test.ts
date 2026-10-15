@@ -75,7 +75,7 @@ const link = (
 ) => ({
     id: id('r'),
     name,
-    // ChartDB: source is the referenced table, target holds the foreign key
+    // QubdiDB: source is the referenced table, target holds the foreign key
     sourceTableId: parent.id,
     targetTableId: child.id,
     sourceFieldId: parent.fields.find((f) => f.name === parentCol)!.id,

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity } from 'lucide-react';
 import { Button } from '@/components/button/button';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, type DriftBadge } from '@/lib/qubdi/api';
 import {
@@ -14,7 +14,7 @@ import { DriftDialog } from './drift-dialog';
 /** Toolbar entry for drift detection: shows a badge when the database has drifted. */
 export const DriftControl: React.FC = () => {
     const { enabled, user, remoteIdFor } = useQubdi();
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram } = useDiagram();
     const [open, setOpen] = useState(false);
     const [badge, setBadge] = useState<DriftBadge | null>(null);
     const remoteId = remoteIdFor(currentDiagram.id);

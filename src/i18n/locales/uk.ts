@@ -386,8 +386,6 @@ export const uk: LanguageTranslation = {
             error: {
                 message:
                     'Помилка створення сценарію SQL. Спробуйте пізніше або <0>звʼяжіться з нами</0>.',
-                description:
-                    'Не соромтеся використовувати свій OPENAI_TOKEN, дивіться посібник <0>тут</0>.',
             },
         },
 
@@ -465,12 +463,6 @@ export const uk: LanguageTranslation = {
             cancel: 'Скасувати',
         },
 
-        star_us_dialog: {
-            title: 'Допоможіть нам покращитися!',
-            description: 'Поставне на зірку на GitHub? Це лише один клік!',
-            close: 'Не зараз',
-            confirm: 'Звісно!',
-        },
         export_diagram_dialog: {
             title: 'Експорт Діаграми',
             description: 'Оберіть формат експорту:',
@@ -480,7 +472,7 @@ export const uk: LanguageTranslation = {
             error: {
                 title: 'Помилка експорут діаграми',
                 description:
-                    'Щось пішло не так. Потрібна допомога? support@chartdb.io',
+                    'Щось пішло не так. Потрібна допомога? the Qubdi support team',
             },
         },
         import_diagram_dialog: {
@@ -491,7 +483,7 @@ export const uk: LanguageTranslation = {
             error: {
                 title: 'Помилка імпорту діаграми',
                 description:
-                    'JSON діаграми є неправильним. Будь ласка, перевірте JSON і спробуйте ще раз. Потрібна допомога? support@chartdb.io',
+                    'JSON діаграми є неправильним. Будь ласка, перевірте JSON і спробуйте ще раз. Потрібна допомога? the Qubdi support team',
             },
         },
         // TODO: Translate

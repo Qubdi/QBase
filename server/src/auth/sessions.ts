@@ -39,7 +39,8 @@ export async function getSessionUser(
         .where(
             and(
                 eq(sessions.id, hashToken(token)),
-                gt(sessions.expiresAt, new Date())
+                gt(sessions.expiresAt, new Date()),
+                eq(users.isActive, true)
             )
         );
     return rows[0] ?? null;

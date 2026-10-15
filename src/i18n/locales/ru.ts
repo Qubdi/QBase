@@ -385,8 +385,6 @@ export const ru: LanguageTranslation = {
             error: {
                 message:
                     'Ошибка создания скрипта SQL. Попробуйте еще раз позже или <0>свяжитесь с нами</0>.',
-                description:
-                    'Не стесняйтесь использовать ваш OPENAI_TOKEN, см. руководство <0>здесь</0>.',
             },
         },
 
@@ -464,13 +462,6 @@ export const ru: LanguageTranslation = {
             cancel: 'Отменить',
         },
 
-        star_us_dialog: {
-            title: 'Помогите нам стать лучше!',
-            description:
-                'Хотите отметить нас на GitHub? Это всего лишь один клик!',
-            close: 'Не сейчас',
-            confirm: 'Конечно!',
-        },
         export_diagram_dialog: {
             title: 'Экспорт кода диаграммы',
             description: 'Выберите формат экспорта:',
@@ -480,7 +471,7 @@ export const ru: LanguageTranslation = {
             error: {
                 title: 'Ошибка экспортирования диаграммы',
                 description:
-                    'Что-то пошло не так. Если вам нужна помощь, напишите нам: support@chartdb.io',
+                    'Что-то пошло не так. Если вам нужна помощь, напишите нам: the Qubdi support team',
             },
         },
         import_diagram_dialog: {
@@ -491,7 +482,7 @@ export const ru: LanguageTranslation = {
             error: {
                 title: 'Ошибка при импорте диаграммы',
                 description:
-                    'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: support@chartdb.io',
+                    'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: the Qubdi support team',
             },
         },
         import_dbml_dialog: {

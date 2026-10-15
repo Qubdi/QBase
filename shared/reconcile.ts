@@ -4,7 +4,7 @@ import type {
     RelationshipDesc,
     SchemaDesc,
     TableDesc,
-} from './schema-desc';
+} from './schema-desc.js';
 
 // reconcile(diagram, database) answers: what would have to change in the
 // diagram for it to match the database? It is pure and has no dependencies, so
@@ -107,7 +107,7 @@ export interface ChangeSet {
 
 export interface ReconcileOptions {
     /**
-     * Names remembered from the last sync, keyed by ChartDB id. This is the
+     * Names remembered from the last sync, keyed by QubdiDB id. This is the
      * "stored source identity": it keeps a table matched even if someone
      * renamed it in the diagram.
      */

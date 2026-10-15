@@ -1,6 +1,7 @@
 import { QUBDI_BACKEND_URL } from './config';
 import type { EditorComment } from './comments-store';
 import type { LintConfig } from '../../../shared/lint';
+import { listQuery, type ListParams, type Page } from './paging';
 
 export type MemberRole = 'owner' | 'editor' | 'viewer';
 
@@ -10,12 +11,66 @@ export interface RemoteUser {
     isAdmin: boolean;
 }
 
+export type ProjectRole = 'editor' | 'viewer';
+
+/** A project the signed-in user can work in. Admins are 'owner' everywhere. */
+export interface MyProject {
+    id: string;
+    name: string;
+    /** the project's URL piece: /<slug>/diagrams */
+    slug: string;
+    description: string;
+    /** how many diagrams the project holds */
+    diagramCount: number;
+    role: MemberRole;
+}
+
+export interface AdminUser {
+    id: string;
+    email: string;
+    isAdmin: boolean;
+    /** a disabled user cannot sign in */
+    isActive: boolean;
+    createdAt: string;
+    /** number of projects the user is assigned to */
+    projects: number;
+}
+
+export type UserStatus = 'active' | 'disabled';
+
+export interface AdminProject {
+    id: string;
+    name: string;
+    slug: string;
+    description: string;
+    createdAt: string;
+    members: number;
+    diagrams: number;
+}
+
+export interface ProjectMember {
+    userId: string;
+    email: string;
+    role: ProjectRole;
+}
+
 export interface RemoteDiagramSummary {
     id: string;
     title: string;
     updatedAt: string;
     ownerId: string;
+    /** set when the diagram lives in a project; access then follows the project */
+    projectId?: string | null;
     role: MemberRole;
+    // what the list shows about the diagram (read from its content; for
+    // viewers, from the published copy). Missing on very old servers.
+    ownerEmail?: string | null;
+    databaseType?: string | null;
+    databaseEdition?: string | null;
+    tableCount?: number;
+    relationshipCount?: number;
+    /** when the diagram was first created */
+    createdAt?: string | null;
 }
 
 export interface RemoteDiagram extends RemoteDiagramSummary {
@@ -192,6 +247,14 @@ export interface CatalogResponse {
 
 type FetchLike = typeof fetch;
 
+/** Browsers cap the body of a keepalive request at 64 KiB. */
+export const KEEPALIVE_BODY_LIMIT = 60_000;
+
+export interface RequestOptions {
+    /** Let the request finish even if the page is closing (small bodies only). */
+    keepalive?: boolean;
+}
+
 export function createApi(
     baseUrl: string = QUBDI_BACKEND_URL,
     fetchImpl: FetchLike = (...args) => fetch(...args)
@@ -199,8 +262,10 @@ export function createApi(
     async function request<T>(
         method: string,
         path: string,
-        body?: unknown
+        body?: unknown,
+        options?: RequestOptions
     ): Promise<T> {
+        const json = body === undefined ? undefined : JSON.stringify(body);
         const res = await fetchImpl(`${baseUrl}${path}`, {
             method,
             credentials: 'include',
@@ -208,7 +273,12 @@ export function createApi(
                 body === undefined
                     ? {}
                     : { 'content-type': 'application/json' },
-            body: body === undefined ? undefined : JSON.stringify(body),
+            body: json,
+            // an oversized keepalive request would be rejected outright
+            ...(options?.keepalive &&
+            (json?.length ?? 0) <= KEEPALIVE_BODY_LIMIT
+                ? { keepalive: true }
+                : {}),
         });
         if (res.status === 204) return undefined as T;
         const data = await res.json().catch(() => ({}));
@@ -223,6 +293,8 @@ export function createApi(
     }
 
     return {
+        setupStatus: () =>
+            request<{ needsSetup: boolean }>('GET', '/auth/setup-status'),
         register: (email: string, password: string) =>
             request<RemoteUser>('POST', '/auth/register', { email, password }),
         login: (email: string, password: string) =>
@@ -236,8 +308,71 @@ export function createApi(
             }),
 
         listDiagrams: () => request<RemoteDiagramSummary[]>('GET', '/diagrams'),
-        createDiagram: (title: string, content: Record<string, unknown>) =>
-            request<RemoteDiagram>('POST', '/diagrams', { title, content }),
+        createDiagram: (
+            title: string,
+            content: Record<string, unknown>,
+            projectId: string
+        ) =>
+            request<RemoteDiagram>('POST', '/diagrams', {
+                title,
+                content,
+                projectId,
+            }),
+        listProjects: (params?: ListParams) =>
+            request<Page<MyProject>>('GET', `/projects${listQuery(params)}`),
+        /** One project by its web address or id; 404 unless the user may see it. */
+        getProject: (ref: string) =>
+            request<MyProject>('GET', `/projects/${encodeURIComponent(ref)}`),
+
+        // admin panel (admins only; everyone else gets a 404)
+        adminListUsers: (params?: ListParams & { status?: UserStatus }) =>
+            request<Page<AdminUser>>(
+                'GET',
+                `/admin/users${listQuery(params, { status: params?.status })}`
+            ),
+        adminCreateUser: (body: {
+            email: string;
+            password: string;
+            isAdmin?: boolean;
+        }) => request<AdminUser>('POST', '/admin/users', body),
+        adminUpdateUser: (
+            id: string,
+            body: { password?: string; isAdmin?: boolean; isActive?: boolean }
+        ) =>
+            request<{ id: string; isAdmin: boolean; isActive: boolean }>(
+                'PATCH',
+                `/admin/users/${id}`,
+                body
+            ),
+        adminDeleteUser: (id: string) =>
+            request<void>('DELETE', `/admin/users/${id}`),
+        adminListProjects: (params?: ListParams) =>
+            request<Page<AdminProject>>(
+                'GET',
+                `/admin/projects${listQuery(params)}`
+            ),
+        adminCreateProject: (body: { name: string; description?: string }) =>
+            request<AdminProject>('POST', '/admin/projects', body),
+        adminUpdateProject: (
+            id: string,
+            body: { name?: string; description?: string }
+        ) => request<AdminProject>('PATCH', `/admin/projects/${id}`, body),
+        adminDeleteProject: (id: string) =>
+            request<void>('DELETE', `/admin/projects/${id}`),
+        adminListProjectMembers: (id: string) =>
+            request<ProjectMember[]>('GET', `/admin/projects/${id}/members`),
+        adminSetProjectMember: (
+            id: string,
+            userId: string,
+            role: ProjectRole
+        ) =>
+            request<ProjectMember>(
+                'PUT',
+                `/admin/projects/${id}/members/${userId}`,
+                { role }
+            ),
+        adminRemoveProjectMember: (id: string, userId: string) =>
+            request<void>('DELETE', `/admin/projects/${id}/members/${userId}`),
         getDiagram: (id: string) =>
             request<RemoteDiagram>('GET', `/diagrams/${id}`),
         updateDiagram: (
@@ -246,8 +381,11 @@ export function createApi(
                 title?: string;
                 content?: Record<string, unknown>;
                 autoPublish?: boolean;
-            }
-        ) => request<RemoteDiagram>('PUT', `/diagrams/${id}`, patch),
+                /** `updatedAt` of the server copy the content is based on */
+                baseUpdatedAt?: string;
+            },
+            options?: RequestOptions
+        ) => request<RemoteDiagram>('PUT', `/diagrams/${id}`, patch, options),
         publish: (id: string, note?: string) =>
             request<{
                 version: number;
@@ -365,10 +503,14 @@ export function createApi(
                 '/introspect',
                 ref
             ),
-        listSavedConnections: () =>
-            request<SavedConnection[]>('GET', '/introspect/connections'),
-        saveConnection: (input: DbConnectionInput & { name: string }) =>
-            request<SavedConnection>('POST', '/introspect/connections', input),
+        listSavedConnections: (projectId: string) =>
+            request<SavedConnection[]>(
+                'GET',
+                `/introspect/connections?projectId=${encodeURIComponent(projectId)}`
+            ),
+        saveConnection: (
+            input: DbConnectionInput & { name: string; projectId: string }
+        ) => request<SavedConnection>('POST', '/introspect/connections', input),
         deleteSavedConnection: (id: string) =>
             request<void>('DELETE', `/introspect/connections/${id}`),
         getLintConfig: (id: string) =>
@@ -431,7 +573,8 @@ export const errorMessage = (e: unknown): string => {
         const map: Record<string, string> = {
             invalid_credentials: 'Wrong email or password.',
             email_taken: 'That email is already registered.',
-            signup_disabled: 'Sign-ups are disabled on this server.',
+            signup_disabled:
+                'Accounts are created by an admin. Ask yours for access.',
             invalid_request: 'Please check the values you entered.',
             wrong_password: 'Current password is incorrect.',
             user_not_found: 'No account with that email exists yet.',
@@ -440,13 +583,28 @@ export const errorMessage = (e: unknown): string => {
             not_found: 'Not found.',
             encryption_not_configured:
                 'This server cannot store passwords (CONNECTION_KEY is not set).',
-            name_taken: 'You already saved a connection with that name.',
+            name_taken: 'That name is already in use.',
             invalid_schedule: 'That schedule is not a valid cron expression.',
             invalid_webhook: 'That webhook URL is not valid.',
             connection_required: 'Choose a saved connection to enable checks.',
             connection_not_found: 'That saved connection does not exist.',
             not_configured: 'Save the drift settings first.',
             already_running: 'A check is already running.',
+            no_project:
+                'Open this diagram from a project before saving it to the server.',
+            last_admin: 'There must be at least one admin who can sign in.',
+            cannot_disable_self: 'You cannot disable your own account.',
+            account_disabled:
+                'This account has been disabled. Ask an admin to enable it.',
+            invalid_name:
+                'Use letters or numbers in the project name; it becomes its web address.',
+            reserved_name:
+                'That name is used by the app itself. Choose another one.',
+            cannot_delete_self: 'You cannot delete your own account.',
+            project_not_empty:
+                'This project still has diagrams. Delete them first.',
+            managed_by_project:
+                'Access is managed by the project. Ask an admin to change it.',
         };
         if (e.code === 'target_blocked' || e.code === 'connection_failed') {
             return e.detail ?? `Request failed (${e.code}).`;

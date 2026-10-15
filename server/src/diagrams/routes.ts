@@ -1,12 +1,14 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
+import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
-import { diagramMembers, diagrams, snapshots, users } from '../db/schema.js';
-import { canWrite, getRole } from './permissions.js';
+import { diagrams, projectMembers, snapshots, users } from '../db/schema.js';
+import { canWrite, getProjectRole, getRole } from './permissions.js';
+import { diagramStats, statsColumns } from './summary.js';
 import {
-    latestSnapshot,
+    latestSnapshots,
     presentDiagram,
     publishSnapshot,
 } from './service.js';
@@ -17,16 +19,44 @@ const versionParam = z.object({
     version: z.coerce.number().int().positive(),
 });
 
+/**
+ * A diagram's content is the editor's own JSON, so unknown keys pass through.
+ * What the server relies on is checked: the known collections are arrays and
+ * the known scalars are strings.
+ */
+const diagramContent = z
+    .object({
+        id: z.string().max(200).optional(),
+        name: z.string().max(500).optional(),
+        databaseType: z.string().max(50).optional(),
+        databaseEdition: z.string().max(50).optional(),
+        tables: z.array(z.unknown()).optional(),
+        relationships: z.array(z.unknown()).optional(),
+        dependencies: z.array(z.unknown()).optional(),
+        areas: z.array(z.unknown()).optional(),
+        customTypes: z.array(z.unknown()).optional(),
+        notes: z.array(z.unknown()).optional(),
+    })
+    .passthrough();
+
 const createBody = z.object({
     title: z.string().trim().min(1).max(200),
-    content: z.record(z.unknown()),
+    content: diagramContent,
+    // every diagram lives in a project
+    projectId: z.string().uuid(),
 });
 
 const updateBody = z
     .object({
         title: z.string().trim().min(1).max(200).optional(),
-        content: z.record(z.unknown()).optional(),
+        content: diagramContent.optional(),
         autoPublish: z.boolean().optional(),
+        /**
+         * The `updatedAt` of the copy this edit is based on. Saving content
+         * needs it, so a save made on top of someone else's newer one is
+         * refused instead of silently replacing it.
+         */
+        baseUpdatedAt: z.coerce.date().optional(),
     })
     .refine(
         (b) =>
@@ -34,14 +64,18 @@ const updateBody = z
             b.content !== undefined ||
             b.autoPublish !== undefined,
         { message: 'nothing to update' }
-    );
+    )
+    .refine((b) => b.content === undefined || b.baseUpdatedAt !== undefined, {
+        message: 'baseUpdatedAt is required when saving content',
+        path: ['baseUpdatedAt'],
+    });
 
 const publishBody = z
     .object({ note: z.string().trim().max(500).optional() })
     .default({});
 
 export const diagramRoutes =
-    (db: Db): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep'>): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -50,51 +84,80 @@ export const diagramRoutes =
         });
 
         app.get('/', async (req) => {
-            const rows = await db
-                .select({
-                    id: diagrams.id,
-                    title: diagrams.title,
-                    updatedAt: diagrams.updatedAt,
-                    ownerId: diagrams.ownerId,
-                    role: diagramMembers.role,
-                })
-                .from(diagramMembers)
-                .innerJoin(diagrams, eq(diagrams.id, diagramMembers.diagramId))
-                .where(eq(diagramMembers.userId, req.user!.id))
-                .orderBy(desc(diagrams.updatedAt));
+            const me = req.user!;
+            const select = {
+                id: diagrams.id,
+                title: diagrams.title,
+                updatedAt: diagrams.updatedAt,
+                ownerId: diagrams.ownerId,
+                ownerEmail: users.email,
+                projectId: diagrams.projectId,
+                ...statsColumns,
+            };
+            // admins see every project's diagrams; others only their projects'
+            const rows = me.isAdmin
+                ? (
+                      await db
+                          .select(select)
+                          .from(diagrams)
+                          .leftJoin(users, eq(users.id, diagrams.ownerId))
+                  ).map((d) => ({
+                      ...d,
+                      role: 'owner' as const,
+                  }))
+                : await db
+                      .select({ ...select, role: projectMembers.role })
+                      .from(projectMembers)
+                      .innerJoin(
+                          diagrams,
+                          eq(diagrams.projectId, projectMembers.projectId)
+                      )
+                      .leftJoin(users, eq(users.id, diagrams.ownerId))
+                      .where(eq(projectMembers.userId, me.id));
+            rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
             // viewers must not learn about unpublished renames
-            return Promise.all(
-                rows.map(async (r) => {
-                    if (canWrite(r.role)) return r;
-                    const last = await latestSnapshot(db, r.id);
-                    return {
-                        ...r,
-                        title: last?.title ?? r.title,
-                        updatedAt: last?.publishedAt ?? r.updatedAt,
-                    };
-                })
+            const latest = await latestSnapshots(
+                db,
+                rows.filter((r) => !canWrite(r.role)).map((r) => r.id)
             );
+            return rows.map((r) => {
+                if (canWrite(r.role)) return r;
+                const last = latest.get(r.id);
+                return {
+                    ...r,
+                    title: last?.title ?? r.title,
+                    updatedAt: last?.publishedAt ?? r.updatedAt,
+                    // the numbers describe what the viewer can open: the published copy
+                    // (nothing published yet: nothing to describe)
+                    ...diagramStats(last?.content),
+                };
+            });
         });
 
-        app.post('/', async (req, reply) => {
+        app.post('/', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {
             const body = createBody.parse(req.body);
             const userId = req.user!.id;
-            const diagram = await db.transaction(async (tx) => {
-                const [d] = await tx
-                    .insert(diagrams)
-                    .values({
-                        ownerId: userId,
-                        title: body.title,
-                        content: body.content,
-                    })
-                    .returning();
-                await tx.insert(diagramMembers).values({
-                    diagramId: d.id,
-                    userId,
-                    role: 'owner',
-                });
-                return d;
-            });
+            // creating needs write access in the project; strangers get 404
+            const projectRole = await getProjectRole(
+                db,
+                body.projectId,
+                userId
+            );
+            if (!projectRole) {
+                return reply.code(404).send({ error: 'not_found' });
+            }
+            if (!canWrite(projectRole)) {
+                return reply.code(403).send({ error: 'forbidden' });
+            }
+            const [diagram] = await db
+                .insert(diagrams)
+                .values({
+                    ownerId: userId,
+                    projectId: body.projectId,
+                    title: body.title,
+                    content: body.content,
+                })
+                .returning();
             await audit(db, {
                 userId,
                 action: 'diagram.create',
@@ -102,7 +165,13 @@ export const diagramRoutes =
             });
             return reply
                 .code(201)
-                .send(await presentDiagram(db, diagram, 'owner'));
+                .send(
+                    await presentDiagram(
+                        db,
+                        diagram,
+                        (await getRole(db, diagram.id, userId)) ?? 'owner'
+                    )
+                );
         });
 
         app.get('/:id', async (req, reply) => {
@@ -116,19 +185,42 @@ export const diagramRoutes =
             return presentDiagram(db, d, role);
         });
 
-        app.put('/:id', async (req, reply) => {
+        app.put('/:id', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
             if (!canWrite(role)) {
                 return reply.code(403).send({ error: 'forbidden' });
             }
-            const body = updateBody.parse(req.body);
+            const { baseUpdatedAt, ...changes } = updateBody.parse(req.body);
+            // the compare and the write are one statement, so two saves based
+            // on the same copy cannot both win. Times are compared to the
+            // millisecond: that is all JSON carries.
             const [d] = await db
                 .update(diagrams)
-                .set({ ...body, updatedAt: new Date() })
-                .where(eq(diagrams.id, id))
+                .set({ ...changes, updatedAt: new Date() })
+                .where(
+                    and(
+                        eq(diagrams.id, id),
+                        changes.content !== undefined && baseUpdatedAt
+                            ? sql`date_trunc('milliseconds', ${diagrams.updatedAt}) = ${baseUpdatedAt}`
+                            : undefined
+                    )
+                )
                 .returning();
+            if (!d) {
+                // the diagram exists (checked above), so the base was stale
+                const [current] = await db
+                    .select({ updatedAt: diagrams.updatedAt })
+                    .from(diagrams)
+                    .where(eq(diagrams.id, id));
+                return reply.code(409).send({
+                    error: 'conflict',
+                    message:
+                        'Someone else saved this diagram after the copy you started from.',
+                    updatedAt: current?.updatedAt ?? null,
+                });
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'diagram.update',
@@ -138,6 +230,7 @@ export const diagramRoutes =
                 const snap = await publishSnapshot(db, id, req.user!.id, {
                     note: 'Auto-published on save',
                     onlyIfChanged: true,
+                    keep: config.snapshotKeep,
                 });
                 if (snap) {
                     await audit(db, {
@@ -174,7 +267,10 @@ export const diagramRoutes =
                 return reply.code(403).send({ error: 'forbidden' });
             }
             const { note } = publishBody.parse(req.body ?? {});
-            const snap = await publishSnapshot(db, id, req.user!.id, { note });
+            const snap = await publishSnapshot(db, id, req.user!.id, {
+                note,
+                keep: config.snapshotKeep,
+            });
             if (!snap) return reply.code(404).send({ error: 'not_found' });
             await audit(db, {
                 userId: req.user!.id,
@@ -209,11 +305,15 @@ export const diagramRoutes =
             const { id, version } = versionParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
-            const rows = await db
+            const [snap] = await db
                 .select()
                 .from(snapshots)
-                .where(eq(snapshots.diagramId, id));
-            const snap = rows.find((s) => s.version === version);
+                .where(
+                    and(
+                        eq(snapshots.diagramId, id),
+                        eq(snapshots.version, version)
+                    )
+                );
             if (!snap) return reply.code(404).send({ error: 'not_found' });
             return {
                 version: snap.version,

@@ -381,8 +381,6 @@ export const tr: LanguageTranslation = {
             error: {
                 message:
                     'SQL betiği oluşturulurken hata oluştu. Lütfen daha sonra tekrar deneyin veya <0>bize ulaşın</0>.',
-                description:
-                    "OPENAI_TOKEN'ınızı kullanabilirsiniz, kılavuzu <0>buradan</0> görebilirsiniz.",
             },
         },
         create_relationship_dialog: {
@@ -454,13 +452,6 @@ export const tr: LanguageTranslation = {
             create: 'Oluştur',
             cancel: 'İptal',
         },
-        star_us_dialog: {
-            title: 'Bize yardım et!',
-            description:
-                "Bizi GitHub'da yıldızlamak ister misiniz? Sadece bir tık uzakta!",
-            close: 'Şimdi Değil',
-            confirm: 'Tabii ki!',
-        },
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',
@@ -471,7 +462,7 @@ export const tr: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? the Qubdi support team',
             },
         },
         // TODO: Translate
@@ -483,7 +474,7 @@ export const tr: LanguageTranslation = {
             error: {
                 title: 'Error importing diagram',
                 description:
-                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? support@chartdb.io',
+                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? the Qubdi support team',
             },
         },
         // TODO: Translate

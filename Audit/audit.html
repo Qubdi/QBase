@@ -1,0 +1,122 @@
+<meta charset="utf-8">
+<title>QubdiDB &mdash; Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 8</b></div>
+  <h1>14 open across four lenses, 1 High. Nothing is Crit.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> 2026-10-14</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (155 files, 1399 tests), npm audit · server tests run against Postgres (27 files, 466 tests, SQL Server tests skipped) · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+  <div class="note crit">
+    <span class="pill crit">Act first</span>
+    <span><ul class="body">
+      <li><code>SEC-001</code> — <code>/auth/login</code> and <code>/auth/register</code> accept unlimited guesses.</li>
+    </ul></span>
+  </div>
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-client.html">Client</a>
+    <span class="here">Index (this file)</span>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="summary">
+  <div class="section-head"><span class="snum">01</span><h2>Summary</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
+      <tbody>
+        <tr><td>Security &amp; secrets</td><td>12</td><td>0</td><td>1</td><td>3</td><td>0</td></tr>
+        <tr><td>Repository</td><td>2</td><td>0</td><td>0</td><td>13</td><td>0</td></tr>
+        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>19</td><td>0</td></tr>
+        <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>5</td><td>1</td></tr>
+        <tr><td>Total</td><td>14</td><td>0</td><td>1</td><td>40</td><td>1</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="lenses">
+  <div class="section-head"><span class="snum">02</span><h2>Lenses</h2></div>
+  <a class="idx-card sec" href="audit-security.html">
+    <h3>Security &amp; secrets</h3>
+    <p>Unthrottled auth leads the list.</p>
+    <p class="lbl">12 open &middot; 0 Crit &middot; 1 High &middot; 3 fixed &middot; 0 accepted</p>
+  </a>
+  <a class="idx-card repo" href="audit-repository.html">
+    <h3>Repository &amp; governance</h3>
+    <p>Tailwind 3 advisories and a missing CODEOWNERS file.</p>
+    <p class="lbl">2 open &middot; 0 Crit &middot; 0 High &middot; 13 fixed &middot; 0 accepted</p>
+  </a>
+  <a class="idx-card dev" href="audit-server.html">
+    <h3>Server</h3>
+    <p>No open findings; all nineteen fixed.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 19 fixed &middot; 0 accepted</p>
+  </a>
+  <a class="idx-card stg" href="audit-client.html">
+    <h3>Client</h3>
+    <p>No open findings; five fixed, one accepted.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 5 fixed &middot; 1 accepted</p>
+  </a>
+</section>
+
+<section id="changelog">
+  <div class="section-head"><span class="snum">03</span><h2>Changelog</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>2026-10-14</td><td class="wrap-cell">First pass: 55 new, 0 fixed, 0 dropped</td></tr>
+        <tr><td>2</td><td>2026-10-14</td><td class="wrap-cell">0 new, 6 fixed, 0 dropped; 5 findings re-anchored or recounted</td></tr>
+        <tr><td>3</td><td>2026-10-14</td><td class="wrap-cell">0 new, 1 fixed, 0 dropped</td></tr>
+        <tr><td>4</td><td>2026-10-14</td><td class="wrap-cell">0 new, 1 fixed, 0 dropped</td></tr>
+        <tr><td>5</td><td>2026-10-14</td><td class="wrap-cell">0 new, 0 fixed, 1 accepted (CLI-006 cut from 27 suppressions and 12 casts to 10)</td></tr>
+        <tr><td>6</td><td>2026-10-14</td><td class="wrap-cell">0 new, 1 fixed, 0 dropped</td></tr>
+        <tr><td>7</td><td>2026-10-14</td><td class="wrap-cell">0 new, 19 fixed, 0 dropped; 2 findings re-anchored</td></tr>
+        <tr><td>8</td><td>2026-10-14</td><td class="wrap-cell">0 new, 12 fixed, 0 dropped; 2 findings narrowed</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qubdidb-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import {
     RULES,
     normalizeConfig,
@@ -22,8 +23,11 @@ export interface LintSettingsDialogProps {
     onSave: (config: LintConfig) => void;
 }
 
-const selectClass =
-    'h-8 rounded-md border border-input bg-background px-2 text-sm';
+const SEVERITY_OPTIONS = [
+    { value: 'error', label: 'Error' },
+    { value: 'warning', label: 'Warning' },
+    { value: 'info', label: 'Info' },
+];
 
 export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
     open,
@@ -93,21 +97,18 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                         </span>
                                     </span>
                                 </label>
-                                <select
+                                <OptionSelect
+                                    size="sm"
+                                    className="w-28 shrink-0"
                                     aria-label={`Severity for ${r.title}`}
-                                    className={selectClass}
                                     value={s.severity}
-                                    onChange={(e) =>
+                                    onValueChange={(v) =>
                                         setRule(r.id, {
-                                            severity: e.target
-                                                .value as LintSeverity,
+                                            severity: v as LintSeverity,
                                         })
                                     }
-                                >
-                                    <option value="error">error</option>
-                                    <option value="warning">warning</option>
-                                    <option value="info">info</option>
-                                </select>
+                                    options={SEVERITY_OPTIONS}
+                                />
                             </li>
                         );
                     })}
@@ -115,42 +116,44 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                 <div className="flex flex-wrap gap-4 text-sm">
                     <label className="flex items-center gap-2">
                         Name style
-                        <select
+                        <OptionSelect
                             aria-label="Name style"
-                            className={selectClass}
+                            className="w-56"
                             value={draft.naming?.style ?? 'auto'}
-                            onChange={(e) =>
+                            onValueChange={(v) =>
                                 setDraft((d) => ({
                                     ...d,
                                     naming: {
                                         ...d.naming,
-                                        style: e.target.value as
+                                        style: v as
                                             | 'auto'
                                             | 'snake_case'
                                             | 'camelCase',
                                     },
                                 }))
                             }
-                        >
-                            <option value="auto">
-                                Detect from the diagram
-                            </option>
-                            <option value="snake_case">snake_case</option>
-                            <option value="camelCase">camelCase</option>
-                        </select>
+                            options={[
+                                {
+                                    value: 'auto',
+                                    label: 'Detect from the diagram',
+                                },
+                                { value: 'snake_case', label: 'snake_case' },
+                                { value: 'camelCase', label: 'camelCase' },
+                            ]}
+                        />
                     </label>
                     <label className="flex items-center gap-2">
                         Table names
-                        <select
+                        <OptionSelect
                             aria-label="Table names"
-                            className={selectClass}
+                            className="w-40"
                             value={draft.naming?.tables ?? 'consistent'}
-                            onChange={(e) =>
+                            onValueChange={(v) =>
                                 setDraft((d) => ({
                                     ...d,
                                     naming: {
                                         ...d.naming,
-                                        tables: e.target.value as
+                                        tables: v as
                                             | 'consistent'
                                             | 'plural'
                                             | 'singular'
@@ -158,12 +161,13 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                     },
                                 }))
                             }
-                        >
-                            <option value="consistent">Consistent</option>
-                            <option value="plural">Plural</option>
-                            <option value="singular">Singular</option>
-                            <option value="any">Do not check</option>
-                        </select>
+                            options={[
+                                { value: 'consistent', label: 'Consistent' },
+                                { value: 'plural', label: 'Plural' },
+                                { value: 'singular', label: 'Singular' },
+                                { value: 'any', label: 'Do not check' },
+                            ]}
+                        />
                     </label>
                 </div>
                 <div className="flex justify-between">

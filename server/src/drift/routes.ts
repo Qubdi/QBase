@@ -2,9 +2,12 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
-import type { Db } from '../db/client.js';
 import { driftReports, driftSettings, savedConnections } from '../db/schema.js';
-import { canWrite, getRole } from '../diagrams/permissions.js';
+import {
+    canWrite,
+    getDiagramProject,
+    getRole,
+} from '../diagrams/permissions.js';
 import { isValidCron, nextCronRun } from '../lib/cron.js';
 import {
     badgeOf,
@@ -17,7 +20,10 @@ import {
 import { parseWebhookUrl } from './webhook.js';
 
 const diagramParam = z.object({ id: z.string().uuid() });
-const reportParam = z.object({ id: z.string().uuid(), reportId: z.string().uuid() });
+const reportParam = z.object({
+    id: z.string().uuid(),
+    reportId: z.string().uuid(),
+});
 
 const settingsBody = z.object({
     enabled: z.boolean(),
@@ -50,6 +56,10 @@ export const driftRoutes =
     (deps: DriftDeps): FastifyPluginAsync =>
     async (app) => {
         const { db } = deps;
+        // shares its allowance with the introspection routes
+        const outbound = deps.outboundLimit
+            ? { onRequest: deps.outboundLimit }
+            : {};
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -102,21 +112,30 @@ export const driftRoutes =
                 if ('error' in parsed) {
                     return reply
                         .code(400)
-                        .send({ error: 'invalid_webhook', message: parsed.error });
+                        .send({
+                            error: 'invalid_webhook',
+                            message: parsed.error,
+                        });
                 }
             }
             if (body.connectionId) {
-                const [conn] = await db
-                    .select({ id: savedConnections.id })
-                    .from(savedConnections)
-                    .where(
-                        and(
-                            eq(savedConnections.id, body.connectionId),
-                            eq(savedConnections.ownerId, req.user!.id)
-                        )
-                    );
+                const projectId = await getDiagramProject(db, id);
+                const [conn] = projectId
+                    ? await db
+                          .select({ id: savedConnections.id })
+                          .from(savedConnections)
+                          .where(
+                              and(
+                                  eq(savedConnections.id, body.connectionId),
+                                  // only the diagram's own project's connections
+                                  eq(savedConnections.projectId, projectId)
+                              )
+                          )
+                    : [];
                 if (!conn) {
-                    return reply.code(400).send({ error: 'connection_not_found' });
+                    return reply
+                        .code(400)
+                        .send({ error: 'connection_not_found' });
                 }
             }
             if (body.enabled && !body.connectionId) {
@@ -131,14 +150,19 @@ export const driftRoutes =
                 tables: body.tables,
                 sourceKeys: body.sourceKeys,
                 webhookUrl: body.webhookUrl || null,
-                nextRunAt: body.enabled ? nextCronRun(body.schedule, new Date()) : null,
+                nextRunAt: body.enabled
+                    ? nextCronRun(body.schedule, new Date())
+                    : null,
                 updatedBy: req.user!.id,
                 updatedAt: new Date(),
             };
             const [row] = await db
                 .insert(driftSettings)
                 .values({ diagramId: id, ...values })
-                .onConflictDoUpdate({ target: driftSettings.diagramId, set: values })
+                .onConflictDoUpdate({
+                    target: driftSettings.diagramId,
+                    set: values,
+                })
                 .returning();
             await audit(db, {
                 userId: req.user!.id,
@@ -148,7 +172,7 @@ export const driftRoutes =
             return presentSettings(row);
         });
 
-        app.post('/:id/drift/check', async (req, reply) => {
+        app.post('/:id/drift/check', outbound, async (req, reply) => {
             const { id } = diagramParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const [settings] = await db
@@ -174,7 +198,9 @@ export const driftRoutes =
             const { id } = diagramParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const { limit } = z
-                .object({ limit: z.coerce.number().int().min(1).max(100).default(20) })
+                .object({
+                    limit: z.coerce.number().int().min(1).max(100).default(20),
+                })
                 .parse(req.query);
             const rows = await db
                 .select()
@@ -192,7 +218,10 @@ export const driftRoutes =
                 .select()
                 .from(driftReports)
                 .where(
-                    and(eq(driftReports.id, reportId), eq(driftReports.diagramId, id))
+                    and(
+                        eq(driftReports.id, reportId),
+                        eq(driftReports.diagramId, id)
+                    )
                 );
             if (!row) return reply.code(404).send({ error: 'not_found' });
             return presentReport(row);
@@ -214,6 +243,9 @@ export const driftRoutes =
                 diagramId: id,
             });
             const after = await latestReport(db, id);
-            return { latest: after ? summarizeReport(after) : null, badge: badgeOf(after) };
+            return {
+                latest: after ? summarizeReport(after) : null,
+                badge: badgeOf(after),
+            };
         });
     };

@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/scroll-area/scroll-area';
 import { Button } from '@/components/button/button';
 import { ColorPicker } from '@/components/color-picker/color-picker';
 import { Separator } from '@/components/separator/separator';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useUpdateTable } from '@/hooks/use-update-table';
 import { useTranslation } from 'react-i18next';
 import { useLayout } from '@/hooks/use-layout';
@@ -41,7 +41,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
         const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
         const [isVisible, setIsVisible] = useState(false);
         const { createField, updateTable, schemas, databaseType } =
-            useChartDB();
+            useDiagram();
         const { t } = useTranslation();
         const { openTableFromSidebar, selectSidebarSection } = useLayout();
         const { tableName, handleTableNameChange } = useUpdateTable(table);
@@ -241,7 +241,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                                 placeholder={
                                     defaultSchemaName || 'Select schema'
                                 }
-                                className="h-6 min-h-6 w-20 shrink-0 rounded-sm border-slate-600 bg-background py-0 pl-2 pr-0.5 text-sm"
+                                className="h-6 min-h-6 w-20 shrink-0 rounded-sm border-input bg-background py-0 pl-2 pr-0.5 text-sm"
                                 popoverClassName="w-[200px]"
                                 commandOnMouseDown={(e) => e.stopPropagation()}
                                 commandOnClick={(e) => e.stopPropagation()}
@@ -268,7 +268,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                                     setNewSchemaName(e.target.value)
                                 }
                                 placeholder={`Enter schema name${defaultSchemaName ? ` (e.g. ${defaultSchemaName})` : ''}`}
-                                className="h-6 w-28 shrink-0 rounded-sm border-slate-600 bg-background text-sm"
+                                className="h-6 w-28 shrink-0 rounded-sm border-input bg-background text-sm"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         handleCreateNewSchema();
@@ -282,7 +282,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                         )}
                         <Input
                             ref={inputRef}
-                            className="h-6 flex-1 rounded-sm border-slate-600 bg-background text-sm"
+                            className="h-6 flex-1 rounded-sm border-input bg-background text-sm"
                             placeholder="Table name"
                             value={tableName}
                             onChange={(e) =>

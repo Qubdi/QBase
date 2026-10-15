@@ -220,6 +220,34 @@ export const publicShareRoutes =
         };
         const tokenParam = z.object({ token: z.string() });
 
+        // open live viewers per link, so one link cannot hold unlimited sockets
+        const viewers = new Map<string, number>();
+        // One publish wakes every viewer of a link. They share one re-check
+        // of the link instead of running a query each.
+        const RECHECK_TTL_MS = 2_000;
+        const rechecks = new Map<
+            string,
+            { at: number; result: Promise<boolean> }
+        >();
+        const stillValidShared = (
+            linkId: string,
+            openedWith: string,
+            user: Parameters<typeof resolveLinkById>[2]
+        ) => {
+            const key = `${linkId}:${openedWith}:${user?.id ?? ''}`;
+            const hit = rechecks.get(key);
+            if (hit && Date.now() - hit.at < RECHECK_TTL_MS) return hit.result;
+            const result = resolveLinkById(db, linkId, user).then(
+                (c) => c.ok && c.link.live && c.link.tokenHash === openedWith
+            );
+            rechecks.set(key, { at: Date.now(), result });
+            // forget old entries so the map stays small
+            for (const [k, v] of rechecks) {
+                if (Date.now() - v.at > RECHECK_TTL_MS) rechecks.delete(k);
+            }
+            return result;
+        };
+
         app.get('/:token', limit, async (req, reply) => {
             const { token } = tokenParam.parse(req.params);
             const check = await resolveToken(db, token, req.user);
@@ -293,6 +321,12 @@ export const publicShareRoutes =
             }
             const { id: linkId, diagramId, tokenHash: openedWith } = check.link;
 
+            const open = viewers.get(linkId) ?? 0;
+            if (open >= config.sseMaxPerLink) {
+                return reply.code(429).send({ error: 'too_many_viewers' });
+            }
+            viewers.set(linkId, open + 1);
+
             reply.hijack();
             const raw = reply.raw;
             raw.writeHead(200, {
@@ -313,16 +347,17 @@ export const publicShareRoutes =
             const close = () => {
                 if (closed) return;
                 closed = true;
+                const left = (viewers.get(linkId) ?? 1) - 1;
+                if (left > 0) viewers.set(linkId, left);
+                else viewers.delete(linkId);
                 cleanup.forEach((fn) => fn());
                 raw.end();
             };
 
             // still allowed? (revoked, expired, access changed, live turned off,
             // or the token was regenerated so this URL is no longer the real one)
-            const stillValid = async () => {
-                const c = await resolveLinkById(db, linkId, req.user);
-                return c.ok && c.link.live && c.link.tokenHash === openedWith;
-            };
+            const stillValid = () =>
+                stillValidShared(linkId, openedWith, req.user);
 
             cleanup.push(
                 onPublish(async (changedDiagramId, version) => {

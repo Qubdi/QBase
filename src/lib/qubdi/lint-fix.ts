@@ -19,7 +19,7 @@ export type FixOp =
       }
     | { kind: 'updateTable'; tableId: string; patch: Partial<DBTable> };
 
-/** ChartDB's own data type for a canonical type name, with a faithful fallback. */
+/** QubdiDB's own data type for a canonical type name, with a faithful fallback. */
 export function resolveDataType(
     databaseType: DatabaseType,
     typeName: string

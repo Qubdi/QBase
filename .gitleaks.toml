@@ -1,0 +1,8 @@
+# Extends the default rules. Allows only the throwaway password of the optional
+# SQL Server test container (docker-compose.yml, profile "mssql").
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SQL Server test container password"
+regexes = ['''Qubdi_Strong_Pass1''']

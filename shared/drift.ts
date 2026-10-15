@@ -1,5 +1,5 @@
-import { describeChange } from './change-text';
-import type { Change, PossibleRename } from './reconcile';
+import { describeChange } from './change-text.js';
+import type { Change, PossibleRename } from './reconcile.js';
 
 // Drift detection reports how a live database differs from a diagram. This
 // file decides how serious each difference is. Pure and dependency-free.

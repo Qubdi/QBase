@@ -380,8 +380,6 @@ export const ar: LanguageTranslation = {
             error: {
                 message:
                     'النصي. يرجى المحاولة مرة اخرى لاحقاً او <0>اتصل بنا</0> SQL خطأ في إنشاء برنامج',
-                description:
-                    ' الخاصة بك. راجع الدليل <0>هنا</0> OPENAI_TOKEN لا تتردد في استخدام',
             },
         },
 
@@ -458,12 +456,6 @@ export const ar: LanguageTranslation = {
             cancel: 'إلغاء',
         },
 
-        star_us_dialog: {
-            title: '!ساعدنا على التحسن',
-            description: '؟! إنها مجرد نقرة واحدةGITHUB هل ترغب في تقييمنا على',
-            close: 'ليس الآن',
-            confirm: '!بالتأكيد',
-        },
         export_diagram_dialog: {
             title: 'تصدير المخطط',
             description: ':اختر التنسيق للتصدير',
@@ -473,7 +465,7 @@ export const ar: LanguageTranslation = {
             error: {
                 title: 'حدث خطأ أثناء التصدير',
                 description:
-                    'support@chartdb.io حدث خطأ ما. هل تحتاج إلى مساعدة؟',
+                    'the Qubdi support team حدث خطأ ما. هل تحتاج إلى مساعدة؟',
             },
         },
         import_diagram_dialog: {
@@ -484,7 +476,7 @@ export const ar: LanguageTranslation = {
             error: {
                 title: 'حدث خطأ أثناء الاستيراد',
                 description:
-                    'support@chartdb.io و المحاولة مرة اخرى. هل تحتاج إلى المساعدة؟ JSON غير صالح. يرجى التحقق من JSON الرسم البياني',
+                    'the Qubdi support team و المحاولة مرة اخرى. هل تحتاج إلى المساعدة؟ JSON غير صالح. يرجى التحقق من JSON الرسم البياني',
             },
         },
         import_dbml_dialog: {

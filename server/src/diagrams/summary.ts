@@ -1,0 +1,43 @@
+import { sql } from 'drizzle-orm';
+import { diagrams } from '../db/schema.js';
+
+/** What a diagram list shows about each diagram, read from its content. */
+export interface DiagramStats {
+    databaseType: string | null;
+    databaseEdition: string | null;
+    tableCount: number;
+    relationshipCount: number;
+    /** when the diagram was first created, as the editor recorded it */
+    createdAt: string | null;
+}
+
+const text = (v: unknown): string | null =>
+    typeof v === 'string' && v !== '' ? v : null;
+
+const count = (v: unknown): number => (Array.isArray(v) ? v.length : 0);
+
+/** The same numbers the SQL below computes, for content already in memory. */
+export function diagramStats(content: unknown): DiagramStats {
+    const c =
+        content && typeof content === 'object'
+            ? (content as Record<string, unknown>)
+            : {};
+    return {
+        databaseType: text(c.databaseType),
+        databaseEdition: text(c.databaseEdition),
+        tableCount: count(c.tables),
+        relationshipCount: count(c.relationships),
+        createdAt: text(c.createdAt),
+    };
+}
+
+// The list is read for every diagram a user can see, so for writers the numbers
+// are taken inside the database instead of loading each full diagram.
+const col = diagrams.content;
+export const statsColumns = {
+    databaseType: sql<string | null>`nullif(${col}->>'databaseType', '')`,
+    databaseEdition: sql<string | null>`nullif(${col}->>'databaseEdition', '')`,
+    tableCount: sql<number>`case when jsonb_typeof(${col}->'tables') = 'array' then jsonb_array_length(${col}->'tables') else 0 end`,
+    relationshipCount: sql<number>`case when jsonb_typeof(${col}->'relationships') = 'array' then jsonb_array_length(${col}->'relationships') else 0 end`,
+    createdAt: sql<string | null>`nullif(${col}->>'createdAt', '')`,
+};

@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { useToast } from '@/components/toast/use-toast';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
 import { api, errorMessage } from '@/lib/qubdi/api';
@@ -41,7 +41,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
     open,
     onOpenChange,
 }) => {
-    const { currentDiagram, updateDiagramData } = useChartDB();
+    const { currentDiagram, updateDiagramData } = useDiagram();
     const { addUndoAction, resetRedoStack } = useRedoUndoStack();
     const { syncDiagram, remoteIdFor } = useQubdi();
     const { toast } = useToast();

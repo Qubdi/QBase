@@ -50,6 +50,48 @@
       "when": 1791933698673,
       "tag": "0006_certain_meltdown",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791976528723,
+      "tag": "0007_projects",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791979554260,
+      "tag": "0008_require_project",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791980061112,
+      "tag": "0009_connections_per_project",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791981904558,
+      "tag": "0010_project_slug",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791983501371,
+      "tag": "0011_user_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792007983937,
+      "tag": "0012_wakeful_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

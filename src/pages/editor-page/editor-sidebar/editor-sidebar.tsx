@@ -15,7 +15,7 @@ import { Table, Workflow } from 'lucide-react';
 import { useLayout } from '@/hooks/use-layout';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { supportsCustomTypes } from '@/lib/domain/database-capabilities';
 import { useDialog } from '@/hooks/use-dialog';
 import { Separator } from '@/components/separator/separator';
@@ -39,7 +39,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
     } = useLayout();
     const { t } = useTranslation();
     const { isMd: isDesktop } = useBreakpoint('md');
-    const { databaseType } = useChartDB();
+    const { databaseType } = useDiagram();
     const { openCreateDiagramDialog, openOpenDiagramDialog } = useDialog();
 
     const diagramItems: SidebarItem[] = useMemo(
@@ -152,7 +152,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                             {diagramItems.map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton
-                                        className="justify-center space-y-0.5 !px-0 hover:bg-gray-200 data-[active=true]:bg-gray-100 data-[active=true]:text-pink-600 data-[active=true]:hover:bg-pink-100 dark:hover:bg-gray-800 dark:data-[active=true]:bg-gray-900 dark:data-[active=true]:text-pink-400 dark:data-[active=true]:hover:bg-pink-950"
+                                        className="justify-center space-y-0.5 !px-0 hover:bg-gray-200 data-[active=true]:bg-gray-100 data-[active=true]:text-teal-600 data-[active=true]:hover:bg-teal-100 dark:hover:bg-gray-800 dark:data-[active=true]:bg-gray-900 dark:data-[active=true]:text-teal-400 dark:data-[active=true]:hover:bg-teal-950"
                                         isActive={item.active}
                                         asChild
                                     >
@@ -177,7 +177,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                             {baseItems.map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton
-                                        className="justify-center space-y-0.5 !px-0 hover:bg-gray-200 data-[active=true]:bg-gray-100 data-[active=true]:text-pink-600 data-[active=true]:hover:bg-pink-100 dark:hover:bg-gray-800 dark:data-[active=true]:bg-gray-900 dark:data-[active=true]:text-pink-400 dark:data-[active=true]:hover:bg-pink-950"
+                                        className="justify-center space-y-0.5 !px-0 hover:bg-gray-200 data-[active=true]:bg-gray-100 data-[active=true]:text-teal-600 data-[active=true]:hover:bg-teal-100 dark:hover:bg-gray-800 dark:data-[active=true]:bg-gray-900 dark:data-[active=true]:text-teal-400 dark:data-[active=true]:hover:bg-teal-950"
                                         isActive={item.active}
                                         asChild
                                     >
@@ -206,12 +206,12 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                     {footerItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
                             {item.badge && (
-                                <span className="absolute -right-1 -top-1 rounded-full bg-pink-500 px-[3px] py-px text-[8px] font-semibold text-white">
+                                <span className="absolute -right-1 -top-1 rounded-full bg-teal-500 px-[3px] py-px text-[8px] font-semibold text-white">
                                     {item.badge}
                                 </span>
                             )}
                             <SidebarMenuButton
-                                className="justify-center space-y-0.5 !px-0 hover:bg-gray-200 data-[active=true]:bg-gray-100 data-[active=true]:text-pink-600 data-[active=true]:hover:bg-pink-100 dark:hover:bg-gray-800 dark:data-[active=true]:bg-gray-900 dark:data-[active=true]:text-pink-400 dark:data-[active=true]:hover:bg-pink-950"
+                                className="justify-center space-y-0.5 !px-0 hover:bg-gray-200 data-[active=true]:bg-gray-100 data-[active=true]:text-teal-600 data-[active=true]:hover:bg-teal-100 dark:hover:bg-gray-800 dark:data-[active=true]:bg-gray-900 dark:data-[active=true]:text-teal-400 dark:data-[active=true]:hover:bg-teal-950"
                                 isActive={item.active}
                                 asChild
                             >

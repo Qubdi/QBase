@@ -3,11 +3,11 @@ import type { ExportImageContext, ImageType } from './export-image-context';
 import { exportImageContext } from './export-image-context';
 import { toJpeg, toPng, toSvg } from 'html-to-image';
 import { useReactFlow } from '@xyflow/react';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useFullScreenLoader } from '@/hooks/use-full-screen-spinner';
 import { useTheme } from '@/hooks/use-theme';
-import logoDark from '@/assets/logo-dark.png';
-import logoLight from '@/assets/logo-light.png';
+import logoDark from '@/assets/qubdi-logo-dark.svg';
+import logoLight from '@/assets/qubdi-logo-light.svg';
 import type { EffectiveTheme } from '../theme-context/theme-context';
 
 export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
@@ -16,7 +16,7 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
     const { hideLoader, showLoader } = useFullScreenLoader();
     const { setNodes, getViewport } = useReactFlow();
     const { effectiveTheme } = useTheme();
-    const { diagramName } = useChartDB();
+    const { diagramName } = useDiagram();
     const [logoBase64, setLogoBase64] = useState<string>('');
 
     useEffect(() => {
@@ -25,11 +25,12 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
         img.src = effectiveTheme === 'light' ? logoLight : logoDark;
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
+            const scale = 4; // the logo is an SVG, so render it sharp
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
             const ctx = canvas.getContext('2d');
             if (ctx) {
-                ctx.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 const base64 = canvas.toDataURL('image/png');
                 setLogoBase64(base64);
             }

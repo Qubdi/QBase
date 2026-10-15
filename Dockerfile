@@ -1,11 +1,8 @@
 FROM node:24-alpine AS builder
 
-ARG VITE_OPENAI_API_KEY
-ARG VITE_OPENAI_API_ENDPOINT
-ARG VITE_LLM_MODEL_NAME
-ARG VITE_HIDE_CHARTDB_CLOUD
+ARG VITE_HIDE_CLOUD
 ARG VITE_DISABLE_ANALYTICS
-ARG VITE_QUBDI_BACKEND_URL
+ARG VITE_HOST_URL
 
 WORKDIR /usr/src/app
 
@@ -15,12 +12,11 @@ RUN npm ci
 
 COPY . .
 
-RUN echo "VITE_OPENAI_API_KEY=${VITE_OPENAI_API_KEY}" > .env && \
-    echo "VITE_OPENAI_API_ENDPOINT=${VITE_OPENAI_API_ENDPOINT}" >> .env && \
-    echo "VITE_LLM_MODEL_NAME=${VITE_LLM_MODEL_NAME}" >> .env && \
-    echo "VITE_HIDE_CHARTDB_CLOUD=${VITE_HIDE_CHARTDB_CLOUD}" >> .env && \
+# The backend URL is not baked in: nginx serves it at run time through
+# /config.js (QUBDI_BACKEND_URL), so one image fits every environment.
+RUN echo "VITE_HIDE_CLOUD=${VITE_HIDE_CLOUD}" > .env && \
     echo "VITE_DISABLE_ANALYTICS=${VITE_DISABLE_ANALYTICS}" >> .env && \
-    echo "VITE_QUBDI_BACKEND_URL=${VITE_QUBDI_BACKEND_URL}" >> .env
+    echo "VITE_HOST_URL=${VITE_HOST_URL}" >> .env
 
 RUN npm run build
 

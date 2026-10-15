@@ -389,8 +389,6 @@ export const ja: LanguageTranslation = {
             error: {
                 message:
                     'SQLスクリプトの生成中にエラーが発生しました。後でもう一度試すか、<0>お問い合わせください</0>。',
-                description:
-                    'OPENAI_TOKENを自由に使用して、マニュアルを<0>こちら</0>で確認してください。',
             },
         },
 
@@ -468,13 +466,6 @@ export const ja: LanguageTranslation = {
             cancel: 'キャンセル',
         },
 
-        star_us_dialog: {
-            title: '改善をサポートしてください！',
-            description:
-                'GitHubでスターを付けていただけますか？ クリックするだけです！',
-            close: '今はしない',
-            confirm: 'もちろん！',
-        },
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',
@@ -485,7 +476,7 @@ export const ja: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? the Qubdi support team',
             },
         },
         // TODO: Translate
@@ -497,7 +488,7 @@ export const ja: LanguageTranslation = {
             error: {
                 title: 'Error importing diagram',
                 description:
-                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? support@chartdb.io',
+                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? the Qubdi support team',
             },
         },
         // TODO: Translate

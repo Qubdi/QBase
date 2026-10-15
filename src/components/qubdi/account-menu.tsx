@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-    CloudUpload,
-    Database,
+    FolderKanban,
     KeyRound,
     LogOut,
     RefreshCw,
     Share2,
+    ShieldCheck,
     UserRound,
     Users,
 } from 'lucide-react';
@@ -18,13 +19,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/dropdown-menu/dropdown-menu';
-import { useToast } from '@/components/toast/use-toast';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { errorMessage } from '@/lib/qubdi/api';
 import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
-import { ImportFromDatabaseDialog } from './import-from-database-dialog';
 import { MembersDialog } from './members-dialog';
 import { OPEN_RESYNC_EVENT } from './drift-dialog';
 import { ResyncDialog } from './resync-dialog';
@@ -32,15 +30,13 @@ import { ShareDialog } from './share-dialog';
 
 export const AccountMenu: React.FC = () => {
     const { enabled, user, logout, syncDiagram, remoteIdFor } = useQubdi();
-    const { currentDiagram } = useChartDB();
-    const { toast } = useToast();
+    const { currentDiagram } = useDiagram();
+    const navigate = useNavigate();
     const [authOpen, setAuthOpen] = useState(false);
     const [membersOpen, setMembersOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
     const [shareOpen, setShareOpen] = useState(false);
-    const [importOpen, setImportOpen] = useState(false);
     const [resyncOpen, setResyncOpen] = useState(false);
-    const [, forceRender] = useState(0);
 
     // the drift report page asks for a re-sync through this event
     useEffect(() => {
@@ -66,22 +62,19 @@ export const AccountMenu: React.FC = () => {
         );
     }
 
-    const sync = async () => {
-        try {
-            await syncDiagram(currentDiagram);
-            forceRender((n) => n + 1);
-            toast({ title: 'Synced to server' });
-        } catch (e) {
-            toast({
-                title: 'Sync failed',
-                description: errorMessage(e),
-                variant: 'destructive',
-            });
-        }
-    };
-
     return (
         <>
+            {user.isAdmin ? (
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => navigate('/admin')}
+                >
+                    <ShieldCheck className="size-4" />
+                    Admin
+                </Button>
+            ) : null}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-1">
@@ -95,13 +88,9 @@ export const AccountMenu: React.FC = () => {
                         {user.isAdmin ? ' (admin)' : ''}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={sync}>
-                        <CloudUpload className="mr-2 size-4" />
-                        Sync to server
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setImportOpen(true)}>
-                        <Database className="mr-2 size-4" />
-                        Import from database
+                    <DropdownMenuItem onClick={() => navigate('/')}>
+                        <FolderKanban className="mr-2 size-4" />
+                        Projects
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setResyncOpen(true)}>
                         <RefreshCw className="mr-2 size-4" />
@@ -115,6 +104,12 @@ export const AccountMenu: React.FC = () => {
                         <Users className="mr-2 size-4" />
                         Members
                     </DropdownMenuItem>
+                    {user.isAdmin ? (
+                        <DropdownMenuItem onClick={() => navigate('/admin')}>
+                            <ShieldCheck className="mr-2 size-4" />
+                            Admin panel
+                        </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuItem onClick={() => setPasswordOpen(true)}>
                         <KeyRound className="mr-2 size-4" />
                         Change password
@@ -131,10 +126,6 @@ export const AccountMenu: React.FC = () => {
                 onOpenChange={setMembersOpen}
                 remoteId={remoteIdFor(currentDiagram.id)}
                 currentUserId={user.id}
-            />
-            <ImportFromDatabaseDialog
-                open={importOpen}
-                onOpenChange={setImportOpen}
             />
             <ResyncDialog open={resyncOpen} onOpenChange={setResyncOpen} />
             <ShareDialog

@@ -387,8 +387,6 @@ export const te: LanguageTranslation = {
             error: {
                 message:
                     'SQL స్క్రిప్ట్ ఉత్పత్తి చేయడంలో తప్పు. దయచేసి తర్వాతి సమయంలో ప్రయత్నించండి లేదా <0>మాతో సంప్రదించండి</0>.',
-                description:
-                    'మీ OPENAI_TOKEN ఉపయోగించి ప్రయత్నించండి, మాన్యువల్‌ను <0>ఇక్కడ</0> చూడండి.',
             },
         },
 
@@ -466,14 +464,6 @@ export const te: LanguageTranslation = {
             cancel: 'రద్దు',
         },
 
-        star_us_dialog: {
-            title: 'మా సహాయంతో మెరుగుపరచండి!',
-            description:
-                'మీకు GitHub‌లో మాకు స్టార్ ఇవ్వాలనుకుంటున్నారా? కేవలం ఒక క్లిక్ మాత్రమే!',
-            close: 'ఇప్పుడు కాదు',
-            confirm: 'ఖచ్చితంగా!',
-        },
-
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',
@@ -484,7 +474,7 @@ export const te: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? the Qubdi support team',
             },
         },
 
@@ -497,7 +487,7 @@ export const te: LanguageTranslation = {
             error: {
                 title: 'Error importing diagram',
                 description:
-                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? support@chartdb.io',
+                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? the Qubdi support team',
             },
         },
         // TODO: Translate

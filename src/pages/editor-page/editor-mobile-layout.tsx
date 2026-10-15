@@ -12,6 +12,7 @@ import {
 import { Separator } from '@/components/separator/separator';
 import type { Diagram } from '@/lib/domain/diagram';
 import { TopNavbarMobile } from './top-navbar/top-navbar-mobile';
+import { AccessBanner } from '@/components/qubdi/access-banner';
 import { SidebarProvider } from '@/components/sidebar/sidebar';
 import { EditorSidebar } from './editor-sidebar/editor-sidebar';
 
@@ -31,6 +32,7 @@ export const EditorMobileLayout: React.FC<EditorMobileLayoutProps> = ({
             >
                 <EditorSidebar />
                 <TopNavbarMobile />
+                <AccessBanner />
                 <Drawer
                     open={isSidePanelShowed}
                     onClose={() => hideSidePanel()}

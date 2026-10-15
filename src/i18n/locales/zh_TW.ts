@@ -377,8 +377,6 @@ export const zh_TW: LanguageTranslation = {
             error: {
                 message:
                     '生成 SQL 腳本時發生錯誤。稍後再試，或<0>聯繫我們</0>。',
-                description:
-                    '可以自由使用 OPENAI_TOKEN，詳細說明可參考<0>此處</0>。',
             },
         },
 
@@ -455,12 +453,6 @@ export const zh_TW: LanguageTranslation = {
             cancel: '取消',
         },
 
-        star_us_dialog: {
-            title: '協助我們改善！',
-            description: '請在 GitHub 上給我們一顆星，只需點擊一下！',
-            close: '先不要',
-            confirm: '當然！',
-        },
         export_diagram_dialog: {
             title: '匯出圖表',
             description: '選擇匯出格式：',
@@ -471,7 +463,7 @@ export const zh_TW: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? the Qubdi support team',
             },
         },
 
@@ -483,7 +475,7 @@ export const zh_TW: LanguageTranslation = {
             error: {
                 title: '匯入圖表時發生錯誤',
                 description:
-                    '圖表的 JSON 無效。請檢查 JSON 並再試一次。如需幫助，請聯繫 support@chartdb.io',
+                    '圖表的 JSON 無效。請檢查 JSON 並再試一次。如需幫助，請聯繫 the Qubdi support team',
             },
         },
         // TODO: Translate

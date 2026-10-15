@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearRemoteId, getRemoteId, setRemoteId } from '../remote-map';
+import {
+    clearRemoteId,
+    getProjectId,
+    getRemoteId,
+    setProjectId,
+    setRemoteId,
+} from '../remote-map';
 
 describe('remote map', () => {
     beforeEach(() => localStorage.clear());
@@ -25,5 +31,23 @@ describe('remote map', () => {
         expect(getRemoteId('a')).toBeUndefined();
         setRemoteId('a', '1');
         expect(getRemoteId('a')).toBe('1');
+    });
+
+    it('remembers the project of a bound diagram and forgets it on unbind', () => {
+        setRemoteId('a', 'r1');
+        setProjectId('a', 'p1');
+        setProjectId('b', 'p2');
+        expect(getProjectId('a')).toBe('p1');
+        expect(getProjectId('missing')).toBeUndefined();
+        clearRemoteId('a');
+        expect(getProjectId('a')).toBeUndefined();
+        expect(getProjectId('b')).toBe('p2');
+    });
+
+    it('survives corrupted project storage', () => {
+        localStorage.setItem('qubdidb.remote-project', '[oops');
+        expect(getProjectId('a')).toBeUndefined();
+        setProjectId('a', 'p1');
+        expect(getProjectId('a')).toBe('p1');
     });
 });

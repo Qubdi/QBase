@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { SidebarProvider } from '@/components/sidebar/sidebar';
 import { EditorSidebar } from './editor-sidebar/editor-sidebar';
 import { TopNavbar } from './top-navbar/top-navbar';
+import { AccessBanner } from '@/components/qubdi/access-banner';
 
 export interface EditorDesktopLayoutProps {
     initialDiagram?: Diagram;
@@ -24,6 +25,7 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
     return (
         <>
             <TopNavbar />
+            <AccessBanner />
             <SidebarProvider
                 defaultOpen={false}
                 open={false}

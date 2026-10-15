@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Eye, EyeOff, MessageSquare, X } from 'lucide-react';
 import { Button } from '@/components/button/button';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { OptionSelect } from '@/components/option-select/option-select';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import {
@@ -19,7 +20,7 @@ import { buildViewerGraph } from '@/lib/qubdi/viewer-model';
 /** Toolbar button plus the editor's comments panel. Only active when signed in. */
 export const CommentsControl: React.FC = () => {
     const { enabled, user, remoteIdFor, syncDiagram } = useQubdi();
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram } = useDiagram();
     const state = useCommentsState();
     const remoteId = remoteIdFor(currentDiagram.id);
     const [error, setError] = useState<string | null>(null);
@@ -143,29 +144,22 @@ export const CommentsControl: React.FC = () => {
                             });
                         }}
                     >
-                        <select
+                        <OptionSelect
                             aria-label="Comment target"
-                            className="h-9 rounded-md border border-input bg-background px-2"
+                            className="w-full"
+                            placeholder="Choose a table, field or relationship…"
                             value={pick}
-                            onChange={(e) => setPick(e.target.value)}
-                            required
-                        >
-                            <option value="">
-                                Choose a table, field or relationship…
-                            </option>
-                            {options.map((o) => (
-                                <option
-                                    key={targetKey(o.type, o.id)}
-                                    value={targetKey(o.type, o.id)}
-                                >
-                                    {o.type === 'table'
+                            onValueChange={setPick}
+                            options={options.map((o) => ({
+                                value: targetKey(o.type, o.id),
+                                label:
+                                    o.type === 'table'
                                         ? `Table · ${o.label}`
                                         : o.type === 'field'
                                           ? `Field · ${o.label}`
-                                          : `Relationship · ${o.label}`}
-                                </option>
-                            ))}
-                        </select>
+                                          : `Relationship · ${o.label}`,
+                            }))}
+                        />
                         <textarea
                             aria-label="New comment"
                             className="min-h-16 rounded-md border border-input bg-background p-2"
@@ -215,6 +209,13 @@ export const CommentsControl: React.FC = () => {
                                     state.focus?.type === c.targetType &&
                                     state.focus.id === c.targetId
                                 }
+                                // the server allows the author and admins; anyone
+                                // else may only resolve
+                                canChange={
+                                    !!user &&
+                                    (user.isAdmin ||
+                                        c.authorEmail === user.email)
+                                }
                                 editing={editing?.id === c.id ? editing : null}
                                 setEditing={setEditing}
                                 onSave={(body) =>
@@ -248,6 +249,7 @@ interface CommentItemProps {
     comment: EditorComment;
     label: string;
     focused: boolean;
+    canChange: boolean;
     editing: { id: string; body: string } | null;
     setEditing: (e: { id: string; body: string } | null) => void;
     onSave: (body: string) => void;
@@ -259,6 +261,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     comment: c,
     label,
     focused,
+    canChange,
     editing,
     setEditing,
     onSave,
@@ -325,16 +328,26 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     <Button variant="ghost" size="sm" onClick={onResolve}>
                         {c.resolved ? 'Reopen' : 'Resolve'}
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditing({ id: c.id, body: c.body })}
-                    >
-                        Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={onDelete}>
-                        Delete
-                    </Button>
+                    {canChange ? (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                    setEditing({ id: c.id, body: c.body })
+                                }
+                            >
+                                Edit
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onDelete}
+                            >
+                                Delete
+                            </Button>
+                        </>
+                    ) : null}
                 </span>
             )}
         </div>

@@ -145,11 +145,9 @@ export const fixMetadataJson = (metadataJson: string): string => {
             )
 
             // Handle cases like "'CHAT'::"CustomType"" (ensures existing quotes are escaped for JSON)
-            /* eslint-disable-next-line no-useless-escape */
-            .replace(/'([^']+)'::\"([^\"]+)\"/g, '\'$1\'::\\\"$2\\\"')
+            .replace(/'([^']+)'::"([^"]+)"/g, `'$1'::\\"$2\\"`)
 
-            /* eslint-disable-next-line no-useless-escape */
-            .replace(/\"/g, '___ESCAPED_QUOTE___') // Temporarily replace empty strings
+            .replace(/"/g, '___ESCAPED_QUOTE___') // Temporarily replace empty strings
             .replace(/(:\s*)""(?=\s*[,}])/g, '$1___EMPTY___') // Temporarily replace empty strings (Safari-compatible)
             .replace(/""/g, '"') // Replace remaining double quotes
             .replace(/___ESCAPED_QUOTE___/g, '"') // Restore empty strings

@@ -384,8 +384,6 @@ export const vi: LanguageTranslation = {
             error: {
                 message:
                     'Lỗi khi tạo SQL. Vui lòng thử lại sau hoặc <0>liên hệ với chúng tôi</0>.',
-                description:
-                    'Bạn có thể sử dụng OPENAI_TOKEN, xem hướng dẫn <0>tại đây</0>.',
             },
         },
 
@@ -463,13 +461,6 @@ export const vi: LanguageTranslation = {
             cancel: 'Hủy',
         },
 
-        star_us_dialog: {
-            title: 'Hãy giúp chúng tôi cải thiện!',
-            description:
-                'Bạn có muốn ủng hộ chúng tôi bằng cách gắn sao trên GitHub không? Chỉ cần một cú nhấp chuột là được!',
-            close: 'Chưa phải bây giờ',
-            confirm: 'Dĩ nhiên rồi!',
-        },
         export_diagram_dialog: {
             title: 'Xuất sơ đồ',
             description: 'Chọn định dạng để xuất:',
@@ -479,7 +470,7 @@ export const vi: LanguageTranslation = {
             error: {
                 title: 'Lỗi khi xuất sơ đồ',
                 description:
-                    'Có gì đó không ổn. Cần trợ giúp? support@chartdb.io',
+                    'Có gì đó không ổn. Cần trợ giúp? the Qubdi support team',
             },
         },
 
@@ -491,7 +482,7 @@ export const vi: LanguageTranslation = {
             error: {
                 title: 'Lỗi khi nhập sơ đồ',
                 description:
-                    'Sơ đồ ở dạng JSON không hợp lệ. Vui lòng kiểm tra JSON và thử lại. Bạn cần trợ giúp? support@chartdb.io',
+                    'Sơ đồ ở dạng JSON không hợp lệ. Vui lòng kiểm tra JSON và thử lại. Bạn cần trợ giúp? the Qubdi support team',
             },
         },
         // TODO: Translate

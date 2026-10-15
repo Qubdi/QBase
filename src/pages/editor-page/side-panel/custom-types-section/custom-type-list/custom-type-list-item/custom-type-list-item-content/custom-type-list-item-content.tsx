@@ -7,7 +7,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/select/select';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import type {
     DBCustomType,
     DBCustomTypeField,
@@ -42,7 +42,7 @@ export const CustomTypeListItemContent: React.FC<
         highlightCustomTypeId,
         tables,
         readonly,
-    } = useChartDB();
+    } = useDiagram();
     const { t } = useTranslation();
 
     const deleteCustomTypeHandler = useCallback(() => {

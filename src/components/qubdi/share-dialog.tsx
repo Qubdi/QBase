@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
+import { OptionSelect } from '@/components/option-select/option-select';
 import {
     api,
     errorMessage,
@@ -22,8 +23,15 @@ export interface ShareDialogProps {
     ensureRemoteId: () => Promise<string>;
 }
 
-const selectClass =
-    'h-9 rounded-md border border-input bg-background px-2 text-sm';
+// same look as the dropdown next to it
+const DATE_INPUT_CLASS =
+    'h-8 rounded-md border border-input bg-background px-2 text-xs shadow-sm transition-colors hover:border-muted-foreground/40 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30';
+
+const ACCESS_OPTIONS = [
+    { value: 'anyone', label: 'Anyone with the link' },
+    { value: 'signed_in', label: 'Signed-in users' },
+    { value: 'off', label: 'Off' },
+];
 
 /** datetime-local value <-> ISO string */
 const toLocalInput = (iso: string | null) =>
@@ -138,39 +146,30 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                         <div className="flex flex-wrap items-center gap-3">
                                             <label className="flex items-center gap-1">
                                                 Access
-                                                <select
-                                                    className={selectClass}
+                                                <OptionSelect
+                                                    size="sm"
+                                                    className="w-44"
+                                                    aria-label="Who can open this link"
                                                     value={l.access}
-                                                    onChange={(e) =>
+                                                    onValueChange={(v) =>
                                                         void run((id) =>
                                                             api.updateShareLink(
                                                                 id,
                                                                 l.id,
                                                                 {
-                                                                    access: e
-                                                                        .target
-                                                                        .value as ShareAccess,
+                                                                    access: v as ShareAccess,
                                                                 }
                                                             )
                                                         )
                                                     }
-                                                >
-                                                    <option value="anyone">
-                                                        Anyone with the link
-                                                    </option>
-                                                    <option value="signed_in">
-                                                        Signed-in users
-                                                    </option>
-                                                    <option value="off">
-                                                        Off
-                                                    </option>
-                                                </select>
+                                                    options={ACCESS_OPTIONS}
+                                                />
                                             </label>
                                             <label className="flex items-center gap-1">
                                                 Expires
                                                 <input
                                                     type="datetime-local"
-                                                    className={selectClass}
+                                                    className={DATE_INPUT_CLASS}
                                                     value={toLocalInput(
                                                         l.expiresAt
                                                     )}

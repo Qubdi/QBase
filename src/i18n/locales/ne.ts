@@ -388,8 +388,6 @@ export const ne: LanguageTranslation = {
             error: {
                 message:
                     'SQL स्क्रिप्ट उत्पन्न गर्नमा त्रुटि। कृपया पछि प्रयास गर्नुहोस् वा <0>हामीलाई सम्पर्क गर्नुहोस्</0>।',
-                description:
-                    'तपाईंले OPENAI_TOKEN प्रयोग गर्न सक्नुहुन्छ, यहाँ <0>यहाँ</0> म्यानुअल हेर्नुहोस्।',
             },
         },
 
@@ -467,13 +465,6 @@ export const ne: LanguageTranslation = {
             cancel: 'रद्द गर्नुहोस्',
         },
 
-        star_us_dialog: {
-            title: 'हामीलाई अझ राम्रो हुन मदत गर्नुहोस!',
-            description:
-                'के तपाईं हामीलाई GitHub मा स्टार गर्न चाहनुहुन्छ? यो केवल एक क्लिक पर छ!',
-            close: 'अहिले हैन',
-            confirm: 'अवस्य!',
-        },
         export_diagram_dialog: {
             title: 'डायाग्राम निर्यात गर्नुहोस्',
             description: 'निर्यात गर्नका लागि निर्यात फरम्याट छान्नुहोस:',
@@ -483,7 +474,7 @@ export const ne: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? the Qubdi support team',
             },
         },
 
@@ -495,7 +486,7 @@ export const ne: LanguageTranslation = {
             error: {
                 title: 'डायाग्राम आयात गर्दा समस्या आयो',
                 description:
-                    'डायाग्राम JSON अमान्य छ। कृपया JSON जाँच गर्नुहोस् र पुन: प्रयास गर्नुहोस्। मद्दत चाहिन्छ? support@chartdb.io मा सम्पर्क गर्नुहोस्',
+                    'डायाग्राम JSON अमान्य छ। कृपया JSON जाँच गर्नुहोस् र पुन: प्रयास गर्नुहोस्। मद्दत चाहिन्छ? the Qubdi support team मा सम्पर्क गर्नुहोस्',
             },
         },
         // TODO: Translate

@@ -3,6 +3,16 @@ import { auditLog } from '../db/schema.js';
 
 export type AuditAction =
     | 'user.register'
+    | 'user.create'
+    | 'user.update'
+    | 'user.delete'
+    | 'user.disable'
+    | 'user.enable'
+    | 'project.create'
+    | 'project.update'
+    | 'project.delete'
+    | 'project.member_set'
+    | 'project.member_remove'
     | 'diagram.create'
     | 'diagram.update'
     | 'diagram.delete'
@@ -18,10 +28,7 @@ export type AuditAction =
     | 'drift.configure'
     | 'drift.check'
     | 'drift.dismiss'
-    | 'lint.configure'
-    | 'member.add'
-    | 'member.role_change'
-    | 'member.remove';
+    | 'lint.configure';
 
 export async function audit(
     db: Db,

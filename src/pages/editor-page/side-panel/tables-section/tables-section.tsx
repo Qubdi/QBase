@@ -4,12 +4,12 @@ import { Button } from '@/components/button/button';
 import { Table, View, X, EyeOff } from 'lucide-react';
 import { Input } from '@/components/input/input';
 import type { DBTable } from '@/lib/domain/db-table';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useLayout } from '@/hooks/use-layout';
 import { EmptyState } from '@/components/empty-state/empty-state';
 import { ScrollArea } from '@/components/scroll-area/scroll-area';
 import { useTranslation } from 'react-i18next';
-import { useViewport } from '@xyflow/react';
+import { useReactFlow } from '@xyflow/react';
 import { useDialog } from '@/hooks/use-dialog';
 import type { DBSchema } from '@/lib/domain';
 import { useDiagramFilter } from '@/context/diagram-filter-context/use-diagram-filter';
@@ -21,11 +21,12 @@ import { useLocalConfig } from '@/hooks/use-local-config';
 export interface TablesSectionProps {}
 
 export const TablesSection: React.FC<TablesSectionProps> = () => {
-    const { createTable, tables, databaseType, readonly } = useChartDB();
+    const { createTable, tables, databaseType, readonly } = useDiagram();
     const { filter, schemasDisplayed, hasActiveFilter, resetFilter } =
         useDiagramFilter();
     const { openTableSchemaDialog } = useDialog();
-    const viewport = useViewport();
+    // read the viewport when needed; subscribing to it re-renders this panel on every pan frame
+    const { getViewport } = useReactFlow();
     const { t } = useTranslation();
     const { openTableFromSidebar } = useLayout();
     const [filterText, setFilterText] = React.useState('');
@@ -69,12 +70,13 @@ export const TablesSection: React.FC<TablesSectionProps> = () => {
     }, [tablesFilteredByDiagram, filterText, showDBViews]);
 
     const getCenterLocation = useCallback(() => {
+        const viewport = getViewport();
         const padding = 80;
         const centerX = -viewport.x / viewport.zoom + padding / viewport.zoom;
         const centerY = -viewport.y / viewport.zoom + padding / viewport.zoom;
 
         return { centerX, centerY };
-    }, [viewport.x, viewport.y, viewport.zoom]);
+    }, [getViewport]);
 
     const createTableWithLocation = useCallback(
         async ({ schema }: { schema?: DBSchema }) => {

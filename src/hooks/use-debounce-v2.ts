@@ -1,11 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { debounce as utilsDebounce } from '@/lib/utils';
 
-interface DebouncedFunction {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (...args: any[]): void;
+type DebouncedFunction<T extends (...args: never[]) => unknown> = ((
+    ...args: Parameters<T>
+) => void) & {
     cancel?: () => void;
-}
+};
 
 /**
  * A hook that returns a debounced version of the provided function.
@@ -17,18 +17,20 @@ interface DebouncedFunction {
  * @returns A debounced version of the callback
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useDebounce<T extends (...args: any[]) => any>(
+export function useDebounce<T extends (...args: never[]) => unknown>(
     callback: T,
     delay: number
 ): (...args: Parameters<T>) => void {
     // Use a ref to store the debounced function
-    const debouncedFnRef = useRef<DebouncedFunction>();
+    const debouncedFnRef = useRef<DebouncedFunction<T>>();
 
     // Update the debounced function when dependencies change
     useEffect(() => {
         // Create the debounced function
-        debouncedFnRef.current = utilsDebounce(callback, delay);
+        debouncedFnRef.current = utilsDebounce(
+            callback as (...args: Parameters<T>) => void,
+            delay
+        );
 
         // Clean up when component unmounts or dependencies change
         return () => {

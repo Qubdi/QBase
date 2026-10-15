@@ -16,9 +16,11 @@ module.exports = {
     	extend: {
     		fontFamily: {
     			primary: [
-    				'Raleway',
+    				'Manrope',
                     ...defaultTheme.fontFamily.sans
-                ]
+                ],
+    			sans: ['Inter', ...defaultTheme.fontFamily.sans],
+    			mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono]
     		},
     		colors: {
     			border: 'hsl(var(--border))',

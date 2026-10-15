@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { comments, diagrams, snapshots } from '../db/schema.js';
 import { planCarryForward } from '../comments/targets.js';
@@ -22,6 +22,20 @@ export async function latestSnapshot(
     return row;
 }
 
+/** The latest snapshot of each given diagram, in one query. */
+export async function latestSnapshots(
+    db: Db,
+    diagramIds: string[]
+): Promise<Map<string, SnapshotRow>> {
+    if (diagramIds.length === 0) return new Map();
+    const rows = await db
+        .selectDistinctOn([snapshots.diagramId])
+        .from(snapshots)
+        .where(inArray(snapshots.diagramId, diagramIds))
+        .orderBy(snapshots.diagramId, desc(snapshots.version));
+    return new Map(rows.map((r) => [r.diagramId, r]));
+}
+
 /**
  * What a member is allowed to see. Writers get the working copy; viewers only
  * ever get the latest published snapshot (or no content if nothing is published).
@@ -31,6 +45,7 @@ export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
     const base = {
         id: d.id,
         ownerId: d.ownerId,
+        projectId: d.projectId,
         role,
         publishedVersion: last?.version ?? null,
         publishedAt: last?.publishedAt ?? null,
@@ -63,7 +78,12 @@ export async function publishSnapshot(
     db: Db,
     diagramId: string,
     userId: string,
-    opts: { note?: string | null; onlyIfChanged?: boolean } = {}
+    opts: {
+        note?: string | null;
+        onlyIfChanged?: boolean;
+        /** keep only this many newest snapshots; 0 or unset keeps all */
+        keep?: number
+    } = {}
 ): Promise<SnapshotRow | null> {
     const row = await db.transaction(async (tx) => {
         const [d] = await tx
@@ -92,6 +112,18 @@ export async function publishSnapshot(
                 note: opts.note ?? null,
             })
             .returning();
+
+        // retention: versions are consecutive, so everything this far back goes
+        if (opts.keep && opts.keep > 0) {
+            await tx
+                .delete(snapshots)
+                .where(
+                    and(
+                        eq(snapshots.diagramId, diagramId),
+                        lte(snapshots.version, created.version - opts.keep)
+                    )
+                );
+        }
 
         // comments follow the diagram to the new version while their target
         // exists; the rest are flagged as orphaned, never deleted

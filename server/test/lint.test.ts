@@ -6,7 +6,16 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog } from '../src/db/schema.js';
 import { parseArgs, runCli, type CliIo } from '../src/cli/lint.js';
 import diagramFixture from './fixtures/postgres-diagram.json' with { type: 'json' };
-import { as, createTestApp, registerUser, type TestCtx, type TestUser } from './helpers.js';
+import {
+    as,
+    createTestApp,
+    registerUser,
+    type TestCtx,
+    withBase,
+    type TestUser,
+    grant,
+    projectFor,
+} from './helpers.js';
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x));
 const content = diagramFixture.content as Record<string, unknown>;
@@ -28,16 +37,16 @@ describe('lint API', () => {
     let id: string;
 
     const get = (u: TestUser, url: string) => ctx.app.inject({ url, headers: as(u) });
-    const setContent = (c: object) =>
-        ctx.app.inject({ method: 'PUT', url: `/diagrams/${id}`, headers: as(owner), payload: { content: c } });
+    const setContent = async (c: object) =>
+        ctx.app.inject({ method: 'PUT', url: `/diagrams/${id}`, headers: as(owner), payload: await withBase(ctx.app, owner, id, { content: c }) });
 
     beforeAll(async () => {
         ctx = await createTestApp();
         owner = await registerUser(ctx.app, 'owner@example.com');
         viewer = await registerUser(ctx.app, 'viewer@example.com');
         stranger = await registerUser(ctx.app, 'stranger@example.com');
-        id = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: diagramFixture })).json().id;
-        await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/members`, headers: as(owner), payload: { email: viewer.email, role: 'viewer' } });
+        id = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })).json().id;
+        await grant(ctx.app, viewer, 'viewer');
     });
     afterAll(() => ctx.close());
 
@@ -309,5 +318,46 @@ describe('lint CLI', () => {
             expect(r.status).toBe(2);
             expect(r.stderr).toMatch(/cannot read input/);
         });
+    });
+});
+
+describe('lint route limits', () => {
+    const post = (ctx: TestCtx, user: TestUser, diagram: object) =>
+        ctx.app.inject({
+            method: 'POST',
+            url: '/lint',
+            headers: as(user),
+            payload: { diagram },
+        });
+
+    it('limits /lint per user, not per address', async () => {
+        const ctx = await createTestApp({ lintRateLimit: 2 });
+        try {
+            const a = await registerUser(ctx.app, 'a@example.com');
+            const b = await registerUser(ctx.app, 'b@example.com');
+            const codes = [];
+            for (let i = 0; i < 3; i++) {
+                codes.push((await post(ctx, a, { tables: [] })).statusCode);
+            }
+            expect(codes).toEqual([200, 200, 429]);
+            // another user from the same address has their own allowance
+            expect((await post(ctx, b, { tables: [] })).statusCode).toBe(200);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('refuses a diagram over the size cap', async () => {
+        const ctx = await createTestApp({ bodyLimit: 1024 * 1024 });
+        try {
+            const user = await registerUser(ctx.app, 'a@example.com');
+            const res = await post(ctx, user, {
+                tables: [],
+                filler: 'x'.repeat(6 * 1024 * 1024),
+            });
+            expect(res.statusCode).toBe(413);
+        } finally {
+            await ctx.close();
+        }
     });
 });

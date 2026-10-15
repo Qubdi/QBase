@@ -4,9 +4,39 @@ import { createBrowserRouter } from 'react-router-dom';
 import type { TemplatePageLoaderData } from './pages/template-page/template-page';
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
+import { QUBDI_BACKEND_ENABLED } from './lib/qubdi/config';
 
 const routes: RouteObject[] = [
-    ...['', 'diagrams/:diagramId'].map((path) => ({
+    // With a server the home route is the project picker (nothing exists
+    // outside a project); in local mode it stays the editor.
+    ...(QUBDI_BACKEND_ENABLED
+        ? [
+              {
+                  path: '',
+                  async lazy() {
+                      const { HomePage } =
+                          await import('./pages/home-page/home-page');
+                      return { element: <HomePage /> };
+                  },
+              },
+              // a project's workspace: the editor, scoped to the project
+              ...[
+                  ':projectSlug/diagrams',
+                  ':projectSlug/diagrams/:remoteDiagramId',
+              ].map((path) => ({
+                  path,
+                  async lazy() {
+                      const { EditorPage } =
+                          await import('./pages/editor-page/editor-page');
+                      return { element: <EditorPage /> };
+                  },
+              })),
+          ]
+        : []),
+    ...(QUBDI_BACKEND_ENABLED
+        ? ['diagrams/:diagramId']
+        : ['', 'diagrams/:diagramId']
+    ).map((path) => ({
         path,
         async lazy() {
             const { EditorPage } =
@@ -17,6 +47,15 @@ const routes: RouteObject[] = [
             };
         },
     })),
+    {
+        path: 'admin',
+        async lazy() {
+            const { AdminPage } = await import('./pages/admin-page/admin-page');
+            return {
+                element: <AdminPage />,
+            };
+        },
+    },
     {
         path: 's/:token',
         async lazy() {

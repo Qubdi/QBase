@@ -39,7 +39,7 @@ import {
 } from './table-node/table-node';
 import type { RelationshipEdgeType } from './relationship-edge/relationship-edge';
 import { RelationshipEdge } from './relationship-edge/relationship-edge';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import {
     LEFT_HANDLE_ID_PREFIX,
     TARGET_ID_PREFIX,
@@ -77,7 +77,7 @@ import {
 } from './canvas-utils';
 import type { Graph } from '@/lib/graph';
 import { removeVertex } from '@/lib/graph';
-import type { ChartDBEvent } from '@/context/chartdb-context/chartdb-context';
+import type { DiagramEvent } from '@/context/diagram-context/diagram-context';
 import { cn, debounce, getOperatingSystem } from '@/lib/utils';
 import type { DependencyEdgeType } from './dependency-edge/dependency-edge';
 import { DependencyEdge } from './dependency-edge/dependency-edge';
@@ -114,6 +114,7 @@ import {
 } from '@/lib/utils/area-utils';
 import { CanvasFilter } from './canvas-filter/canvas-filter';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { useTableClipboard } from '@/hooks/use-table-clipboard';
 import { ShowAllButton } from './show-all-button';
 import { useIsLostInCanvas } from './hooks/use-is-lost-in-canvas';
 import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
@@ -304,7 +305,8 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         updateNote,
         highlightedCustomType,
         highlightCustomTypeId,
-    } = useChartDB();
+        createTable,
+    } = useDiagram();
     const { showSidePanel } = useLayout();
     const { effectiveTheme } = useTheme();
     const { scrollAction, showDBViews, showMiniMapOnCanvas } = useLocalConfig();
@@ -964,9 +966,22 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         [nodes, overlapGraph, setOverlapGraph, getNode]
     );
 
-    const updateOverlappingGraphOnChangesDebounced = debounce(
-        updateOverlappingGraphOnChanges,
-        200
+    // One debounced function for the life of the canvas, always calling the latest
+    // version. Making a new one on every render meant nothing was ever debounced:
+    // the overlap graph was rebuilt after every step of a drag, re-rendering every table.
+    const updateOverlappingGraphOnChangesRef = useRef(
+        updateOverlappingGraphOnChanges
+    );
+    updateOverlappingGraphOnChangesRef.current =
+        updateOverlappingGraphOnChanges;
+    const updateOverlappingGraphOnChangesDebounced = useMemo(
+        () =>
+            debounce(
+                (...args: Parameters<typeof updateOverlappingGraphOnChanges>) =>
+                    updateOverlappingGraphOnChangesRef.current(...args),
+                200
+            ),
+        []
     );
 
     const findRelevantNodesChanges = useCallback(
@@ -1336,7 +1351,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
     );
 
     const eventConsumer = useCallback(
-        (event: ChartDBEvent) => {
+        (event: DiagramEvent) => {
             let newOverlappingGraph: Graph<string> = overlapGraph;
             if (event.action === 'add_tables') {
                 for (const table of event.data.tables) {
@@ -1520,6 +1535,17 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         },
         []
     );
+
+    // Ctrl/Cmd+C and Ctrl/Cmd+V copy and paste the selected tables (no relationships)
+    useTableClipboard({
+        tables,
+        selectedIds: selectedTableIds,
+        areaIds: areas.map((a) => a.id),
+        databaseType,
+        readonly,
+        createTable,
+        notify: (title, description) => toast({ title, description }),
+    });
 
     // Handle mouse move to update cursor position for floating edge
     const { screenToFlowPosition } = useReactFlow();
@@ -1721,7 +1747,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                                                         'size-8 p-1 shadow-none',
                                                         snapToGridEnabled ||
                                                             shiftPressed
-                                                            ? 'bg-pink-600 text-white hover:bg-pink-500 dark:hover:bg-pink-700 hover:text-white'
+                                                            ? 'bg-teal-600 text-white hover:bg-teal-500 dark:hover:bg-teal-700 hover:text-white'
                                                             : ''
                                                     )}
                                                     onClick={() =>
@@ -1813,7 +1839,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                         >
                             <Badge
                                 variant="default"
-                                className="bg-pink-600 text-white"
+                                className="bg-teal-600 text-white"
                             >
                                 {t('loading_diagram')}
                             </Badge>
@@ -1830,7 +1856,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                             className="!shadow-none"
                         >
                             <Button
-                                className="size-11 bg-pink-600 p-2 hover:bg-pink-500"
+                                className="size-11 bg-teal-600 p-2 hover:bg-teal-500"
                                 onClick={showSidePanel}
                             >
                                 <Pencil />
@@ -1877,7 +1903,8 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     <Background
                         variant={BackgroundVariant.Dots}
                         gap={16}
-                        size={1}
+                        size={1.2}
+                        color="hsl(var(--muted-foreground) / 0.35)"
                     />
                     {/* Empty state when all tables are hidden by filter */}
                     {allTablesHiddenByFilter && (

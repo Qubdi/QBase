@@ -12,7 +12,7 @@ import {
     MenubarSubTrigger,
     MenubarTrigger,
 } from '@/components/menubar/menubar';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useDialog } from '@/hooks/use-dialog';
 import { useExportImage } from '@/hooks/use-export-image';
 import { databaseTypeToLabelMap } from '@/lib/databases';
@@ -27,6 +27,12 @@ import { useLayout } from '@/hooks/use-layout';
 import { useTheme } from '@/hooks/use-theme';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import { useNavigate } from 'react-router-dom';
+import { QUBDI_BACKEND_ENABLED } from '@/lib/qubdi/config';
+import { api, errorMessage } from '@/lib/qubdi/api';
+import { projectHomePath } from '@/lib/qubdi/project-path';
+import { clearRemoteId } from '@/lib/qubdi/remote-map';
+import { useToast } from '@/components/toast/use-toast';
+import { useWorkspace } from '@/components/qubdi/workspace-context';
 import { useAlert } from '@/context/alert-context/alert-context';
 
 export interface MenuProps {}
@@ -37,7 +43,7 @@ export const Menu: React.FC<MenuProps> = () => {
         deleteDiagram,
         updateDiagramUpdatedAt,
         databaseType,
-    } = useChartDB();
+    } = useDiagram();
     const {
         openCreateDiagramDialog,
         openOpenDiagramDialog,
@@ -67,17 +73,42 @@ export const Menu: React.FC<MenuProps> = () => {
     const { exportImage } = useExportImage();
     const navigate = useNavigate();
 
-    const handleDeleteDiagramAction = useCallback(() => {
-        deleteDiagram();
-        navigate('/');
-    }, [deleteDiagram, navigate]);
+    const workspace = useWorkspace();
+    const { toast } = useToast();
+    const handleDeleteDiagramAction = useCallback(async () => {
+        if (!workspace) {
+            deleteDiagram();
+            navigate('/');
+            return;
+        }
+        try {
+            // the project's copy goes first: if that fails nothing is lost
+            if (workspace.remoteDiagramId) {
+                await api.deleteDiagram(workspace.remoteDiagramId);
+            }
+            if (workspace.localDiagramId) {
+                clearRemoteId(workspace.localDiagramId);
+            }
+            deleteDiagram();
+            navigate(projectHomePath(workspace.project.slug));
+        } catch (e) {
+            toast({
+                title: 'Could not delete the diagram',
+                description: errorMessage(e),
+                variant: 'destructive',
+            });
+        }
+    }, [workspace, deleteDiagram, navigate, toast]);
 
+    // with a server, diagrams are created and opened from a project
     const createNewDiagram = () => {
-        openCreateDiagramDialog();
+        if (QUBDI_BACKEND_ENABLED) navigate('/');
+        else openCreateDiagramDialog();
     };
 
     const openDiagram = () => {
-        openOpenDiagramDialog();
+        if (QUBDI_BACKEND_ENABLED) navigate('/');
+        else openOpenDiagramDialog();
     };
 
     const exportSVG = useCallback(() => {
@@ -140,7 +171,7 @@ export const Menu: React.FC<MenuProps> = () => {
     const emojiAI = '✨';
 
     return (
-        <Menubar className="h-8 border-none py-2 shadow-none md:h-10 md:py-0">
+        <Menubar className="h-8 items-center gap-0.5 border-none bg-transparent p-0 shadow-none md:h-9">
             <MenubarMenu>
                 <MenubarTrigger>{t('menu.actions.actions')}</MenubarTrigger>
                 <MenubarContent>
@@ -300,21 +331,28 @@ export const Menu: React.FC<MenuProps> = () => {
                         </MenubarSubContent>
                     </MenubarSub>
                     <MenubarSeparator />
-                    <MenubarItem
-                        onClick={() =>
-                            showAlert({
-                                title: t('delete_diagram_alert.title'),
-                                description: t(
-                                    'delete_diagram_alert.description'
-                                ),
-                                actionLabel: t('delete_diagram_alert.delete'),
-                                closeLabel: t('delete_diagram_alert.cancel'),
-                                onAction: handleDeleteDiagramAction,
-                            })
-                        }
-                    >
-                        {t('menu.actions.delete_diagram')}
-                    </MenubarItem>
+                    {/* in a project only an admin may delete the shared diagram */}
+                    {!workspace || workspace.project.role === 'owner' ? (
+                        <MenubarItem
+                            onClick={() =>
+                                showAlert({
+                                    title: t('delete_diagram_alert.title'),
+                                    description: t(
+                                        'delete_diagram_alert.description'
+                                    ),
+                                    actionLabel: t(
+                                        'delete_diagram_alert.delete'
+                                    ),
+                                    closeLabel: t(
+                                        'delete_diagram_alert.cancel'
+                                    ),
+                                    onAction: handleDeleteDiagramAction,
+                                })
+                            }
+                        >
+                            {t('menu.actions.delete_diagram')}
+                        </MenubarItem>
+                    ) : null}
                 </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>

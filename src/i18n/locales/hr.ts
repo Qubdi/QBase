@@ -381,8 +381,6 @@ export const hr: LanguageTranslation = {
             error: {
                 message:
                     'Greška pri generiranju SQL skripte. Molimo pokušajte ponovno kasnije ili <0>kontaktirajte nas</0>.',
-                description:
-                    'Slobodno koristite svoj OPENAI_TOKEN, pogledajte priručnik <0>ovdje</0>.',
             },
         },
 
@@ -459,13 +457,6 @@ export const hr: LanguageTranslation = {
             cancel: 'Odustani',
         },
 
-        star_us_dialog: {
-            title: 'Pomozite nam da se poboljšamo!',
-            description:
-                'Želite li nam dati zvjezdicu na GitHubu? Samo je jedan klik!',
-            close: 'Ne sada',
-            confirm: 'Naravno!',
-        },
         export_diagram_dialog: {
             title: 'Izvezi dijagram',
             description: 'Odaberite format za izvoz:',
@@ -475,7 +466,7 @@ export const hr: LanguageTranslation = {
             error: {
                 title: 'Greška pri izvozu dijagrama',
                 description:
-                    'Nešto je pošlo po zlu. Trebate pomoć? support@chartdb.io',
+                    'Nešto je pošlo po zlu. Trebate pomoć? the Qubdi support team',
             },
         },
 
@@ -487,7 +478,7 @@ export const hr: LanguageTranslation = {
             error: {
                 title: 'Greška pri uvozu dijagrama',
                 description:
-                    'JSON dijagrama je nevažeći. Molimo provjerite JSON i pokušajte ponovno. Trebate pomoć? support@chartdb.io',
+                    'JSON dijagrama je nevažeći. Molimo provjerite JSON i pokušajte ponovno. Trebate pomoć? the Qubdi support team',
             },
         },
 

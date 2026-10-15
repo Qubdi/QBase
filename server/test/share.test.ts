@@ -8,7 +8,9 @@ import {
     registerUser,
     sampleContent,
     type TestCtx,
+    withBase,
     type TestUser,
+    grant,
 } from './helpers.js';
 
 describe('share links', () => {
@@ -47,12 +49,7 @@ describe('share links', () => {
             [editor, 'editor'],
             [viewer, 'viewer'],
         ] as const) {
-            await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${id}/members`,
-                headers: as(owner),
-                payload: { email: u.email, role },
-            });
+            await grant(ctx.app, u, role);
         }
     });
     afterAll(() => ctx.close());
@@ -213,10 +210,10 @@ describe('share links', () => {
                 method: 'PUT',
                 url: `/diagrams/${id}`,
                 headers: as(owner),
-                payload: {
+                payload: await withBase(ctx.app, owner, id, {
                     title: 'Draft title',
                     content: { ...sampleContent, name: 'Draft' },
-                },
+                }),
             });
             const res = await open(token);
             expect(res.statusCode).toBe(200);
@@ -389,6 +386,56 @@ describe('share rate limit', () => {
                 const res = await ctx.app.inject({ url: '/health' });
                 expect(res.statusCode).toBe(200);
             }
+        } finally {
+            await ctx.close();
+        }
+    });
+});
+
+describe('share rate limit behind a proxy', () => {
+    const hit = (
+        ctx: TestCtx,
+        forwardedFor: string
+    ): Promise<number> =>
+        ctx.app
+            .inject({
+                url: `/s/${'A'.repeat(22)}`,
+                headers: { 'x-forwarded-for': forwardedFor },
+            })
+            .then((r) => r.statusCode);
+
+    it('keys on the proxy address when no proxy is trusted', async () => {
+        const ctx = await createTestApp({ shareRateLimit: 2 });
+        try {
+            expect(await hit(ctx, '1.1.1.1')).toBe(404);
+            expect(await hit(ctx, '2.2.2.2')).toBe(404);
+            // different visitors, one bucket
+            expect(await hit(ctx, '3.3.3.3')).toBe(429);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('trusts a number of proxy hops', async () => {
+        const ctx = await createTestApp({ shareRateLimit: 1, trustProxy: 1 });
+        try {
+            expect(await hit(ctx, '1.1.1.1')).toBe(404);
+            expect(await hit(ctx, '2.2.2.2')).toBe(404);
+            expect(await hit(ctx, '1.1.1.1')).toBe(429);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('keys on the visitor address when the proxy is trusted', async () => {
+        const ctx = await createTestApp({
+            shareRateLimit: 1,
+            trustProxy: true,
+        });
+        try {
+            expect(await hit(ctx, '1.1.1.1')).toBe(404);
+            expect(await hit(ctx, '2.2.2.2')).toBe(404);
+            expect(await hit(ctx, '1.1.1.1')).toBe(429);
         } finally {
             await ctx.close();
         }

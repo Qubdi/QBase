@@ -40,13 +40,20 @@ export const authRoutes =
             });
         };
 
+        // lets the UI show the first-run "create admin" form only when it applies
+        app.get('/setup-status', async () => {
+            const [{ value }] = await db.select({ value: count() }).from(users);
+            return { needsSetup: value === 0 };
+        });
+
         app.post('/register', async (req, reply) => {
             const body = credentials.parse(req.body);
             const [{ value: existing }] = await db
                 .select({ value: count() })
                 .from(users);
             const isFirst = existing === 0;
-            if (!isFirst && !config.allowSignup) {
+            // accounts are created by an admin; only the very first one may self-register
+            if (!isFirst) {
                 return reply.code(403).send({ error: 'signup_disabled' });
             }
             const taken = await db
@@ -84,6 +91,9 @@ export const authRoutes =
                 !(await verifyPassword(user.passwordHash, body.password))
             ) {
                 return reply.code(401).send({ error: 'invalid_credentials' });
+            }
+            if (!user.isActive) {
+                return reply.code(403).send({ error: 'account_disabled' });
             }
             await startSession(reply, user.id);
             return { id: user.id, email: user.email, isAdmin: user.isAdmin };

@@ -1,0 +1,106 @@
+<meta charset="utf-8">
+<title>QubdiDB &mdash; Client Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 8</b></div>
+  <h1>0 open.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> 2026-10-14</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (155 files, 1399 tests), npm audit · server tests run against Postgres (27 files, 466 tests, SQL Server tests skipped) · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <span class="here">Client (this file)</span>
+    <a href="audit.html">Index</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="reg" class="stg-sector">
+  <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
+  <p class="section-note">0 open &middot; 0 Crit &middot; 0 High &middot; 0 Med &middot; 0 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="closed" class="stg-sector">
+  <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
+  <details><summary>Fixed (5)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">CLI-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Autosave serialised the whole diagram on every change; now compares a revision number</td></tr>
+        <tr><td class="svc-name">CLI-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Leave-page save used plain <code>fetch</code>; now sent with <code>keepalive</code></td></tr>
+        <tr><td class="svc-name">CLI-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL import validators for MySQL, SQLite and SQL Server were stubs; now implemented</td></tr>
+        <tr><td class="svc-name">CLI-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Star-us dialog and its GIF were never opened; deleted with i18n keys</td></tr>
+        <tr><td class="svc-name">CLI-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Hard-coded <code>qubdi.example</code> in template pages; host now from <code>VITE_HOST_URL</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <details><summary>Accepted (1)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">CLI-006</td><td><span class="pill warn">Accepted</span></td><td class="wrap-cell">10 lint suppressions remain in app code: parser AST typing, hook deps, third-party classes</td><td class="wrap-cell">Each has a stated reason; removing them risks behaviour</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <span class="here">Client (this file)</span>
+    <a href="audit.html">Index</a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qubdidb-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

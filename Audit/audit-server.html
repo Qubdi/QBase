@@ -1,0 +1,121 @@
+<meta charset="utf-8">
+<title>QubdiDB &mdash; Server Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 8</b></div>
+  <h1>0 open.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> 2026-10-14</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (155 files, 1399 tests), npm audit · server tests run against Postgres (27 files, 466 tests, SQL Server tests skipped) · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <span class="here">Server (this file)</span>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="reg" class="dev-sector">
+  <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
+  <p class="section-note">0 open &middot; 0 Crit &middot; 0 High &middot; 0 Med &middot; 0 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="closed" class="dev-sector">
+  <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
+  <details><summary>Fixed (19)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">SRV-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>PUT /diagrams/:id</code> was last-write-wins; a save on an older copy now gets 409</td></tr>
+        <tr><td class="svc-name">SRV-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Version fetch loaded every snapshot; now filtered in SQL</td></tr>
+        <tr><td class="svc-name">SRV-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No snapshot retention; <code>SNAPSHOT_KEEP</code> prunes at publish and on a timer</td></tr>
+        <tr><td class="svc-name">SRV-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">50 MB limit on every route; now 1 MiB, diagram routes keep 50 MB, content shape-checked</td></tr>
+        <tr><td class="svc-name">SRV-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>/lint</code> ran unbounded input; now capped at 5 MiB and rate-limited per user</td></tr>
+        <tr><td class="svc-name">SRV-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Introspect and drift-check routes had no limit; now one per-user allowance</td></tr>
+        <tr><td class="svc-name">SRV-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift runs were claimed per process; now claimed in SQL with a lease</td></tr>
+        <tr><td class="svc-name">SRV-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SSE viewers uncapped; now capped per link, one shared link re-check per publish</td></tr>
+        <tr><td class="svc-name">SRV-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Pg pool had no error handler, size or timeouts; all set</td></tr>
+        <tr><td class="svc-name">SRV-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Logger disabled; now on (<code>LOG_LEVEL</code>), 500 errors logged with request id</td></tr>
+        <tr><td class="svc-name">SRV-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No SIGTERM handler; now stops scheduler, closes streams and pool</td></tr>
+        <tr><td class="svc-name">SRV-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No <code>trustProxy</code>; <code>TRUST_PROXY</code> setting added</td></tr>
+        <tr><td class="svc-name">SRV-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Last-admin guard raced; admin changes now run under an advisory lock</td></tr>
+        <tr><td class="svc-name">SRV-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Viewer list ran a snapshot query per row; now one query</td></tr>
+        <tr><td class="svc-name">SRV-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Expired sessions never deleted; purged hourly</td></tr>
+        <tr><td class="svc-name">SRV-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused <code>member.*</code> audit actions removed</td></tr>
+        <tr><td class="svc-name">SRV-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Production ran through <code>tsx</code>; now compiled and run with <code>node</code></td></tr>
+        <tr><td class="svc-name">SRV-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Any editor could change others' comments; now author or owner only</td></tr>
+        <tr><td class="svc-name">SRV-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>audit_log</code> had no index, read route or retention; all three added</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <details><summary>Accepted (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Part of a 4-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <span class="here">Server (this file)</span>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qubdidb-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

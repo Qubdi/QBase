@@ -69,14 +69,14 @@ export function parseArgs(argv: string[]): Args | { error: string } {
     return args;
 }
 
-/** A ChartDB export, or the server's { title, content } wrapper. */
+/** A QubdiDB export, or the server's { title, content } wrapper. */
 function diagramOf(json: unknown): LintInput {
     if (json && typeof json === 'object') {
         const o = json as Record<string, unknown>;
         if (Array.isArray(o.tables)) return o as LintInput;
         if (o.content && typeof o.content === 'object') return o.content as LintInput;
     }
-    throw new Error('the file does not look like a ChartDB diagram (no "tables")');
+    throw new Error('the file does not look like a QubdiDB diagram (no "tables")');
 }
 
 export function runCli(argv: string[], io: CliIo): number {

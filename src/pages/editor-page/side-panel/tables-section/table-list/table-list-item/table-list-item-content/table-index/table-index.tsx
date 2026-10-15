@@ -27,7 +27,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/tooltip/tooltip';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { IndexTypeSelector } from './index-type-selector';
 
 export interface TableIndexProps {
@@ -44,7 +44,7 @@ export const TableIndex: React.FC<TableIndexProps> = ({
     removeIndex,
 }) => {
     const { t } = useTranslation();
-    const { databaseType, readonly } = useChartDB();
+    const { databaseType, readonly } = useDiagram();
 
     const fieldOptions = useMemo(
         () =>
@@ -127,7 +127,7 @@ export const TableIndex: React.FC<TableIndexProps> = ({
             {index.comments ? (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="absolute right-0 top-0 size-0 border-l-[10px] border-t-[10px] border-l-transparent border-t-pink-500" />
+                        <div className="absolute right-0 top-0 size-0 border-l-[10px] border-t-[10px] border-l-transparent border-t-teal-500" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                         <div>

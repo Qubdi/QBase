@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
     index,
     jsonb,
@@ -13,7 +14,7 @@ import {
     uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
-export const memberRole = pgEnum('member_role', ['owner', 'editor', 'viewer']);
+export const projectRole = pgEnum('project_role', ['editor', 'viewer']);
 
 export const shareAccess = pgEnum('share_access', [
     'anyone',
@@ -38,6 +39,8 @@ export const users = pgTable('users', {
     email: text('email').notNull().unique(),
     passwordHash: text('password_hash').notNull(),
     isAdmin: boolean('is_admin').notNull().default(false),
+    // a disabled user cannot sign in; their data and assignments stay
+    isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true })
         .notNull()
         .defaultNow(),
@@ -52,11 +55,52 @@ export const sessions = pgTable('sessions', {
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
 
+export const projects = pgTable(
+    'projects',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        name: text('name').notNull().unique(),
+        slug: text('slug').notNull(),
+        description: text('description').notNull().default(''),
+        createdBy: uuid('created_by').references(() => users.id, {
+            onDelete: 'set null',
+        }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (t) => [
+        // the URL piece (/Qubdi/diagrams); unique ignoring case
+        uniqueIndex('projects_slug_lower_idx').on(sql`lower(${t.slug})`),
+    ]
+);
+
+export const projectMembers = pgTable(
+    'project_members',
+    {
+        projectId: uuid('project_id')
+            .notNull()
+            .references(() => projects.id, { onDelete: 'cascade' }),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        role: projectRole('role').notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.projectId, t.userId] }),
+        index('project_members_user_idx').on(t.userId),
+    ]
+);
+
 export const diagrams = pgTable('diagrams', {
     id: uuid('id').primaryKey().defaultRandom(),
     ownerId: uuid('owner_id')
         .notNull()
         .references(() => users.id, { onDelete: 'cascade' }),
+    // every diagram lives in exactly one project; access comes from the project
+    projectId: uuid('project_id')
+        .notNull()
+        .references(() => projects.id, { onDelete: 'restrict' }),
     title: text('title').notNull(),
     content: jsonb('content').notNull(),
     autoPublish: boolean('auto_publish').notNull().default(false),
@@ -91,31 +135,23 @@ export const snapshots = pgTable(
     ]
 );
 
-export const diagramMembers = pgTable(
-    'diagram_members',
+export const auditLog = pgTable(
+    'audit_log',
     {
-        diagramId: uuid('diagram_id')
-            .notNull()
-            .references(() => diagrams.id, { onDelete: 'cascade' }),
-        userId: uuid('user_id')
-            .notNull()
-            .references(() => users.id, { onDelete: 'cascade' }),
-        role: memberRole('role').notNull(),
+        id: serial('id').primaryKey(),
+        // no FKs: audit rows must outlive deleted users and diagrams
+        userId: uuid('user_id'),
+        action: text('action').notNull(),
+        diagramId: uuid('diagram_id'),
+        at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [
-        primaryKey({ columns: [t.diagramId, t.userId] }),
-        index('diagram_members_user_idx').on(t.userId),
+        // newest-first reads and the retention delete
+        index('audit_log_at_idx').on(t.at),
+        index('audit_log_diagram_at_idx').on(t.diagramId, t.at),
+        index('audit_log_user_at_idx').on(t.userId, t.at),
     ]
 );
-
-export const auditLog = pgTable('audit_log', {
-    id: serial('id').primaryKey(),
-    // no FKs: audit rows must outlive deleted users and diagrams
-    userId: uuid('user_id'),
-    action: text('action').notNull(),
-    diagramId: uuid('diagram_id'),
-    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
-});
 
 export const shareLinks = pgTable('share_links', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -168,9 +204,14 @@ export const savedConnections = pgTable(
     'saved_connections',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        ownerId: uuid('owner_id')
+        // connections belong to a project and are usable by its editors
+        projectId: uuid('project_id')
             .notNull()
-            .references(() => users.id, { onDelete: 'cascade' }),
+            .references(() => projects.id, { onDelete: 'cascade' }),
+        // who saved it; the connection outlives that user
+        ownerId: uuid('owner_id').references(() => users.id, {
+            onDelete: 'set null',
+        }),
         name: text('name').notNull(),
         dialect: text('dialect').notNull(),
         host: text('host').notNull(),
@@ -187,7 +228,12 @@ export const savedConnections = pgTable(
             .notNull()
             .defaultNow(),
     },
-    (t) => [uniqueIndex('saved_connections_owner_name_idx').on(t.ownerId, t.name)]
+    (t) => [
+        uniqueIndex('saved_connections_project_name_idx').on(
+            t.projectId,
+            t.name
+        ),
+    ]
 );
 
 export const driftSettings = pgTable('drift_settings', {

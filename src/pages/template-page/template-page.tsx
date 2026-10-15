@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
-import ChartDBLogo from '@/assets/logo-light.png';
-import ChartDBDarkLogo from '@/assets/logo-dark.png';
-import { useTheme } from '@/hooks/use-theme';
+import { Logo } from '@/components/logo/logo';
+import { Link as RouterLink } from 'react-router-dom';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Button } from '@/components/button/button';
@@ -29,7 +28,7 @@ import {
 import { Badge } from '@/components/badge/badge';
 import { Canvas } from '../editor-page/canvas/canvas';
 import { ReactFlowProvider } from '@xyflow/react';
-import { ChartDBProvider } from '@/context/chartdb-context/chartdb-provider';
+import { DiagramProvider } from '@/context/diagram-context/diagram-provider';
 import { Helmet } from 'react-helmet-async';
 import { APP_URL, HOST_URL } from '@/lib/env';
 import { Link } from '@/components/link/link';
@@ -51,8 +50,6 @@ const TemplatePageComponent: React.FC = () => {
         }
     }, [template, navigate]);
 
-    const { effectiveTheme } = useTheme();
-
     const cloneTemplate = useCallback(async () => {
         if (APP_URL) {
             window.location.href = `${APP_URL}/templates/clone/${templateSlug}`;
@@ -66,14 +63,14 @@ const TemplatePageComponent: React.FC = () => {
             <Helmet>
                 {template ? (
                     <>
-                        {HOST_URL !== 'https://chartdb.io' ? (
+                        {HOST_URL ? (
                             <link
                                 rel="canonical"
-                                href={`https://chartdb.io/templates/${templateSlug}`}
+                                href={`${HOST_URL}/templates/${templateSlug}`}
                             />
                         ) : null}
                         <title>
-                            {`Database schema diagram for - ${template.name} | ChartDB`}
+                            {`Database schema diagram for - ${template.name} | QubdiDB`}
                         </title>
                         <meta
                             name="description"
@@ -81,7 +78,7 @@ const TemplatePageComponent: React.FC = () => {
                         />
                         <meta
                             property="og:title"
-                            content={`Database schema diagram for - ${template.name} | ChartDB`}
+                            content={`Database schema diagram for - ${template.name} | QubdiDB`}
                         />
                         <meta
                             property="og:url"
@@ -96,10 +93,10 @@ const TemplatePageComponent: React.FC = () => {
                             content={`${HOST_URL}${template.image}`}
                         />
                         <meta property="og:type" content="website" />
-                        <meta property="og:site_name" content="ChartDB" />
+                        <meta property="og:site_name" content="QubdiDB" />
                         <meta
                             name="twitter:title"
-                            content={`Database schema for - ${template.name} | ChartDB`}
+                            content={`Database schema for - ${template.name} | QubdiDB`}
                         />
                         <meta
                             name="twitter:description"
@@ -113,11 +110,9 @@ const TemplatePageComponent: React.FC = () => {
                             name="twitter:card"
                             content="summary_large_image"
                         />
-                        <meta name="twitter:site" content="@ChartDB_io" />
-                        <meta name="twitter:creator" content="@ChartDB_io" />
                     </>
                 ) : (
-                    <title>Database Schema Diagram | ChartDB</title>
+                    <title>Database Schema Diagram | QubdiDB</title>
                 )}
             </Helmet>
 
@@ -125,34 +120,15 @@ const TemplatePageComponent: React.FC = () => {
                 <nav className="flex h-12 shrink-0 flex-row items-center justify-between border-b px-4">
                     <div className="flex flex-1 justify-start gap-x-3">
                         <div className="flex items-center font-primary">
-                            <a
-                                href="https://chartdb.io"
-                                className="cursor-pointer"
-                                rel="noreferrer"
-                            >
-                                <img
-                                    src={
-                                        effectiveTheme === 'light'
-                                            ? ChartDBLogo
-                                            : ChartDBDarkLogo
-                                    }
-                                    alt="chartDB"
-                                    className="h-4 max-w-fit"
-                                />
-                            </a>
+                            <RouterLink to="/">
+                                <Logo />
+                            </RouterLink>
                         </div>
                     </div>
-                    <div className="flex flex-1 justify-end">
-                        <iframe
-                            src={`https://ghbtns.com/github-btn.html?user=chartdb&repo=chartdb&type=star&size=large&text=false`}
-                            width="40"
-                            height="30"
-                            title="GitHub"
-                        ></iframe>
-                    </div>
+                    <div className="flex flex-1 justify-end" />
                 </nav>
                 {!template ? (
-                    <Spinner size={'large'} className="mt-20 text-pink-600" />
+                    <Spinner size={'large'} className="mt-20 text-teal-600" />
                 ) : (
                     <div className="flex flex-1 flex-col p-3 pb-5 text-center md:px-28 md:text-left">
                         <Breadcrumb className="mb-2">
@@ -257,7 +233,7 @@ const TemplatePageComponent: React.FC = () => {
 
                                             <Link
                                                 className="break-all text-sm text-muted-foreground"
-                                                href={`${template.url}?ref=chartdb`}
+                                                href={`${template.url}`}
                                                 target="_blank"
                                             >
                                                 {template.url}
@@ -284,7 +260,7 @@ const TemplatePageComponent: React.FC = () => {
                             </div>
                             <div className="flex min-h-96 overflow-hidden rounded border md:flex-1 md:rounded-lg">
                                 <div className="size-full">
-                                    <ChartDBProvider
+                                    <DiagramProvider
                                         diagram={template.diagram}
                                         readonly
                                     >
@@ -293,7 +269,7 @@ const TemplatePageComponent: React.FC = () => {
                                                 template.diagram.tables ?? []
                                             }
                                         />
-                                    </ChartDBProvider>
+                                    </DiagramProvider>
                                 </div>
                             </div>
                         </div>

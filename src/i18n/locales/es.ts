@@ -388,8 +388,6 @@ export const es: LanguageTranslation = {
             error: {
                 message:
                     'Error al generar el script SQL. Por favor, intenta nuevamente más tarde o <0>contáctanos</0>.',
-                description:
-                    'Siéntete libre de usar tu OPENAI_TOKEN, consulta el manual <0>aquí</0>.',
             },
         },
 
@@ -466,14 +464,6 @@ export const es: LanguageTranslation = {
             cancel: 'Cancelar',
         },
 
-        star_us_dialog: {
-            title: '¡Ayúdanos a mejorar!',
-            description:
-                '¿Te gusta ChartDB? Por favor, danos una estrella en GitHub.',
-            close: 'Ahora no',
-            confirm: '¡Claro!',
-        },
-
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',
@@ -484,7 +474,7 @@ export const es: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? the Qubdi support team',
             },
         },
         // TODO: Translate
@@ -496,7 +486,7 @@ export const es: LanguageTranslation = {
             error: {
                 title: 'Error importing diagram',
                 description:
-                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? support@chartdb.io',
+                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? the Qubdi support team',
             },
         },
         // TODO: Translate

@@ -15,14 +15,14 @@ import {
     SortableContext,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useChartDB } from '@/hooks/use-chartdb.ts';
+import { useDiagram } from '@/hooks/use-diagram.ts';
 
 export interface NotesListProps {
     notes: Note[];
 }
 
 export const NotesList: React.FC<NotesListProps> = ({ notes }) => {
-    const { updateNote } = useChartDB();
+    const { updateNote } = useDiagram();
 
     const { openedNoteInSidebar } = useLayout();
     const lastSelectedNote = React.useRef<string | null>(null);

@@ -385,8 +385,6 @@ export const gu: LanguageTranslation = {
             error: {
                 message:
                     'SQL સ્ક્રિપ્ટ જનરેટ કરવા દરમિયાન ભૂલ થઈ. કૃપા કરીને પછીથી ફરી પ્રયત્ન કરો અથવા <0>અમારો સંપર્ક કરો</0>.',
-                description:
-                    'તમારા OPENAI_TOKEN નો ઉપયોગ કરવા માટે મફત અનુભવો, મેન્યુઅલ <0>અહીં જુઓ</0>.',
             },
         },
 
@@ -464,14 +462,6 @@ export const gu: LanguageTranslation = {
             cancel: 'રદ કરો',
         },
 
-        star_us_dialog: {
-            title: 'અમને સુધારવામાં મદદ કરો!',
-            description:
-                'શું તમે GitHub પર અમને સ્ટાર આપી શકો છો? તે માત્ર એક ક્લિક દૂર છે!',
-            close: 'હાલમાં નહીં',
-            confirm: 'ખરેખર!',
-        },
-
         export_diagram_dialog: {
             title: 'ડાયાગ્રામ નિકાસ કરો',
             description: 'નિકાસ માટે ફોર્મેટ પસંદ કરો:',
@@ -481,7 +471,7 @@ export const gu: LanguageTranslation = {
             error: {
                 title: 'ડાયાગ્રામ નિકાસમાં ભૂલ',
                 description:
-                    'કશુક તો ખોટું થયું. મદદ જોઈએ? support@chartdb.io પર સંપર્ક કરો.',
+                    'કશુક તો ખોટું થયું. મદદ જોઈએ? the Qubdi support team પર સંપર્ક કરો.',
             },
         },
 
@@ -493,7 +483,7 @@ export const gu: LanguageTranslation = {
             error: {
                 title: 'ડાયાગ્રામ આયાતમાં ભૂલ',
                 description:
-                    'ડાયાગ્રામ JSON અમાન્ય છે. કૃપા કરીને JSON તપાસો અને ફરી પ્રયાસ કરો. મદદ જોઈએ? support@chartdb.io પર સંપર્ક કરો.',
+                    'ડાયાગ્રામ JSON અમાન્ય છે. કૃપા કરીને JSON તપાસો અને ફરી પ્રયાસ કરો. મદદ જોઈએ? the Qubdi support team પર સંપર્ક કરો.',
             },
         },
         // TODO: Translate

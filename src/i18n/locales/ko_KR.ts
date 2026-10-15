@@ -384,8 +384,6 @@ export const ko_KR: LanguageTranslation = {
             error: {
                 message:
                     'SQL 생성에 실패하였습니다. 잠시후 다시 시도해주세요 계속해서 증상이 발생하는 경우 <0>우리에게 연락해주세요</0>.',
-                description:
-                    '당신의 OPENAI_TOKEN가 있는 경우, <0>여기에서</0> 메뉴얼을 참고하여 사용하실 수 있습니다.',
             },
         },
 
@@ -463,13 +461,6 @@ export const ko_KR: LanguageTranslation = {
             cancel: '취소',
         },
 
-        star_us_dialog: {
-            title: '개선할 수 있도록 도와주세요!',
-            description:
-                'GitHub에 별을 찍어주시겠습니까? 클릭 한번이면 됩니다!',
-            close: '아직은 괜찮아요',
-            confirm: '당연하죠!',
-        },
         export_diagram_dialog: {
             title: '다이어그램 내보내기',
             description: '내보낼 형식을 선택해주세요:',
@@ -479,7 +470,7 @@ export const ko_KR: LanguageTranslation = {
             error: {
                 title: '다이어그램 내보내기 오류',
                 description:
-                    '무언가 문제가 발생하였습니다. 도움이 필요하신 경우 support@chartdb.io으로 연락해주세요.',
+                    '무언가 문제가 발생하였습니다. 도움이 필요하신 경우 the Qubdi support team으로 연락해주세요.',
             },
         },
         import_diagram_dialog: {
@@ -490,7 +481,7 @@ export const ko_KR: LanguageTranslation = {
             error: {
                 title: '다이어그램 가져오기 오류',
                 description:
-                    '다이어그램 JSON이 유효하지 않습니다. JSON이 올바른 형식인지 확인해주세요. 도움이 필요하신 경우 support@chartdb.io으로 연락해주세요.',
+                    '다이어그램 JSON이 유효하지 않습니다. JSON이 올바른 형식인지 확인해주세요. 도움이 필요하신 경우 the Qubdi support team으로 연락해주세요.',
             },
         },
         // TODO: Translate

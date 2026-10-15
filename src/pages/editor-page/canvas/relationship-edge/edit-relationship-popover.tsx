@@ -81,7 +81,7 @@ export const EditRelationshipPopover: React.FC<
                             className={cn(
                                 'h-7 w-11 text-xs font-medium',
                                 isActive &&
-                                    'bg-slate-700 text-white hover:bg-slate-600'
+                                    'bg-primary text-primary-foreground hover:bg-primary/90'
                             )}
                             onClick={(e) => {
                                 e.preventDefault();
@@ -96,11 +96,11 @@ export const EditRelationshipPopover: React.FC<
                         </Button>
                     );
                 })}
-                <div className="mx-1 h-6 w-px bg-slate-300" />
+                <div className="mx-1 h-6 w-px bg-border" />
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="size-7 p-0 text-sky-600 hover:bg-sky-50 hover:text-sky-700"
+                    className="size-7 p-0 text-primary hover:bg-accent hover:text-accent-foreground"
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -113,7 +113,7 @@ export const EditRelationshipPopover: React.FC<
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="size-7 p-0 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                    className="size-7 p-0 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();

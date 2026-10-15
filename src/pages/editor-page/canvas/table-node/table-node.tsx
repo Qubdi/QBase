@@ -36,7 +36,7 @@ import {
 } from '@/lib/domain/db-table';
 import { TableNodeField } from './table-node-field';
 import { useLayout } from '@/hooks/use-layout';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import type { RelationshipEdgeType } from '../relationship-edge/relationship-edge';
 import type { DBField } from '@/lib/domain/db-field';
 import { useTranslation } from 'react-i18next';
@@ -87,7 +87,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
             targetEdgeCounts,
         },
     }) => {
-        const { updateTable, relationships, readonly } = useChartDB();
+        const { updateTable, relationships, readonly } = useDiagram();
         const edges = useStore((store) => store.edges) as EdgeType[];
         const {
             openTableFromSidebar,
@@ -348,11 +348,11 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
         const tableClassName = useMemo(
             () =>
                 cn(
-                    'flex w-full flex-col border-2 bg-slate-50 dark:bg-slate-950 rounded-lg shadow-sm transition-transform duration-300',
+                    'flex w-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm',
                     table.isView ? 'border-dashed' : '',
                     selected || isTarget || isPartOfCreatingRelationship
-                        ? 'border-pink-600'
-                        : 'border-slate-500 dark:border-slate-700',
+                        ? 'border-primary ring-2 ring-primary/25'
+                        : 'border-border',
                     isOverlapping
                         ? 'ring-2 ring-offset-slate-50 dark:ring-offset-slate-900 ring-blue-500 ring-offset-2'
                         : '',
@@ -455,7 +455,9 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                     }}
                     onMouseEnter={() => {
                         setIsHovering(true);
-                        setHoveringTableId(table.id);
+                        // only drawing a new line needs to know the hovered table, and
+                        // every table re-renders when this changes
+                        if (tempFloatingEdge) setHoveringTableId(table.id);
                     }}
                     onMouseLeave={() => {
                         setIsHovering(false);
@@ -505,10 +507,10 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                         }
                     />
                     <div
-                        className="h-2 rounded-t-[6px]"
+                        className="h-1"
                         style={{ backgroundColor: tableColor }}
                     ></div>
-                    <div className="group flex h-9 items-center justify-between bg-slate-200 px-2 dark:bg-slate-900">
+                    <div className="group flex h-9 items-center justify-between border-b bg-muted/70 px-2.5">
                         <div className="flex min-w-0 flex-1 items-center gap-2">
                             {isDiffNewTable ? (
                                 <Tooltip>

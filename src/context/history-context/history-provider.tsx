@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { historyContext } from './history-context';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
 import type { RedoUndoActionHandlers } from './redo-undo-action';
 
@@ -46,7 +46,7 @@ export const HistoryProvider: React.FC<React.PropsWithChildren> = ({
         addNotes,
         removeNotes,
         updateNote,
-    } = useChartDB();
+    } = useDiagram();
 
     const redoActionHandlers = useMemo(
         (): RedoUndoActionHandlers => ({
@@ -401,8 +401,7 @@ export const HistoryProvider: React.FC<React.PropsWithChildren> = ({
 
         await handler?.({
             undoData: action.undoData,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as never);
     };
 
     const redo = async () => {
@@ -416,8 +415,7 @@ export const HistoryProvider: React.FC<React.PropsWithChildren> = ({
 
         await handler?.({
             redoData: action.redoData,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as never);
     };
 
     return (

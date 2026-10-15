@@ -3,94 +3,56 @@
  * Validates SQL Server (T-SQL) syntax and provides helpful error messages
  */
 
-import type {
-    ValidationResult,
-    ValidationError,
-    ValidationWarning,
-} from './postgresql-validator';
+import { validateWithRules, type DialectRules } from './common-validator';
+import type { ValidationResult } from './postgresql-validator';
+
+export const sqlServerRules: DialectRules = {
+    quotes: [
+        { open: "'", close: "'" },
+        { open: '"', close: '"' },
+        { open: '[', close: ']' },
+    ],
+    // T-SQL separates statements with GO or plain newlines as well
+    requiresSemicolons: false,
+    viewPattern: /\bCREATE\s+(?:OR\s+ALTER\s+)?VIEW\b/,
+    foreignSyntax: [
+        {
+            pattern: /\bAUTO_INCREMENT\b/,
+            message:
+                'AUTO_INCREMENT is MySQL syntax. Use IDENTITY in SQL Server.',
+        },
+        {
+            pattern: /\b(?:BIG|SMALL)?SERIAL\b/,
+            message: 'SERIAL is PostgreSQL syntax. Use IDENTITY in SQL Server.',
+        },
+        {
+            pattern: /\bGENERATED\s+(?:ALWAYS|BY\s+DEFAULT)\s+AS\s+IDENTITY\b/,
+            message:
+                'GENERATED AS IDENTITY is PostgreSQL syntax. Use IDENTITY(1,1) in SQL Server.',
+        },
+        {
+            pattern: /\bCREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\b/,
+            message:
+                'CREATE TABLE IF NOT EXISTS is not supported in SQL Server. Use IF OBJECT_ID(...) IS NULL.',
+        },
+        {
+            pattern: /::\s*\w+/,
+            message:
+                'The :: cast operator is PostgreSQL syntax. Use CAST(... AS ...) in SQL Server.',
+        },
+        {
+            pattern: /`/,
+            message:
+                'Backticks are MySQL syntax. Use square brackets ([ ]) in SQL Server.',
+        },
+    ],
+};
 
 /**
  * Validates SQL Server SQL syntax
  * @param sql - The SQL Server SQL to validate
- * @returns ValidationResult with errors, warnings, and optional fixed SQL
+ * @returns ValidationResult with errors and warnings
  */
 export function validateSQLServerDialect(sql: string): ValidationResult {
-    const errors: ValidationError[] = [];
-    const warnings: ValidationWarning[] = [];
-
-    // First check if the SQL is empty or just whitespace
-    if (!sql || !sql.trim()) {
-        errors.push({
-            line: 1,
-            message: 'SQL script is empty',
-            type: 'syntax',
-            suggestion: 'Add CREATE TABLE statements to import',
-        });
-        return {
-            isValid: false,
-            errors,
-            warnings,
-            tableCount: 0,
-        };
-    }
-
-    // TODO: Implement SQL Server-specific validation
-    // For now, just do basic checks
-
-    // Check for common SQL Server syntax patterns
-    const lines = sql.split('\n');
-    let tableCount = 0;
-    let viewCount = 0;
-
-    lines.forEach((line, index) => {
-        const trimmedLine = line.trim();
-
-        // Count CREATE TABLE statements
-        if (trimmedLine.match(/^\s*CREATE\s+TABLE/i)) {
-            tableCount++;
-        }
-
-        // Count CREATE VIEW statements
-        if (trimmedLine.match(/^\s*CREATE\s+(OR\s+ALTER\s+)?VIEW/i)) {
-            viewCount++;
-        }
-
-        // Check for syntax from other databases that won't work in SQL Server
-        if (trimmedLine.includes('AUTO_INCREMENT')) {
-            warnings.push({
-                message: `Line ${index + 1}: AUTO_INCREMENT is MySQL syntax. Use IDENTITY in SQL Server.`,
-                type: 'compatibility',
-            });
-        }
-
-        if (trimmedLine.includes('SERIAL')) {
-            warnings.push({
-                message: `Line ${index + 1}: SERIAL is PostgreSQL syntax. Use IDENTITY in SQL Server.`,
-                type: 'compatibility',
-            });
-        }
-    });
-
-    // Add import summary message
-    if (tableCount > 0 || viewCount > 0) {
-        const parts: string[] = [];
-        if (tableCount > 0) {
-            parts.push(`${tableCount} table${tableCount !== 1 ? 's' : ''}`);
-        }
-        if (viewCount > 0) {
-            parts.push(`${viewCount} view${viewCount !== 1 ? 's' : ''}`);
-        }
-        warnings.unshift({
-            message: `Found ${parts.join(' and ')} to import.`,
-            type: 'compatibility',
-        });
-    }
-
-    return {
-        isValid: errors.length === 0,
-        errors,
-        warnings,
-        tableCount,
-        viewCount,
-    };
+    return validateWithRules(sql, sqlServerRules);
 }

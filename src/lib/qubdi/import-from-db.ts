@@ -63,7 +63,7 @@ export const schemasOfSelection = (selected: ReadonlySet<string>): string[] =>
     [...new Set([...selected].map((k) => k.slice(0, k.indexOf('.'))))].sort();
 
 /**
- * Turns server metadata into a ChartDB diagram using ChartDB's own importer,
+ * Turns server metadata into a QubdiDB diagram using QubdiDB's own importer,
  * so type mapping, layout and relationships match a manual import.
  */
 export async function metadataToDiagram(

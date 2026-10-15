@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog } from '../src/db/schema.js';
+import { pruneSnapshots } from '../src/maintenance.js';
 import {
     as,
     createDiagram,
@@ -7,7 +8,9 @@ import {
     registerUser,
     sampleContent,
     type TestCtx,
+    withBase,
     type TestUser,
+    grant,
 } from './helpers.js';
 
 describe('published snapshots', () => {
@@ -27,12 +30,12 @@ describe('published snapshots', () => {
         });
     const get = (u: TestUser, diagramId = id) =>
         ctx.app.inject({ url: `/diagrams/${diagramId}`, headers: as(u) });
-    const edit = (u: TestUser, patch: object, diagramId = id) =>
+    const edit = async (u: TestUser, patch: object, diagramId = id) =>
         ctx.app.inject({
             method: 'PUT',
             url: `/diagrams/${diagramId}`,
             headers: as(u),
-            payload: patch,
+            payload: await withBase(ctx.app, u, diagramId, patch),
         });
 
     beforeAll(async () => {
@@ -46,12 +49,7 @@ describe('published snapshots', () => {
             [editor, 'editor'],
             [viewer, 'viewer'],
         ] as const) {
-            await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${id}/members`,
-                headers: as(owner),
-                payload: { email: u.email, role },
-            });
+            await grant(ctx.app, u, role);
         }
     });
     afterAll(() => ctx.close());
@@ -243,12 +241,7 @@ describe('auto-publish', () => {
         owner = await registerUser(ctx.app, 'owner@example.com');
         viewer = await registerUser(ctx.app, 'viewer@example.com');
         id = await createDiagram(ctx.app, owner);
-        await ctx.app.inject({
-            method: 'POST',
-            url: `/diagrams/${id}/members`,
-            headers: as(owner),
-            payload: { email: viewer.email, role: 'viewer' },
-        });
+        await grant(ctx.app, viewer, 'viewer');
     });
     afterAll(() => ctx.close());
 
@@ -314,5 +307,103 @@ describe('auto-publish', () => {
             payload: { title: 'C' },
         });
         expect(await versions()).toHaveLength(2);
+    });
+});
+
+describe('snapshot retention', () => {
+    const versionsOf = async (
+        ctx: TestCtx,
+        user: TestUser,
+        id: string
+    ): Promise<number[]> =>
+        (
+            await ctx.app.inject({
+                url: `/diagrams/${id}/versions`,
+                headers: as(user),
+            })
+        )
+            .json()
+            .map((v: { version: number }) => v.version);
+
+    const publish = (ctx: TestCtx, user: TestUser, id: string) =>
+        ctx.app.inject({
+            method: 'POST',
+            url: `/diagrams/${id}/publish`,
+            headers: as(user),
+            payload: {},
+        });
+
+    it('keeps only the newest N versions as new ones are published', async () => {
+        const ctx = await createTestApp({ snapshotKeep: 3 });
+        try {
+            const owner = await registerUser(ctx.app, 'owner@example.com');
+            const id = await createDiagram(ctx.app, owner);
+            for (let i = 1; i <= 5; i++) {
+                await ctx.app.inject({
+                    method: 'PUT',
+                    url: `/diagrams/${id}`,
+                    headers: as(owner),
+                    payload: { title: `Edit ${i}` },
+                });
+                expect((await publish(ctx, owner, id)).statusCode).toBe(201);
+            }
+            expect(await versionsOf(ctx, owner, id)).toEqual([5, 4, 3]);
+            // numbering goes on from the newest, not from the count left
+            await ctx.app.inject({
+                method: 'PUT',
+                url: `/diagrams/${id}`,
+                headers: as(owner),
+                payload: { title: 'Edit 6' },
+            });
+            expect((await publish(ctx, owner, id)).json().version).toBe(6);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('keeps every version when the limit is 0', async () => {
+        const ctx = await createTestApp({ snapshotKeep: 0 });
+        try {
+            const owner = await registerUser(ctx.app, 'owner@example.com');
+            const id = await createDiagram(ctx.app, owner);
+            for (let i = 1; i <= 4; i++) {
+                await ctx.app.inject({
+                    method: 'PUT',
+                    url: `/diagrams/${id}`,
+                    headers: as(owner),
+                    payload: { title: `Edit ${i}` },
+                });
+                await publish(ctx, owner, id);
+            }
+            expect(await versionsOf(ctx, owner, id)).toEqual([4, 3, 2, 1]);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('the maintenance job trims diagrams published before the limit existed', async () => {
+        const ctx = await createTestApp({ snapshotKeep: 0 });
+        try {
+            const owner = await registerUser(ctx.app, 'owner@example.com');
+            const a = await createDiagram(ctx.app, owner, 'A');
+            const b = await createDiagram(ctx.app, owner, 'B');
+            for (const id of [a, b]) {
+                for (let i = 1; i <= 4; i++) {
+                    await ctx.app.inject({
+                        method: 'PUT',
+                        url: `/diagrams/${id}`,
+                        headers: as(owner),
+                        payload: { title: `${id} ${i}` },
+                    });
+                    await publish(ctx, owner, id);
+                }
+            }
+            expect(await pruneSnapshots(ctx.db, 0)).toBe(0);
+            expect(await pruneSnapshots(ctx.db, 2)).toBe(4);
+            expect(await versionsOf(ctx, owner, a)).toEqual([4, 3]);
+            expect(await versionsOf(ctx, owner, b)).toEqual([4, 3]);
+        } finally {
+            await ctx.close();
+        }
     });
 });

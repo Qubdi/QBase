@@ -8,7 +8,6 @@ const scrollActionKey = 'scroll_action';
 const showCardinalityKey = 'show_cardinality';
 const showFieldAttributesKey = 'show_field_attributes';
 const githubRepoOpenedKey = 'github_repo_opened';
-const starUsDialogLastOpenKey = 'star_us_dialog_last_open';
 const showMiniMapOnCanvasKey = 'show_minimap_on_canvas';
 const showDBViewsKey = 'show_db_views';
 
@@ -40,22 +39,10 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
         (localStorage.getItem(githubRepoOpenedKey) || 'false') === 'true'
     );
 
-    const [starUsDialogLastOpen, setStarUsDialogLastOpen] =
-        React.useState<number>(
-            parseInt(localStorage.getItem(starUsDialogLastOpenKey) || '0')
-        );
-
     const [showMiniMapOnCanvas, setShowMiniMapOnCanvas] =
         React.useState<boolean>(
             (localStorage.getItem(showMiniMapOnCanvasKey) || 'true') === 'true'
         );
-
-    useEffect(() => {
-        localStorage.setItem(
-            starUsDialogLastOpenKey,
-            starUsDialogLastOpen.toString()
-        );
-    }, [starUsDialogLastOpen]);
 
     useEffect(() => {
         localStorage.setItem(githubRepoOpenedKey, githubRepoOpened.toString());
@@ -99,8 +86,6 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
                 setShowFieldAttributes,
                 setGithubRepoOpened,
                 githubRepoOpened,
-                starUsDialogLastOpen,
-                setStarUsDialogLastOpen,
                 showMiniMapOnCanvas,
                 setShowMiniMapOnCanvas,
             }}

@@ -9,7 +9,7 @@ import {
     ContextMenuTrigger,
 } from '@/components/context-menu/context-menu';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useLayout } from '@/hooks/use-layout';
 import { cloneTable } from '@/lib/clone';
 import type { DBTable } from '@/lib/domain/db-table';
@@ -26,7 +26,8 @@ import {
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCanvas } from '@/hooks/use-canvas';
-import { useReactFlow, useStore } from '@xyflow/react';
+import { useReactFlow } from '@xyflow/react';
+import { useSelectedTableIds } from '@/hooks/use-selected-table-ids';
 
 export interface TableNodeContextMenuProps {
     table: DBTable;
@@ -45,19 +46,15 @@ export const TableNodeContextMenu: React.FC<
         relationships,
         updateArea,
         updateTablesState,
-    } = useChartDB();
+    } = useDiagram();
     const { closeAllTablesInSidebar } = useLayout();
     const { t } = useTranslation();
     const { isMd: isDesktop } = useBreakpoint('md');
     const { setEditTableModeTable, startFloatingEdgeCreation } = useCanvas();
     const { getNodes } = useReactFlow();
 
-    // Reactively detect multi-selection
-    const selectedTableIds = useStore((state) =>
-        state.nodes
-            .filter((n) => n.type === 'table' && n.selected && !n.hidden)
-            .map((n) => n.id)
-    );
+    // Reactively detect multi-selection (compared by content, see the hook)
+    const selectedTableIds = useSelectedTableIds();
     const isMultiSelect =
         selectedTableIds.length > 1 && selectedTableIds.includes(table.id);
 

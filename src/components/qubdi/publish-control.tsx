@@ -10,7 +10,7 @@ import {
 } from '@/components/dialog/dialog';
 import { Input } from '@/components/input/input';
 import { useToast } from '@/components/toast/use-toast';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import {
@@ -20,7 +20,7 @@ import {
 
 export const PublishControl: React.FC = () => {
     const { enabled, user, syncDiagram, remoteIdFor } = useQubdi();
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram } = useDiagram();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [note, setNote] = useState('');

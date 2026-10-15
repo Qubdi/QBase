@@ -378,8 +378,6 @@ export const zh_CN: LanguageTranslation = {
             error: {
                 message:
                     '生成 SQL 脚本时出错。请稍后再试，或者 <0>联系我们</0>。',
-                description:
-                    '随时使用您的 OPENAI_TOKEN，在<0>这里</0>查看手册。',
             },
         },
 
@@ -455,12 +453,6 @@ export const zh_CN: LanguageTranslation = {
             cancel: '取消',
         },
 
-        star_us_dialog: {
-            title: '帮助我们改进！',
-            description: '您想在 GitHub 上为我们加注星标吗？只需点击一下即可！',
-            close: '以后再说',
-            confirm: '当然！',
-        },
         export_diagram_dialog: {
             title: '导出关系图',
             description: '选择导出格式：',
@@ -471,7 +463,7 @@ export const zh_CN: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? the Qubdi support team',
             },
         },
 
@@ -483,7 +475,7 @@ export const zh_CN: LanguageTranslation = {
             error: {
                 title: '导入关系图时出错',
                 description:
-                    '关系图 JSON 无效，请检查 JSON 后重试。需要帮助？ 联系 support@chartdb.io',
+                    '关系图 JSON 无效，请检查 JSON 后重试。需要帮助？ 联系 the Qubdi support team',
             },
         },
         // TODO: Translate

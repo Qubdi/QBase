@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -8,7 +8,7 @@ import {
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
-import { errorMessage } from '@/lib/qubdi/api';
+import { api, errorMessage } from '@/lib/qubdi/api';
 import { useQubdi } from '@/hooks/use-qubdi';
 
 export interface AuthDialogProps {
@@ -21,11 +21,20 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
     onOpenChange,
 }) => {
     const { login, register } = useQubdi();
-    const [mode, setMode] = useState<'login' | 'register'>('login');
+    // self-registration only exists on a brand-new server, to create its admin
+    const [needsSetup, setNeedsSetup] = useState(false);
+    const mode = needsSetup ? 'register' : 'login';
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+        if (!open) return;
+        api.setupStatus()
+            .then((r) => setNeedsSetup(r.needsSetup))
+            .catch(() => setNeedsSetup(false));
+    }, [open]);
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,12 +56,12 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
             <DialogContent className="max-w-sm" showClose>
                 <DialogHeader>
                     <DialogTitle>
-                        {mode === 'login' ? 'Sign in' : 'Create account'}
+                        {mode === 'login' ? 'Sign in' : 'Create admin account'}
                     </DialogTitle>
                     <DialogDescription>
                         {mode === 'login'
-                            ? 'Sign in to sync diagrams to your QubdiDB server.'
-                            : 'The first account on a server becomes its admin.'}
+                            ? 'Sign in to sync diagrams to your QubdiDB server. Accounts are created by an admin.'
+                            : 'This server has no users yet. The first account becomes its admin and can create everyone else.'}
                     </DialogDescription>
                 </DialogHeader>
                 <form
@@ -87,20 +96,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                         </p>
                     ) : null}
                     <Button type="submit" disabled={busy}>
-                        {mode === 'login' ? 'Sign in' : 'Create account'}
+                        {mode === 'login' ? 'Sign in' : 'Create admin account'}
                     </Button>
-                    <button
-                        type="button"
-                        className="text-sm text-muted-foreground underline"
-                        onClick={() => {
-                            setError(null);
-                            setMode(mode === 'login' ? 'register' : 'login');
-                        }}
-                    >
-                        {mode === 'login'
-                            ? 'No account? Create one'
-                            : 'Already have an account? Sign in'}
-                    </button>
                 </form>
             </DialogContent>
         </Dialog>

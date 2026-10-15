@@ -384,8 +384,6 @@ export const fr: LanguageTranslation = {
             error: {
                 message:
                     'Erreur lors de la génération du script SQL. Veuillez réessayer plus tard ou <0>contactez-nous</0>.',
-                description:
-                    "N'hésitez pas à utiliser votre OPENAI_TOKEN, voir le manuel <0>ici</0>.",
             },
         },
 
@@ -412,14 +410,6 @@ export const fr: LanguageTranslation = {
                 'Plusieurs schémas sont actuellement affichés. Sélectionnez-en un pour la nouvelle table.',
             cancel: 'Annuler',
             confirm: 'Confirmer',
-        },
-
-        star_us_dialog: {
-            title: 'Aidez-nous à nous améliorer',
-            description:
-                "Souhaitez-vous nous donner une étoile sur GitHub ? Il ne suffit que d'un clic !",
-            close: 'Pas maintenant',
-            confirm: 'Bien sûr !',
         },
 
         update_table_schema_dialog: {
@@ -479,7 +469,7 @@ export const fr: LanguageTranslation = {
             error: {
                 title: "Erreur lors de l'exportation du diagramme",
                 description:
-                    "Une erreur s'est produite. Besoin d'aide ? support@chartdb.io",
+                    "Une erreur s'est produite. Besoin d'aide ? the Qubdi support team",
             },
         },
         import_diagram_dialog: {
@@ -490,7 +480,7 @@ export const fr: LanguageTranslation = {
             error: {
                 title: "Erreur lors de l'exportation du diagramme",
                 description:
-                    "Le diagramme JSON n'est pas valide. Veuillez vérifier le JSON et réessayer. Besoin d'aide ? support@chartdb.io",
+                    "Le diagramme JSON n'est pas valide. Veuillez vérifier le JSON et réessayer. Besoin d'aide ? the Qubdi support team",
             },
         },
         import_dbml_dialog: {

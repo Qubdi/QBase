@@ -1,7 +1,7 @@
 # QubdiDB
 
-Database schema diagrams you can keep on your own server. QubdiDB is a fork of
-the ChartDB editor (AGPL-3.0) with an optional self-hosted backend. The editor
+Database schema diagrams you can keep on your own server. QubdiDB is an AGPL-3.0
+diagram editor with an optional self-hosted backend. The editor
 still works fully offline in the browser; the backend adds accounts, published
 versions, share links, comments, live-database import, re-sync, drift detection
 and schema lint.
@@ -11,9 +11,8 @@ and schema lint.
 | Part | Where | Stack |
 | --- | --- | --- |
 | Editor | `src/` | React 18, TypeScript, Vite, Tailwind, `@xyflow/react`, Dexie |
-| Backend (optional) | `server/` | Node 22, Fastify, Drizzle, PostgreSQL |
+| Backend (optional) | `server/` | Node 24, Fastify, Drizzle, PostgreSQL |
 | Shared logic | `shared/` | Pure TypeScript with no dependencies: `reconcile`, drift classification, `lint` |
-| Original editor code | `OLD/` | Untouched copy kept for reference |
 
 ## Features
 
@@ -39,24 +38,33 @@ cd server
 npm install
 CONNECTION_KEY="a-long-random-secret" \
 INTROSPECT_ALLOW_HOSTS="" \
-npm start                      # http://localhost:3001
+npm start                      # compiles to dist/, then runs it: http://localhost:3001
+                               # (npm run dev restarts on file changes instead)
 
 # 3. editor (from the repository root)
 npm install
-VITE_QUBDI_BACKEND_URL=http://localhost:3001 npm run dev
+cp .env.example .env           # VITE_QUBDI_BACKEND_URL=http://localhost:3001
+npm run dev
 ```
 
 Without `VITE_QUBDI_BACKEND_URL` the editor runs in local-only mode and shows no account UI.
 Schema lint works either way.
+
+### Configuration
+
+All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
+
+- Repository root `.env` (copy `.env.example`): read by `docker compose` and by the editor build. It holds the core database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`), where it runs (`POSTGRES_HOST`, `POSTGRES_PORT`; point them at another machine to use an existing Postgres), the secrets, and the bind address and port of each service (`*_BIND_IP`, `*_PUBLISH_PORT` / `*_PORT`), and the editor's `QUBDI_BACKEND_URL` (read in the browser at run time, so changing it needs no rebuild; `VITE_QUBDI_BACKEND_URL` is the same setting for `npm run dev`) and `VITE_HOST_URL` (public URL for canonical links; unset = none).
+- `server/.env` (copy `server/.env.example`): read by the backend when run outside Docker.
 
 ### Backend settings
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `DATABASE_URL` | `postgres://qubdidb:qubdidb@localhost:5433/qubdidb` | Where QubdiDB stores its own data |
+| `HOST` | `0.0.0.0` | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
 | `SESSION_SECRET` | dev value | Set this in production |
-| `ALLOW_SIGNUP` | `true` | The first account always works and becomes admin; set `false` to close sign-ups after that |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
 | `CONNECTION_KEY` | unset | Encrypts saved database passwords. Saving connections and scheduled drift checks need it |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default |

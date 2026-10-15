@@ -384,8 +384,6 @@ export const id_ID: LanguageTranslation = {
             error: {
                 message:
                     'Kesalahan saat menghasilkan skrip SQL. Silakan coba lagi nanti atau <0>hubungi kami</0>.',
-                description:
-                    'Silakan gunakan OPENAI_TOKEN Anda, lihat petunjuk <0>di sini</0>.',
             },
         },
 
@@ -463,14 +461,6 @@ export const id_ID: LanguageTranslation = {
             cancel: 'Batal',
         },
 
-        star_us_dialog: {
-            title: 'Bantu kami meningkatkan!',
-            description:
-                'Apakah Anda ingin menambahkan bintang di GitHub? Cukup klik!',
-            close: 'Tidak sekarang',
-            confirm: 'Tentu saja!',
-        },
-
         export_diagram_dialog: {
             title: 'Ekspor Diagram',
             description: 'Pilih format untuk ekspor:',
@@ -480,7 +470,7 @@ export const id_ID: LanguageTranslation = {
             error: {
                 title: 'Error ekspor diagram',
                 description:
-                    'Sesuatu yang salah. Butuh bantuan? support@chartdb.io',
+                    'Sesuatu yang salah. Butuh bantuan? the Qubdi support team',
             },
         },
 
@@ -492,7 +482,7 @@ export const id_ID: LanguageTranslation = {
             error: {
                 title: 'Error impor diagram',
                 description:
-                    'Diagram JSON tidak valid. Silakan cek JSON dan coba lagi. Butuh bantuan? support@chartdb.io',
+                    'Diagram JSON tidak valid. Silakan cek JSON dan coba lagi. Butuh bantuan? the Qubdi support team',
             },
         },
         // TODO: Translate

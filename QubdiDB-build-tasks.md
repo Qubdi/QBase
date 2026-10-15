@@ -7,7 +7,7 @@ Order: 1 Auth → 2 Snapshots → 3 Share links → 4 Comments → 5 Direct impo
 ## Shared context (paste at the top of every task)
 
 ```
-Project: QubdiDB, a fork of ChartDB (AGPL-3.0, React 18 + TypeScript + Vite, Tailwind, Radix, @xyflow/react, Dexie/IndexedDB, i18next). Do not use ChartDB branding. ChartDB is local-first with no backend; we are adding a small self-hosted backend.
+Project: QubdiDB, an AGPL-3.0 project ( React 18 + TypeScript + Vite, Tailwind, Radix, @xyflow/react, Dexie/IndexedDB, i18next). The editor is local-first with no backend; we are adding a small self-hosted backend.
 
 Backend stack: Node 22 + TypeScript + Fastify, PostgreSQL, Drizzle ORM, Docker Compose. Everything FOSS and self-hostable. Frontend keeps working offline with Dexie; the backend is optional and enabled by an env flag.
 
@@ -92,7 +92,7 @@ Goal: connect to a live database, read its schema and create a diagram.
 
 Build:
 - Introspection module with one interface and drivers for PostgreSQL and SQL Server (add MySQL later). Read: schemas, tables, columns (type, length, nullability, default), primary keys, unique constraints, indexes, foreign keys (with ON DELETE/UPDATE), comments.
-- Normalise output into the existing ChartDB diagram model (reuse its type mapping per dialect).
+- Normalise output into the existing diagram model (reuse its type mapping per dialect).
 - Connection form: host, port, database, user, password, SSL option, schema filter. Credentials are used for the request only, never stored unless the user saves a connection; saved passwords are encrypted with a key from env.
 - Read-only by design: use a read-only transaction, run only catalog queries, set a statement timeout.
 - Frontend: Import > From database wizard (connect, pick schemas/tables, preview, create diagram).

@@ -392,8 +392,6 @@ export const mr: LanguageTranslation = {
             error: {
                 message:
                     'SQL स्क्रिप्ट तयार करताना एरर. कृपया नंतर पुन्हा प्रयत्न करा किंवा <0>आमच्याशी संपर्क साधा</0>.',
-                description:
-                    'तुमचा OPENAI_TOKEN वापरण्यास मोकळे रहा, मॅन्युअल <0>येथे</0> पहा.',
             },
         },
 
@@ -471,14 +469,6 @@ export const mr: LanguageTranslation = {
             cancel: 'रद्द करा',
         },
 
-        star_us_dialog: {
-            title: 'आम्हाला सुधारण्यास मदत करा!',
-            description:
-                'तुम्हाला GitHub वर आम्हाला स्टार करायचे आहे का? हे फक्त एक क्लिक दूर आहे!',
-            close: 'आता नाही',
-            confirm: 'नक्कीच!',
-        },
-
         // TODO: Add translations
         export_diagram_dialog: {
             title: 'Export Diagram',
@@ -489,7 +479,7 @@ export const mr: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? the Qubdi support team',
             },
         },
 
@@ -502,7 +492,7 @@ export const mr: LanguageTranslation = {
             error: {
                 title: 'Error importing diagram',
                 description:
-                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? support@chartdb.io',
+                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? the Qubdi support team',
             },
         },
         // TODO: Translate

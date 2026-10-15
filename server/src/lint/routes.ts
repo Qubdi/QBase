@@ -4,7 +4,9 @@ import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import type { Db } from '../db/client.js';
 import { diagrams } from '../db/schema.js';
+import type { Config } from '../config.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
+import { perUserLimit } from '../lib/rate-key.js';
 import { latestSnapshot } from '../diagrams/service.js';
 import {
     RULES,
@@ -22,9 +24,14 @@ const statelessBody = z.object({
     config: z.record(z.unknown()).optional(),
 });
 
+/** Largest diagram the stateless /lint route accepts, in bytes. */
+export const LINT_BODY_LIMIT = 5 * 1024 * 1024;
+
 export const lintRoutes =
-    (db: Db): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'lintRateLimit'>): FastifyPluginAsync =>
     async (app) => {
+        const limit = perUserLimit(config.lintRateLimit);
+
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -35,14 +42,21 @@ export const lintRoutes =
         app.get('/lint/rules', async () => RULES);
 
         /** Lints a diagram sent in the request. Stores nothing. */
-        app.post('/lint', async (req) => {
+        app.post(
+            '/lint',
+            {
+                ...limit,
+                // linting runs synchronously, so the input is capped
+                bodyLimit: LINT_BODY_LIMIT,
+            },
+            async (req) => {
             const body = statelessBody.parse(req.body);
             const config = normalizeConfig(body.config);
             const findings = lint(body.diagram as LintInput, config);
             return { findings, summary: summarizeFindings(findings) };
         });
 
-        app.get('/diagrams/:id/lint', async (req, reply) => {
+        app.get('/diagrams/:id/lint', limit, async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const { source } = lintQuery.parse(req.query);
             const role = await getRole(db, id, req.user!.id);

@@ -4,9 +4,12 @@ import { auditLog, comments } from '../src/db/schema.js';
 import {
     as,
     createTestApp,
+    projectFor,
     registerUser,
     type TestCtx,
+    withBase,
     type TestUser,
+    grant,
 } from './helpers.js';
 
 const table = (id: string, fieldIds: string[] = []) => ({
@@ -37,12 +40,12 @@ describe('comments', () => {
     let id: string;
     let token: string;
 
-    const setContent = (c: object, title = 'Shop') =>
+    const setContent = async (c: object, title = 'Shop') =>
         ctx.app.inject({
             method: 'PUT',
             url: `/diagrams/${id}`,
             headers: as(owner),
-            payload: { title, content: c },
+            payload: await withBase(ctx.app, owner, id, { title, content: c }),
         });
     const publish = async () =>
         (
@@ -93,6 +96,7 @@ describe('comments', () => {
             url: '/diagrams',
             headers: as(owner),
             payload: {
+                projectId: await projectFor(ctx.app),
                 title: 'Shop',
                 content: content([table('t1', ['f1']), table('t2', ['f2'])], ['r1']),
             },
@@ -102,12 +106,7 @@ describe('comments', () => {
             [editor, 'editor'],
             [viewer, 'viewer'],
         ] as const) {
-            await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${id}/members`,
-                headers: as(owner),
-                payload: { email: u.email, role },
-            });
+            await grant(ctx.app, u, role);
         }
         const link = await ctx.app.inject({
             method: 'POST',
@@ -163,7 +162,7 @@ describe('comments', () => {
         });
 
         it('edits, resolves, unresolves and deletes', async () => {
-            const made = (await add(owner, 'table', 't2', 'first')).json();
+            const made = (await add(editor, 'table', 't2', 'first')).json();
             const url = `/diagrams/${id}/comments/${made.id}`;
             const put = await ctx.app.inject({
                 method: 'PUT',
@@ -199,6 +198,56 @@ describe('comments', () => {
             ).toBe(404);
         });
 
+        it('lets only the author or the owner edit or delete, while any editor may resolve', async () => {
+            const second = await registerUser(ctx.app, 'editor2@example.com');
+            await grant(ctx.app, second, 'editor');
+            const mine = (await add(editor, 'table', 't2', 'mine')).json();
+            const url = `/diagrams/${id}/comments/${mine.id}`;
+
+            // another editor: no edit, no delete, but resolving is shared work
+            const put = await ctx.app.inject({
+                method: 'PUT',
+                url,
+                headers: as(second),
+                payload: { body: 'hijacked' },
+            });
+            expect(put.statusCode).toBe(403);
+            const del = await ctx.app.inject({
+                method: 'DELETE',
+                url,
+                headers: as(second),
+            });
+            expect(del.statusCode).toBe(403);
+            const resolve = await ctx.app.inject({
+                method: 'POST',
+                url: `${url}/resolve`,
+                headers: as(second),
+            });
+            expect(resolve.statusCode).toBe(200);
+
+            // the owner may moderate; the comment survived untouched until now
+            const list = await ctx.app.inject({
+                url: `/diagrams/${id}/comments`,
+                headers: as(owner),
+            });
+            expect(
+                list.json().find((c: { id: string }) => c.id === mine.id).body
+            ).toBe('mine');
+            const ownerPut = await ctx.app.inject({
+                method: 'PUT',
+                url,
+                headers: as(owner),
+                payload: { body: 'moderated' },
+            });
+            expect(ownerPut.statusCode).toBe(200);
+            const ownerDel = await ctx.app.inject({
+                method: 'DELETE',
+                url,
+                headers: as(owner),
+            });
+            expect(ownerDel.statusCode).toBe(204);
+        });
+
         it('stops viewers from editing, resolving or deleting', async () => {
             const made = (await add(owner, 'table', 't1', 'locked')).json();
             const url = `/diagrams/${id}/comments/${made.id}`;
@@ -225,7 +274,11 @@ describe('comments', () => {
                     method: 'POST',
                     url: '/diagrams',
                     headers: as(owner),
-                    payload: { title: 'Other', content: content([table('t1')]) },
+                    payload: {
+                        projectId: await projectFor(ctx.app),
+                        title: 'Other',
+                        content: content([table('t1')]),
+                    },
                 })
             ).json().id;
             const made = (await add(owner, 'table', 't1')).json();

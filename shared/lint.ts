@@ -5,7 +5,7 @@ import {
     type DiagramLike,
     type SchemaDesc,
     type TableDesc,
-} from './schema-desc';
+} from './schema-desc.js';
 
 // A rules engine that reviews a diagram and lists problems. lint() is pure and
 // has no dependencies: the editor, the server API and the CLI all call it.

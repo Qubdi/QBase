@@ -377,8 +377,6 @@ export const en = {
             error: {
                 message:
                     'Error generating SQL script. Please try again later or <0>contact us</0>.',
-                description:
-                    'Feel free to use your OPENAI_TOKEN, see the manual <0>here</0>.',
             },
         },
 
@@ -455,13 +453,6 @@ export const en = {
             cancel: 'Cancel',
         },
 
-        star_us_dialog: {
-            title: 'Help us improve!',
-            description:
-                "Would you like to star us on GitHub? It's just a click away!",
-            close: 'Not now',
-            confirm: 'Of course!',
-        },
         export_diagram_dialog: {
             title: 'Export Diagram',
             description: 'Choose the format for export:',
@@ -471,7 +462,7 @@ export const en = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? support@qubdi.dev',
             },
         },
 
@@ -483,7 +474,7 @@ export const en = {
             error: {
                 title: 'Error importing diagram',
                 description:
-                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? support@chartdb.io',
+                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? support@qubdi.dev',
             },
         },
 

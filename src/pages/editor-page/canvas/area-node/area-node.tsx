@@ -8,7 +8,7 @@ import React, {
 import type { NodeProps, Node } from '@xyflow/react';
 import { NodeResizer } from '@xyflow/react';
 import type { Area } from '@/lib/domain/area';
-import { useChartDB } from '@/hooks/use-chartdb';
+import { useDiagram } from '@/hooks/use-diagram';
 import { Input } from '@/components/input/input';
 import { useClickAway, useKeyPressEvent } from 'react-use';
 import {
@@ -41,7 +41,7 @@ export type AreaNodeType = Node<
 
 export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
     ({ selected, dragging, data: { area } }) => {
-        const { updateArea, readonly } = useChartDB();
+        const { updateArea, readonly } = useDiagram();
         const { t } = useTranslation();
         const [editMode, setEditMode] = useState(false);
         const [areaName, setAreaName] = useState(area.name);
@@ -120,7 +120,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
             () =>
                 cn(
                     'relative flex h-full flex-col rounded-md border-2 shadow-sm',
-                    selected ? 'border-pink-600' : 'border-transparent',
+                    selected ? 'border-teal-600' : 'border-transparent',
                     isDiffNewArea
                         ? 'outline outline-[3px] outline-green-500 dark:outline-green-900 outline-offset-[5px]'
                         : '',
@@ -162,7 +162,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
                         <NodeResizer
                             isVisible={focused}
                             lineClassName="!border-4 !border-transparent"
-                            handleClassName="!h-[10px] !w-[10px] !rounded-full !bg-pink-600"
+                            handleClassName="!h-[10px] !w-[10px] !rounded-full !bg-teal-600"
                             minHeight={100}
                             minWidth={100}
                         />
