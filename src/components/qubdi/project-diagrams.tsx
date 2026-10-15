@@ -36,7 +36,7 @@ import {
     toDatabaseEdition,
     toDatabaseType,
 } from '@/lib/qubdi/diagram-summary';
-import { projectDiagramPath } from '@/lib/qubdi/project-path';
+import { getLatestFromServer } from '@/lib/qubdi/get-latest';
 import { clearRemoteId, findLocalId } from '@/lib/qubdi/remote-map';
 
 export interface ProjectDiagramsProps {
@@ -120,16 +120,17 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
         }
     };
 
-    // drop this browser's copy; opening the URL again fetches the server version
     const getLatest = async (d: RemoteDiagramSummary) => {
         const existing = localCopy(d.id);
         if (!existing) return;
         setBusy(true);
         try {
-            await deleteDiagram(existing);
-            clearRemoteId(existing);
-            // the editor caches the open diagram, so reload the page itself
-            window.location.assign(projectDiagramPath(projectSlug, d.id));
+            await getLatestFromServer({
+                localId: existing,
+                remoteId: d.id,
+                projectSlug,
+                deleteLocal: deleteDiagram,
+            });
         } catch (e) {
             setError(errorMessage(e));
             setBusy(false);
