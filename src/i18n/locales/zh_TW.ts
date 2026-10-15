@@ -371,8 +371,7 @@ export const zh_TW: LanguageTranslation = {
             description: '將圖表 Schema 匯出為 {{databaseType}} 格式的腳本',
             close: '關閉',
             loading: {
-                text: 'AI 正在生成 {{databaseType}} 的 SQL...',
-                description: '最多需要 30 秒。',
+                text: '正在為 {{databaseType}} 產生 SQL...',
             },
             error: {
                 message:

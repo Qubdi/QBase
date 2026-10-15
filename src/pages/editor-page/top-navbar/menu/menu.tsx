@@ -163,8 +163,6 @@ export const Menu: React.FC<MenuProps> = () => {
         setShowMiniMapOnCanvas(!showMiniMapOnCanvas);
     }, [showMiniMapOnCanvas, setShowMiniMapOnCanvas]);
 
-    const emojiAI = '✨';
-
     return (
         <Menubar className="h-8 items-center gap-0.5 border-none bg-transparent p-0 shadow-none md:h-9">
             <MenubarMenu>
@@ -246,9 +244,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['postgresql']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                             {databaseType !== DatabaseType.MYSQL ? (
@@ -258,9 +253,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['mysql']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                             {databaseType !== DatabaseType.SQL_SERVER ? (
@@ -270,9 +262,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['sql_server']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                             {databaseType !== DatabaseType.MARIADB ? (
@@ -282,9 +271,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['mariadb']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                             {databaseType !== DatabaseType.SQLITE ? (
@@ -294,9 +280,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['sqlite']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                         </MenubarSubContent>

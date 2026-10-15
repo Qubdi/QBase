@@ -375,8 +375,7 @@ export const tr: LanguageTranslation = {
                 'Diyagram şemanızı {{databaseType}} betiğine dışa aktarın',
             close: 'Kapat',
             loading: {
-                text: 'AI, SQL oluşturuyor {{databaseType}}...',
-                description: 'Bu işlem en fazla 30 saniye sürecektir.',
+                text: '{{databaseType}} için SQL oluşturuluyor...',
             },
             error: {
                 message:

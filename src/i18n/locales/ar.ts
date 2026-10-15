@@ -374,8 +374,7 @@ export const ar: LanguageTranslation = {
                 '{{databaseType}} صدّر مخطط الرسم البياني إلى برنامج نصي لـ',
             close: 'إغلاق',
             loading: {
-                text: '...{{databaseType}} ل SQL يقوم الذكاء الاصطناعي بإنشاء',
-                description: 'هذا قد يستغرق 30 ثانية',
+                text: 'جارٍ إنشاء SQL لـ {{databaseType}}...',
             },
             error: {
                 message:

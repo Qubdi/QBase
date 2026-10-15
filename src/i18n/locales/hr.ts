@@ -375,8 +375,7 @@ export const hr: LanguageTranslation = {
                 'Izvezite shemu vašeg dijagrama u {{databaseType}} skriptu',
             close: 'Zatvori',
             loading: {
-                text: 'AI generira SQL za {{databaseType}}...',
-                description: 'Ovo bi trebalo potrajati do 30 sekundi.',
+                text: 'Generiranje SQL-a za {{databaseType}}...',
             },
             error: {
                 message:

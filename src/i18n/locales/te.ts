@@ -381,8 +381,7 @@ export const te: LanguageTranslation = {
                 'మీ చిత్ర స్కీమాను {{databaseType}} స్క్రిప్ట్‌గా ఎగుమతి చేయండి',
             close: 'మూసి వేయండి',
             loading: {
-                text: '{{databaseType}} కోసం SQL ను ఉత్పత్తి చేయడంలో AI',
-                description: 'ఇది 30 సెకన్లు పడుతుంది.',
+                text: '{{databaseType}} కోసం SQL రూపొందించబడుతోంది...',
             },
             error: {
                 message:

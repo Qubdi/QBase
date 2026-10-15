@@ -382,8 +382,7 @@ export const es: LanguageTranslation = {
                 'Exporta el esquema de tu diagrama a un script {{databaseType}}',
             close: 'Cerrar',
             loading: {
-                text: 'La IA está generando SQL para {{databaseType}}...',
-                description: 'Esto debería tomar hasta 30 segundos.',
+                text: 'Generando SQL para {{databaseType}}...',
             },
             error: {
                 message:

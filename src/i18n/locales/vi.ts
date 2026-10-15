@@ -378,8 +378,7 @@ export const vi: LanguageTranslation = {
             description: 'Xuất sơ đồ của bạn sang {{databaseType}}',
             close: 'Đóng',
             loading: {
-                text: 'AI đang tạo SQL cho {{databaseType}}...',
-                description: 'Việc này có thể mất khoảng 30 giây.',
+                text: 'Đang tạo SQL cho {{databaseType}}...',
             },
             error: {
                 message:

@@ -371,8 +371,7 @@ export const en = {
                 'Export your diagram schema to {{databaseType}} script',
             close: 'Close',
             loading: {
-                text: 'AI is generating SQL for {{databaseType}}...',
-                description: 'This should take up to 30 seconds.',
+                text: 'Generating SQL for {{databaseType}}...',
             },
             error: {
                 message:

@@ -383,8 +383,7 @@ export const de: LanguageTranslation = {
                 'Exportieren Sie das Schema Ihres Diagramms in ein {{databaseType}} Skript',
             close: 'Schließen',
             loading: {
-                text: 'Die KI generiert SQL für {{databaseType}}...',
-                description: 'Dies sollte bis zu 30 Sekunden dauern.',
+                text: 'SQL für {{databaseType}} wird erstellt...',
             },
             error: {
                 message:

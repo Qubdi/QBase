@@ -378,8 +378,7 @@ export const id_ID: LanguageTranslation = {
             description: 'Ekspor skema diagram Anda ke skrip {{databaseType}}',
             close: 'Tutup',
             loading: {
-                text: 'AI sedang membuat SQL untuk {{databaseType}}...',
-                description: 'Ini akan memakan waktu hingga 30 detik.',
+                text: 'Membuat SQL untuk {{databaseType}}...',
             },
             error: {
                 message:

@@ -380,8 +380,7 @@ export const uk: LanguageTranslation = {
                 'Експортуйте свою схему діаграми в {{databaseType}} сценарій',
             close: 'Закрити',
             loading: {
-                text: 'ШІ створює SQL для {{databaseType}}…',
-                description: 'Це має зайняти до 30 секунд.',
+                text: 'Створення SQL для {{databaseType}}...',
             },
             error: {
                 message:

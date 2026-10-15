@@ -383,8 +383,7 @@ export const ja: LanguageTranslation = {
                 'ダイアグラムスキーマを{{databaseType}}スクリプトにエクスポート',
             close: '閉じる',
             loading: {
-                text: 'AIが{{databaseType}}のSQLを生成中...',
-                description: 'これには最大30秒かかります。',
+                text: '{{databaseType}}のSQLを生成中...',
             },
             error: {
                 message:
