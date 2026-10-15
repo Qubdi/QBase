@@ -9,7 +9,7 @@ import {
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
 import type { DBField } from '@/lib/domain/db-field';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
+import { collectForeignKeys } from '../foreign-keys';
 
 function parseMySQLDefault(field: DBField): string {
     if (!field.default) {
@@ -441,75 +441,27 @@ export function exportMySQL({
     if (relationships.length > 0) {
         sqlScript += '\n-- Foreign key constraints\n';
 
-        const foreignKeys = relationships
-            .map((r: DBRelationship) => {
-                const sourceTable = tables.find(
-                    (t) => t.id === r.sourceTableId
-                );
-                const targetTable = tables.find(
-                    (t) => t.id === r.targetTableId
-                );
-
-                if (
-                    !sourceTable ||
-                    !targetTable ||
-                    sourceTable.isView ||
-                    targetTable.isView
-                ) {
-                    return '';
-                }
-
-                const sourceField = sourceTable.fields.find(
-                    (f) => f.id === r.sourceFieldId
-                );
-                const targetField = targetTable.fields.find(
-                    (f) => f.id === r.targetFieldId
-                );
-
-                if (!sourceField || !targetField) {
-                    return '';
-                }
-
-                // Determine which table should have the foreign key based on cardinality
-                // - FK goes on the "many" side when cardinalities differ
-                // - FK goes on target when cardinalities are the same (one:one, many:many)
-                let fkTable, fkField, refTable, refField;
-
-                if (
-                    r.sourceCardinality === 'many' &&
-                    r.targetCardinality === 'many'
-                ) {
-                    // Many-to-many relationships need a junction table, skip
-                    return '';
-                } else if (
-                    r.sourceCardinality === 'many' &&
-                    r.targetCardinality === 'one'
-                ) {
-                    // FK goes on source table (the many side)
-                    fkTable = sourceTable;
-                    fkField = sourceField;
-                    refTable = targetTable;
-                    refField = targetField;
-                } else {
-                    // All other cases: FK goes on target table
-                    fkTable = targetTable;
-                    fkField = targetField;
-                    refTable = sourceTable;
-                    refField = sourceField;
-                }
-
+        const foreignKeys = collectForeignKeys({ tables, relationships })
+            .map((k) => {
+                const { fkTable, refTable } = k;
                 const fkTableName = fkTable.schema
                     ? `\`${fkTable.schema}\`.\`${fkTable.name}\``
                     : `\`${fkTable.name}\``;
                 const refTableName = refTable.schema
                     ? `\`${refTable.schema}\`.\`${refTable.name}\``
                     : `\`${refTable.name}\``;
+                const fkColumns = k.fkFields
+                    .map((f) => `\`${f.name}\``)
+                    .join(', ');
+                const refColumns = k.refFields
+                    .map((f) => `\`${f.name}\``)
+                    .join(', ');
 
                 // Create a descriptive constraint name
-                const constraintName = `\`fk_${fkTable.name}_${fkField.name}\``;
+                const constraintName = `\`fk_${fkTable.name}_${k.fkFields.map((f) => f.name).join('_')}\``;
 
                 // MySQL supports ON DELETE and ON UPDATE actions
-                return `ALTER TABLE ${fkTableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY(\`${fkField.name}\`) REFERENCES ${refTableName}(\`${refField.name}\`);`;
+                return `ALTER TABLE ${fkTableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY(${fkColumns}) REFERENCES ${refTableName}(${refColumns});`;
             })
             .filter(Boolean); // Remove empty strings
 

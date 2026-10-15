@@ -16,6 +16,7 @@ import {
     supportsCustomTypes,
     supportsCheckConstraints,
 } from '@/lib/domain/database-capabilities';
+import { collectForeignKeys } from './foreign-keys';
 
 // Function to normalize over-escaped default values
 // Handles cases like '''value'' which should be 'value'
@@ -647,72 +648,24 @@ export const exportBaseSQL = ({
         }
 
         // Handle relationships (foreign keys)
-        relationships?.forEach((relationship) => {
-            const sourceTable = nonViewTables.find(
-                (table) => table.id === relationship.sourceTableId
-            );
-            const targetTable = nonViewTables.find(
-                (table) => table.id === relationship.targetTableId
-            );
-
-            const sourceTableField = sourceTable?.fields.find(
-                (field) => field.id === relationship.sourceFieldId
-            );
-            const targetTableField = targetTable?.fields.find(
-                (field) => field.id === relationship.targetFieldId
-            );
-
-            if (
-                sourceTable &&
-                targetTable &&
-                sourceTableField &&
-                targetTableField
-            ) {
-                // Determine which table should have the foreign key based on cardinality
-                // - FK goes on the "many" side when cardinalities differ
-                // - FK goes on target when cardinalities are the same (one:one, many:many)
-                // - Many-to-many needs a junction table, skip for SQL export
-                let fkTable, fkField, refTable, refField;
-
-                if (
-                    relationship.sourceCardinality === 'many' &&
-                    relationship.targetCardinality === 'many'
-                ) {
-                    // Many-to-many relationships need a junction table, skip
-                    return;
-                } else if (
-                    relationship.sourceCardinality === 'many' &&
-                    relationship.targetCardinality === 'one'
-                ) {
-                    // FK goes on source table (the many side)
-                    fkTable = sourceTable;
-                    fkField = sourceTableField;
-                    refTable = targetTable;
-                    refField = targetTableField;
-                } else {
-                    // All other cases: FK goes on target table
-                    // - one:one (same cardinality → target)
-                    // - one:many (target is many side → target)
-                    fkTable = targetTable;
-                    fkField = targetTableField;
-                    refTable = sourceTable;
-                    refField = sourceTableField;
-                }
-
+        collectForeignKeys({ tables: nonViewTables, relationships }).forEach(
+            (k) => {
+                const { fkTable, refTable } = k;
                 const fkTableName = getQuotedTableName(fkTable, isDBMLFlow);
                 const refTableName = getQuotedTableName(refTable, isDBMLFlow);
-                const quotedFkFieldName = getQuotedFieldName(
-                    fkField.name,
-                    isDBMLFlow
-                );
-                const quotedRefFieldName = getQuotedFieldName(
-                    refField.name,
-                    isDBMLFlow
-                );
+                const fkColumns = k.fkFields
+                    .map((f) => getQuotedFieldName(f.name, isDBMLFlow))
+                    .join(', ');
+                const refColumns = k.refFields
+                    .map((f) => getQuotedFieldName(f.name, isDBMLFlow))
+                    .join(', ');
+                const name =
+                    k.name ||
+                    `fk_${fkTable.name}_${k.fkFields.map((f) => f.name).join('_')}`;
 
-                sqlScript += `ALTER TABLE ${fkTableName} ADD CONSTRAINT ${relationship.name} FOREIGN KEY (${quotedFkFieldName}) REFERENCES ${refTableName} (${quotedRefFieldName});\n`;
+                sqlScript += `ALTER TABLE ${fkTableName} ADD CONSTRAINT ${name} FOREIGN KEY (${fkColumns}) REFERENCES ${refTableName} (${refColumns});\n`;
             }
-        });
+        );
     }
 
     return sqlScript;
