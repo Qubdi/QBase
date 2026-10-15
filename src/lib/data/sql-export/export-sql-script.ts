@@ -7,9 +7,10 @@ import { exportPostgreSQL } from './export-per-type/postgresql';
 import { exportSQLite } from './export-per-type/sqlite';
 import { exportMySQL } from './export-per-type/mysql';
 import {
-    exportPostgreSQLToMySQL,
-    exportPostgreSQLToMSSQL,
-} from './cross-dialect';
+    canConvert,
+    convertDiagram,
+    DATABASE_LABEL,
+} from './cross-dialect/convert/convert-schema';
 import { escapeSQLComment } from './export-per-type/common';
 import {
     databaseTypesWithCommentSupport,
@@ -163,7 +164,13 @@ export const exportBaseSQL = ({
     onlyRelationships?: boolean;
     skipFKGeneration?: boolean;
 }): string => {
-    const { tables, relationships } = diagram;
+    const { relationships } = diagram;
+    // foreign key column types are adjusted below: work on a copy, so that
+    // exporting never changes the diagram that is open in the editor
+    const tables = diagram.tables?.map((table) => ({
+        ...table,
+        fields: table.fields.map((field) => ({ ...field })),
+    }));
 
     if (!tables || tables.length === 0) {
         return '';
@@ -185,28 +192,38 @@ export const exportBaseSQL = ({
         }
     }
 
-    // Deterministic cross-dialect exports (PostgreSQL to MySQL/SQL Server)
-    // These provide consistent, predictable output
-    if (!isDBMLFlow && diagram.databaseType === DatabaseType.POSTGRESQL) {
-        if (
-            targetDatabaseType === DatabaseType.MYSQL ||
-            targetDatabaseType === DatabaseType.MARIADB
-        ) {
-            return exportPostgreSQLToMySQL({ diagram, onlyRelationships });
-        }
-        if (targetDatabaseType === DatabaseType.SQL_SERVER) {
-            return exportPostgreSQLToMSSQL({ diagram, onlyRelationships });
-        }
+    // A MySQL diagram is already valid MariaDB
+    if (
+        !isDBMLFlow &&
+        diagram.databaseType === DatabaseType.MYSQL &&
+        targetDatabaseType === DatabaseType.MARIADB
+    ) {
+        return exportMySQL({ diagram, onlyRelationships });
+    }
+
+    // Every other pair between databases that have a converter
+    if (!isDBMLFlow && canConvert(diagram.databaseType, targetDatabaseType)) {
+        return convertDiagram({
+            diagram,
+            targetDatabaseType,
+            onlyRelationships,
+        });
     }
 
     // Filter out the tables that are views
     const nonViewTables = tables.filter((table) => !table.isView);
 
     // Align the data types based on foreign key relationships
-    alignForeignKeyDataTypes(diagram);
+    alignForeignKeyDataTypes({ tables, relationships });
 
     // Initialize the SQL script string
     let sqlScript = '';
+
+    // No converter exists for this pair (Oracle and ClickHouse diagrams): the
+    // types below are copied as they are written, so say so
+    if (!isDBMLFlow && diagram.databaseType !== targetDatabaseType) {
+        sqlScript += `-- ${DATABASE_LABEL[diagram.databaseType]} to ${DATABASE_LABEL[targetDatabaseType]}\n-- WARNING: there is no converter for this pair. Column types and defaults are\n-- copied as written and need to be checked before this script is run.\n\n`;
+    }
 
     // First create the CREATE SCHEMA statements for all the found schemas based on tables
     // Skip schema creation for DBML flow as DBML doesn't support CREATE SCHEMA syntax
@@ -688,9 +705,10 @@ function getMySQLDataTypeSize(type: DataType) {
     );
 }
 
-function alignForeignKeyDataTypes(diagram: Diagram) {
-    const { tables, relationships } = diagram;
-
+function alignForeignKeyDataTypes({
+    tables,
+    relationships,
+}: Pick<Diagram, 'tables' | 'relationships'>) {
     if (
         !tables ||
         tables.length === 0 ||

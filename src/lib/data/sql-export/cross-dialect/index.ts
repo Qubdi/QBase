@@ -4,6 +4,7 @@
  */
 
 import { DatabaseType } from '@/lib/domain/database-type';
+import { canConvert } from './convert/convert-schema';
 
 // Re-export types
 export type {
@@ -29,17 +30,14 @@ export type {
     UnsupportedFeatureType,
 } from './unsupported-features';
 
-/**
- * Supported cross-dialect conversion paths.
- * Maps source database type to an array of supported target database types.
- */
-const CROSS_DIALECT_SUPPORT: Partial<Record<DatabaseType, DatabaseType[]>> = {
-    [DatabaseType.POSTGRESQL]: [
-        DatabaseType.MYSQL,
-        DatabaseType.MARIADB,
-        DatabaseType.SQL_SERVER,
-    ],
-};
+/** The databases a script can be converted to. */
+const CONVERSION_TARGETS: DatabaseType[] = [
+    DatabaseType.POSTGRESQL,
+    DatabaseType.MYSQL,
+    DatabaseType.MARIADB,
+    DatabaseType.SQL_SERVER,
+    DatabaseType.SQLITE,
+];
 
 /**
  * Check if deterministic cross-dialect export is supported from source to target database type.
@@ -52,7 +50,8 @@ const CROSS_DIALECT_SUPPORT: Partial<Record<DatabaseType, DatabaseType[]>> = {
  * ```ts
  * hasCrossDialectSupport(DatabaseType.POSTGRESQL, DatabaseType.MYSQL) // true
  * hasCrossDialectSupport(DatabaseType.POSTGRESQL, DatabaseType.SQL_SERVER) // true
- * hasCrossDialectSupport(DatabaseType.MYSQL, DatabaseType.POSTGRESQL) // false (not yet implemented)
+ * hasCrossDialectSupport(DatabaseType.MYSQL, DatabaseType.POSTGRESQL) // true
+ * hasCrossDialectSupport(DatabaseType.ORACLE, DatabaseType.POSTGRESQL) // false (no converter)
  * ```
  */
 export function hasCrossDialectSupport(
@@ -69,12 +68,7 @@ export function hasCrossDialectSupport(
         return false;
     }
 
-    const supportedTargets = CROSS_DIALECT_SUPPORT[sourceDatabaseType];
-    if (!supportedTargets) {
-        return false;
-    }
-
-    return supportedTargets.includes(targetDatabaseType);
+    return canConvert(sourceDatabaseType, targetDatabaseType);
 }
 
 /**
@@ -86,5 +80,7 @@ export function hasCrossDialectSupport(
 export function getSupportedTargetDialects(
     sourceDatabaseType: DatabaseType
 ): DatabaseType[] {
-    return CROSS_DIALECT_SUPPORT[sourceDatabaseType] ?? [];
+    return CONVERSION_TARGETS.filter((target) =>
+        hasCrossDialectSupport(sourceDatabaseType, target)
+    );
 }
