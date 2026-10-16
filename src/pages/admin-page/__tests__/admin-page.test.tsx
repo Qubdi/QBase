@@ -28,11 +28,14 @@ vi.mock('@/components/logo/logo', () => ({ Logo: () => <span>logo</span> }));
 vi.mock('../projects-panel', () => ({
     ProjectsPanel: () => <div>projects panel</div>,
 }));
+vi.mock('../activity-panel', () => ({
+    ActivityPanel: () => <div>activity panel</div>,
+}));
 vi.mock('../diagrams-panel', () => ({
     DiagramsPanel: () => <div>diagrams panel</div>,
 }));
-vi.mock('../activity-panel', () => ({
-    ActivityPanel: () => <div>activity panel</div>,
+vi.mock('../overview-panel', () => ({
+    OverviewPanel: () => <div>overview panel</div>,
 }));
 vi.mock('../users-panel', () => ({
     UsersPanel: ({ currentUserId }: { currentUserId: string }) => (
@@ -88,10 +91,10 @@ describe('admin panel frame', () => {
     it('sends /admin to the default section', async () => {
         const router = open('/admin');
         expect(
-            await screen.findByRole('heading', { name: 'Projects' })
+            await screen.findByRole('heading', { name: 'Overview' })
         ).toBeTruthy();
-        expect(screen.getByText('projects panel')).toBeTruthy();
-        expect(router.state.location.pathname).toBe('/admin/projects');
+        expect(screen.getByText('overview panel')).toBeTruthy();
+        expect(router.state.location.pathname).toBe('/admin/overview');
     });
 
     it('marks the current section and moves when another is chosen', async () => {
@@ -133,34 +136,28 @@ describe('admin panel frame', () => {
         }
     });
 
-    it('says so on a section that is not built yet', async () => {
-        const unbuilt = ADMIN_SECTIONS.find((s) => !s.built);
-        // once every section is built there is nothing left to say it about
-        if (!unbuilt) return;
-        open(`/admin/${unbuilt.id}`);
-        expect(
-            await screen.findByRole('heading', { name: unbuilt.label })
-        ).toBeTruthy();
-        expect(screen.getByText('This section is not built yet.')).toBeTruthy();
-    });
+    // every section has a page of its own, and shows only that one
+    const PAGES = {
+        overview: 'overview panel',
+        projects: 'projects panel',
+        users: 'users panel for me',
+        diagrams: 'diagrams panel',
+        activity: 'activity panel',
+    } as const;
 
-    it('shows the diagrams page in its section', async () => {
-        open('/admin/diagrams');
-        expect(
-            await screen.findByRole('heading', { name: 'Diagrams' })
-        ).toBeTruthy();
-        expect(screen.getByText('diagrams panel')).toBeTruthy();
-        expect(screen.queryByText('This section is not built yet.')).toBeNull();
-    });
-
-    it('shows the activity page in its section', async () => {
-        open('/admin/activity');
-        expect(
-            await screen.findByRole('heading', { name: 'Activity' })
-        ).toBeTruthy();
-        expect(screen.getByText('activity panel')).toBeTruthy();
-        expect(screen.queryByText('This section is not built yet.')).toBeNull();
-    });
+    it.each(ADMIN_SECTIONS.map((s) => [s.id, s.label] as const))(
+        'shows the %s page in its section',
+        async (id, label) => {
+            open(`/admin/${id}`);
+            expect(
+                await screen.findByRole('heading', { name: label })
+            ).toBeTruthy();
+            expect(screen.getByText(PAGES[id])).toBeTruthy();
+            for (const [other, text] of Object.entries(PAGES)) {
+                if (other !== id) expect(screen.queryByText(text)).toBeNull();
+            }
+        }
+    );
 
     it('shows the missing-page message, without the sections, to a member', async () => {
         state.user = member;
@@ -191,11 +188,11 @@ describe('admin panel frame', () => {
 });
 
 describe('admin sections', () => {
-    it('lands on a section that is built', () => {
-        const landing = ADMIN_SECTIONS.find(
-            (s) => s.id === DEFAULT_ADMIN_SECTION
+    it('lands on the overview, which is one of the sections', () => {
+        expect(DEFAULT_ADMIN_SECTION).toBe('overview');
+        expect(ADMIN_SECTIONS.map((s) => s.id)).toContain(
+            DEFAULT_ADMIN_SECTION
         );
-        expect(landing?.built).toBe(true);
     });
 
     it('finds the section a path belongs to', () => {

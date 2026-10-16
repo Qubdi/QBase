@@ -12,80 +12,22 @@ import { UserPicker } from '@/components/qubdi/user-picker';
 import { useCursorList } from '@/hooks/use-cursor-list';
 import {
     ACTIVITY_GROUP_OPTIONS,
-    describeActivity,
     endOfDay,
     groupByDay,
     startOfDay,
-    type Segment,
 } from '@/lib/qubdi/activity';
 import { api, type ActivityGroup, type ActivityItem } from '@/lib/qubdi/api';
 import { cn } from '@/lib/utils';
+import { ActivitySentence, type Named } from './activity-sentence';
 
 const PAGE_SIZE = 30;
 const NO_USERS: ReadonlySet<string> = new Set();
-
-interface Named {
-    id: string;
-    label: string;
-}
 
 const timeOf = (iso: string) =>
     new Date(iso).toLocaleTimeString(undefined, {
         hour: '2-digit',
         minute: '2-digit',
     });
-
-/** The sentence for one row. The person and the diagram narrow the list when chosen. */
-const Sentence: React.FC<{
-    item: ActivityItem;
-    onPerson: (person: Named) => void;
-    onDiagram: (diagram: Named) => void;
-    /** already narrowed to this person or diagram: nothing more to choose */
-    activeUserId?: string;
-    activeDiagramId?: string;
-}> = ({ item, onPerson, onDiagram, activeUserId, activeDiagramId }) => {
-    const piece = (s: Segment, i: number) => {
-        if (s.kind === 'gone') {
-            return (
-                <span key={i} className="italic text-muted-foreground">
-                    {s.text}
-                </span>
-            );
-        }
-        if (s.kind === 'text') return <span key={i}>{s.text}</span>;
-
-        const { userId, diagramId } = s;
-        const choose =
-            userId && userId !== activeUserId
-                ? () => onPerson({ id: userId, label: s.text })
-                : diagramId && diagramId !== activeDiagramId
-                  ? () => onDiagram({ id: diagramId, label: s.text })
-                  : null;
-        if (!choose) {
-            return (
-                <span key={i} className="break-words font-medium">
-                    {s.text}
-                </span>
-            );
-        }
-        return (
-            <button
-                key={i}
-                type="button"
-                title={
-                    s.userId
-                        ? `Show only what ${s.text} did`
-                        : `Show only the activity on ${s.text}`
-                }
-                className="break-words rounded-sm text-left font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={choose}
-            >
-                {s.text}
-            </button>
-        );
-    };
-    return <span>{describeActivity(item).map(piece)}</span>;
-};
 
 /** Who did what and when, newest first, with filters and "Load more". */
 export const ActivityPanel: React.FC = () => {
@@ -293,7 +235,7 @@ export const ActivityPanel: React.FC = () => {
                                         key={item.id}
                                         className="flex items-baseline justify-between gap-3 border-b px-3 py-2 text-sm last:border-b-0"
                                     >
-                                        <Sentence
+                                        <ActivitySentence
                                             item={item}
                                             onPerson={setPerson}
                                             onDiagram={setDiagram}

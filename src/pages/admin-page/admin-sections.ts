@@ -6,8 +6,6 @@ export interface AdminSectionInfo {
     label: string;
     /** one line under the section's title */
     description: string;
-    /** false until the section's page exists; it shows a placeholder meanwhile */
-    built: boolean;
 }
 
 export const ADMIN_SECTIONS = [
@@ -16,35 +14,30 @@ export const ADMIN_SECTIONS = [
         label: 'Overview',
         description:
             'Totals for users, projects, diagrams and share links, and the latest activity.',
-        built: false,
     },
     {
         id: 'projects',
         label: 'Projects',
         description:
             'Organise diagrams into projects and choose who can access each one.',
-        built: true,
     },
     {
         id: 'users',
         label: 'Users',
         description:
             'Create users, choose who is an admin, and turn accounts on or off.',
-        built: true,
     },
     {
         id: 'diagrams',
         label: 'Diagrams',
         description:
             'Every diagram with its project, owner and share links, so a link can be revoked.',
-        built: true,
     },
     {
         id: 'activity',
         label: 'Activity',
         description:
             'Who did what and when, newest first: publishes, share links and changes to users and projects.',
-        built: true,
     },
 ] as const satisfies readonly AdminSectionInfo[];
 
@@ -53,10 +46,9 @@ export type AdminSectionId = (typeof ADMIN_SECTIONS)[number]['id'];
 export const ADMIN_SECTION_IDS = ADMIN_SECTIONS.map((s) => s.id);
 
 /**
- * Where `/admin` goes. Projects until the Overview page is built (step 5 of the
- * admin plan in TODO.md), so an admin never lands on an empty page.
+ * Where `/admin` goes: the Overview, where an admin starts.
  */
-export const DEFAULT_ADMIN_SECTION: AdminSectionId = 'projects';
+export const DEFAULT_ADMIN_SECTION: AdminSectionId = 'overview';
 
 export const adminPath = (id: AdminSectionId) => `/admin/${id}`;
 

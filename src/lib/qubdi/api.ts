@@ -76,6 +76,35 @@ export interface ProjectMember {
     role: ProjectRole;
 }
 
+/** The figures on the admin Overview. */
+export interface AdminStats {
+    users: {
+        total: number;
+        /** accounts that can sign in */
+        active: number;
+        admins: number;
+        /** people with a live session right now */
+        signedIn: number;
+    };
+    projects: number;
+    diagrams: {
+        total: number;
+        /** diagrams with at least one published version */
+        published: number;
+    };
+    /** share links that can be opened right now */
+    activeLinks: number;
+    /** diagrams someone has open for editing right now */
+    editingNow: number;
+    /** database drift checks run in the last 24 hours */
+    driftChecks24h: number;
+    activity: {
+        timeZone: string;
+        /** events per day, oldest first and today last; saves are not counted */
+        days: { day: string; events: number }[];
+    };
+}
+
 /** A diagram as the admin Diagrams page lists it (never its content). */
 export interface AdminDiagram {
     id: string;
@@ -481,6 +510,12 @@ export function createApi(
             request<{ signedOut: number }>(
                 'DELETE',
                 `/admin/users/${id}/sessions`
+            ),
+        /** `timeZone` makes a "day" on the chart the viewer's own. */
+        adminStats: (timeZone?: string) =>
+            request<AdminStats>(
+                'GET',
+                `/admin/stats${listQuery(undefined, { tz: timeZone })}`
             ),
         adminListDiagrams: (params?: ListParams & { projectId?: string }) =>
             request<Page<AdminDiagram>>(
