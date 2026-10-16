@@ -390,7 +390,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 required={isNew}
                             />
                             <div className="flex flex-wrap gap-4 text-sm">
-                                <label className="flex items-center gap-1">
+                                <label className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
                                         checked={form.ssl}
@@ -400,7 +400,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                     />
                                     Use SSL / TLS
                                 </label>
-                                <label className="flex items-center gap-1">
+                                <label className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
                                         checked={form.trustServerCertificate}

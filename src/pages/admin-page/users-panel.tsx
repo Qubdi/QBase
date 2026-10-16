@@ -132,7 +132,6 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                         type="checkbox"
                         checked={isAdmin}
                         onChange={(e) => setIsAdmin(e.target.checked)}
-                        className="size-4 accent-primary"
                     />
                     Make this user an admin
                 </label>

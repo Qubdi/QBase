@@ -110,6 +110,35 @@
         scrollbar-width: thin;
         scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
     }
+    /* One look for every checkbox. Native inputs are styled here; the Radix
+       <Checkbox> in components/checkbox/checkbox.tsx is styled to match. */
+    input[type='checkbox'] {
+        @apply grid size-4 shrink-0 cursor-pointer appearance-none place-content-center rounded border border-muted-foreground/70 bg-background;
+        @apply enabled:hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background;
+        @apply checked:border-primary checked:bg-primary;
+        @apply disabled:cursor-not-allowed disabled:opacity-50;
+        margin: 0;
+    }
+    /* the tick is a shape filled with a theme colour, so it follows dark mode */
+    input[type='checkbox']::before {
+        content: '';
+        width: 0.625rem;
+        height: 0.625rem;
+        background-color: hsl(var(--primary-foreground));
+        clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        transform: scale(0);
+        transition: transform 120ms ease-out;
+    }
+    input[type='checkbox']:checked::before {
+        transform: scale(1);
+    }
+    label:has(> input[type='checkbox']:not(:disabled)) {
+        cursor: pointer;
+    }
+    label:has(> input[type='checkbox']:disabled) {
+        cursor: not-allowed;
+        color: hsl(var(--muted-foreground));
+    }
     *::-webkit-scrollbar {
         width: 8px;
         height: 8px;
