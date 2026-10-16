@@ -49,7 +49,14 @@ const open = (path: string) => {
     return router;
 };
 
-const nav = () => screen.findByRole('navigation', { name: 'Admin sections' });
+// the first test in the file also pays for loading the lazy route's modules,
+// which can take longer than a second on a busy machine
+const nav = () =>
+    screen.findByRole(
+        'navigation',
+        { name: 'Admin sections' },
+        { timeout: 5000 }
+    );
 
 describe('admin panel frame', () => {
     beforeEach(() => {

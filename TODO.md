@@ -460,6 +460,34 @@ Open questions:
       used by the editor. Drop them (a migration, after exporting any stored comments), or keep
       them for the read-only share viewer?
 
+## In progress: admin Projects page UX
+
+Asked for: "we need better UX for this page" (`/admin/projects`). Done so far (checkpoint):
+
+- The page was one long column: the "New project" form on top, project details next, and the
+  members (the job people actually come here for) below the fold. Now the project's pane has a
+  header (name, description, address, size, Open workspace) and two tabs, **Members** (opens
+  first) and **Settings** (rename, description, delete).
+- **New project** is a button that opens a dialog; the first-run page (no projects) invites the
+  first one with a button.
+- Success toasts for create, add, role change, save and delete; removing a person has an **Undo**
+  toast instead of a confirm dialog.
+- Delete is disabled, with the reason, while the project still holds diagrams (the server refused
+  after the confirm before). Deleting no longer asks for the deleted project's members.
+- The list shows each project's description; an error belongs to the project it happened in; on a
+  phone, choosing a project scrolls its details into view; Settings fields have visible labels;
+  admins are not offered in the "add a person" list (they already have full access).
+
+Still to do / ideas, for the next session:
+
+- [ ] Look at the live page once more (`http://localhost:8080/admin/projects`, light and dark, and
+      at phone width) after the last two tweaks (visible labels, admins hidden); the screenshots
+      were taken just before them.
+- [ ] On a phone the candidate list under "Search users by email" is tall; consider a shorter one.
+- [ ] Open question: should an admin be able to move a diagram to another project from here, so
+      "delete or move them first" has a way to do it? Today only the editor can.
+- [ ] The Users page has the same long-column shape (create form above the table); same treatment?
+
 ## ✅ Done: dragging a table froze the relationship lines (`1582178`)
 
 The user reported that while a table was dragged, its relationship line froze and then jumped

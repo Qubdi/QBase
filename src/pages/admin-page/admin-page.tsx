@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Logo } from '@/components/logo/logo';
 import { Spinner } from '@/components/spinner/spinner';
 import { Button } from '@/components/button/button';
+import { Toaster } from '@/components/toast/toaster';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -29,6 +30,7 @@ const Shell: React.FC<React.PropsWithChildren<{ title?: string }>> = ({
             </Button>
         </nav>
         {children}
+        <Toaster />
     </section>
 );
 

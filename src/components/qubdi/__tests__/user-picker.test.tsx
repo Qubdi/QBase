@@ -69,6 +69,33 @@ describe('UserPicker', () => {
         expect(screen.queryByText('cara@other.io')).toBeNull();
     });
 
+    it('offers admins unless asked to leave them out', async () => {
+        const root = { ...user('9', 'root@corp.io'), isAdmin: true };
+        adminListUsers.mockImplementation(async () =>
+            answer([...everyone, root])
+        );
+        const { unmount } = render(
+            <UserPicker
+                selected={null}
+                onSelect={vi.fn()}
+                excludeIds={new Set()}
+            />
+        );
+        expect(await screen.findByText('root@corp.io')).toBeTruthy();
+        unmount();
+
+        render(
+            <UserPicker
+                selected={null}
+                onSelect={vi.fn()}
+                excludeIds={new Set()}
+                hideAdmins
+            />
+        );
+        expect(await screen.findByText('ann@corp.io')).toBeTruthy();
+        expect(screen.queryByText('root@corp.io')).toBeNull();
+    });
+
     it('searches the server as the admin types', async () => {
         render(
             <UserPicker

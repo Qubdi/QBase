@@ -81,7 +81,7 @@ describe('admin ProjectsPanel paging', () => {
 
     it('asks for five projects at a time', async () => {
         renderPanel();
-        await screen.findByText('Project 1');
+        await within(list()).findByText('Project 1');
         expect(adminListProjects).toHaveBeenCalledWith(
             expect.objectContaining({ page: 1, limit: 5 })
         );
@@ -89,7 +89,7 @@ describe('admin ProjectsPanel paging', () => {
 
     it('shows no more than five projects on a page', async () => {
         renderPanel();
-        await screen.findByText('Project 1');
+        await within(list()).findByText('Project 1');
         expect(names()).toEqual([
             'Project 1',
             'Project 2',
@@ -103,7 +103,7 @@ describe('admin ProjectsPanel paging', () => {
 
     it('moves to the next page of five, then to the short last page', async () => {
         renderPanel();
-        await screen.findByText('Project 1');
+        await within(list()).findByText('Project 1');
         fireEvent.click(screen.getByLabelText('Next page'));
         expect(await screen.findByText('6–10 of 12 projects')).toBeTruthy();
         expect(names()).toEqual([
@@ -126,33 +126,35 @@ describe('admin ProjectsPanel paging', () => {
 
     it('can go back to the previous page', async () => {
         renderPanel();
-        await screen.findByText('Project 1');
+        await within(list()).findByText('Project 1');
         fireEvent.click(screen.getByLabelText('Next page'));
-        await screen.findByText('Project 6');
+        await within(list()).findByText('Project 6');
         fireEvent.click(screen.getByLabelText('Previous page'));
         expect(await screen.findByText('1–5 of 12 projects')).toBeTruthy();
     });
 
     it('keeps the chosen project open while another page is shown', async () => {
         renderPanel();
-        await screen.findByText('Project 1');
-        fireEvent.click(screen.getByText('Project 2').closest('button')!);
-        expect(
-            (screen.getByLabelText('Project name') as HTMLInputElement).value
-        ).toBe('Project 2');
+        await within(list()).findByText('Project 1');
+        fireEvent.click(
+            within(list()).getByText('Project 2').closest('button')!
+        );
+        const shown = () =>
+            screen
+                .getByRole('region', { name: /^Project / })
+                .querySelector('h2')?.textContent;
+        expect(shown()).toBe('Project 2');
         fireEvent.click(screen.getByLabelText('Next page'));
-        await screen.findByText('Project 6');
-        // Project 2 is no longer in the list, but it is still the one being edited
-        expect(
-            (screen.getByLabelText('Project name') as HTMLInputElement).value
-        ).toBe('Project 2');
+        await within(list()).findByText('Project 6');
+        // Project 2 is no longer in the list, but it is still the one being shown
+        expect(shown()).toBe('Project 2');
     });
 
     it('searches from the first page, still five at a time', async () => {
         renderPanel();
-        await screen.findByText('Project 1');
+        await within(list()).findByText('Project 1');
         fireEvent.click(screen.getByLabelText('Next page'));
-        await screen.findByText('Project 6');
+        await within(list()).findByText('Project 6');
         fireEvent.change(screen.getByLabelText('Search projects'), {
             target: { value: 'project 1' },
         });
