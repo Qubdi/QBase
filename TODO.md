@@ -401,9 +401,20 @@ Query rules for every new endpoint:
        an audit insert 0.75 to 0.73 ms (no extra cost from the fifth index).
 2. [ ] **Server groundwork**: audit `meta` and the routes that write it; `users.last_login_at`;
        the new `sessions` columns with the throttled `last_seen_at`.
-3. [ ] **Admin shell**: left sidebar (Overview, Projects, Users, Diagrams, Activity) that becomes
+3. [x] **Admin shell**: left sidebar (Overview, Projects, Users, Diagrams, Activity) that becomes
        a top bar on small screens, routes `/admin/:section`, Projects and Users moved in as they
-       are.
+       are. Notes:
+       - The section paths are fixed child routes of `admin` (`adminRoute` in
+         `pages/admin-page/admin-route.tsx`), not a `:section` parameter: the editor has a
+         `:projectSlug/diagrams` route and a parameter here would tie with it, so `/admin/diagrams`
+         could be read as a project called "admin". A test guards this.
+       - `/admin` goes to Projects until Overview exists. When step 5 ships, change
+         `DEFAULT_ADMIN_SECTION` in `admin-sections.ts` to `overview`; a test fails if the default
+         is a section that is not built.
+       - Overview, Diagrams and Activity show "This section is not built yet." Set `built: true`
+         in `admin-sections.ts` and add the page to `AdminSection` as each one ships.
+       - On a phone the row of sections scrolls sideways and keeps the current one in view.
+       - Checked in headless Chromium against a throwaway stack: light and dark, 1280 and 390 px.
 4. [ ] **Activity**: `GET /admin/audit` with cursor paging and filters (action group, user,
        diagram, date range); a list with readable lines ("Anna published Orders v3"), load more.
 5. [ ] **Overview**: `GET /admin/stats` (users total / active / admins, projects, diagrams,

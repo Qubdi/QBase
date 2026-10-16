@@ -1,25 +1,24 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Logo } from '@/components/logo/logo';
 import { Spinner } from '@/components/spinner/spinner';
 import { Button } from '@/components/button/button';
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/tabs/tabs';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { ProjectsPanel } from './projects-panel';
-import { UsersPanel } from './users-panel';
+import { AdminNav } from './admin-nav';
+import { sectionForPath } from './admin-sections';
 
-const Shell: React.FC<React.PropsWithChildren> = ({ children }) => (
+const Shell: React.FC<React.PropsWithChildren<{ title?: string }>> = ({
+    title,
+    children,
+}) => (
     <section className="flex min-h-screen w-screen flex-col bg-background">
         <Helmet>
-            <title>QubdiDB - Admin</title>
+            <title>
+                {title ? `QubdiDB - Admin - ${title}` : 'QubdiDB - Admin'}
+            </title>
         </Helmet>
         <nav className="flex h-12 items-center justify-between border-b bg-background/80 px-4 backdrop-blur">
             <Link to="/" className="flex h-full items-center">
@@ -33,8 +32,14 @@ const Shell: React.FC<React.PropsWithChildren> = ({ children }) => (
     </section>
 );
 
-const AdminContent: React.FC = () => {
+/**
+ * The admin panel's frame: the sections on the left (a row on small screens),
+ * the section's title, and the section itself in the outlet.
+ */
+export const AdminLayout: React.FC = () => {
     const { enabled, user } = useQubdi();
+    const { pathname } = useLocation();
+    const section = sectionForPath(pathname);
 
     if (user === undefined && enabled) {
         return (
@@ -61,26 +66,23 @@ const AdminContent: React.FC = () => {
     }
 
     return (
-        <Shell>
-            <main className="mx-auto w-full max-w-5xl px-4 py-8">
-                <h1 className="font-primary text-2xl font-bold">Admin</h1>
-                <p className="mb-6 text-sm text-muted-foreground">
-                    Create users, organise diagrams into projects, and choose
-                    who can access each project.
-                </p>
-                <Tabs defaultValue="projects">
-                    <TabsList>
-                        <TabsTrigger value="projects">Projects</TabsTrigger>
-                        <TabsTrigger value="users">Users</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="projects" className="mt-6">
-                        <ProjectsPanel />
-                    </TabsContent>
-                    <TabsContent value="users" className="mt-6">
-                        <UsersPanel currentUserId={user.id} />
-                    </TabsContent>
-                </Tabs>
-            </main>
+        <Shell title={section?.label}>
+            <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 md:flex-row md:gap-8 md:py-8">
+                <AdminNav />
+                <main className="min-w-0 max-w-5xl flex-1">
+                    {section ? (
+                        <header className="mb-6">
+                            <h1 className="font-primary text-2xl font-bold">
+                                {section.label}
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                {section.description}
+                            </p>
+                        </header>
+                    ) : null}
+                    <Outlet />
+                </main>
+            </div>
         </Shell>
     );
 };
@@ -88,7 +90,7 @@ const AdminContent: React.FC = () => {
 export const AdminPage: React.FC = () => (
     <LocalConfigProvider>
         <ThemeProvider>
-            <AdminContent />
+            <AdminLayout />
         </ThemeProvider>
     </LocalConfigProvider>
 );

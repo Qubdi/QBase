@@ -5,6 +5,7 @@ import type { TemplatePageLoaderData } from './pages/template-page/template-page
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
 import { QUBDI_BACKEND_ENABLED } from './lib/qubdi/config';
+import { adminRoute } from './pages/admin-page/admin-route';
 
 const routes: RouteObject[] = [
     // With a server the home route is the project picker (nothing exists
@@ -47,15 +48,7 @@ const routes: RouteObject[] = [
             };
         },
     })),
-    {
-        path: 'admin',
-        async lazy() {
-            const { AdminPage } = await import('./pages/admin-page/admin-page');
-            return {
-                element: <AdminPage />,
-            };
-        },
-    },
+    adminRoute,
     {
         path: 's/:token',
         async lazy() {
