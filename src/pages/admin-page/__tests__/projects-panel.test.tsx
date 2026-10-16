@@ -106,16 +106,21 @@ describe('admin ProjectsPanel paging', () => {
         await within(list()).findByText('Project 1');
         fireEvent.click(screen.getByLabelText('Next page'));
         expect(await screen.findByText('6–10 of 12 projects')).toBeTruthy();
-        expect(names()).toEqual([
-            'Project 6',
-            'Project 7',
-            'Project 8',
-            'Project 9',
-            'Project 10',
-        ]);
+        // the counter moves at once; the rows follow when they arrive
+        await waitFor(() =>
+            expect(names()).toEqual([
+                'Project 6',
+                'Project 7',
+                'Project 8',
+                'Project 9',
+                'Project 10',
+            ])
+        );
         fireEvent.click(screen.getByLabelText('Next page'));
         expect(await screen.findByText('11–12 of 12 projects')).toBeTruthy();
-        expect(names()).toEqual(['Project 11', 'Project 12']);
+        await waitFor(() =>
+            expect(names()).toEqual(['Project 11', 'Project 12'])
+        );
         expect(
             (screen.getByLabelText('Next page') as HTMLButtonElement).disabled
         ).toBe(true);

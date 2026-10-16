@@ -79,10 +79,16 @@ export const ProjectsPanel: React.FC = () => {
         [list.items, selectedId, selectedCache]
     );
 
-    // open the first project once the list arrives
+    // Open the first project once the list arrives, and again when the open one
+    // is gone. The updates are functional: this effect runs after the render it
+    // belongs to, and a project the person chose in between must not be replaced
+    // by the first one because this render still saw "nothing chosen".
     useEffect(() => {
-        if (!selectedId && list.items.length > 0) choose(list.items[0]);
-    }, [selectedId, list.items, choose]);
+        const first = list.items[0];
+        if (!first) return;
+        setSelectedId((current) => current ?? first.id);
+        setSelectedCache((current) => current ?? first);
+    }, [selectedId, list.items]);
 
     const reloadMembers = useCallback(async (id: string | null) => {
         if (!id) {
