@@ -51,6 +51,39 @@ Existing items this rule also picks up: the `comments` table, its enum and its r
 used by the UI (the Comments panel was removed); decide whether to drop them or keep them
 (open question in the admin plan).
 
+## Backlog: editor UI changes
+
+Three small, separate UI tasks. Nothing started yet. None touches the database, so the model
+checklist above does not apply.
+
+1. [ ] **UI change for the Tables visuals.** Rework how tables look and are laid out. Read from the
+       code: the table on the canvas is `canvas/table-node/table-node.tsx` (with
+       `table-node-field.tsx` for each row), the list in the side panel is
+       `side-panel/tables-section/tables-section.tsx`, and the display switches are in
+       `side-panel/visuals-section/visuals-section.tsx` and the View menu. Light and dark, and
+       keep dragging smooth (see the Done item on the relationship lines: the reduced-motion rule
+       must stay `transition: none`).
+2. [ ] **UI change for the Lint settings.** Rework the Lint settings dialog
+       (`components/qubdi/lint-settings-dialog.tsx`, opened from the gear in
+       `components/qubdi/lint-control.tsx`). Settings stay in the browser per diagram
+       (`lib/qubdi/lint-config-store.ts`), so linting keeps working offline.
+3. [ ] **Remove "All Databases..." and "New..." from the Actions menu**
+       (`pages/editor-page/top-navbar/menu/menu.tsx`, keys `menu.actions.new` and
+       `menu.actions.browse` in `i18n/locales/en.ts`). The sidebar's New and Open buttons
+       (`editor_sidebar.new_diagram`, `editor_sidebar.browse`) stay, so both are still reachable.
+       Remove the two keys from every locale file if a test or the type requires it; check that
+       no test looks for the menu entries.
+
+Open questions:
+
+- [ ] Tables visuals: which part, exactly? The table on the canvas, the Tables list in the side
+      panel, or the Visuals tab? And what should change (colours, spacing, field rows, a compact
+      mode)? A screenshot or a sketch would settle it.
+- [ ] Lint settings: what is wrong with the dialog today, and what should it look like?
+- [ ] The "Open" keyboard shortcut (`KeyboardShortcutAction.OPEN_DIAGRAM`, shown next to "All
+      Databases..."): keep it working with the menu entry gone? (default: yes, it still opens the
+      same dialog)
+
 ## Backlog: real-time co-editing
 
 Several people edit the same diagram at the same time and see each other's changes live. This is
@@ -430,12 +463,11 @@ Query rules for every new endpoint:
          `pages/admin-page/admin-route.tsx`), not a `:section` parameter: the editor has a
          `:projectSlug/diagrams` route and a parameter here would tie with it, so `/admin/diagrams`
          could be read as a project called "admin". A test guards this.
-       - `/admin` goes to Projects until Overview exists. When step 5 ships, change
-         `DEFAULT_ADMIN_SECTION` in `admin-sections.ts` to `overview`; a test fails if the default
-         is a section that is not built.
-       - Overview and Diagrams show "This section is not built yet." (Activity was the first to
-         be built, in step 4.) Set `built: true` in `admin-sections.ts` and add the page to
-         `AdminSection` as each one ships.
+       - `/admin` went to Projects until Overview existed; step 5 made it `overview`
+         (`DEFAULT_ADMIN_SECTION` in `admin-sections.ts`).
+       - Sections not built yet showed "This section is not built yet." and had a `built` flag.
+         Steps 4 to 6 built the last three, so the flag and the placeholder were removed; a
+         section added to `ADMIN_SECTIONS` without a page is now a type error.
        - On a phone the row of sections scrolls sideways and keeps the current one in view.
        - Checked in headless Chromium against a throwaway stack: light and dark, 1280 and 390 px.
 4. [x] **Activity**: `GET /admin/audit` with cursor paging and filters (action group, user,
@@ -473,15 +505,130 @@ Query rules for every new endpoint:
          because it walks the newest rows until it has 30 matches. Re-measure on real data.
        - Left for later: filtering by the person an admin acted on (not only who acted); CSV export
          (open question below).
-5. [ ] **Overview**: `GET /admin/stats` (users total / active / admins, projects, diagrams,
+5. [x] **Overview**: `GET /admin/stats` (users total / active / admins, projects, diagrams,
        published, active share links, editing right now, drift checks in the last 24 hours,
        activity over 7 days); cards plus recent activity.
-6. [ ] **Diagrams and sharing**: `GET /admin/diagrams` (paged, search by title, filter by
+       No migration: every figure is answered from an index or a small table. Notes:
+       - What the figures mean: users *active* can sign in; *admins* is every account with the
+         admin flag; *signed in* is people with a live session; a diagram is *published* when it
+         has a snapshot; a share link is *open* by the one rule in `share/active.ts` (not
+         revoked, not expired, not off); *editing now* is a lock whose lease has not run out.
+       - Drift checks in 24 hours are the `drift.check` audit rows. A real check writes one and a
+         reused report (the check made on opening a diagram) is not a check and writes none, so
+         this equals the number of reports made, and it reads `audit_log_action_at_idx` instead of
+         scanning `drift_reports` (no index on `run_at`, and large `jsonb` per row). Revisit if a
+         scheduled check (the `schedule` trigger exists but nothing creates it) is ever added:
+         it must write the audit row too.
+       - The chart is events per day for seven days, saves left out: they are most of the table
+         and only say how long a diagram was open. The exclusion is in the query (an `in` list of
+         every other action, built from `AUDIT_ACTIONS`, so a new action is counted), which lets it
+         use the action index and never walk the saves. A day is the viewer's own: the page sends
+         its time zone (`?tz=Asia/Tbilisi`), checked against the list the runtime knows (400
+         otherwise), and a zone the database does not know falls back to UTC (the response says
+         which was used). Every one of the seven days is in the answer, empty ones as 0.
+       - Measured on a throwaway Postgres (2,000 users, 1,500 sessions, 50,000 diagrams, 30,000
+         snapshots, 5,000 share links, 300,000 audit rows of which 85% saves),
+         `EXPLAIN (ANALYZE, BUFFERS)`: users 0.4 ms; signed in 1.4 ms; projects 0.1 ms;
+         diagrams 4.6 ms (index only); published diagrams 7 ms (index only on
+         `snapshots_diagram_version_idx`); open links 1.2 ms (a scan of 5,000 rows, so no partial
+         index yet: the step 1 note said to add one only if needed); editing now 0.07 ms; drift
+         checks 1.7 ms; the chart 16 ms and 2,887 buffers for 10,226 events (counting saves too
+         would read 60,426 rows and take 36 ms, and the gap grows with real volume).
+       - The page: six tiles that lead to the page with the detail; a column chart of the week
+         (one series, so no legend: the title says what it is; thin columns, a hairline grid, the
+         busiest day labelled, every day in a tooltip that opens on hover and on keyboard focus,
+         and a table view with the same numbers); and the latest eight events as sentences, from
+         the Activity endpoint with `saves=hide`, so there is no second endpoint. Refresh keeps
+         what is on screen, dimmed, and the figures and the events fail separately.
+       - `/admin` now lands on the Overview. All five sections are built, so the `built` flag and
+         the "not built yet" placeholder are gone; a section added to `ADMIN_SECTIONS` without a
+         page is a type error.
+       - Left for later: change against the previous week, and figures per project.
+6. [x] **Diagrams and sharing**: `GET /admin/diagrams` (paged, search by title, filter by
        project; title, project, owner, updated, published version, who is editing, active links);
        list and revoke share links.
-7. [ ] **Stronger user management**: last sign-in column; a user's sessions and "sign out
+       No migration. Notes:
+       - `GET /admin/diagrams?page&limit&q&projectId`: newest change first (ties by id, so a page
+         never repeats a row), at most 100 a page, `q` matches the title with `%` and `_` taken
+         literally. Each row has the project's name and address (the title links into the editor),
+         the owner, when it changed, the newest published version, who is editing (a lock whose
+         lease has not run out) and how many share links are open. It reads named columns only,
+         never `content`; the extras come from lookups by id for the page's rows (projects and
+         users by primary key, `snapshots_diagram_version_idx`, the lock table and
+         `share_links_diagram_idx`), not a join every row pays for.
+       - "Open" is one rule, `activeLinkSql` next to `linkStatus` (`share/active.ts`), and a test
+         holds it equal to `checkLinkUsable` over every combination of revoked, expired, off and
+         who can open it. The Overview counts with the same rule.
+       - `GET /admin/diagrams/:id/share-links` gives every link of a diagram, newest first, with its
+         state, access, expiry and who made it (null once that account is deleted). It never gives
+         the token or its hash: the address is shown once, to its maker, and not stored, so an
+         admin can end a link but cannot read where it points. `DELETE .../:linkId` revokes it at
+         once and tells anyone watching it live; it needs no project membership, because a leaked
+         link is when the owner may not be around. It answers `404` for a link that belongs to
+         another diagram, and two admins revoking together record one `share.revoke` row (the
+         update is conditional on "not revoked yet", and only the one that wins records it).
+       - The page: a title search, a project filter (a searchable list read from the server a page
+         at a time, so it works with any number of projects), the table, and a dialog per diagram
+         listing its links with Revoke (a second click on the row confirms; revoked links are
+         shown muted and cannot be revoked again).
+       - Measured on a throwaway Postgres with 50,000 diagrams holding 195 MB of out-of-line
+         content (never read: the heap scanned is 16 MB, 2,086 buffers), `EXPLAIN (ANALYZE,
+         BUFFERS)`: the count 4.8 ms; page 1 17.7 ms; the last page (2,500) 42.6 ms, because the
+         sort spills to disk; a title search 26 ms plus 24.6 ms for its count; one project (250
+         diagrams) 1.3 ms; every lookup under 100 buffers.
+       - **No `updated_at` index**, as step 1 decided: an index that contains it made none of
+         3,000 autosaves an in-place update. At 50,000 diagrams the sort costs 18 ms for the
+         first page, which is fine. Re-measure at about 200,000 diagrams; past that, keep the
+         recency in a separate small table (one row per diagram) rather than index this column.
+       - Left for later: releasing a stuck editing lock from here (open question below), and
+         revoking every link of a diagram in one click.
+7. [x] **Stronger user management**: last sign-in column; a user's sessions and "sign out
        everywhere" (`DELETE /admin/users/:id/sessions`); bulk enable, disable and delete with
        the existing guard rails (not yourself, never the last active admin).
+       No migration: `users.last_login_at` and the `sessions` columns came with step 2, and
+       `sessions_user_idx` and `diagrams_owner_idx` from step 1 serve the new queries. Notes:
+       - `GET /admin/users` gains `lastLoginAt` and `lastActiveAt` (the last use of the person's
+         live session; null means not signed in). The second is one lookup of the page's sessions
+         by `user_id`, not a join every row pays for.
+       - A person has one live session (`createSession` ends the one before), so "a user's
+         sessions" is a list of at most one. `GET /admin/users/:id/sessions` still returns an
+         array, so it does not change if that rule ever does. It gives when and which browser
+         (`userAgent`), never the session id, which is the hash of the cookie.
+       - `DELETE /admin/users/:id/sessions` ends the sessions and lets go of the diagrams the
+         person was editing, and answers `{ signedOut }`. It refuses the caller
+         (`cannot_sign_out_self`: use the ordinary Sign out), and signing out someone who was not
+         signed in writes no audit row. New audit action `user.sign_out`, worded in Activity
+         ("anna@corp.io signed bob@corp.io out everywhere").
+       - `POST /admin/users/bulk { action: enable | disable | delete, ids }` (1 to 100 ids): all
+         or nothing, under the same admin-set lock as the single routes. The caller in a disable
+         or delete is `400 cannot_disable_self` / `cannot_delete_self`; a request that would leave
+         no active admin is `400 last_admin`; an account already in the wanted state, or gone, is
+         counted as `unchanged` and gets no audit row. One audit row per account changed, the same
+         actions and `meta` as the single routes. A delete hands the diagrams to the caller, as the
+         single delete does (they share `removeUsers`).
+       - The caller cannot be in a bulk disable or delete and is an active admin, so "last admin"
+         can only come up when another admin turns the caller off while the request waits for the
+         lock. The plain two-admins race does not reach the check (the loser has no session left
+         and gets `401` first: with the check removed that test still passed), so a test holds the
+         lock, turns the caller off meanwhile, and expects `last_admin`. It fails with the check
+         removed.
+       - The page: a checkbox column with select all on the page (the caller cannot be ticked),
+         a bar with Enable (at once), Disable and Delete (each asks first and says what will
+         happen), a Last sign-in column ("3 hours ago", the exact time on hover, "Never", and a
+         "Signed in" tag), and a Sessions button that opens a dialog (browser as "Chrome on
+         Windows", signed in, last active, Sign out everywhere). What is ticked is dropped when the
+         page, search or filter changes, so "3 selected" never counts rows out of sight. The delete
+         dialog used to say personal diagrams are deleted; they are not, they pass to the admin, so
+         the text now says that.
+       - Measured on a throwaway Postgres with 5,000 users, 4,750 sessions and 5,000 diagrams,
+         `EXPLAIN (ANALYZE, BUFFERS)`: the page of 100 users as before 360 buffers, and the new
+         sessions lookup for those 100 people 78; a bulk disable of 100 about 1,400 buffers for
+         the update and 173 for the sessions; a bulk delete of 100 with every cascade 19 ms, the
+         diagram hand-over using `diagrams_owner_idx` (203 buffers). The planner reads `users` and
+         `sessions` whole at this size (about 60 to 80 pages), which is the cheaper plan; the
+         indexes take over as they grow.
+       - Left for later: ticking across pages ("all 4,000 matching"), and forcing a password
+         change (the password-rules plan).
 8. [ ] **Every step ends with**: server and frontend tests, lint, type check and the full suite in
        a container, light and dark screenshots for UI steps, the database checklist at the top of
        this file when there is a migration, a Docker rebuild, then a commit.
