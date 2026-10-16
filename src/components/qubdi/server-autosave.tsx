@@ -1,11 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, CloudCheck, CloudUpload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/tooltip/tooltip';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, ApiError } from '@/lib/qubdi/api';
@@ -131,39 +126,35 @@ interface StatusIconProps {
     children: React.ReactNode;
 }
 
-/** One navbar-sized icon with its tooltip; a button only when it can act. */
+/** One navbar-sized icon with its label; a button only when it can act. */
 const StatusIcon: React.FC<StatusIconProps> = ({
     label,
     onClick,
     className,
     children,
-}) => (
-    <Tooltip>
-        <TooltipTrigger asChild>
-            {onClick ? (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`relative size-8 ${className ?? ''}`}
-                    aria-label={label}
-                    onClick={onClick}
-                >
-                    {children}
-                </Button>
-            ) : (
-                <span
-                    role="status"
-                    aria-label={label}
-                    tabIndex={0}
-                    className={`flex size-8 items-center justify-center rounded-md text-muted-foreground [&_svg]:size-4 ${className ?? ''}`}
-                >
-                    {children}
-                </span>
-            )}
-        </TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-);
+}) =>
+    onClick ? (
+        <Button
+            variant="ghost"
+            size="icon"
+            className={`relative size-8 ${className ?? ''}`}
+            aria-label={label}
+            title={label}
+            onClick={onClick}
+        >
+            {children}
+        </Button>
+    ) : (
+        <span
+            role="status"
+            aria-label={label}
+            title={label}
+            tabIndex={0}
+            className={`flex size-8 items-center justify-center rounded-md text-muted-foreground [&_svg]:size-4 ${className ?? ''}`}
+        >
+            {children}
+        </span>
+    );
 
 /**
  * The save state of the open diagram as one icon in the navbar; the tooltip

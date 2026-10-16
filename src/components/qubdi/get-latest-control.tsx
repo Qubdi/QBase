@@ -12,11 +12,6 @@ import {
 } from '@/components/alert-dialog/alert-dialog';
 import { Button } from '@/components/button/button';
 import { useToast } from '@/components/toast/use-toast';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/tooltip/tooltip';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useStorage } from '@/hooks/use-storage';
@@ -119,20 +114,16 @@ export const GetLatestControl: React.FC = () => {
 
     return (
         <>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8"
-                        aria-label="Get latest from server"
-                        onClick={() => setOpen(true)}
-                    >
-                        <CloudDownload />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>Get latest from server</TooltipContent>
-            </Tooltip>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label="Get latest from server"
+                title="Get latest from server"
+                onClick={() => setOpen(true)}
+            >
+                <CloudDownload />
+            </Button>
             <GetLatestDialog open={open} onOpenChange={setOpen} />
         </>
     );

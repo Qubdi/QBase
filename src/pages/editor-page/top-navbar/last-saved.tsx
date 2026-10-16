@@ -1,14 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import TimeAgo from 'timeago-react';
 import { useDiagram } from '@/hooks/use-diagram';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/tooltip/tooltip';
 import { useTranslation } from 'react-i18next';
 import type { LocaleFunc } from 'timeago.js';
-import { register as registerLocale } from 'timeago.js';
+import { format, register as registerLocale } from 'timeago.js';
 import { Save } from 'lucide-react';
 
 export interface LastSavedProps {}
@@ -89,30 +83,17 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
         updateLocale();
     }, [i18n.language]);
 
+    const savedAgo = `Saved ${format(currentDiagram.updatedAt, language)}`;
+
     return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <span
-                    role="img"
-                    aria-label="Last saved"
-                    tabIndex={0}
-                    className="flex size-8 items-center justify-center rounded-md text-muted-foreground"
-                >
-                    <Save className="size-4" />
-                </span>
-            </TooltipTrigger>
-            <TooltipContent>
-                <div>
-                    Saved{' '}
-                    <TimeAgo
-                        datetime={currentDiagram.updatedAt}
-                        locale={language}
-                    />
-                </div>
-                <div className="opacity-80">
-                    {currentDiagram.updatedAt.toLocaleString()}
-                </div>
-            </TooltipContent>
-        </Tooltip>
+        <span
+            role="img"
+            aria-label={savedAgo}
+            title={`${savedAgo}\n${currentDiagram.updatedAt.toLocaleString()}`}
+            tabIndex={0}
+            className="flex size-8 items-center justify-center rounded-md text-muted-foreground"
+        >
+            <Save className="size-4" />
+        </span>
     );
 };
