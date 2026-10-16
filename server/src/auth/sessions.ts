@@ -1,9 +1,18 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { and, eq, gt, ne } from 'drizzle-orm';
+import { and, eq, gt, ne, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { diagramLocks, sessions, users } from '../db/schema.js';
 
 export const SESSION_COOKIE = 'qubdidb_session';
+
+/** A session's last_seen_at is rewritten at most this often, not on every request. */
+export const LAST_SEEN_SECONDS = 5 * 60;
+
+/** The User-Agent kept per session; the column refuses anything longer. */
+export const MAX_USER_AGENT_LENGTH = 200;
+
+const keepUserAgent = (userAgent: string | undefined) =>
+    userAgent ? userAgent.slice(0, MAX_USER_AGENT_LENGTH) : null;
 
 export interface SessionUser {
     id: string;
@@ -17,11 +26,14 @@ const hashToken = (token: string) =>
 /**
  * Starts a session. A user has one live session at a time: signing in ends
  * every other session of the account, and lets go of the diagrams it was editing.
+ * It also records the sign-in on the user (last_login_at) and the browser's
+ * User-Agent on the session.
  */
 export async function createSession(
     db: Db,
     userId: string,
-    days: number
+    days: number,
+    userAgent?: string
 ): Promise<{ token: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + days * 86_400_000);
@@ -34,9 +46,13 @@ export async function createSession(
             .for('update');
         await tx.delete(sessions).where(eq(sessions.userId, userId));
         await tx.delete(diagramLocks).where(eq(diagramLocks.userId, userId));
-        await tx
-            .insert(sessions)
-            .values({ id: hashToken(token), userId, expiresAt });
+        await tx.update(users).set({ lastLoginAt: sql`now()` }).where(eq(users.id, userId));
+        await tx.insert(sessions).values({
+            id: hashToken(token),
+            userId,
+            expiresAt,
+            userAgent: keepUserAgent(userAgent),
+        });
     });
     return { token, expiresAt };
 }
@@ -46,18 +62,37 @@ export async function getSessionUser(
     token: string | undefined
 ): Promise<SessionUser | null> {
     if (!token) return null;
+    const id = hashToken(token);
+    // decided by the database's clock, in the same query that finds the session
+    const stale = sql`${sessions.lastSeenAt} < now() - make_interval(secs => ${LAST_SEEN_SECONDS})`;
     const rows = await db
-        .select({ id: users.id, email: users.email, isAdmin: users.isAdmin })
+        .select({
+            id: users.id,
+            email: users.email,
+            isAdmin: users.isAdmin,
+            seenLongAgo: sql<boolean>`${stale}`,
+        })
         .from(sessions)
         .innerJoin(users, eq(users.id, sessions.userId))
         .where(
             and(
-                eq(sessions.id, hashToken(token)),
+                eq(sessions.id, id),
                 gt(sessions.expiresAt, new Date()),
                 eq(users.isActive, true)
             )
         );
-    return rows[0] ?? null;
+    const row = rows[0];
+    if (!row) return null;
+    if (row.seenLongAgo) {
+        // The condition is repeated so that requests arriving together write once.
+        // Failing to note when a session was last used must not fail the request.
+        await db
+            .update(sessions)
+            .set({ lastSeenAt: sql`now()` })
+            .where(and(eq(sessions.id, id), stale))
+            .catch(() => undefined);
+    }
+    return { id: row.id, email: row.email, isAdmin: row.isAdmin };
 }
 
 export async function destroySession(db: Db, token: string | undefined) {

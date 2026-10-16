@@ -174,7 +174,12 @@ describe('auth', () => {
     });
 
     it('writes audit rows for self-registration and admin-created users', async () => {
-        const [first] = await ctx.db.select().from(users).limit(1);
+        // the first account is the admin who creates the others
+        const [first] = await ctx.db
+            .select()
+            .from(users)
+            .orderBy(users.createdAt)
+            .limit(1);
         await registerUser(ctx.app, 'audit@example.com');
         const rows = await ctx.db.select().from(auditLog);
         expect(rows.some((r) => r.action === 'user.register')).toBe(true);

@@ -399,8 +399,30 @@ Query rules for every new endpoint:
        and 12; audit page 500 by OFFSET 2,194 to 189 buffers; admin project list with counts 2,283
        to 83 buffers; a diagram's share links 176 to 4; deleting a user with its cascades 8.1 to 3.4 ms;
        an audit insert 0.75 to 0.73 ms (no extra cost from the fifth index).
-2. [ ] **Server groundwork**: audit `meta` and the routes that write it; `users.last_login_at`;
-       the new `sessions` columns with the throttled `last_seen_at`.
+2. [x] **Server groundwork** (`0016_audit_meta_and_sign_in_tracking`): audit `meta` and the routes
+       that write it; `users.last_login_at`; the new `sessions` columns with the throttled
+       `last_seen_at`. Notes:
+       - `meta` holds ids and names, never an email (audit rows outlive the account, so an
+         address there would defeat erasing it) and never a token. The table refuses a `meta` that
+         is not an object or is over 1 KB. Written by the admin, share and diagram routes:
+         `project.create|update|delete` (`projectId`, `name`), `project.member_set` (`projectId`,
+         `targetUserId`, `role`), `project.member_remove`, `user.create|delete` (`targetUserId`),
+         `user.update|enable|disable` (`targetUserId`, `changed`), `diagram.create|delete`
+         (`projectId`, `name`), `diagram.publish` (`version`) and `share.*` (`linkId`, `access`).
+         `diagram.update` has no `meta` on purpose: it is a row per save, the most frequent action,
+         and `diagram_id` already says it. Step 4 turns these into lines ("Anna published Orders
+         v3"): look names up while the project or diagram exists, and fall back to `meta.name`.
+       - `GET /admin/audit` now returns `meta` (null for older rows and for saves).
+       - `last_seen_at` is written at most every 5 minutes (`LAST_SEEN_SECONDS`), decided by the
+         database's clock, and a failed write never fails the request. `user_agent` is cut to 200
+         characters; no IP address is kept.
+       - Existing sessions show the migration day as `created_at` and `last_seen_at`.
+       - Measured (5,000 users and sessions, 100k audit rows): the per-request session lookup is
+         0.04 ms and 6 buffers; the `last_seen_at` and `last_login_at` writes were in-place updates
+         in 94% and 85% of cases on freshly packed tables; an audit insert costs the same with or
+         without `meta` (about 135 bytes when present).
+       - `test/auth.test.ts` took "the first user" with `select ... limit 1` and no `order by`;
+         sign-in now updates `users`, which moved the row. It orders by `created_at` now.
 3. [x] **Admin shell**: left sidebar (Overview, Projects, Users, Diagrams, Activity) that becomes
        a top bar on small screens, routes `/admin/:section`, Projects and Users moved in as they
        are. Notes:

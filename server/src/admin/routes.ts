@@ -1,7 +1,7 @@
 import { and, count, desc, eq, gte, ilike, lte, ne, or, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { audit } from '../audit/audit.js';
+import { audit, type AuditMeta } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
@@ -143,6 +143,7 @@ export const adminRoutes =
                     userId: auditLog.userId,
                     userEmail: users.email,
                     diagramId: auditLog.diagramId,
+                    meta: auditLog.meta,
                 })
                 .from(auditLog)
                 .leftJoin(users, eq(users.id, auditLog.userId))
@@ -203,7 +204,11 @@ export const adminRoutes =
                     isAdmin: body.isAdmin,
                 })
                 .returning();
-            await audit(db, { userId: req.user!.id, action: 'user.create' });
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'user.create',
+                meta: { targetUserId: user.id },
+            });
             return reply.code(201).send({
                 id: user.id,
                 email: user.email,
@@ -257,6 +262,13 @@ export const adminRoutes =
             }
             const statusChanged =
                 body.isActive !== undefined && body.isActive !== target.isActive;
+            // what this request actually changed (a password counts every time)
+            const changed: NonNullable<AuditMeta['changed']> = [];
+            if (body.password !== undefined) changed.push('password');
+            if (body.isAdmin !== undefined && body.isAdmin !== target.isAdmin) {
+                changed.push('isAdmin');
+            }
+            if (statusChanged) changed.push('isActive');
             await audit(db, {
                 userId: req.user!.id,
                 action: statusChanged
@@ -264,6 +276,7 @@ export const adminRoutes =
                         ? 'user.enable'
                         : 'user.disable'
                     : 'user.update',
+                meta: { targetUserId: id, changed },
             });
             return {
                 id,
@@ -306,7 +319,11 @@ export const adminRoutes =
             if (outcome.error === 'last_admin') {
                 return reply.code(400).send({ error: 'last_admin' });
             }
-            await audit(db, { userId: req.user!.id, action: 'user.delete' });
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'user.delete',
+                meta: { targetUserId: id },
+            });
             return reply.code(204).send();
         });
 
@@ -369,6 +386,7 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.create',
+                meta: { projectId: p.id, name: p.name },
             });
             return reply.code(201).send({ ...p, members: 0, diagrams: 0 });
         });
@@ -408,6 +426,7 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.update',
+                meta: { projectId: id, name: p.name },
             });
             return p;
         });
@@ -415,7 +434,7 @@ export const adminRoutes =
         app.delete('/projects/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const [exists] = await db
-                .select({ id: projects.id })
+                .select({ id: projects.id, name: projects.name })
                 .from(projects)
                 .where(eq(projects.id, id));
             if (!exists) return reply.code(404).send({ error: 'not_found' });
@@ -430,6 +449,8 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.delete',
+                // the project is gone, so keep its name for the log
+                meta: { projectId: id, name: exists.name },
             });
             return reply.code(204).send();
         });
@@ -480,6 +501,7 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.member_set',
+                meta: { projectId: id, targetUserId: userId, role: body.role },
             });
             return { userId, email: user.email, role: body.role };
         });
@@ -501,6 +523,7 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.member_remove',
+                meta: { projectId: id, targetUserId: userId },
             });
             return reply.code(204).send();
         });

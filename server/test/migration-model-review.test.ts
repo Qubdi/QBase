@@ -1,50 +1,22 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { rmSync } from 'node:fs';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ADMIN_URL } from './helpers.js';
+import { foldersBefore, foldersThrough, urlFor } from './migration-helpers.js';
 
 // Migration 0015 (model review) run against a database that already holds data in
 // the old shape. Each case gets its own throwaway database, so neither the
-// development database nor the shared test database is touched.
+// development database nor the shared test database is touched. It stops after
+// 0015, so later migrations never change what this test checks.
 
 const MIGRATION = '0015_model_review';
-const migrationsDir = fileURLToPath(
-    new URL('../src/db/migrations', import.meta.url)
-);
-
-const urlFor = (name: string) => ADMIN_URL.replace(/\/postgres$/, `/${name}`);
-
-/** A copy of the migrations folder that stops right before the one under test. */
-function foldersBefore(tag: string) {
-    const dir = mkdtempSync(join(tmpdir(), 'qubdidb-migrations-'));
-    mkdirSync(join(dir, 'meta'));
-    const journal = JSON.parse(
-        readFileSync(join(migrationsDir, 'meta', '_journal.json'), 'utf8')
-    ) as { entries: { tag: string }[] };
-    const stop = journal.entries.findIndex((e) => e.tag === tag);
-    expect(stop).toBeGreaterThan(0);
-    const kept = journal.entries.slice(0, stop);
-    for (const entry of kept) {
-        cpSync(
-            join(migrationsDir, `${entry.tag}.sql`),
-            join(dir, `${entry.tag}.sql`)
-        );
-    }
-    writeFileSync(
-        join(dir, 'meta', '_journal.json'),
-        JSON.stringify({ ...journal, entries: kept })
-    );
-    return dir;
-}
 
 describe('migration 0015: model review', () => {
     const admin = new pg.Client({ connectionString: ADMIN_URL });
     const before = foldersBefore(MIGRATION);
+    const through = foldersThrough(MIGRATION);
     const databases: string[] = [];
     const pools: pg.Pool[] = [];
 
@@ -56,6 +28,7 @@ describe('migration 0015: model review', () => {
         }
         await admin.end();
         rmSync(before, { recursive: true, force: true });
+        rmSync(through, { recursive: true, force: true });
     });
 
     /** A new database brought up to the shape just before 0015, holding sample data. */
@@ -147,7 +120,7 @@ describe('migration 0015: model review', () => {
         beforeAll(async () => {
             const old = await oldShapeDb('qubdidb_mig_data');
             ({ pool, userId, diagramId } = old);
-            await migrate(old.db, { migrationsFolder: migrationsDir });
+            await migrate(old.db, { migrationsFolder: through });
         });
 
         it('keeps every audit row and its id', async () => {
@@ -236,7 +209,7 @@ describe('migration 0015: model review', () => {
                 'clash@example.com',
             ]);
             const failure = await migrate(db, {
-                migrationsFolder: migrationsDir,
+                migrationsFolder: through,
             }).then(
                 () => null,
                 (err: Error) => err

@@ -172,6 +172,7 @@ export const diagramRoutes =
                 userId,
                 action: 'diagram.create',
                 diagramId: diagram.id,
+                meta: { projectId: diagram.projectId, name: diagram.title },
             });
             return reply
                 .code(201)
@@ -263,6 +264,7 @@ export const diagramRoutes =
                         userId: req.user!.id,
                         action: 'diagram.publish',
                         diagramId: id,
+                        meta: { version: snap.version },
                     });
                 }
             }
@@ -299,11 +301,17 @@ export const diagramRoutes =
             if (role !== 'owner') {
                 return reply.code(403).send({ error: 'forbidden' });
             }
+            // the diagram is about to go, so note what it was for the log
+            const [gone] = await db
+                .select({ title: diagrams.title, projectId: diagrams.projectId })
+                .from(diagrams)
+                .where(eq(diagrams.id, id));
             await db.delete(diagrams).where(eq(diagrams.id, id));
             await audit(db, {
                 userId: req.user!.id,
                 action: 'diagram.delete',
                 diagramId: id,
+                meta: { projectId: gone?.projectId, name: gone?.title },
             });
             return reply.code(204).send();
         });
@@ -325,6 +333,7 @@ export const diagramRoutes =
                 userId: req.user!.id,
                 action: 'diagram.publish',
                 diagramId: id,
+                meta: { version: snap.version },
             });
             return reply.code(201).send({
                 version: snap.version,

@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
     bigint,
+    check,
     index,
     jsonb,
     pgEnum,
@@ -13,6 +14,7 @@ import {
     integer,
     uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import type { AuditMeta } from '../audit/audit.js';
 
 export const projectRole = pgEnum('project_role', ['editor', 'viewer']);
 
@@ -51,6 +53,9 @@ export const users = pgTable(
         createdAt: timestamp('created_at', { withTimezone: true })
             .notNull()
             .defaultNow(),
+        // set at every sign-in; null until the person signs in after this
+        // column was added (and for an account nobody has signed in to yet)
+        lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
     },
     (t) => [
         // the app lowercases emails; this makes the database refuse a second
@@ -68,13 +73,28 @@ export const sessions = pgTable(
             .notNull()
             .references(() => users.id, { onDelete: 'cascade' }),
         expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+        // when the person signed in (a session that existed before this column
+        // shows the day it was added)
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        // last request made with this session, written at most every 5 minutes
+        // (see getSessionUser), not on every request
+        lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        // the browser's User-Agent, cut to 200 characters, so an admin can tell
+        // sessions apart; no IP address is kept, it is personal data we do not need
+        userAgent: text('user_agent'),
     },
     (t) => [
         // sign-in, sign-out and "reset password" delete a user's sessions by
         // user_id, and so does the cascade when the user is deleted.
         // No expires_at index: a user has one live session, so the table holds
         // about one row per user and the hourly purge reads all of it anyway.
+        // No index on last_seen_at either, so writing it stays an in-place update.
         index('sessions_user_idx').on(t.userId),
+        check('sessions_user_agent_len', sql`char_length(${t.userAgent}) <= 200`),
     ]
 );
 
@@ -212,8 +232,20 @@ export const auditLog = pgTable(
         action: text('action').notNull(),
         diagramId: uuid('diagram_id'),
         at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+        // what the action was done to (which project, which user, which
+        // version): ids and names, never an email or anything secret, and no
+        // foreign keys, so a row still reads after its target is gone. Small and
+        // never filtered or joined on. Null for diagram.update, the most frequent
+        // action (every save), where diagram_id already says it all.
+        meta: jsonb('meta').$type<AuditMeta>(),
     },
     (t) => [
+        // an object no bigger than 1 KB, so the table that grows without limit
+        // cannot be filled with large documents
+        check(
+            'audit_log_meta_small',
+            sql`${t.meta} is null or (jsonb_typeof(${t.meta}) = 'object' and octet_length(${t.meta}::text) <= 1024)`
+        ),
         // GET /admin/audit with no filter (order by at desc, id desc; it is
         // also the order of a keyset cursor) and the retention delete (at < cutoff)
         index('audit_log_at_id_idx').on(

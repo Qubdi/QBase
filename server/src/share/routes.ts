@@ -127,6 +127,7 @@ export const shareManagementRoutes =
                 userId: req.user!.id,
                 action: 'share.create',
                 diagramId: id,
+                meta: { linkId: link.id, access: link.access },
             });
             // the raw token is returned exactly once
             return reply.code(201).send({ ...presentLink(link), token });
@@ -156,6 +157,7 @@ export const shareManagementRoutes =
                 userId: req.user!.id,
                 action: 'share.update',
                 diagramId: id,
+                meta: { linkId, access: updated.access },
             });
             emitLinkChanged(linkId);
             return presentLink(updated);
@@ -175,6 +177,7 @@ export const shareManagementRoutes =
                     userId: req.user!.id,
                     action: 'share.revoke',
                     diagramId: id,
+                    meta: { linkId },
                 });
             }
             emitLinkChanged(linkId);
@@ -199,6 +202,7 @@ export const shareManagementRoutes =
                 userId: req.user!.id,
                 action: 'share.regenerate',
                 diagramId: id,
+                meta: { linkId },
             });
             // viewers on the old URL are cut off; the old token no longer resolves
             emitLinkChanged(linkId);
