@@ -538,6 +538,129 @@ describe('drift detection', () => {
         });
     });
 
+    describe('opening a diagram reuses a recent report', () => {
+        const cachedCheck = (u: TestUser = owner, app = ctx.app) =>
+            app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/check?cached=1`, headers: as(u) });
+        const reportCount = async () =>
+            (await ctx.db.select().from(driftReports).where(eq(driftReports.diagramId, diagramId))).length;
+        const checkAudits = async () =>
+            (await ctx.db.select().from(auditLog)).filter((r) => r.diagramId === diagramId && r.action === 'drift.check').length;
+        const editDiagram = () =>
+            ctx.app.inject({ method: 'PUT', url: `/diagrams/${diagramId}`, headers: as(owner), payload: { autoPublish: false } });
+
+        beforeEach(async () => {
+            expect((await put(owner, settings())).statusCode).toBe(200);
+        });
+
+        it('reads the database once, then hands back the same report', async () => {
+            const first = await cachedCheck();
+            expect(first.statusCode).toBe(200);
+            const second = await cachedCheck();
+            expect(second.statusCode).toBe(200);
+            expect(second.json().id).toBe(first.json().id);
+            expect(factoryCalls).toBe(1);
+            expect(await reportCount()).toBe(1);
+        });
+
+        it('hands back everything a check does, including the badge', async () => {
+            addColumn('phone');
+            const first = (await cachedCheck()).json();
+            const again = (await cachedCheck()).json();
+            expect(again.status).toBe('drifted');
+            expect(again.changes).toHaveLength(1);
+            expect(again.badge).toEqual({ status: 'drifted', counts: { breaking: 0, warning: 1, info: 0 }, reportId: first.id });
+            expect(factoryCalls).toBe(1);
+        });
+
+        it('does not count a reused report as a check in the audit log', async () => {
+            const before = await checkAudits();
+            await cachedCheck();
+            await cachedCheck();
+            await cachedCheck();
+            expect((await checkAudits()) - before).toBe(1);
+        });
+
+        it('always reads the database when a check is asked for', async () => {
+            await cachedCheck();
+            expect((await check()).statusCode).toBe(200);
+            expect(factoryCalls).toBe(2);
+            expect(await reportCount()).toBe(2);
+        });
+
+        it('shows a change in the database once the report has run out', async () => {
+            expect((await cachedCheck()).json().status).toBe('clean');
+            addColumn('phone');
+            expect((await cachedCheck()).json().status).toBe('clean');
+            expect(factoryCalls).toBe(1);
+            await ctx.db.update(driftReports).set({ runAt: new Date(Date.now() - 10 * 60_000) });
+            expect((await cachedCheck()).json().status).toBe('drifted');
+            expect(factoryCalls).toBe(2);
+        });
+
+        it('reads again after the diagram is edited', async () => {
+            await cachedCheck();
+            expect((await editDiagram()).statusCode).toBe(200);
+            await cachedCheck();
+            expect(factoryCalls).toBe(2);
+            // and the new report is reused in its turn
+            await cachedCheck();
+            expect(factoryCalls).toBe(2);
+        });
+
+        it('reads again after the drift settings change', async () => {
+            await cachedCheck();
+            expect((await put(owner, settings({ schemas: ['public'] }))).statusCode).toBe(200);
+            await cachedCheck();
+            expect(factoryCalls).toBe(2);
+        });
+
+        it('reads again after the saved connection is edited', async () => {
+            await cachedCheck();
+            // no password: the saved one is kept
+            const { dialect, host, user, database } = conn();
+            const edit = (db: string) =>
+                ctx.app.inject({
+                    method: 'PUT',
+                    url: `/introspect/connections/${connectionId}`,
+                    headers: as(owner),
+                    payload: { name: 'prod', dialect, host, user, database: db },
+                });
+            expect((await edit('shop2')).statusCode).toBe(200);
+            await cachedCheck();
+            expect(factoryCalls).toBe(2);
+            expect((await edit(database)).statusCode).toBe(200);
+        });
+
+        it('tries again after a failure instead of reusing it', async () => {
+            factoryError = new Error('connection refused');
+            expect((await cachedCheck()).json().status).toBe('error');
+            factoryError = null;
+            expect((await cachedCheck()).json().status).toBe('clean');
+            expect(factoryCalls).toBe(2);
+            expect(await reportCount()).toBe(2);
+        });
+
+        it('is left off by DRIFT_CACHE_SECONDS=0', async () => {
+            const off = await createTestApp({ connectionKey: 'a-long-enough-connection-key', driftCacheSeconds: 0 }, { factory }, false);
+            try {
+                await cachedCheck(owner, off.app);
+                await cachedCheck(owner, off.app);
+                expect(factoryCalls).toBe(2);
+                expect(await reportCount()).toBe(2);
+            } finally {
+                await off.close();
+            }
+        });
+
+        it('is only for people who can edit, and only takes cached=1', async () => {
+            expect((await cachedCheck(viewer)).statusCode).toBe(403);
+            expect((await cachedCheck(stranger)).statusCode).toBe(404);
+            const odd = await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/check?cached=yes`, headers: as(owner) });
+            expect(odd.statusCode).toBe(400);
+            expect(factoryCalls).toBe(0);
+        });
+    });
+
     describe('concurrency', () => {
         it('does not run two checks of one diagram at once', async () => {
             await put(owner, settings());

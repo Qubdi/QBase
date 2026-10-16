@@ -190,6 +190,11 @@ export interface DriftBadge {
     reportId: string;
 }
 
+/** What a check answers with: its report, and the badge the diagram shows once it is stored. */
+export interface DriftCheckResult extends DriftReport {
+    badge: DriftBadge | null;
+}
+
 export interface DriftSettings {
     connectionId: string | null;
     schemas: string[];
@@ -566,8 +571,15 @@ export function createApi(
             request<DriftOverview>('GET', `/diagrams/${id}/drift`),
         saveDrift: (id: string, settings: DriftSettings) =>
             request<DriftSettings>('PUT', `/diagrams/${id}/drift`, settings),
-        checkDrift: (id: string) =>
-            request<DriftReport>('POST', `/diagrams/${id}/drift/check`),
+        /**
+         * Reads the database and stores a report. With `cached`, a recent report
+         * of an unchanged diagram is handed back instead (opening a diagram).
+         */
+        checkDrift: (id: string, options?: { cached?: boolean }) =>
+            request<DriftCheckResult>(
+                'POST',
+                `/diagrams/${id}/drift/check${options?.cached ? '?cached=1' : ''}`
+            ),
         listDriftReports: (id: string, limit = 20) =>
             request<DriftReportSummary[]>(
                 'GET',

@@ -12,9 +12,11 @@ import {
     badgeOf,
     latestReport,
     presentReport,
+    reusableReport,
     runDriftCheck,
     summarizeReport,
     type DriftDeps,
+    type ReportRow,
 } from './service.js';
 import { parseWebhookUrl } from './webhook.js';
 
@@ -22,6 +24,15 @@ const diagramParam = z.object({ id: z.string().uuid() });
 const reportParam = z.object({
     id: z.string().uuid(),
     reportId: z.string().uuid(),
+});
+
+// `cached=1`: a recent report may stand in for reading the database (see reusableReport)
+const checkQuery = z.object({ cached: z.enum(['1']).optional() });
+
+/** A check's report, with the badge the diagram shows once it is stored. */
+const presentCheck = (r: ReportRow) => ({
+    ...presentReport(r),
+    badge: badgeOf(r),
 });
 
 const settingsBody = z.object({
@@ -157,6 +168,7 @@ export const driftRoutes =
 
         app.post('/:id/drift/check', outbound, async (req, reply) => {
             const { id } = diagramParam.parse(req.params);
+            const { cached } = checkQuery.parse(req.query);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const [settings] = await db
                 .select()
@@ -168,6 +180,12 @@ export const driftRoutes =
             if (!settings.connectionId) {
                 return reply.code(400).send({ error: 'connection_required' });
             }
+            // only the check made on opening a diagram may reuse a report; asking
+            // for a check always reads the database, and a reused report is not a check
+            const reused = cached
+                ? await reusableReport(db, id, deps.config.driftCacheSeconds)
+                : null;
+            if (reused) return presentCheck(reused);
             const report = await runDriftCheck(deps, id);
             if (!report) {
                 return reply.code(409).send({ error: 'already_running' });
@@ -177,7 +195,7 @@ export const driftRoutes =
                 action: 'drift.check',
                 diagramId: id,
             });
-            return presentReport(report);
+            return presentCheck(report);
         });
 
         app.get('/:id/drift/reports', async (req, reply) => {

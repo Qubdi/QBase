@@ -103,6 +103,45 @@ export async function latestReport(db: Db, diagramId: string) {
     return r;
 }
 
+/**
+ * The latest report, when it can stand in for a new check: it is recent enough,
+ * it found a result (a failure to reach the database is retried), and neither
+ * the diagram nor the drift settings changed after it ran. Editing a saved
+ * connection counts as a settings change. Changes made in the database itself
+ * are only seen once the report is older than `ttlSeconds`.
+ */
+export async function reusableReport(
+    db: Db,
+    diagramId: string,
+    ttlSeconds: number,
+    now: Date = new Date()
+): Promise<ReportRow | null> {
+    if (ttlSeconds <= 0) return null;
+    const latest = await latestReport(db, diagramId);
+    if (
+        !latest ||
+        latest.status === 'error' ||
+        now.getTime() - latest.runAt.getTime() >= ttlSeconds * 1000
+    ) {
+        return null;
+    }
+    const [diagram] = await db
+        .select({ updatedAt: diagrams.updatedAt })
+        .from(diagrams)
+        .where(eq(diagrams.id, diagramId));
+    const [settings] = await db
+        .select({ updatedAt: driftSettings.updatedAt })
+        .from(driftSettings)
+        .where(eq(driftSettings.diagramId, diagramId));
+    if (!diagram || !settings) return null;
+    // strictly before: a change in the same millisecond is not trusted to be older
+    const ranAt = latest.runAt.getTime();
+    const unchanged =
+        diagram.updatedAt.getTime() < ranAt &&
+        settings.updatedAt.getTime() < ranAt;
+    return unchanged ? latest : null;
+}
+
 class DriftError extends Error {}
 
 /**

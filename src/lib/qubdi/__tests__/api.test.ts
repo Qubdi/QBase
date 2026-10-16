@@ -123,6 +123,35 @@ describe('qubdi api client', () => {
         expect(init.method).toBe('PATCH');
     });
 
+    describe('drift check', () => {
+        const urlOf = async (options?: { cached?: boolean }) => {
+            const fetchMock = vi.fn(async () => jsonResponse(200, {}));
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            await api.checkDrift('d1', options);
+            const [url, init] = fetchMock.mock.calls[0] as unknown as [
+                string,
+                RequestInit,
+            ];
+            return { url, method: init.method };
+        };
+
+        it('reads the database when asked for a check', async () => {
+            expect(await urlOf()).toEqual({
+                url: 'http://srv/diagrams/d1/drift/check',
+                method: 'POST',
+            });
+        });
+
+        it('lets a recent report stand in when a diagram is opened', async () => {
+            expect((await urlOf({ cached: true })).url).toBe(
+                'http://srv/diagrams/d1/drift/check?cached=1'
+            );
+        });
+    });
+
     describe('edit lock', () => {
         it('asks for the lock of a diagram on behalf of one editor', async () => {
             const fetchMock = vi.fn(async () =>
