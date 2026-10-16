@@ -19,6 +19,7 @@ import {
     listAdminDiagrams,
     listDiagramLinks,
 } from './diagrams.js';
+import { adminStats, statsQuery } from './stats.js';
 import { activityQuery, listActivity } from '../audit/activity.js';
 import {
     audit,
@@ -168,6 +169,13 @@ export const adminRoutes =
                 return reply.code(404).send({ error: 'not_found' });
             }
         });
+
+        // ---- overview ----
+
+        // the figures on the Overview; ?tz=Asia/Tbilisi makes a "day" the viewer's own
+        app.get('/stats', async (req) =>
+            adminStats(db, statsQuery.parse(req.query).tz)
+        );
 
         // ---- audit log ----
 
