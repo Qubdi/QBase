@@ -90,10 +90,26 @@ describe('indexes serve the queries they were made for', () => {
     const client = new pg.Client({ connectionString: TEST_URL });
     beforeAll(async () => {
         await client.connect();
+        // The planner picks between two indexes for "this action, newest first"
+        // by how common the action is, so the answer must not depend on what an
+        // earlier test file left in the table. Give it a log shaped like a real
+        // one: mostly saves, a publish now and then.
+        await client.query('truncate table audit_log restart identity');
+        await client.query(
+            `insert into audit_log (user_id, action, at)
+             select gen_random_uuid(),
+                    case when g % 100 = 0 then 'diagram.publish' else 'diagram.update' end,
+                    now() - (g || ' seconds')::interval
+               from generate_series(1, 3000) g`
+        );
+        await client.query('analyze audit_log');
         // a tiny table is read with a sequential scan; ask for an index if one can serve
         await client.query('set enable_seqscan = off');
     });
-    afterAll(() => client.end());
+    afterAll(async () => {
+        await client.query('truncate table audit_log restart identity');
+        await client.end();
+    });
 
     it.each(cases)('$query', async ({ sql, index }) => {
         const { rows } = await client.query(`explain ${sql}`);
