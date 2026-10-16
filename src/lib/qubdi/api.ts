@@ -54,6 +54,58 @@ export interface ProjectMember {
     role: ProjectRole;
 }
 
+/** The kinds of action the Activity filter offers; the server defines them. */
+export type ActivityGroup =
+    | 'users'
+    | 'projects'
+    | 'diagrams'
+    | 'sharing'
+    | 'checks'
+    | 'comments';
+
+/** One line of the audit log, with the names behind its ids (null when gone). */
+export interface ActivityItem {
+    id: number;
+    at: string;
+    /** `diagram.publish`, `project.member_set` and so on */
+    action: string;
+    userId: string | null;
+    userEmail: string | null;
+    diagramId: string | null;
+    diagramTitle: string | null;
+    projectId: string | null;
+    projectName: string | null;
+    /** the person an admin acted on (not the one who acted) */
+    targetUserId: string | null;
+    targetUserEmail: string | null;
+    meta: {
+        role?: ProjectRole;
+        version?: number;
+        access?: 'anyone' | 'signed_in' | 'off';
+        changed?: ('password' | 'isAdmin' | 'isActive')[];
+    } | null;
+}
+
+export interface ActivityPage {
+    items: ActivityItem[];
+    /** pass back as `cursor` for the next, older page; null on the last */
+    nextCursor: string | null;
+}
+
+export interface ActivityParams {
+    limit?: number;
+    cursor?: string | null;
+    group?: ActivityGroup;
+    /** who did it */
+    userId?: string;
+    diagramId?: string;
+    /** ISO times, both ends included */
+    from?: string;
+    to?: string;
+    /** `hide` leaves out saves, which are by far the most frequent action */
+    saves?: 'show' | 'hide';
+}
+
 export interface RemoteDiagramSummary {
     id: string;
     title: string;
@@ -359,6 +411,22 @@ export function createApi(
             ),
         adminDeleteUser: (id: string) =>
             request<void>('DELETE', `/admin/users/${id}`),
+        adminListActivity: (params: ActivityParams = {}) =>
+            request<ActivityPage>(
+                'GET',
+                `/admin/audit${listQuery(
+                    { limit: params.limit },
+                    {
+                        cursor: params.cursor ?? undefined,
+                        group: params.group,
+                        userId: params.userId,
+                        diagramId: params.diagramId,
+                        from: params.from,
+                        to: params.to,
+                        saves: params.saves,
+                    }
+                )}`
+            ),
         adminListProjects: (params?: ListParams) =>
             request<Page<AdminProject>>(
                 'GET',

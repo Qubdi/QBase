@@ -123,6 +123,59 @@ describe('qubdi api client', () => {
         expect(init.method).toBe('PATCH');
     });
 
+    describe('activity', () => {
+        const urlOf = async (
+            params?: Parameters<
+                ReturnType<typeof createApi>['adminListActivity']
+            >[0]
+        ) => {
+            const fetchMock = vi.fn(async () =>
+                jsonResponse(200, { items: [], nextCursor: null })
+            );
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            await api.adminListActivity(params);
+            return fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+        };
+
+        it('asks for a page with no filters as a plain URL', async () => {
+            const [url, init] = await urlOf({ limit: 30 });
+            expect(url).toBe('http://srv/admin/audit?limit=30');
+            expect(init.method).toBe('GET');
+        });
+
+        it('sends the cursor and every filter that is set, and only those', async () => {
+            const [url] = await urlOf({
+                limit: 30,
+                cursor: 'abc_-',
+                group: 'sharing',
+                userId: 'u1',
+                diagramId: 'd1',
+                from: '2026-10-01T00:00:00.000Z',
+                to: '2026-10-02T23:59:59.999Z',
+                saves: 'hide',
+            });
+            const query = new URL(url).searchParams;
+            expect(Object.fromEntries(query)).toEqual({
+                limit: '30',
+                cursor: 'abc_-',
+                group: 'sharing',
+                userId: 'u1',
+                diagramId: 'd1',
+                from: '2026-10-01T00:00:00.000Z',
+                to: '2026-10-02T23:59:59.999Z',
+                saves: 'hide',
+            });
+        });
+
+        it('leaves out an empty cursor, as on the first page', async () => {
+            const [url] = await urlOf({ limit: 30, cursor: null });
+            expect(new URL(url).searchParams.has('cursor')).toBe(false);
+        });
+    });
+
     describe('drift check', () => {
         const urlOf = async (options?: { cached?: boolean }) => {
             const fetchMock = vi.fn(async () => jsonResponse(200, {}));

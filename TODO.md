@@ -433,12 +433,46 @@ Query rules for every new endpoint:
        - `/admin` goes to Projects until Overview exists. When step 5 ships, change
          `DEFAULT_ADMIN_SECTION` in `admin-sections.ts` to `overview`; a test fails if the default
          is a section that is not built.
-       - Overview, Diagrams and Activity show "This section is not built yet." Set `built: true`
-         in `admin-sections.ts` and add the page to `AdminSection` as each one ships.
+       - Overview and Diagrams show "This section is not built yet." (Activity was the first to
+         be built, in step 4.) Set `built: true` in `admin-sections.ts` and add the page to
+         `AdminSection` as each one ships.
        - On a phone the row of sections scrolls sideways and keeps the current one in view.
        - Checked in headless Chromium against a throwaway stack: light and dark, 1280 and 390 px.
-4. [ ] **Activity**: `GET /admin/audit` with cursor paging and filters (action group, user,
+4. [x] **Activity**: `GET /admin/audit` with cursor paging and filters (action group, user,
        diagram, date range); a list with readable lines ("Anna published Orders v3"), load more.
+       No migration: the indexes from step 1 serve every query below. Notes:
+       - The response is now `{ items, nextCursor }`; `total`, `page` and the count query are gone
+         (a count over a log that grows without limit is the slow part, and "load more" does not
+         need it). The cursor is the `(at, id)` of the last row, and `at` keeps its microseconds:
+         a JavaScript `Date` stops at milliseconds, and a cursor cut there skipped rows (a test
+         inserts rows inside one millisecond and proves it). It is opaque base64url; anything the
+         server did not issue is a `400`. `limit` defaults to 30, at most 100.
+       - Filters: `group` (users, projects, diagrams, sharing, checks, comments; an action is in a
+         group by its prefix, see `AUDIT_GROUPS`, and a test fails if a new action fits none),
+         `action`, `userId` (who did it), `diagramId`, `from` and `to` (both ends included), and
+         `saves=hide`. A save is a row of its own and the most frequent action (every autosave), so
+         the page asks for them hidden by default ("Show every save" brings them back); the API
+         shows everything unless asked.
+       - The server returns the names behind the ids, not sentences: three primary-key lookups
+         for the page (users, diagram titles, project names), never `content`. A row whose user,
+         diagram or project is gone still reads: the email is null and the name falls back to
+         `meta.name` (only on the matching `diagram.*` or `project.*` rows, so a project's name is
+         never taken for a diagram's). A `meta` value that is not an id cannot break the page.
+         The sentences are built in the browser (`describeActivity` in `lib/qubdi/activity.ts`),
+         one per action, with a fallback that shows an action it has no wording for.
+       - The page: a row per event under a day heading, the time on the right; choosing a person
+         or a diagram in a row narrows the list to it; a person picker, a date range (whole local
+         days), a kind-of-activity select, "Load more" (30 at a time) and Refresh.
+       - Measured on a throwaway Postgres with 100k generated audit rows (80% of them saves, a
+         guess at the mix), 200 people and 5,000 diagrams, `EXPLAIN (ANALYZE, BUFFERS)`: the first
+         page 0.12 ms and 34 buffers; the page at row 50,000 also 34 buffers, because the cursor
+         is an index condition on `audit_log_at_id_idx` (the OFFSET it replaces reads more the
+         deeper it goes: 189 buffers at page 500 in step 1); saves hidden 0.25 ms and 161; one
+         rare action 0.2 ms and 38 (`audit_log_action_at_idx`); one person 35 buffers; one
+         diagram 41; the sharing group (5% of the rows) 0.46 ms and 534, the worst case seen,
+         because it walks the newest rows until it has 30 matches. Re-measure on real data.
+       - Left for later: filtering by the person an admin acted on (not only who acted); CSV export
+         (open question below).
 5. [ ] **Overview**: `GET /admin/stats` (users total / active / admins, projects, diagrams,
        published, active share links, editing right now, drift checks in the last 24 hours,
        activity over 7 days); cards plus recent activity.

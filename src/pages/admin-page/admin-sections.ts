@@ -43,8 +43,8 @@ export const ADMIN_SECTIONS = [
         id: 'activity',
         label: 'Activity',
         description:
-            'Who did what and when: publishes, shares and changes made by admins.',
-        built: false,
+            'Who did what and when, newest first: publishes, share links and changes to users and projects.',
+        built: true,
     },
 ] as const satisfies readonly AdminSectionInfo[];
 

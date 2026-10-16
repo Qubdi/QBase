@@ -28,6 +28,9 @@ vi.mock('@/components/logo/logo', () => ({ Logo: () => <span>logo</span> }));
 vi.mock('../projects-panel', () => ({
     ProjectsPanel: () => <div>projects panel</div>,
 }));
+vi.mock('../activity-panel', () => ({
+    ActivityPanel: () => <div>activity panel</div>,
+}));
 vi.mock('../users-panel', () => ({
     UsersPanel: ({ currentUserId }: { currentUserId: string }) => (
         <div>users panel for {currentUserId}</div>
@@ -128,11 +131,23 @@ describe('admin panel frame', () => {
     });
 
     it('says so on a section that is not built yet', async () => {
+        const unbuilt = ADMIN_SECTIONS.find((s) => !s.built);
+        // once every section is built there is nothing left to say it about
+        if (!unbuilt) return;
+        open(`/admin/${unbuilt.id}`);
+        expect(
+            await screen.findByRole('heading', { name: unbuilt.label })
+        ).toBeTruthy();
+        expect(screen.getByText('This section is not built yet.')).toBeTruthy();
+    });
+
+    it('shows the activity page in its section', async () => {
         open('/admin/activity');
         expect(
             await screen.findByRole('heading', { name: 'Activity' })
         ).toBeTruthy();
-        expect(screen.getByText('This section is not built yet.')).toBeTruthy();
+        expect(screen.getByText('activity panel')).toBeTruthy();
+        expect(screen.queryByText('This section is not built yet.')).toBeNull();
     });
 
     it('shows the missing-page message, without the sections, to a member', async () => {

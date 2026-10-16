@@ -1,34 +1,64 @@
 import type { Db } from '../db/client.js';
 import { auditLog } from '../db/schema.js';
 
-export type AuditAction =
-    | 'user.register'
-    | 'user.create'
-    | 'user.update'
-    | 'user.delete'
-    | 'user.disable'
-    | 'user.enable'
-    | 'project.create'
-    | 'project.update'
-    | 'project.delete'
-    | 'project.member_set'
-    | 'project.member_remove'
-    | 'diagram.create'
-    | 'diagram.update'
-    | 'diagram.delete'
-    | 'diagram.publish'
-    | 'share.create'
-    | 'share.update'
-    | 'share.revoke'
-    | 'share.regenerate'
-    | 'comment.create'
-    | 'comment.update'
-    | 'comment.resolve'
-    | 'comment.delete'
-    | 'drift.configure'
-    | 'drift.check'
-    | 'drift.dismiss'
-    | 'lint.configure';
+export const AUDIT_ACTIONS = [
+    'user.register',
+    'user.create',
+    'user.update',
+    'user.delete',
+    'user.disable',
+    'user.enable',
+    'project.create',
+    'project.update',
+    'project.delete',
+    'project.member_set',
+    'project.member_remove',
+    'diagram.create',
+    'diagram.update',
+    'diagram.delete',
+    'diagram.publish',
+    'share.create',
+    'share.update',
+    'share.revoke',
+    'share.regenerate',
+    'comment.create',
+    'comment.update',
+    'comment.resolve',
+    'comment.delete',
+    'drift.configure',
+    'drift.check',
+    'drift.dismiss',
+    'lint.configure',
+] as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+/**
+ * The Activity page's "what kind" filter. A group is every action that starts
+ * with its prefix (`user.`), so a new action lands in the right group by its
+ * name; `test/admin-audit.test.ts` fails if one fits none.
+ */
+export const AUDIT_GROUPS = {
+    users: ['user.'],
+    projects: ['project.'],
+    diagrams: ['diagram.'],
+    sharing: ['share.'],
+    checks: ['drift.', 'lint.'],
+    comments: ['comment.'],
+} as const satisfies Record<string, readonly string[]>;
+
+export type AuditGroup = keyof typeof AUDIT_GROUPS;
+
+export const AUDIT_GROUP_NAMES = Object.keys(AUDIT_GROUPS) as [
+    AuditGroup,
+    ...AuditGroup[],
+];
+
+/** The actions that belong to a group, for an `action in (...)` filter. */
+export const actionsInGroup = (group: AuditGroup): AuditAction[] =>
+    AUDIT_ACTIONS.filter((action) =>
+        AUDIT_GROUPS[group].some((prefix) => action.startsWith(prefix))
+    );
 
 /**
  * What an action was done to. Ids and names only: never an email, a token or a
