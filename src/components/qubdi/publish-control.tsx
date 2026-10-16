@@ -14,9 +14,25 @@ import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import {
+    publishStatusBadge,
     publishStatusText,
     type PublishStatus,
+    type PublishTone,
 } from '@/lib/qubdi/publish-status';
+
+// a version pill has the same shape as the Lint and Drift badges
+const PILL_CLASS: Record<PublishTone, string> = {
+    neutral: 'bg-muted text-muted-foreground',
+    warning:
+        'bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100',
+    success: 'bg-primary/15 text-primary',
+};
+// with no version to show, the badge is only a coloured dot
+const DOT_CLASS: Record<PublishTone, string> = {
+    neutral: 'bg-muted-foreground/50',
+    warning: 'bg-amber-500',
+    success: 'bg-primary',
+};
 
 export const PublishControl: React.FC = () => {
     const { enabled, user, syncDiagram, remoteIdFor } = useQubdi();
@@ -62,6 +78,8 @@ export const PublishControl: React.FC = () => {
 
     if (!enabled || !user) return null;
 
+    const badge = publishStatusBadge(status);
+
     const publish = async () => {
         setBusy(true);
         try {
@@ -100,16 +118,12 @@ export const PublishControl: React.FC = () => {
 
     return (
         <>
-            <span
-                className="hidden text-xs text-muted-foreground lg:inline"
-                data-testid="publish-status"
-            >
-                {publishStatusText(status)}
-            </span>
             <Button
                 variant="outline"
                 size="sm"
                 className="gap-1"
+                title={publishStatusText(status)}
+                aria-label={`Publish. ${publishStatusText(status)}`}
                 onClick={() => {
                     void refresh();
                     setOpen(true);
@@ -117,6 +131,19 @@ export const PublishControl: React.FC = () => {
             >
                 <Rocket className="size-4" />
                 Publish
+                {badge.label ? (
+                    <span
+                        data-testid="publish-status"
+                        className={`rounded-full px-1.5 text-[10px] font-semibold ${PILL_CLASS[badge.tone]}`}
+                    >
+                        {badge.label}
+                    </span>
+                ) : (
+                    <span
+                        data-testid="publish-status"
+                        className={`size-2 rounded-full ${DOT_CLASS[badge.tone]}`}
+                    />
+                )}
             </Button>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="max-w-sm" showClose>
