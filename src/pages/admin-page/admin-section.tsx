@@ -2,6 +2,7 @@ import React from 'react';
 import { useQubdi } from '@/hooks/use-qubdi';
 import type { AdminSectionId } from './admin-sections';
 import { ActivityPanel } from './activity-panel';
+import { DiagramsPanel } from './diagrams-panel';
 import { ProjectsPanel } from './projects-panel';
 import { UsersPanel } from './users-panel';
 
@@ -17,6 +18,8 @@ export const AdminSection: React.FC<{ id: AdminSectionId }> = ({ id }) => {
     const { user } = useQubdi();
 
     switch (id) {
+        case 'diagrams':
+            return <DiagramsPanel />;
         case 'activity':
             return <ActivityPanel />;
         case 'projects':

@@ -37,7 +37,7 @@ export const ADMIN_SECTIONS = [
         label: 'Diagrams',
         description:
             'Every diagram with its project, owner and share links, so a link can be revoked.',
-        built: false,
+        built: true,
     },
     {
         id: 'activity',

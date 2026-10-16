@@ -28,6 +28,9 @@ vi.mock('@/components/logo/logo', () => ({ Logo: () => <span>logo</span> }));
 vi.mock('../projects-panel', () => ({
     ProjectsPanel: () => <div>projects panel</div>,
 }));
+vi.mock('../diagrams-panel', () => ({
+    DiagramsPanel: () => <div>diagrams panel</div>,
+}));
 vi.mock('../activity-panel', () => ({
     ActivityPanel: () => <div>activity panel</div>,
 }));
@@ -139,6 +142,15 @@ describe('admin panel frame', () => {
             await screen.findByRole('heading', { name: unbuilt.label })
         ).toBeTruthy();
         expect(screen.getByText('This section is not built yet.')).toBeTruthy();
+    });
+
+    it('shows the diagrams page in its section', async () => {
+        open('/admin/diagrams');
+        expect(
+            await screen.findByRole('heading', { name: 'Diagrams' })
+        ).toBeTruthy();
+        expect(screen.getByText('diagrams panel')).toBeTruthy();
+        expect(screen.queryByText('This section is not built yet.')).toBeNull();
     });
 
     it('shows the activity page in its section', async () => {

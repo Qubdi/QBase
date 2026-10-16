@@ -76,6 +76,41 @@ export interface ProjectMember {
     role: ProjectRole;
 }
 
+/** A diagram as the admin Diagrams page lists it (never its content). */
+export interface AdminDiagram {
+    id: string;
+    title: string;
+    projectId: string;
+    projectName: string | null;
+    /** the project's web address, for a link into the editor */
+    projectSlug: string | null;
+    ownerId: string;
+    ownerEmail: string | null;
+    updatedAt: string;
+    /** the newest published version; null if it was never published */
+    publishedVersion: number | null;
+    /** who has it open for editing right now */
+    editingBy: { userId: string; email: string | null } | null;
+    /** share links that can be opened right now */
+    activeLinks: number;
+}
+
+export type ShareLinkStatus = 'active' | 'off' | 'expired' | 'revoked';
+
+/** A share link as an admin sees it: its state and who made it, never its address. */
+export interface AdminShareLink {
+    id: string;
+    access: 'anyone' | 'signed_in' | 'off';
+    /** viewers on it are sent each new version as it is published */
+    live: boolean;
+    expiresAt: string | null;
+    createdAt: string;
+    revokedAt: string | null;
+    createdById: string | null;
+    createdByEmail: string | null;
+    status: ShareLinkStatus;
+}
+
 /** The kinds of action the Activity filter offers; the server defines them. */
 export type ActivityGroup =
     | 'users'
@@ -446,6 +481,22 @@ export function createApi(
             request<{ signedOut: number }>(
                 'DELETE',
                 `/admin/users/${id}/sessions`
+            ),
+        adminListDiagrams: (params?: ListParams & { projectId?: string }) =>
+            request<Page<AdminDiagram>>(
+                'GET',
+                `/admin/diagrams${listQuery(params, { projectId: params?.projectId })}`
+            ),
+        adminListDiagramLinks: (id: string) =>
+            request<AdminShareLink[]>(
+                'GET',
+                `/admin/diagrams/${id}/share-links`
+            ),
+        /** Ends a share link at once, for anyone using it. */
+        adminRevokeDiagramLink: (id: string, linkId: string) =>
+            request<void>(
+                'DELETE',
+                `/admin/diagrams/${id}/share-links/${linkId}`
             ),
         adminListActivity: (params: ActivityParams = {}) =>
             request<ActivityPage>(
