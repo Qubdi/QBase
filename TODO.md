@@ -376,8 +376,29 @@ Query rules for every new endpoint:
 
 ### Steps (tick when shipped, note the commit)
 
-1. [ ] **Model review migration**: the indexes and constraint changes above, a migration test and
-       the `EXPLAIN` notes. No behaviour change.
+1. [x] **Model review migration** (`0015_model_review`): the indexes and constraint changes above,
+       a migration test and the `EXPLAIN` notes. No behaviour change. Checked on a throwaway
+       Postgres seeded with 100k audit rows, 5k diagrams, 15k snapshots and 10k share links, and on
+       a copy of the dev data. What differs from the list above, and why:
+       - `diagrams` gets `(project_id)`, not `(project_id, updated_at desc)`. Every autosave changes
+         `updated_at`, and an index that contains it made 0 of 3,000 saves in-place (HOT) updates;
+         without it all 3,000 were. Add an `updated_at` index only when the Diagrams list (step 6)
+         needs one, and measure the saves again.
+       - No `sessions.expires_at` index (a user has one session, so the table is about one row per
+         user and the purge reads it all) and no `diagram_locks.user_id` index (300 rows; a delete
+         by user was no faster with one). `sessions.user_id` is indexed as listed, though at 200
+         users the planner still chooses a scan: it pays off at thousands of users and for step 7.
+       - No partial index on active share links yet. `share_links (diagram_id, created_at desc)`
+         serves the per-diagram list and the cascade; add the partial one with the step 5 or 6 query
+         that counts active links, if `EXPLAIN` shows it is needed.
+       - The audit `meta` column moves to step 2, with the routes that write it.
+       - Descending indexes are built `DESC NULLS FIRST`. Drizzle's `desc()` alone makes
+         `DESC NULLS LAST`, which Postgres does not use for `order by x desc`
+         (use `.desc().nullsFirst()`); `test/model-indexes.test.ts` guards this.
+       Measured, before to after: a rare action in the audit list 2.7 ms and 1,893 buffers to 0.04 ms
+       and 12; audit page 500 by OFFSET 2,194 to 189 buffers; admin project list with counts 2,283
+       to 83 buffers; a diagram's share links 176 to 4; deleting a user with its cascades 8.1 to 3.4 ms;
+       an audit insert 0.75 to 0.73 ms (no extra cost from the fifth index).
 2. [ ] **Server groundwork**: audit `meta` and the routes that write it; `users.last_login_at`;
        the new `sessions` columns with the throttled `last_seen_at`.
 3. [ ] **Admin shell**: left sidebar (Overview, Projects, Users, Diagrams, Activity) that becomes
