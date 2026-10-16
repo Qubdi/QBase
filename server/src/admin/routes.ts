@@ -1,19 +1,38 @@
-import { and, count, eq, ilike, ne, or, sql } from 'drizzle-orm';
+import {
+    and,
+    count,
+    desc,
+    eq,
+    gt,
+    ilike,
+    inArray,
+    ne,
+    notInArray,
+    or,
+    sql,
+} from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { activityQuery, listActivity } from '../audit/activity.js';
-import { audit, type AuditMeta } from '../audit/audit.js';
+import {
+    audit,
+    auditMany,
+    type AuditAction,
+    type AuditMeta,
+} from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
 import {
     containsPattern,
+    MAX_PAGE_SIZE,
     offsetOf,
     pageOf,
     pagingQuery,
 } from '../lib/paging.js';
 import { slugFor } from '../projects/slug.js';
 import {
+    diagramLocks,
     diagrams,
     projectMembers,
     projects,
@@ -51,6 +70,21 @@ const userListQuery = z.object({
     status: z.enum(['active', 'disabled']).optional(),
 });
 
+/** One action on up to a page's worth of accounts at once. */
+const bulkUsersBody = z.object({
+    action: z.enum(['enable', 'disable', 'delete']),
+    ids: z.array(z.string().uuid()).min(1).max(MAX_PAGE_SIZE),
+});
+
+const BULK_AUDIT_ACTION = {
+    enable: 'user.enable',
+    disable: 'user.disable',
+    delete: 'user.delete',
+} as const satisfies Record<
+    z.infer<typeof bulkUsersBody>['action'],
+    AuditAction
+>;
+
 const projectBody = z.object({
     name: z.string().trim().min(1).max(100),
     description: z.string().trim().max(500).default(''),
@@ -82,6 +116,19 @@ const withAdminSetLock = <T>(db: Db, fn: (tx: Tx) => Promise<T>) =>
     });
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+/**
+ * Deletes accounts. Their diagrams do not go with them (owner_id would
+ * cascade): the team keeps them, owned by `heirId`.
+ */
+const removeUsers = async (tx: Tx, ids: string[], heirId: string) => {
+    await tx
+        .update(diagrams)
+        .set({ ownerId: heirId })
+        .where(inArray(diagrams.ownerId, ids));
+    await tx.delete(sessions).where(inArray(sessions.userId, ids));
+    await tx.delete(users).where(inArray(users.id, ids));
+};
 
 const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
     const [{ value }] = await tx
@@ -141,6 +188,7 @@ export const adminRoutes =
                     isAdmin: users.isAdmin,
                     isActive: users.isActive,
                     createdAt: users.createdAt,
+                    lastLoginAt: users.lastLoginAt,
                     projects: sql<number>`(select count(*)::int from project_members pm where pm.user_id = users.id)`,
                 })
                 .from(users)
@@ -148,7 +196,42 @@ export const adminRoutes =
                 .orderBy(users.createdAt, users.id)
                 .limit(paging.limit)
                 .offset(offsetOf(paging));
-            return pageOf(items, total, paging);
+            // who is signed in right now, for this page only: one lookup on
+            // sessions_user_idx, not a join that every row pays for
+            const live =
+                items.length === 0
+                    ? []
+                    : await db
+                          .select({
+                              userId: sessions.userId,
+                              lastSeenAt: sessions.lastSeenAt,
+                          })
+                          .from(sessions)
+                          .where(
+                              and(
+                                  inArray(
+                                      sessions.userId,
+                                      items.map((u) => u.id)
+                                  ),
+                                  gt(sessions.expiresAt, new Date())
+                              )
+                          );
+            const lastActive = new Map<string, Date>();
+            for (const s of live) {
+                const known = lastActive.get(s.userId);
+                if (!known || s.lastSeenAt > known) {
+                    lastActive.set(s.userId, s.lastSeenAt);
+                }
+            }
+            return pageOf(
+                items.map((u) => ({
+                    ...u,
+                    // null: not signed in (no live session)
+                    lastActiveAt: lastActive.get(u.id) ?? null,
+                })),
+                total,
+                paging
+            );
         });
 
         app.post('/users', async (req, reply) => {
@@ -179,6 +262,8 @@ export const adminRoutes =
                 isAdmin: user.isAdmin,
                 isActive: user.isActive,
                 createdAt: user.createdAt,
+                lastLoginAt: null,
+                lastActiveAt: null,
                 projects: 0,
             });
         });
@@ -268,13 +353,7 @@ export const adminRoutes =
                 ) {
                     return { error: 'last_admin' as const };
                 }
-                // owner_id cascades; keep the team's diagrams alive
-                await tx
-                    .update(diagrams)
-                    .set({ ownerId: req.user!.id })
-                    .where(eq(diagrams.ownerId, id));
-                await tx.delete(sessions).where(eq(sessions.userId, id));
-                await tx.delete(users).where(eq(users.id, id));
+                await removeUsers(tx, [id], req.user!.id);
                 return {};
             });
             if (outcome.error === 'not_found') {
@@ -289,6 +368,156 @@ export const adminRoutes =
                 meta: { targetUserId: id },
             });
             return reply.code(204).send();
+        });
+
+        // Enable, disable or delete several accounts in one request. All or
+        // nothing, under the same lock as the single-account routes: a request
+        // that would leave no admin who can sign in, or that includes the
+        // caller in a disable or delete, changes nothing and says why. An
+        // account that is already in the wanted state, or no longer exists,
+        // is counted as unchanged and gets no audit row.
+        app.post('/users/bulk', async (req, reply) => {
+            const body = bulkUsersBody.parse(req.body);
+            const ids = [...new Set(body.ids)];
+            const self = req.user!.id;
+            // enabling yourself changes nothing, so only the actions that take
+            // access away refuse
+            if (body.action !== 'enable' && ids.includes(self)) {
+                return reply.code(400).send({
+                    error:
+                        body.action === 'delete'
+                            ? 'cannot_delete_self'
+                            : 'cannot_disable_self',
+                });
+            }
+            const outcome = await withAdminSetLock(db, async (tx) => {
+                const found = await tx
+                    .select({
+                        id: users.id,
+                        isAdmin: users.isAdmin,
+                        isActive: users.isActive,
+                    })
+                    .from(users)
+                    .where(inArray(users.id, ids));
+                const changing = found.filter((u) =>
+                    body.action === 'enable'
+                        ? !u.isActive
+                        : body.action === 'disable'
+                          ? u.isActive
+                          : true
+                );
+                const changingIds = changing.map((u) => u.id);
+                if (changingIds.length === 0) return { changed: [] as string[] };
+
+                // admins who can sign in are lost to a disable or a delete;
+                // someone else must remain
+                const losesAdmin =
+                    body.action !== 'enable' &&
+                    changing.some((u) => u.isAdmin && u.isActive);
+                if (losesAdmin) {
+                    const [{ value: remaining }] = await tx
+                        .select({ value: count() })
+                        .from(users)
+                        .where(
+                            and(
+                                eq(users.isAdmin, true),
+                                eq(users.isActive, true),
+                                notInArray(users.id, changingIds)
+                            )
+                        );
+                    if (remaining < 1) return { error: 'last_admin' as const };
+                }
+
+                if (body.action === 'enable') {
+                    await tx
+                        .update(users)
+                        .set({ isActive: true })
+                        .where(inArray(users.id, changingIds));
+                } else if (body.action === 'disable') {
+                    await tx
+                        .update(users)
+                        .set({ isActive: false })
+                        .where(inArray(users.id, changingIds));
+                    // a disabled account ends every session, and lets go of
+                    // the diagrams it was editing
+                    await tx
+                        .delete(sessions)
+                        .where(inArray(sessions.userId, changingIds));
+                    await tx
+                        .delete(diagramLocks)
+                        .where(inArray(diagramLocks.userId, changingIds));
+                } else {
+                    await removeUsers(tx, changingIds, self);
+                }
+                return { changed: changingIds };
+            });
+            if ('error' in outcome) {
+                return reply.code(400).send({ error: outcome.error });
+            }
+            await auditMany(
+                db,
+                outcome.changed.map((targetUserId) => ({
+                    userId: self,
+                    action: BULK_AUDIT_ACTION[body.action],
+                    meta: { targetUserId },
+                }))
+            );
+            return {
+                changed: outcome.changed.length,
+                unchanged: ids.length - outcome.changed.length,
+            };
+        });
+
+        // ---- a user's sessions ----
+
+        // what the admin may see of a session: when, and from which browser.
+        // Never its id, which is the hash of the cookie.
+        app.get('/users/:id/sessions', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const [exists] = await db
+                .select({ id: users.id })
+                .from(users)
+                .where(eq(users.id, id));
+            if (!exists) return reply.code(404).send({ error: 'not_found' });
+            return db
+                .select({
+                    createdAt: sessions.createdAt,
+                    lastSeenAt: sessions.lastSeenAt,
+                    expiresAt: sessions.expiresAt,
+                    userAgent: sessions.userAgent,
+                })
+                .from(sessions)
+                .where(
+                    and(
+                        eq(sessions.userId, id),
+                        gt(sessions.expiresAt, new Date())
+                    )
+                )
+                .orderBy(desc(sessions.createdAt));
+        });
+
+        // "sign out everywhere". Your own session is the one you use: leave
+        // with the ordinary sign out.
+        app.delete('/users/:id/sessions', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            if (id === req.user!.id) {
+                return reply.code(400).send({ error: 'cannot_sign_out_self' });
+            }
+            const [exists] = await db
+                .select({ id: users.id })
+                .from(users)
+                .where(eq(users.id, id));
+            if (!exists) return reply.code(404).send({ error: 'not_found' });
+            const signedOut = await destroyOtherSessions(db, id, undefined);
+            // signing out someone who was not signed in is not an event
+            if (signedOut > 0) {
+                await audit(db, {
+                    userId: req.user!.id,
+                    action: 'user.sign_out',
+                    meta: { targetUserId: id },
+                });
+            }
+            return { signedOut };
         });
 
         // ---- projects ----

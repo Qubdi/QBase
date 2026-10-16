@@ -8,6 +8,7 @@ export const AUDIT_ACTIONS = [
     'user.delete',
     'user.disable',
     'user.enable',
+    'user.sign_out',
     'project.create',
     'project.update',
     'project.delete',
@@ -96,19 +97,26 @@ export function cleanMeta(meta: AuditMeta | undefined): AuditMeta | null {
     return Object.keys(kept).length > 0 ? (kept as AuditMeta) : null;
 }
 
-export async function audit(
-    db: Db,
-    entry: {
-        userId: string;
-        action: AuditAction;
-        diagramId?: string;
-        meta?: AuditMeta;
-    }
-) {
-    await db.insert(auditLog).values({
-        userId: entry.userId,
-        action: entry.action,
-        diagramId: entry.diagramId ?? null,
-        meta: cleanMeta(entry.meta),
-    });
+export interface AuditEntry {
+    userId: string;
+    action: AuditAction;
+    diagramId?: string;
+    meta?: AuditMeta;
+}
+
+const toRow = (entry: AuditEntry) => ({
+    userId: entry.userId,
+    action: entry.action,
+    diagramId: entry.diagramId ?? null,
+    meta: cleanMeta(entry.meta),
+});
+
+export async function audit(db: Db, entry: AuditEntry) {
+    await db.insert(auditLog).values(toRow(entry));
+}
+
+/** Several rows in one statement, for an action done to many things at once. */
+export async function auditMany(db: Db, entries: AuditEntry[]) {
+    if (entries.length === 0) return;
+    await db.insert(auditLog).values(entries.map(toRow));
 }

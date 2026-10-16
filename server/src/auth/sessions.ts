@@ -107,21 +107,31 @@ export async function destroySession(db: Db, token: string | undefined) {
     }
 }
 
-/** Drop every session of a user except the one identified by `exceptToken`. */
+/**
+ * Drop every session of a user except the one identified by `exceptToken`.
+ * Returns how many live sessions it ended (one that had already expired and
+ * was waiting for the purge does not count), so a caller can tell "signed
+ * out" from "was not signed in".
+ */
 export async function destroyOtherSessions(
     db: Db,
     userId: string,
     exceptToken: string | undefined
-) {
+): Promise<number> {
     const condition = exceptToken
         ? and(
               eq(sessions.userId, userId),
               ne(sessions.id, hashToken(exceptToken))
           )
         : eq(sessions.userId, userId);
-    await db.delete(sessions).where(condition);
+    const ended = await db
+        .delete(sessions)
+        .where(condition)
+        .returning({ expiresAt: sessions.expiresAt });
     // nobody is left to renew the diagrams that user was editing
     if (!exceptToken) {
         await db.delete(diagramLocks).where(eq(diagramLocks.userId, userId));
     }
+    const now = Date.now();
+    return ended.filter((s) => s.expiresAt.getTime() > now).length;
 }
