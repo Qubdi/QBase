@@ -6,6 +6,7 @@ import {
     gt,
     ilike,
     inArray,
+    isNull,
     ne,
     notInArray,
     or,
@@ -13,6 +14,11 @@ import {
 } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import {
+    adminDiagramsQuery,
+    listAdminDiagrams,
+    listDiagramLinks,
+} from './diagrams.js';
 import { activityQuery, listActivity } from '../audit/activity.js';
 import {
     audit,
@@ -23,6 +29,7 @@ import {
 import { hashPassword } from '../auth/password.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
+import { emitLinkChanged } from '../events.js';
 import {
     containsPattern,
     MAX_PAGE_SIZE,
@@ -37,10 +44,15 @@ import {
     projectMembers,
     projects,
     sessions,
+    shareLinks,
     users,
 } from '../db/schema.js';
 
 const idParam = z.object({ id: z.string().uuid() });
+const linkParam = z.object({
+    id: z.string().uuid(),
+    linkId: z.string().uuid(),
+});
 const memberParam = z.object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
@@ -518,6 +530,56 @@ export const adminRoutes =
                 });
             }
             return { signedOut };
+        });
+
+        // ---- diagrams and their share links ----
+
+        // paged: ?page=&limit=&q= (matches the title) &projectId=
+        app.get('/diagrams', async (req) =>
+            listAdminDiagrams(db, adminDiagramsQuery.parse(req.query))
+        );
+
+        app.get('/diagrams/:id/share-links', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const [exists] = await db
+                .select({ id: diagrams.id })
+                .from(diagrams)
+                .where(eq(diagrams.id, id));
+            if (!exists) return reply.code(404).send({ error: 'not_found' });
+            return listDiagramLinks(db, id);
+        });
+
+        // Ends a link at once, including for anyone watching it live. An admin
+        // does not have to be a member of the project to do this: a leaked
+        // link is exactly when the owner may not be around.
+        app.delete('/diagrams/:id/share-links/:linkId', async (req, reply) => {
+            const { id, linkId } = linkParam.parse(req.params);
+            const [link] = await db
+                .select({ id: shareLinks.id })
+                .from(shareLinks)
+                .where(
+                    and(eq(shareLinks.id, linkId), eq(shareLinks.diagramId, id))
+                );
+            if (!link) return reply.code(404).send({ error: 'not_found' });
+            // only the request that really revokes it records it: two admins
+            // revoking at once leave one row
+            const revoked = await db
+                .update(shareLinks)
+                .set({ revokedAt: new Date() })
+                .where(
+                    and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt))
+                )
+                .returning({ id: shareLinks.id });
+            if (revoked.length > 0) {
+                await audit(db, {
+                    userId: req.user!.id,
+                    action: 'share.revoke',
+                    diagramId: id,
+                    meta: { linkId },
+                });
+            }
+            emitLinkChanged(linkId);
+            return reply.code(204).send();
         });
 
         // ---- projects ----
