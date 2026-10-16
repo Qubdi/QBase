@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { KeyRound, Monitor, Trash2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { Badge } from '@/components/badge/badge';
 import { Input } from '@/components/input/input';
@@ -27,6 +28,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/dialog/dialog';
+import { useToast } from '@/components/toast/use-toast';
 import { ListPager } from '@/components/qubdi/list-pager';
 import { SearchInput } from '@/components/qubdi/search-input';
 import { usePagedList } from '@/hooks/use-paged-list';
@@ -34,16 +36,45 @@ import {
     api,
     errorMessage,
     type AdminUser,
+    type BulkUserAction,
+    type BulkUsersResult,
     type UserStatus,
 } from '@/lib/qubdi/api';
+import { ago, exactTime } from '@/lib/qubdi/when';
+import { UserSessionsDialog } from './user-sessions-dialog';
 
 const PAGE_SIZE = 10;
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+const BULK_DONE: Record<BulkUserAction, string> = {
+    enable: 'Enabled',
+    disable: 'Disabled',
+    delete: 'Deleted',
+};
+
+/** What to tell the admin after a bulk action: how many it did, and how many it left. */
+const bulkToast = (action: BulkUserAction, result: BulkUsersResult) =>
+    result.changed === 0
+        ? {
+              title: 'Nothing to change',
+              description:
+                  'They were already in that state, or no longer exist.',
+          }
+        : {
+              title: `${BULK_DONE[action]} ${plural(result.changed, 'user')}`,
+              description:
+                  result.unchanged > 0
+                      ? `${plural(result.unchanged, 'account')} left as they were.`
+                      : undefined,
+          };
 
 export interface UsersPanelProps {
     currentUserId: string;
 }
 
 export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
+    const { toast } = useToast();
     const [error, setError] = useState<string | null>(null);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -52,6 +83,13 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
     const [resetFor, setResetFor] = useState<AdminUser | null>(null);
     const [newPassword, setNewPassword] = useState('');
     const [deleteFor, setDeleteFor] = useState<AdminUser | null>(null);
+    const [sessionsFor, setSessionsFor] = useState<AdminUser | null>(null);
+    // the people ticked for a bulk action, and the action waiting to be confirmed
+    const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+    const [confirmBulk, setConfirmBulk] = useState<Exclude<
+        BulkUserAction,
+        'enable'
+    > | null>(null);
 
     // a fixed page size keeps the panel the same height however many users exist
     const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
@@ -66,6 +104,40 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
         { limit: PAGE_SIZE, filter: statusFilter === 'all' ? '' : statusFilter }
     );
 
+    // a tick belongs to the rows it was made on: another page, search or
+    // filter starts with nothing ticked, so "3 selected" never counts rows
+    // that are out of sight
+    useEffect(() => {
+        setSelected(new Set());
+    }, [list.page, list.query, statusFilter]);
+
+    // only rows that are on this page and that may be acted on in bulk (the
+    // server refuses the caller in a disable or delete)
+    const selectable = useMemo(
+        () => list.items.filter((u) => u.id !== currentUserId),
+        [list.items, currentUserId]
+    );
+    const chosen = useMemo(
+        () => selectable.filter((u) => selected.has(u.id)),
+        [selectable, selected]
+    );
+    const allChosen =
+        selectable.length > 0 && chosen.length === selectable.length;
+    const someChosen = chosen.length > 0 && !allChosen;
+    const selectAll = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        // "some but not all" has no HTML attribute: it is set on the element
+        if (selectAll.current) selectAll.current.indeterminate = someChosen;
+    }, [someChosen]);
+
+    const toggle = (id: string, on: boolean) =>
+        setSelected((current) => {
+            const next = new Set(current);
+            if (on) next.add(id);
+            else next.delete(id);
+            return next;
+        });
+
     const run = async (fn: () => Promise<unknown>) => {
         setError(null);
         setBusy(true);
@@ -77,6 +149,16 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
         } finally {
             setBusy(false);
         }
+    };
+
+    /** The same action on everyone ticked; nothing changes unless all of it can. */
+    const bulk = (action: BulkUserAction) => {
+        const ids = chosen.map((u) => u.id);
+        void run(async () => {
+            const result = await api.adminBulkUsers(action, ids);
+            setSelected(new Set());
+            toast(bulkToast(action, result));
+        });
     };
 
     const createUser = (e: React.FormEvent) => {
@@ -183,13 +265,86 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                         ))}
                     </div>
                 </div>
-                <div className="max-h-[26rem] min-h-40 overflow-y-auto">
+                {chosen.length > 0 ? (
+                    <div
+                        role="toolbar"
+                        aria-label="Actions for the selected users"
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground"
+                    >
+                        <span aria-live="polite">{chosen.length} selected</span>
+                        <div className="flex flex-wrap gap-1">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                aria-label="Enable selected users"
+                                disabled={busy}
+                                onClick={() => bulk('enable')}
+                            >
+                                Enable
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                aria-label="Disable selected users"
+                                disabled={busy}
+                                onClick={() => setConfirmBulk('disable')}
+                            >
+                                Disable
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                aria-label="Delete selected users"
+                                className="text-destructive hover:text-destructive"
+                                disabled={busy}
+                                onClick={() => setConfirmBulk('delete')}
+                            >
+                                Delete
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setSelected(new Set())}
+                            >
+                                Clear selection
+                            </Button>
+                        </div>
+                    </div>
+                ) : null}
+                <div className="max-h-[26rem] min-h-40 overflow-y-auto [&_td]:px-2.5 [&_th]:px-2.5">
                     <Table>
                         <TableHeader className="sticky top-0 z-10 bg-card">
                             <TableRow>
+                                <TableHead className="w-10">
+                                    <input
+                                        ref={selectAll}
+                                        type="checkbox"
+                                        aria-label="Select all users on this page"
+                                        checked={allChosen}
+                                        disabled={
+                                            busy || selectable.length === 0
+                                        }
+                                        onChange={(e) =>
+                                            setSelected(
+                                                e.target.checked
+                                                    ? new Set(
+                                                          selectable.map(
+                                                              (u) => u.id
+                                                          )
+                                                      )
+                                                    : new Set()
+                                            )
+                                        }
+                                    />
+                                </TableHead>
                                 <TableHead>Email</TableHead>
                                 <TableHead>Role</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Last sign-in</TableHead>
                                 <TableHead className="text-right">
                                     Projects
                                 </TableHead>
@@ -202,7 +357,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             {list.initialLoading ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={5}
+                                        colSpan={7}
                                         className="text-muted-foreground"
                                     >
                                         Loading…
@@ -211,7 +366,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             ) : list.items.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={5}
+                                        colSpan={7}
                                         className="text-muted-foreground"
                                     >
                                         {list.query
@@ -233,6 +388,25 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                     : 'text-muted-foreground'
                                             }
                                         >
+                                            <TableCell>
+                                                <input
+                                                    type="checkbox"
+                                                    aria-label={`Select ${u.email}`}
+                                                    title={
+                                                        self
+                                                            ? 'You cannot select yourself'
+                                                            : undefined
+                                                    }
+                                                    checked={selected.has(u.id)}
+                                                    disabled={busy || self}
+                                                    onChange={(e) =>
+                                                        toggle(
+                                                            u.id,
+                                                            e.target.checked
+                                                        )
+                                                    }
+                                                />
+                                            </TableCell>
                                             <TableCell className="font-medium">
                                                 {u.email}
                                                 {self ? (
@@ -266,6 +440,31 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         ? 'Active'
                                                         : 'Disabled'}
                                                 </Badge>
+                                            </TableCell>
+                                            <TableCell className="whitespace-nowrap">
+                                                {u.lastLoginAt ? (
+                                                    <time
+                                                        dateTime={u.lastLoginAt}
+                                                        title={exactTime(
+                                                            u.lastLoginAt
+                                                        )}
+                                                    >
+                                                        {ago(u.lastLoginAt)}
+                                                    </time>
+                                                ) : (
+                                                    <span className="text-muted-foreground">
+                                                        Never
+                                                    </span>
+                                                )}
+                                                {u.lastActiveAt ? (
+                                                    <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                                                        <span
+                                                            aria-hidden
+                                                            className="size-1.5 rounded-full bg-current"
+                                                        />
+                                                        Signed in
+                                                    </span>
+                                                ) : null}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 {u.projects}
@@ -312,26 +511,53 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                             ? 'Disable'
                                                             : 'Enable'}
                                                     </Button>
+                                                    {/* the rarer actions are icons, so the row fits; each has a name for a screen reader and a tooltip */}
                                                     <Button
                                                         variant="ghost"
-                                                        size="sm"
+                                                        size="icon"
+                                                        className="size-8"
+                                                        aria-label={`Reset password of ${u.email}`}
+                                                        title="Reset password"
                                                         onClick={() => {
                                                             setNewPassword('');
                                                             setResetFor(u);
                                                         }}
                                                     >
-                                                        Reset password
+                                                        <KeyRound />
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
-                                                        size="sm"
-                                                        className="text-destructive hover:text-destructive"
+                                                        size="icon"
+                                                        className="size-8"
+                                                        aria-label={`Sessions of ${u.email}`}
+                                                        disabled={self}
+                                                        title={
+                                                            self
+                                                                ? 'Use Sign out in the account menu'
+                                                                : 'Sessions'
+                                                        }
+                                                        onClick={() =>
+                                                            setSessionsFor(u)
+                                                        }
+                                                    >
+                                                        <Monitor />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-8 text-destructive hover:text-destructive"
+                                                        aria-label={`Delete ${u.email}`}
+                                                        title={
+                                                            self
+                                                                ? 'You cannot delete yourself'
+                                                                : 'Delete user'
+                                                        }
                                                         disabled={busy || self}
                                                         onClick={() =>
                                                             setDeleteFor(u)
                                                         }
                                                     >
-                                                        Delete
+                                                        <Trash2 />
                                                     </Button>
                                                 </div>
                                             </TableCell>
@@ -404,8 +630,8 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                         <AlertDialogTitle>Delete user?</AlertDialogTitle>
                         <AlertDialogDescription>
                             {deleteFor?.email} will lose access immediately.
-                            Diagrams they created inside projects stay with the
-                            project; their personal diagrams are deleted.
+                            Diagrams they created stay with their projects and
+                            become yours.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -425,6 +651,43 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <AlertDialog
+                open={confirmBulk !== null}
+                onOpenChange={(o) => !o && setConfirmBulk(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {confirmBulk === 'delete' ? 'Delete' : 'Disable'}{' '}
+                            {plural(chosen.length, 'user')}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {confirmBulk === 'delete'
+                                ? 'They lose access immediately and the accounts cannot be brought back. Diagrams they created stay with their projects and become yours.'
+                                : 'They are signed out at once and cannot sign in until you enable them again. Their diagrams and project access stay as they are.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (confirmBulk) bulk(confirmBulk);
+                            }}
+                        >
+                            {confirmBulk === 'delete'
+                                ? `Delete ${plural(chosen.length, 'user')}`
+                                : `Disable ${plural(chosen.length, 'user')}`}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <UserSessionsDialog
+                user={sessionsFor}
+                onClose={() => setSessionsFor(null)}
+                onSignedOut={list.reload}
+            />
         </div>
     );
 };

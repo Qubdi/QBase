@@ -32,11 +32,33 @@ export interface AdminUser {
     /** a disabled user cannot sign in */
     isActive: boolean;
     createdAt: string;
+    /** the last time they signed in; null if they never have */
+    lastLoginAt: string | null;
+    /** when their live session was last used; null when they are not signed in */
+    lastActiveAt: string | null;
     /** number of projects the user is assigned to */
     projects: number;
 }
 
 export type UserStatus = 'active' | 'disabled';
+
+/** One sign-in of a user, as an admin may see it (no id, no token). */
+export interface AdminSession {
+    createdAt: string;
+    lastSeenAt: string;
+    expiresAt: string;
+    /** the browser's User-Agent; null when it did not say */
+    userAgent: string | null;
+}
+
+export type BulkUserAction = 'enable' | 'disable' | 'delete';
+
+export interface BulkUsersResult {
+    /** accounts the action was done to */
+    changed: number;
+    /** accounts left alone: already in that state, or no longer there */
+    unchanged: number;
+}
 
 export interface AdminProject {
     id: string;
@@ -411,6 +433,20 @@ export function createApi(
             ),
         adminDeleteUser: (id: string) =>
             request<void>('DELETE', `/admin/users/${id}`),
+        /** Enable, disable or delete up to 100 accounts; all or nothing. */
+        adminBulkUsers: (action: BulkUserAction, ids: string[]) =>
+            request<BulkUsersResult>('POST', '/admin/users/bulk', {
+                action,
+                ids,
+            }),
+        adminListUserSessions: (id: string) =>
+            request<AdminSession[]>('GET', `/admin/users/${id}/sessions`),
+        /** Ends every session of the user; says how many were live. */
+        adminSignOutUser: (id: string) =>
+            request<{ signedOut: number }>(
+                'DELETE',
+                `/admin/users/${id}/sessions`
+            ),
         adminListActivity: (params: ActivityParams = {}) =>
             request<ActivityPage>(
                 'GET',
@@ -716,6 +752,8 @@ export const errorMessage = (e: unknown): string => {
                 'Open this diagram from a project before saving it to the server.',
             last_admin: 'There must be at least one admin who can sign in.',
             cannot_disable_self: 'You cannot disable your own account.',
+            cannot_sign_out_self:
+                'You cannot sign yourself out here. Use Sign out in the account menu.',
             account_disabled:
                 'This account has been disabled. Ask an admin to enable it.',
             invalid_name:

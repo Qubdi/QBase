@@ -108,6 +108,7 @@ describe('describeActivity', () => {
                 'anna@corp.io disabled the account of bob@corp.io',
             ],
             ['user.enable', 'anna@corp.io enabled the account of bob@corp.io'],
+            ['user.sign_out', 'anna@corp.io signed bob@corp.io out everywhere'],
             ['user.update', 'anna@corp.io updated the account of bob@corp.io'],
         ])('%s', (action, expected) => {
             expect(sentence({ action, ...target })).toBe(expected);

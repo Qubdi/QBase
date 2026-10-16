@@ -123,6 +123,65 @@ describe('qubdi api client', () => {
         expect(init.method).toBe('PATCH');
     });
 
+    describe('user management', () => {
+        const call = async (
+            request: (api: ReturnType<typeof createApi>) => Promise<unknown>,
+            answer: unknown = {}
+        ) => {
+            const fetchMock = vi.fn(async () => jsonResponse(200, answer));
+            await request(
+                createApi('http://srv', fetchMock as unknown as typeof fetch)
+            );
+            const [url, init] = fetchMock.mock.calls[0] as unknown as [
+                string,
+                RequestInit,
+            ];
+            return { url, init };
+        };
+
+        it('sends a bulk action as one request with the action and the ids', async () => {
+            const { url, init } = await call(
+                (api) => api.adminBulkUsers('disable', ['u1', 'u2']),
+                { changed: 2, unchanged: 0 }
+            );
+            expect(url).toBe('http://srv/admin/users/bulk');
+            expect(init.method).toBe('POST');
+            expect(JSON.parse(init.body as string)).toEqual({
+                action: 'disable',
+                ids: ['u1', 'u2'],
+            });
+        });
+
+        it("reads a user's sessions", async () => {
+            const { url, init } = await call(
+                (api) => api.adminListUserSessions('u1'),
+                []
+            );
+            expect(url).toBe('http://srv/admin/users/u1/sessions');
+            expect(init.method).toBe('GET');
+        });
+
+        it('signs a user out everywhere with a DELETE on their sessions', async () => {
+            const { url, init } = await call(
+                (api) => api.adminSignOutUser('u1'),
+                {
+                    signedOut: 1,
+                }
+            );
+            expect(url).toBe('http://srv/admin/users/u1/sessions');
+            expect(init.method).toBe('DELETE');
+        });
+
+        it('explains what the server refused', () => {
+            expect(
+                errorMessage(new ApiError(400, 'cannot_sign_out_self'))
+            ).toMatch(/sign yourself out/i);
+            expect(
+                errorMessage(new ApiError(400, 'cannot_delete_self'))
+            ).toMatch(/delete your own/i);
+        });
+    });
+
     describe('activity', () => {
         const urlOf = async (
             params?: Parameters<

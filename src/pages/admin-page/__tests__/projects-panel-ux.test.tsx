@@ -71,6 +71,8 @@ const user = (id: string, email: string): AdminUser => ({
     isAdmin: false,
     isActive: true,
     createdAt: '2025-01-01T00:00:00.000Z',
+    lastLoginAt: null,
+    lastActiveAt: null,
     projects: 0,
 });
 
@@ -180,10 +182,11 @@ describe('admin ProjectsPanel', () => {
             renderPanel();
             await screen.findByRole('heading', { name: 'Billing' });
             expect(tab('Members').getAttribute('aria-selected')).toBe('true');
+            // the people arrive after the project's name does
             const assigned = within(
-                screen.getByRole('list', { name: 'Assigned users' })
+                await screen.findByRole('list', { name: 'Assigned users' })
             );
-            expect(assigned.getByText('ann@corp.io')).toBeTruthy();
+            expect(await assigned.findByText('ann@corp.io')).toBeTruthy();
             expect(screen.queryByLabelText('Project name')).toBeNull();
 
             await userEvent.click(tab('Settings'));
@@ -206,9 +209,11 @@ describe('admin ProjectsPanel', () => {
             const picker = await screen.findByRole('list', {
                 name: 'Matching users',
             });
+            // wait for the users to arrive before saying who is not among them
+            const dave = await within(picker).findByText('dave@corp.io');
             expect(within(picker).queryByText('ann@corp.io')).toBeNull();
             expect(within(picker).queryByText('root@corp.io')).toBeNull();
-            fireEvent.click(within(picker).getByText('dave@corp.io'));
+            fireEvent.click(dave);
             await userEvent.click(
                 screen.getByRole('button', { name: 'Assign' })
             );
@@ -232,7 +237,7 @@ describe('admin ProjectsPanel', () => {
             renderPanel();
             await screen.findByRole('heading', { name: 'Billing' });
             fireEvent.keyDown(
-                screen.getByRole('combobox', {
+                await screen.findByRole('combobox', {
                     name: 'Permission for ann@corp.io',
                 }),
                 { key: ' ' }
@@ -257,7 +262,9 @@ describe('admin ProjectsPanel', () => {
             renderPanel();
             await screen.findByRole('heading', { name: 'Billing' });
             fireEvent.click(
-                screen.getByRole('button', { name: 'Remove bob@corp.io' })
+                await screen.findByRole('button', {
+                    name: 'Remove bob@corp.io',
+                })
             );
 
             await waitFor(() =>
@@ -288,7 +295,9 @@ describe('admin ProjectsPanel', () => {
             renderPanel();
             await screen.findByRole('heading', { name: 'Billing' });
             fireEvent.click(
-                screen.getByRole('button', { name: 'Remove ann@corp.io' })
+                await screen.findByRole('button', {
+                    name: 'Remove ann@corp.io',
+                })
             );
             expect((await screen.findByRole('alert')).textContent).toBe(
                 'Not found.'

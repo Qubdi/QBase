@@ -98,6 +98,8 @@ export function describeActivity(item: ActivityItem): Segment[] {
             return [who, text(' disabled the account of '), target];
         case 'user.enable':
             return [who, text(' enabled the account of '), target];
+        case 'user.sign_out':
+            return [who, text(' signed '), target, text(' out everywhere')];
 
         case 'project.create':
             return [who, text(' created the project '), project];
