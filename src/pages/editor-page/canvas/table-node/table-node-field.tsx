@@ -40,7 +40,6 @@ import {
 } from './table-node-dependency-indicator';
 import { useCanvas } from '@/hooks/use-canvas';
 import { useLayout } from '@/hooks/use-layout';
-import { CommentMarker } from '@/components/qubdi/comment-marker';
 
 export const LEFT_HANDLE_ID_PREFIX = 'left_rel_';
 export const RIGHT_HANDLE_ID_PREFIX = 'right_rel_';
@@ -465,7 +464,6 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                             field.name
                         )}
                     </span>
-                    <CommentMarker type="field" id={field.id} />
                     {field.comments ? (
                         <Tooltip>
                             <TooltipTrigger asChild>

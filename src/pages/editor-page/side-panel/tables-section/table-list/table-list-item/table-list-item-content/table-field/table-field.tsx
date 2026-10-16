@@ -110,7 +110,7 @@ export const TableField: React.FC<TableFieldProps> = ({
                             <TooltipContent className="max-w-xs">
                                 <div>
                                     <div className="font-normal text-white/70 dark:text-black/70">
-                                        Comment:
+                                        Description:
                                     </div>
                                     <div className="whitespace-pre-wrap break-words">
                                         {field.comments}

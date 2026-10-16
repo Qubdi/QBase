@@ -1,7 +1,6 @@
 import React from 'react';
 import { AccountMenu } from '@/components/qubdi/account-menu';
 import { PublishControl } from '@/components/qubdi/publish-control';
-import { CommentsControl } from '@/components/qubdi/comments-control';
 import { DriftControl } from '@/components/qubdi/drift-control';
 import { GetLatestControl } from '@/components/qubdi/get-latest-control';
 import { LintControl } from '@/components/qubdi/lint-control';
@@ -32,7 +31,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
                 <GetLatestControl />
                 <LintControl />
                 <DriftControl />
-                <CommentsControl />
                 <PublishControl />
                 <AccountMenu />
                 <LanguageNav />
