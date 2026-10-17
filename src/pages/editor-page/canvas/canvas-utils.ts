@@ -113,3 +113,52 @@ export const findOverlappingTables = ({
 
     return graph;
 };
+
+export interface PlacedRect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** Space kept between tables that were moved apart. */
+export const TABLE_GAP = 24;
+
+const overlaps = (a: PlacedRect, b: PlacedRect, dx: number, dy: number) =>
+    a.x + dx < b.x + b.width &&
+    a.x + dx + a.width > b.x &&
+    a.y + dy < b.y + b.height &&
+    a.y + dy + a.height > b.y;
+
+/**
+ * How far to shift tables that were just dropped so none of them sits on top of
+ * another table: the smallest move that leaves them clear of `others`, or
+ * `{ dx: 0, dy: 0 }` when they already are. The dropped tables move together,
+ * so tables dragged as a group keep their arrangement.
+ */
+export const findFreeShift = (
+    moved: PlacedRect[],
+    others: PlacedRect[],
+    gap = TABLE_GAP
+): { dx: number; dy: number } => {
+    const free = (dx: number, dy: number) =>
+        !moved.some((m) => others.some((o) => overlaps(m, o, dx, dy)));
+    if (free(0, 0)) return { dx: 0, dy: 0 };
+
+    // the best spot always has a moved table flush against another one
+    const dxs = new Set<number>([0]);
+    const dys = new Set<number>([0]);
+    for (const m of moved) {
+        for (const o of others) {
+            dxs.add(o.x - gap - (m.x + m.width));
+            dxs.add(o.x + o.width + gap - m.x);
+            dys.add(o.y - gap - (m.y + m.height));
+            dys.add(o.y + o.height + gap - m.y);
+        }
+    }
+    const candidates: { dx: number; dy: number }[] = [];
+    for (const dx of dxs) for (const dy of dys) candidates.push({ dx, dy });
+    candidates.sort((a, b) => Math.hypot(a.dx, a.dy) - Math.hypot(b.dx, b.dy));
+
+    return candidates.find((c) => free(c.dx, c.dy)) ?? { dx: 0, dy: 0 };
+};

@@ -72,6 +72,7 @@ import { CanvasContextMenu } from './canvas-context-menu';
 import { areFieldTypesCompatible } from '@/lib/data/data-types/data-types';
 import {
     calcTableHeight,
+    findFreeShift,
     findOverlappingTables,
     findTableOverlapping,
 } from './canvas-utils';
@@ -275,7 +276,7 @@ export interface CanvasProps {
 }
 
 export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
-    const { getEdge, getInternalNode, getNode } = useReactFlow();
+    const { getEdge, getInternalNode, getNode, getNodes } = useReactFlow();
     const updateNodeInternals = useUpdateNodeInternals();
     const [selectedTableIds, setSelectedTableIds] = useState<string[]>([]);
     const [selectedRelationshipIds, setSelectedRelationshipIds] = useState<
@@ -1092,6 +1093,59 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
 
                 // Add visual changes to React Flow
                 changesToApply = [...changesToApply, ...additionalChanges];
+            // Tables dropped on top of other tables slide to the nearest free
+            // spot, all together when several were dragged
+            const dropped = changesToApply.filter(
+                (change): change is NodePositionChange =>
+                    change.type === 'position' &&
+                    !change.dragging &&
+                    !!change.position &&
+                    !isNaN(change.position.x) &&
+                    !isNaN(change.position.y) &&
+                    getNode(change.id)?.type === 'table'
+            );
+            if (dropped.length > 0 && !readonly) {
+                const droppedIds = new Set(dropped.map((c) => c.id));
+                const rectOf = (node: NodeType, x: number, y: number) => ({
+                    x,
+                    y,
+                    width:
+                        node.measured?.width ??
+                        (node.data as { table?: DBTable }).table?.width ??
+                        MIN_TABLE_SIZE,
+                    height:
+                        node.measured?.height ??
+                        calcTableHeight(
+                            (node.data as { table?: DBTable }).table
+                        ),
+                });
+                const others = getNodes()
+                    .filter((n) => n.type === 'table' && !droppedIds.has(n.id))
+                    .map((n) => rectOf(n, n.position.x, n.position.y));
+                const moved = dropped.flatMap((c) => {
+                    const node = getNode(c.id);
+                    return node
+                        ? [rectOf(node, c.position!.x, c.position!.y)]
+                        : [];
+                });
+                const { dx, dy } = findFreeShift(moved, others);
+                if (dx !== 0 || dy !== 0) {
+                    changesToApply = changesToApply.map((change) =>
+                        droppedIds.has(change.id) &&
+                        change.type === 'position' &&
+                        change.position
+                            ? {
+                                  ...change,
+                                  position: {
+                                      x: change.position.x + dx,
+                                      y: change.position.y + dy,
+                                  },
+                              }
+                            : change
+                    );
+                }
+            }
+
             }
 
             // First, detect area changes
@@ -1345,6 +1399,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
             removeNote,
             readonly,
             tables,
+            getNodes,
             areas,
             getNode,
         ]
