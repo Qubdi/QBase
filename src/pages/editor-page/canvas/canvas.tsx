@@ -31,6 +31,7 @@ import {
     useUpdateNodeInternals,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { findRelationshipBetween } from '@/lib/domain/db-relationship';
 import { PoweredByMark } from '@/components/qubdi/powered-by';
 import equal from 'fast-deep-equal';
 import type { TableNodeType } from './table-node/table-node';
@@ -850,6 +851,23 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 return;
             }
 
+            if (
+                findRelationshipBetween(relationships, {
+                    sourceTableId,
+                    targetTableId,
+                    sourceFieldId,
+                    targetFieldId,
+                })
+            ) {
+                toast({
+                    title: 'Already connected',
+                    variant: 'destructive',
+                    description:
+                        'These two fields already have a relationship between them',
+                });
+                return;
+            }
+
             createRelationship({
                 sourceTableId,
                 targetTableId,
@@ -857,7 +875,14 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 targetFieldId,
             });
         },
-        [createRelationship, createDependency, getField, toast, databaseType]
+        [
+            createRelationship,
+            createDependency,
+            getField,
+            toast,
+            databaseType,
+            relationships,
+        ]
     );
 
     const onEdgesChangeHandler: OnEdgesChange<EdgeType> = useCallback(

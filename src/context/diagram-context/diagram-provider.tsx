@@ -12,6 +12,7 @@ import {
 } from '@/lib/domain/db-index';
 import type { DBCheckConstraint } from '@/lib/domain/db-check-constraint';
 import type { DBRelationship } from '@/lib/domain/db-relationship';
+import { findRelationshipBetween } from '@/lib/domain/db-relationship';
 import { useStorage } from '@/hooks/use-storage';
 import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
 import type { Diagram } from '@/lib/domain/diagram';
@@ -1320,6 +1321,15 @@ export const DiagramProvider: React.FC<
                 sourceFieldId,
                 targetFieldId,
             }) => {
+                // one line per pair of fields: hand back the one that is there
+                const existing = findRelationshipBetween(relationships, {
+                    sourceTableId,
+                    targetTableId,
+                    sourceFieldId,
+                    targetFieldId,
+                });
+                if (existing) return existing;
+
                 const sourceTable = getTable(sourceTableId);
                 const sourceTableName = sourceTable?.name ?? '';
 
@@ -1350,7 +1360,7 @@ export const DiagramProvider: React.FC<
 
                 return relationship;
             },
-            [addRelationship, getTable]
+            [addRelationship, getTable, relationships]
         );
 
     const getRelationship: DiagramContext['getRelationship'] = useCallback(
