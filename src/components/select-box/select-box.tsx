@@ -326,7 +326,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                             className={cn(
                                 'items-center gap-1 overflow-hidden text-sm',
                                 multiple
-                                    ? 'flex flex-grow flex-wrap'
+                                    ? 'flex grow flex-wrap'
                                     : 'inline-flex whitespace-nowrap'
                             )}
                         >
