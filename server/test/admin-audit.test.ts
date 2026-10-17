@@ -341,7 +341,7 @@ describe('GET /admin/audit', () => {
         it('names the person an admin acted on, and keeps the row when they are deleted', async () => {
             const created = await call('POST', '/admin/users', {
                 email: 'target@example.com',
-                password: 'password123',
+                password: 'Password-123!',
             });
             const targetId = created.json().id;
 

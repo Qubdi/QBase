@@ -183,8 +183,13 @@ They apply when a password is **set**, never when it is checked at sign-in.
 ### Steps (tick when shipped, note the commit)
 
 1. [x] **`checkPassword` in `shared/password.ts`**, with tests for every rule and the Unicode cases. A part before the @ shorter than 3 characters is not compared (it would match almost anything). "Not the same as the current password" is checked by the server, which has the hash.
-2. [ ] **Server:** split the schemas, use them in the four places, the error shape; update the test
-       helpers to a compliant password.
+2. [x] **Server:** `signIn` (not empty, at most 200) and the new-password rules in `auth/password-rules.ts`,
+       used by register, change-password, admin create user and admin reset. A weak password gets 400
+       `{ error: 'weak_password', rules }`; change-password also answers `same_password`, only after the
+       current password was right (a wrong one still gets 403 and nothing about the new one). Admin reset
+       compares with the target's own email. `PASSWORD_MIN_LENGTH` is read into config (default 12, floor 8)
+       and passed through `docker-compose.yml`. Tests use `Password-123!`; the server suite can run against a
+       throwaway Postgres with `TEST_PG_PORT`.
 3. [ ] **Client:** `PasswordField` with the checklist in the four dialogs.
 4. [ ] **`must_change_password`:** migration, the admin create and reset set it, the forced-change
        flow.

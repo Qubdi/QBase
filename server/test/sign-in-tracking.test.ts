@@ -43,7 +43,7 @@ describe('sign-in tracking', () => {
             method: 'POST',
             url: '/admin/users',
             headers: as(admin),
-            payload: { email, password: 'password123' },
+            payload: { email, password: 'Password-123!' },
         });
         expect(res.statusCode).toBe(201);
         return res.json().id as string;
@@ -52,7 +52,7 @@ describe('sign-in tracking', () => {
     const signIn = (
         email: string,
         headers: Record<string, string> = {},
-        password = 'password123'
+        password = 'Password-123!'
     ) =>
         ctx.app.inject({
             method: 'POST',

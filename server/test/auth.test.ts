@@ -38,7 +38,7 @@ describe('auth', () => {
             method: 'POST',
             url: '/admin/users',
             headers: as(admin),
-            payload: { email: 'DUP@example.com', password: 'password123' },
+            payload: { email: 'DUP@example.com', password: 'Password-123!' },
         });
         expect(dup.statusCode).toBe(409);
         const weak = await ctx.app.inject({
@@ -55,7 +55,7 @@ describe('auth', () => {
         const res = await ctx.app.inject({
             method: 'POST',
             url: '/auth/login',
-            payload: { email: 'cookie@example.com', password: 'password123' },
+            payload: { email: 'cookie@example.com', password: 'Password-123!' },
         });
         const c = res.cookies.find((x) => x.name === 'qubdidb_session')!;
         expect(c.httpOnly).toBe(true);
@@ -65,7 +65,7 @@ describe('auth', () => {
     });
 
     it('does not store the password in plain text', async () => {
-        await registerUser(ctx.app, 'hash@example.com', 'password123');
+        await registerUser(ctx.app, 'hash@example.com', 'Password-123!');
         const rows = await ctx.db.select().from(users);
         for (const r of rows) {
             expect(r.passwordHash).toMatch(/^\$argon2/);
@@ -83,14 +83,14 @@ describe('auth', () => {
         const unknown = await ctx.app.inject({
             method: 'POST',
             url: '/auth/login',
-            payload: { email: 'nobody@example.com', password: 'password123' },
+            payload: { email: 'nobody@example.com', password: 'Password-123!' },
         });
         expect(unknown.statusCode).toBe(401);
 
         const ok = await ctx.app.inject({
             method: 'POST',
             url: '/auth/login',
-            payload: { email: 'login@example.com', password: 'password123' },
+            payload: { email: 'login@example.com', password: 'Password-123!' },
         });
         expect(ok.statusCode).toBe(200);
         const cookie = `qubdidb_session=${
@@ -130,7 +130,7 @@ describe('auth', () => {
             method: 'POST',
             url: '/auth/change-password',
             headers: as(user),
-            payload: { currentPassword: 'nope-nope', newPassword: 'newpassword1' },
+            payload: { currentPassword: 'nope-nope', newPassword: 'Newpassword-1!' },
         });
         expect(wrong.statusCode).toBe(403);
 
@@ -139,8 +139,8 @@ describe('auth', () => {
             url: '/auth/change-password',
             headers: as(user),
             payload: {
-                currentPassword: 'password123',
-                newPassword: 'newpassword1',
+                currentPassword: 'Password-123!',
+                newPassword: 'Newpassword-1!',
             },
         });
         expect(ok.statusCode).toBe(200);
@@ -159,7 +159,7 @@ describe('auth', () => {
         const login = await ctx.app.inject({
             method: 'POST',
             url: '/auth/login',
-            payload: { email: 'pw@example.com', password: 'newpassword1' },
+            payload: { email: 'pw@example.com', password: 'Newpassword-1!' },
         });
         expect(login.statusCode).toBe(200);
     });
@@ -168,7 +168,7 @@ describe('auth', () => {
         const res = await ctx.app.inject({
             method: 'POST',
             url: '/auth/change-password',
-            payload: { currentPassword: 'x', newPassword: 'newpassword1' },
+            payload: { currentPassword: 'x', newPassword: 'Newpassword-1!' },
         });
         expect(res.statusCode).toBe(401);
     });
@@ -201,7 +201,7 @@ describe('closed signup', () => {
             const res = await ctx.app.inject({
                 method: 'POST',
                 url: '/auth/register',
-                payload: { email: 'second@example.com', password: 'password123' },
+                payload: { email: 'second@example.com', password: 'Password-123!' },
             });
             expect(res.statusCode).toBe(403);
         } finally {
@@ -230,13 +230,13 @@ describe('auth throttling', () => {
                     (await attempt(ctx, 'a@example.com', 'wrong-password')).statusCode
                 ).toBe(401);
             }
-            const locked = await attempt(ctx, 'a@example.com', 'password123');
+            const locked = await attempt(ctx, 'a@example.com', 'Password-123!');
             expect(locked.statusCode).toBe(429);
             expect(locked.json().error).toBe('too_many_attempts');
             expect(Number(locked.headers['retry-after'])).toBeGreaterThan(0);
             // another account is not affected
             await registerUser(ctx.app, 'b@example.com');
-            expect((await attempt(ctx, 'b@example.com', 'password123')).statusCode).toBe(200);
+            expect((await attempt(ctx, 'b@example.com', 'Password-123!')).statusCode).toBe(200);
         } finally {
             await ctx.close();
         }
@@ -262,7 +262,7 @@ describe('auth throttling', () => {
             for (let round = 0; round < 3; round++) {
                 await attempt(ctx, 'a@example.com', 'wrong-password');
                 await attempt(ctx, 'a@example.com', 'wrong-password');
-                expect((await attempt(ctx, 'a@example.com', 'password123')).statusCode).toBe(200);
+                expect((await attempt(ctx, 'a@example.com', 'Password-123!')).statusCode).toBe(200);
             }
         } finally {
             await ctx.close();
@@ -276,7 +276,7 @@ describe('auth throttling', () => {
             // each route has its own allowance of 3 a minute
             const codes: number[] = [];
             for (let i = 0; i < 4; i++) {
-                codes.push((await attempt(ctx, 'a@example.com', 'password123')).statusCode);
+                codes.push((await attempt(ctx, 'a@example.com', 'Password-123!')).statusCode);
             }
             expect(codes).toEqual([200, 200, 200, 429]);
             const change = (currentPassword: string) =>
@@ -284,7 +284,7 @@ describe('auth throttling', () => {
                     method: 'POST',
                     url: '/auth/change-password',
                     headers: as(user),
-                    payload: { currentPassword, newPassword: 'password456' },
+                    payload: { currentPassword, newPassword: 'Password-456!' },
                 });
             // the sign-ins above replaced the session: sign in again is limited,
             // so use the old cookie only to show the route counts on its own
@@ -294,7 +294,7 @@ describe('auth throttling', () => {
             const register = await ctx.app.inject({
                 method: 'POST',
                 url: '/auth/register',
-                payload: { email: 'x@example.com', password: 'password123' },
+                payload: { email: 'x@example.com', password: 'Password-123!' },
             });
             expect([403, 429]).toContain(register.statusCode);
         } finally {
@@ -311,11 +311,11 @@ describe('auth throttling', () => {
                     method: 'POST',
                     url: '/auth/change-password',
                     headers: as(user),
-                    payload: { currentPassword, newPassword: 'password456' },
+                    payload: { currentPassword, newPassword: 'Password-456!' },
                 });
             expect((await change('nope-nope')).statusCode).toBe(403);
             expect((await change('nope-nope')).statusCode).toBe(403);
-            expect((await change('password123')).statusCode).toBe(429);
+            expect((await change('Password-123!')).statusCode).toBe(429);
         } finally {
             await ctx.close();
         }
@@ -333,7 +333,7 @@ describe('session cookie flags', () => {
                 method: 'POST',
                 url: '/auth/register',
                 headers,
-                payload: { email: 'a@example.com', password: 'password123' },
+                payload: { email: 'a@example.com', password: 'Password-123!' },
             });
             return String(res.headers['set-cookie']);
         } finally {
@@ -386,7 +386,7 @@ describe('first-run sign-up', () => {
                         url: '/auth/register',
                         payload: {
                             email: `first${n}@example.com`,
-                            password: 'password123',
+                            password: 'Password-123!',
                         },
                     })
                 )
@@ -409,7 +409,7 @@ describe('first-run sign-up', () => {
                 ctx.app.inject({
                     method: 'POST',
                     url: '/auth/register',
-                    payload: { email: 'same@example.com', password: 'password123' },
+                    payload: { email: 'same@example.com', password: 'Password-123!' },
                 });
             const codes = (await Promise.all([send(), send()]))
                 .map((r) => r.statusCode)
@@ -439,7 +439,7 @@ describe('auth audit trail', () => {
                 });
             await login('a@example.com', 'wrong-password');
             await login('nobody@example.com', 'wrong-password');
-            await login('a@example.com', 'password123');
+            await login('a@example.com', 'Password-123!');
             expect(await actionsOf(ctx)).toEqual([
                 'user.register',
                 'user.sign_in_failed',
@@ -453,10 +453,10 @@ describe('auth audit trail', () => {
                     method: 'POST',
                     url: '/auth/change-password',
                     headers: as(fresh),
-                    payload: { currentPassword, newPassword: 'password456' },
+                    payload: { currentPassword, newPassword: 'Password-456!' },
                 });
             expect((await change('wrong-password')).statusCode).toBe(403);
-            expect((await change('password123')).statusCode).toBe(200);
+            expect((await change('Password-123!')).statusCode).toBe(200);
             const actions = await actionsOf(ctx);
             expect(actions.slice(-3)).toEqual([
                 'user.sign_in',

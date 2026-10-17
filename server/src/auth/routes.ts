@@ -16,6 +16,7 @@ import {
     verifyAgainstNobody,
     verifyPassword,
 } from './password.js';
+import { weakPassword } from './password-rules.js';
 import {
     createSession,
     destroyOtherSessions,
@@ -26,14 +27,22 @@ import {
 // advisory-lock key for the first-run sign-up (distinct from the admin-set lock)
 const FIRST_USER_LOCK = 7_301_001;
 
-const credentials = z.object({
+// Sign-in only checks that something was sent: the rules for a good password
+// apply when one is SET (see weakPassword), never here, so people who chose a
+// password under older rules can still get in.
+const signIn = z.object({
     email: z.string().trim().toLowerCase().email(),
-    password: z.string().min(8).max(200),
+    password: z.string().min(1).max(200),
+});
+
+const newAccount = z.object({
+    email: z.string().trim().toLowerCase().email(),
+    password: z.string().max(200),
 });
 
 const changePassword = z.object({
     currentPassword: z.string(),
-    newPassword: z.string().min(8).max(200),
+    newPassword: z.string().max(200),
 });
 
 export const authRoutes =
@@ -95,7 +104,9 @@ export const authRoutes =
         });
 
         app.post('/register', limit, async (req, reply) => {
-            const body = credentials.parse(req.body);
+            const body = newAccount.parse(req.body);
+            const weak = weakPassword(config, body.password, body.email);
+            if (weak) return reply.code(400).send(weak);
             const passwordHash = await hashPassword(body.password);
             // Counting and inserting happen under one lock: two first-run
             // sign-ups arriving together would both see an empty table and
@@ -141,7 +152,7 @@ export const authRoutes =
         });
 
         app.post('/login', limit, async (req, reply) => {
-            const body = credentials.parse(req.body);
+            const body = signIn.parse(req.body);
             // unknown emails are counted too, so the lockout reveals nothing
             const key = `login:${body.email}`;
             if (locked(reply, key)) return;
@@ -210,6 +221,13 @@ export const authRoutes =
                 });
                 return reply.code(403).send({ error: 'wrong_password' });
             }
+            // the current password was right, so saying why the new one is not
+            // acceptable tells a stranger nothing
+            if (body.newPassword === body.currentPassword) {
+                return reply.code(400).send({ error: 'same_password' });
+            }
+            const weak = weakPassword(config, body.newPassword, user.email);
+            if (weak) return reply.code(400).send(weak);
             failures.reset(key);
             await db
                 .update(users)

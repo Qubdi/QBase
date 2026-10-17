@@ -117,7 +117,7 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.get('/health', async () => ({ ok: true }));
 
     app.register(authRoutes(db, config), { prefix: '/auth' });
-    app.register(adminRoutes(db), { prefix: '/admin' });
+    app.register(adminRoutes(db, config), { prefix: '/admin' });
     app.register(projectRoutes(db), { prefix: '/projects' });
     app.register(diagramRoutes(db, config), { prefix: '/diagrams' });
     app.register(memberRoutes(db), { prefix: '/diagrams' });

@@ -114,7 +114,7 @@ describe('audit meta: what an action was done to', () => {
         it('records the user on create', async () => {
             const created = await call(admin, 'POST', '/admin/users', {
                 email: 'target@example.com',
-                password: 'password123',
+                password: 'Password-123!',
             });
             expect(created.statusCode).toBe(201);
             targetId = created.json().id;
@@ -125,7 +125,7 @@ describe('audit meta: what an action was done to', () => {
 
         it('records what an update changed', async () => {
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
-                password: 'another-password',
+                password: 'Another-password-1!',
             });
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,
@@ -144,7 +144,7 @@ describe('audit meta: what an action was done to', () => {
         it('does not list a field that was sent but did not change', async () => {
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
                 isAdmin: true,
-                password: 'a-third-password',
+                password: 'A-third-password-1!',
             });
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,

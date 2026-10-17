@@ -58,7 +58,7 @@ describe('managing users: last sign-in, sessions and bulk actions', () => {
                 method: 'POST',
                 url: '/auth/login',
                 headers: { 'user-agent': userAgent },
-                payload: { email, password: 'password123' },
+                payload: { email, password: 'Password-123!' },
             });
             expect(res.statusCode).toBe(200);
             const set = res.cookies.find((c) => c.name === 'qubdidb_session')!;
@@ -87,7 +87,7 @@ describe('managing users: last sign-in, sessions and bulk actions', () => {
 
     describe('last sign-in and who is signed in', () => {
         it('has neither for an account nobody has signed in to', async () => {
-            const made = await registerUser(ctx.app, 'never@example.com', 'password123');
+            const made = await registerUser(ctx.app, 'never@example.com', 'Password-123!');
             // registerUser signs in; end that session to get a fresh account
             await call(admin, 'DELETE', `/admin/users/${made.id}/sessions`);
             await ctx.db
@@ -233,7 +233,7 @@ describe('managing users: last sign-in, sessions and bulk actions', () => {
             const again = await ctx.app.inject({
                 method: 'POST',
                 url: '/auth/login',
-                payload: { email: 'ivan@example.com', password: 'password123' },
+                payload: { email: 'ivan@example.com', password: 'Password-123!' },
             });
             expect(again.statusCode).toBe(200);
         });
@@ -410,7 +410,7 @@ describe('managing users: last sign-in, sessions and bulk actions', () => {
                 const login = await ctx.app.inject({
                     method: 'POST',
                     url: '/auth/login',
-                    payload: { email: 'e1@example.com', password: 'password123' },
+                    payload: { email: 'e1@example.com', password: 'Password-123!' },
                 });
                 expect(login.statusCode).toBe(200);
             });

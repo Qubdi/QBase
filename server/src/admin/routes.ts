@@ -28,6 +28,8 @@ import {
     type AuditMeta,
 } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
+import { weakPassword } from '../auth/password-rules.js';
+import type { Config } from '../config.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
@@ -62,13 +64,14 @@ const memberParam = z.object({
 
 const createUserBody = z.object({
     email: z.string().trim().toLowerCase().email(),
-    password: z.string().min(8).max(200),
+    // the rules are checked in the route (weakPassword), so the answer can list them
+    password: z.string().max(200),
     isAdmin: z.boolean().default(false),
 });
 
 const updateUserBody = z
     .object({
-        password: z.string().min(8).max(200).optional(),
+        password: z.string().max(200).optional(),
         isAdmin: z.boolean().optional(),
         isActive: z.boolean().optional(),
     })
@@ -160,7 +163,7 @@ const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
 
 /** Everything under /admin is admin-only; non-admins get a 404, not a 403. */
 export const adminRoutes =
-    (db: Db): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'passwordMinLength'>): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -257,6 +260,8 @@ export const adminRoutes =
 
         app.post('/users', async (req, reply) => {
             const body = createUserBody.parse(req.body);
+            const weak = weakPassword(config, body.password, body.email);
+            if (weak) return reply.code(400).send(weak);
             const taken = await db
                 .select({ id: users.id })
                 .from(users)
@@ -309,6 +314,14 @@ export const adminRoutes =
             if (body.isAdmin !== undefined) patch.isAdmin = body.isAdmin;
             if (body.isActive !== undefined) patch.isActive = body.isActive;
             if (body.password !== undefined) {
+                // the rules compare with the account's own email
+                const [account] = await db
+                    .select({ email: users.email })
+                    .from(users)
+                    .where(eq(users.id, id));
+                if (!account) return reply.code(404).send({ error: 'not_found' });
+                const weak = weakPassword(config, body.password, account.email);
+                if (weak) return reply.code(400).send(weak);
                 patch.passwordHash = await hashPassword(body.password);
             }
             // the check and the write happen under one lock, so two admins

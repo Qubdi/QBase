@@ -37,7 +37,7 @@ describe('security headers', () => {
         const res = await ctx.app.inject({
             method: 'POST',
             url: '/auth/login',
-            payload: { email: 'a@example.com', password: 'password123' },
+            payload: { email: 'a@example.com', password: 'Password-123!' },
         });
         expect(res.statusCode).toBe(200);
         expectHeaders(res.headers);

@@ -4,8 +4,10 @@ import { loadConfig, type Config } from '../src/config.js';
 import { createDb } from '../src/db/client.js';
 
 export const TEST_DB = 'qubdidb_test';
-export const ADMIN_URL = 'postgres://qubdidb:qubdidb@localhost:5433/postgres';
-export const TEST_URL = `postgres://qubdidb:qubdidb@localhost:5433/${TEST_DB}`;
+// TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
+const PG_PORT = process.env.TEST_PG_PORT ?? '5433';
+export const ADMIN_URL = `postgres://qubdidb:qubdidb@localhost:${PG_PORT}/postgres`;
+export const TEST_URL = `postgres://qubdidb:qubdidb@localhost:${PG_PORT}/${TEST_DB}`;
 
 // the first user on a fresh database is the admin; they create everyone else
 let adminCookie: string | null = null;
@@ -67,7 +69,7 @@ export interface TestUser {
 export async function registerUser(
     app: FastifyInstance,
     email: string,
-    password = 'password123'
+    password = 'Password-123!'
 ): Promise<TestUser> {
     if (adminCookie) {
         // self sign-up is closed: an admin creates the account, then it signs in
@@ -102,7 +104,7 @@ export async function registerUser(
 export async function loginUser(
     app: FastifyInstance,
     email: string,
-    password = 'password123'
+    password = 'Password-123!'
 ): Promise<TestUser> {
     const res = await app.inject({
         method: 'POST',

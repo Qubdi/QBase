@@ -1,3 +1,5 @@
+import { normalizeMinLength } from '../../shared/password.js';
+
 export interface Config {
     databaseUrl: string;
     /** interface the HTTP server listens on */
@@ -38,6 +40,8 @@ export interface Config {
     authMaxFailures: number;
     /** how long a locked-out account waits, in minutes */
     authLockoutMinutes: number;
+    /** fewest characters a new password may have (never below 8); sign-in does not check it */
+    passwordMinLength: number;
     /** most live (SSE) viewers one share link may have open at once */
     sseMaxPerLink: number;
     /** pino level: fatal, error, warn, info, debug, trace or silent */
@@ -101,6 +105,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         authRateLimit: Number(env.AUTH_RATE_LIMIT ?? 20),
         authMaxFailures: Number(env.AUTH_MAX_FAILURES ?? 10),
         authLockoutMinutes: Number(env.AUTH_LOCKOUT_MINUTES ?? 15),
+        passwordMinLength: normalizeMinLength(
+            env.PASSWORD_MIN_LENGTH ? Number(env.PASSWORD_MIN_LENGTH) : undefined
+        ),
         sseMaxPerLink: Number(env.SSE_MAX_PER_LINK ?? 100),
         trustProxy: parseTrustProxy(env.TRUST_PROXY),
         logLevel: env.LOG_LEVEL ?? 'info',
