@@ -224,6 +224,7 @@ export const CreateRelationshipDialog: React.FC<
                 className="flex flex-col overflow-y-auto"
                 showClose
                 forceOverlay
+                aria-describedby={undefined}
                 onInteractOutside={(e) => e.preventDefault()}
             >
                 <DialogHeader>

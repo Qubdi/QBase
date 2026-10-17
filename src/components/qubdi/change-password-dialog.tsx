@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/dialog/dialog';
@@ -47,6 +48,9 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             <DialogContent className="max-w-sm" showClose>
                 <DialogHeader>
                     <DialogTitle>Change password</DialogTitle>
+                    <DialogDescription>
+                        Enter your current password and choose a new one.
+                    </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="flex flex-col gap-3">
                     <Input
