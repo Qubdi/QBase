@@ -1,5 +1,4 @@
 import { QUBDI_BACKEND_URL } from './config';
-import type { EditorComment } from './comments-store';
 import type { LintConfig } from '../../../shared/lint';
 import { listQuery, type ListParams, type Page } from './paging';
 
@@ -669,30 +668,6 @@ export function createApi(
                 return { status: 'error' };
             }
         },
-        listComments: (id: string) =>
-            request<EditorComment[]>('GET', `/diagrams/${id}/comments`),
-        addComment: (
-            id: string,
-            body: {
-                targetType: 'table' | 'field' | 'relationship';
-                targetId: string;
-                body: string;
-            }
-        ) => request<EditorComment>('POST', `/diagrams/${id}/comments`, body),
-        updateComment: (id: string, commentId: string, body: string) =>
-            request<EditorComment>(
-                'PUT',
-                `/diagrams/${id}/comments/${commentId}`,
-                { body }
-            ),
-        resolveComment: (id: string, commentId: string, resolved: boolean) =>
-            request<EditorComment>(
-                'POST',
-                `/diagrams/${id}/comments/${commentId}/resolve`,
-                { resolved }
-            ),
-        deleteComment: (id: string, commentId: string) =>
-            request<void>('DELETE', `/diagrams/${id}/comments/${commentId}`),
         getPublicComments: async (
             token: string
         ): Promise<PublicCommentsResult> => {
