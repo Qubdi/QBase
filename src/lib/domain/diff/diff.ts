@@ -1,19 +1,10 @@
-import { z } from 'zod';
-
 import type { CheckConstraintDiff } from './check-constraint-diff';
-import { createCheckConstraintDiffSchema } from './check-constraint-diff';
 import type { FieldDiff } from './field-diff';
-import { createFieldDiffSchema } from './field-diff';
 import type { IndexDiff } from './index-diff';
-import { createIndexDiffSchema } from './index-diff';
 import type { RelationshipDiff } from './relationship-diff';
-import { createRelationshipDiffSchema } from './relationship-diff';
 import type { TableDiff } from './table-diff';
-import { createTableDiffSchema } from './table-diff';
 import type { AreaDiff } from './area-diff';
-import { createAreaDiffSchema } from './area-diff';
 import type { NoteDiff } from './note-diff';
-import { createNoteDiffSchema } from './note-diff';
 import type {
     DBCheckConstraint,
     DBField,
@@ -40,54 +31,6 @@ export type DiagramDiff<
     | RelationshipDiff<TRelationship>
     | AreaDiff<TArea>
     | NoteDiff<TNote>;
-
-export const createDiagramDiffSchema = <
-    TTable = DBTable,
-    TField = DBField,
-    TIndex = DBIndex,
-    TCheckConstraint = DBCheckConstraint,
-    TRelationship = DBRelationship,
-    TArea = Area,
-    TNote = Note,
->(
-    tableSchema: z.ZodType<TTable>,
-    fieldSchema: z.ZodType<TField>,
-    indexSchema: z.ZodType<TIndex>,
-    checkConstraintSchema: z.ZodType<TCheckConstraint>,
-    relationshipSchema: z.ZodType<TRelationship>,
-    areaSchema: z.ZodType<TArea>,
-    noteSchema: z.ZodType<TNote>
-): z.ZodType<
-    DiagramDiff<
-        TTable,
-        TField,
-        TIndex,
-        TCheckConstraint,
-        TRelationship,
-        TArea,
-        TNote
-    >
-> => {
-    return z.union([
-        createTableDiffSchema(tableSchema),
-        createFieldDiffSchema(fieldSchema),
-        createIndexDiffSchema(indexSchema),
-        createCheckConstraintDiffSchema(checkConstraintSchema),
-        createRelationshipDiffSchema(relationshipSchema),
-        createAreaDiffSchema(areaSchema),
-        createNoteDiffSchema(noteSchema),
-    ]) as z.ZodType<
-        DiagramDiff<
-            TTable,
-            TField,
-            TIndex,
-            TCheckConstraint,
-            TRelationship,
-            TArea,
-            TNote
-        >
-    >;
-};
 
 export type DiffMap<
     TTable = DBTable,
