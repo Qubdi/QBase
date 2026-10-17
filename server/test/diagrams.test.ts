@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { auditLog } from '../src/db/schema.js';
+import { auditLog, diagramLocks } from '../src/db/schema.js';
 import {
     as,
     createDiagram,
@@ -373,13 +373,18 @@ describe('saving content on top of another save', () => {
         expect(await current(a)).toBe(res.json().updatedAt);
     });
 
+    // the edit lock moving from one editor to the next, as when the first closes the diagram
+    const passTheLock = () => ctx.db.delete(diagramLocks);
+
     it('refuses a save based on an older copy and leaves the newer one alone', async () => {
         const base = await current(a);
+        await passTheLock();
         // b saves first, from the same starting point
         expect(
             (await save(b, { ...sampleContent, name: 'from b' }, base)).statusCode
         ).toBe(200);
         // a still holds the old copy
+        await passTheLock();
         const stale = await save(a, { ...sampleContent, name: 'from a' }, base);
         expect(stale.statusCode).toBe(409);
         expect(stale.json()).toMatchObject({ error: 'conflict' });
@@ -392,6 +397,7 @@ describe('saving content on top of another save', () => {
     });
 
     it('lets the loser overwrite on purpose by saving on top of the latest copy', async () => {
+        await passTheLock();
         const res = await save(a, { ...sampleContent, name: 'a again' }, await current(a));
         expect(res.statusCode).toBe(200);
         expect(res.json().content.name).toBe('a again');
@@ -399,9 +405,10 @@ describe('saving content on top of another save', () => {
 
     it('lets only one of two simultaneous saves from the same copy win', async () => {
         const base = await current(a);
+        // one editor, so the lock lets both in and only the base check decides
         const [r1, r2] = await Promise.all([
-            save(a, { ...sampleContent, name: 'race a' }, base),
-            save(b, { ...sampleContent, name: 'race b' }, base),
+            save(a, { ...sampleContent, name: 'race 1' }, base),
+            save(a, { ...sampleContent, name: 'race 2' }, base),
         ]);
         expect([r1.statusCode, r2.statusCode].sort()).toEqual([200, 409]);
     });

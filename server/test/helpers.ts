@@ -9,6 +9,7 @@ export const TEST_URL = `postgres://qubdidb:qubdidb@localhost:5433/${TEST_DB}`;
 
 // the first user on a fresh database is the admin; they create everyone else
 let adminCookie: string | null = null;
+let adminEmail: string | null = null;
 // one shared project that test diagrams live in (every diagram needs a project)
 let testProjectId: string | null = null;
 
@@ -37,6 +38,7 @@ export async function createTestApp(
     const { db, pool } = createDb(TEST_URL);
     if (reset) {
         adminCookie = null;
+        adminEmail = null;
         testProjectId = null;
         await pool.query(
             'truncate table audit_log, sessions, project_members, projects, diagrams, saved_connections, drift_settings, drift_reports, users restart identity cascade'
@@ -91,6 +93,7 @@ export async function registerUser(
     const set = res.cookies.find((c) => c.name === 'qubdidb_session')!;
     const cookie = `qubdidb_session=${set.value}`;
     adminCookie = cookie;
+    adminEmail = email;
     return { id: res.json().id, email, cookie };
 }
 
@@ -108,11 +111,11 @@ export async function loginUser(
         throw new Error(`login failed: ${res.statusCode} ${res.body}`);
     }
     const set = res.cookies.find((c) => c.name === 'qubdidb_session')!;
-    return {
-        id: res.json().id,
-        email,
-        cookie: `qubdidb_session=${set.value}`,
-    };
+    const cookie = `qubdidb_session=${set.value}`;
+    // an account has one live session: signing the admin in again replaces the
+    // one the helpers act as
+    if (email === adminEmail) adminCookie = cookie;
+    return { id: res.json().id, email, cookie };
 }
 
 /** The shared test project, created on first use by the admin (first user). */

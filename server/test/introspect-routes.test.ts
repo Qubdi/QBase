@@ -437,6 +437,127 @@ describe('introspect HTTP layer (fake driver)', () => {
             expect(row.ownerId).toBeNull();
         });
 
+        describe('editing', () => {
+            let editId: string;
+            const edit = (u: TestUser, id: string, payload: object) =>
+                ctx.app.inject({
+                    method: 'PUT',
+                    url: `/introspect/connections/${id}`,
+                    headers: as(u),
+                    payload,
+                });
+            const withoutPassword = (over: object = {}) => {
+                const body: Record<string, unknown> = { ...conn(), ...over };
+                delete body.password;
+                return body;
+            };
+            const storedPassword = async (id: string) => {
+                const [row] = await ctx.db
+                    .select()
+                    .from(savedConnections)
+                    .where(eq(savedConnections.id, id));
+                return new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc);
+            };
+
+            beforeAll(async () => {
+                editId = (await save(bob, 'to edit')).json().id;
+            });
+
+            it('changes the settings and keeps the saved password when none is sent', async () => {
+                const res = await edit(
+                    bob,
+                    editId,
+                    withoutPassword({ name: 'renamed', host: '93.184.216.35', database: 'shop2', port: 5433 })
+                );
+                expect(res.statusCode).toBe(200);
+                expect(res.json()).toMatchObject({
+                    id: editId,
+                    name: 'renamed',
+                    host: '93.184.216.35',
+                    database: 'shop2',
+                    port: 5433,
+                });
+                expect(res.body).not.toContain('p@ss-w0rd-SECRET');
+                expect(await storedPassword(editId)).toBe('p@ss-w0rd-SECRET');
+            });
+
+            it('replaces the password when a new one is sent, and never returns it', async () => {
+                const res = await edit(bob, editId, { ...conn(), name: 'renamed', password: 'brand-new-pass' });
+                expect(res.statusCode).toBe(200);
+                expect(res.body).not.toContain('brand-new-pass');
+                expect(await storedPassword(editId)).toBe('brand-new-pass');
+            });
+
+            it('fills in the default port for the dialect', async () => {
+                const res = await edit(bob, editId, withoutPassword({ name: 'renamed', port: undefined }));
+                expect(res.json().port).toBe(5432);
+            });
+
+            it('rejects a name another connection of the project already uses, but not its own', async () => {
+                expect((await edit(bob, editId, withoutPassword({ name: 'prod replica' }))).statusCode).toBe(409);
+                expect((await edit(bob, editId, withoutPassword({ name: 'renamed' }))).statusCode).toBe(200);
+            });
+
+            it('validates what it is given', async () => {
+                expect((await edit(bob, editId, withoutPassword({ host: '' }))).statusCode).toBe(400);
+                expect((await edit(bob, editId, withoutPassword({ name: '  ' }))).statusCode).toBe(400);
+            });
+
+            it('is for the project editors only', async () => {
+                const body = withoutPassword({ name: 'renamed' });
+                expect((await edit(carol, editId, body)).statusCode).toBe(403);
+                expect((await edit(dave, editId, body)).statusCode).toBe(404);
+                expect(
+                    (await edit(bob, '00000000-0000-4000-8000-000000000000', body)).statusCode
+                ).toBe(404);
+            });
+
+            it('needs the encryption key only to change the password', async () => {
+                const nokey = await createTestApp({}, undefined, false);
+                try {
+                    const u = await registerUser(nokey.app, 'nokey-edit@example.com');
+                    await grant(nokey.app, u, 'editor');
+                    const put = (payload: object) =>
+                        nokey.app.inject({
+                            method: 'PUT',
+                            url: `/introspect/connections/${editId}`,
+                            headers: as(u),
+                            payload,
+                        });
+                    const withPassword = await put({ ...conn(), name: 'renamed', password: 'x' });
+                    expect(withPassword.statusCode).toBe(501);
+                    expect(withPassword.json().error).toBe('encryption_not_configured');
+                    expect((await put(withoutPassword({ name: 'renamed' }))).statusCode).toBe(200);
+                } finally {
+                    await nokey.close();
+                }
+            });
+        });
+
+        describe('capabilities', () => {
+            it('says saved connections work when the server has an encryption key', async () => {
+                const res = await ctx.app.inject({ url: '/introspect/capabilities', headers: as(bob) });
+                expect(res.statusCode).toBe(200);
+                expect(res.json()).toEqual({ savedConnections: true });
+            });
+
+            it('says they do not when it has none', async () => {
+                const nokey = await createTestApp({}, undefined, false);
+                try {
+                    const u = await registerUser(nokey.app, 'nokey-cap@example.com');
+                    const res = await nokey.app.inject({ url: '/introspect/capabilities', headers: as(u) });
+                    expect(res.json()).toEqual({ savedConnections: false });
+                } finally {
+                    await nokey.close();
+                }
+            });
+
+            it('needs a login', async () => {
+                const res = await ctx.app.inject({ url: '/introspect/capabilities' });
+                expect(res.statusCode).toBe(401);
+            });
+        });
+
         it('deletes a saved connection', async () => {
             const del = await ctx.app.inject({ method: 'DELETE', url: `/introspect/connections/${savedId}`, headers: as(bob) });
             expect(del.statusCode).toBe(204);

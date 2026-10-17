@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { importDBMLToDiagram } from '../dbml-import';
+import { verifyDBML } from '../verify-dbml';
 import { generateDBMLFromDiagram } from '../../dbml-export/dbml-export';
 import { DatabaseType } from '@/lib/domain/database-type';
 
@@ -85,8 +86,7 @@ Table "user_profiles" {
             expect(rel.targetCardinality).toBe('one');
         });
 
-        it('should import many-to-many relationship (ref: <>)', async () => {
-            // ref: <> means many-to-many relationship
+        it('should refuse a many-to-many reference (ref: <>): it needs a junction table', async () => {
             const dbml = `
 Table "students" {
   "id" int [pk, ref: <> "courses"."id"]
@@ -98,16 +98,14 @@ Table "courses" {
   "title" varchar(200)
 }
 `;
-            const diagram = await importDBMLToDiagram(dbml, {
-                databaseType: DatabaseType.POSTGRESQL,
-            });
-
-            expect(diagram.relationships?.length).toBe(1);
-            const rel = diagram.relationships![0];
-
-            // Both sides should be many
-            expect(rel.sourceCardinality).toBe('many');
-            expect(rel.targetCardinality).toBe('many');
+            await expect(
+                importDBMLToDiagram(dbml, {
+                    databaseType: DatabaseType.POSTGRESQL,
+                })
+            ).rejects.toThrow(
+                // the parser may list the two tables in either order
+                /Many-to-many references \(<>\) are not supported: "(students" and "courses|courses" and "students)"\. Add a junction table/
+            );
         });
     });
 
@@ -190,7 +188,7 @@ Ref: "profiles"."user_id" - "users"."id"
             expect(rel.targetCardinality).toBe('one');
         });
 
-        it('should import many-to-many with standalone Ref <>', async () => {
+        it('should refuse a many-to-many with standalone Ref <>', async () => {
             const dbml = `
 Table "students" {
   "id" int [pk]
@@ -204,16 +202,52 @@ Table "courses" {
 
 Ref: "students"."id" <> "courses"."id"
 `;
+            await expect(
+                importDBMLToDiagram(dbml, {
+                    databaseType: DatabaseType.POSTGRESQL,
+                })
+            ).rejects.toThrow(/junction table/);
+        });
+
+        it('should say so while the DBML is being checked, at the line of the reference', () => {
+            const dbml = `
+Table "students" {
+  "id" int [pk]
+}
+
+Table "courses" {
+  "id" int [pk]
+}
+
+Ref: "students"."id" <> "courses"."id"
+`;
+            const result = verifyDBML(dbml, {
+                databaseType: DatabaseType.POSTGRESQL,
+            });
+
+            expect(result.hasError).toBe(true);
+            if (!result.hasError) return;
+            expect(result.errorText).toMatch(/junction table/);
+            expect(result.parsedError?.line).toBe(10);
+        });
+
+        it('should not mistake the SQL not-equal operator for a many-to-many', async () => {
+            const dbml = `
+Table "orders" {
+  "id" int [pk]
+  "status" int [note: 'a <> b']
+  Note: 'rows where a <> b'
+}
+`;
             const diagram = await importDBMLToDiagram(dbml, {
                 databaseType: DatabaseType.POSTGRESQL,
             });
 
-            expect(diagram.relationships?.length).toBe(1);
-            const rel = diagram.relationships![0];
-
-            // Both sides should be many
-            expect(rel.sourceCardinality).toBe('many');
-            expect(rel.targetCardinality).toBe('many');
+            expect(diagram.tables?.length).toBe(1);
+            expect(
+                verifyDBML(dbml, { databaseType: DatabaseType.POSTGRESQL })
+                    .hasError
+            ).toBe(false);
         });
     });
 
@@ -278,32 +312,36 @@ Table "settings" {
             expect(rel.targetCardinality).toBe('one');
         });
 
-        it('should preserve many-to-many cardinality through export and re-import', async () => {
-            const inputDbml = `
-Table "tags" {
-  "id" int [pk, ref: <> "articles"."id"]
-  "name" varchar(50)
-}
-
+        it('should export a legacy many-to-many as a one-to-many, never as <>', async () => {
+            const diagram = await importDBMLToDiagram(
+                `
 Table "articles" {
   "id" int [pk]
-  "title" varchar(200)
 }
-`;
-            const diagram = await importDBMLToDiagram(inputDbml, {
-                databaseType: DatabaseType.POSTGRESQL,
-            });
+
+Table "tags" {
+  "id" int [pk]
+  "article_id" int [ref: > "articles"."id"]
+}
+`,
+                { databaseType: DatabaseType.POSTGRESQL }
+            );
+            // a diagram saved before many-to-many was dropped can still hold one
+            const rel = diagram.relationships![0];
+            rel.sourceCardinality = 'many';
+            rel.targetCardinality = 'many';
 
             const exportResult = generateDBMLFromDiagram(diagram);
 
-            const reimportedDiagram = await importDBMLToDiagram(
+            expect(exportResult.inlineDbml).not.toContain('<>');
+            expect(exportResult.relationshipsDbml).not.toContain('<>');
+
+            const reimported = await importDBMLToDiagram(
                 exportResult.inlineDbml,
                 { databaseType: DatabaseType.POSTGRESQL }
             );
-
-            const rel = reimportedDiagram.relationships![0];
-            expect(rel.sourceCardinality).toBe('many');
-            expect(rel.targetCardinality).toBe('many');
+            expect(reimported.relationships![0].sourceCardinality).toBe('one');
+            expect(reimported.relationships![0].targetCardinality).toBe('many');
         });
     });
 

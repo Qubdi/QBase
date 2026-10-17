@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { RemoteDiagramSummary } from '../api';
-import { isLocked, lockedReason, resolveAccess } from '../access';
+import {
+    applyLock,
+    isLocked,
+    lockedReason,
+    resolveAccess,
+    type AccessState,
+} from '../access';
 
 const summary = (
     id: string,
@@ -67,6 +73,69 @@ describe('isLocked', () => {
         ).toBe(false);
         expect(isLocked({ status: 'off' })).toBe(false);
     });
+
+    it('locks an editor who is shut out by another editor', () => {
+        expect(
+            isLocked({
+                status: 'taken',
+                projectId: 'p',
+                remoteId: 'r',
+                holder: 'a@b.co',
+            })
+        ).toBe(true);
+    });
+});
+
+describe('applyLock', () => {
+    const editor: AccessState = {
+        status: 'editor',
+        projectId: 'p',
+        remoteId: 'r',
+    };
+
+    it('waits for the answer before an editor may edit', () => {
+        expect(applyLock(editor, { status: 'checking' })).toBeNull();
+    });
+
+    it('lets the editor holding the lock edit', () => {
+        expect(applyLock(editor, { status: 'held' })).toEqual(editor);
+    });
+
+    it('turns an editor into a read-only visitor, naming who is editing', () => {
+        expect(
+            applyLock(editor, { status: 'taken', holder: 'sam@corp.io' })
+        ).toEqual({
+            status: 'taken',
+            projectId: 'p',
+            remoteId: 'r',
+            holder: 'sam@corp.io',
+        });
+    });
+
+    it('keeps an editor out when the server cannot be asked', () => {
+        expect(applyLock(editor, { status: 'unreachable' })).toEqual({
+            status: 'error',
+        });
+    });
+
+    it('leaves everyone who cannot edit anyway as they are', () => {
+        const viewer: AccessState = {
+            status: 'viewer',
+            projectId: 'p',
+            remoteId: 'r',
+        };
+        for (const lock of [
+            { status: 'checking' },
+            { status: 'held' },
+            { status: 'taken', holder: 'x' },
+            { status: 'unreachable' },
+        ] as const) {
+            expect(applyLock(viewer, lock)).toEqual(viewer);
+            expect(applyLock({ status: 'off' }, lock)).toEqual({
+                status: 'off',
+            });
+        }
+    });
 });
 
 describe('lockedReason', () => {
@@ -90,5 +159,34 @@ describe('lockedReason', () => {
         expect(
             lockedReason({ status: 'editor', projectId: 'p', remoteId: 'r' })
         ).toBeNull();
+    });
+
+    describe('when someone else is editing', () => {
+        const taken = (holder: string | null): AccessState => ({
+            status: 'taken',
+            projectId: 'p',
+            remoteId: 'r',
+            holder,
+        });
+
+        it('names who is editing', () => {
+            expect(
+                lockedReason(taken('sam@corp.io'), 'Billing', 'me@corp.io')
+            ).toBe(
+                'sam@corp.io is editing this diagram, so it is read-only for you for now.'
+            );
+        });
+
+        it('does not name anyone the server did not name', () => {
+            expect(lockedReason(taken(null))).toMatch(
+                /^Someone else is editing this diagram/
+            );
+        });
+
+        it("says so when the other editor is the user's own tab", () => {
+            expect(
+                lockedReason(taken('me@corp.io'), undefined, 'me@corp.io')
+            ).toMatch(/another tab or window/);
+        });
     });
 });

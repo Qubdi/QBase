@@ -1,10 +1,10 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import type { Config } from '../config.js';
 import type { RequestHook } from '../lib/rate-key.js';
 import type { Db } from '../db/client.js';
-import { savedConnections } from '../db/schema.js';
+import { driftSettings, savedConnections } from '../db/schema.js';
 import { canWrite, getProjectRole } from '../diagrams/permissions.js';
 import { CryptoBox } from './crypto-box.js';
 import { filterMetadata } from './filter.js';
@@ -63,6 +63,12 @@ const saveBody = connectionFields.extend({
     name: z.string().trim().min(1).max(100),
     // saved connections belong to a project
     projectId: uuid,
+});
+
+/** Editing a connection: leaving the password out keeps the saved one. */
+const updateBody = connectionFields.extend({
+    name: z.string().trim().min(1).max(100),
+    password: z.string().max(1000).optional(),
 });
 
 const listQuery = z.object({ projectId: uuid });
@@ -255,6 +261,11 @@ export const introspectRoutes =
             return true;
         };
 
+        // lets the editor say so up front when saved connections cannot work
+        app.get('/capabilities', async () => ({
+            savedConnections: box !== null,
+        }));
+
         app.get('/connections', async (req, reply) => {
             const { projectId } = listQuery.parse(req.query);
             if (!(await requireProjectWriter(projectId, req.user!.id, reply))) {
@@ -312,6 +323,72 @@ export const introspectRoutes =
                 })
                 .returning();
             return reply.code(201).send(summarize(row));
+        });
+
+        app.put('/connections/:id', async (req, reply) => {
+            const { id } = z.object({ id: uuid }).parse(req.params);
+            const body = updateBody.parse(req.body);
+            const [conn] = await db
+                .select()
+                .from(savedConnections)
+                .where(eq(savedConnections.id, id));
+            if (!conn) return reply.code(404).send({ error: 'not_found' });
+            if (
+                !(await requireProjectWriter(
+                    conn.projectId,
+                    req.user!.id,
+                    reply
+                ))
+            ) {
+                return;
+            }
+            // only a new password needs the key; the rest is plain settings
+            if (body.password !== undefined && !box) {
+                return reply
+                    .code(501)
+                    .send({ error: 'encryption_not_configured' });
+            }
+            const dup = await db
+                .select({ id: savedConnections.id })
+                .from(savedConnections)
+                .where(
+                    and(
+                        eq(savedConnections.projectId, conn.projectId),
+                        eq(savedConnections.name, body.name),
+                        ne(savedConnections.id, id)
+                    )
+                );
+            if (dup.length > 0) {
+                return reply.code(409).send({ error: 'name_taken' });
+            }
+            const row = await db.transaction(async (tx) => {
+                const [updated] = await tx
+                    .update(savedConnections)
+                    .set({
+                        name: body.name,
+                        dialect: body.dialect,
+                        host: body.host,
+                        port: body.port ?? DEFAULT_PORTS[body.dialect],
+                        database: body.database,
+                        username: body.user,
+                        ssl: body.ssl,
+                        trustServerCertificate: body.trustServerCertificate,
+                        ...(body.password !== undefined
+                            ? { passwordEnc: box!.encrypt(body.password) }
+                            : {}),
+                    })
+                    .where(eq(savedConnections.id, id))
+                    .returning();
+                // reports made with this connection's old details may describe
+                // another database: a settings change keeps them from being
+                // reused when a diagram is opened
+                await tx
+                    .update(driftSettings)
+                    .set({ updatedAt: new Date() })
+                    .where(eq(driftSettings.connectionId, id));
+                return updated;
+            });
+            return summarize(row);
         });
 
         app.delete('/connections/:id', async (req, reply) => {

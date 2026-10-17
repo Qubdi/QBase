@@ -51,7 +51,6 @@ import {
 } from '@/components/tooltip/tooltip';
 import { useDiff } from '@/context/diff-context/use-diff';
 import { TableNodeStatus } from './table-node-status/table-node-status';
-import { CommentMarker } from '@/components/qubdi/comment-marker';
 import { TableEditMode } from './table-edit-mode/table-edit-mode';
 import { useCanvas } from '@/hooks/use-canvas';
 
@@ -581,7 +580,6 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                                     {table.name}
                                 </Label>
                             )}
-                            <CommentMarker type="table" id={table.id} />
                         </div>
                         <div className="hidden shrink-0 flex-row group-hover:flex">
                             {readonly ? null : (

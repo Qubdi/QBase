@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DriftBadge, DriftItem } from '../api';
-import { isValidCronShape } from '../cron-shape';
-import {
-    SCHEDULE_PRESETS,
-    badgeLabel,
-    badgeSeverity,
-    presetIdOf,
-    splitByCategory,
-} from '../drift-ui';
+import { badgeLabel, badgeSeverity, splitByCategory } from '../drift-ui';
 
 const badge = (
     counts: Partial<DriftBadge['counts']>,
@@ -22,34 +15,6 @@ const item = (
     category: DriftItem['category'],
     severity: DriftItem['severity'] = 'info'
 ): DriftItem => ({ id, kind: 'x', category, severity, summary: id });
-
-describe('schedule presets', () => {
-    it('are all valid 5-field expressions with unique ids', () => {
-        for (const p of SCHEDULE_PRESETS) {
-            expect(isValidCronShape(p.cron), p.id).toBe(true);
-        }
-        expect(new Set(SCHEDULE_PRESETS.map((p) => p.id)).size).toBe(
-            SCHEDULE_PRESETS.length
-        );
-    });
-
-    it('recognise their own expression, ignoring spacing, and call everything else custom', () => {
-        expect(presetIdOf('0 3 * * *')).toBe('daily');
-        expect(presetIdOf('  0 * * * *  ')).toBe('hourly');
-        expect(presetIdOf('*/7 * * * *')).toBe('custom');
-        expect(presetIdOf('')).toBe('custom');
-    });
-});
-
-describe('isValidCronShape', () => {
-    it('accepts five fields and rejects anything else', () => {
-        expect(isValidCronShape('*/5 * * * *')).toBe(true);
-        expect(isValidCronShape(' 0   3 * *  1 ')).toBe(true);
-        expect(isValidCronShape('* * * *')).toBe(false);
-        expect(isValidCronShape('* * * * * *')).toBe(false);
-        expect(isValidCronShape('')).toBe(false);
-    });
-});
 
 describe('badge', () => {
     it('has no label or severity when there is nothing to show', () => {

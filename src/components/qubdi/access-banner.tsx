@@ -7,16 +7,18 @@ import { useQubdi } from '@/hooks/use-qubdi';
 import { isLocked, lockedReason } from '@/lib/qubdi/access';
 import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';
 import { useDiagramAccess } from './diagram-access-context';
+import { GetLatestDialog } from './get-latest-control';
 
 /** Explains why the open diagram is read-only and, if it can, how to fix it. */
 export const AccessBanner: React.FC = () => {
     const { access, refresh } = useDiagramAccess();
-    const { syncDiagram } = useQubdi();
+    const { syncDiagram, user } = useQubdi();
     const { currentDiagram } = useDiagram();
     const [projects, setProjects] = useState<MyProject[]>([]);
     const [choice, setChoice] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [latestOpen, setLatestOpen] = useState(false);
 
     const unbound = access.status === 'unbound';
     const projectId =
@@ -36,7 +38,8 @@ export const AccessBanner: React.FC = () => {
     const writable = projects.filter((p) => p.role !== 'viewer');
     const reason = lockedReason(
         access,
-        projects.find((p) => p.id === projectId)?.name
+        projects.find((p) => p.id === projectId)?.name,
+        user?.email
     );
 
     if (!reason) return null;
@@ -62,6 +65,17 @@ export const AccessBanner: React.FC = () => {
         >
             <Lock className="size-4 shrink-0" />
             <span className="flex-1">{reason}</span>
+            {access.status === 'taken' ? (
+                <>
+                    <Button size="sm" onClick={() => setLatestOpen(true)}>
+                        Get latest and edit
+                    </Button>
+                    <GetLatestDialog
+                        open={latestOpen}
+                        onOpenChange={setLatestOpen}
+                    />
+                </>
+            ) : null}
             {unbound && writable.length > 0 ? (
                 <span className="flex items-center gap-2">
                     <OptionSelect

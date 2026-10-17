@@ -206,4 +206,25 @@ describe('createAutosaver', () => {
             expect(statuses).toEqual(['pending', 'saving', 'saved']);
         });
     });
+
+    describe('discard', () => {
+        it('drops the unsent change, so even a flush sends nothing', async () => {
+            const { saver, saved } = setup();
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            saver.discard();
+            await saver.flush();
+            await vi.advanceTimersByTimeAsync(5000);
+            expect(saved).toEqual([]);
+        });
+
+        it('ignores edits made afterwards', async () => {
+            const { saver, saved } = setup();
+            saver.update({ n: 1 });
+            saver.discard();
+            saver.update({ n: 2 });
+            await vi.advanceTimersByTimeAsync(5000);
+            expect(saved).toEqual([]);
+        });
+    });
 });

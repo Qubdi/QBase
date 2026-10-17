@@ -4,6 +4,7 @@ import type { DBMLError } from './dbml-import-error';
 import {
     parseDBMLError,
     validateArrayTypesForDatabase,
+    validateNoManyToManyRefs,
 } from './dbml-import-error';
 import type { DatabaseType } from '@/lib/domain/database-type';
 
@@ -32,7 +33,10 @@ export const verifyDBML = (
         const sanitizedContent = sanitizeDBML(preprocessedContent);
 
         const parser = new Parser();
-        parser.parse(sanitizedContent, 'dbmlv2');
+        const database = parser.parse(sanitizedContent, 'dbmlv2');
+        for (const schema of database.schemas ?? []) {
+            validateNoManyToManyRefs(schema.refs ?? []);
+        }
     } catch (e) {
         const parsedError = parseDBMLError(e);
         if (parsedError) {

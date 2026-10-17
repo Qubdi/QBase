@@ -10,6 +10,8 @@ export interface UserPickerProps {
     onSelect: (user: AdminUser | null) => void;
     /** users that cannot be chosen, e.g. people already in the project */
     excludeIds: ReadonlySet<string>;
+    /** leave admins out: they already have full access, so assigning one does nothing */
+    hideAdmins?: boolean;
 }
 
 /**
@@ -20,6 +22,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     selected,
     onSelect,
     excludeIds,
+    hideAdmins = false,
 }) => {
     const list = usePagedList(
         ({ page, limit, q }) => api.adminListUsers({ page, limit, q }),
@@ -45,7 +48,9 @@ export const UserPicker: React.FC<UserPickerProps> = ({
         );
     }
 
-    const candidates = list.items.filter((u) => !excludeIds.has(u.id));
+    const candidates = list.items.filter(
+        (u) => !excludeIds.has(u.id) && !(hideAdmins && u.isAdmin)
+    );
     const more = list.total > list.items.length;
 
     return (

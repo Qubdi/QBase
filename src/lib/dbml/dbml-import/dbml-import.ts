@@ -27,6 +27,7 @@ import {
 } from '@/lib/domain/db-custom-type';
 import {
     validateArrayTypesForDatabase,
+    validateNoManyToManyRefs,
     DBMLValidationError,
     getPositionFromIndex,
 } from './dbml-import-error';
@@ -629,6 +630,7 @@ export const importDBMLToDiagram = async (
             }
 
             if (schema.refs) {
+                validateNoManyToManyRefs(schema.refs);
                 schema.refs.forEach((ref) => {
                     // Convert the ref to ensure it has exactly two endpoints
                     if (ref.endpoints && ref.endpoints.length >= 2) {

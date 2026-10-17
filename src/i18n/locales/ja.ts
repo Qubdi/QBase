@@ -383,8 +383,7 @@ export const ja: LanguageTranslation = {
                 'ダイアグラムスキーマを{{databaseType}}スクリプトにエクスポート',
             close: '閉じる',
             loading: {
-                text: 'AIが{{databaseType}}のSQLを生成中...',
-                description: 'これには最大30秒かかります。',
+                text: '{{databaseType}}のSQLを生成中...',
             },
             error: {
                 message:
@@ -509,7 +508,6 @@ export const ja: LanguageTranslation = {
             one_to_one: '1対1',
             one_to_many: '1対多',
             many_to_one: '多対1',
-            many_to_many: '多対多',
         },
 
         canvas_context_menu: {

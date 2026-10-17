@@ -15,6 +15,7 @@ import { Spinner } from '@/components/spinner/spinner';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
+import { SessionEndedNotice } from './session-ended-notice';
 
 /**
  * Frame for the pages outside the editor (projects, diagrams of a project).
@@ -89,6 +90,7 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
                 <Spinner size="large" className="mx-auto mt-24 text-primary" />
             ) : user === null ? (
                 <div className="mx-auto mt-24 flex max-w-sm flex-col items-center gap-3 px-4 text-center">
+                    <SessionEndedNotice />
                     <p className="text-sm text-muted-foreground">
                         Sign in to see your projects. Accounts are created by an
                         admin.

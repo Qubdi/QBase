@@ -386,8 +386,7 @@ export const mr: LanguageTranslation = {
                 'तुमच्या आरेख स्कीमाला {{databaseType}} स्क्रिप्टमध्ये निर्यात करा',
             close: 'बंद करा',
             loading: {
-                text: 'AI {{databaseType}} साठी SQL तयार करत आहे...',
-                description: 'याला 30 सेकंद लागतील.',
+                text: '{{databaseType}} साठी SQL तयार होत आहे...',
             },
             error: {
                 message:
@@ -514,7 +513,6 @@ export const mr: LanguageTranslation = {
             one_to_one: 'एक ते एक',
             one_to_many: 'एक ते अनेक',
             many_to_one: 'अनेक ते एक',
-            many_to_many: 'अनेक ते अनेक',
         },
 
         canvas_context_menu: {

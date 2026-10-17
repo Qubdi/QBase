@@ -8,14 +8,13 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 8</b></div>
-  <h1>0 open.</h1>
+  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 9</b></div>
+  <h1>17 open.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-14</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (155 files, 1399 tests), npm audit · server tests run against Postgres (27 files, 466 tests, SQL Server tests skipped) · no secret read</span>
+    <span><b>audit date</b> 2026-10-17</span>
+    <span><b>method</b> static analysis · whole-tree read · import-graph dead-code scan · eslint, tsc -b, vitest run (197 files, 2042 tests) in a node:24 container · npm audit via registry bulk API (no Node on host) · server tests skipped (no Node on host) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
-
   <div class="split-nav">
     <b>Part of a 4-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
@@ -23,6 +22,7 @@
     <a href="audit-server.html">Server</a>
     <span class="here">Client (this file)</span>
     <a href="audit.html">Index</a>
+    <a href="todo.html">TODO</a>
   </div>
 </header>
 
@@ -30,11 +30,28 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">0 open &middot; 0 Crit &middot; 0 High &middot; 0 Med &middot; 0 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">17 open &middot; 0 Crit &middot; 0 High &middot; 7 Med &middot; 10 Low. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">A 404 on save clears the remote id; every later save fails <code>no_project</code></td><td><code>src/context/qubdi-context/qubdi-provider.tsx:103</code></td><td class="wrap-cell">Keep the remote id without a <code>projectId</code>; surface the error</td></tr>
+        <tr><td class="svc-name">CLI-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Unsent local edits are never uploaded after reload, re-login or reopen</td><td><code>src/lib/qubdi/autosave.ts:77</code></td><td class="wrap-cell">Compare local copy with base on open; mark it pending</td></tr>
+        <tr><td class="svc-name">CLI-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Keepalive size check counts UTF-16 characters, not bytes; Georgian saves lost</td><td><code>src/lib/qubdi/api.ts:425</code></td><td class="wrap-cell">Measure with <code>TextEncoder</code> byte length</td></tr>
+        <tr><td class="svc-name">CLI-010</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Lost edit lock never shown; a 423 on save retries forever</td><td><code>src/components/qubdi/use-edit-lock.ts:42</code></td><td class="wrap-cell">On 423, switch to read-only and tell the user</td></tr>
+        <tr><td class="svc-name">CLI-016</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Old cross-dialect PG exporter cluster (~2,400 lines) reached only by tests</td><td><code>src/lib/data/sql-export/cross-dialect/index.ts:80</code></td><td class="wrap-cell">Delete the cluster and its test; keep <code>escapeSQLComment</code></td></tr>
+        <tr><td class="svc-name">CLI-017</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Comments API methods and <code>comments-store</code> dead since the panel was removed</td><td><code>src/lib/qubdi/api.ts:668</code></td><td class="wrap-cell">Delete the five methods, the store and its test</td></tr>
+        <tr><td class="svc-name">CLI-018</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Members dialog owner branches never render; they call nonexistent endpoints</td><td><code>src/components/qubdi/members-dialog.tsx:54</code></td><td class="wrap-cell">Remove <code>isOwner</code> branches and the three member-write API methods</td></tr>
+        <tr><td class="svc-name">CLI-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">API <code>fetch</code> has no timeout; one hung save stalls autosave</td><td><code>src/lib/qubdi/api.ts:416</code></td><td class="wrap-cell">Pass <code>AbortSignal.timeout(30_000)</code> to <code>fetch</code></td></tr>
+        <tr><td class="svc-name">CLI-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lock release on <code>pagehide</code> races the final keepalive save</td><td><code>src/components/qubdi/use-edit-lock.ts:53</code></td><td class="wrap-cell">Release the lock after the final save settles</td></tr>
+        <tr><td class="svc-name">CLI-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Change-password and create-relationship dialogs lack a description</td><td><code>src/components/qubdi/change-password-dialog.tsx:47</code></td><td class="wrap-cell">Add <code>DialogDescription</code> or <code>aria-describedby={undefined}</code></td></tr>
+        <tr><td class="svc-name">CLI-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Monaco bundles unused TypeScript, CSS and HTML workers</td><td><code>src/components/code-snippet/config.ts:6</code></td><td class="wrap-cell">Keep only the editor and JSON workers</td></tr>
+        <tr><td class="svc-name">CLI-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No <code>manualChunks</code>; bundle visualizer runs on every build</td><td><code>vite.config.ts:11</code></td><td class="wrap-cell">Split vendor chunks; run the visualizer on demand</td></tr>
+        <tr><td class="svc-name">CLI-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Combobox component is never imported</td><td><code>src/components/combobox/combobox.tsx:1</code></td><td class="wrap-cell">Delete the file</td></tr>
+        <tr><td class="svc-name">CLI-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>applyIds</code> (328 lines) is reached only by its test</td><td><code>src/lib/utils/apply-ids.ts:70</code></td><td class="wrap-cell">Delete the file, barrel line and test</td></tr>
+        <tr><td class="svc-name">CLI-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Zod diagram-diff schema tree (~300 lines) is never used</td><td><code>src/lib/domain/diff/diff.ts:44</code></td><td class="wrap-cell">Delete the schema code</td></tr>
+        <tr><td class="svc-name">CLI-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">ChartDB cloud, analytics flags and <code>github_repo_opened</code> setting never read</td><td><code>src/lib/env.ts:1</code></td><td class="wrap-cell">Remove flags, their Docker/nginx plumbing and the setting</td></tr>
+        <tr><td class="svc-name">CLI-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unreferenced exports: <code>applyFilterOnDiagram</code>, <code>quickValidate</code>, <code>getNeighbors</code>, <code>listVersions</code>, <code>listDriftReports</code>, others</td><td><code>src/lib/domain/diagram-filter/filter.ts:76</code></td><td class="wrap-cell">Remove the unreferenced exports</td></tr>
       </tbody>
     </table>
   </div>
@@ -76,6 +93,7 @@
     <a href="audit-server.html">Server</a>
     <span class="here">Client (this file)</span>
     <a href="audit.html">Index</a>
+    <a href="todo.html">TODO</a>
   </div>
 
 </div>

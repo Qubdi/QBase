@@ -6,6 +6,8 @@ export interface QubdiContext {
     enabled: boolean;
     /** undefined while the first /auth/me call is in flight */
     user: RemoteUser | null | undefined;
+    /** the user was signed out by the server (an account has one live session) */
+    sessionEnded: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
@@ -26,6 +28,7 @@ const reject = () => Promise.reject(new Error('QubdiProvider missing'));
 export const qubdiContext = createContext<QubdiContext>({
     enabled: false,
     user: null,
+    sessionEnded: false,
     login: reject,
     register: reject,
     logout: reject,

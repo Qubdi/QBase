@@ -124,7 +124,7 @@ Goal: tell the user when the live database no longer matches the diagram.
 
 Build:
 - Reuse the introspection module and the reconcile function from Task 6 in report-only mode.
-- Scheduled check (cron-style, per diagram, default off) plus a manual "Check now".
+- A manual "Check now" per diagram (there is no schedule).
 - Table drift_reports (id, diagram_id, run_at, status: clean | drifted | error, changes JSON).
 - Classify changes: only-in-database, only-in-diagram, and differing definitions, with severity (breaking: dropped or retyped column; warning: new nullable column; info: comment or default).
 - Notify: badge on the diagram, and an optional webhook (generic JSON POST, so it works with ntfy, Slack-compatible tools or n8n).

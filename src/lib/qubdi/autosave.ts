@@ -17,6 +17,8 @@ export interface Autosaver<T> {
     update: (value: T) => void;
     /** Send any unsent change now (also retries after a failure). */
     flush: () => Promise<void>;
+    /** Forget every unsent change and stop saving (the user threw them away). */
+    discard: () => void;
     dispose: () => void;
 }
 
@@ -96,6 +98,12 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
         flush() {
             clear();
             return run();
+        },
+        discard() {
+            disposed = true;
+            latest = null;
+            pending = false;
+            clear();
         },
         dispose() {
             disposed = true;

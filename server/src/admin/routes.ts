@@ -1,27 +1,59 @@
-import { and, count, desc, eq, gte, ilike, lte, ne, or, sql } from 'drizzle-orm';
+import {
+    and,
+    count,
+    desc,
+    eq,
+    gt,
+    ilike,
+    inArray,
+    isNull,
+    ne,
+    notInArray,
+    or,
+    sql,
+} from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { audit } from '../audit/audit.js';
+import {
+    adminDiagramsQuery,
+    listAdminDiagrams,
+    listDiagramLinks,
+} from './diagrams.js';
+import { adminStats, statsQuery } from './stats.js';
+import { activityQuery, listActivity } from '../audit/activity.js';
+import {
+    audit,
+    auditMany,
+    type AuditAction,
+    type AuditMeta,
+} from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
+import { emitLinkChanged } from '../events.js';
 import {
     containsPattern,
+    MAX_PAGE_SIZE,
     offsetOf,
     pageOf,
     pagingQuery,
 } from '../lib/paging.js';
 import { slugFor } from '../projects/slug.js';
 import {
-    auditLog,
+    diagramLocks,
     diagrams,
     projectMembers,
     projects,
     sessions,
+    shareLinks,
     users,
 } from '../db/schema.js';
 
 const idParam = z.object({ id: z.string().uuid() });
+const linkParam = z.object({
+    id: z.string().uuid(),
+    linkId: z.string().uuid(),
+});
 const memberParam = z.object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
@@ -50,6 +82,21 @@ const updateUserBody = z
 const userListQuery = z.object({
     status: z.enum(['active', 'disabled']).optional(),
 });
+
+/** One action on up to a page's worth of accounts at once. */
+const bulkUsersBody = z.object({
+    action: z.enum(['enable', 'disable', 'delete']),
+    ids: z.array(z.string().uuid()).min(1).max(MAX_PAGE_SIZE),
+});
+
+const BULK_AUDIT_ACTION = {
+    enable: 'user.enable',
+    disable: 'user.disable',
+    delete: 'user.delete',
+} as const satisfies Record<
+    z.infer<typeof bulkUsersBody>['action'],
+    AuditAction
+>;
 
 const projectBody = z.object({
     name: z.string().trim().min(1).max(100),
@@ -83,6 +130,19 @@ const withAdminSetLock = <T>(db: Db, fn: (tx: Tx) => Promise<T>) =>
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
+/**
+ * Deletes accounts. Their diagrams do not go with them (owner_id would
+ * cascade): the team keeps them, owned by `heirId`.
+ */
+const removeUsers = async (tx: Tx, ids: string[], heirId: string) => {
+    await tx
+        .update(diagrams)
+        .set({ ownerId: heirId })
+        .where(inArray(diagrams.ownerId, ids));
+    await tx.delete(sessions).where(inArray(sessions.userId, ids));
+    await tx.delete(users).where(inArray(users.id, ids));
+};
+
 const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
     const [{ value }] = await tx
         .select({ value: count() })
@@ -97,14 +157,6 @@ const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
     return value;
 };
 
-const auditQuery = z.object({
-    action: z.string().trim().max(60).optional(),
-    userId: z.string().uuid().optional(),
-    diagramId: z.string().uuid().optional(),
-    from: z.coerce.date().optional(),
-    to: z.coerce.date().optional(),
-});
-
 /** Everything under /admin is admin-only; non-admins get a 404, not a 403. */
 export const adminRoutes =
     (db: Db): FastifyPluginAsync =>
@@ -118,40 +170,20 @@ export const adminRoutes =
             }
         });
 
+        // ---- overview ----
+
+        // the figures on the Overview; ?tz=Asia/Tbilisi makes a "day" the viewer's own
+        app.get('/stats', async (req) =>
+            adminStats(db, statsQuery.parse(req.query).tz)
+        );
+
         // ---- audit log ----
 
-        // newest first; filter with ?action=&userId=&diagramId=&from=&to=
-        app.get('/audit', async (req) => {
-            const paging = pagingQuery.parse(req.query);
-            const f = auditQuery.parse(req.query);
-            const where = and(
-                f.action ? eq(auditLog.action, f.action) : undefined,
-                f.userId ? eq(auditLog.userId, f.userId) : undefined,
-                f.diagramId ? eq(auditLog.diagramId, f.diagramId) : undefined,
-                f.from ? gte(auditLog.at, f.from) : undefined,
-                f.to ? lte(auditLog.at, f.to) : undefined
-            );
-            const [{ value: total }] = await db
-                .select({ value: count() })
-                .from(auditLog)
-                .where(where);
-            const items = await db
-                .select({
-                    id: auditLog.id,
-                    at: auditLog.at,
-                    action: auditLog.action,
-                    userId: auditLog.userId,
-                    userEmail: users.email,
-                    diagramId: auditLog.diagramId,
-                })
-                .from(auditLog)
-                .leftJoin(users, eq(users.id, auditLog.userId))
-                .where(where)
-                .orderBy(desc(auditLog.at), desc(auditLog.id))
-                .limit(paging.limit)
-                .offset(offsetOf(paging));
-            return pageOf(items, total, paging);
-        });
+        // newest first, a page at a time: ?limit=&cursor= (the nextCursor of the
+        // previous page), filtered with ?group=&action=&userId=&diagramId=&from=&to=&saves=
+        app.get('/audit', async (req) =>
+            listActivity(db, activityQuery.parse(req.query))
+        );
 
         // ---- users ----
 
@@ -176,6 +208,7 @@ export const adminRoutes =
                     isAdmin: users.isAdmin,
                     isActive: users.isActive,
                     createdAt: users.createdAt,
+                    lastLoginAt: users.lastLoginAt,
                     projects: sql<number>`(select count(*)::int from project_members pm where pm.user_id = users.id)`,
                 })
                 .from(users)
@@ -183,7 +216,42 @@ export const adminRoutes =
                 .orderBy(users.createdAt, users.id)
                 .limit(paging.limit)
                 .offset(offsetOf(paging));
-            return pageOf(items, total, paging);
+            // who is signed in right now, for this page only: one lookup on
+            // sessions_user_idx, not a join that every row pays for
+            const live =
+                items.length === 0
+                    ? []
+                    : await db
+                          .select({
+                              userId: sessions.userId,
+                              lastSeenAt: sessions.lastSeenAt,
+                          })
+                          .from(sessions)
+                          .where(
+                              and(
+                                  inArray(
+                                      sessions.userId,
+                                      items.map((u) => u.id)
+                                  ),
+                                  gt(sessions.expiresAt, new Date())
+                              )
+                          );
+            const lastActive = new Map<string, Date>();
+            for (const s of live) {
+                const known = lastActive.get(s.userId);
+                if (!known || s.lastSeenAt > known) {
+                    lastActive.set(s.userId, s.lastSeenAt);
+                }
+            }
+            return pageOf(
+                items.map((u) => ({
+                    ...u,
+                    // null: not signed in (no live session)
+                    lastActiveAt: lastActive.get(u.id) ?? null,
+                })),
+                total,
+                paging
+            );
         });
 
         app.post('/users', async (req, reply) => {
@@ -203,13 +271,19 @@ export const adminRoutes =
                     isAdmin: body.isAdmin,
                 })
                 .returning();
-            await audit(db, { userId: req.user!.id, action: 'user.create' });
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'user.create',
+                meta: { targetUserId: user.id },
+            });
             return reply.code(201).send({
                 id: user.id,
                 email: user.email,
                 isAdmin: user.isAdmin,
                 isActive: user.isActive,
                 createdAt: user.createdAt,
+                lastLoginAt: null,
+                lastActiveAt: null,
                 projects: 0,
             });
         });
@@ -257,6 +331,13 @@ export const adminRoutes =
             }
             const statusChanged =
                 body.isActive !== undefined && body.isActive !== target.isActive;
+            // what this request actually changed (a password counts every time)
+            const changed: NonNullable<AuditMeta['changed']> = [];
+            if (body.password !== undefined) changed.push('password');
+            if (body.isAdmin !== undefined && body.isAdmin !== target.isAdmin) {
+                changed.push('isAdmin');
+            }
+            if (statusChanged) changed.push('isActive');
             await audit(db, {
                 userId: req.user!.id,
                 action: statusChanged
@@ -264,6 +345,7 @@ export const adminRoutes =
                         ? 'user.enable'
                         : 'user.disable'
                     : 'user.update',
+                meta: { targetUserId: id, changed },
             });
             return {
                 id,
@@ -291,13 +373,7 @@ export const adminRoutes =
                 ) {
                     return { error: 'last_admin' as const };
                 }
-                // owner_id cascades; keep the team's diagrams alive
-                await tx
-                    .update(diagrams)
-                    .set({ ownerId: req.user!.id })
-                    .where(eq(diagrams.ownerId, id));
-                await tx.delete(sessions).where(eq(sessions.userId, id));
-                await tx.delete(users).where(eq(users.id, id));
+                await removeUsers(tx, [id], req.user!.id);
                 return {};
             });
             if (outcome.error === 'not_found') {
@@ -306,7 +382,211 @@ export const adminRoutes =
             if (outcome.error === 'last_admin') {
                 return reply.code(400).send({ error: 'last_admin' });
             }
-            await audit(db, { userId: req.user!.id, action: 'user.delete' });
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'user.delete',
+                meta: { targetUserId: id },
+            });
+            return reply.code(204).send();
+        });
+
+        // Enable, disable or delete several accounts in one request. All or
+        // nothing, under the same lock as the single-account routes: a request
+        // that would leave no admin who can sign in, or that includes the
+        // caller in a disable or delete, changes nothing and says why. An
+        // account that is already in the wanted state, or no longer exists,
+        // is counted as unchanged and gets no audit row.
+        app.post('/users/bulk', async (req, reply) => {
+            const body = bulkUsersBody.parse(req.body);
+            const ids = [...new Set(body.ids)];
+            const self = req.user!.id;
+            // enabling yourself changes nothing, so only the actions that take
+            // access away refuse
+            if (body.action !== 'enable' && ids.includes(self)) {
+                return reply.code(400).send({
+                    error:
+                        body.action === 'delete'
+                            ? 'cannot_delete_self'
+                            : 'cannot_disable_self',
+                });
+            }
+            const outcome = await withAdminSetLock(db, async (tx) => {
+                const found = await tx
+                    .select({
+                        id: users.id,
+                        isAdmin: users.isAdmin,
+                        isActive: users.isActive,
+                    })
+                    .from(users)
+                    .where(inArray(users.id, ids));
+                const changing = found.filter((u) =>
+                    body.action === 'enable'
+                        ? !u.isActive
+                        : body.action === 'disable'
+                          ? u.isActive
+                          : true
+                );
+                const changingIds = changing.map((u) => u.id);
+                if (changingIds.length === 0) return { changed: [] as string[] };
+
+                // admins who can sign in are lost to a disable or a delete;
+                // someone else must remain
+                const losesAdmin =
+                    body.action !== 'enable' &&
+                    changing.some((u) => u.isAdmin && u.isActive);
+                if (losesAdmin) {
+                    const [{ value: remaining }] = await tx
+                        .select({ value: count() })
+                        .from(users)
+                        .where(
+                            and(
+                                eq(users.isAdmin, true),
+                                eq(users.isActive, true),
+                                notInArray(users.id, changingIds)
+                            )
+                        );
+                    if (remaining < 1) return { error: 'last_admin' as const };
+                }
+
+                if (body.action === 'enable') {
+                    await tx
+                        .update(users)
+                        .set({ isActive: true })
+                        .where(inArray(users.id, changingIds));
+                } else if (body.action === 'disable') {
+                    await tx
+                        .update(users)
+                        .set({ isActive: false })
+                        .where(inArray(users.id, changingIds));
+                    // a disabled account ends every session, and lets go of
+                    // the diagrams it was editing
+                    await tx
+                        .delete(sessions)
+                        .where(inArray(sessions.userId, changingIds));
+                    await tx
+                        .delete(diagramLocks)
+                        .where(inArray(diagramLocks.userId, changingIds));
+                } else {
+                    await removeUsers(tx, changingIds, self);
+                }
+                return { changed: changingIds };
+            });
+            if ('error' in outcome) {
+                return reply.code(400).send({ error: outcome.error });
+            }
+            await auditMany(
+                db,
+                outcome.changed.map((targetUserId) => ({
+                    userId: self,
+                    action: BULK_AUDIT_ACTION[body.action],
+                    meta: { targetUserId },
+                }))
+            );
+            return {
+                changed: outcome.changed.length,
+                unchanged: ids.length - outcome.changed.length,
+            };
+        });
+
+        // ---- a user's sessions ----
+
+        // what the admin may see of a session: when, and from which browser.
+        // Never its id, which is the hash of the cookie.
+        app.get('/users/:id/sessions', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const [exists] = await db
+                .select({ id: users.id })
+                .from(users)
+                .where(eq(users.id, id));
+            if (!exists) return reply.code(404).send({ error: 'not_found' });
+            return db
+                .select({
+                    createdAt: sessions.createdAt,
+                    lastSeenAt: sessions.lastSeenAt,
+                    expiresAt: sessions.expiresAt,
+                    userAgent: sessions.userAgent,
+                })
+                .from(sessions)
+                .where(
+                    and(
+                        eq(sessions.userId, id),
+                        gt(sessions.expiresAt, new Date())
+                    )
+                )
+                .orderBy(desc(sessions.createdAt));
+        });
+
+        // "sign out everywhere". Your own session is the one you use: leave
+        // with the ordinary sign out.
+        app.delete('/users/:id/sessions', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            if (id === req.user!.id) {
+                return reply.code(400).send({ error: 'cannot_sign_out_self' });
+            }
+            const [exists] = await db
+                .select({ id: users.id })
+                .from(users)
+                .where(eq(users.id, id));
+            if (!exists) return reply.code(404).send({ error: 'not_found' });
+            const signedOut = await destroyOtherSessions(db, id, undefined);
+            // signing out someone who was not signed in is not an event
+            if (signedOut > 0) {
+                await audit(db, {
+                    userId: req.user!.id,
+                    action: 'user.sign_out',
+                    meta: { targetUserId: id },
+                });
+            }
+            return { signedOut };
+        });
+
+        // ---- diagrams and their share links ----
+
+        // paged: ?page=&limit=&q= (matches the title) &projectId=
+        app.get('/diagrams', async (req) =>
+            listAdminDiagrams(db, adminDiagramsQuery.parse(req.query))
+        );
+
+        app.get('/diagrams/:id/share-links', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const [exists] = await db
+                .select({ id: diagrams.id })
+                .from(diagrams)
+                .where(eq(diagrams.id, id));
+            if (!exists) return reply.code(404).send({ error: 'not_found' });
+            return listDiagramLinks(db, id);
+        });
+
+        // Ends a link at once, including for anyone watching it live. An admin
+        // does not have to be a member of the project to do this: a leaked
+        // link is exactly when the owner may not be around.
+        app.delete('/diagrams/:id/share-links/:linkId', async (req, reply) => {
+            const { id, linkId } = linkParam.parse(req.params);
+            const [link] = await db
+                .select({ id: shareLinks.id })
+                .from(shareLinks)
+                .where(
+                    and(eq(shareLinks.id, linkId), eq(shareLinks.diagramId, id))
+                );
+            if (!link) return reply.code(404).send({ error: 'not_found' });
+            // only the request that really revokes it records it: two admins
+            // revoking at once leave one row
+            const revoked = await db
+                .update(shareLinks)
+                .set({ revokedAt: new Date() })
+                .where(
+                    and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt))
+                )
+                .returning({ id: shareLinks.id });
+            if (revoked.length > 0) {
+                await audit(db, {
+                    userId: req.user!.id,
+                    action: 'share.revoke',
+                    diagramId: id,
+                    meta: { linkId },
+                });
+            }
+            emitLinkChanged(linkId);
             return reply.code(204).send();
         });
 
@@ -369,6 +649,7 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.create',
+                meta: { projectId: p.id, name: p.name },
             });
             return reply.code(201).send({ ...p, members: 0, diagrams: 0 });
         });
@@ -408,6 +689,7 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.update',
+                meta: { projectId: id, name: p.name },
             });
             return p;
         });
@@ -415,7 +697,7 @@ export const adminRoutes =
         app.delete('/projects/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const [exists] = await db
-                .select({ id: projects.id })
+                .select({ id: projects.id, name: projects.name })
                 .from(projects)
                 .where(eq(projects.id, id));
             if (!exists) return reply.code(404).send({ error: 'not_found' });
@@ -430,6 +712,8 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.delete',
+                // the project is gone, so keep its name for the log
+                meta: { projectId: id, name: exists.name },
             });
             return reply.code(204).send();
         });
@@ -480,6 +764,7 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.member_set',
+                meta: { projectId: id, targetUserId: userId, role: body.role },
             });
             return { userId, email: user.email, role: body.role };
         });
@@ -501,6 +786,7 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.member_remove',
+                meta: { projectId: id, targetUserId: userId },
             });
             return reply.code(204).send();
         });

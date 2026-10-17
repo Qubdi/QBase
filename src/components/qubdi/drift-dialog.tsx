@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/button/button';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/components/input/input';
-import { useToast } from '@/components/toast/use-toast';
 import { useDiagram } from '@/hooks/use-diagram';
 import { getProjectId } from '@/lib/qubdi/remote-map';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -18,18 +17,17 @@ import {
     errorMessage,
     type DriftBadge,
     type DriftItem,
-    type DriftOverview,
     type DriftReport,
     type SavedConnection,
 } from '@/lib/qubdi/api';
 import {
-    SCHEDULE_PRESETS,
     SEVERITY_CLASS,
     SEVERITY_LABEL,
-    presetIdOf,
     splitByCategory,
 } from '@/lib/qubdi/drift-ui';
 import { getSyncState } from '@/lib/qubdi/sync-state';
+import { ConnectionsDialog } from './connections-dialog';
+import { useWorkspace } from './workspace-context';
 
 export interface DriftDialogProps {
     open: boolean;
@@ -73,40 +71,34 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
 }) => {
     const { currentDiagram } = useDiagram();
     const { syncDiagram, remoteIdFor } = useQubdi();
-    const { toast } = useToast();
-    const [overview, setOverview] = useState<DriftOverview | null>(null);
+    const workspace = useWorkspace();
     const [report, setReport] = useState<DriftReport | null>(null);
     const [connections, setConnections] = useState<SavedConnection[]>([]);
-    const [enabled, setEnabled] = useState(false);
-    const [schedule, setSchedule] = useState('0 3 * * *');
+    const [connectionsOpen, setConnectionsOpen] = useState(false);
     const [connectionId, setConnectionId] = useState('');
     const [webhook, setWebhook] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const syncState = open ? getSyncState(currentDiagram.id) : undefined;
+    const projectId = workspace?.project.id ?? getProjectId(currentDiagram.id);
 
     const load = useCallback(async () => {
         const remoteId = remoteIdFor(currentDiagram.id);
         setError(null);
         try {
-            const projectId = getProjectId(currentDiagram.id);
             setConnections(
                 projectId
                     ? await api.listSavedConnections(projectId).catch(() => [])
                     : []
             );
             if (!remoteId) {
-                setOverview(null);
                 setReport(null);
                 return;
             }
             const o = await api.getDrift(remoteId);
-            setOverview(o);
             onBadgeChange(o.badge);
             if (o.settings) {
-                setEnabled(o.settings.enabled);
-                setSchedule(o.settings.schedule);
                 setConnectionId(o.settings.connectionId ?? '');
                 setWebhook(o.settings.webhookUrl ?? '');
             } else if (syncState?.source.kind === 'saved') {
@@ -120,7 +112,19 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         } catch (e) {
             setError(errorMessage(e));
         }
-    }, [currentDiagram.id, remoteIdFor, onBadgeChange, syncState]);
+    }, [currentDiagram.id, projectId, remoteIdFor, onBadgeChange, syncState]);
+
+    // the connections changed in the connections dialog: refresh the choice
+    const reloadConnections = useCallback(async () => {
+        if (!projectId) return;
+        const list = await api.listSavedConnections(projectId).catch(() => []);
+        setConnections(list);
+        setConnectionId((current) =>
+            current && !list.some((c) => c.id === current)
+                ? ''
+                : current || (list.length === 1 ? list[0].id : '')
+        );
+    }, [projectId]);
 
     useEffect(() => {
         if (open) void load();
@@ -141,11 +145,10 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         }
     };
 
-    const save = () =>
+    // what to compare with is remembered with the diagram, so Check now saves it first
+    const checkNow = () =>
         run(async (id) => {
             await api.saveDrift(id, {
-                enabled,
-                schedule: schedule.trim(),
                 connectionId: connectionId || null,
                 schemas: syncState?.schemas ?? [],
                 tables: syncState?.tables ?? [],
@@ -155,16 +158,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                 },
                 webhookUrl: webhook.trim() || null,
             });
-            toast({ title: 'Drift settings saved' });
-            await load();
-        });
-
-    const checkNow = () =>
-        run(async (id) => {
             const r = await api.checkDrift(id);
             setReport(r);
             const o = await api.getDrift(id);
-            setOverview(o);
             onBadgeChange(o.badge);
         });
 
@@ -176,7 +172,6 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         });
 
     const split = report ? splitByCategory(report.changes) : null;
-    const preset = presetIdOf(schedule);
     const remoteId = remoteIdFor(currentDiagram.id);
 
     return (
@@ -201,42 +196,10 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                     className="flex flex-col gap-3 rounded-md border p-3 text-sm"
                     onSubmit={(e) => {
                         e.preventDefault();
-                        void save();
+                        void checkNow();
                     }}
                 >
-                    <label className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            checked={enabled}
-                            onChange={(e) => setEnabled(e.target.checked)}
-                        />
-                        Check on a schedule
-                    </label>
                     <div className="flex flex-wrap items-center gap-2">
-                        <OptionSelect
-                            aria-label="Schedule"
-                            className="w-44"
-                            value={preset}
-                            onValueChange={(id) => {
-                                const p = SCHEDULE_PRESETS.find(
-                                    (x) => x.id === id
-                                );
-                                if (p) setSchedule(p.cron);
-                            }}
-                            options={[
-                                ...SCHEDULE_PRESETS.map((p) => ({
-                                    value: p.id,
-                                    label: p.label,
-                                })),
-                                { value: 'custom', label: 'Custom…' },
-                            ]}
-                        />
-                        <Input
-                            aria-label="Cron expression"
-                            className="w-40 font-mono"
-                            value={schedule}
-                            onChange={(e) => setSchedule(e.target.value)}
-                        />
                         <OptionSelect
                             aria-label="Saved connection"
                             className="w-56"
@@ -248,7 +211,26 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                                 label: c.name,
                             }))}
                         />
+                        {projectId ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setConnectionsOpen(true)}
+                            >
+                                {connections.length === 0
+                                    ? 'Add a connection'
+                                    : 'Manage connections'}
+                            </Button>
+                        ) : null}
                     </div>
+                    {connections.length === 0 && projectId ? (
+                        <p className="text-muted-foreground">
+                            There is no saved connection in this project yet.
+                            Add the database this diagram describes to compare
+                            it with.
+                        </p>
+                    ) : null}
                     <Input
                         aria-label="Webhook URL"
                         placeholder="Webhook URL (optional): receives a JSON POST when drift is found"
@@ -256,15 +238,10 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                         onChange={(e) => setWebhook(e.target.value)}
                     />
                     <div className="flex gap-2">
-                        <Button type="submit" size="sm" disabled={busy}>
-                            Save settings
-                        </Button>
                         <Button
-                            type="button"
+                            type="submit"
                             size="sm"
-                            variant="outline"
-                            disabled={busy || !remoteId || !overview?.settings}
-                            onClick={() => void checkNow()}
+                            disabled={busy || !connectionId}
                         >
                             {busy ? 'Working…' : 'Check now'}
                         </Button>
@@ -283,8 +260,8 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                         data-testid="drift-report"
                     >
                         <p className="text-sm">
-                            Last check {new Date(report.runAt).toLocaleString()}{' '}
-                            ({report.trigger}):{' '}
+                            Last check {new Date(report.runAt).toLocaleString()}
+                            :{' '}
                             <strong data-testid="drift-status">
                                 {report.status === 'clean'
                                     ? 'no drift'
@@ -362,12 +339,24 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                             </div>
                         ) : null}
                     </div>
-                ) : remoteId && overview?.settings ? (
+                ) : remoteId ? (
                     <p className="text-sm text-muted-foreground">
-                        No check has run yet. Press Check now.
+                        No check has run yet. Choose a connection and press
+                        Check now.
                     </p>
                 ) : null}
             </DialogContent>
+            {projectId ? (
+                <ConnectionsDialog
+                    open={connectionsOpen}
+                    onOpenChange={setConnectionsOpen}
+                    project={{
+                        id: projectId,
+                        name: workspace?.project.name ?? 'this project',
+                    }}
+                    onChanged={() => void reloadConnections()}
+                />
+            ) : null}
         </Dialog>
     );
 };

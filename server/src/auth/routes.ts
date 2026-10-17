@@ -1,5 +1,9 @@
 import { count, eq } from 'drizzle-orm';
-import type { FastifyPluginAsync, FastifyReply } from 'fastify';
+import type {
+    FastifyPluginAsync,
+    FastifyReply,
+    FastifyRequest,
+} from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
@@ -26,11 +30,16 @@ const changePassword = z.object({
 export const authRoutes =
     (db: Db, config: Config): FastifyPluginAsync =>
     async (app) => {
-        const startSession = async (reply: FastifyReply, userId: string) => {
+        const startSession = async (
+            req: FastifyRequest,
+            reply: FastifyReply,
+            userId: string
+        ) => {
             const { token, expiresAt } = await createSession(
                 db,
                 userId,
-                config.sessionDays
+                config.sessionDays,
+                req.headers['user-agent']
             );
             reply.setCookie(SESSION_COOKIE, token, {
                 httpOnly: true,
@@ -72,7 +81,7 @@ export const authRoutes =
                 })
                 .returning();
             await audit(db, { userId: user.id, action: 'user.register' });
-            await startSession(reply, user.id);
+            await startSession(req, reply, user.id);
             return reply.code(201).send({
                 id: user.id,
                 email: user.email,
@@ -95,7 +104,7 @@ export const authRoutes =
             if (!user.isActive) {
                 return reply.code(403).send({ error: 'account_disabled' });
             }
-            await startSession(reply, user.id);
+            await startSession(req, reply, user.id);
             return { id: user.id, email: user.email, isAdmin: user.isAdmin };
         });
 

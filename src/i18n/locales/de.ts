@@ -383,8 +383,7 @@ export const de: LanguageTranslation = {
                 'Exportieren Sie das Schema Ihres Diagramms in ein {{databaseType}} Skript',
             close: 'Schließen',
             loading: {
-                text: 'Die KI generiert SQL für {{databaseType}}...',
-                description: 'Dies sollte bis zu 30 Sekunden dauern.',
+                text: 'SQL für {{databaseType}} wird erstellt...',
             },
             error: {
                 message:
@@ -508,7 +507,6 @@ export const de: LanguageTranslation = {
             one_to_one: 'Ein zu Eins (1:1)',
             one_to_many: 'Ein zu Viele (1:n)',
             many_to_one: 'Viele zu Eins (n:1)',
-            many_to_many: 'Viele zu Viele (n:m)',
         },
 
         canvas_context_menu: {

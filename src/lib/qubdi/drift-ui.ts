@@ -1,22 +1,5 @@
 import type { DriftBadge, DriftItem, DriftSeverity } from './api';
 
-export interface SchedulePreset {
-    id: string;
-    label: string;
-    cron: string;
-}
-
-/** Common schedules; anything else is a custom cron expression (UTC). */
-export const SCHEDULE_PRESETS: SchedulePreset[] = [
-    { id: 'hourly', label: 'Every hour', cron: '0 * * * *' },
-    { id: 'six', label: 'Every 6 hours', cron: '0 */6 * * *' },
-    { id: 'daily', label: 'Every day at 03:00 UTC', cron: '0 3 * * *' },
-    { id: 'weekly', label: 'Every Monday at 03:00 UTC', cron: '0 3 * * 1' },
-];
-
-export const presetIdOf = (cron: string): string =>
-    SCHEDULE_PRESETS.find((p) => p.cron === cron.trim())?.id ?? 'custom';
-
 /** Text for the navbar badge, or null when there is nothing to show. */
 export function badgeLabel(badge: DriftBadge | null): string | null {
     if (!badge) return null;

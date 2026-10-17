@@ -1721,7 +1721,7 @@ export const pokemonDb: Template = {
                 targetTableId: 'o1q0k0iqprc4nft3xr0ahombk',
                 sourceFieldId: 'uzs7zymuvc175cz1x0ds0i062',
                 targetFieldId: 'rvijvbidfhkmprs3ppl6bjoie',
-                sourceCardinality: 'many',
+                sourceCardinality: 'one',
                 targetCardinality: 'many',
                 createdAt: now,
             },

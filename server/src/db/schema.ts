@@ -1,11 +1,12 @@
 import { sql } from 'drizzle-orm';
 import {
+    bigint,
+    check,
     index,
     jsonb,
     pgEnum,
     pgTable,
     primaryKey,
-    serial,
     text,
     timestamp,
     uuid,
@@ -13,6 +14,7 @@ import {
     integer,
     uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import type { AuditMeta } from '../audit/audit.js';
 
 export const projectRole = pgEnum('project_role', ['editor', 'viewer']);
 
@@ -34,26 +36,67 @@ export const driftStatus = pgEnum('drift_status', [
     'error',
 ]);
 
-export const users = pgTable('users', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    email: text('email').notNull().unique(),
-    passwordHash: text('password_hash').notNull(),
-    isAdmin: boolean('is_admin').notNull().default(false),
-    // a disabled user cannot sign in; their data and assignments stay
-    isActive: boolean('is_active').notNull().default(true),
-    createdAt: timestamp('created_at', { withTimezone: true })
-        .notNull()
-        .defaultNow(),
-});
+// how a drift report came about; 'schedule' stays for reports stored back
+// when checks still ran on a timer
+export const driftTrigger = pgEnum('drift_trigger', ['manual', 'schedule']);
 
-export const sessions = pgTable('sessions', {
-    // sha256 of the cookie token; the raw token is never stored
-    id: text('id').primaryKey(),
-    userId: uuid('user_id')
-        .notNull()
-        .references(() => users.id, { onDelete: 'cascade' }),
-    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-});
+export const users = pgTable(
+    'users',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        // the plain unique constraint serves the sign-in lookup (email = $1)
+        email: text('email').notNull().unique(),
+        passwordHash: text('password_hash').notNull(),
+        isAdmin: boolean('is_admin').notNull().default(false),
+        // a disabled user cannot sign in; their data and assignments stay
+        isActive: boolean('is_active').notNull().default(true),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        // set at every sign-in; null until the person signs in after this
+        // column was added (and for an account nobody has signed in to yet)
+        lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    },
+    (t) => [
+        // the app lowercases emails; this makes the database refuse a second
+        // account that differs only by case
+        uniqueIndex('users_email_lower_idx').on(sql`lower(${t.email})`),
+    ]
+);
+
+export const sessions = pgTable(
+    'sessions',
+    {
+        // sha256 of the cookie token; the raw token is never stored
+        id: text('id').primaryKey(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+        // when the person signed in (a session that existed before this column
+        // shows the day it was added)
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        // last request made with this session, written at most every 5 minutes
+        // (see getSessionUser), not on every request
+        lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        // the browser's User-Agent, cut to 200 characters, so an admin can tell
+        // sessions apart; no IP address is kept, it is personal data we do not need
+        userAgent: text('user_agent'),
+    },
+    (t) => [
+        // sign-in, sign-out and "reset password" delete a user's sessions by
+        // user_id, and so does the cascade when the user is deleted.
+        // No expires_at index: a user has one live session, so the table holds
+        // about one row per user and the hourly purge reads all of it anyway.
+        // No index on last_seen_at either, so writing it stays an in-place update.
+        index('sessions_user_idx').on(t.userId),
+        check('sessions_user_agent_len', sql`char_length(${t.userAgent}) <= 200`),
+    ]
+);
 
 export const projects = pgTable(
     'projects',
@@ -62,6 +105,7 @@ export const projects = pgTable(
         name: text('name').notNull().unique(),
         slug: text('slug').notNull(),
         description: text('description').notNull().default(''),
+        // no index on created_by: projects are few, and users are deleted rarely
         createdBy: uuid('created_by').references(() => users.id, {
             onDelete: 'set null',
         }),
@@ -92,23 +136,60 @@ export const projectMembers = pgTable(
     ]
 );
 
-export const diagrams = pgTable('diagrams', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    ownerId: uuid('owner_id')
+export const diagrams = pgTable(
+    'diagrams',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        // on delete cascade, but the admin delete route first hands the user's
+        // diagrams to the admin, so a user's diagrams are never lost
+        ownerId: uuid('owner_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        // every diagram lives in exactly one project; access comes from the project
+        projectId: uuid('project_id')
+            .notNull()
+            .references(() => projects.id, { onDelete: 'restrict' }),
+        title: text('title').notNull(),
+        content: jsonb('content').notNull(),
+        autoPublish: boolean('auto_publish').notNull().default(false),
+        // per-diagram lint rule settings (enabled rules, severities, naming style)
+        lintConfig: jsonb('lint_config').notNull().default({}),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (t) => [
+        // a project's diagrams: the workspace list, the admin project counts
+        // and the "project is not empty" check; also the scan that the restrict
+        // rule on project_id makes when a project is deleted. It is only
+        // project_id on purpose: updated_at changes on every save, and an
+        // index that contains it turns every autosave from a cheap in-place
+        // (HOT) update into one that writes index entries (0 of 3,000 saves
+        // were HOT with it, all 3,000 without)
+        index('diagrams_project_idx').on(t.projectId),
+        // the admin user delete reassigns a user's diagrams by owner_id, and the
+        // cascade scans it too
+        index('diagrams_owner_idx').on(t.ownerId),
+    ]
+);
+
+/**
+ * Who is editing a diagram right now: at most one editor at a time. The editor
+ * renews its lock while the diagram is open; a lock nobody renews runs out.
+ */
+export const diagramLocks = pgTable('diagram_locks', {
+    diagramId: uuid('diagram_id')
+        .primaryKey()
+        .references(() => diagrams.id, { onDelete: 'cascade' }),
+    // no index on user_id: one row per diagram that is open for editing, so
+    // the table is small (a delete by user_id read 300 rows and was not faster
+    // with an index)
+    userId: uuid('user_id')
         .notNull()
         .references(() => users.id, { onDelete: 'cascade' }),
-    // every diagram lives in exactly one project; access comes from the project
-    projectId: uuid('project_id')
-        .notNull()
-        .references(() => projects.id, { onDelete: 'restrict' }),
-    title: text('title').notNull(),
-    content: jsonb('content').notNull(),
-    autoPublish: boolean('auto_publish').notNull().default(false),
-    // per-diagram lint rule settings (enabled rules, severities, naming style)
-    lintConfig: jsonb('lint_config').notNull().default({}),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-        .notNull()
-        .defaultNow(),
+    // one browser tab: the same user in a second tab is a second editor
+    editorId: text('editor_id').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
 
 export const snapshots = pgTable(
@@ -131,46 +212,88 @@ export const snapshots = pgTable(
         note: text('note'),
     },
     (t) => [
+        // also serves diagram_id lookups (version history, latest version)
         uniqueIndex('snapshots_diagram_version_idx').on(t.diagramId, t.version),
+        // the biggest table: deleting a user sets published_by to null, and
+        // without this index that scans every row of it
+        index('snapshots_published_by_idx').on(t.publishedBy),
     ]
 );
 
 export const auditLog = pgTable(
     'audit_log',
     {
-        id: serial('id').primaryKey(),
+        // the one table that grows without limit, so a bigint that cannot run out
+        id: bigint('id', { mode: 'number' })
+            .primaryKey()
+            .generatedAlwaysAsIdentity(),
         // no FKs: audit rows must outlive deleted users and diagrams
         userId: uuid('user_id'),
         action: text('action').notNull(),
         diagramId: uuid('diagram_id'),
         at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+        // what the action was done to (which project, which user, which
+        // version): ids and names, never an email or anything secret, and no
+        // foreign keys, so a row still reads after its target is gone. Small and
+        // never filtered or joined on. Null for diagram.update, the most frequent
+        // action (every save), where diagram_id already says it all.
+        meta: jsonb('meta').$type<AuditMeta>(),
     },
     (t) => [
-        // newest-first reads and the retention delete
-        index('audit_log_at_idx').on(t.at),
+        // an object no bigger than 1 KB, so the table that grows without limit
+        // cannot be filled with large documents
+        check(
+            'audit_log_meta_small',
+            sql`${t.meta} is null or (jsonb_typeof(${t.meta}) = 'object' and octet_length(${t.meta}::text) <= 1024)`
+        ),
+        // GET /admin/audit with no filter (order by at desc, id desc; it is
+        // also the order of a keyset cursor) and the retention delete (at < cutoff)
+        index('audit_log_at_id_idx').on(
+            t.at.desc().nullsFirst(),
+            t.id.desc().nullsFirst()
+        ),
+        // GET /admin/audit?action=
+        index('audit_log_action_at_idx').on(
+            t.action,
+            t.at.desc().nullsFirst()
+        ),
+        // GET /admin/audit?diagramId=
         index('audit_log_diagram_at_idx').on(t.diagramId, t.at),
+        // GET /admin/audit?userId=
         index('audit_log_user_at_idx').on(t.userId, t.at),
     ]
 );
 
-export const shareLinks = pgTable('share_links', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    diagramId: uuid('diagram_id')
-        .notNull()
-        .references(() => diagrams.id, { onDelete: 'cascade' }),
-    // sha256 of the URL token; the raw token is shown once and never stored
-    tokenHash: text('token_hash').notNull().unique(),
-    access: shareAccess('access').notNull().default('anyone'),
-    expiresAt: timestamp('expires_at', { withTimezone: true }),
-    live: boolean('live').notNull().default(false),
-    createdBy: uuid('created_by').references(() => users.id, {
-        onDelete: 'set null',
-    }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-        .notNull()
-        .defaultNow(),
-    revokedAt: timestamp('revoked_at', { withTimezone: true }),
-});
+export const shareLinks = pgTable(
+    'share_links',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        diagramId: uuid('diagram_id')
+            .notNull()
+            .references(() => diagrams.id, { onDelete: 'cascade' }),
+        // sha256 of the URL token; the raw token is shown once and never stored
+        tokenHash: text('token_hash').notNull().unique(),
+        access: shareAccess('access').notNull().default('anyone'),
+        expiresAt: timestamp('expires_at', { withTimezone: true }),
+        live: boolean('live').notNull().default(false),
+        // no index on created_by: users are deleted rarely
+        createdBy: uuid('created_by').references(() => users.id, {
+            onDelete: 'set null',
+        }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    },
+    (t) => [
+        // GET /diagrams/:id/share-links (a diagram's links, newest first), and
+        // the cascade when a diagram is deleted
+        index('share_links_diagram_idx').on(
+            t.diagramId,
+            t.createdAt.desc().nullsFirst()
+        ),
+    ]
+);
 
 export const comments = pgTable(
     'comments',
@@ -208,7 +331,8 @@ export const savedConnections = pgTable(
         projectId: uuid('project_id')
             .notNull()
             .references(() => projects.id, { onDelete: 'cascade' }),
-        // who saved it; the connection outlives that user
+        // who saved it; the connection outlives that user (no index: a project
+        // holds a handful of connections)
         ownerId: uuid('owner_id').references(() => users.id, {
             onDelete: 'set null',
         }),
@@ -240,9 +364,8 @@ export const driftSettings = pgTable('drift_settings', {
     diagramId: uuid('diagram_id')
         .primaryKey()
         .references(() => diagrams.id, { onDelete: 'cascade' }),
-    enabled: boolean('enabled').notNull().default(false),
-    // 5-field cron expression, UTC
-    schedule: text('schedule').notNull().default('0 3 * * *'),
+    // no index on connection_id or updated_by: deleting a connection or a user
+    // is rare and the table has one small row per diagram
     connectionId: uuid('connection_id').references(() => savedConnections.id, {
         onDelete: 'set null',
     }),
@@ -253,7 +376,6 @@ export const driftSettings = pgTable('drift_settings', {
         .notNull()
         .default({ tables: {}, columns: {} }),
     webhookUrl: text('webhook_url'),
-    nextRunAt: timestamp('next_run_at', { withTimezone: true }),
     updatedBy: uuid('updated_by').references(() => users.id, {
         onDelete: 'set null',
     }),
@@ -273,7 +395,7 @@ export const driftReports = pgTable(
             .notNull()
             .defaultNow(),
         status: driftStatus('status').notNull(),
-        trigger: text('trigger').notNull(),
+        trigger: driftTrigger('trigger').notNull(),
         changes: jsonb('changes').notNull().default([]),
         renameHints: jsonb('rename_hints').notNull().default([]),
         counts: jsonb('counts')

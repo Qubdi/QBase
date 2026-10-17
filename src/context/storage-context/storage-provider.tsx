@@ -8,7 +8,10 @@ import type {
     DBRelationship,
     RelationshipType,
 } from '@/lib/domain/db-relationship';
-import { determineCardinalities } from '@/lib/domain/db-relationship';
+import {
+    determineCardinalities,
+    normalizeCardinalities,
+} from '@/lib/domain/db-relationship';
 import type { DiagramConfig } from '@/lib/domain/config';
 import type { DBDependency } from '@/lib/domain/db-dependency';
 import type { Area } from '@/lib/domain/area';
@@ -124,10 +127,14 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
                 .modify((relationship, ref) => {
                     // relationship.type was replaced by the cardinalities
                     const legacy = relationship as unknown as {
-                        type?: RelationshipType;
+                        type?: RelationshipType | 'many_to_many';
                     };
                     const { sourceCardinality, targetCardinality } =
-                        determineCardinalities(legacy.type ?? 'one_to_one');
+                        determineCardinalities(
+                            legacy.type === 'many_to_many'
+                                ? 'one_to_many'
+                                : (legacy.type ?? 'one_to_one')
+                        );
 
                     relationship.sourceCardinality = sourceCardinality;
                     relationship.targetCardinality = targetCardinality;
@@ -240,6 +247,21 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
             diagram_filters: 'diagramId, tableIds, schemasIds',
             notes: '++id, diagramId, content, x, y, width, height, color',
         });
+
+        dexieDB.version(14).upgrade((tx) =>
+            tx
+                .table<DBRelationship & { diagramId: string }>(
+                    'db_relationships'
+                )
+                .toCollection()
+                // there is no many-to-many relationship: a foreign key points at one row
+                .modify((relationship) => {
+                    Object.assign(
+                        relationship,
+                        normalizeCardinalities(relationship)
+                    );
+                })
+        );
 
         dexieDB.on('ready', async () => {
             const config = await dexieDB.config.get(1);

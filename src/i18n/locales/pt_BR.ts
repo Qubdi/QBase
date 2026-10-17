@@ -382,8 +382,7 @@ export const pt_BR: LanguageTranslation = {
                 'Exporte o esquema do seu diagrama para o script {{databaseType}}',
             close: 'Fechar',
             loading: {
-                text: 'A IA está gerando SQL para {{databaseType}}...',
-                description: 'Isso pode levar até 30 segundos.',
+                text: 'Gerando SQL para {{databaseType}}...',
             },
             error: {
                 message:
@@ -508,7 +507,6 @@ export const pt_BR: LanguageTranslation = {
             one_to_one: 'Um para Um',
             one_to_many: 'Um para Muitos',
             many_to_one: 'Muitos para Um',
-            many_to_many: 'Muitos para Muitos',
         },
 
         canvas_context_menu: {

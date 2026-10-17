@@ -2,11 +2,6 @@ import http from 'node:http';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
-import {
-    CLAIM_LEASE_MS,
-    claimDueChecks,
-    runDueChecks,
-} from '../src/drift/service.js';
 import type {
     DatabaseMetadata,
     Introspector,
@@ -14,7 +9,6 @@ import type {
 } from '../src/introspect/types.js';
 import diagramFixture from './fixtures/postgres-diagram.json' with { type: 'json' };
 import metadataFixture from './fixtures/postgres-metadata.json' with { type: 'json' };
-import { loadConfig } from '../src/config.js';
 import {
     as,
     createTestApp,
@@ -67,8 +61,6 @@ describe('drift detection', () => {
     let connectionId: string;
 
     const settings = (over: object = {}) => ({
-        enabled: true,
-        schedule: '0 3 * * *',
         connectionId,
         schemas: [],
         tables: [],
@@ -164,28 +156,35 @@ describe('drift detection', () => {
     });
 
     describe('settings', () => {
-        it('starts unconfigured and is off by default', async () => {
+        it('starts unconfigured', async () => {
             const res = await get();
             expect(res.json()).toEqual({ settings: null, latest: null, badge: null });
         });
 
-        it('saves settings and schedules the next run only when enabled', async () => {
-            const on = await put(owner, settings({ schedule: '*/10 * * * *' }));
-            expect(on.statusCode).toBe(200);
-            expect(on.json()).toMatchObject({ enabled: true, schedule: '*/10 * * * *' });
-            expect(on.json().nextRunAt).toBeTruthy();
-            const off = await put(owner, settings({ enabled: false }));
-            expect(off.json().enabled).toBe(false);
-            expect(off.json().nextRunAt).toBeNull();
+        it('saves the settings, which have no schedule', async () => {
+            const res = await put(owner, settings({ webhookUrl: 'https://hooks.example.com/drift' }));
+            expect(res.statusCode).toBe(200);
+            expect(res.json()).toMatchObject({
+                connectionId,
+                webhookUrl: 'https://hooks.example.com/drift',
+            });
+            const stored = (await get()).json().settings;
+            for (const gone of ['enabled', 'schedule', 'nextRunAt']) {
+                expect(res.json()).not.toHaveProperty(gone);
+                expect(stored).not.toHaveProperty(gone);
+            }
         });
 
-        it('rejects bad schedules, webhooks and connections', async () => {
-            expect((await put(owner, settings({ schedule: 'every day' }))).json().error).toBe('invalid_schedule');
-            expect((await put(owner, settings({ schedule: '* * *' }))).statusCode).toBe(400);
+        it('ignores a schedule sent by an old client', async () => {
+            const res = await put(owner, settings({ enabled: true, schedule: '*/10 * * * *' }));
+            expect(res.statusCode).toBe(200);
+            expect(res.json().schedule).toBeUndefined();
+        });
+
+        it('rejects bad webhooks and connections', async () => {
             expect((await put(owner, settings({ webhookUrl: 'ftp://x.example.com' }))).json().error).toBe('invalid_webhook');
             expect((await put(owner, settings({ webhookUrl: 'not a url' }))).statusCode).toBe(400);
             expect((await put(owner, settings({ webhookUrl: 'https://user:pw@x.example.com/h' }))).statusCode).toBe(400);
-            expect((await put(owner, settings({ connectionId: null }))).json().error).toBe('connection_required');
             expect((await put(owner, settings({ connectionId: '00000000-0000-4000-8000-000000000000' }))).json().error).toBe('connection_not_found');
         });
 
@@ -207,9 +206,14 @@ describe('drift detection', () => {
             expect(res.json().error).toBe('connection_not_found');
         });
 
-        it('allows saving a disabled configuration without a connection', async () => {
-            const res = await put(owner, settings({ enabled: false, connectionId: null }));
+        it('allows saving settings before a connection is chosen, but will not check without one', async () => {
+            const res = await put(owner, settings({ connectionId: null }));
             expect(res.statusCode).toBe(200);
+            const checked = await check();
+            expect(checked.statusCode).toBe(400);
+            expect(checked.json().error).toBe('connection_required');
+            expect(factoryCalls).toBe(0);
+            expect(await ctx.db.select().from(driftReports)).toHaveLength(0);
         });
 
         it('does not run a check before it is configured', async () => {
@@ -221,7 +225,7 @@ describe('drift detection', () => {
 
     describe('what a check finds', () => {
         beforeEach(async () => {
-            expect((await put(owner, settings({ enabled: false }))).statusCode).toBe(200);
+            expect((await put(owner, settings())).statusCode).toBe(200);
         });
 
         it('reports clean when the database matches the diagram', async () => {
@@ -358,11 +362,11 @@ describe('drift detection', () => {
         });
 
         it('ignores database tables outside the stored selection', async () => {
-            await put(owner, settings({ enabled: false, tables: ['public.customers', 'shop.order_items', 'shop.orders', 'shop.paid_orders'] }));
+            await put(owner, settings({ tables: ['public.customers', 'shop.order_items', 'shop.orders', 'shop.paid_orders'] }));
             meta.tables.push({ schema: 'shop', table: 'extra', type: 'BASE TABLE' });
             expect((await check()).json().status).toBe('clean');
             // without a selection the same table is reported
-            await put(owner, settings({ enabled: false, tables: [] }));
+            await put(owner, settings({ tables: [] }));
             const body = (await check()).json();
             expect(body.changes.map((c: { id: string }) => c.id)).toEqual(['table_added:shop.extra']);
         });
@@ -375,7 +379,7 @@ describe('drift detection', () => {
             try {
                 const without = (await check()).json();
                 expect(without.status).toBe('drifted');
-                await put(owner, settings({ enabled: false, sourceKeys: { tables: { [customers.id]: 'public.customers' }, columns: {} } }));
+                await put(owner, settings({ sourceKeys: { tables: { [customers.id]: 'public.customers' }, columns: {} } }));
                 const withKeys = (await check()).json();
                 expect(withKeys.status).toBe('clean');
             } finally {
@@ -386,7 +390,7 @@ describe('drift detection', () => {
 
     describe('failures are errors, not drift', () => {
         beforeEach(async () => {
-            expect((await put(owner, settings({ enabled: false }))).statusCode).toBe(200);
+            expect((await put(owner, settings())).statusCode).toBe(200);
         });
 
         it('reports a connection failure as an error with nothing to compare', async () => {
@@ -408,19 +412,20 @@ describe('drift detection', () => {
             await ctx.db.update((await import('../src/db/schema.js')).savedConnections).set({ host: '93.184.216.34' });
         });
 
-        it('reports a deleted connection as an error', async () => {
+        it('asks for another connection after the saved one is deleted', async () => {
             const tmp = await ctx.app.inject({
                 method: 'POST',
                 url: '/introspect/connections',
                 headers: as(owner),
                 payload: { ...conn(), projectId: await projectFor(ctx.app), name: 'temp' },
             });
-            await put(owner, settings({ enabled: false, connectionId: tmp.json().id }));
+            await put(owner, settings({ connectionId: tmp.json().id }));
             await ctx.app.inject({ method: 'DELETE', url: `/introspect/connections/${tmp.json().id}`, headers: as(owner) });
-            const body = (await check()).json();
-            expect(body.status).toBe('error');
-            expect(body.error).toMatch(/connection/i);
+            // the settings forget the connection, and a check asks for another one
             expect((await get()).json().settings.connectionId).toBeNull();
+            const res = await check();
+            expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('connection_required');
         });
 
         it('an error does not hide earlier drift history and shows as a badge', async () => {
@@ -444,7 +449,7 @@ describe('drift detection', () => {
 
     describe('badge and dismissal', () => {
         beforeEach(async () => {
-            await put(owner, settings({ enabled: false }));
+            await put(owner, settings());
         });
 
         it('shows a badge for undismissed drift and clears it when dismissed', async () => {
@@ -488,7 +493,7 @@ describe('drift detection', () => {
 
     describe('reports', () => {
         beforeEach(async () => {
-            await put(owner, settings({ enabled: false }));
+            await put(owner, settings());
         });
 
         it('lists newest first, honours the limit, and fetches one with its changes', async () => {
@@ -525,7 +530,7 @@ describe('drift detection', () => {
 
         it('is removed with the diagram', async () => {
             const tmp = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })).json().id;
-            await put(owner, settings({ enabled: false }), tmp);
+            await put(owner, settings(), tmp);
             await check(owner, tmp);
             await ctx.app.inject({ method: 'DELETE', url: `/diagrams/${tmp}`, headers: as(owner) });
             expect(await ctx.db.select().from(driftReports).where(eq(driftReports.diagramId, tmp))).toHaveLength(0);
@@ -533,9 +538,132 @@ describe('drift detection', () => {
         });
     });
 
+    describe('opening a diagram reuses a recent report', () => {
+        const cachedCheck = (u: TestUser = owner, app = ctx.app) =>
+            app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/check?cached=1`, headers: as(u) });
+        const reportCount = async () =>
+            (await ctx.db.select().from(driftReports).where(eq(driftReports.diagramId, diagramId))).length;
+        const checkAudits = async () =>
+            (await ctx.db.select().from(auditLog)).filter((r) => r.diagramId === diagramId && r.action === 'drift.check').length;
+        const editDiagram = () =>
+            ctx.app.inject({ method: 'PUT', url: `/diagrams/${diagramId}`, headers: as(owner), payload: { autoPublish: false } });
+
+        beforeEach(async () => {
+            expect((await put(owner, settings())).statusCode).toBe(200);
+        });
+
+        it('reads the database once, then hands back the same report', async () => {
+            const first = await cachedCheck();
+            expect(first.statusCode).toBe(200);
+            const second = await cachedCheck();
+            expect(second.statusCode).toBe(200);
+            expect(second.json().id).toBe(first.json().id);
+            expect(factoryCalls).toBe(1);
+            expect(await reportCount()).toBe(1);
+        });
+
+        it('hands back everything a check does, including the badge', async () => {
+            addColumn('phone');
+            const first = (await cachedCheck()).json();
+            const again = (await cachedCheck()).json();
+            expect(again.status).toBe('drifted');
+            expect(again.changes).toHaveLength(1);
+            expect(again.badge).toEqual({ status: 'drifted', counts: { breaking: 0, warning: 1, info: 0 }, reportId: first.id });
+            expect(factoryCalls).toBe(1);
+        });
+
+        it('does not count a reused report as a check in the audit log', async () => {
+            const before = await checkAudits();
+            await cachedCheck();
+            await cachedCheck();
+            await cachedCheck();
+            expect((await checkAudits()) - before).toBe(1);
+        });
+
+        it('always reads the database when a check is asked for', async () => {
+            await cachedCheck();
+            expect((await check()).statusCode).toBe(200);
+            expect(factoryCalls).toBe(2);
+            expect(await reportCount()).toBe(2);
+        });
+
+        it('shows a change in the database once the report has run out', async () => {
+            expect((await cachedCheck()).json().status).toBe('clean');
+            addColumn('phone');
+            expect((await cachedCheck()).json().status).toBe('clean');
+            expect(factoryCalls).toBe(1);
+            await ctx.db.update(driftReports).set({ runAt: new Date(Date.now() - 10 * 60_000) });
+            expect((await cachedCheck()).json().status).toBe('drifted');
+            expect(factoryCalls).toBe(2);
+        });
+
+        it('reads again after the diagram is edited', async () => {
+            await cachedCheck();
+            expect((await editDiagram()).statusCode).toBe(200);
+            await cachedCheck();
+            expect(factoryCalls).toBe(2);
+            // and the new report is reused in its turn
+            await cachedCheck();
+            expect(factoryCalls).toBe(2);
+        });
+
+        it('reads again after the drift settings change', async () => {
+            await cachedCheck();
+            expect((await put(owner, settings({ schemas: ['public'] }))).statusCode).toBe(200);
+            await cachedCheck();
+            expect(factoryCalls).toBe(2);
+        });
+
+        it('reads again after the saved connection is edited', async () => {
+            await cachedCheck();
+            // no password: the saved one is kept
+            const { dialect, host, user, database } = conn();
+            const edit = (db: string) =>
+                ctx.app.inject({
+                    method: 'PUT',
+                    url: `/introspect/connections/${connectionId}`,
+                    headers: as(owner),
+                    payload: { name: 'prod', dialect, host, user, database: db },
+                });
+            expect((await edit('shop2')).statusCode).toBe(200);
+            await cachedCheck();
+            expect(factoryCalls).toBe(2);
+            expect((await edit(database)).statusCode).toBe(200);
+        });
+
+        it('tries again after a failure instead of reusing it', async () => {
+            factoryError = new Error('connection refused');
+            expect((await cachedCheck()).json().status).toBe('error');
+            factoryError = null;
+            expect((await cachedCheck()).json().status).toBe('clean');
+            expect(factoryCalls).toBe(2);
+            expect(await reportCount()).toBe(2);
+        });
+
+        it('is left off by DRIFT_CACHE_SECONDS=0', async () => {
+            const off = await createTestApp({ connectionKey: 'a-long-enough-connection-key', driftCacheSeconds: 0 }, { factory }, false);
+            try {
+                await cachedCheck(owner, off.app);
+                await cachedCheck(owner, off.app);
+                expect(factoryCalls).toBe(2);
+                expect(await reportCount()).toBe(2);
+            } finally {
+                await off.close();
+            }
+        });
+
+        it('is only for people who can edit, and only takes cached=1', async () => {
+            expect((await cachedCheck(viewer)).statusCode).toBe(403);
+            expect((await cachedCheck(stranger)).statusCode).toBe(404);
+            const odd = await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/check?cached=yes`, headers: as(owner) });
+            expect(odd.statusCode).toBe(400);
+            expect(factoryCalls).toBe(0);
+        });
+    });
+
     describe('concurrency', () => {
         it('does not run two checks of one diagram at once', async () => {
-            await put(owner, settings({ enabled: false }));
+            await put(owner, settings());
             factoryDelayMs = 150;
             const [a, b] = await Promise.all([check(), check()]);
             expect([a.statusCode, b.statusCode].sort()).toEqual([200, 409]);
@@ -592,7 +720,7 @@ describe('drift webhooks', () => {
             method: 'PUT',
             url: `/diagrams/${diagramId}/drift`,
             headers: as(owner),
-            payload: { enabled: false, schedule: '0 3 * * *', connectionId, webhookUrl: `http://127.0.0.1:${port}/hook` },
+            payload: { connectionId, webhookUrl: `http://127.0.0.1:${port}/hook` },
         });
         expect(res.statusCode).toBe(200);
     });
@@ -663,7 +791,7 @@ describe('drift webhooks', () => {
             method: 'PUT',
             url: `/diagrams/${diagramId}/drift`,
             headers: as(owner),
-            payload: { enabled: false, schedule: '0 3 * * *', connectionId, webhookUrl: 'http://127.0.0.1:1/hook' },
+            payload: { connectionId, webhookUrl: 'http://127.0.0.1:1/hook' },
         });
         drift('phone');
         const res = await check();
@@ -683,7 +811,7 @@ describe('drift webhooks', () => {
                 method: 'PUT',
                 url: `/diagrams/${id}/drift`,
                 headers: as(u),
-                payload: { enabled: false, schedule: '0 3 * * *', connectionId: cid, webhookUrl: `http://127.0.0.1:${port}/hook` },
+                payload: { connectionId: cid, webhookUrl: `http://127.0.0.1:${port}/hook` },
             });
             drift('phone');
             const res = await strict.app.inject({ method: 'POST', url: `/diagrams/${id}/drift/check`, headers: as(u) });
@@ -698,135 +826,5 @@ describe('drift webhooks', () => {
         for (let i = 0; i < 60; i++) drift(`c${i}`);
         await check();
         expect((received[0].body.changes as unknown[]).length).toBe(50);
-    });
-});
-
-describe('drift scheduler', () => {
-    let ctx: TestCtx;
-    let owner: TestUser;
-    const ids: string[] = [];
-
-    beforeAll(async () => {
-        ctx = await createTestApp({ connectionKey: 'a-long-enough-connection-key' }, { factory });
-        owner = await registerUser(ctx.app, 'sched@example.com');
-        for (let i = 0; i < 3; i++) {
-            ids.push((await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })).json().id);
-        }
-    });
-    afterAll(() => ctx.close());
-    beforeEach(async () => {
-        meta = clone(base);
-        factoryError = null;
-        factoryCalls = 0;
-        await ctx.db.delete(driftReports);
-        await ctx.db.delete(driftSettings);
-    });
-
-    const deps = () => ({
-        db: ctx.db,
-        config: {
-            ...loadConfig({ LOG_LEVEL: 'silent' }),
-            connectionKey: 'a-long-enough-connection-key',
-        },
-        factory,
-    });
-    const configure = async (diagramId: string, over: object = {}) => {
-        const cid = (
-            await ctx.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(owner), payload: { ...conn(), projectId: await projectFor(ctx.app), name: `c-${diagramId.slice(0, 6)}-${Math.random()}` } })
-        ).json().id;
-        const res = await ctx.app.inject({
-            method: 'PUT',
-            url: `/diagrams/${diagramId}/drift`,
-            headers: as(owner),
-            payload: { enabled: true, schedule: '0 3 * * *', connectionId: cid, ...over },
-        });
-        expect(res.statusCode).toBe(200);
-    };
-    const setNext = (diagramId: string, when: Date | null) =>
-        ctx.db.update(driftSettings).set({ nextRunAt: when }).where(eq(driftSettings.diagramId, diagramId));
-    const reports = async (diagramId: string) =>
-        ctx.db.select().from(driftReports).where(eq(driftReports.diagramId, diagramId));
-
-    it('runs only enabled checks whose time has come', async () => {
-        await configure(ids[0]);
-        await configure(ids[1]);
-        await configure(ids[2], { enabled: false });
-        const now = new Date('2026-03-10T12:00:00Z');
-        await setNext(ids[0], new Date('2026-03-10T11:59:00Z')); // due
-        await setNext(ids[1], new Date('2026-03-10T12:01:00Z')); // not yet
-        const ran = await runDueChecks(deps(), now);
-        expect(ran).toBe(1);
-        expect(await reports(ids[0])).toHaveLength(1);
-        expect(await reports(ids[1])).toHaveLength(0);
-        expect(await reports(ids[2])).toHaveLength(0);
-        expect((await reports(ids[0]))[0].trigger).toBe('schedule');
-    });
-
-    it('treats a missing next-run time as due and then schedules the next run', async () => {
-        await configure(ids[0], { schedule: '*/30 * * * *' });
-        await setNext(ids[0], null);
-        const now = new Date('2026-03-10T12:07:00Z');
-        expect(await runDueChecks(deps(), now)).toBe(1);
-        const [s] = await ctx.db.select().from(driftSettings).where(eq(driftSettings.diagramId, ids[0]));
-        expect(s.nextRunAt?.toISOString()).toBe('2026-03-10T12:30:00.000Z');
-        // nothing is due again until then
-        expect(await runDueChecks(deps(), new Date('2026-03-10T12:20:00Z'))).toBe(0);
-    });
-
-    it('runs the check at its scheduled time and finds drift', async () => {
-        await configure(ids[0]);
-        await setNext(ids[0], new Date('2026-03-10T03:00:00Z'));
-        meta.columns.push({ schema: 'public', table: 'customers', name: 'phone', type: 'text', ordinal_position: 99, nullable: true } as DatabaseMetadata['columns'][number]);
-        await runDueChecks(deps(), new Date('2026-03-10T03:00:10Z'));
-        const [r] = await reports(ids[0]);
-        expect(r.status).toBe('drifted');
-    });
-
-    it('keeps going when one diagram fails', async () => {
-        await configure(ids[0]);
-        await configure(ids[1]);
-        await setNext(ids[0], new Date(0));
-        await setNext(ids[1], new Date(0));
-        // the first factory call throws, the second succeeds
-        let n = 0;
-        const flaky: typeof factory = async (p, t) => {
-            if (n++ === 0) throw new Error('first one is down');
-            return factory(p, t);
-        };
-        const ran = await runDueChecks({ ...deps(), factory: flaky }, new Date());
-        expect(ran).toBe(2);
-        const all = [...(await reports(ids[0])), ...(await reports(ids[1]))];
-        expect(all.map((r) => r.status).sort()).toEqual(['clean', 'error']);
-    });
-
-    it('does nothing when nothing is configured', async () => {
-        expect(await runDueChecks(deps(), new Date())).toBe(0);
-    });
-
-    describe('several servers at once', () => {
-        it('lets exactly one of two racing schedulers take each due check', async () => {
-            for (const id of ids) await configure(id);
-            for (const id of ids) await setNext(id, new Date(0));
-            const now = new Date('2026-03-10T12:00:00Z');
-            const [a, b] = await Promise.all([
-                runDueChecks(deps(), now),
-                runDueChecks(deps(), now),
-            ]);
-            // three diagrams were due: each ran once, none twice
-            expect(a + b).toBe(3);
-            for (const id of ids) expect(await reports(id)).toHaveLength(1);
-        });
-
-        it('hides a claimed check from other servers until the lease ends', async () => {
-            await configure(ids[0]);
-            await setNext(ids[0], new Date(0));
-            const now = new Date('2026-03-10T12:00:00Z');
-            expect(await claimDueChecks(ctx.db, now)).toEqual([ids[0]]);
-            // a second server sees nothing due, even before the check finished
-            expect(await claimDueChecks(ctx.db, now)).toEqual([]);
-            // the claiming server died: after the lease the check is up again
-            const later = new Date(now.getTime() + CLAIM_LEASE_MS + 1000);
-            expect(await claimDueChecks(ctx.db, later)).toEqual([ids[0]]);
-        });
     });
 });

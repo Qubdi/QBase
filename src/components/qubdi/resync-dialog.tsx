@@ -223,6 +223,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                                                         onChange={() =>
                                                             toggle(r.id)
                                                         }
+                                                        className="mt-0.5"
                                                     />
                                                     <span>
                                                         {describeRename(r)}
@@ -253,6 +254,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                                                         onChange={() =>
                                                             toggle(c.id)
                                                         }
+                                                        className="mt-0.5"
                                                     />
                                                     <span>
                                                         {describeChange(c)}

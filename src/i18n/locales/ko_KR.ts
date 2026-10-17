@@ -378,8 +378,7 @@ export const ko_KR: LanguageTranslation = {
             description: '다이어그램 스키마를 {{databaseType}} SQL로 내보내기',
             close: '닫기',
             loading: {
-                text: '{{databaseType}} SQL을 AI가 생성하고 있습니다...',
-                description: '30초 정도 걸릴 수 있습니다.',
+                text: '{{databaseType}}용 SQL을 생성하는 중...',
             },
             error: {
                 message:
@@ -502,7 +501,6 @@ export const ko_KR: LanguageTranslation = {
             one_to_one: '일대일 (1:1)',
             one_to_many: '일대다 (1:N)',
             many_to_one: '다대일 (N:1)',
-            many_to_many: '다대다 (N:N)',
         },
 
         canvas_context_menu: {
