@@ -29,7 +29,7 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
 
     return (
         <section className="flex min-h-screen w-screen flex-col bg-background">
-            <nav className="flex h-12 items-center justify-between border-b bg-background/80 px-4 backdrop-blur">
+            <nav className="flex h-12 items-center justify-between bg-background/80 px-4 backdrop-blur">
                 <Link to="/" className="flex h-full items-center">
                     <Logo />
                 </Link>
@@ -82,14 +82,14 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
             </nav>
 
             {!enabled ? (
-                <p className="mx-auto mt-24 max-w-sm px-4 text-center text-muted-foreground">
+                <p className="m-auto max-w-sm px-4 text-center text-muted-foreground">
                     Projects need a QubdiDB server. Set VITE_QUBDI_BACKEND_URL
                     and sign in to use them.
                 </p>
             ) : user === undefined ? (
-                <Spinner size="large" className="mx-auto mt-24 text-primary" />
+                <Spinner size="large" className="m-auto text-primary" />
             ) : user === null ? (
-                <div className="mx-auto mt-24 flex max-w-sm flex-col items-center gap-3 px-4 text-center">
+                <div className="m-auto flex max-w-sm flex-col items-center gap-3 px-4 text-center">
                     <SessionEndedNotice />
                     <SignInPrompt verb="see" />
                 </div>

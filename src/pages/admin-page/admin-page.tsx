@@ -22,7 +22,7 @@ const Shell: React.FC<React.PropsWithChildren<{ title?: string }>> = ({
                 {title ? `QubdiDB - Admin - ${title}` : 'QubdiDB - Admin'}
             </title>
         </Helmet>
-        <nav className="flex h-12 items-center justify-between border-b bg-background/80 px-4 backdrop-blur">
+        <nav className="flex h-12 items-center justify-between bg-background/80 px-4 backdrop-blur">
             <Link to="/" className="flex h-full items-center">
                 <Logo />
             </Link>
@@ -48,7 +48,7 @@ export const AdminLayout: React.FC = () => {
     if (user === undefined && enabled) {
         return (
             <Shell>
-                <Spinner size="large" className="mx-auto mt-20 text-primary" />
+                <Spinner size="large" className="m-auto text-primary" />
             </Shell>
         );
     }
@@ -57,7 +57,7 @@ export const AdminLayout: React.FC = () => {
     if (!enabled || !user?.isAdmin) {
         return (
             <Shell>
-                <div className="mx-auto mt-24 max-w-sm text-center">
+                <div className="m-auto max-w-sm text-center">
                     <h1 className="font-primary text-5xl font-extrabold text-primary">
                         404
                     </h1>
