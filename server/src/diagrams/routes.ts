@@ -268,7 +268,13 @@ export const diagramRoutes =
                     });
                 }
             }
-            return presentDiagram(db, d, role);
+            // the editor has the content it just sent: do not send it back
+            const { content: _sent, ...saved } = await presentDiagram(
+                db,
+                d,
+                role
+            );
+            return saved;
         });
 
         // The editor asks for this when it opens the diagram and again every

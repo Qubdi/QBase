@@ -22,6 +22,21 @@ export async function latestSnapshot(
     return row;
 }
 
+/** The latest snapshot without its (large) content. */
+export async function latestSnapshotMeta(db: Db, diagramId: string) {
+    const [row] = await db
+        .select({
+            version: snapshots.version,
+            publishedAt: snapshots.publishedAt,
+            contentHash: snapshots.contentHash,
+        })
+        .from(snapshots)
+        .where(eq(snapshots.diagramId, diagramId))
+        .orderBy(desc(snapshots.version))
+        .limit(1);
+    return row;
+}
+
 /** The latest snapshot of each given diagram, in one query. */
 export async function latestSnapshots(
     db: Db,
@@ -41,18 +56,14 @@ export async function latestSnapshots(
  * ever get the latest published snapshot (or no content if nothing is published).
  */
 export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
-    const last = await latestSnapshot(db, d.id);
-    const base = {
-        id: d.id,
-        ownerId: d.ownerId,
-        projectId: d.projectId,
-        role,
-        publishedVersion: last?.version ?? null,
-        publishedAt: last?.publishedAt ?? null,
-    };
+    const common = { id: d.id, ownerId: d.ownerId, projectId: d.projectId, role };
     if (canWrite(role)) {
+        // a writer needs the snapshot's version and hash, not its content
+        const last = await latestSnapshotMeta(db, d.id);
         return {
-            ...base,
+            ...common,
+            publishedVersion: last?.version ?? null,
+            publishedAt: last?.publishedAt ?? null,
             title: d.title,
             content: d.content,
             updatedAt: d.updatedAt,
@@ -61,8 +72,11 @@ export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
                 !last || last.contentHash !== diagramHash(d.title, d.content),
         };
     }
+    const last = await latestSnapshot(db, d.id);
     return {
-        ...base,
+        ...common,
+        publishedVersion: last?.version ?? null,
+        publishedAt: last?.publishedAt ?? null,
         title: last?.title ?? d.title,
         content: last?.content ?? null,
         updatedAt: last?.publishedAt ?? d.updatedAt,

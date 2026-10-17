@@ -210,7 +210,13 @@ describe('diagrams and permissions', () => {
         });
         expect(put.statusCode).toBe(200);
         expect(put.json().title).toBe('Edited');
-        expect(put.json().content.name).toBe('X');
+        // the reply leaves the content out: the editor just sent it
+        expect(put.json().content).toBeUndefined();
+        const after = await ctx.app.inject({
+            url: `/diagrams/${diagramId}`,
+            headers: as(editor),
+        });
+        expect(after.json().content.name).toBe('X');
         const del = await ctx.app.inject({
             method: 'DELETE',
             url: `/diagrams/${diagramId}`,
@@ -368,7 +374,7 @@ describe('saving content on top of another save', () => {
         const base = await current(a);
         const res = await save(a, { ...sampleContent, name: 'one' }, base);
         expect(res.statusCode).toBe(200);
-        expect(res.json().content.name).toBe('one');
+        expect(res.json().content).toBeUndefined();
         expect(res.json().updatedAt).not.toBe(base);
         expect(await current(a)).toBe(res.json().updatedAt);
     });
@@ -400,7 +406,12 @@ describe('saving content on top of another save', () => {
         await passTheLock();
         const res = await save(a, { ...sampleContent, name: 'a again' }, await current(a));
         expect(res.statusCode).toBe(200);
-        expect(res.json().content.name).toBe('a again');
+        expect(res.json().content).toBeUndefined();
+        const stored = await ctx.app.inject({
+            url: `/diagrams/${id}`,
+            headers: as(a),
+        });
+        expect(stored.json().content.name).toBe('a again');
     });
 
     it('lets only one of two simultaneous saves from the same copy win', async () => {
