@@ -18,5 +18,7 @@ WORKDIR /app/server
 COPY --from=build /app/server/package.json ./
 COPY --from=build /app/server/node_modules ./node_modules
 COPY --from=build /app/server/dist ./dist
+# nothing here writes to disk: run as the unprivileged user the image provides
+USER node
 EXPOSE 3001
 CMD ["node", "dist/server/src/server.js"]
