@@ -26,7 +26,8 @@ const canonical = (value: unknown): string =>
     );
 
 const fingerprint = (content: Record<string, unknown>): string => {
-    const { updatedAt: _ignored, ...rest } = content;
+    const rest = { ...content };
+    delete rest.updatedAt;
     const text = canonical(rest);
     // FNV-1a: small enough for session storage, and only ever compared
     let h = 0x811c9dc5;
