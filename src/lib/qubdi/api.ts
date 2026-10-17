@@ -614,8 +614,6 @@ export function createApi(
                 note: string | null;
                 publishedAt: string;
             }>('POST', `/diagrams/${id}/publish`, note ? { note } : {}),
-        listVersions: (id: string) =>
-            request<RemoteVersion[]>('GET', `/diagrams/${id}/versions`),
         listShareLinks: (id: string) =>
             request<RemoteShareLink[]>('GET', `/diagrams/${id}/share-links`),
         createShareLink: (
@@ -748,11 +746,6 @@ export function createApi(
             request<DriftCheckResult>(
                 'POST',
                 `/diagrams/${id}/drift/check${options?.cached ? '?cached=1' : ''}`
-            ),
-        listDriftReports: (id: string, limit = 20) =>
-            request<DriftReportSummary[]>(
-                'GET',
-                `/diagrams/${id}/drift/reports?limit=${limit}`
             ),
         getDriftReport: (id: string, reportId: string) =>
             request<DriftReport>(
