@@ -12,7 +12,6 @@ import type { CanvasEvent } from '@/context/canvas-context/canvas-context';
 import { useTheme } from '@/hooks/use-theme';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { getIsOldSafari } from '@/safari-compat';
 
 export interface NoteNodeProps extends NodeProps {
@@ -197,7 +196,6 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                                 remarkPlugins={
                                     getIsOldSafari() ? [] : [remarkGfm]
                                 }
-                                rehypePlugins={[rehypeRaw]}
                                 components={{
                                     h1: (props) => (
                                         <h1
