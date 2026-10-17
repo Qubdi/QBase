@@ -100,5 +100,11 @@ The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
   before it is sent, and PostgreSQL runs inside a read-only transaction. SQL Server has no
   read-only transaction, so use a login that only has read access.
 - Drift checks compare the server's copy of the diagram, so the editor syncs it first.
+- Run one server process. Rate limits, the per-link live-viewer cap, the shared lint and outbound
+  allowances and the guard against two drift checks of one diagram at once are kept in the memory
+  of each process. Behind several processes (or replicas) each one counts on its own, so the
+  effective limits multiply and two drift checks can overlap. Scale the database, not the server,
+  or put a limiter in front of it. Edit locks, sessions and everything else are in Postgres and
+  are safe to share.
 
 QubdiDB is licensed under the AGPL-3.0, like the project it is forked from.

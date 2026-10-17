@@ -2,6 +2,9 @@ import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { SESSION_COOKIE } from '../auth/sessions.js';
 
+// Every limiter here keeps its counts in this process's memory, so they assume
+// one server process (see "Run one server process" in the README).
+
 /**
  * Rate-limit bucket for a signed-in user: their session, hashed so the raw
  * token never sits in the limiter's memory. Without a session cookie the
