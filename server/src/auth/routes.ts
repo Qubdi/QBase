@@ -1,4 +1,4 @@
-import { count, eq } from 'drizzle-orm';
+import { count, eq, sql } from 'drizzle-orm';
 import type {
     FastifyPluginAsync,
     FastifyReply,
@@ -22,6 +22,9 @@ import {
     destroySession,
     SESSION_COOKIE,
 } from './sessions.js';
+
+// advisory-lock key for the first-run sign-up (distinct from the admin-set lock)
+const FIRST_USER_LOCK = 7_301_001;
 
 const credentials = z.object({
     email: z.string().trim().toLowerCase().email(),
@@ -93,34 +96,41 @@ export const authRoutes =
 
         app.post('/register', limit, async (req, reply) => {
             const body = credentials.parse(req.body);
-            const [{ value: existing }] = await db
-                .select({ value: count() })
-                .from(users);
-            const isFirst = existing === 0;
-            // accounts are created by an admin; only the very first one may self-register
-            if (!isFirst) {
-                return reply.code(403).send({ error: 'signup_disabled' });
-            }
-            const taken = await db
-                .select({ id: users.id })
-                .from(users)
-                .where(eq(users.email, body.email));
-            if (taken.length > 0) {
-                return reply.code(409).send({ error: 'email_taken' });
-            }
             const passwordHash = await hashPassword(body.password);
-            let user;
-            try {
-                [user] = await db
+            // Counting and inserting happen under one lock: two first-run
+            // sign-ups arriving together would both see an empty table and
+            // both become admin.
+            const result = await db.transaction(async (tx) => {
+                await tx.execute(
+                    sql`select pg_advisory_xact_lock(${FIRST_USER_LOCK})`
+                );
+                const [{ value: existing }] = await tx
+                    .select({ value: count() })
+                    .from(users);
+                // accounts are created by an admin; only the very first one may self-register
+                if (existing > 0) return { error: 'signup_disabled' as const };
+                const taken = await tx
+                    .select({ id: users.id })
+                    .from(users)
+                    .where(eq(users.email, body.email));
+                if (taken.length > 0) return { error: 'email_taken' as const };
+                const [created] = await tx
                     .insert(users)
-                    .values({ email: body.email, passwordHash, isAdmin: isFirst })
+                    .values({ email: body.email, passwordHash, isAdmin: true })
                     .returning();
-            } catch (err) {
+                return { user: created };
+            }).catch((err: unknown) => {
                 if (isUniqueViolation(err)) {
-                    return reply.code(409).send({ error: 'email_taken' });
+                    return { error: 'email_taken' as const };
                 }
                 throw err;
+            });
+            if ('error' in result) {
+                return reply
+                    .code(result.error === 'signup_disabled' ? 403 : 409)
+                    .send({ error: result.error });
             }
+            const { user } = result;
             await audit(db, { userId: user.id, action: 'user.register' });
             await startSession(req, reply, user.id);
             return reply.code(201).send({

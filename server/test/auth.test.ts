@@ -374,3 +374,51 @@ describe('session cookie flags', () => {
         expect(spoofed).not.toMatch(/Secure/i);
     });
 });
+
+describe('first-run sign-up', () => {
+    it('creates exactly one admin when several sign-ups arrive together', async () => {
+        const ctx = await createTestApp();
+        try {
+            const results = await Promise.all(
+                Array.from({ length: 6 }, (_, n) =>
+                    ctx.app.inject({
+                        method: 'POST',
+                        url: '/auth/register',
+                        payload: {
+                            email: `first${n}@example.com`,
+                            password: 'password123',
+                        },
+                    })
+                )
+            );
+            expect(results.map((r) => r.statusCode).sort()).toEqual([
+                201, 403, 403, 403, 403, 403,
+            ]);
+            const all = await ctx.db.select().from(users);
+            expect(all).toHaveLength(1);
+            expect(all[0].isAdmin).toBe(true);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('answers 409 for the same email arriving twice at once', async () => {
+        const ctx = await createTestApp();
+        try {
+            const send = () =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/register',
+                    payload: { email: 'same@example.com', password: 'password123' },
+                });
+            const codes = (await Promise.all([send(), send()]))
+                .map((r) => r.statusCode)
+                .sort();
+            // one wins; the other sees either the closed sign-up or the taken email
+            expect(codes[0]).toBe(201);
+            expect([403, 409]).toContain(codes[1]);
+        } finally {
+            await ctx.close();
+        }
+    });
+});
