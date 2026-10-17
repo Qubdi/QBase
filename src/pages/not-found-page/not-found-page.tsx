@@ -1,8 +1,9 @@
+import { PageFooter } from '@/components/qubdi/powered-by';
 import React from 'react';
 
 export const NotFoundPage: React.FC = () => {
     return (
-        <section className="min-h-screen bg-background">
+        <section className="flex min-h-screen flex-col bg-background">
             <div className="mx-auto max-w-screen-xl px-4 py-8 lg:px-6 lg:py-16">
                 <div className="mx-auto max-w-screen-sm text-center">
                     <h1 className="mb-4 text-7xl font-extrabold tracking-tight text-primary lg:text-9xl">
@@ -17,6 +18,7 @@ export const NotFoundPage: React.FC = () => {
                     </p>
                 </div>
             </div>
+            <PageFooter />
         </section>
     );
 };

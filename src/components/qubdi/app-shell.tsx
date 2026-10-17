@@ -14,6 +14,7 @@ import { Logo } from '@/components/logo/logo';
 import { Spinner } from '@/components/spinner/spinner';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { ChangePasswordDialog } from './change-password-dialog';
+import { PageFooter } from './powered-by';
 import { SessionEndedNotice } from './session-ended-notice';
 import { SignInPrompt } from './sign-in-prompt';
 
@@ -95,6 +96,7 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
             ) : (
                 children
             )}
+            <PageFooter />
             <ChangePasswordDialog
                 open={passwordOpen}
                 onOpenChange={setPasswordOpen}

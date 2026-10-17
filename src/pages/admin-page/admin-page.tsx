@@ -8,6 +8,7 @@ import { Toaster } from '@/components/toast/toaster';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
+import { PageFooter } from '@/components/qubdi/powered-by';
 import { AdminNav } from './admin-nav';
 import { sectionForPath } from './admin-sections';
 
@@ -15,7 +16,7 @@ const Shell: React.FC<React.PropsWithChildren<{ title?: string }>> = ({
     title,
     children,
 }) => (
-    <section className="flex min-h-screen w-screen flex-col bg-background">
+    <section className="flex min-h-screen w-full flex-col bg-background">
         <Helmet>
             <title>
                 {title ? `QubdiDB - Admin - ${title}` : 'QubdiDB - Admin'}
@@ -30,6 +31,7 @@ const Shell: React.FC<React.PropsWithChildren<{ title?: string }>> = ({
             </Button>
         </nav>
         {children}
+        <PageFooter />
         <Toaster />
     </section>
 );

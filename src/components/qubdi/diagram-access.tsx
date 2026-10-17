@@ -47,7 +47,7 @@ const Loading: React.FC = () => (
 
 const SignInRequired: React.FC = () => (
     <Centered>
-        <Logo />
+        <Logo className="h-auto" />
         <SessionEndedNotice />
         <SignInPrompt verb="open" />
     </Centered>
@@ -58,7 +58,7 @@ const Problem: React.FC<{ title: string; detail: string }> = ({
     detail,
 }) => (
     <Centered>
-        <Logo />
+        <Logo className="h-auto" />
         <div>
             <p className="font-medium">{title}</p>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">

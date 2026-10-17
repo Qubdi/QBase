@@ -24,12 +24,14 @@ import {
     BackgroundVariant,
     MiniMap,
     Controls,
+    Panel,
     useReactFlow,
     useKeyPress,
     SelectionMode,
     useUpdateNodeInternals,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { PoweredByMark } from '@/components/qubdi/powered-by';
 import equal from 'fast-deep-equal';
 import type { TableNodeType } from './table-node/table-node';
 import {
@@ -1924,9 +1926,14 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                             style={{
                                 width: isDesktop ? 100 : 60,
                                 height: isDesktop ? 100 : 60,
+                                // leave the corner under it for "Powered by Qubdi"
+                                marginBottom: 32,
                             }}
                         />
                     )}
+                    <Panel position="bottom-right" style={{ margin: 8 }}>
+                        <PoweredByMark />
+                    </Panel>
                     <Background
                         variant={BackgroundVariant.Dots}
                         gap={16}

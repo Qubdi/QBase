@@ -4,11 +4,13 @@ import {
     Background,
     Controls,
     MiniMap,
+    Panel,
     ReactFlow,
     type Edge,
     type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { PoweredByMark } from '@/components/qubdi/powered-by';
 import { Input } from '@/components/input/input';
 import { Button } from '@/components/button/button';
 import { AuthDialog } from '@/components/qubdi/auth-dialog';
@@ -225,6 +227,9 @@ export const ShareViewerPage: React.FC = () => {
                         <Background />
                         <Controls showInteractive={false} />
                         <MiniMap pannable zoomable />
+                        <Panel position="bottom-center">
+                            <PoweredByMark />
+                        </Panel>
                     </ReactFlow>
                 </div>
             </div>

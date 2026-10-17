@@ -1,3 +1,4 @@
+import { PageFooter } from '@/components/qubdi/powered-by';
 import React from 'react';
 import { Logo } from '@/components/logo/logo';
 import { Link } from 'react-router-dom';
@@ -35,7 +36,7 @@ const TemplatesPageComponent: React.FC = () => {
     return (
         <>
             <TemplatesPageHelmet tag={tag} isFeatured={isFeatured} />
-            <section className="flex w-screen flex-col bg-background">
+            <section className="flex min-h-screen w-full flex-col bg-background">
                 <nav className="flex h-12 shrink-0 flex-row items-center justify-between border-b px-4">
                     <div className="flex flex-1 justify-start gap-x-3">
                         <div className="flex items-center font-primary">
@@ -118,6 +119,7 @@ const TemplatesPageComponent: React.FC = () => {
                         </div>
                     )}
                 </div>
+                <PageFooter />
             </section>
         </>
     );
