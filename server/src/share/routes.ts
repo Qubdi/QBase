@@ -245,6 +245,8 @@ export const publicShareRoutes =
                 (c) => c.ok && c.link.live && c.link.tokenHash === openedWith
             );
             rechecks.set(key, { at: Date.now(), result });
+            // a failed check must not be served from the cache
+            result.catch(() => rechecks.delete(key));
             // forget old entries so the map stays small
             for (const [k, v] of rechecks) {
                 if (Date.now() - v.at > RECHECK_TTL_MS) rechecks.delete(k);
@@ -363,19 +365,38 @@ export const publicShareRoutes =
             const stillValid = () =>
                 stillValidShared(linkId, openedWith, req.user);
 
+            // The listeners run detached from any request, so a database error
+            // in one would be an unhandled rejection and end the process. The
+            // viewer's stream closes instead; the browser reconnects.
             cleanup.push(
                 onPublish(async (changedDiagramId, version) => {
                     if (closed || changedDiagramId !== diagramId) return;
-                    if (!(await stillValid())) return close();
-                    raw.write(
-                        `event: version\ndata: ${JSON.stringify({ version })}\n\n`
-                    );
+                    try {
+                        if (!(await stillValid())) return close();
+                        raw.write(
+                            `event: version\ndata: ${JSON.stringify({ version })}\n\n`
+                        );
+                    } catch (err) {
+                        req.log.error(
+                            { err },
+                            'share events: publish check failed'
+                        );
+                        close();
+                    }
                 })
             );
             cleanup.push(
                 onLinkChanged(async (changedLinkId) => {
                     if (closed || changedLinkId !== linkId) return;
-                    if (!(await stillValid())) close();
+                    try {
+                        if (!(await stillValid())) close();
+                    } catch (err) {
+                        req.log.error(
+                            { err },
+                            'share events: link check failed'
+                        );
+                        close();
+                    }
                 })
             );
 
