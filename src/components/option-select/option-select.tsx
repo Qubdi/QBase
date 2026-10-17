@@ -20,6 +20,7 @@ export interface OptionSelectProps {
     options: SelectOption[];
     placeholder?: string;
     'aria-label'?: string;
+    id?: string;
     disabled?: boolean;
     className?: string;
     /** `sm` is a compact 32px control for tables and rows. */
@@ -46,6 +47,7 @@ export const OptionSelect: React.FC<OptionSelectProps> = ({
         disabled={disabled}
     >
         <SelectTrigger
+            id={rest.id}
             aria-label={rest['aria-label']}
             className={cn(size === 'sm' && 'h-8 text-xs', className)}
         >
