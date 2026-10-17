@@ -56,14 +56,14 @@ used by the UI (the Comments panel was removed); decide whether to drop them or 
 Three small, separate UI tasks. Nothing started yet. None touches the database, so the model
 checklist above does not apply.
 
-1. [ ] **UI change for the Tables visuals.** Rework how tables look and are laid out. Read from the
+1. [x] **UI change for the Tables visuals.** Rework how tables look and are laid out. Read from the
        code: the table on the canvas is `canvas/table-node/table-node.tsx` (with
        `table-node-field.tsx` for each row), the list in the side panel is
        `side-panel/tables-section/tables-section.tsx`, and the display switches are in
        `side-panel/visuals-section/visuals-section.tsx` and the View menu. Light and dark, and
        keep dragging smooth (see the Done item on the relationship lines: the reduced-motion rule
        must stay `transition: none`).
-2. [ ] **UI change for the Lint settings.** Rework the Lint settings dialog
+2. [x] **UI change for the Lint settings.** Rework the Lint settings dialog
        (`components/qubdi/lint-settings-dialog.tsx`, opened from the gear in
        `components/qubdi/lint-control.tsx`). Settings stay in the browser per diagram
        (`lib/qubdi/lint-config-store.ts`), so linting keeps working offline.
