@@ -13,7 +13,6 @@ import type { Db } from './db/client.js';
 import { driftRoutes } from './drift/routes.js';
 import { defaultIntrospectorFactory } from './introspect/routes.js';
 import { lintRoutes } from './lint/routes.js';
-import { commentRoutes } from './comments/routes.js';
 import {
     introspectRoutes,
     type IntrospectDeps,
@@ -124,7 +123,6 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         { prefix: '/diagrams' }
     );
     app.register(lintRoutes(db, config));
-    app.register(commentRoutes(db), { prefix: '/diagrams' });
     app.register(shareManagementRoutes(db), { prefix: '/diagrams' });
     app.register(publicShareRoutes(db, config), { prefix: '/s' });
 

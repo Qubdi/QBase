@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { auditLog, comments } from '../src/db/schema.js';
+import { comments } from '../src/db/schema.js';
 import {
     as,
     createTestApp,
@@ -56,32 +56,17 @@ describe('comments', () => {
                 payload: {},
             })
         ).json().version as number;
-    const add = (
-        u: TestUser,
-        targetType: string,
-        targetId: string,
-        body = 'note'
-    ) =>
-        ctx.app.inject({
-            method: 'POST',
-            url: `/diagrams/${id}/comments`,
-            headers: as(u),
-            payload: { targetType, targetId, body },
-        });
-    const editorList = async () =>
+    // The editor has no way to write comments any more: rows are inserted
+    // directly, as old data would be.
+    const add = async (targetType: 'table' | 'field' | 'relationship', targetId: string, body = 'note') =>
         (
-            await ctx.app.inject({
-                url: `/diagrams/${id}/comments`,
-                headers: as(owner),
-            })
-        ).json() as Array<{
-            id: string;
-            targetId: string;
-            orphaned: boolean;
-            snapshotVersion: number;
-            resolved: boolean;
-            authorEmail: string;
-        }>;
+            await ctx.db
+                .insert(comments)
+                .values({ diagramId: id, targetType, targetId, body, authorId: owner.id })
+                .returning()
+        )[0];
+    const editorList = async () =>
+        ctx.db.select().from(comments).where(eq(comments.diagramId, id));
     const publicView = () =>
         ctx.app.inject({ url: `/s/${token}/comments` });
 
@@ -118,176 +103,24 @@ describe('comments', () => {
     });
     afterAll(() => ctx.close());
 
-    describe('writing', () => {
-        it('requires login', async () => {
-            const res = await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${id}/comments`,
-                payload: { targetType: 'table', targetId: 't1', body: 'x' },
-            });
-            expect(res.statusCode).toBe(401);
-        });
-
-        it('lets owners and editors comment on tables, fields and relationships', async () => {
-            const a = await add(owner, 'table', 't1', 'about the table');
-            expect(a.statusCode).toBe(201);
-            expect(a.json()).toMatchObject({
-                targetType: 'table',
-                targetId: 't1',
-                body: 'about the table',
-                resolved: false,
-                orphaned: false,
-                snapshotVersion: 0,
-                authorEmail: 'owner@example.com',
-            });
-            expect((await add(editor, 'field', 'f1')).statusCode).toBe(201);
-            expect((await add(owner, 'relationship', 'r1')).statusCode).toBe(201);
-        });
-
-        it('stops viewers and strangers from writing', async () => {
-            expect((await add(viewer, 'table', 't1')).statusCode).toBe(403);
-            expect((await add(stranger, 'table', 't1')).statusCode).toBe(404);
-        });
-
-        it('validates the target and body', async () => {
-            expect((await add(owner, 'table', 'missing')).json().error).toBe(
-                'target_not_found'
-            );
-            expect((await add(owner, 'field', 't1')).statusCode).toBe(400);
-            expect((await add(owner, 'column', 'f1')).statusCode).toBe(400);
-            expect((await add(owner, 'table', 't1', '   ')).statusCode).toBe(400);
-            expect(
-                (await add(owner, 'table', 't1', 'x'.repeat(2001))).statusCode
-            ).toBe(400);
-        });
-
-        it('edits, resolves, unresolves and deletes', async () => {
-            const made = (await add(editor, 'table', 't2', 'first')).json();
-            const url = `/diagrams/${id}/comments/${made.id}`;
-            const put = await ctx.app.inject({
-                method: 'PUT',
-                url,
-                headers: as(editor),
-                payload: { body: 'second' },
-            });
-            expect(put.json().body).toBe('second');
-
-            const res = await ctx.app.inject({
-                method: 'POST',
-                url: `${url}/resolve`,
-                headers: as(owner),
-            });
-            expect(res.json().resolved).toBe(true);
-            const un = await ctx.app.inject({
-                method: 'POST',
-                url: `${url}/resolve`,
-                headers: as(owner),
-                payload: { resolved: false },
-            });
-            expect(un.json().resolved).toBe(false);
-
-            const del = await ctx.app.inject({
-                method: 'DELETE',
-                url,
-                headers: as(editor),
-            });
-            expect(del.statusCode).toBe(204);
-            expect(
-                (await ctx.app.inject({ method: 'DELETE', url, headers: as(owner) }))
-                    .statusCode
-            ).toBe(404);
-        });
-
-        it('lets only the author or the owner edit or delete, while any editor may resolve', async () => {
-            const second = await registerUser(ctx.app, 'editor2@example.com');
-            await grant(ctx.app, second, 'editor');
-            const mine = (await add(editor, 'table', 't2', 'mine')).json();
-            const url = `/diagrams/${id}/comments/${mine.id}`;
-
-            // another editor: no edit, no delete, but resolving is shared work
-            const put = await ctx.app.inject({
-                method: 'PUT',
-                url,
-                headers: as(second),
-                payload: { body: 'hijacked' },
-            });
-            expect(put.statusCode).toBe(403);
-            const del = await ctx.app.inject({
-                method: 'DELETE',
-                url,
-                headers: as(second),
-            });
-            expect(del.statusCode).toBe(403);
-            const resolve = await ctx.app.inject({
-                method: 'POST',
-                url: `${url}/resolve`,
-                headers: as(second),
-            });
-            expect(resolve.statusCode).toBe(200);
-
-            // the owner may moderate; the comment survived untouched until now
-            const list = await ctx.app.inject({
-                url: `/diagrams/${id}/comments`,
-                headers: as(owner),
-            });
-            expect(
-                list.json().find((c: { id: string }) => c.id === mine.id).body
-            ).toBe('mine');
-            const ownerPut = await ctx.app.inject({
-                method: 'PUT',
-                url,
-                headers: as(owner),
-                payload: { body: 'moderated' },
-            });
-            expect(ownerPut.statusCode).toBe(200);
-            const ownerDel = await ctx.app.inject({
-                method: 'DELETE',
-                url,
-                headers: as(owner),
-            });
-            expect(ownerDel.statusCode).toBe(204);
-        });
-
-        it('stops viewers from editing, resolving or deleting', async () => {
-            const made = (await add(owner, 'table', 't1', 'locked')).json();
-            const url = `/diagrams/${id}/comments/${made.id}`;
-            for (const [method, path, payload] of [
-                ['PUT', url, { body: 'hack' }],
-                ['POST', `${url}/resolve`, {}],
-                ['DELETE', url, undefined],
+    describe('the editor routes are gone', () => {
+        it('no longer serves or accepts comments on a diagram', async () => {
+            for (const [method, url] of [
+                ['GET', `/diagrams/${id}/comments`],
+                ['POST', `/diagrams/${id}/comments`],
+                ['PUT', `/diagrams/${id}/comments/${id}`],
+                ['POST', `/diagrams/${id}/comments/${id}/resolve`],
+                ['DELETE', `/diagrams/${id}/comments/${id}`],
             ] as const) {
                 const res = await ctx.app.inject({
                     method,
-                    url: path,
-                    headers: as(viewer),
-                    payload,
-                });
-                expect(res.statusCode, `${method} ${path}`).toBe(403);
-            }
-            const row = (await editorList()).find((c) => c.id === made.id)!;
-            expect(row).toBeDefined();
-        });
-
-        it('does not reach a comment through another diagram', async () => {
-            const other = (
-                await ctx.app.inject({
-                    method: 'POST',
-                    url: '/diagrams',
+                    url,
                     headers: as(owner),
-                    payload: {
-                        projectId: await projectFor(ctx.app),
-                        title: 'Other',
-                        content: content([table('t1')]),
-                    },
-                })
-            ).json().id;
-            const made = (await add(owner, 'table', 't1')).json();
-            const res = await ctx.app.inject({
-                method: 'DELETE',
-                url: `/diagrams/${other}/comments/${made.id}`,
-                headers: as(owner),
-            });
-            expect(res.statusCode).toBe(404);
+                    payload: { targetType: 'table', targetId: 't1', body: 'x' },
+                });
+                expect(res.statusCode, `${method} ${url}`).toBe(404);
+            }
+            expect(await editorList()).toHaveLength(0);
         });
     });
 
@@ -296,7 +129,7 @@ describe('comments', () => {
 
         it('keeps comments out of the published view until they are carried', async () => {
             expect((await publicView()).statusCode).toBe(404); // nothing published
-            commentId = (await add(owner, 'table', 't1', 'carry me')).json().id;
+            commentId = (await add('table', 't1', 'carry me')).id;
         });
 
         it('carries comments to the first published version', async () => {
@@ -316,7 +149,7 @@ describe('comments', () => {
                     ['r1']
                 )
             );
-            const fresh = (await add(owner, 'table', 't9', 'brand new')).json().id;
+            const fresh = (await add('table', 't9', 'brand new')).id;
             const before = (await publicView()).json();
             expect(before.comments.some((c: { id: string }) => c.id === fresh)).toBe(false);
 
@@ -360,12 +193,11 @@ describe('comments', () => {
         });
 
         it('keeps resolved state across publishes', async () => {
-            const target = (await add(owner, 'table', 't2', 'resolved one')).json().id;
-            await ctx.app.inject({
-                method: 'POST',
-                url: `/diagrams/${id}/comments/${target}/resolve`,
-                headers: as(owner),
-            });
+            const target = (await add('table', 't2', 'resolved one')).id;
+            await ctx.db
+                .update(comments)
+                .set({ resolved: true })
+                .where(eq(comments.id, target));
             await publish();
             expect((await editorList()).find((c) => c.id === target)!.resolved).toBe(true);
             const pub = (await publicView()).json();
@@ -374,31 +206,6 @@ describe('comments', () => {
     });
 
     describe('reading', () => {
-        it('shows editors everything, including author and orphan flags', async () => {
-            const list = await editorList();
-            expect(list.length).toBeGreaterThan(0);
-            expect(list.every((c) => typeof c.authorEmail === 'string' || c.authorEmail === null)).toBe(true);
-        });
-
-        it('shows member viewers only the published view, with no author', async () => {
-            const res = await ctx.app.inject({
-                url: `/diagrams/${id}/comments`,
-                headers: as(viewer),
-            });
-            expect(res.statusCode).toBe(200);
-            expect(res.body).not.toContain('@example.com');
-            expect(res.body).not.toContain('authorEmail');
-            expect(res.json().every((c: { id: string }) => typeof c.id === 'string')).toBe(true);
-        });
-
-        it('hides comments from strangers', async () => {
-            const res = await ctx.app.inject({
-                url: `/diagrams/${id}/comments`,
-                headers: as(stranger),
-            });
-            expect(res.statusCode).toBe(404);
-        });
-
         it('serves the public view without exposing author identity', async () => {
             const res = await publicView();
             expect(res.statusCode).toBe(200);
@@ -494,17 +301,6 @@ describe('comments', () => {
             });
             expect(res.statusCode).toBe(403);
         });
-    });
-
-    it('audits comment writes', async () => {
-        const actions = new Set(
-            (await ctx.db.select().from(auditLog))
-                .filter((r) => r.diagramId === id)
-                .map((r) => r.action)
-        );
-        for (const a of ['comment.create', 'comment.update', 'comment.resolve', 'comment.delete']) {
-            expect(actions.has(a as never), a).toBe(true);
-        }
     });
 
     it('removes comments together with the diagram', async () => {

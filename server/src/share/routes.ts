@@ -6,7 +6,7 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
-import { commentsForPublishedView } from '../comments/routes.js';
+import { commentsForPublishedView } from '../comments/view.js';
 import { latestSnapshot } from '../diagrams/service.js';
 import {
     emitLinkChanged,
