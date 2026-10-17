@@ -3,6 +3,7 @@ import type { Db } from '../db/client.js';
 import { comments, diagrams, snapshots } from '../db/schema.js';
 import { planCarryForward } from '../comments/targets.js';
 import { diagramHash } from '../lib/hash.js';
+import { snapshotStatsColumns } from './summary.js';
 import { emitPublish } from '../events.js';
 import { canWrite, type Role } from './permissions.js';
 
@@ -37,14 +38,19 @@ export async function latestSnapshotMeta(db: Db, diagramId: string) {
     return row;
 }
 
-/** The latest snapshot of each given diagram, in one query. */
-export async function latestSnapshots(
-    db: Db,
-    diagramIds: string[]
-): Promise<Map<string, SnapshotRow>> {
+/**
+ * What the list shows of each given diagram's latest snapshot: title, publish
+ * time and the stats computed in the database, never the content itself.
+ */
+export async function latestSnapshotListing(db: Db, diagramIds: string[]) {
     if (diagramIds.length === 0) return new Map();
     const rows = await db
-        .selectDistinctOn([snapshots.diagramId])
+        .selectDistinctOn([snapshots.diagramId], {
+            diagramId: snapshots.diagramId,
+            title: snapshots.title,
+            publishedAt: snapshots.publishedAt,
+            ...snapshotStatsColumns,
+        })
         .from(snapshots)
         .where(inArray(snapshots.diagramId, diagramIds))
         .orderBy(snapshots.diagramId, desc(snapshots.version));

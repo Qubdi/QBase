@@ -9,12 +9,16 @@ import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import { diagramStats, statsColumns } from './summary.js';
 import {
-    latestSnapshots,
+    latestSnapshotListing,
     presentDiagram,
     publishSnapshot,
 } from './service.js';
 
 const idParam = z.object({ id: z.string().uuid() });
+const listQuery = z.object({
+    limit: z.coerce.number().int().min(1).max(500).optional(),
+    offset: z.coerce.number().int().min(0).default(0),
+});
 /** Names one open editor (a browser tab) for the diagram's edit lock. */
 const editorIdSchema = z.string().min(1).max(100);
 const versionParam = z.object({
@@ -126,11 +130,11 @@ export const diagramRoutes =
                       .where(eq(projectMembers.userId, me.id));
             rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
             // viewers must not learn about unpublished renames
-            const latest = await latestSnapshots(
+            const latest = await latestSnapshotListing(
                 db,
                 rows.filter((r) => !canWrite(r.role)).map((r) => r.id)
             );
-            return rows.map((r) => {
+            const all = rows.map((r) => {
                 if (canWrite(r.role)) return r;
                 const last = latest.get(r.id);
                 return {
@@ -139,9 +143,22 @@ export const diagramRoutes =
                     updatedAt: last?.publishedAt ?? r.updatedAt,
                     // the numbers describe what the viewer can open: the published copy
                     // (nothing published yet: nothing to describe)
-                    ...diagramStats(last?.content),
+                    ...(last
+                        ? {
+                              databaseType: last.databaseType,
+                              databaseEdition: last.databaseEdition,
+                              tableCount: last.tableCount,
+                              relationshipCount: last.relationshipCount,
+                              createdAt: last.createdAt,
+                          }
+                        : diagramStats(undefined)),
                 };
             });
+            // paging is optional: without `limit` the whole list comes back
+            const { limit, offset } = listQuery.parse(req.query);
+            return limit === undefined
+                ? all.slice(offset)
+                : all.slice(offset, offset + limit);
         });
 
         app.post('/', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {

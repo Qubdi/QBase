@@ -1,5 +1,6 @@
-import { sql } from 'drizzle-orm';
-import { diagrams } from '../db/schema.js';
+import { sql, type SQL } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
+import { diagrams, snapshots } from '../db/schema.js';
 
 /** What a diagram list shows about each diagram, read from its content. */
 export interface DiagramStats {
@@ -31,13 +32,15 @@ export function diagramStats(content: unknown): DiagramStats {
     };
 }
 
-// The list is read for every diagram a user can see, so for writers the numbers
-// are taken inside the database instead of loading each full diagram.
-const col = diagrams.content;
-export const statsColumns = {
+// The list is read for every diagram a user can see, so the numbers are taken
+// inside the database instead of loading each full diagram: from the working
+// copy for writers, from the latest snapshot for viewers.
+const columnsOf = (col: PgColumn): { [K in keyof DiagramStats]: SQL<DiagramStats[K]> } => ({
     databaseType: sql<string | null>`nullif(${col}->>'databaseType', '')`,
     databaseEdition: sql<string | null>`nullif(${col}->>'databaseEdition', '')`,
     tableCount: sql<number>`case when jsonb_typeof(${col}->'tables') = 'array' then jsonb_array_length(${col}->'tables') else 0 end`,
     relationshipCount: sql<number>`case when jsonb_typeof(${col}->'relationships') = 'array' then jsonb_array_length(${col}->'relationships') else 0 end`,
     createdAt: sql<string | null>`nullif(${col}->>'createdAt', '')`,
-};
+});
+export const statsColumns = columnsOf(diagrams.content);
+export const snapshotStatsColumns = columnsOf(snapshots.content);

@@ -196,4 +196,27 @@ describe('diagram list summary', () => {
             expect(asViewer[key], key).toEqual(asEditor[key]);
         }
     });
+
+    it('pages the list on request and returns everything otherwise', async () => {
+        const all = await list(editor);
+        const get = async (query: string) =>
+            (
+                await ctx.app.inject({
+                    url: `/diagrams${query}`,
+                    headers: as(editor),
+                })
+            ).json() as Array<{ id: string }>;
+        const first = await get('?limit=1');
+        expect(first.map((d) => d.id)).toEqual([all[0].id]);
+        const rest = await get('?limit=1&offset=1');
+        expect(rest.map((d) => d.id)).toEqual([all[1].id]);
+        expect((await get('?offset=1')).map((d) => d.id)).toEqual(
+            all.slice(1).map((d) => d.id)
+        );
+        const bad = await ctx.app.inject({
+            url: '/diagrams?limit=0',
+            headers: as(editor),
+        });
+        expect(bad.statusCode).toBe(400);
+    });
 });
