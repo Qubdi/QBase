@@ -21,6 +21,7 @@ import {
     setProjectId,
     setRemoteId,
 } from '@/lib/qubdi/remote-map';
+import { clearLocalUserData } from '@/lib/qubdi/local-data';
 import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 import {
     confirmSentContent,
@@ -75,6 +76,10 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         resetAdminLanding();
         setSessionEnded(false);
         setUser(null);
+        // the next person on this browser must not find this one's diagrams;
+        // the reload drops what the page still holds in memory
+        await clearLocalUserData();
+        window.location.replace('/');
     }, []);
 
     const syncDiagram = useCallback(
