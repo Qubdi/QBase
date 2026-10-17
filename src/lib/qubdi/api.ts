@@ -769,23 +769,6 @@ export function createApi(
 
         listMembers: (id: string) =>
             request<RemoteMember[]>('GET', `/diagrams/${id}/members`),
-        addMember: (id: string, email: string, role: 'editor' | 'viewer') =>
-            request<RemoteMember>('POST', `/diagrams/${id}/members`, {
-                email,
-                role,
-            }),
-        changeMemberRole: (
-            id: string,
-            userId: string,
-            role: 'editor' | 'viewer'
-        ) =>
-            request<{ userId: string; role: MemberRole }>(
-                'PATCH',
-                `/diagrams/${id}/members/${userId}`,
-                { role }
-            ),
-        removeMember: (id: string, userId: string) =>
-            request<void>('DELETE', `/diagrams/${id}/members/${userId}`),
     };
 }
 

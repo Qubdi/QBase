@@ -131,21 +131,6 @@ describe('qubdi api client', () => {
         await expect(api.deleteDiagram('id')).resolves.toBeUndefined();
     });
 
-    it('builds member URLs', async () => {
-        const fetchMock = vi.fn(async () => jsonResponse(200, {}));
-        const api = createApi(
-            'http://srv',
-            fetchMock as unknown as typeof fetch
-        );
-        await api.changeMemberRole('d1', 'u1', 'editor');
-        const [url, init] = fetchMock.mock.calls[0] as unknown as [
-            string,
-            RequestInit,
-        ];
-        expect(url).toBe('http://srv/diagrams/d1/members/u1');
-        expect(init.method).toBe('PATCH');
-    });
-
     describe('user management', () => {
         const call = async (
             request: (api: ReturnType<typeof createApi>) => Promise<unknown>,

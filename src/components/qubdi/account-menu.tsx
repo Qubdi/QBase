@@ -151,7 +151,6 @@ export const AccountMenu: React.FC = () => {
                 open={membersOpen}
                 onOpenChange={setMembersOpen}
                 remoteId={remoteIdFor(currentDiagram.id)}
-                currentUserId={user.id}
             />
             {connectionsProject ? (
                 <ConnectionsDialog
