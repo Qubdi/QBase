@@ -4,6 +4,7 @@ import {
     ACCESS_LABEL,
     canRevoke,
     expiryText,
+    linkStatus,
     STATUS_LABEL,
 } from '../share-links';
 
@@ -76,5 +77,38 @@ describe('labels', () => {
         for (const s of ['active', 'off', 'expired', 'revoked'] as const) {
             expect(STATUS_LABEL[s].length).toBeGreaterThan(0);
         }
+    });
+});
+
+describe('linkStatus', () => {
+    const base = {
+        revokedAt: null,
+        expiresAt: null,
+        access: 'anyone',
+    } as const;
+
+    it('calls an open link active', () => {
+        expect(linkStatus(base, now)).toBe('active');
+        expect(linkStatus({ ...base, expiresAt: at(DAY) }, now)).toBe('active');
+    });
+
+    it('calls a switched-off link off', () => {
+        expect(linkStatus({ ...base, access: 'off' }, now)).toBe('off');
+    });
+
+    it('calls a link past its end expired, even when it is also off', () => {
+        const past = { ...base, expiresAt: at(-HOUR) };
+        expect(linkStatus(past, now)).toBe('expired');
+        expect(linkStatus({ ...past, access: 'off' }, now)).toBe('expired');
+        expect(linkStatus({ ...base, expiresAt: at(0) }, now)).toBe('expired');
+    });
+
+    it('calls a revoked link revoked, whatever else is true', () => {
+        expect(
+            linkStatus(
+                { access: 'off', expiresAt: at(-HOUR), revokedAt: at(-HOUR) },
+                now
+            )
+        ).toBe('revoked');
     });
 });

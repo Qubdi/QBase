@@ -1,6 +1,7 @@
 // The Activity page's wording and dates. Plain functions, no React.
 
 import type { ActivityGroup, ActivityItem } from './api';
+import { ago } from './when';
 
 export const ACTIVITY_GROUP_OPTIONS: {
     value: '' | ActivityGroup;
@@ -38,6 +39,15 @@ const ACCESS_WORDS: Record<
     anyone: 'anyone with the link',
     signed_in: 'signed-in users only',
     off: 'off',
+};
+
+/** Which link was revoked: " (anyone with the link, made 2 days ago)". Old rows have neither. */
+const revokedDetail = (meta: ActivityItem['meta']): Segment[] => {
+    const parts = [
+        ...(meta?.access ? [ACCESS_WORDS[meta.access]] : []),
+        ...(meta?.madeAt ? [`made ${ago(meta.madeAt)}`] : []),
+    ];
+    return parts.length > 0 ? [text(` (${parts.join(', ')})`)] : [];
 };
 
 const CHANGED_WORDS = {
@@ -167,7 +177,12 @@ export function describeActivity(item: ActivityItem): Segment[] {
                     : []),
             ];
         case 'share.revoke':
-            return [who, text(' revoked a share link of '), diagram];
+            return [
+                who,
+                text(' revoked a share link of '),
+                diagram,
+                ...revokedDetail(meta),
+            ];
         case 'share.regenerate':
             return [
                 who,

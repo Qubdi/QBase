@@ -164,6 +164,8 @@ export interface ActivityItem {
         role?: ProjectRole;
         version?: number;
         access?: 'anyone' | 'signed_in' | 'off';
+        /** share.revoke: when the link was made */
+        madeAt?: string;
         changed?: ('password' | 'isAdmin' | 'isActive')[];
         /** a saved connection's name, for the connection actions */
         name?: string;

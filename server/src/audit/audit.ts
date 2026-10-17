@@ -80,6 +80,8 @@ export interface AuditMeta {
     version?: number;
     linkId?: string;
     access?: 'anyone' | 'signed_in' | 'off';
+    /** share.revoke: when the link was made (ISO), to tell links apart */
+    madeAt?: string;
     /** the project's name or the diagram's title, for when it no longer exists */
     name?: string;
     /** audit.export: how many rows the file held */

@@ -3,6 +3,34 @@
 import type { AdminShareLink, ShareLinkStatus } from './api';
 import { ago } from './when';
 
+/** What the list needs of a link; the editor's and the admin's both have it. */
+export interface ShareLinkFields {
+    id: string;
+    access: AdminShareLink['access'];
+    live: boolean;
+    expiresAt: string | null;
+    createdAt: string;
+    revokedAt: string | null;
+    /** undefined when the list does not say who made it; null when that user is gone */
+    createdByEmail?: string | null;
+}
+
+/**
+ * What to call a link. The same order as the server's `linkStatus`: a revoked
+ * link is revoked even if it also expired.
+ */
+export function linkStatus(
+    link: Pick<ShareLinkFields, 'revokedAt' | 'expiresAt' | 'access'>,
+    now: Date = new Date()
+): ShareLinkStatus {
+    if (link.revokedAt) return 'revoked';
+    if (link.expiresAt && Date.parse(link.expiresAt) <= now.getTime()) {
+        return 'expired';
+    }
+    if (link.access === 'off') return 'off';
+    return 'active';
+}
+
 export const ACCESS_LABEL: Record<AdminShareLink['access'], string> = {
     anyone: 'Anyone with the link',
     signed_in: 'Signed-in users only',

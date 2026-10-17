@@ -7,11 +7,7 @@ import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { latestSnapshot } from '../diagrams/service.js';
-import {
-    emitLinkChanged,
-    onLinkChanged,
-    onPublish,
-} from '../events.js';
+import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
 import { generateToken, hashToken } from './tokens.js';
 
@@ -189,7 +185,11 @@ export const shareManagementRoutes =
                         userId: req.user!.id,
                         action: 'share.revoke',
                         diagramId: id,
-                        meta: { linkId },
+                        meta: {
+                            linkId,
+                            access: link.access,
+                            madeAt: link.createdAt.toISOString(),
+                        },
                     });
                 }
             }

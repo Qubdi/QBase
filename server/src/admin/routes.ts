@@ -349,7 +349,8 @@ export const adminRoutes =
                     .select({ email: users.email })
                     .from(users)
                     .where(eq(users.id, id));
-                if (!account) return reply.code(404).send({ error: 'not_found' });
+                if (!account)
+                    return reply.code(404).send({ error: 'not_found' });
                 const weak = weakPassword(config, body.password, account.email);
                 if (weak) return reply.code(400).send(weak);
                 patch.passwordHash = await hashPassword(body.password);
@@ -386,7 +387,8 @@ export const adminRoutes =
                 await destroyOtherSessions(db, id, undefined);
             }
             const statusChanged =
-                body.isActive !== undefined && body.isActive !== target.isActive;
+                body.isActive !== undefined &&
+                body.isActive !== target.isActive;
             // what this request actually changed (a password counts every time)
             const changed: NonNullable<AuditMeta['changed']> = [];
             if (body.password !== undefined) changed.push('password');
@@ -483,7 +485,8 @@ export const adminRoutes =
                           : true
                 );
                 const changingIds = changing.map((u) => u.id);
-                if (changingIds.length === 0) return { changed: [] as string[] };
+                if (changingIds.length === 0)
+                    return { changed: [] as string[] };
 
                 // admins who can sign in are lost to a disable or a delete;
                 // someone else must remain
@@ -619,7 +622,11 @@ export const adminRoutes =
         app.delete('/diagrams/:id/share-links/:linkId', async (req, reply) => {
             const { id, linkId } = linkParam.parse(req.params);
             const [link] = await db
-                .select({ id: shareLinks.id })
+                .select({
+                    id: shareLinks.id,
+                    access: shareLinks.access,
+                    createdAt: shareLinks.createdAt,
+                })
                 .from(shareLinks)
                 .where(
                     and(eq(shareLinks.id, linkId), eq(shareLinks.diagramId, id))
@@ -639,7 +646,11 @@ export const adminRoutes =
                     userId: req.user!.id,
                     action: 'share.revoke',
                     diagramId: id,
-                    meta: { linkId },
+                    meta: {
+                        linkId,
+                        access: link.access,
+                        madeAt: link.createdAt.toISOString(),
+                    },
                 });
             }
             emitLinkChanged(linkId);

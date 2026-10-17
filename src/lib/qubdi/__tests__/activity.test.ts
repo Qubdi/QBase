@@ -259,9 +259,26 @@ describe('describeActivity', () => {
         });
 
         it('revokes and regenerates', () => {
+            // rows from before the link was described name no link
             expect(sentence({ action: 'share.revoke' })).toBe(
                 'anna@corp.io revoked a share link of Orders'
             );
+            expect(
+                sentence({
+                    action: 'share.revoke',
+                    meta: {
+                        access: 'signed_in',
+                        madeAt: new Date(
+                            Date.now() - 2 * 86_400_000
+                        ).toISOString(),
+                    },
+                })
+            ).toBe(
+                'anna@corp.io revoked a share link of Orders (signed-in users only, made 2 days ago)'
+            );
+            expect(
+                sentence({ action: 'share.revoke', meta: { access: 'off' } })
+            ).toBe('anna@corp.io revoked a share link of Orders (off)');
             expect(sentence({ action: 'share.regenerate' })).toBe(
                 'anna@corp.io made a new address for a share link of Orders'
             );

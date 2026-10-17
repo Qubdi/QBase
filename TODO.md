@@ -51,17 +51,17 @@ plain), `jsonb` only for document-like content, and an explicit `on delete` on e
 
 Three small UI tasks. Nothing started yet. Neither touches the database.
 
-1. [ ] **The share-link table must look and sit exactly the same everywhere.** Today the editor's
+1. [x] **The share-link table must look and sit exactly the same everywhere.** Today the editor's
        Share dialog (`components/qubdi/share-dialog.tsx`, a list of bordered cards) and the admin
        Diagrams "Share links" dialog (`pages/admin-page/diagram-links-dialog.tsx`) show the same links
        in different layouts. Make the table, its columns, its order and its position the same in both
        (one shared component is the safe way), light and dark, desktop and phone.
-2. [ ] **Every revoked link reads just "Revoked link".** In the Share dialog all revoked links show the
+2. [x] **Every revoked link reads just "Revoked link".** In the Share dialog all revoked links show the
        same grey text, so you cannot tell them apart (and the Activity line says only "revoked a share
        link of <diagram>", `lib/qubdi/activity.ts`, action `share.revoke`). Say which link: for example
        when it was made and by whom, its access, and when it was revoked. The audit row already has
        `meta.linkId` and `meta.access`.
-3. [ ] **Not duplicated, one reference.** The share-link table (columns, states, the revoke action, the
+3. [x] **Not duplicated, one reference.** The share-link table (columns, states, the revoke action, the
        status wording) is written once and both dialogs use it, so the two can never drift apart again.
        Today each dialog has its own copy of the markup and the status text (`lib/qubdi/share-links.ts`
        already holds some shared helpers). Remove the second copy; a test renders both dialogs and
