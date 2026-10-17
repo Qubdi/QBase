@@ -107,8 +107,15 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                     confirmSentContent(diagram.id);
                     return updated.id;
                 } catch (e) {
-                    // deleted or access revoked on the server: fall through and re-create
-                    if (!(e instanceof ApiError) || e.status !== 404) throw e;
+                    // deleted or access revoked on the server: re-create it, but
+                    // only when a project is known. Without one, keep the id so
+                    // the real error surfaces instead of a later `no_project`.
+                    if (
+                        !(e instanceof ApiError) ||
+                        e.status !== 404 ||
+                        !projectId
+                    )
+                        throw e;
                     clearRemoteId(diagram.id);
                 }
             }
