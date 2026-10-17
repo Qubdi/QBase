@@ -1106,7 +1106,14 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
             );
             if (dropped.length > 0 && !readonly) {
                 const droppedIds = new Set(dropped.map((c) => c.id));
-                const rectOf = (node: NodeType, x: number, y: number) => ({
+                const rectOf = (
+                    node: {
+                        measured?: { width?: number; height?: number };
+                        data: unknown;
+                    },
+                    x: number,
+                    y: number
+                ) => ({
                     x,
                     y,
                     width:
@@ -1131,8 +1138,8 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 const { dx, dy } = findFreeShift(moved, others);
                 if (dx !== 0 || dy !== 0) {
                     changesToApply = changesToApply.map((change) =>
-                        droppedIds.has(change.id) &&
                         change.type === 'position' &&
+                        droppedIds.has(change.id) &&
                         change.position
                             ? {
                                   ...change,
