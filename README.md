@@ -30,7 +30,10 @@ There are no external services: no analytics, no GitHub integration, no social l
 ## Run it
 
 ```bash
-# 1. database (and optionally the backend) with Docker
+# 1. database (and optionally the backend) with Docker. Compose needs a
+#    POSTGRES_PASSWORD in .env (copy .env.example and fill it in); services
+#    listen on 127.0.0.1 unless you set a *_BIND_IP
+cp .env.example .env
 docker compose up -d db
 
 # 2. backend
@@ -77,7 +80,8 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 
 ```bash
 npx vitest run                 # editor and shared logic
-cd server && npx vitest run    # backend (needs `docker compose up -d db`)
+cd server && npx vitest run    # backend (needs the database up with POSTGRES_PASSWORD=qubdidb:
+                               # the tests connect as qubdidb/qubdidb on port 5433)
 ```
 
 The SQL Server tests need the optional container and skip cleanly without it:
