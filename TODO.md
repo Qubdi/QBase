@@ -67,7 +67,7 @@ checklist above does not apply.
        (`components/qubdi/lint-settings-dialog.tsx`, opened from the gear in
        `components/qubdi/lint-control.tsx`). Settings stay in the browser per diagram
        (`lib/qubdi/lint-config-store.ts`), so linting keeps working offline.
-3. [ ] **Remove "All Databases..." and "New..." from the Actions menu**
+3. [x] **Remove "All Databases..." and "New..." from the Actions menu**
        (`pages/editor-page/top-navbar/menu/menu.tsx`, keys `menu.actions.new` and
        `menu.actions.browse` in `i18n/locales/en.ts`). The sidebar's New and Open buttons
        (`editor_sidebar.new_diagram`, `editor_sidebar.browse`) stay, so both are still reachable.
