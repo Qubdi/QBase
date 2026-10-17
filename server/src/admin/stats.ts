@@ -1,4 +1,4 @@
-import { and, count, eq, gt, gte, sql } from 'drizzle-orm';
+import { and, count, eq, exists, gt, gte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { AUDIT_ACTIONS } from '../audit/audit.js';
 import type { Db } from '../db/client.js';
@@ -100,11 +100,19 @@ export async function adminStats(db: Db, timeZone: string): Promise<AdminStats> 
             .where(gt(sessions.expiresAt, new Date())),
         db.select({ n: count() }).from(projects),
         db.select({ n: count() }).from(diagrams),
+        // published = has at least one snapshot; `exists` stops at the first
+        // one instead of reading every snapshot of every diagram
         db
-            .select({
-                n: sql<number>`count(distinct ${snapshots.diagramId})`.mapWith(Number),
-            })
-            .from(snapshots),
+            .select({ n: count() })
+            .from(diagrams)
+            .where(
+                exists(
+                    db
+                        .select({ one: sql`1` })
+                        .from(snapshots)
+                        .where(eq(snapshots.diagramId, diagrams.id))
+                )
+            ),
         db.select({ n: count() }).from(shareLinks).where(activeLinkSql()),
         // a lease nobody renewed is not someone editing
         db
