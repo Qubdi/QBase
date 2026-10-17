@@ -61,6 +61,18 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.register(rateLimit, { global: false });
     app.decorateRequest('user', null);
 
+    // The API returns JSON, never a page: forbid framing and sniffing, and
+    // let a browser that does render a response run nothing from it.
+    app.addHook('onSend', async (_req, reply) => {
+        reply.header('x-content-type-options', 'nosniff');
+        reply.header('x-frame-options', 'DENY');
+        reply.header('referrer-policy', 'no-referrer');
+        reply.header(
+            'content-security-policy',
+            "default-src 'none'; frame-ancestors 'none'"
+        );
+    });
+
     app.addHook('onRequest', async (req, reply) => {
         if (config.corsOrigin) {
             reply.header('access-control-allow-origin', config.corsOrigin);

@@ -2,6 +2,16 @@ server {
     listen       80;
     listen  [::]:80;
 
+    # Security headers. No location below uses add_header, so these apply to
+    # every response (an add_header inside a location would drop them).
+    # connect-src is the backend the editor talks to (QUBDI_BACKEND_URL).
+    # style-src needs 'unsafe-inline': React and the editor set inline styles.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' $QUBDI_BACKEND_URL; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
     location / {
         root   /usr/share/nginx/html;
         index  index.html index.htm;

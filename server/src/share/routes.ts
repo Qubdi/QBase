@@ -352,6 +352,8 @@ export const publicShareRoutes =
             raw.writeHead(200, {
                 'content-type': 'text/event-stream',
                 'cache-control': 'no-cache, no-transform',
+                // the stream bypasses the app's onSend hook
+                'x-content-type-options': 'nosniff',
                 connection: 'keep-alive',
                 ...(config.corsOrigin
                     ? {
