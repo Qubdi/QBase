@@ -1,7 +1,7 @@
-import { lt, sql } from 'drizzle-orm';
+import { and, isNotNull, lt, or, sql } from 'drizzle-orm';
 import type { Config } from './config.js';
 import type { Db } from './db/client.js';
-import { sessions } from './db/schema.js';
+import { diagramLocks, shareLinks, sessions } from './db/schema.js';
 
 const DAY_MS = 86_400_000;
 
@@ -15,6 +15,40 @@ export async function purgeExpiredSessions(
         .where(lt(sessions.expiresAt, now))
         .returning({ id: sessions.id });
     return rows.length;
+}
+
+/** Deletes edit locks nobody renewed. They are already ignored. */
+export async function purgeExpiredLocks(
+    db: Db,
+    now: Date = new Date()
+): Promise<number> {
+    const res = await db
+        .delete(diagramLocks)
+        .where(lt(diagramLocks.expiresAt, now));
+    return res.rowCount ?? 0;
+}
+
+/**
+ * Deletes share links that stopped working `days` or more ago (revoked, or
+ * past their expiry). They are already refused; this only keeps the table and
+ * each diagram's link list from growing for ever. 0 or less keeps everything.
+ */
+export async function purgeDeadLinks(
+    db: Db,
+    days: number,
+    now: Date = new Date()
+): Promise<number> {
+    if (!(days > 0)) return 0;
+    const cutoff = new Date(now.getTime() - days * DAY_MS);
+    const res = await db
+        .delete(shareLinks)
+        .where(
+            or(
+                and(isNotNull(shareLinks.revokedAt), lt(shareLinks.revokedAt, cutoff)),
+                and(isNotNull(shareLinks.expiresAt), lt(shareLinks.expiresAt, cutoff))
+            )
+        );
+    return res.rowCount ?? 0;
 }
 
 const AUDIT_BATCH = 5000;
@@ -85,7 +119,7 @@ export async function pruneDriftReports(db: Db, keep: number): Promise<number> {
 
 type MaintenanceConfig = Pick<
     Config,
-    'auditRetentionDays' | 'snapshotKeep' | 'driftReportKeep'
+    'auditRetentionDays' | 'snapshotKeep' | 'driftReportKeep' | 'deadLinkKeepDays'
 >;
 
 export async function runMaintenance(
@@ -95,6 +129,8 @@ export async function runMaintenance(
 ) {
     return {
         sessions: await purgeExpiredSessions(db, now),
+        locks: await purgeExpiredLocks(db, now),
+        links: await purgeDeadLinks(db, config.deadLinkKeepDays, now),
         audit: await purgeAuditLog(db, config.auditRetentionDays, now),
         snapshots: await pruneSnapshots(db, config.snapshotKeep),
         driftReports: await pruneDriftReports(db, config.driftReportKeep),

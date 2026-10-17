@@ -16,6 +16,9 @@ import {
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
 import { generateToken, hashToken } from './tokens.js';
 
+/** Most links the editor's list returns for one diagram, newest first. */
+export const MAX_LISTED_LINKS = 200;
+
 const diagramParam = z.object({ id: z.string().uuid() });
 const linkParam = z.object({
     id: z.string().uuid(),
@@ -103,7 +106,8 @@ export const shareManagementRoutes =
                 .select()
                 .from(shareLinks)
                 .where(eq(shareLinks.diagramId, id))
-                .orderBy(desc(shareLinks.createdAt));
+                .orderBy(desc(shareLinks.createdAt))
+                .limit(MAX_LISTED_LINKS);
             return rows.map(presentLink);
         });
 

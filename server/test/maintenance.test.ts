@@ -2,13 +2,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import {
     auditLog,
+    diagramLocks,
     diagrams,
     driftReports,
     projects,
     sessions,
+    shareLinks,
 } from '../src/db/schema.js';
 import {
     pruneDriftReports,
+    purgeDeadLinks,
+    purgeExpiredLocks,
     purgeAuditLog,
     purgeExpiredSessions,
 } from '../src/maintenance.js';
@@ -109,5 +113,69 @@ describe('maintenance', () => {
 
     it('keeps every drift report when the limit is 0', async () => {
         expect(await pruneDriftReports(ctx.db, 0)).toBe(0);
+    });
+
+    describe('locks and dead share links', () => {
+        let diagramId: string;
+        beforeAll(async () => {
+            const [project] = await ctx.db
+                .insert(projects)
+                .values({ name: 'Dead links', slug: 'dead-links' })
+                .returning({ id: projects.id });
+            [{ id: diagramId }] = await ctx.db
+                .insert(diagrams)
+                .values({
+                    projectId: project.id,
+                    ownerId: userId,
+                    title: 'Links',
+                    content: {},
+                })
+                .returning({ id: diagrams.id });
+        });
+
+        it('deletes edit locks that were not renewed', async () => {
+            await ctx.db.delete(diagramLocks);
+            await ctx.db.insert(diagramLocks).values({
+                diagramId,
+                userId,
+                editorId: 'tab',
+                expiresAt: daysAgo(1),
+            });
+            expect(await purgeExpiredLocks(ctx.db, now)).toBe(1);
+            await ctx.db.insert(diagramLocks).values({
+                diagramId,
+                userId,
+                editorId: 'tab',
+                expiresAt: new Date(now.getTime() + 60_000),
+            });
+            expect(await purgeExpiredLocks(ctx.db, now)).toBe(0);
+        });
+
+        it('deletes links revoked or expired long ago and keeps the rest', async () => {
+            const link = (name: string, over: object) => ({
+                diagramId,
+                tokenHash: `hash-${name}`,
+                ...over,
+            });
+            await ctx.db.insert(shareLinks).values([
+                link('revoked-old', { revokedAt: daysAgo(40) }),
+                link('expired-old', { expiresAt: daysAgo(40) }),
+                link('revoked-recent', { revokedAt: daysAgo(2) }),
+                link('expired-recent', { expiresAt: daysAgo(2) }),
+                link('live', {}),
+                link('future', { expiresAt: new Date(now.getTime() + 86_400_000) }),
+            ]);
+            expect(await purgeDeadLinks(ctx.db, 30, now)).toBe(2);
+            const left = (await ctx.db.select().from(shareLinks))
+                .map((l) => l.tokenHash)
+                .sort();
+            expect(left).toEqual([
+                'hash-expired-recent',
+                'hash-future',
+                'hash-live',
+                'hash-revoked-recent',
+            ]);
+            expect(await purgeDeadLinks(ctx.db, 0, now)).toBe(0);
+        });
     });
 });

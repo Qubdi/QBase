@@ -25,6 +25,8 @@ export interface Config {
     diagramBodyLimit: number;
     /** audit rows older than this many days are deleted; 0 keeps them all */
     auditRetentionDays: number;
+    /** share links revoked or expired this many days ago are deleted; 0 keeps them all */
+    deadLinkKeepDays: number;
     /** most live (SSE) viewers one share link may have open at once */
     sseMaxPerLink: number;
     /** pino level: fatal, error, warn, info, debug, trace or silent */
@@ -75,6 +77,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         bodyLimit: Number(env.BODY_LIMIT_KB ?? 1024) * 1024,
         diagramBodyLimit: Number(env.DIAGRAM_BODY_LIMIT_MB ?? 50) * 1024 * 1024,
         auditRetentionDays: Number(env.AUDIT_RETENTION_DAYS ?? 365),
+        deadLinkKeepDays: Number(env.DEAD_LINK_KEEP_DAYS ?? 30),
         sseMaxPerLink: Number(env.SSE_MAX_PER_LINK ?? 100),
         trustProxy: parseTrustProxy(env.TRUST_PROXY),
         logLevel: env.LOG_LEVEL ?? 'info',

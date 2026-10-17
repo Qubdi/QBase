@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog, shareLinks } from '../src/db/schema.js';
+import { MAX_LISTED_LINKS } from '../src/share/routes.js';
 import {
     as,
     createDiagram,
@@ -90,6 +91,21 @@ describe('share links', () => {
             const text = list.body;
             expect(text).not.toContain(body.token);
             expect(text).not.toContain(row.tokenHash);
+        });
+
+        it('caps the list at the newest links', async () => {
+            const crowded = await createDiagram(ctx.app, owner, 'Crowded');
+            await ctx.db.insert(shareLinks).values(
+                Array.from({ length: MAX_LISTED_LINKS + 5 }, (_, n) => ({
+                    diagramId: crowded,
+                    tokenHash: `crowded-${n}`,
+                }))
+            );
+            const list = await ctx.app.inject({
+                url: `/diagrams/${crowded}/share-links`,
+                headers: as(owner),
+            });
+            expect(list.json()).toHaveLength(MAX_LISTED_LINKS);
         });
 
         it('hides the list from viewers and strangers', async () => {
