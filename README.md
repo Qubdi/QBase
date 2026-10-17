@@ -16,7 +16,7 @@ and schema lint.
 
 ## Features
 
-1. **Accounts and permissions**: email and password (argon2), owner / editor / viewer per diagram, audit log.
+1. **Accounts and permissions**: email and password (argon2, with [password rules](#passwords)), owner / editor / viewer per diagram, audit log.
 2. **Published snapshots**: viewers only ever see numbered published versions, never the working copy.
 3. **Read-only share links**: unguessable tokens (only a hash is stored), expiry, revoke, live updates over SSE, rate limited.
 4. **Comments** on tables, fields and relationships, shown read-only on shared views; carried forward on publish, orphaned ones are hidden. The editor has no way to write them.
@@ -75,6 +75,22 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
 | `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) before an account is locked |
 | `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |
+| `PASSWORD_MIN_LENGTH` | `12` | Fewest characters of a new password. Cannot be set below 8. Applies when a password is set, never at sign-in |
+
+### Passwords
+
+A password that is being **set** (the first admin's sign-up, changing your own, an admin creating a user or resetting one) must have:
+
+- at least `PASSWORD_MIN_LENGTH` characters (12 unless you change it; never fewer than 8) and at most 200,
+- a capital letter, a number and a symbol (any character that is not a letter, a number or a space; spaces are allowed but do not count). Letters and digits from other alphabets count, so a Georgian or Cyrillic capital works,
+- nothing that is the account's email address or contains the part before the `@` (a part shorter than 3 characters is not compared),
+- and, when changing it, not the same as the current password.
+
+The forms show these as a checklist while you type; the server checks them again and answers `400 { "error": "weak_password", "rules": [...] }` listing what is missing.
+
+Signing in does not apply the rules, so people who chose a password before they existed keep working, and nobody is asked to change one. Passwords are stored only as argon2 hashes.
+
+An admin who creates a user or resets a password is choosing a **temporary** password: the person is asked to choose their own at their next sign-in and can do nothing else until they have (the API answers `403 password_change_required`). Signing out is always possible.
 
 ## Tests
 

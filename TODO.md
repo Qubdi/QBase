@@ -161,95 +161,6 @@ Open questions:
 - [ ] Keep it behind the switch, off by default, until it has proven itself? (default: yes)
 - [ ] Operations or CRDT: decided by the spike.
 
-## Backlog: password rules
-
-A password that is being set must have a capital letter, a number, a symbol and a minimum length.
-Nothing started yet.
-
-### What the code looks like today (read from the code)
-
-- A password is only checked for 8 to 200 characters. Four server places set one: first-admin
-  sign-up and change-password (`auth/routes.ts`), admin create user and admin reset
-  (`admin/routes.ts`).
-- The `credentials` schema (email and password, minimum 8) is **shared by register and login**.
-  Putting the new rules there would reject existing users at sign-in and lock them out. Sign-in
-  must only check "not empty, at most 200".
-- Four inputs hard-code `minLength={8}` and "min 8" text: the sign-in dialog, the change-password
-  dialog, admin Create user and admin Reset password.
-- Many server and frontend tests create users with `password123`, which will fail the new rules.
-
-### Rules
-
-They apply when a password is **set**, never when it is checked at sign-in.
-
-- At least `PASSWORD_MIN_LENGTH` characters: default **12**, and the setting cannot go below 8 (the
-  minimum today). The maximum stays 200.
-- At least one **capital letter**, one **number** and one **symbol**. Defined with Unicode classes
-  so non-English letters work: capital = `\p{Lu}`, number = `\p{Nd}`, symbol = any character that is
-  not a letter, a number or whitespace (spaces are allowed but do not count).
-- Not the account's email, and not containing the part before the `@`; on a change, not the same
-  as the current password.
-- A blocklist of common passwords is a separate nice-to-have.
-
-### Design
-
-- One pure function `checkPassword(password, { minLength, email? })` in `shared/` (like the lint
-  rules) that returns the list of broken rules. The server is the authority; the client uses the
-  same function for live feedback.
-- **Server:** split the schemas into `signIn` (not empty, at most 200) and `newPassword` (the
-  rules), used by the four places above. A weak password gets
-  `{ error: 'weak_password', rules: [...] }` so the UI can say exactly what is missing.
-- **Client:** one `PasswordField` with a live checklist (a tick or cross per rule) used by the four
-  dialogs, replacing the hard-coded `minLength={8}` and placeholders.
-- **Existing users keep their passwords.** No forced reset for them.
-- **Temporary passwords:** an admin creates users with one, so add
-  `users.must_change_password boolean not null default false`. It is set when an admin creates a
-  user or resets a password and cleared when the person sets their own. While it is true, the API
-  answers `403 password_change_required` to everything except change-password, `me` and logout,
-  and the UI opens the change-password dialog.
-- **Config:** `PASSWORD_MIN_LENGTH` (default 12), listed in `.env.example`.
-
-### Steps (tick when shipped, note the commit)
-
-1. [x] **`checkPassword` in `shared/password.ts`**, with tests for every rule and the Unicode cases. A part before the @ shorter than 3 characters is not compared (it would match almost anything). "Not the same as the current password" is checked by the server, which has the hash.
-2. [x] **Server:** `signIn` (not empty, at most 200) and the new-password rules in `auth/password-rules.ts`,
-       used by register, change-password, admin create user and admin reset. A weak password gets 400
-       `{ error: 'weak_password', rules }`; change-password also answers `same_password`, only after the
-       current password was right (a wrong one still gets 403 and nothing about the new one). Admin reset
-       compares with the target's own email. `PASSWORD_MIN_LENGTH` is read into config (default 12, floor 8)
-       and passed through `docker-compose.yml`. Tests use `Password-123!`; the server suite can run against a
-       throwaway Postgres with `TEST_PG_PORT`.
-3. [x] **Client:** `PasswordField` (`components/qubdi/password-field.tsx`) with a tick or cross per rule, in the four
-       dialogs: first-admin sign-up, change password, admin New user and admin Reset password. The button is held
-       until every rule is met. Sign-in is a plain field with no rules and no `minLength`. The minimum length comes
-       from `GET /auth/setup-status` (`passwordMinLength`), once per page load (`usePasswordMinLength`), and is the
-       default 12 until it arrives. The email rule uses the typed email, the signed-in email, or the account being reset.
-4. [x] **`must_change_password`** (`0017_users_must_change_password`, one `add column boolean not null
-       default false`; existing accounts stay false, so nobody is forced to change). Set by admin create and by
-       admin reset (not when an admin resets their own), cleared by change-password. While it is true the API
-       answers `403 password_change_required` to everything except `/health`, `/auth/me`, `/auth/change-password`,
-       `/auth/logout`, `/auth/login`, `/auth/register` and `/auth/setup-status` (`OPEN_TO_TEMPORARY_PASSWORD` in
-       `app.ts`). `me` and the sign-in answer carry `mustChangePassword`. The UI opens an undismissable
-       "Choose your own password" dialog over every page (`ForcedPasswordChange`) with Sign out as the way out.
-       No index (never filtered on), no retention (a column, not a table). Undo: drop the column and the hook.
-       Fixtures: `registerUser` settles the flag unless `{ temporary: true }`. Left for later: a "Temporary
-       password" badge in the admin Users list.
-5. [ ] **Docs:** the rules and `PASSWORD_MIN_LENGTH` in `README` and `.env.example`.
-6. [ ] **Every step ends with:** tests, lint, type check and the full suite in a container,
-       screenshots for UI steps, the database checklist at the top of this file when there is a
-       migration, a Docker rebuild, then a commit.
-
-Tests to include: each rule fails on its own and all together pass; Unicode capitals and symbols;
-sign-in still works with an old weak password; the four endpoints reject weak passwords with the
-list of rules; changing to the same password is rejected; the `must_change_password` flow; the
-client checklist.
-
-Open questions:
-
-- [ ] Minimum length: 12 (default), or another number?
-- [ ] Force a password change at first sign-in for users an admin created? (default: yes)
-- [ ] Ask existing users with a weak password to change it at their next sign-in? (default: no)
-
 ## Backlog: two-factor sign-in with an authenticator app (Google or Microsoft Authenticator)
 
 After the password, the person types the 6-digit code their authenticator app shows. This is the
@@ -382,8 +293,8 @@ Left for later, from the shipped steps:
 - Diagrams: revoke every link of a diagram in one click. Add an `updated_at` index or a small
   recency table only past about 200,000 diagrams (an index containing it stops autosaves from
   being in-place updates).
-- Users: ticking across pages ("all 4,000 matching"); forcing a password change (see the
-  password-rules plan).
+- Users: ticking across pages ("all 4,000 matching"); a "Temporary password" badge for accounts
+  that still have `must_change_password` set.
 - Share links: add a partial index on active links only if `EXPLAIN` shows it is needed.
 
 Open questions:
