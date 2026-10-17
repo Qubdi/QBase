@@ -100,6 +100,12 @@ export function describeActivity(item: ActivityItem): Segment[] {
             return [who, text(' enabled the account of '), target];
         case 'user.sign_out':
             return [who, text(' signed '), target, text(' out everywhere')];
+        case 'user.sign_in':
+            return [who, text(' signed in')];
+        case 'user.sign_in_failed':
+            return [who, text(' had a failed sign-in or password check')];
+        case 'user.password_change':
+            return [who, text(' changed their password')];
 
         case 'project.create':
             return [who, text(' created the project '), project];
@@ -168,6 +174,24 @@ export function describeActivity(item: ActivityItem): Segment[] {
                 text(' made a new address for a share link of '),
                 diagram,
             ];
+
+        case 'connection.create':
+        case 'connection.update':
+        case 'connection.delete': {
+            const verb = {
+                'connection.create': ' saved the connection ',
+                'connection.update': ' changed the connection ',
+                'connection.delete': ' deleted the connection ',
+            }[item.action];
+            return [
+                who,
+                text(verb),
+                meta?.name
+                    ? { text: meta.name, kind: 'name' as const }
+                    : { text: 'a connection', kind: 'gone' as const },
+                ...inProject,
+            ];
+        }
 
         case 'comment.create':
             return [who, text(' added a comment on '), diagram];

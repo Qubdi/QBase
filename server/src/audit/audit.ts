@@ -9,6 +9,9 @@ export const AUDIT_ACTIONS = [
     'user.disable',
     'user.enable',
     'user.sign_out',
+    'user.sign_in',
+    'user.sign_in_failed',
+    'user.password_change',
     'project.create',
     'project.update',
     'project.delete',
@@ -22,6 +25,9 @@ export const AUDIT_ACTIONS = [
     'share.update',
     'share.revoke',
     'share.regenerate',
+    'connection.create',
+    'connection.update',
+    'connection.delete',
     'comment.create',
     'comment.update',
     'comment.resolve',
@@ -41,7 +47,8 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number];
  */
 export const AUDIT_GROUPS = {
     users: ['user.'],
-    projects: ['project.'],
+    // a saved connection belongs to a project
+    projects: ['project.', 'connection.'],
     diagrams: ['diagram.'],
     sharing: ['share.'],
     checks: ['drift.', 'lint.'],

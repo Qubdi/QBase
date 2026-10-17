@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { savedConnections } from '../src/db/schema.js';
+import { auditLog, savedConnections } from '../src/db/schema.js';
 import { CryptoBox } from '../src/introspect/crypto-box.js';
 import { defaultIntrospectorFactory } from '../src/introspect/routes.js';
 import type {
@@ -454,6 +454,52 @@ describe('introspect HTTP layer (fake driver)', () => {
                 .where(eq(savedConnections.id, made.json().id));
             expect(row).toBeDefined();
             expect(row.ownerId).toBeNull();
+        });
+
+        it('records creating, changing and deleting a connection in the audit log', async () => {
+            const make = await ctx.app.inject({
+                method: 'POST',
+                url: '/introspect/connections',
+                headers: as(bob),
+                payload: { ...conn(), name: 'Audited connection', projectId },
+            });
+            expect(make.statusCode).toBe(201);
+            const id = make.json().id as string;
+            const change = await ctx.app.inject({
+                method: 'PUT',
+                url: `/introspect/connections/${id}`,
+                headers: as(bob),
+                payload: { ...conn(), password: undefined, name: 'Audited connection' },
+            });
+            expect(change.statusCode).toBe(200);
+            const gone = await ctx.app.inject({
+                method: 'DELETE',
+                url: `/introspect/connections/${id}`,
+                headers: as(bob),
+            });
+            expect(gone.statusCode).toBe(204);
+            const rows = (await ctx.db.select().from(auditLog)).filter((r) =>
+                r.action.startsWith('connection.')
+            );
+            const mine = rows.filter(
+                (r) =>
+                    r.userId === bob.id &&
+                    (r.meta as { name?: string } | null)?.name ===
+                        'Audited connection'
+            );
+            expect(mine.map((r) => r.action)).toEqual([
+                'connection.create',
+                'connection.update',
+                'connection.delete',
+            ]);
+            for (const r of mine) {
+                expect(r.meta).toEqual({
+                    projectId,
+                    name: 'Audited connection',
+                });
+                // never the password or host
+                expect(JSON.stringify(r.meta)).not.toContain(conn().password);
+            }
         });
 
         describe('editing', () => {

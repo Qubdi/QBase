@@ -154,6 +154,14 @@ export const authRoutes =
                 : await verifyAgainstNobody(body.password);
             if (!user || !ok) {
                 failures.recordFailure(key);
+                // only for an account that exists: guesses at made-up emails
+                // would otherwise fill the log
+                if (user) {
+                    await audit(db, {
+                        userId: user.id,
+                        action: 'user.sign_in_failed',
+                    });
+                }
                 return reply.code(401).send({ error: 'invalid_credentials' });
             }
             failures.reset(key);
@@ -161,6 +169,7 @@ export const authRoutes =
                 return reply.code(403).send({ error: 'account_disabled' });
             }
             await startSession(req, reply, user.id);
+            await audit(db, { userId: user.id, action: 'user.sign_in' });
             return { id: user.id, email: user.email, isAdmin: user.isAdmin };
         });
 
@@ -195,6 +204,10 @@ export const authRoutes =
                 !(await verifyPassword(user.passwordHash, body.currentPassword))
             ) {
                 failures.recordFailure(key);
+                await audit(db, {
+                    userId: user.id,
+                    action: 'user.sign_in_failed',
+                });
                 return reply.code(403).send({ error: 'wrong_password' });
             }
             failures.reset(key);
@@ -207,6 +220,7 @@ export const authRoutes =
                 user.id,
                 req.cookies[SESSION_COOKIE]
             );
+            await audit(db, { userId: user.id, action: 'user.password_change' });
             return { ok: true };
         });
     };

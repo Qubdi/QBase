@@ -114,6 +114,34 @@ describe('describeActivity', () => {
             expect(sentence({ action, ...target })).toBe(expected);
         });
 
+        it.each([
+            ['user.sign_in', 'anna@corp.io signed in'],
+            [
+                'user.sign_in_failed',
+                'anna@corp.io had a failed sign-in or password check',
+            ],
+            ['user.password_change', 'anna@corp.io changed their password'],
+        ])('%s', (action, expected) => {
+            expect(sentence({ action })).toBe(expected);
+        });
+
+        it('names a saved connection and its project', () => {
+            expect(
+                sentence({
+                    action: 'connection.create',
+                    projectName: 'Shop',
+                    meta: { name: 'Prod replica' },
+                })
+            ).toBe('anna@corp.io saved the connection Prod replica in Shop');
+            expect(
+                sentence({
+                    action: 'connection.delete',
+                    projectName: null,
+                    meta: null,
+                })
+            ).toBe('anna@corp.io deleted the connection a connection');
+        });
+
         it('says what an update changed', () => {
             expect(
                 sentence({

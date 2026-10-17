@@ -422,3 +422,50 @@ describe('first-run sign-up', () => {
         }
     });
 });
+
+describe('auth audit trail', () => {
+    const actionsOf = async (ctx: TestCtx) =>
+        (await ctx.db.select().from(auditLog)).map((r) => r.action);
+
+    it('records sign-ins, failed sign-ins of real accounts and password changes', async () => {
+        const ctx = await createTestApp();
+        try {
+            const user = await registerUser(ctx.app, 'a@example.com');
+            const login = (email: string, password: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/login',
+                    payload: { email, password },
+                });
+            await login('a@example.com', 'wrong-password');
+            await login('nobody@example.com', 'wrong-password');
+            await login('a@example.com', 'password123');
+            expect(await actionsOf(ctx)).toEqual([
+                'user.register',
+                'user.sign_in_failed',
+                'user.sign_in',
+            ]);
+
+            // the sign-in above replaced the session: use the new cookie
+            const fresh = await loginUser(ctx.app, 'a@example.com');
+            const change = (currentPassword: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/change-password',
+                    headers: as(fresh),
+                    payload: { currentPassword, newPassword: 'password456' },
+                });
+            expect((await change('wrong-password')).statusCode).toBe(403);
+            expect((await change('password123')).statusCode).toBe(200);
+            const actions = await actionsOf(ctx);
+            expect(actions.slice(-3)).toEqual([
+                'user.sign_in',
+                'user.sign_in_failed',
+                'user.password_change',
+            ]);
+            expect(user.id).toBeTruthy();
+        } finally {
+            await ctx.close();
+        }
+    });
+});

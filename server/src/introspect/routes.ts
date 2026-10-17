@@ -18,6 +18,7 @@ import {
     type LookupAll,
 } from './net-guard.js';
 import { connectPostgres } from './postgres.js';
+import { audit } from '../audit/audit.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
 import { UnsafeSqlError } from './readonly-guard.js';
 import { connectSqlServer } from './sqlserver.js';
@@ -342,6 +343,11 @@ export const introspectRoutes =
                     }
                 );
             if (!row) return reply.code(409).send({ error: 'name_taken' });
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'connection.create',
+                meta: { projectId: row.projectId, name: row.name },
+            });
             return reply.code(201).send(summarize(row));
         });
 
@@ -418,13 +424,21 @@ export const introspectRoutes =
                 });
             if (nameTaken) return reply.code(409).send({ error: 'name_taken' });
             if (!row) return reply.code(404).send({ error: 'not_found' });
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'connection.update',
+                meta: { projectId: row.projectId, name: row.name },
+            });
             return summarize(row);
         });
 
         app.delete('/connections/:id', async (req, reply) => {
             const { id } = z.object({ id: uuid }).parse(req.params);
             const [conn] = await db
-                .select({ projectId: savedConnections.projectId })
+                .select({
+                    projectId: savedConnections.projectId,
+                    name: savedConnections.name,
+                })
                 .from(savedConnections)
                 .where(eq(savedConnections.id, id));
             if (!conn) return reply.code(404).send({ error: 'not_found' });
@@ -440,6 +454,11 @@ export const introspectRoutes =
             await db
                 .delete(savedConnections)
                 .where(eq(savedConnections.id, id));
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'connection.delete',
+                meta: { projectId: conn.projectId, name: conn.name },
+            });
             return reply.code(204).send();
         });
     };

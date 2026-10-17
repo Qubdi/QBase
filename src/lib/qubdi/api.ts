@@ -163,6 +163,8 @@ export interface ActivityItem {
         version?: number;
         access?: 'anyone' | 'signed_in' | 'off';
         changed?: ('password' | 'isAdmin' | 'isActive')[];
+        /** a saved connection's name, for the connection actions */
+        name?: string;
     } | null;
 }
 
