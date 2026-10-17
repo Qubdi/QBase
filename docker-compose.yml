@@ -25,7 +25,6 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-qubdidb}:${POSTGRES_PASSWORD:-qubdidb}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-qubdidb}
-      SESSION_SECRET: ${SESSION_SECRET:-change-me}
       CONNECTION_KEY: ${CONNECTION_KEY:-}
       INTROSPECT_ALLOW_HOSTS: ${INTROSPECT_ALLOW_HOSTS:-}
       PORT: "3001"

@@ -57,7 +57,7 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         routerOptions: { maxParamLength: 1000 },
     });
 
-    app.register(cookie, { secret: config.sessionSecret });
+    app.register(cookie);
     app.register(rateLimit, { global: false });
     app.decorateRequest('user', null);
 

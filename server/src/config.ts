@@ -1,6 +1,5 @@
 export interface Config {
     databaseUrl: string;
-    sessionSecret: string;
     /** interface the HTTP server listens on */
     host: string;
     port: number;
@@ -86,7 +85,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         databaseUrl:
             env.DATABASE_URL ??
             'postgres://qubdidb:qubdidb@localhost:5433/qubdidb',
-        sessionSecret: env.SESSION_SECRET ?? 'dev-secret-change-me',
         host: env.HOST ?? '0.0.0.0',
         port: Number(env.PORT ?? 3001),
         corsOrigin: env.CORS_ORIGIN ?? null,

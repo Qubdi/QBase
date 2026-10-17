@@ -64,7 +64,6 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `DATABASE_URL` | `postgres://qubdidb:qubdidb@localhost:5433/qubdidb` | Where QubdiDB stores its own data |
 | `HOST` | `0.0.0.0` | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
-| `SESSION_SECRET` | dev value | Set this in production |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
 | `CONNECTION_KEY` | unset | Encrypts saved database passwords (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default |
