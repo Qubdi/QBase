@@ -44,14 +44,7 @@ const TemplatesPageComponent: React.FC = () => {
                             </Link>
                         </div>
                     </div>
-                    <div className="flex flex-1 justify-end">
-                        <iframe
-                            src={`https://ghbtns.com/github-btn.html?user=qubdi&repo=qubdidb&type=star&size=large&text=false`}
-                            width="40"
-                            height="30"
-                            title="GitHub"
-                        ></iframe>
-                    </div>
+                    <div className="flex flex-1 justify-end" />
                 </nav>
                 <div className="flex flex-col p-3 text-center md:px-28 md:text-left">
                     <h1 className="font-primary text-2xl font-bold">
