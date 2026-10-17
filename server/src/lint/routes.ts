@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -65,7 +65,17 @@ export const lintRoutes =
             if (source === 'working' && !canWrite(role)) {
                 return reply.code(403).send({ error: 'forbidden' });
             }
-            const [d] = await db.select().from(diagrams).where(eq(diagrams.id, id));
+            // the working copy is the large column: read it only when it is linted
+            const [d] = await db
+                .select({
+                    lintConfig: diagrams.lintConfig,
+                    content:
+                        source === 'working'
+                            ? diagrams.content
+                            : sql<null>`null`,
+                })
+                .from(diagrams)
+                .where(eq(diagrams.id, id));
             let content: unknown = d.content;
             if (source === 'published') {
                 const snap = await latestSnapshot(db, id);
@@ -81,7 +91,10 @@ export const lintRoutes =
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
-            const [d] = await db.select().from(diagrams).where(eq(diagrams.id, id));
+            const [d] = await db
+                .select({ lintConfig: diagrams.lintConfig })
+                .from(diagrams)
+                .where(eq(diagrams.id, id));
             return normalizeConfig(d.lintConfig);
         });
 
