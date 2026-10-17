@@ -225,11 +225,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                                             );
                                                         setUrls((u) => ({
                                                             ...u,
-                                                            [l.id]: buildShareUrl(
-                                                                window.location
-                                                                    .origin,
-                                                                r.token
-                                                            ),
+                                                            [l.id]:
+                                                                buildShareUrl(
+                                                                    window
+                                                                        .location
+                                                                        .origin,
+                                                                    r.token
+                                                                ),
                                                         }));
                                                     })
                                                 }

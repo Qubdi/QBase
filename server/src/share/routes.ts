@@ -35,7 +35,7 @@ const createBody = z
         expiresAt: futureDate.nullable().optional(),
         live: z.boolean().default(false),
     })
-    .default({});
+    .default({ access: 'anyone', live: false });
 
 const patchBody = z
     .object({

@@ -875,10 +875,7 @@ export function normalizeConfig(raw: unknown): LintConfig {
             )
                 ? {
                       tables: n.tables as
-                          | 'consistent'
-                          | 'plural'
-                          | 'singular'
-                          | 'any',
+                          'consistent' | 'plural' | 'singular' | 'any',
                   }
                 : {}),
         };

@@ -379,7 +379,6 @@ export const RelationshipEdge: React.FC<EdgeProps<RelationshipEdgeType>> =
                         fill="none"
                         strokeOpacity={0}
                         strokeWidth={20}
-                        // eslint-disable-next-line tailwindcss/no-custom-classname
                         className="react-flow__edge-interaction"
                         onClick={handleEdgeClick}
                         onContextMenu={handleContextMenu}

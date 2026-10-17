@@ -21,12 +21,10 @@ const deferred = <T,>() => {
 
 describe('useCursorList', () => {
     it('loads the first page on mount, without a cursor', async () => {
-        const fetchPage = vi.fn(
-            async (): Promise<CursorPage<Row>> => ({
-                items: rows(3, 2, 1),
-                nextCursor: null,
-            })
-        );
+        const fetchPage = vi.fn(async (): Promise<CursorPage<Row>> => ({
+            items: rows(3, 2, 1),
+            nextCursor: null,
+        }));
         const { result } = renderHook(() => useCursorList(fetchPage, 'all'));
         expect(result.current.loading).toBe(true);
         await waitFor(() => expect(result.current.loading).toBe(false));

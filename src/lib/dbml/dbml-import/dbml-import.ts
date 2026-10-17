@@ -577,8 +577,7 @@ export const importDBMLToDiagram = async (
 
                                 // "columns" can be a string in some DBML versions
                                 const rawColumns = dbmlIndex.columns as
-                                    | string
-                                    | (string | { value: string })[];
+                                    string | (string | { value: string })[];
 
                                 // Handle both string and array formats
                                 if (typeof rawColumns === 'string') {

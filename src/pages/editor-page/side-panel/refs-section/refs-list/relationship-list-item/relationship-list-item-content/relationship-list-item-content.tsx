@@ -217,7 +217,9 @@ export const RelationshipListItemContent: React.FC<
 
                     <Select
                         value={relationshipType}
-                        onValueChange={updateCardinalities}
+                        onValueChange={(type) =>
+                            updateCardinalities(type as RelationshipType)
+                        }
                         disabled={readonly}
                     >
                         <SelectTrigger className="h-8">

@@ -142,12 +142,7 @@ export interface AdminShareLink {
 
 /** The kinds of action the Activity filter offers; the server defines them. */
 export type ActivityGroup =
-    | 'users'
-    | 'projects'
-    | 'diagrams'
-    | 'sharing'
-    | 'checks'
-    | 'comments';
+    'users' | 'projects' | 'diagrams' | 'sharing' | 'checks' | 'comments';
 
 /** One line of the audit log, with the names behind its ids (null when gone). */
 export interface ActivityItem {

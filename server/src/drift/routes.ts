@@ -41,8 +41,8 @@ const settingsBody = z.object({
     tables: z.array(z.string().max(400)).max(5000).default([]),
     sourceKeys: z
         .object({
-            tables: z.record(z.string()).default({}),
-            columns: z.record(z.string()).default({}),
+            tables: z.record(z.string(), z.string()).default({}),
+            columns: z.record(z.string(), z.string()).default({}),
         })
         .default({ tables: {}, columns: {} }),
     webhookUrl: z.string().trim().max(2000).nullable().default(null),

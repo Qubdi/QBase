@@ -129,9 +129,7 @@ const HIGHLIGHTED_EDGE_Z_INDEX = 1;
 const DEFAULT_EDGE_Z_INDEX = 0;
 
 export type EdgeType =
-    | RelationshipEdgeType
-    | DependencyEdgeType
-    | TempFloatingEdgeType;
+    RelationshipEdgeType | DependencyEdgeType | TempFloatingEdgeType;
 
 export type NodeType =
     | TableNodeType
@@ -1093,6 +1091,8 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
 
                 // Add visual changes to React Flow
                 changesToApply = [...changesToApply, ...additionalChanges];
+            }
+
             // Tables dropped on top of other tables slide to the nearest free
             // spot, all together when several were dragged
             const dropped = changesToApply.filter(
@@ -1144,8 +1144,6 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                             : change
                     );
                 }
-            }
-
             }
 
             // First, detect area changes
@@ -1399,9 +1397,9 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
             removeNote,
             readonly,
             tables,
-            getNodes,
             areas,
             getNode,
+            getNodes,
         ]
     );
 

@@ -23,7 +23,7 @@ const createBody = z.object({
 const updateBody = z.object({ body: text });
 const resolveBody = z
     .object({ resolved: z.boolean().default(true) })
-    .default({});
+    .default({ resolved: true });
 
 type CommentRow = typeof comments.$inferSelect;
 

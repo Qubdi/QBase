@@ -84,7 +84,8 @@ export const SelectDatabaseContent: React.FC<SelectDatabaseContentProps> = ({
             <div className="flex min-h-[280px] flex-col md:min-h-[370px]">
                 <ToggleGroup
                     value={databaseType}
-                    onValueChange={(value: DatabaseType) => {
+                    onValueChange={(raw: string) => {
+                        const value = raw as DatabaseType;
                         if (!value) {
                             setDatabaseType(DatabaseType.GENERIC);
                         } else {

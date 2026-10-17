@@ -18,10 +18,10 @@ import {
 
 const idParam = z.object({ id: z.string().uuid() });
 const lintQuery = z.object({ source: z.enum(['working', 'published']).default('working') });
-const configBody = z.object({ config: z.record(z.unknown()) });
+const configBody = z.object({ config: z.record(z.string(), z.unknown()) });
 const statelessBody = z.object({
-    diagram: z.record(z.unknown()),
-    config: z.record(z.unknown()).optional(),
+    diagram: z.record(z.string(), z.unknown()),
+    config: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** Largest diagram the stateless /lint route accepts, in bytes. */

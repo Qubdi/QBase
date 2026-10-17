@@ -325,9 +325,7 @@ function extractTablesFromAST(
                 typeof node.table === 'string'
             ) {
                 const rawSchema = (node.db || node.schema) as
-                    | string
-                    | null
-                    | undefined;
+                    string | null | undefined;
                 const tableName = node.table;
                 if (tableName) {
                     // Assign default schema if undefined

@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@config '../tailwind.config.js';
 
 @layer components {
     .react-flow.canvas-cursor-default .react-flow__pane {
@@ -18,7 +17,7 @@
     }
 
     .monaco-editor .monaco-editor-overlaymessage {
-        @apply hidden !important;
+        @apply hidden!;
     }
 
     .marker-definitions {
