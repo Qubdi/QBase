@@ -389,6 +389,9 @@ export const setSessionEndedHandler = (fn: (() => void) | null) => {
     sessionEndedHandler = fn;
 };
 
+/** How long any API request may take before it is given up. */
+export const REQUEST_TIMEOUT_MS = 30_000;
+
 /** Browsers cap the body of a keepalive request at 64 KiB. */
 export const KEEPALIVE_BODY_LIMIT = 60_000;
 
@@ -420,6 +423,8 @@ export function createApi(
                     ? {}
                     : { 'content-type': 'application/json' },
             body: json,
+            // one hung request must not stall autosave behind it
+            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
             // an oversized keepalive request would be rejected outright
             ...(options?.keepalive &&
             (json === undefined ? 0 : utf8Bytes(json)) <= KEEPALIVE_BODY_LIMIT

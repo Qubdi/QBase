@@ -60,6 +60,20 @@ describe('qubdi api client', () => {
         });
     });
 
+    it('gives every request a timeout signal so a hung one cannot stall saving', async () => {
+        const fetchMock = vi.fn(async () => jsonResponse(200, { ok: true }));
+        const api = createApi(
+            'http://srv',
+            fetchMock as unknown as typeof fetch
+        );
+        await api.logout();
+        const init = (
+            fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+        )[1];
+        expect(init.signal).toBeInstanceOf(AbortSignal);
+        expect(init.signal?.aborted).toBe(false);
+    });
+
     it('sends credentials and a JSON body', async () => {
         const fetchMock = vi.fn(async () =>
             jsonResponse(200, { id: '1', email: 'a@b.co', isAdmin: true })
