@@ -51,6 +51,27 @@ Existing items this rule also picks up: the `comments` table, its enum and its r
 used by the UI (the Comments panel was removed); decide whether to drop them or keep them
 (open question in the admin plan).
 
+## Backlog: share links
+
+Two small UI tasks. Nothing started yet. Neither touches the database.
+
+1. [ ] **The share-link table must look and sit exactly the same everywhere.** Today the editor's
+       Share dialog (`components/qubdi/share-dialog.tsx`, a list of bordered cards) and the admin
+       Diagrams "Share links" dialog (`pages/admin-page/diagram-links-dialog.tsx`) show the same links
+       in different layouts. Make the table, its columns, its order and its position the same in both
+       (one shared component is the safe way), light and dark, desktop and phone.
+2. [ ] **Every revoked link reads just "Revoked link".** In the Share dialog all revoked links show the
+       same grey text, so you cannot tell them apart (and the Activity line says only "revoked a share
+       link of <diagram>", `lib/qubdi/activity.ts`, action `share.revoke`). Say which link: for example
+       when it was made and by whom, its access, and when it was revoked. The audit row already has
+       `meta.linkId` and `meta.access`.
+
+Open questions:
+
+- [ ] Task 1: which two screens must match, exactly? (Reading: the editor's Share dialog and the admin
+      "Share links" dialog.) A screenshot of the one to copy would settle it.
+- [ ] Task 2: is it the Share dialog list, the Activity log, or both?
+
 ## Backlog: real-time co-editing
 
 Several people edit the same diagram at the same time and see each other's changes live. This is
