@@ -30,4 +30,5 @@ jobs:
           path-to-document: 'https://github.com/qubdi/qubdidb/blob/main/CLA.md'
           # branch should not be protected
           branch: 'main'
-          allowlist: 
+          # bots cannot sign a CLA; comma-separated GitHub logins
+          allowlist: 'dependabot[bot]'
