@@ -39,8 +39,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # `npm run build` lints again first; the Lint step above already did
       - name: Build project
-        run: npm run build
+        run: npx tsc -b && npx vite build
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
