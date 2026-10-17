@@ -48,6 +48,12 @@ export const LEFT_HANDLE_ID_PREFIX = 'left_rel_';
 export const RIGHT_HANDLE_ID_PREFIX = 'right_rel_';
 export const TARGET_ID_PREFIX = 'target_rel_';
 
+// The dot that starts a relationship, on both edges of the hovered row. A
+// hollow ring that fills and grows under the pointer; the invisible ring around
+// it makes it easy to grab.
+const CONNECT_HANDLE_CLASS =
+    '!size-3 !rounded-full !border-2 !border-primary !bg-card !shadow-sm !transition-all !duration-150 !cursor-crosshair hover:!scale-150 hover:!bg-primary hover:!shadow-[0_0_0_4px_hsl(var(--primary)/0.2)] after:absolute after:-inset-2 after:content-[""]';
+
 export interface TableNodeFieldProps {
     tableNodeId: string;
     field: DBField;
@@ -416,6 +422,9 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                             isCustomTypeHighlighted,
                         'max-h-8 opacity-100': visible,
                         'z-0 max-h-0 overflow-hidden opacity-0': !visible,
+                        // while a relationship is being dragged, the rows it
+                        // can end on light up
+                        'bg-primary/5 hover:bg-primary/20': !!isTarget,
                         'bg-sky-200 dark:bg-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900 border-sky-300 dark:border-sky-700':
                             isDiffFieldChanged &&
                             !isSummaryOnly &&
@@ -432,13 +441,21 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                     <>
                         <Handle
                             id={`${RIGHT_HANDLE_ID_PREFIX}${field.id}`}
-                            className={`!h-4 !w-4 !border-2 !bg-teal-600 ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
+                            className={cn(
+                                CONNECT_HANDLE_CLASS,
+                                (!focused || readonly || isTargetFromView) &&
+                                    '!pointer-events-none !opacity-0'
+                            )}
                             position={Position.Right}
                             type="source"
                         />
                         <Handle
                             id={`${LEFT_HANDLE_ID_PREFIX}${field.id}`}
-                            className={`!h-4 !w-4 !border-2 !bg-teal-600 ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
+                            className={cn(
+                                CONNECT_HANDLE_CLASS,
+                                (!focused || readonly || isTargetFromView) &&
+                                    '!pointer-events-none !opacity-0'
+                            )}
                             position={Position.Left}
                             type="source"
                         />
