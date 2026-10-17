@@ -182,7 +182,7 @@ They apply when a password is **set**, never when it is checked at sign-in.
 
 ### Steps (tick when shipped, note the commit)
 
-1. [ ] **`checkPassword` in `shared/`**, with tests for every rule and the Unicode cases.
+1. [x] **`checkPassword` in `shared/password.ts`**, with tests for every rule and the Unicode cases. A part before the @ shorter than 3 characters is not compared (it would match almost anything). "Not the same as the current password" is checked by the server, which has the hash.
 2. [ ] **Server:** split the schemas, use them in the four places, the error shape; update the test
        helpers to a compliant password.
 3. [ ] **Client:** `PasswordField` with the checklist in the four dialogs.
