@@ -321,3 +321,56 @@ describe('auth throttling', () => {
         }
     });
 });
+
+describe('session cookie flags', () => {
+    const cookieOf = async (
+        overrides: Parameters<typeof createTestApp>[0],
+        headers: Record<string, string> = {}
+    ) => {
+        const ctx = await createTestApp(overrides);
+        try {
+            const res = await ctx.app.inject({
+                method: 'POST',
+                url: '/auth/register',
+                headers,
+                payload: { email: 'a@example.com', password: 'password123' },
+            });
+            return String(res.headers['set-cookie']);
+        } finally {
+            await ctx.close();
+        }
+    };
+
+    it('is httpOnly and SameSite=Lax, and not Secure on plain http by default', async () => {
+        const cookie = await cookieOf({});
+        expect(cookie).toMatch(/HttpOnly/i);
+        expect(cookie).toMatch(/SameSite=Lax/i);
+        expect(cookie).not.toMatch(/Secure/i);
+    });
+
+    it('is Secure when forced on', async () => {
+        expect(await cookieOf({ cookieSecure: true })).toMatch(/Secure/i);
+    });
+
+    it('is never Secure when forced off, even over https', async () => {
+        const cookie = await cookieOf(
+            { cookieSecure: false, trustProxy: true },
+            { 'x-forwarded-proto': 'https' }
+        );
+        expect(cookie).not.toMatch(/Secure/i);
+    });
+
+    it('follows the forwarded protocol in auto mode behind a trusted proxy', async () => {
+        const behind = await cookieOf(
+            { cookieSecure: 'auto', trustProxy: true },
+            { 'x-forwarded-proto': 'https' }
+        );
+        expect(behind).toMatch(/Secure/i);
+        // without trust, a client-supplied header must not switch it on
+        const spoofed = await cookieOf(
+            { cookieSecure: 'auto', trustProxy: false },
+            { 'x-forwarded-proto': 'https' }
+        );
+        expect(spoofed).not.toMatch(/Secure/i);
+    });
+});

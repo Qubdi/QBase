@@ -69,6 +69,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `CONNECTION_KEY` | unset | Encrypts saved database passwords (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default |
 | `SHARE_RATE_LIMIT` | `60` | Public share requests per minute per IP |
+| `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`) |
 | `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
 | `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) before an account is locked |
 | `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |

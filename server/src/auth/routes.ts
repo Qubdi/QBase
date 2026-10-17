@@ -56,6 +56,11 @@ export const authRoutes =
             return true;
         };
 
+        const cookieSecure = (req: FastifyRequest) =>
+            config.cookieSecure === 'auto'
+                ? req.protocol === 'https'
+                : config.cookieSecure;
+
         const startSession = async (
             req: FastifyRequest,
             reply: FastifyReply,
@@ -71,6 +76,7 @@ export const authRoutes =
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
+                secure: cookieSecure(req),
                 expires: expiresAt,
             });
         };
@@ -146,7 +152,10 @@ export const authRoutes =
 
         app.post('/logout', async (req, reply) => {
             await destroySession(db, req.cookies[SESSION_COOKIE]);
-            reply.clearCookie(SESSION_COOKIE, { path: '/' });
+            reply.clearCookie(SESSION_COOKIE, {
+                path: '/',
+                secure: cookieSecure(req),
+            });
             return { ok: true };
         });
 

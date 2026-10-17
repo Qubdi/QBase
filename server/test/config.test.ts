@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadConfig, parseTrustProxy } from '../src/config.js';
+import { loadConfig, parseCookieSecure, parseTrustProxy } from '../src/config.js';
 
 describe('parseTrustProxy', () => {
     it('trusts nothing by default', () => {
@@ -19,5 +19,16 @@ describe('parseTrustProxy', () => {
 
     it('is part of the loaded config', () => {
         expect(loadConfig({ TRUST_PROXY: '1' }).trustProxy).toBe(1);
+    });
+});
+
+describe('parseCookieSecure', () => {
+    it('reads true and false, and falls back to auto', () => {
+        expect(parseCookieSecure('true')).toBe(true);
+        expect(parseCookieSecure(' FALSE ')).toBe(false);
+        expect(parseCookieSecure(undefined)).toBe('auto');
+        expect(parseCookieSecure('')).toBe('auto');
+        expect(parseCookieSecure('auto')).toBe('auto');
+        expect(parseCookieSecure('yes')).toBe('auto');
     });
 });
