@@ -534,11 +534,6 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                             backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${tableColor} 20%, transparent), color-mix(in srgb, ${tableColor} 6%, transparent))`,
                         }}
                     >
-                        <span
-                            aria-hidden
-                            className="absolute bottom-2.5 left-0 top-2.5 w-[3px] rounded-r-sm"
-                            style={{ backgroundColor: tableColor }}
-                        />
                         {isDiffNewTable || isDiffTableRemoved ? (
                             <Tooltip>
                                 <TooltipTrigger asChild>
