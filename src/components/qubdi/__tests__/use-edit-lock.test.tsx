@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { registerFinalFlush } from '@/lib/qubdi/save-status-store';
 import { reportLockLost } from '@/lib/qubdi/lock-lost';
 import { LOCK_HEARTBEAT_MS, useEditLock } from '../use-edit-lock';
 
@@ -117,6 +118,7 @@ describe('useEditLock', () => {
             const { unmount } = renderHook(() => useEditLock('r1'));
             await tick();
             unmount();
+            await tick();
             expect(release).toHaveBeenCalledWith('r1', 'tab-1', {
                 keepalive: true,
             });
@@ -129,9 +131,30 @@ describe('useEditLock', () => {
             renderHook(() => useEditLock('r1'));
             await tick();
             window.dispatchEvent(new Event('pagehide'));
+            await tick();
             expect(release).toHaveBeenCalledTimes(1);
             window.dispatchEvent(new Event('pagehide'));
+            await tick();
             expect(release).toHaveBeenCalledTimes(1);
+        });
+
+        it('lets go only after the final save has settled', async () => {
+            acquire.mockResolvedValue(held);
+            let finish!: () => void;
+            const flush = vi.fn(
+                () => new Promise<void>((resolve) => (finish = resolve))
+            );
+            registerFinalFlush(flush);
+            renderHook(() => useEditLock('r1'));
+            await tick();
+            window.dispatchEvent(new Event('pagehide'));
+            await tick();
+            expect(flush).toHaveBeenCalledTimes(1);
+            expect(release).not.toHaveBeenCalled();
+            finish();
+            await tick();
+            expect(release).toHaveBeenCalledTimes(1);
+            registerFinalFlush(null);
         });
     });
 
@@ -160,11 +183,11 @@ describe('useEditLock', () => {
         await tick();
         expect(result.current.status).toBe('held');
         rerender({ id: 'r2' });
+        expect(result.current).toEqual({ status: 'checking' });
+        await tick();
         expect(release).toHaveBeenCalledWith('r1', 'tab-1', {
             keepalive: true,
         });
-        expect(result.current).toEqual({ status: 'checking' });
-        await tick();
         expect(result.current).toEqual({
             status: 'taken',
             holder: 'sam@corp.io',

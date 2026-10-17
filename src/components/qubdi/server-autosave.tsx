@@ -16,9 +16,11 @@ import {
 import type { Diagram } from '@/lib/domain/diagram';
 import { createRevisionTracker } from '@/lib/qubdi/revision';
 import {
+    registerFinalFlush,
     registerSaveDiscard,
     resetSaveStatus,
     setSaveStatus,
+    trackFinalSave,
     useSaveStatus,
 } from '@/lib/qubdi/save-status-store';
 import { useDiagramAccess } from './diagram-access-context';
@@ -139,11 +141,15 @@ export const ServerAutosave: React.FC = () => {
         registerSaveDiscard(() => saver.discard());
         const flushOnLeave = () => {
             leavingRef.current = true;
-            void saver.flush();
+            const sent = saver.flush();
+            trackFinalSave(sent);
+            return sent;
         };
+        registerFinalFlush(flushOnLeave);
         // the page may come back from the back/forward cache
         const resumed = () => {
             leavingRef.current = false;
+            registerFinalFlush(flushOnLeave);
         };
         window.addEventListener('pagehide', flushOnLeave);
         window.addEventListener('pageshow', resumed);
@@ -152,8 +158,11 @@ export const ServerAutosave: React.FC = () => {
             window.removeEventListener('pagehide', flushOnLeave);
             window.removeEventListener('pageshow', resumed);
             // leaving the diagram: send what is still pending
-            void saver.flush().finally(() => saver.dispose());
+            const sent = saver.flush();
+            trackFinalSave(sent);
+            void sent.finally(() => saver.dispose());
             saverRef.current = null;
+            registerFinalFlush(null);
             registerSaveDiscard(null);
             resetSaveStatus();
         };

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { LockState } from '@/lib/qubdi/access';
 import { api } from '@/lib/qubdi/api';
 import { getEditorId } from '@/lib/qubdi/editor-id';
+import { settleFinalSave } from '@/lib/qubdi/save-status-store';
 import { onLockLost } from '@/lib/qubdi/lock-lost';
 
 /** How often the open editor renews its lock; the server's lasts 90 seconds. */
@@ -54,9 +55,12 @@ export function useEditLock(remoteId: string | undefined): LockState {
         const release = () => {
             if (!held) return;
             held = false;
-            void api
-                .releaseLock(remoteId, editorId, { keepalive: true })
-                .catch(() => undefined);
+            // after the final save, which would otherwise take the lock back
+            void settleFinalSave().then(() =>
+                api
+                    .releaseLock(remoteId, editorId, { keepalive: true })
+                    .catch(() => undefined)
+            );
         };
 
         // a save was refused with 423: the lock is someone else's now
