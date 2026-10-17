@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import {
     auditLog,
@@ -15,6 +15,7 @@ import {
     purgeExpiredLocks,
     purgeAuditLog,
     purgeExpiredSessions,
+    startMaintenance,
 } from '../src/maintenance.js';
 import { createTestApp, registerUser, type TestCtx } from './helpers.js';
 
@@ -176,6 +177,48 @@ describe('maintenance', () => {
                 'hash-revoked-recent',
             ]);
             expect(await purgeDeadLinks(ctx.db, 0, now)).toBe(0);
+        });
+    });
+
+    describe('startMaintenance', () => {
+        const config = {
+            auditRetentionDays: 0,
+            snapshotKeep: 0,
+            driftReportKeep: 0,
+            deadLinkKeepDays: 0,
+        };
+        const expired = (id: string) => ({
+            id,
+            userId,
+            expiresAt: new Date(Date.now() - 1000),
+        });
+        const left = async () =>
+            (await ctx.db.select().from(sessions)).map((s) => s.id);
+
+        it('cleans up at once, again on every interval, and stops when told', async () => {
+            await ctx.db.delete(sessions);
+            await ctx.db.insert(sessions).values(expired('first'));
+            const stop = startMaintenance({ db: ctx.db, config }, 25);
+            // the first run is immediate
+            await vi.waitFor(async () => expect(await left()).toEqual([]));
+            // a later interval picks up new work
+            await ctx.db.insert(sessions).values(expired('second'));
+            await vi.waitFor(async () => expect(await left()).toEqual([]));
+
+            await stop();
+            // after stop() resolves nothing runs any more
+            await ctx.db.insert(sessions).values(expired('third'));
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            expect(await left()).toEqual(['third']);
+        });
+
+        it('lets the first run finish, then never runs again after an immediate stop', async () => {
+            await ctx.db.delete(sessions);
+            const stop = startMaintenance({ db: ctx.db, config }, 60_000);
+            await stop();
+            await ctx.db.insert(sessions).values(expired('late'));
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            expect(await left()).toEqual(['late']);
         });
     });
 });
