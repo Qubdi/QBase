@@ -108,6 +108,23 @@ describe('introspect HTTP layer (fake driver)', () => {
         }
     });
 
+    it('keeps inline connections for people who may write in a project', async () => {
+        const viewer = await registerUser(ctx.app, 'inline-viewer@example.com');
+        await grant(ctx.app, viewer, 'viewer');
+        const nobody = await registerUser(ctx.app, 'inline-nobody@example.com');
+        const before = calls.length;
+        for (const who of [viewer, nobody]) {
+            for (const url of ['/introspect/catalog', '/introspect']) {
+                const res = await post(who, url, { connection: conn() });
+                expect(res.statusCode, `${who.email} ${url}`).toBe(403);
+            }
+        }
+        // nothing was opened for them
+        expect(calls.length).toBe(before);
+        expect((await post(bob, '/introspect/catalog', { connection: conn() })).statusCode).toBe(200);
+        expect((await post(alice, '/introspect/catalog', { connection: conn() })).statusCode).toBe(200);
+    });
+
     it('returns the catalog and closes the connection afterwards', async () => {
         const before = calls.length;
         const res = await post(alice, '/introspect/catalog', { connection: conn() });
@@ -205,6 +222,7 @@ describe('introspect HTTP layer (fake driver)', () => {
             );
             try {
                 const u = await registerUser(leaky.app, 'leaky@example.com');
+                await grant(leaky.app, u, 'editor');
                 const res = await leaky.app.inject({
                     method: 'POST',
                     url: '/introspect/catalog',
@@ -274,6 +292,7 @@ describe('introspect HTTP layer (fake driver)', () => {
             );
             try {
                 const u = await registerUser(allowed.app, 'allowed@example.com');
+                await grant(allowed.app, u, 'editor');
                 const res = await allowed.app.inject({
                     method: 'POST',
                     url: '/introspect/catalog',
@@ -599,6 +618,7 @@ describe('introspect end to end against the real sample database', () => {
         const blocked = await createTestApp({}, { factory: defaultIntrospectorFactory }, false);
         try {
             const u = await registerUser(blocked.app, 'blocked@example.com');
+            await grant(blocked.app, u, 'editor');
             const res = await blocked.app.inject({
                 method: 'POST',
                 url: '/introspect/catalog',

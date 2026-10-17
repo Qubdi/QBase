@@ -5,7 +5,11 @@ import type { Config } from '../config.js';
 import type { RequestHook } from '../lib/rate-key.js';
 import type { Db } from '../db/client.js';
 import { driftSettings, savedConnections } from '../db/schema.js';
-import { canWrite, getProjectRole } from '../diagrams/permissions.js';
+import {
+    canWrite,
+    canWriteAnywhere,
+    getProjectRole,
+} from '../diagrams/permissions.js';
 import { CryptoBox } from './crypto-box.js';
 import { filterMetadata } from './filter.js';
 import {
@@ -131,6 +135,12 @@ export const introspectRoutes =
             reply: FastifyReply
         ): Promise<ConnectionParams | null> => {
             if ('connection' in body) {
+                // opening a connection to any host the guard allows is a
+                // writer's tool: viewers and project-less accounts may not
+                if (!(await canWriteAnywhere(db, userId))) {
+                    reply.code(403).send({ error: 'forbidden' });
+                    return null;
+                }
                 const c = body.connection;
                 return {
                     ...c,

@@ -32,6 +32,34 @@ export async function getRole(
     return getProjectRole(db, projectId, userId);
 }
 
+/**
+ * Whether a user may write in at least one project: an admin, or a member
+ * with the editor role somewhere. Viewers and users without any
+ * project may not.
+ */
+export async function canWriteAnywhere(
+    db: Db,
+    userId: string
+): Promise<boolean> {
+    const [user] = await db
+        .select({ isAdmin: users.isAdmin })
+        .from(users)
+        .where(eq(users.id, userId));
+    if (!user) return false;
+    if (user.isAdmin) return true;
+    const rows = await db
+        .select({ projectId: projectMembers.projectId })
+        .from(projectMembers)
+        .where(
+            and(
+                eq(projectMembers.userId, userId),
+                eq(projectMembers.role, 'editor')
+            )
+        )
+        .limit(1);
+    return rows.length > 0;
+}
+
 /** Admins are owners of every project; others get their granted role. */
 export async function getProjectRole(
     db: Db,
