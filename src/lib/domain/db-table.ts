@@ -530,7 +530,7 @@ export const calcTableHeight = (table?: DBTable): number => {
 
     const FIELD_HEIGHT = 32; // h-8 per field
     const TABLE_FOOTER_HEIGHT = 32; // h-8 for show more button
-    const TABLE_HEADER_HEIGHT = 42;
+    const TABLE_HEADER_HEIGHT = 50; // h-12 header plus the card border
     // Calculate how many fields are visible
     const fieldCount = table.fields.length;
     let visibleFieldCount = fieldCount;
