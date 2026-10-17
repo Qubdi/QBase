@@ -42,6 +42,15 @@ describe('qubdi api client', () => {
             expect(init.keepalive).toBeUndefined();
         });
 
+        it('counts bytes, not characters, against the limit', async () => {
+            // 30,000 Georgian letters are 30,000 characters but 90,000 bytes
+            const init = await run(
+                { text: 'ა'.repeat(30_000) },
+                { keepalive: true }
+            );
+            expect(init.keepalive).toBeUndefined();
+        });
+
         it('drops keepalive for a body over the browser limit', async () => {
             const init = await run(
                 { big: 'x'.repeat(KEEPALIVE_BODY_LIMIT) },

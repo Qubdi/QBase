@@ -392,6 +392,10 @@ export const setSessionEndedHandler = (fn: (() => void) | null) => {
 /** Browsers cap the body of a keepalive request at 64 KiB. */
 export const KEEPALIVE_BODY_LIMIT = 60_000;
 
+// the browser's cap counts bytes; `string.length` counts UTF-16 units, which
+// is a third of the bytes for Georgian and other non-Latin text
+const utf8Bytes = (text: string) => new TextEncoder().encode(text).length;
+
 export interface RequestOptions {
     /** Let the request finish even if the page is closing (small bodies only). */
     keepalive?: boolean;
@@ -418,7 +422,7 @@ export function createApi(
             body: json,
             // an oversized keepalive request would be rejected outright
             ...(options?.keepalive &&
-            (json?.length ?? 0) <= KEEPALIVE_BODY_LIMIT
+            (json === undefined ? 0 : utf8Bytes(json)) <= KEEPALIVE_BODY_LIMIT
                 ? { keepalive: true }
                 : {}),
         });
