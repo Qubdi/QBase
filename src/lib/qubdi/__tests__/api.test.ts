@@ -436,4 +436,71 @@ describe('qubdi api client', () => {
         );
         expect(errorMessage(new TypeError('network'))).toMatch(/reach/i);
     });
+
+    describe('adminExportActivity', () => {
+        const csvResponse = (headers: Record<string, string> = {}) =>
+            new Response('a,b\r\n', {
+                status: 200,
+                headers: { 'content-type': 'text/csv', ...headers },
+            });
+
+        it('asks for the filters, without a page or cursor, and sends the cookie', async () => {
+            const fetchMock = vi.fn(async () => csvResponse());
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            await api.adminExportActivity({
+                group: 'sharing',
+                userId: 'u1',
+                from: '2026-03-01T00:00:00.000Z',
+                saves: 'hide',
+            });
+            const [url, init] = fetchMock.mock.calls[0] as unknown as [
+                string,
+                RequestInit,
+            ];
+            expect(url.startsWith('http://srv/admin/audit/export?')).toBe(true);
+            const query = new URL(url).searchParams;
+            expect(query.get('group')).toBe('sharing');
+            expect(query.get('userId')).toBe('u1');
+            expect(query.get('saves')).toBe('hide');
+            expect(query.has('limit')).toBe(false);
+            expect(query.has('cursor')).toBe(false);
+            expect(init.credentials).toBe('include');
+        });
+
+        it('gives back the file with its row count and whether it was cut short', async () => {
+            const fetchMock = vi.fn(async () =>
+                csvResponse({ 'x-row-count': '50000', 'x-truncated': 'true' })
+            );
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            const result = await api.adminExportActivity();
+            expect(result.rows).toBe(50000);
+            expect(result.truncated).toBe(true);
+            expect(await result.blob.text()).toBe('a,b\r\n');
+        });
+
+        it('treats missing headers as an uncut file of unknown size', async () => {
+            const api = createApi('http://srv', (async () =>
+                csvResponse()) as unknown as typeof fetch);
+            const result = await api.adminExportActivity();
+            expect(result.rows).toBe(0);
+            expect(result.truncated).toBe(false);
+        });
+
+        it('throws the server error, not a file, when refused', async () => {
+            const api = createApi('http://srv', (async () =>
+                jsonResponse(404, {
+                    error: 'not_found',
+                })) as unknown as typeof fetch);
+            await expect(api.adminExportActivity()).rejects.toMatchObject({
+                status: 404,
+                code: 'not_found',
+            });
+        });
+    });
 });

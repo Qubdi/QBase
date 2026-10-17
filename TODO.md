@@ -300,7 +300,6 @@ Left for later, from the shipped steps:
 Open questions:
 
 - [ ] Should admins be able to release a stuck editing lock from the Diagrams section?
-- [ ] Should the Activity list be exportable (CSV)?
 - [ ] The old comments feature: the `comments` table, its enum and the server routes are no longer
       used by the editor. Drop them (a migration, after exporting any stored comments), or keep
       them for the read-only share viewer?

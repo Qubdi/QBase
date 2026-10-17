@@ -36,6 +36,7 @@ export const AUDIT_ACTIONS = [
     'drift.check',
     'drift.dismiss',
     'lint.configure',
+    'audit.export',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -52,6 +53,8 @@ export const AUDIT_GROUPS = {
     diagrams: ['diagram.'],
     sharing: ['share.'],
     checks: ['drift.', 'lint.'],
+    // an admin took a copy of the log
+    exports: ['audit.'],
     comments: ['comment.'],
 } as const satisfies Record<string, readonly string[]>;
 
@@ -84,6 +87,8 @@ export interface AuditMeta {
     access?: 'anyone' | 'signed_in' | 'off';
     /** the project's name or the diagram's title, for when it no longer exists */
     name?: string;
+    /** audit.export: how many rows the file held */
+    rows?: number;
     /** user.update: what the admin changed */
     changed?: ('password' | 'isAdmin' | 'isActive')[];
 }

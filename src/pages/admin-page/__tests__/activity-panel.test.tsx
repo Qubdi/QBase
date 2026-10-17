@@ -13,12 +13,25 @@ import { ActivityPanel } from '../activity-panel';
 
 const adminListActivity = vi.fn();
 const adminListUsers = vi.fn();
+const adminExportActivity = vi.fn();
 vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     api: {
         adminListActivity: (...a: unknown[]) => adminListActivity(...a),
         adminListUsers: (...a: unknown[]) => adminListUsers(...a),
+        adminExportActivity: (...a: unknown[]) => adminExportActivity(...a),
     },
+}));
+
+const saveBlob = vi.fn();
+vi.mock('@/lib/qubdi/save-blob', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    saveBlob: (...a: unknown[]) => saveBlob(...a),
+}));
+
+const toast = vi.fn();
+vi.mock('@/components/toast/use-toast', () => ({
+    useToast: () => ({ toast }),
 }));
 
 // Radix Select and Popover expect pointer and scroll APIs that happy-dom lacks
@@ -70,6 +83,9 @@ describe('ActivityPanel', () => {
     beforeEach(() => {
         adminListActivity.mockReset();
         adminListUsers.mockReset();
+        adminExportActivity.mockReset();
+        saveBlob.mockReset();
+        toast.mockReset();
         adminListActivity.mockResolvedValue(
             page([
                 entry(3),
@@ -335,5 +351,118 @@ describe('ActivityPanel', () => {
         expect((await screen.findByRole('alert')).textContent).toMatch(
             /reach/i
         );
+    });
+
+    describe('Export CSV', () => {
+        const exportButton = () =>
+            screen.getByRole('button', { name: /Export CSV|Exporting/ });
+        const sentToExport = (): Record<string, unknown> =>
+            adminExportActivity.mock.calls.at(-1)![0] as Record<
+                string,
+                unknown
+            >;
+
+        it('saves the file the server makes, named for today, and says how many rows', async () => {
+            adminExportActivity.mockResolvedValue({
+                blob: new Blob(['x']),
+                rows: 42,
+                truncated: false,
+            });
+            render(<ActivityPanel />);
+            await screen.findAllByText('Orders', { exact: false });
+            fireEvent.click(exportButton());
+            await waitFor(() => expect(saveBlob).toHaveBeenCalledTimes(1));
+            expect(saveBlob.mock.calls[0][1]).toMatch(
+                /^qubdidb-activity-\d{4}-\d{2}-\d{2}\.csv$/
+            );
+            expect(toast).toHaveBeenCalledWith({
+                title: 'Activity exported',
+                description: '42 rows saved as CSV.',
+            });
+        });
+
+        it('exports what the filters say, not only what is loaded, with saves left out by default', async () => {
+            adminExportActivity.mockResolvedValue({
+                blob: new Blob(['x']),
+                rows: 1,
+                truncated: false,
+            });
+            render(<ActivityPanel />);
+            await screen.findAllByText('Orders', { exact: false });
+            await pick('Kind of activity', 'Share links');
+            fireEvent.change(screen.getByLabelText('From'), {
+                target: { value: '2026-03-01' },
+            });
+            fireEvent.click(exportButton());
+            await waitFor(() => expect(adminExportActivity).toHaveBeenCalled());
+            expect(sentToExport()).toMatchObject({
+                group: 'sharing',
+                from: startOfDay('2026-03-01'),
+                saves: 'hide',
+            });
+            expect(sentToExport()).not.toHaveProperty('limit');
+            expect(sentToExport()).not.toHaveProperty('cursor');
+        });
+
+        it('exports the saves too once they are shown', async () => {
+            adminExportActivity.mockResolvedValue({
+                blob: new Blob(['x']),
+                rows: 1,
+                truncated: false,
+            });
+            render(<ActivityPanel />);
+            await screen.findAllByText('Orders', { exact: false });
+            fireEvent.click(screen.getByLabelText('Show every save'));
+            fireEvent.click(exportButton());
+            await waitFor(() => expect(adminExportActivity).toHaveBeenCalled());
+            expect(sentToExport().saves).toBe('show');
+        });
+
+        it('says when more rows matched than one file holds', async () => {
+            adminExportActivity.mockResolvedValue({
+                blob: new Blob(['x']),
+                rows: 50000,
+                truncated: true,
+            });
+            render(<ActivityPanel />);
+            await screen.findAllByText('Orders', { exact: false });
+            fireEvent.click(exportButton());
+            await waitFor(() => expect(toast).toHaveBeenCalled());
+            expect(toast.mock.calls[0][0].description).toMatch(
+                /newest 50000 rows.*narrow the dates/
+            );
+        });
+
+        it('shows why it failed and saves nothing', async () => {
+            const { ApiError } = await import('@/lib/qubdi/api');
+            adminExportActivity.mockRejectedValue(
+                new ApiError(404, 'not_found')
+            );
+            render(<ActivityPanel />);
+            await screen.findAllByText('Orders', { exact: false });
+            fireEvent.click(exportButton());
+            expect(await screen.findByRole('alert')).toBeTruthy();
+            expect(saveBlob).not.toHaveBeenCalled();
+            // and it can be tried again
+            expect((exportButton() as HTMLButtonElement).disabled).toBe(false);
+        });
+
+        it('cannot be pressed twice while it is working', async () => {
+            let finish: (v: unknown) => void = () => undefined;
+            adminExportActivity.mockReturnValue(
+                new Promise((resolve) => (finish = resolve))
+            );
+            render(<ActivityPanel />);
+            await screen.findAllByText('Orders', { exact: false });
+            fireEvent.click(exportButton());
+            await waitFor(() =>
+                expect((exportButton() as HTMLButtonElement).disabled).toBe(
+                    true
+                )
+            );
+            expect(exportButton().textContent).toContain('Exporting');
+            finish({ blob: new Blob(['x']), rows: 1, truncated: false });
+            await waitFor(() => expect(saveBlob).toHaveBeenCalledTimes(1));
+        });
     });
 });

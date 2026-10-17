@@ -143,7 +143,13 @@ export interface AdminShareLink {
 
 /** The kinds of action the Activity filter offers; the server defines them. */
 export type ActivityGroup =
-    'users' | 'projects' | 'diagrams' | 'sharing' | 'checks' | 'comments';
+    | 'users'
+    | 'projects'
+    | 'diagrams'
+    | 'sharing'
+    | 'checks'
+    | 'comments'
+    | 'exports';
 
 /** One line of the audit log, with the names behind its ids (null when gone). */
 export interface ActivityItem {
@@ -167,6 +173,8 @@ export interface ActivityItem {
         changed?: ('password' | 'isAdmin' | 'isActive')[];
         /** a saved connection's name, for the connection actions */
         name?: string;
+        /** audit.export: how many rows the file held */
+        rows?: number;
     } | null;
 }
 
@@ -559,6 +567,38 @@ export function createApi(
                     }
                 )}`
             ),
+        /**
+         * The activity log as a CSV file, for the same filters as the list.
+         * `truncated` means more rows matched than one file holds.
+         */
+        adminExportActivity: async (
+            params: Omit<ActivityParams, 'limit' | 'cursor'> = {}
+        ): Promise<{ blob: Blob; rows: number; truncated: boolean }> => {
+            const res = await fetchImpl(
+                `${baseUrl}/admin/audit/export${listQuery(undefined, {
+                    group: params.group,
+                    userId: params.userId,
+                    diagramId: params.diagramId,
+                    from: params.from,
+                    to: params.to,
+                    saves: params.saves,
+                })}`,
+                {
+                    credentials: 'include',
+                    // a long log takes a while to read
+                    signal: AbortSignal.timeout(120_000),
+                }
+            );
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new ApiError(res.status, data?.error ?? 'request_failed');
+            }
+            return {
+                blob: await res.blob(),
+                rows: Number(res.headers.get('x-row-count') ?? 0),
+                truncated: res.headers.get('x-truncated') === 'true',
+            };
+        },
         adminListProjects: (params?: ListParams) =>
             request<Page<AdminProject>>(
                 'GET',

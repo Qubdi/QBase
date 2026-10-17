@@ -93,6 +93,11 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
                 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
             );
             reply.header('access-control-allow-headers', 'content-type');
+            // the editor reads these from the activity export
+            reply.header(
+                'access-control-expose-headers',
+                'x-row-count,x-truncated,content-disposition'
+            );
             reply.header('vary', 'origin');
             if (req.method === 'OPTIONS') {
                 return reply.code(204).send();

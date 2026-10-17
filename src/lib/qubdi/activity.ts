@@ -13,6 +13,7 @@ export const ACTIVITY_GROUP_OPTIONS: {
     { value: 'sharing', label: 'Share links' },
     { value: 'checks', label: 'Database drift and lint' },
     { value: 'comments', label: 'Comments' },
+    { value: 'exports', label: 'Exports' },
 ];
 
 /**
@@ -214,6 +215,15 @@ export function describeActivity(item: ActivityItem): Segment[] {
             return [who, text(' dismissed the database drift of '), diagram];
         case 'lint.configure':
             return [who, text(' changed the lint settings of '), diagram];
+        case 'audit.export':
+            return [
+                who,
+                text(
+                    meta?.rows === undefined
+                        ? ' exported the activity log'
+                        : ` exported the activity log (${meta.rows} ${meta.rows === 1 ? 'row' : 'rows'})`
+                ),
+            ];
 
         default:
             // an action a newer server added: say it rather than hide it

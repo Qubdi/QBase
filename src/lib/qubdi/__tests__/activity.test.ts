@@ -294,6 +294,18 @@ describe('describeActivity', () => {
         ])('%s', (action, expected) => {
             expect(sentence({ action })).toBe(expected);
         });
+
+        it('audit.export says how many rows the file held', () => {
+            expect(
+                sentence({ action: 'audit.export', meta: { rows: 120 } })
+            ).toBe('anna@corp.io exported the activity log (120 rows)');
+            expect(
+                sentence({ action: 'audit.export', meta: { rows: 1 } })
+            ).toBe('anna@corp.io exported the activity log (1 row)');
+            expect(sentence({ action: 'audit.export' })).toBe(
+                'anna@corp.io exported the activity log'
+            );
+        });
     });
 
     it('shows an action it has no wording for rather than hiding the row', () => {
@@ -313,6 +325,7 @@ describe('the filter options', () => {
             'sharing',
             'checks',
             'comments',
+            'exports',
         ]);
     });
 });

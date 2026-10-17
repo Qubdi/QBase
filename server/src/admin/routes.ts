@@ -21,6 +21,7 @@ import {
 } from './diagrams.js';
 import { adminStats, statsQuery } from './stats.js';
 import { activityQuery, listActivity } from '../audit/activity.js';
+import { exportActivityCsv, exportQuery } from '../audit/export.js';
 import {
     audit,
     auditMany,
@@ -188,6 +189,32 @@ export const adminRoutes =
         app.get('/audit', async (req) =>
             listActivity(db, activityQuery.parse(req.query))
         );
+
+        // the same filters as the list, as a CSV file (newest first, at most
+        // EXPORT_MAX_ROWS rows). An admin taking a copy of who did what is
+        // itself logged.
+        app.get('/audit/export', async (req, reply) => {
+            const { csv, rows, truncated } = await exportActivityCsv(
+                db,
+                exportQuery.parse(req.query)
+            );
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'audit.export',
+                meta: { rows },
+            });
+            const day = new Date().toISOString().slice(0, 10);
+            return reply
+                .header('content-type', 'text/csv; charset=utf-8')
+                .header(
+                    'content-disposition',
+                    `attachment; filename="qubdidb-activity-${day}.csv"`
+                )
+                .header('cache-control', 'no-store')
+                .header('x-row-count', String(rows))
+                .header('x-truncated', String(truncated))
+                .send(csv);
+        });
 
         // ---- users ----
 
