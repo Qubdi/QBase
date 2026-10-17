@@ -24,9 +24,6 @@ export interface LocalConfigContext {
     compactTables: boolean;
     setCompactTables: (compactTables: boolean) => void;
 
-    githubRepoOpened: boolean;
-    setGithubRepoOpened: (githubRepoOpened: boolean) => void;
-
     showMiniMapOnCanvas: boolean;
     setShowMiniMapOnCanvas: (showMiniMapOnCanvas: boolean) => void;
 }
@@ -49,9 +46,6 @@ export const LocalConfigContext = createContext<LocalConfigContext>({
 
     compactTables: false,
     setCompactTables: emptyFn,
-
-    githubRepoOpened: false,
-    setGithubRepoOpened: emptyFn,
 
     showMiniMapOnCanvas: false,
     setShowMiniMapOnCanvas: emptyFn,

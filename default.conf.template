@@ -11,9 +11,7 @@ server {
     location /config.js {
         default_type application/javascript;
         return 200 "window.env = {
-            QUBDI_BACKEND_URL: \"$QUBDI_BACKEND_URL\",
-            HIDE_CLOUD: \"$HIDE_CLOUD\",
-            DISABLE_ANALYTICS: \"$DISABLE_ANALYTICS\"
+            QUBDI_BACKEND_URL: \"$QUBDI_BACKEND_URL\"
         };";
     }
 
