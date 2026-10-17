@@ -27,7 +27,6 @@ import { useLayout } from '@/hooks/use-layout';
 import { useTheme } from '@/hooks/use-theme';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import { useNavigate } from 'react-router-dom';
-import { QUBDI_BACKEND_ENABLED } from '@/lib/qubdi/config';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import { projectHomePath } from '@/lib/qubdi/project-path';
 import { clearRemoteId } from '@/lib/qubdi/remote-map';
@@ -40,8 +39,6 @@ export interface MenuProps {}
 export const Menu: React.FC<MenuProps> = () => {
     const { clearDiagramData, deleteDiagram, databaseType } = useDiagram();
     const {
-        openCreateDiagramDialog,
-        openOpenDiagramDialog,
         openExportSQLDialog,
         openImportDatabaseDialog,
         openExportImageDialog,
@@ -94,17 +91,6 @@ export const Menu: React.FC<MenuProps> = () => {
             });
         }
     }, [workspace, deleteDiagram, navigate, toast]);
-
-    // with a server, diagrams are created and opened from a project
-    const createNewDiagram = () => {
-        if (QUBDI_BACKEND_ENABLED) navigate('/');
-        else openCreateDiagramDialog();
-    };
-
-    const openDiagram = () => {
-        if (QUBDI_BACKEND_ENABLED) navigate('/');
-        else openOpenDiagramDialog();
-    };
 
     const exportSVG = useCallback(() => {
         exportImage('svg', {
@@ -168,20 +154,6 @@ export const Menu: React.FC<MenuProps> = () => {
             <MenubarMenu>
                 <MenubarTrigger>{t('menu.actions.actions')}</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem onClick={createNewDiagram}>
-                        {t('menu.actions.new')}
-                    </MenubarItem>
-                    <MenubarItem onClick={openDiagram}>
-                        {t('menu.actions.browse')}
-                        <MenubarShortcut>
-                            {
-                                keyboardShortcutsForOS[
-                                    KeyboardShortcutAction.OPEN_DIAGRAM
-                                ].keyCombinationLabel
-                            }
-                        </MenubarShortcut>
-                    </MenubarItem>
-                    <MenubarSeparator />
                     <MenubarSub>
                         <MenubarSubTrigger>
                             {t('menu.actions.import')}
