@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 9</b></div>
+  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 10</b></div>
   <h1>20 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
-    <span><b>method</b> static analysis · whole-tree read · import-graph dead-code scan · eslint, tsc -b, vitest run (197 files, 2042 tests) in a node:24 container · npm audit via registry bulk API (no Node on host) · server tests skipped (no Node on host) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (200 files, 2067 tests, 1 fails), vite build · server lint, typecheck, build, vitest (665 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -30,18 +30,18 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">20 open &middot; 0 Crit &middot; 0 High &middot; 6 Med &middot; 14 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">20 open &middot; 0 Crit &middot; 0 High &middot; 5 Med &middot; 15 Low. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">REPO-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">6 high npm advisories (braces, no upstream fix), all in Tailwind 3 toolchain</td><td><code>package.json:112</code></td><td class="wrap-cell">Migrate to Tailwind 4; rerun <code>npm audit</code></td></tr>
+        <tr><td class="svc-name">REPO-012</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Images on EOL Node 25; CI, <code>.nvmrc</code>, <code>engines</code> and README say 24</td><td><code>Dockerfile:1</code></td><td class="wrap-cell">Return both images to <code>node:24-alpine</code>; ignore odd Node majors</td></tr>
         <tr><td class="svc-name">REPO-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No <code>CODEOWNERS</code> file</td><td><code>.github/</code></td><td class="wrap-cell">Add <code>.github/CODEOWNERS</code> with the maintainers' GitHub handle</td></tr>
-        <tr><td class="svc-name">REPO-016</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Monaco pins <code>dompurify</code> 3.2.7: 13 moderate XSS advisories; CI gates only critical</td><td><code>package.json:60</code></td><td class="wrap-cell">Add <code>overrides</code> for <code>dompurify</code> &gt;= 3.4.17; gate audit at high</td></tr>
         <tr><td class="svc-name">REPO-017</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>framer-motion</code>, <code>timeago.js</code>, <code>@dnd-kit/core</code>, <code>@dnd-kit/utilities</code> imported but undeclared</td><td><code>src/components/tree-view/tree-view.tsx:8</code></td><td class="wrap-cell">Declare the four packages in <code>package.json</code></td></tr>
         <tr><td class="svc-name">REPO-019</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Compose passes 6 of 19 server settings; <code>TRUST_PROXY</code>, <code>LOG_LEVEL</code> unreachable</td><td><code>docker-compose.yml:26</code></td><td class="wrap-cell">Pass the remaining server env vars through</td></tr>
         <tr><td class="svc-name">REPO-020</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish runs on any <code>v*</code> tag with no tests or CI gate</td><td><code>.github/workflows/publish.yaml:3</code></td><td class="wrap-cell">Run tests or require CI success before pushing images</td></tr>
         <tr><td class="svc-name">REPO-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">GitHub star iframe from <code>ghbtns.com</code> contradicts README; leaks visitor IPs</td><td><code>src/pages/templates-page/templates-page.tsx:49</code></td><td class="wrap-cell">Remove the iframe</td></tr>
+        <tr><td class="svc-name">REPO-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Monaco pins <code>dompurify</code> 3.4.15 with a low XSS advisory; CI gates only critical</td><td><code>package.json:60</code></td><td class="wrap-cell">Override <code>dompurify</code> to a fixed release; gate CI audit at high</td></tr>
         <tr><td class="svc-name">REPO-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>@radix-ui/react-collapsible</code>, <code>@uidotdev/usehooks</code>, <code>motion</code>, <code>timeago-react</code> never imported</td><td><code>package.json:30</code></td><td class="wrap-cell">Remove the four dependencies</td></tr>
         <tr><td class="svc-name">REPO-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">UI publish job grants unused <code>id-token: write</code></td><td><code>.github/workflows/publish.yaml:18</code></td><td class="wrap-cell">Remove <code>id-token: write</code></td></tr>
         <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CONTRIBUTING has a Discord invite and a broken Email link</td><td><code>CONTRIBUTING.md:21</code></td><td class="wrap-cell">Remove the Discord link; fix the Email link</td></tr>
@@ -53,8 +53,8 @@
         <tr><td class="svc-name">REPO-028</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Pre-commit hook lints only the editor, not the server</td><td><code>.husky/pre-commit:2</code></td><td class="wrap-cell">Also run server lint in the hook</td></tr>
         <tr><td class="svc-name">REPO-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CI lints the editor twice (Lint step and <code>build</code> script)</td><td><code>.github/workflows/ci.yaml:27</code></td><td class="wrap-cell">Drop one of the two lint runs</td></tr>
         <tr><td class="svc-name">REPO-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Root vitest <code>exclude</code> replaces the defaults</td><td><code>vitest.config.ts:14</code></td><td class="wrap-cell">Spread <code>configDefaults.exclude</code> into <code>exclude</code></td></tr>
-        <tr><td class="svc-name">REPO-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>tailwind.config.js</code> uses CommonJS in a <code>"type": "module"</code> package</td><td><code>tailwind.config.js:4</code></td><td class="wrap-cell">Use <code>export default</code> and <code>import</code></td></tr>
         <tr><td class="svc-name">REPO-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">TODO lists a removed <code>CommentMarker</code>; finished workspace URLs still "In progress"</td><td><code>TODO.md:699</code></td><td class="wrap-cell">Drop the stale leftover; mark the section done</td></tr>
+        <tr><td class="svc-name">REPO-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>drizzle-kit</code> pulls old esbuild: 4 moderate dev advisories in <code>server/</code></td><td><code>server/package.json:36</code></td><td class="wrap-cell">Override nested esbuild to &gt;= 0.25, or upgrade <code>drizzle-kit</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -62,7 +62,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (12)</summary>
+  <details><summary>Fixed (13)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -71,14 +71,15 @@
         <tr><td class="svc-name">REPO-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>.dockerignore</code> let <code>server/node_modules</code> and <code>server/.env</code> into images; patterns match at any depth</td></tr>
         <tr><td class="svc-name">REPO-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">ESLint ignored <code>server/</code>; it now has its own config and <code>npm run lint</code></td></tr>
         <tr><td class="svc-name">REPO-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish workflow built only the UI image; it now also pushes the server image</td></tr>
+        <tr><td class="svc-name">REPO-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">6 high braces advisories in the Tailwind 3 toolchain; migrated to Tailwind 4</td></tr>
         <tr><td class="svc-name">REPO-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server <code>drizzle-orm</code> high advisory; upgraded to 0.45.4, vitest to 5</td></tr>
         <tr><td class="svc-name">REPO-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Workflow actions pinned to mutable tags; all pinned to full commit SHAs</td></tr>
         <tr><td class="svc-name">REPO-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI ran no <code>npm audit</code>, secret scan or Docker build; all three added</td></tr>
         <tr><td class="svc-name">REPO-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README and configs listed a missing <code>OLD/</code> folder; removed</td></tr>
-        <tr><td class="svc-name">REPO-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Node 24 in CI but 22 in the server image and README; all on 24, <code>engines</code> added</td></tr>
         <tr><td class="svc-name">REPO-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Placeholder <code>public/sitemap.xml</code> while robots blocks all; sitemap deleted</td></tr>
         <tr><td class="svc-name">REPO-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Root and server versions disagreed; release-please now bumps both</td></tr>
         <tr><td class="svc-name">REPO-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">UI image baked the backend URL at build; now served at run time via <code>/config.js</code></td></tr>
+        <tr><td class="svc-name">REPO-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>tailwind.config.js</code> used CommonJS; now an ES module</td></tr>
       </tbody>
     </table>
   </div>

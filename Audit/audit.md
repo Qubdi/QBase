@@ -1,16 +1,16 @@
 # QubdiDB — Audit
 
-**rev** 9 · **date** 2026-10-17
-**method** static analysis · whole-tree read · import-graph dead-code scan · eslint, tsc -b, vitest run (197 files, 2042 tests) in a node:24 container · npm audit via registry bulk API (no Node on host) · server tests skipped (no Node on host) · no secret read
+**rev** 10 · **date** 2026-10-17
+**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (200 files, 2067 tests, 1 fails), vite build · server lint, typecheck, build, vitest (665 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 16 | 1 | 1 | 4 | 0 |
-| Repository | 20 | 0 | 0 | 12 | 0 |
+| Repository | 20 | 0 | 0 | 13 | 0 |
 | Server | 14 | 0 | 0 | 19 | 0 |
-| Client | 17 | 0 | 0 | 5 | 1 |
-| **Total** | 67 | 1 | 1 | 40 | 1 |
+| Client | 22 | 0 | 0 | 5 | 1 |
+| **Total** | 72 | 1 | 1 | 41 | 1 |
 
 ## Act first
 
@@ -34,7 +34,7 @@
 | SEC-008 | Med | Compose defaults the DB password and `change-me` secret; ports bind all interfaces | `docker-compose.yml:7` | Bind ports to `127.0.0.1`; require secrets in `.env` |
 | SEC-009 | Med | Audit log omits sign-in, failed sign-in, own password change, saved-connection changes | `server/src/audit/audit.ts:4` | Add actions; emit them from auth and connection routes |
 | SEC-017 | Med | Editor can repoint a saved connection's host and receive its stored password | `server/src/introspect/routes.ts:376` | Require password re-entry when host, port or dialect changes |
-| SEC-020 | Med | Logout leaves the previous user's local diagram copies and id maps | `src/context/qubdi-context/qubdi-provider.tsx:69` | Clear Dexie diagrams and `qubdidb.*` keys on logout |
+| SEC-020 | Med | Logout leaves the previous user's local diagram copies and id maps | `src/context/qubdi-context/qubdi-provider.tsx:73` | Clear Dexie diagrams and `qubdidb.*` keys on logout |
 | SEC-012 | Low | `SESSION_SECRET` defaults to a known value and signs nothing | `server/src/config.ts:64` | Delete the setting, or fail startup when unset |
 | SEC-013 | Low | Server image runs as root | `server/Dockerfile:15` | Add `USER node` |
 | SEC-014 | Low | Google Fonts request leaks visitor IPs; README claims no external services | `index.html:9` | Self-host the fonts |
@@ -46,13 +46,13 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-005 | Med | 6 high npm advisories (braces, no upstream fix), all in Tailwind 3 toolchain | `package.json:112` | Migrate to Tailwind 4; rerun `npm audit` |
+| REPO-012 | Med | Images on EOL Node 25; CI, `.nvmrc`, `engines` and README say 24 | `Dockerfile:1` | Return both images to `node:24-alpine`; ignore odd Node majors |
 | REPO-008 | Med | No `CODEOWNERS` file | `.github/` | Add `.github/CODEOWNERS` with the maintainers' GitHub handle |
-| REPO-016 | Med | Monaco pins `dompurify` 3.2.7: 13 moderate XSS advisories; CI gates only critical | `package.json:60` | Add `overrides` for `dompurify` >= 3.4.17; gate audit at high |
 | REPO-017 | Med | `framer-motion`, `timeago.js`, `@dnd-kit/core`, `@dnd-kit/utilities` imported but undeclared | `src/components/tree-view/tree-view.tsx:8` | Declare the four packages in `package.json` |
 | REPO-019 | Med | Compose passes 6 of 19 server settings; `TRUST_PROXY`, `LOG_LEVEL` unreachable | `docker-compose.yml:26` | Pass the remaining server env vars through |
 | REPO-020 | Med | Publish runs on any `v*` tag with no tests or CI gate | `.github/workflows/publish.yaml:3` | Run tests or require CI success before pushing images |
 | REPO-011 | Low | GitHub star iframe from `ghbtns.com` contradicts README; leaks visitor IPs | `src/pages/templates-page/templates-page.tsx:49` | Remove the iframe |
+| REPO-016 | Low | Monaco pins `dompurify` 3.4.15 with a low XSS advisory; CI gates only critical | `package.json:60` | Override `dompurify` to a fixed release; gate CI audit at high |
 | REPO-018 | Low | `@radix-ui/react-collapsible`, `@uidotdev/usehooks`, `motion`, `timeago-react` never imported | `package.json:30` | Remove the four dependencies |
 | REPO-021 | Low | UI publish job grants unused `id-token: write` | `.github/workflows/publish.yaml:18` | Remove `id-token: write` |
 | REPO-022 | Low | CONTRIBUTING has a Discord invite and a broken Email link | `CONTRIBUTING.md:21` | Remove the Discord link; fix the Email link |
@@ -64,8 +64,8 @@
 | REPO-028 | Low | Pre-commit hook lints only the editor, not the server | `.husky/pre-commit:2` | Also run server lint in the hook |
 | REPO-029 | Low | CI lints the editor twice (Lint step and `build` script) | `.github/workflows/ci.yaml:27` | Drop one of the two lint runs |
 | REPO-030 | Low | Root vitest `exclude` replaces the defaults | `vitest.config.ts:14` | Spread `configDefaults.exclude` into `exclude` |
-| REPO-031 | Low | `tailwind.config.js` uses CommonJS in a `"type": "module"` package | `tailwind.config.js:4` | Use `export default` and `import` |
 | REPO-032 | Low | TODO lists a removed `CommentMarker`; finished workspace URLs still "In progress" | `TODO.md:699` | Drop the stale leftover; mark the section done |
+| REPO-033 | Low | `drizzle-kit` pulls old esbuild: 4 moderate dev advisories in `server/` | `server/package.json:36` | Override nested esbuild to >= 0.25, or upgrade `drizzle-kit` |
 
 ### Server
 
@@ -90,14 +90,15 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-007 | Med | A 404 on save clears the remote id; every later save fails `no_project` | `src/context/qubdi-context/qubdi-provider.tsx:103` | Keep the remote id without a `projectId`; surface the error |
+| CLI-007 | Med | A 404 on save clears the remote id; every later save fails `no_project` | `src/context/qubdi-context/qubdi-provider.tsx:112` | Keep the remote id without a `projectId`; surface the error |
 | CLI-008 | Med | Unsent local edits are never uploaded after reload, re-login or reopen | `src/lib/qubdi/autosave.ts:77` | Compare local copy with base on open; mark it pending |
-| CLI-009 | Med | Keepalive size check counts UTF-16 characters, not bytes; Georgian saves lost | `src/lib/qubdi/api.ts:425` | Measure with `TextEncoder` byte length |
+| CLI-009 | Med | Keepalive size check counts UTF-16 characters, not bytes; Georgian saves lost | `src/lib/qubdi/api.ts:421` | Measure with `TextEncoder` byte length |
 | CLI-010 | Med | Lost edit lock never shown; a 423 on save retries forever | `src/components/qubdi/use-edit-lock.ts:42` | On 423, switch to read-only and tell the user |
 | CLI-016 | Med | Old cross-dialect PG exporter cluster (~2,400 lines) reached only by tests | `src/lib/data/sql-export/cross-dialect/index.ts:80` | Delete the cluster and its test; keep `escapeSQLComment` |
-| CLI-017 | Med | Comments API methods and `comments-store` dead since the panel was removed | `src/lib/qubdi/api.ts:668` | Delete the five methods, the store and its test |
+| CLI-017 | Med | Comments API methods and `comments-store` dead since the panel was removed | `src/lib/qubdi/api.ts:663` | Delete the five methods, the store and its test |
 | CLI-018 | Med | Members dialog owner branches never render; they call nonexistent endpoints | `src/components/qubdi/members-dialog.tsx:54` | Remove `isOwner` branches and the three member-write API methods |
-| CLI-011 | Low | API `fetch` has no timeout; one hung save stalls autosave | `src/lib/qubdi/api.ts:416` | Pass `AbortSignal.timeout(30_000)` to `fetch` |
+| CLI-024 | Med | Clipboard hook test still expects the old +30/+50 paste offset; client CI fails | `src/hooks/__tests__/use-table-clipboard.test.ts:180` | Update the test to the side-by-side paste offset |
+| CLI-011 | Low | API `fetch` has no timeout; one hung save stalls autosave | `src/lib/qubdi/api.ts:411` | Pass `AbortSignal.timeout(30_000)` to `fetch` |
 | CLI-012 | Low | Lock release on `pagehide` races the final keepalive save | `src/components/qubdi/use-edit-lock.ts:53` | Release the lock after the final save settles |
 | CLI-013 | Low | Change-password and create-relationship dialogs lack a description | `src/components/qubdi/change-password-dialog.tsx:47` | Add `DialogDescription` or `aria-describedby={undefined}` |
 | CLI-014 | Low | Monaco bundles unused TypeScript, CSS and HTML workers | `src/components/code-snippet/config.ts:6` | Keep only the editor and JSON workers |
@@ -107,6 +108,10 @@
 | CLI-021 | Low | Zod diagram-diff schema tree (~300 lines) is never used | `src/lib/domain/diff/diff.ts:44` | Delete the schema code |
 | CLI-022 | Low | ChartDB cloud, analytics flags and `github_repo_opened` setting never read | `src/lib/env.ts:1` | Remove flags, their Docker/nginx plumbing and the setting |
 | CLI-023 | Low | Unreferenced exports: `applyFilterOnDiagram`, `quickValidate`, `getNeighbors`, `listVersions`, `listDriftReports`, others | `src/lib/domain/diagram-filter/filter.ts:76` | Remove the unreferenced exports |
+| CLI-025 | Low | `flex-shrink-0` and `flex-grow` were removed in Tailwind 4; they emit nothing | `src/components/tree-view/tree-view.tsx:370` | Rename to `shrink-0` and `grow` |
+| CLI-026 | Low | 73 `shadow-sm`, `rounded-sm`, `outline-none` uses changed meaning under Tailwind 4 | `src/components/menubar/menubar.tsx:28` | Run the `@tailwindcss/upgrade` rename pass, or accept new sizes |
+| CLI-027 | Low | Ctrl+O opens the local Open-diagram dialog with the server enabled | `src/context/keyboard-shortcuts-context/keyboard-shortcuts-provider.tsx:42` | Navigate to `/` when `QUBDI_BACKEND_ENABLED`, as the menu did |
+| CLI-028 | Low | `menu.actions.new` and `menu.actions.browse` keys orphaned after the menu removal | `src/i18n/locales/en.ts:17` | Delete both keys from every locale |
 
 ---
 
@@ -122,14 +127,15 @@
 | REPO-002 | Repository | `.dockerignore` let `server/node_modules` and `server/.env` into images; patterns match at any depth |
 | REPO-003 | Repository | ESLint ignored `server/`; it now has its own config and `npm run lint` |
 | REPO-004 | Repository | Publish workflow built only the UI image; it now also pushes the server image |
+| REPO-005 | Repository | 6 high braces advisories in the Tailwind 3 toolchain; migrated to Tailwind 4 |
 | REPO-006 | Repository | Server `drizzle-orm` high advisory; upgraded to 0.45.4, vitest to 5 |
 | REPO-007 | Repository | Workflow actions pinned to mutable tags; all pinned to full commit SHAs |
 | REPO-009 | Repository | CI ran no `npm audit`, secret scan or Docker build; all three added |
 | REPO-010 | Repository | README and configs listed a missing `OLD/` folder; removed |
-| REPO-012 | Repository | Node 24 in CI but 22 in the server image and README; all on 24, `engines` added |
 | REPO-013 | Repository | Placeholder `public/sitemap.xml` while robots blocks all; sitemap deleted |
 | REPO-014 | Repository | Root and server versions disagreed; release-please now bumps both |
 | REPO-015 | Repository | UI image baked the backend URL at build; now served at run time via `/config.js` |
+| REPO-031 | Repository | `tailwind.config.js` used CommonJS; now an ES module |
 | SRV-001 | Server | `PUT /diagrams/:id` was last-write-wins; a save on an older copy now gets 409 |
 | SRV-002 | Server | Version fetch loaded every snapshot; now filtered in SQL |
 | SRV-003 | Server | No snapshot retention; `SNAPSHOT_KEEP` prunes at publish and on a timer |
@@ -161,7 +167,7 @@
 
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
-| CLI-006 | Client | 10 lint suppressions remain in app code: parser AST typing, hook deps, third-party classes | Each has a stated reason; removing them risks behaviour |
+| CLI-006 | Client | 7 lint suppressions remain in app code: parser AST `any` typing, hook deps | Each has a stated reason; removing them risks behaviour |
 
 ---
 
@@ -185,3 +191,4 @@
 | 7 | 2026-10-14 | 0 new, 19 fixed, 0 dropped; 2 findings re-anchored |
 | 8 | 2026-10-14 | 0 new, 12 fixed, 0 dropped; 2 findings narrowed |
 | 9 | 2026-10-17 | 53 new (1 Crit, 11 dead code), 1 fixed, 1 reopened (REPO-011), 0 dropped; 6 re-anchored |
+| 10 | 2026-10-17 | 6 new, 2 fixed, 1 reopened (REPO-012), 0 dropped; REPO-016 narrowed to Low; 5 re-anchored |

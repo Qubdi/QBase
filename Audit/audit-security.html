@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 9</b></div>
+  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 10</b></div>
   <h1>16 open, 1 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
-    <span><b>method</b> static analysis · whole-tree read · import-graph dead-code scan · eslint, tsc -b, vitest run (197 files, 2042 tests) in a node:24 container · npm audit via registry bulk API (no Node on host) · server tests skipped (no Node on host) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (200 files, 2067 tests, 1 fails), vite build · server lint, typecheck, build, vitest (665 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
@@ -51,7 +51,7 @@
         <tr><td class="svc-name">SEC-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Compose defaults the DB password and <code>change-me</code> secret; ports bind all interfaces</td><td><code>docker-compose.yml:7</code></td><td class="wrap-cell">Bind ports to <code>127.0.0.1</code>; require secrets in <code>.env</code></td></tr>
         <tr><td class="svc-name">SEC-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Audit log omits sign-in, failed sign-in, own password change, saved-connection changes</td><td><code>server/src/audit/audit.ts:4</code></td><td class="wrap-cell">Add actions; emit them from auth and connection routes</td></tr>
         <tr><td class="svc-name">SEC-017</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Editor can repoint a saved connection's host and receive its stored password</td><td><code>server/src/introspect/routes.ts:376</code></td><td class="wrap-cell">Require password re-entry when host, port or dialect changes</td></tr>
-        <tr><td class="svc-name">SEC-020</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Logout leaves the previous user's local diagram copies and id maps</td><td><code>src/context/qubdi-context/qubdi-provider.tsx:69</code></td><td class="wrap-cell">Clear Dexie diagrams and <code>qubdidb.*</code> keys on logout</td></tr>
+        <tr><td class="svc-name">SEC-020</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Logout leaves the previous user's local diagram copies and id maps</td><td><code>src/context/qubdi-context/qubdi-provider.tsx:73</code></td><td class="wrap-cell">Clear Dexie diagrams and <code>qubdidb.*</code> keys on logout</td></tr>
         <tr><td class="svc-name">SEC-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>SESSION_SECRET</code> defaults to a known value and signs nothing</td><td><code>server/src/config.ts:64</code></td><td class="wrap-cell">Delete the setting, or fail startup when unset</td></tr>
         <tr><td class="svc-name">SEC-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Server image runs as root</td><td><code>server/Dockerfile:15</code></td><td class="wrap-cell">Add <code>USER node</code></td></tr>
         <tr><td class="svc-name">SEC-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Google Fonts request leaks visitor IPs; README claims no external services</td><td><code>index.html:9</code></td><td class="wrap-cell">Self-host the fonts</td></tr>

@@ -41,7 +41,7 @@
     <table>
       <thead><tr><th>Workstream</th><th>Status</th><th>Steps</th><th>Open Qs</th><th class="wrap-cell">Linked findings</th></tr></thead>
       <tbody>
-        <tr><td><a href="#ui">Editor UI changes</a></td><td><span class="pill flat">Not started</span></td><td>0 / 3</td><td>3</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td><a href="#ui">Editor UI changes</a></td><td><span class="pill good">Shipped</span></td><td>3 / 3</td><td>3</td><td class="wrap-cell"><code>CLI-024</code>, <code>CLI-027</code>, <code>CLI-028</code></td></tr>
         <tr><td><a href="#rt">Real-time co-editing</a></td><td><span class="pill flat">Not started</span></td><td>0 / 8</td><td>4</td><td class="wrap-cell">&mdash;</td></tr>
         <tr><td><a href="#pw">Password rules</a></td><td><span class="pill flat">Not started</span></td><td>0 / 5</td><td>3</td><td class="wrap-cell"><code>SEC-001</code></td></tr>
         <tr><td><a href="#mfa">Two-factor sign-in (TOTP)</a></td><td><span class="pill flat">Not started</span></td><td>0 / 7</td><td>4</td><td class="wrap-cell"><code>SEC-001</code>, <code>SEC-009</code></td></tr>
@@ -82,14 +82,14 @@
 
 <section id="ui" class="stg-sector">
   <div class="section-head"><span class="snum">03</span><h2>Editor UI changes</h2></div>
-  <p class="section-note">No database work. Not started.</p>
+  <p class="section-note">No database work. All three shipped.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>#</th><th>Status</th><th class="wrap-cell">Step</th><th>Where</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Rework table visuals on canvas and side panel; keep drag smooth</td><td><code>canvas/table-node/table-node.tsx</code></td></tr>
-        <tr><td>2</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Rework the Lint settings dialog; settings stay per diagram in the browser</td><td><code>components/qubdi/lint-settings-dialog.tsx</code></td></tr>
-        <tr><td>3</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Remove &ldquo;All Databases&hellip;&rdquo; and &ldquo;New&hellip;&rdquo; from the Actions menu</td><td><code>top-navbar/menu/menu.tsx</code></td></tr>
+        <tr><td>1</td><td><span class="pill good">Done</span></td><td class="wrap-cell">Rework table visuals on canvas and side panel; keep drag smooth</td><td><code>canvas/table-node/table-node.tsx</code></td></tr>
+        <tr><td>2</td><td><span class="pill good">Done</span></td><td class="wrap-cell">Rework the Lint settings dialog; settings stay per diagram in the browser</td><td><code>components/qubdi/lint-settings-dialog.tsx</code></td></tr>
+        <tr><td>3</td><td><span class="pill good">Done</span></td><td class="wrap-cell">Remove &ldquo;All Databases&hellip;&rdquo; and &ldquo;New&hellip;&rdquo; from the Actions menu</td><td><code>top-navbar/menu/menu.tsx</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -99,7 +99,7 @@
       <tbody>
         <tr><td class="wrap-cell">Tables visuals: which part, and what should change?</td><td class="wrap-cell">Needs a screenshot or sketch</td></tr>
         <tr><td class="wrap-cell">Lint settings: what is wrong today, what should it look like?</td><td class="wrap-cell">&mdash;</td></tr>
-        <tr><td class="wrap-cell">Keep the &ldquo;Open&rdquo; shortcut with the menu entry gone?</td><td class="wrap-cell">Yes</td></tr>
+        <tr><td class="wrap-cell">Keep the &ldquo;Open&rdquo; shortcut with the menu entry gone?</td><td class="wrap-cell">Yes; it lost the server-mode redirect (<code>CLI-027</code>)</td></tr>
       </tbody>
     </table>
   </div>
