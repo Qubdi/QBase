@@ -4,6 +4,7 @@ import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, ApiError } from '@/lib/qubdi/api';
+import { reportLockLost } from '@/lib/qubdi/lock-lost';
 import { isLastSentContent, sameContent } from '@/lib/qubdi/sent-content';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
@@ -65,6 +66,15 @@ export const ServerAutosave: React.FC = () => {
             onStatus: (status, error) => {
                 const retry = () => void saver.flush();
                 const current = accessRef.current;
+                // the lock went to someone else: go read-only, do not retry
+                if (
+                    error instanceof ApiError &&
+                    error.status === 423 &&
+                    current.status === 'editor'
+                ) {
+                    reportLockLost(current.remoteId);
+                    return;
+                }
                 const conflict =
                     error instanceof ApiError &&
                     error.status === 409 &&

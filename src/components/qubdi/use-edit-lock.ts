@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { LockState } from '@/lib/qubdi/access';
 import { api } from '@/lib/qubdi/api';
 import { getEditorId } from '@/lib/qubdi/editor-id';
+import { onLockLost } from '@/lib/qubdi/lock-lost';
 
 /** How often the open editor renews its lock; the server's lasts 90 seconds. */
 export const LOCK_HEARTBEAT_MS = 20_000;
@@ -58,6 +59,14 @@ export function useEditLock(remoteId: string | undefined): LockState {
                 .catch(() => undefined);
         };
 
+        // a save was refused with 423: the lock is someone else's now
+        const stopListening = onLockLost((lostId) => {
+            if (lostId !== remoteId) return;
+            held = false;
+            clearInterval(timer);
+            setLock({ status: 'taken', holder: null });
+        });
+
         setLock(CHECKING);
         void ask().then(() => {
             if (!cancelled && held) {
@@ -68,6 +77,7 @@ export function useEditLock(remoteId: string | undefined): LockState {
         window.addEventListener('pagehide', release);
         return () => {
             cancelled = true;
+            stopListening();
             clearInterval(timer);
             window.removeEventListener('pagehide', release);
             release();

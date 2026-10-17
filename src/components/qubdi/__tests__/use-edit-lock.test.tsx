@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { reportLockLost } from '@/lib/qubdi/lock-lost';
 import { LOCK_HEARTBEAT_MS, useEditLock } from '../use-edit-lock';
 
 const acquire = vi.fn();
@@ -62,6 +63,17 @@ describe('useEditLock', () => {
             expect(acquire).toHaveBeenCalledTimes(2);
             await tick(LOCK_HEARTBEAT_MS * 2);
             expect(acquire).toHaveBeenCalledTimes(4);
+        });
+
+        it('goes read-only when a save is refused because the lock is lost', async () => {
+            acquire.mockResolvedValue(held);
+            const { result } = renderHook(() => useEditLock('r1'));
+            await tick();
+            act(() => reportLockLost('r1'));
+            expect(result.current).toEqual({ status: 'taken', holder: null });
+            // it stops renewing, so it never takes the lock back quietly
+            await tick(LOCK_HEARTBEAT_MS * 2);
+            expect(acquire).toHaveBeenCalledTimes(1);
         });
 
         it('gives way as soon as a renewal finds someone else has it', async () => {
