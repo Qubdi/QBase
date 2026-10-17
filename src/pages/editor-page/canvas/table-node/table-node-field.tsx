@@ -41,6 +41,8 @@ import {
 } from './table-node-dependency-indicator';
 import { useCanvas } from '@/hooks/use-canvas';
 import { useLayout } from '@/hooks/use-layout';
+import { FIELD_TYPE_KIND_CLASS, fieldTypeKind } from './field-type-kind';
+import { FieldHoverCard } from './table-node-field-hover-card';
 
 export const LEFT_HANDLE_ID_PREFIX = 'left_rel_';
 export const RIGHT_HANDLE_ID_PREFIX = 'right_rel_';
@@ -94,8 +96,14 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
         isConnectable,
         targetEdgeCount,
     }) => {
-        const { relationships, readonly, highlightedCustomType, databaseType } =
-            useDiagram();
+        const {
+            relationships,
+            readonly,
+            highlightedCustomType,
+            databaseType,
+            getTable,
+            getField,
+        } = useDiagram();
 
         const updateNodeInternals = useUpdateNodeInternals();
         const connection = useConnection();
@@ -345,7 +353,29 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
             if (!highlightedCustomType) return false;
             return field.type.name === highlightedCustomType.name;
         }, [highlightedCustomType, field.type.name]);
-        const { showFieldAttributes } = useLocalConfig();
+        const { showFieldAttributes, compactTables } = useLocalConfig();
+
+        // details of the column appear once the mouse has rested on the row
+        const rowRef = useRef<HTMLDivElement>(null);
+        const hoverTimer = useRef<ReturnType<typeof setTimeout>>();
+        const [cardAnchor, setCardAnchor] = useState<DOMRect | null>(null);
+        const hideCard = useCallback(() => {
+            clearTimeout(hoverTimer.current);
+            setCardAnchor(null);
+        }, []);
+        const scheduleCard = useCallback(() => {
+            if (connection.inProgress) return;
+            clearTimeout(hoverTimer.current);
+            hoverTimer.current = setTimeout(() => {
+                if (rowRef.current) {
+                    setCardAnchor(rowRef.current.getBoundingClientRect());
+                }
+            }, 250);
+        }, [connection.inProgress]);
+        useEffect(() => () => clearTimeout(hoverTimer.current), []);
+        useEffect(() => {
+            if (connection.inProgress) hideCard();
+        }, [connection.inProgress, hideCard]);
 
         const { closeAllTablesInSidebar } = useLayout();
         const { setEditTableModeTable } = useCanvas();
@@ -367,8 +397,15 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
             readonly,
         ]);
 
+        const typeKindClass =
+            FIELD_TYPE_KIND_CLASS[fieldTypeKind(field.type.name)];
+
         return (
             <div
+                ref={rowRef}
+                onMouseEnter={scheduleCard}
+                onMouseLeave={hideCard}
+                onMouseDown={hideCard}
                 className={cn(
                     'group relative flex h-8 items-center justify-between gap-1 border-t px-3 text-sm last:rounded-b-[6px] hover:bg-slate-100 dark:hover:bg-slate-800',
                     'transition-all duration-200 ease-in-out',
@@ -424,10 +461,36 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                         type="target"
                     />
                 ) : null}
+                <span className="flex size-4 shrink-0 items-center justify-center">
+                    {(field.primaryKey && !fieldDiffChangedPrimaryKey?.old) ||
+                    fieldDiffChangedPrimaryKey?.new ? (
+                        <KeyRound
+                            size={14}
+                            className={
+                                isDiffFieldRemoved ||
+                                isDiffNewField ||
+                                (isDiffFieldChanged && !isSummaryOnly)
+                                    ? 'text-current'
+                                    : 'text-amber-500'
+                            }
+                        />
+                    ) : isForeignKey &&
+                      !isDiffFieldRemoved &&
+                      !isDiffNewField &&
+                      !isDiffFieldChanged ? (
+                        <Link2
+                            size={14}
+                            className="text-blue-600 dark:text-blue-400"
+                        />
+                    ) : null}
+                </span>
                 <div
-                    className={cn('flex items-center gap-1 min-w-0 text-left', {
-                        'font-semibold': field.primaryKey || field.unique,
-                    })}
+                    className={cn(
+                        'flex items-center gap-1 min-w-0 text-left flex-1',
+                        {
+                            'font-semibold': field.primaryKey || field.unique,
+                        }
+                    )}
                 >
                     {isDiffFieldRemoved ? (
                         <SquareMinus className="size-3.5 shrink-0 text-red-800 dark:text-red-200" />
@@ -485,46 +548,6 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                         !readonly ? 'group-hover:hidden' : ''
                     )}
                 >
-                    {(field.primaryKey && !fieldDiffChangedPrimaryKey?.old) ||
-                    fieldDiffChangedPrimaryKey?.new ? (
-                        <div
-                            className={cn(
-                                'text-muted-foreground shrink-0',
-                                isDiffFieldRemoved
-                                    ? 'text-red-800 dark:text-red-200'
-                                    : '',
-                                isDiffNewField
-                                    ? 'text-green-800 dark:text-green-200'
-                                    : '',
-                                isDiffFieldChanged &&
-                                    !isSummaryOnly &&
-                                    !isDiffFieldRemoved &&
-                                    !isDiffNewField
-                                    ? 'text-sky-800 dark:text-sky-200'
-                                    : ''
-                            )}
-                        >
-                            <KeyRound
-                                size={14}
-                                className={
-                                    isDiffFieldRemoved ||
-                                    isDiffNewField ||
-                                    (isDiffFieldChanged && !isSummaryOnly)
-                                        ? ''
-                                        : 'text-amber-500'
-                                }
-                            />
-                        </div>
-                    ) : null}
-                    {isForeignKey &&
-                    !isDiffFieldRemoved &&
-                    !isDiffNewField &&
-                    !isDiffFieldChanged ? (
-                        <Link2
-                            size={14}
-                            className="shrink-0 text-blue-600 dark:text-blue-400"
-                        />
-                    ) : null}
                     {field.unique && !field.primaryKey ? (
                         <span
                             className="shrink-0 rounded-sm border px-1 text-[9px] font-semibold leading-3 text-muted-foreground"
@@ -535,7 +558,9 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                     ) : null}
                     <div
                         className={cn(
-                            'text-right font-mono text-[11px] text-muted-foreground overflow-hidden min-w-0',
+                            'min-w-0 overflow-hidden rounded-md px-1.5 py-0.5 text-right font-mono text-[11px] font-semibold',
+                            typeKindClass,
+                            compactTables ? 'hidden' : '',
                             isDiffFieldRemoved
                                 ? 'text-red-800 dark:text-red-200'
                                 : '',
@@ -548,11 +573,10 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                                 !isDiffNewField
                                 ? 'text-sky-800 dark:text-sky-200'
                                 : '',
-                            isForeignKey &&
-                                !isDiffFieldRemoved &&
-                                !isDiffNewField &&
-                                !isDiffFieldChanged
-                                ? 'text-blue-600 dark:text-blue-400'
+                            isDiffFieldRemoved ||
+                                isDiffNewField ||
+                                (isDiffFieldChanged && !isSummaryOnly)
+                                ? 'bg-transparent'
                                 : ''
                         )}
                     >
@@ -644,13 +668,22 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                                 ) : (
                                     <span className="line-through">?</span>
                                 )
-                            ) : field.nullable ? (
-                                '?'
                             ) : (
                                 ''
                             )}
                         </span>
                     </div>
+                    {compactTables || fieldDiffChangedNullable ? null : (
+                        <span
+                            className={cn(
+                                'size-1.5 shrink-0 rounded-full',
+                                field.nullable
+                                    ? 'border-[1.5px] border-muted-foreground/60'
+                                    : 'bg-muted-foreground/60'
+                            )}
+                            title={field.nullable ? 'Nullable' : 'Not null'}
+                        />
+                    )}
                 </div>
                 {readonly ? null : (
                     <div className="ml-2 hidden shrink-0 flex-row group-hover:flex">
@@ -666,6 +699,17 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                         </Button>
                     </div>
                 )}
+                {cardAnchor ? (
+                    <FieldHoverCard
+                        anchor={cardAnchor}
+                        field={field}
+                        tableId={tableNodeId}
+                        relationships={relationships}
+                        getTable={getTable}
+                        getField={getField}
+                        databaseType={databaseType}
+                    />
+                ) : null}
             </div>
         );
     },
