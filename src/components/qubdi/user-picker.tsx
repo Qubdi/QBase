@@ -62,7 +62,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                 label="Search users to assign"
             />
             <ul
-                className="max-h-40 min-h-10 overflow-y-auto rounded-md border"
+                className="max-h-28 min-h-10 overflow-y-auto rounded-md border md:max-h-40"
                 aria-label="Matching users"
             >
                 {list.initialLoading ? (
