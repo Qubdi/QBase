@@ -13,9 +13,9 @@ import {
 import { Logo } from '@/components/logo/logo';
 import { Spinner } from '@/components/spinner/spinner';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { SessionEndedNotice } from './session-ended-notice';
+import { SignInPrompt } from './sign-in-prompt';
 
 /**
  * Frame for the pages outside the editor (projects, diagrams of a project).
@@ -24,7 +24,6 @@ import { SessionEndedNotice } from './session-ended-notice';
 export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
     const { enabled, user, logout } = useQubdi();
     const navigate = useNavigate();
-    const [authOpen, setAuthOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
 
     return (
@@ -91,12 +90,7 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
             ) : user === null ? (
                 <div className="mx-auto mt-24 flex max-w-sm flex-col items-center gap-3 px-4 text-center">
                     <SessionEndedNotice />
-                    <p className="text-sm text-muted-foreground">
-                        Sign in to see your projects. Accounts are created by an
-                        admin.
-                    </p>
-                    <Button onClick={() => setAuthOpen(true)}>Sign in</Button>
-                    <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
+                    <SignInPrompt verb="see" />
                 </div>
             ) : (
                 children

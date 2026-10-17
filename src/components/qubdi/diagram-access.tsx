@@ -24,8 +24,8 @@ import {
     setProjectId,
 } from '@/lib/qubdi/remote-map';
 import { generateId } from '@/lib/utils';
-import { AuthDialog } from './auth-dialog';
 import { SessionEndedNotice } from './session-ended-notice';
+import { SignInPrompt } from './sign-in-prompt';
 import { useEditLock } from './use-edit-lock';
 import {
     DiagramAccessContext,
@@ -45,20 +45,13 @@ const Loading: React.FC = () => (
     </Centered>
 );
 
-const SignInRequired: React.FC = () => {
-    const [authOpen, setAuthOpen] = useState(false);
-    return (
-        <Centered>
-            <Logo />
-            <SessionEndedNotice />
-            <p className="max-w-sm text-sm text-muted-foreground">
-                Sign in to open your projects. Accounts are created by an admin.
-            </p>
-            <Button onClick={() => setAuthOpen(true)}>Sign in</Button>
-            <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
-        </Centered>
-    );
-};
+const SignInRequired: React.FC = () => (
+    <Centered>
+        <Logo />
+        <SessionEndedNotice />
+        <SignInPrompt verb="open" />
+    </Centered>
+);
 
 const Problem: React.FC<{ title: string; detail: string }> = ({
     title,
