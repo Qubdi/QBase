@@ -8,10 +8,15 @@ import UnpluginInjectPreload from 'unplugin-inject-preload/vite';
 export default defineConfig({
     plugins: [
         react(),
-        visualizer({
-            filename: './stats/stats.html',
-            open: false,
-        }),
+        // the bundle report is slow to write: `ANALYZE=1 npm run build`
+        ...(process.env.ANALYZE
+            ? [
+                  visualizer({
+                      filename: './stats/stats.html',
+                      open: false,
+                  }),
+              ]
+            : []),
         UnpluginInjectPreload({
             files: [
                 {
@@ -34,6 +39,16 @@ export default defineConfig({
         rollupOptions: {
             external: (id) => /__test__/.test(id),
             output: {
+                // vendor code changes far less often than the app, so it gets
+                // its own long-cached chunks
+                manualChunks: (id) => {
+                    if (!id.includes('node_modules')) return undefined;
+                    if (/node_modules\/(react|react-dom|scheduler)\//.test(id))
+                        return 'react';
+                    if (id.includes('@xyflow')) return 'xyflow';
+                    if (id.includes('@radix-ui')) return 'radix';
+                    return undefined;
+                },
                 assetFileNames: (assetInfo) => {
                     if (
                         assetInfo.names &&
