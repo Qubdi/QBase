@@ -160,6 +160,7 @@ None open.
 | REPO-030 | Repository | Root vitest `exclude` spreads `configDefaults.exclude` |
 | REPO-032 | Repository | Stale `CommentMarker` leftover dropped; workspace URLs section marked done |
 | REPO-033 | Repository | Nested esbuild under `drizzle-kit` overridden to `^0.25.12`; `npm audit` clean |
+
 ---
 
 ## Accepted
