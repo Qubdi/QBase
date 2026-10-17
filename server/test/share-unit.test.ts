@@ -10,6 +10,7 @@ const link = (over: Partial<ShareLinkRow> = {}): ShareLinkRow => ({
     id: 'l1',
     diagramId: 'd1',
     tokenHash: 'h',
+    tokenEnc: null,
     access: 'anyone',
     expiresAt: null,
     live: false,

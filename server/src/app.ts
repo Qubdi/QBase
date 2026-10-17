@@ -13,10 +13,7 @@ import type { Db } from './db/client.js';
 import { driftRoutes } from './drift/routes.js';
 import { defaultIntrospectorFactory } from './introspect/routes.js';
 import { lintRoutes } from './lint/routes.js';
-import {
-    introspectRoutes,
-    type IntrospectDeps,
-} from './introspect/routes.js';
+import { introspectRoutes, type IntrospectDeps } from './introspect/routes.js';
 import { adminRoutes } from './admin/routes.js';
 import { diagramRoutes } from './diagrams/routes.js';
 import { projectRoutes } from './projects/routes.js';
@@ -127,16 +124,11 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         const status = (err as { statusCode?: number }).statusCode ?? 500;
         // unexpected failures: log them with the request id, show the client nothing
         if (status >= 500) req.log.error({ err }, 'request failed');
-        return reply
-            .code(status)
-            .send({
-                // a server-side failure (500, 502, 503...) may carry driver or
-                // host details in its message: none of it goes to the client
-                error:
-                    status >= 500
-                        ? 'internal_error'
-                        : (err as Error).message,
-            });
+        return reply.code(status).send({
+            // a server-side failure (500, 502, 503...) may carry driver or
+            // host details in its message: none of it goes to the client
+            error: status >= 500 ? 'internal_error' : (err as Error).message,
+        });
     });
 
     app.get('/health', async () => ({ ok: true }));
@@ -148,9 +140,12 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.register(memberRoutes(db), { prefix: '/diagrams' });
     // introspection and manual drift checks draw from one allowance per user
     const outboundLimit = sharedUserLimit(config.outboundRateLimit);
-    app.register(introspectRoutes({ db, config, outboundLimit, ...introspect }), {
-        prefix: '/introspect',
-    });
+    app.register(
+        introspectRoutes({ db, config, outboundLimit, ...introspect }),
+        {
+            prefix: '/introspect',
+        }
+    );
     app.register(
         driftRoutes({
             db,
@@ -162,7 +157,7 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         { prefix: '/diagrams' }
     );
     app.register(lintRoutes(db, config));
-    app.register(shareManagementRoutes(db), { prefix: '/diagrams' });
+    app.register(shareManagementRoutes(db, config), { prefix: '/diagrams' });
     app.register(publicShareRoutes(db, config), { prefix: '/s' });
 
     return app;

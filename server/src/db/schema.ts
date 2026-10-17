@@ -273,6 +273,10 @@ export const shareLinks = pgTable(
             .references(() => diagrams.id, { onDelete: 'cascade' }),
         // sha256 of the URL token; the raw token is shown once and never stored
         tokenHash: text('token_hash').notNull().unique(),
+        // AES-256-GCM of the token (key from CONNECTION_KEY) so an editor can copy
+        // an active link again; null when the server has no key, for links made
+        // before this column, and cleared when the link is revoked
+        tokenEnc: text('token_enc'),
         access: shareAccess('access').notNull().default('anyone'),
         expiresAt: timestamp('expires_at', { withTimezone: true }),
         live: boolean('live').notNull().default(false),

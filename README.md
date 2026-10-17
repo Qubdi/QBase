@@ -67,7 +67,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `HOST` | `0.0.0.0` | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
-| `CONNECTION_KEY` | unset | Encrypts saved database passwords (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it |
+| `CONNECTION_KEY` | unset | Encrypts saved database passwords and the tokens of active share links (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it; without it a share link's URL is shown only once, when it is created or regenerated |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default |
 | `SHARE_RATE_LIMIT` | `60` | Public share requests per minute per IP |
 | `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`) |

@@ -5,6 +5,7 @@ import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
+import { CryptoBox } from '../introspect/crypto-box.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { latestSnapshot } from '../diagrams/service.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
@@ -55,8 +56,25 @@ const presentLink = (l: ShareLinkRow) => ({
 
 /** Editor-facing management of a diagram's share links. */
 export const shareManagementRoutes =
-    (db: Db): FastifyPluginAsync =>
+    (db: Db, config: Config): FastifyPluginAsync =>
     async (app) => {
+        // Active links stay copyable: the token is kept encrypted while the
+        // link lives and wiped when it is revoked. Without a key, tokens are
+        // shown once, as before.
+        const box = config.connectionKey
+            ? new CryptoBox(config.connectionKey)
+            : null;
+        const sealed = (token: string) => box?.encrypt(token) ?? null;
+        const unsealed = (l: ShareLinkRow) => {
+            if (!box || !l.tokenEnc || l.revokedAt) return undefined;
+            try {
+                return box.decrypt(l.tokenEnc);
+            } catch {
+                // a changed key: the link works, only its URL cannot be shown
+                return undefined;
+            }
+        };
+
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -103,7 +121,7 @@ export const shareManagementRoutes =
                 .where(eq(shareLinks.diagramId, id))
                 .orderBy(desc(shareLinks.createdAt))
                 .limit(MAX_LISTED_LINKS);
-            return rows.map(presentLink);
+            return rows.map((l) => ({ ...presentLink(l), token: unsealed(l) }));
         });
 
         app.post('/:id/share-links', async (req, reply) => {
@@ -116,6 +134,7 @@ export const shareManagementRoutes =
                 .values({
                     diagramId: id,
                     tokenHash: hashToken(token),
+                    tokenEnc: sealed(token),
                     access: body.access,
                     expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
                     live: body.live,
@@ -128,7 +147,6 @@ export const shareManagementRoutes =
                 diagramId: id,
                 meta: { linkId: link.id, access: link.access },
             });
-            // the raw token is returned exactly once
             return reply.code(201).send({ ...presentLink(link), token });
         });
 
@@ -172,7 +190,7 @@ export const shareManagementRoutes =
                 // only one changes the row, so only one writes the audit entry
                 const revoked = await db
                     .update(shareLinks)
-                    .set({ revokedAt: new Date() })
+                    .set({ revokedAt: new Date(), tokenEnc: null })
                     .where(
                         and(
                             eq(shareLinks.id, linkId),
@@ -208,7 +226,7 @@ export const shareManagementRoutes =
             const token = generateToken();
             const [updated] = await db
                 .update(shareLinks)
-                .set({ tokenHash: hashToken(token) })
+                .set({ tokenHash: hashToken(token), tokenEnc: sealed(token) })
                 .where(eq(shareLinks.id, linkId))
                 .returning();
             await audit(db, {
@@ -276,7 +294,8 @@ export const publicShareRoutes =
                     : reply.code(404).send({ error: 'not_found' });
             }
             const snap = await latestSnapshot(db, check.link.diagramId);
-            if (!snap) return reply.code(404).send({ error: 'not_found' });
+            // the link is fine; nothing has been published to show yet
+            if (!snap) return reply.code(404).send({ error: 'not_published' });
             return {
                 title: snap.title,
                 content: snap.content,

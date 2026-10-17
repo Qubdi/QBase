@@ -30,6 +30,7 @@ type LoadState =
     | { kind: 'ok'; share: PublicShare }
     | { kind: 'login_required' }
     | { kind: 'not_found' }
+    | { kind: 'not_published' }
     | { kind: 'error' };
 
 const nodeTypes = { viewerTable: ViewerTableNode };
@@ -143,6 +144,17 @@ export const ShareViewerPage: React.FC = () => {
         return (
             <Centered>
                 <p>Loading…</p>
+            </Centered>
+        );
+    }
+    if (state.kind === 'not_published') {
+        return (
+            <Centered>
+                <h1 className="text-xl font-semibold">Not published yet</h1>
+                <p className="text-muted-foreground">
+                    The link works, but its owner has not published this diagram
+                    yet. Try again later.
+                </p>
             </Centered>
         );
     }

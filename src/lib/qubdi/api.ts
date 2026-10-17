@@ -245,9 +245,11 @@ export interface RemoteShareLink {
     live: boolean;
     createdAt: string;
     revokedAt: string | null;
+    /** an active link's token, when the server can keep it (CONNECTION_KEY is set) */
+    token?: string;
 }
 
-/** Returned once, on create and regenerate. */
+/** Returned on create and regenerate. */
 export interface RemoteShareLinkWithToken extends RemoteShareLink {
     token: string;
 }
@@ -264,6 +266,7 @@ export type PublicShareResult =
     | { status: 'ok'; share: PublicShare }
     | { status: 'login_required' }
     | { status: 'not_found' }
+    | { status: 'not_published' }
     | { status: 'error' };
 
 export class ApiError extends Error {
@@ -687,7 +690,17 @@ export function createApi(
                     return { status: 'ok', share: await res.json() };
                 }
                 if (res.status === 401) return { status: 'login_required' };
-                if (res.status === 404) return { status: 'not_found' };
+                if (res.status === 404) {
+                    const body = (await res.json().catch(() => null)) as {
+                        error?: string;
+                    } | null;
+                    return {
+                        status:
+                            body?.error === 'not_published'
+                                ? 'not_published'
+                                : 'not_found',
+                    };
+                }
                 return { status: 'error' };
             } catch {
                 return { status: 'error' };

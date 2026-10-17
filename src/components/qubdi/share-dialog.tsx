@@ -58,6 +58,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     useEffect(() => {
         if (!open) return;
         setError(null);
+        setCopied(null);
         setLinks(null);
         void (async () => {
             try {
@@ -70,6 +71,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         })();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
+
+    // "Copied" is a brief confirmation, not a state the button stays in
+    useEffect(() => {
+        if (copied === null) return;
+        const timer = setTimeout(() => setCopied(null), 2000);
+        return () => clearTimeout(timer);
+    }, [copied]);
 
     const run = async (fn: (id: string) => Promise<unknown>) => {
         if (!remoteId) return false;
@@ -125,7 +133,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                         })
                     }
                     renderControls={(l) => {
-                        const url = urls[l.id];
+                        const url =
+                            urls[l.id] ??
+                            (l.token
+                                ? buildShareUrl(window.location.origin, l.token)
+                                : undefined);
                         return (
                             <>
                                 {url ? (
@@ -150,8 +162,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                     </div>
                                 ) : (
                                     <span className="text-muted-foreground">
-                                        The URL is only shown when a link is
-                                        created or regenerated.
+                                        This link&apos;s URL cannot be shown
+                                        again. Regenerate it to get a new one.
                                     </span>
                                 )}
                                 <div className="flex flex-wrap items-center gap-3">

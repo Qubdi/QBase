@@ -636,7 +636,7 @@ export const adminRoutes =
             // revoking at once leave one row
             const revoked = await db
                 .update(shareLinks)
-                .set({ revokedAt: new Date() })
+                .set({ revokedAt: new Date(), tokenEnc: null })
                 .where(
                     and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt))
                 )
