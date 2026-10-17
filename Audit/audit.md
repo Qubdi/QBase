@@ -1,16 +1,16 @@
 # QubdiDB — Audit
 
-**rev** 11 · **date** 2026-10-17
-**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (665 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
+**rev** 12 · **date** 2026-10-17
+**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (669 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 16 | 1 | 1 | 4 | 0 |
 | Repository | 20 | 0 | 0 | 13 | 0 |
-| Server | 14 | 0 | 0 | 19 | 0 |
+| Server | 1 | 0 | 0 | 32 | 0 |
 | Client | 0 | 0 | 0 | 27 | 1 |
-| **Total** | 50 | 1 | 1 | 63 | 1 |
+| **Total** | 37 | 1 | 1 | 76 | 1 |
 
 ## Act first
 
@@ -71,20 +71,7 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SRV-020 | Med | Async SSE listeners reject unhandled on a DB error and exit the process | `server/src/share/routes.ts:367` | Wrap listener bodies in try/catch |
-| SRV-021 | Med | Every save reads the full latest snapshot and returns the full content | `server/src/diagrams/service.ts:16` | Select snapshot metadata only; drop `content` from the PUT reply |
-| SRV-022 | Med | `GET /diagrams` is unpaged and loads full snapshot content for viewer stats | `server/src/diagrams/routes.ts:96` | Page the list; compute viewer stats in SQL |
-| SRV-023 | Med | `drift_reports` has no retention; the report list loads full `jsonb` | `server/src/maintenance.ts:53` | Prune old drift reports per diagram in `runMaintenance` |
-| SRV-024 | Med | Rate limits, SSE caps and drift guard are per process; undocumented | `server/src/lib/rate-key.ts:43` | Document single-process deployment, or move state to Postgres |
-| SRV-031 | Med | Editor comment CRUD routes still registered and writable; no client calls them | `server/src/comments/routes.ts:133` | Unregister editor comment routes; keep the public viewer read |
-| SRV-025 | Low | Check-then-insert on unique names returns 500 when two requests race | `server/src/admin/routes.ts:259` | Map unique violation `23505` to 409 |
-| SRV-026 | Low | Audit purge is one unbatched DELETE returning every deleted id | `server/src/maintenance.ts:27` | Delete in batches; return the row count only |
-| SRV-027 | Low | Editor share-link revoke can write the audit row twice | `server/src/share/routes.ts:171` | Add `isNull(revokedAt)` to the UPDATE; audit only on change |
-| SRV-028 | Low | Overview counts distinct diagram ids over every snapshot on each load | `server/src/admin/stats.ts:105` | Count with `exists` per diagram |
-| SRV-029 | Low | Lint routes load the full diagram row to read `lintConfig` | `server/src/lint/routes.ts:68` | Select `lintConfig` only; `content` only when needed |
-| SRV-030 | Low | Editor share-link list uncapped; expired locks and dead links never purged | `server/src/share/routes.ts:102` | Cap the list; purge expired locks and dead links |
 | SRV-032 | Low | Version-history and drift-list endpoints have no client | `server/src/diagrams/routes.ts:345` | Remove them, or wire them to a UI |
-| SRV-033 | Low | No test covers the maintenance stop or SIGTERM shutdown | `server/src/server.ts:34` | Test `startMaintenance` stop and the shutdown path |
 
 ### Client
 
@@ -132,6 +119,19 @@ None open.
 | SRV-017 | Server | Production ran through `tsx`; now compiled and run with `node` |
 | SRV-018 | Server | Any editor could change others' comments; now author or owner only |
 | SRV-019 | Server | `audit_log` had no index, read route or retention; all three added |
+| SRV-020 | Server | Async SSE listeners rejected unhandled on a DB error and ended the process; they now log and close the stream, and a failed check is not cached |
+| SRV-021 | Server | Every save read the full latest snapshot and returned the full content; writers now read snapshot metadata only and the save reply omits `content` |
+| SRV-022 | Server | `GET /diagrams` loaded full snapshot content for viewer stats; stats are computed in SQL and `limit` / `offset` are accepted (the editor does not page yet) |
+| SRV-023 | Server | `drift_reports` had no retention; maintenance keeps the newest `DRIFT_REPORT_KEEP` (50) per diagram |
+| SRV-024 | Server | Per-process rate limits, SSE caps and drift guard are now documented as requiring one server process (README, code comments) |
+| SRV-025 | Server | Racing creates returned 500 on a unique violation; users, projects and saved connections now answer 409 |
+| SRV-026 | Server | Audit purge was one unbatched DELETE returning every id; now batched and counted |
+| SRV-027 | Server | Share-link revoke could write the audit row twice; the UPDATE is conditional and audits only on change |
+| SRV-028 | Server | Overview counted distinct diagram ids over every snapshot; now `exists` per diagram |
+| SRV-029 | Server | Lint routes loaded the full diagram row; they select `lintConfig`, and `content` only for the working copy |
+| SRV-030 | Server | Share-link list was uncapped and dead links and expired locks never purged; list capped at 200, maintenance purges expired locks and links dead 30+ days (`DEAD_LINK_KEEP_DAYS`) |
+| SRV-031 | Server | Editor comment routes unregistered; the public viewer read stays and the tests insert rows directly |
+| SRV-033 | Server | No test covered the maintenance stop or SIGTERM shutdown; shutdown extracted to `shutdown.ts` and both are tested |
 | CLI-001 | Client | Autosave serialised the whole diagram on every change; now compares a revision number |
 | CLI-002 | Client | Leave-page save used plain `fetch`; now sent with `keepalive` |
 | CLI-003 | Client | SQL import validators for MySQL, SQLite and SQL Server were stubs; now implemented |
@@ -192,3 +192,4 @@ None open.
 | 9 | 2026-10-17 | 53 new (1 Crit, 11 dead code), 1 fixed, 1 reopened (REPO-011), 0 dropped; 6 re-anchored |
 | 10 | 2026-10-17 | 6 new, 2 fixed, 1 reopened (REPO-012), 0 dropped; REPO-016 narrowed to Low; 5 re-anchored |
 | 11 | 2026-10-17 | 0 new, 22 fixed (all open Client findings), 0 dropped; CLI-014 and CLI-023 fixed in part, see their rows |
+| 12 | 2026-10-17 | 0 new, 13 fixed (all open Server findings but SRV-032), 0 dropped; SRV-022 fixed in part, see its row |

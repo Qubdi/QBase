@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 11</b></div>
-  <h1>50 open across four lenses: 1 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 12</b></div>
+  <h1>37 open across four lenses: 1 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (665 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (669 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
@@ -43,9 +43,9 @@
       <tbody>
         <tr><td>Security &amp; secrets</td><td>16</td><td>1</td><td>1</td><td>4</td><td>0</td></tr>
         <tr><td>Repository</td><td>20</td><td>0</td><td>0</td><td>13</td><td>0</td></tr>
-        <tr><td>Server</td><td>14</td><td>0</td><td>0</td><td>19</td><td>0</td></tr>
+        <tr><td>Server</td><td>1</td><td>0</td><td>0</td><td>32</td><td>0</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>27</td><td>1</td></tr>
-        <tr><td>Total</td><td>50</td><td>1</td><td>1</td><td>63</td><td>1</td></tr>
+        <tr><td>Total</td><td>37</td><td>1</td><td>1</td><td>76</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -65,8 +65,8 @@
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
-    <p>Unhandled SSE rejections, heavy snapshot reads, dead comment routes.</p>
-    <p class="lbl">14 open &middot; 0 Crit &middot; 0 High &middot; 19 fixed &middot; 0 accepted</p>
+    <p>One left: version-history and drift-list endpoints with no client.</p>
+    <p class="lbl">1 open &middot; 0 Crit &middot; 0 High &middot; 32 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
@@ -92,6 +92,7 @@
         <tr><td>9</td><td>2026-10-17</td><td class="wrap-cell">53 new (1 Crit, 11 dead code), 1 fixed, 1 reopened (REPO-011), 0 dropped; 6 re-anchored</td></tr>
         <tr><td>10</td><td>2026-10-17</td><td class="wrap-cell">6 new, 2 fixed, 1 reopened (REPO-012), 0 dropped; REPO-016 narrowed to Low; 5 re-anchored</td></tr>
         <tr><td>11</td><td>2026-10-17</td><td class="wrap-cell">0 new, 22 fixed (all open Client findings), 0 dropped; CLI-014 and CLI-023 fixed in part, see their rows</td></tr>
+        <tr><td>12</td><td>2026-10-17</td><td class="wrap-cell">0 new, 13 fixed (all open Server findings but SRV-032), 0 dropped; SRV-022 fixed in part, see its row</td></tr>
       </tbody>
     </table>
   </div>
