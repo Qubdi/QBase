@@ -156,3 +156,6 @@ dist-ssr
 .idea
 .DS_Store
 stats/
+
+# Local development env file
+dev.env
