@@ -48,6 +48,20 @@ describe('maintenance', () => {
         expect(left.map((r) => r.action)).toEqual(['diagram.create']);
     });
 
+    it('deletes a backlog across several batches and counts every row', async () => {
+        await ctx.db.delete(auditLog);
+        await ctx.db.insert(auditLog).values([
+            ...Array.from({ length: 7 }, () => ({
+                userId,
+                action: 'user.register' as const,
+                at: daysAgo(400),
+            })),
+            { userId, action: 'diagram.create' as const, at: daysAgo(1) },
+        ]);
+        expect(await purgeAuditLog(ctx.db, 365, now, 3)).toBe(7);
+        expect(await ctx.db.select().from(auditLog)).toHaveLength(1);
+    });
+
     it('keeps every audit row when retention is 0', async () => {
         await ctx.db.insert(auditLog).values({
             userId,

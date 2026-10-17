@@ -1,7 +1,7 @@
 import { lt, sql } from 'drizzle-orm';
 import type { Config } from './config.js';
 import type { Db } from './db/client.js';
-import { auditLog, sessions } from './db/schema.js';
+import { sessions } from './db/schema.js';
 
 const DAY_MS = 86_400_000;
 
@@ -17,18 +17,32 @@ export async function purgeExpiredSessions(
     return rows.length;
 }
 
-/** Deletes audit rows older than `days`. 0 or less keeps everything. */
+const AUDIT_BATCH = 5000;
+
+/**
+ * Deletes audit rows older than `days`, a batch at a time so a large backlog
+ * never holds one long lock. 0 or less keeps everything.
+ */
 export async function purgeAuditLog(
     db: Db,
     days: number,
-    now: Date = new Date()
+    now: Date = new Date(),
+    batch = AUDIT_BATCH
 ): Promise<number> {
     if (!(days > 0)) return 0;
-    const rows = await db
-        .delete(auditLog)
-        .where(lt(auditLog.at, new Date(now.getTime() - days * DAY_MS)))
-        .returning({ id: auditLog.id });
-    return rows.length;
+    const cutoff = new Date(now.getTime() - days * DAY_MS);
+    let total = 0;
+    for (;;) {
+        const res = await db.execute(sql`
+            delete from audit_log
+            where id in (
+                select id from audit_log where at < ${cutoff} limit ${batch}
+            )
+        `);
+        const n = res.rowCount ?? 0;
+        total += n;
+        if (n < batch) return total;
+    }
 }
 
 /**
