@@ -24,6 +24,7 @@ import {
     SquareDot,
     SquarePlus,
     SquareMinus,
+    MessageCircleMore,
     View,
 } from 'lucide-react';
 import { Label } from '@/components/label/label';
@@ -509,7 +510,13 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                         className="h-1"
                         style={{ backgroundColor: tableColor }}
                     ></div>
-                    <div className="group flex h-9 items-center justify-between border-b bg-muted/70 px-2.5">
+                    <div
+                        className="group flex h-9 items-center justify-between border-b px-2.5"
+                        // a wash of the table's own colour over the card
+                        style={{
+                            backgroundColor: `color-mix(in srgb, ${tableColor} 14%, transparent)`,
+                        }}
+                    >
                         <div className="flex min-w-0 flex-1 items-center gap-2">
                             {isDiffNewTable ? (
                                 <Tooltip>
@@ -577,10 +584,31 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                                 </Label>
                             ) : (
                                 <Label className="truncate px-2 py-0.5 text-sm font-bold">
+                                    {table.schema ? (
+                                        <span className="font-normal text-muted-foreground">
+                                            {table.schema}.
+                                        </span>
+                                    ) : null}
                                     {table.name}
                                 </Label>
                             )}
+                            {table.comments ? (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <MessageCircleMore className="size-3.5 shrink-0 cursor-pointer text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs whitespace-pre-wrap break-words">
+                                        {table.comments}
+                                    </TooltipContent>
+                                </Tooltip>
+                            ) : null}
                         </div>
+                        <span
+                            className="ml-2 shrink-0 rounded-full bg-background/70 px-1.5 text-[11px] tabular-nums leading-4 text-muted-foreground group-hover:hidden"
+                            title={`${fields.length} fields`}
+                        >
+                            {fields.length}
+                        </span>
                         <div className="hidden shrink-0 flex-row group-hover:flex">
                             {readonly ? null : (
                                 <Button

@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/button/button';
 import {
     KeyRound,
+    Link2,
     MessageCircleMore,
     SquareDot,
     SquareMinus,
@@ -503,12 +504,38 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                                     : ''
                             )}
                         >
-                            <KeyRound size={14} />
+                            <KeyRound
+                                size={14}
+                                className={
+                                    isDiffFieldRemoved ||
+                                    isDiffNewField ||
+                                    (isDiffFieldChanged && !isSummaryOnly)
+                                        ? ''
+                                        : 'text-amber-500'
+                                }
+                            />
                         </div>
+                    ) : null}
+                    {isForeignKey &&
+                    !isDiffFieldRemoved &&
+                    !isDiffNewField &&
+                    !isDiffFieldChanged ? (
+                        <Link2
+                            size={14}
+                            className="shrink-0 text-blue-600 dark:text-blue-400"
+                        />
+                    ) : null}
+                    {field.unique && !field.primaryKey ? (
+                        <span
+                            className="shrink-0 rounded-sm border px-1 text-[9px] font-semibold leading-3 text-muted-foreground"
+                            title="Unique"
+                        >
+                            UQ
+                        </span>
                     ) : null}
                     <div
                         className={cn(
-                            'text-right text-xs text-muted-foreground overflow-hidden min-w-0',
+                            'text-right font-mono text-[11px] text-muted-foreground overflow-hidden min-w-0',
                             isDiffFieldRemoved
                                 ? 'text-red-800 dark:text-red-200'
                                 : '',
