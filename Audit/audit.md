@@ -1,21 +1,16 @@
 # QubdiDB — Audit
 
-**rev** 13 · **date** 2026-10-17
-**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (669 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
+**rev** 14 · **date** 2026-10-17
+**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (199 files, 2032 tests, all pass), vite build · server lint, typecheck, build, vitest (697 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 16 | 1 | 1 | 4 | 0 |
+| Security & secrets | 0 | 0 | 0 | 20 | 0 |
 | Repository | 1 | 0 | 0 | 32 | 0 |
 | Server | 1 | 0 | 0 | 32 | 0 |
 | Client | 0 | 0 | 0 | 27 | 1 |
-| **Total** | 18 | 1 | 1 | 95 | 1 |
-
-## Act first
-
-- `SEC-016` — Note Markdown renders raw HTML; any editor can run script as an admin.
-- `SEC-001` — `/auth/login`, `/auth/register` and `/auth/change-password` accept unlimited guesses.
+| **Total** | 2 | 0 | 0 | 111 | 1 |
 
 ---
 
@@ -23,24 +18,7 @@
 
 ### Security & secrets
 
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| SEC-016 | Crit | Note Markdown renders raw HTML via `rehype-raw`, unsanitised; stored XSS reaches admins | `src/pages/editor-page/canvas/note-node/note-node.tsx:200` | Add `rehype-sanitize` after `rehype-raw`, or drop `rehype-raw` |
-| SEC-001 | High | No rate limit or lockout on `/auth/login`, `/auth/register`, `/auth/change-password` | `server/src/auth/routes.ts:92` | Add per-IP and per-email rate limit to auth routes |
-| SEC-004 | Med | Any signed-in user can open DB connections via `/introspect`, no project role | `server/src/introspect/routes.ts:132` | Require project writer role for inline connections |
-| SEC-005 | Med | Session cookie has no `secure` flag | `server/src/auth/routes.ts:44` | Set `secure` behind HTTPS via a config flag |
-| SEC-006 | Med | Login skips argon2 for unknown emails; timing reveals registered accounts | `server/src/auth/routes.ts:99` | Verify against a dummy hash when the user is missing |
-| SEC-007 | Med | No CSP, `X-Frame-Options` or `nosniff` headers from nginx or Fastify | `default.conf.template:1` | Add security headers in nginx and the server |
-| SEC-008 | Med | Compose defaults the DB password and `change-me` secret; ports bind all interfaces | `docker-compose.yml:7` | Bind ports to `127.0.0.1`; require secrets in `.env` |
-| SEC-009 | Med | Audit log omits sign-in, failed sign-in, own password change, saved-connection changes | `server/src/audit/audit.ts:4` | Add actions; emit them from auth and connection routes |
-| SEC-017 | Med | Editor can repoint a saved connection's host and receive its stored password | `server/src/introspect/routes.ts:376` | Require password re-entry when host, port or dialect changes |
-| SEC-020 | Med | Logout leaves the previous user's local diagram copies and id maps | `src/context/qubdi-context/qubdi-provider.tsx:73` | Clear Dexie diagrams and `qubdidb.*` keys on logout |
-| SEC-012 | Low | `SESSION_SECRET` defaults to a known value and signs nothing | `server/src/config.ts:64` | Delete the setting, or fail startup when unset |
-| SEC-013 | Low | Server image runs as root | `server/Dockerfile:15` | Add `USER node` |
-| SEC-014 | Low | Google Fonts request leaks visitor IPs; README claims no external services | `index.html:9` | Self-host the fonts |
-| SEC-015 | Low | Net guard classifies 6to4, Teredo and `::a.b.c.d` IPv6 as public | `server/src/introspect/net-guard.ts:102` | Classify `2002::/16`, `2001::/32`, `::/96` as reserved |
-| SEC-018 | Low | Concurrent first-run `/auth/register` calls can create several admins | `server/src/auth/routes.ts:60` | Count and insert under an advisory lock |
-| SEC-019 | Low | Error handler returns raw `err.message` for 5xx statuses other than 500 | `server/src/app.ts:98` | Hide the message for every status >= 500 |
+None open.
 
 ### Repository
 
@@ -68,6 +46,22 @@ None open.
 | SEC-003 | Security & secrets | `VITE_OPENAI_API_KEY` baked into the JS bundle; build args removed |
 | SEC-010 | Security & secrets | Audit rows had no target id; `meta` now carries project, user and link ids |
 | SEC-011 | Security & secrets | Cross-dialect SQL export sent the schema to an external LLM; AI export removed |
+| SEC-001 | Security & secrets | `/auth/login`, `/auth/register` and `/auth/change-password` had no rate limit or lockout; per-address limit plus a per-account lockout (`AUTH_RATE_LIMIT`, `AUTH_MAX_FAILURES`, `AUTH_LOCKOUT_MINUTES`) |
+| SEC-004 | Security & secrets | Any signed-in user could open DB connections via `/introspect`; inline connections now need the editor role in some project (or admin) |
+| SEC-005 | Security & secrets | Session cookie had no `Secure` flag; new `COOKIE_SECURE` setting, `auto` by default (follows HTTPS behind a trusted proxy) |
+| SEC-006 | Security & secrets | Login skipped argon2 for unknown emails; an unknown email is now checked against a dummy hash |
+| SEC-007 | Security & secrets | No CSP or security headers; nginx sends a CSP, nosniff, frame and referrer headers and the API sends its own (the CSP was not exercised in a real browser) |
+| SEC-008 | Security & secrets | Compose defaulted the DB password and bound every port to all interfaces; `POSTGRES_PASSWORD` is now required and ports bind to `127.0.0.1` by default |
+| SEC-009 | Security & secrets | Audit log omitted sign-in, failed sign-in, own password change and saved-connection changes; all now recorded |
+| SEC-012 | Security & secrets | `SESSION_SECRET` defaulted to a known value and signed nothing; the setting is deleted |
+| SEC-013 | Security & secrets | Server image ran as root; now `USER node` |
+| SEC-014 | Security & secrets | Google Fonts request leaked visitor IPs; Inter, JetBrains Mono and Manrope are self-hosted |
+| SEC-015 | Security & secrets | Net guard classified 6to4, Teredo and `::a.b.c.d` IPv6 as public; now reserved |
+| SEC-016 | Security & secrets | Note Markdown rendered raw HTML via `rehype-raw`; the plugin and dependency are removed |
+| SEC-017 | Security & secrets | An editor could repoint a saved connection's host and receive its stored password; host, port or dialect changes now need the password typed again |
+| SEC-018 | Security & secrets | Concurrent first-run `/auth/register` calls could create several admins; count and insert run under an advisory lock |
+| SEC-019 | Security & secrets | Error handler returned raw `err.message` for 5xx other than 500; every status 500 and above is hidden |
+| SEC-020 | Security & secrets | Logout left the previous user's local diagram copies and id maps; logout clears the Dexie database and `qubdidb.*` keys, then reloads |
 | REPO-001 | Repository | CI never built or tested `server/`; now lint, typecheck, build and tests on Postgres |
 | REPO-002 | Repository | `.dockerignore` let `server/node_modules` and `server/.env` into images; patterns match at any depth |
 | REPO-003 | Repository | ESLint ignored `server/`; it now has its own config and `npm run lint` |
@@ -195,3 +189,4 @@ None open.
 | 11 | 2026-10-17 | 0 new, 22 fixed (all open Client findings), 0 dropped; CLI-014 and CLI-023 fixed in part, see their rows |
 | 12 | 2026-10-17 | 0 new, 13 fixed (all open Server findings but SRV-032), 0 dropped; SRV-022 fixed in part, see its row |
 | 13 | 2026-10-17 | 0 new, 19 fixed (all open Repository findings but REPO-008), 0 dropped |
+| 14 | 2026-10-17 | 0 new, 16 fixed (all open Security findings), 0 dropped; SEC-007 not tested in a browser |

@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 13</b></div>
-  <h1>16 open, 1 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 14</b></div>
+  <h1>0 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (669 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (199 files, 2032 tests, all pass), vite build · server lint, typecheck, build, vitest (697 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
@@ -37,35 +37,13 @@
 
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">16 open &middot; 1 Crit &middot; 1 High &middot; 8 Med &middot; 6 Low. Source of truth: <code>Audit/audit.md</code>.</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
-      <tbody>
-        <tr><td class="svc-name">SEC-016</td><td><span class="pill crit">Crit</span></td><td class="wrap-cell">Note Markdown renders raw HTML via <code>rehype-raw</code>, unsanitised; stored XSS reaches admins</td><td><code>src/pages/editor-page/canvas/note-node/note-node.tsx:200</code></td><td class="wrap-cell">Add <code>rehype-sanitize</code> after <code>rehype-raw</code>, or drop <code>rehype-raw</code></td></tr>
-        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">No rate limit or lockout on <code>/auth/login</code>, <code>/auth/register</code>, <code>/auth/change-password</code></td><td><code>server/src/auth/routes.ts:92</code></td><td class="wrap-cell">Add per-IP and per-email rate limit to auth routes</td></tr>
-        <tr><td class="svc-name">SEC-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Any signed-in user can open DB connections via <code>/introspect</code>, no project role</td><td><code>server/src/introspect/routes.ts:132</code></td><td class="wrap-cell">Require project writer role for inline connections</td></tr>
-        <tr><td class="svc-name">SEC-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Session cookie has no <code>secure</code> flag</td><td><code>server/src/auth/routes.ts:44</code></td><td class="wrap-cell">Set <code>secure</code> behind HTTPS via a config flag</td></tr>
-        <tr><td class="svc-name">SEC-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Login skips argon2 for unknown emails; timing reveals registered accounts</td><td><code>server/src/auth/routes.ts:99</code></td><td class="wrap-cell">Verify against a dummy hash when the user is missing</td></tr>
-        <tr><td class="svc-name">SEC-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No CSP, <code>X-Frame-Options</code> or <code>nosniff</code> headers from nginx or Fastify</td><td><code>default.conf.template:1</code></td><td class="wrap-cell">Add security headers in nginx and the server</td></tr>
-        <tr><td class="svc-name">SEC-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Compose defaults the DB password and <code>change-me</code> secret; ports bind all interfaces</td><td><code>docker-compose.yml:7</code></td><td class="wrap-cell">Bind ports to <code>127.0.0.1</code>; require secrets in <code>.env</code></td></tr>
-        <tr><td class="svc-name">SEC-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Audit log omits sign-in, failed sign-in, own password change, saved-connection changes</td><td><code>server/src/audit/audit.ts:4</code></td><td class="wrap-cell">Add actions; emit them from auth and connection routes</td></tr>
-        <tr><td class="svc-name">SEC-017</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Editor can repoint a saved connection's host and receive its stored password</td><td><code>server/src/introspect/routes.ts:376</code></td><td class="wrap-cell">Require password re-entry when host, port or dialect changes</td></tr>
-        <tr><td class="svc-name">SEC-020</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Logout leaves the previous user's local diagram copies and id maps</td><td><code>src/context/qubdi-context/qubdi-provider.tsx:73</code></td><td class="wrap-cell">Clear Dexie diagrams and <code>qubdidb.*</code> keys on logout</td></tr>
-        <tr><td class="svc-name">SEC-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>SESSION_SECRET</code> defaults to a known value and signs nothing</td><td><code>server/src/config.ts:64</code></td><td class="wrap-cell">Delete the setting, or fail startup when unset</td></tr>
-        <tr><td class="svc-name">SEC-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Server image runs as root</td><td><code>server/Dockerfile:15</code></td><td class="wrap-cell">Add <code>USER node</code></td></tr>
-        <tr><td class="svc-name">SEC-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Google Fonts request leaks visitor IPs; README claims no external services</td><td><code>index.html:9</code></td><td class="wrap-cell">Self-host the fonts</td></tr>
-        <tr><td class="svc-name">SEC-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Net guard classifies 6to4, Teredo and <code>::a.b.c.d</code> IPv6 as public</td><td><code>server/src/introspect/net-guard.ts:102</code></td><td class="wrap-cell">Classify <code>2002::/16</code>, <code>2001::/32</code>, <code>::/96</code> as reserved</td></tr>
-        <tr><td class="svc-name">SEC-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Concurrent first-run <code>/auth/register</code> calls can create several admins</td><td><code>server/src/auth/routes.ts:60</code></td><td class="wrap-cell">Count and insert under an advisory lock</td></tr>
-        <tr><td class="svc-name">SEC-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Error handler returns raw <code>err.message</code> for 5xx statuses other than 500</td><td><code>server/src/app.ts:98</code></td><td class="wrap-cell">Hide the message for every status &gt;= 500</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <p class="section-note">0 open &middot; 20 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p>None open.</p>
 </section>
 
 <section id="closed" class="sec-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (4)</summary>
+  <details><summary>Fixed (20)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -74,6 +52,22 @@
         <tr><td class="svc-name">SEC-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>VITE_OPENAI_API_KEY</code> baked into the JS bundle; build args removed</td></tr>
         <tr><td class="svc-name">SEC-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Audit rows had no target id; <code>meta</code> now carries project, user and link ids</td></tr>
         <tr><td class="svc-name">SEC-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Cross-dialect SQL export sent the schema to an external LLM; AI export removed</td></tr>
+        <tr><td class="svc-name">SEC-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>/auth/login</code>, <code>/auth/register</code> and <code>/auth/change-password</code> had no rate limit or lockout; per-address limit plus a per-account lockout (<code>AUTH_RATE_LIMIT</code>, <code>AUTH_MAX_FAILURES</code>, <code>AUTH_LOCKOUT_MINUTES</code>)</td></tr>
+        <tr><td class="svc-name">SEC-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Any signed-in user could open DB connections via <code>/introspect</code>; inline connections now need the editor role in some project (or admin)</td></tr>
+        <tr><td class="svc-name">SEC-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Session cookie had no <code>Secure</code> flag; new <code>COOKIE_SECURE</code> setting, <code>auto</code> by default (follows HTTPS behind a trusted proxy)</td></tr>
+        <tr><td class="svc-name">SEC-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Login skipped argon2 for unknown emails; an unknown email is now checked against a dummy hash</td></tr>
+        <tr><td class="svc-name">SEC-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No CSP or security headers; nginx sends a CSP, nosniff, frame and referrer headers and the API sends its own (the CSP was not exercised in a real browser)</td></tr>
+        <tr><td class="svc-name">SEC-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Compose defaulted the DB password and bound every port to all interfaces; <code>POSTGRES_PASSWORD</code> is now required and ports bind to <code>127.0.0.1</code> by default</td></tr>
+        <tr><td class="svc-name">SEC-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Audit log omitted sign-in, failed sign-in, own password change and saved-connection changes; all now recorded</td></tr>
+        <tr><td class="svc-name">SEC-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>SESSION_SECRET</code> defaulted to a known value and signed nothing; the setting is deleted</td></tr>
+        <tr><td class="svc-name">SEC-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server image ran as root; now <code>USER node</code></td></tr>
+        <tr><td class="svc-name">SEC-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Google Fonts request leaked visitor IPs; Inter, JetBrains Mono and Manrope are self-hosted</td></tr>
+        <tr><td class="svc-name">SEC-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Net guard classified 6to4, Teredo and <code>::a.b.c.d</code> IPv6 as public; now reserved</td></tr>
+        <tr><td class="svc-name">SEC-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Note Markdown rendered raw HTML via <code>rehype-raw</code>; the plugin and dependency are removed</td></tr>
+        <tr><td class="svc-name">SEC-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">An editor could repoint a saved connection's host and receive its stored password; host, port or dialect changes now need the password typed again</td></tr>
+        <tr><td class="svc-name">SEC-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Concurrent first-run <code>/auth/register</code> calls could create several admins; count and insert run under an advisory lock</td></tr>
+        <tr><td class="svc-name">SEC-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Error handler returned raw <code>err.message</code> for 5xx other than 500; every status 500 and above is hidden</td></tr>
+        <tr><td class="svc-name">SEC-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Logout left the previous user's local diagram copies and id maps; logout clears the Dexie database and <code>qubdidb.*</code> keys, then reloads</td></tr>
       </tbody>
     </table>
   </div>

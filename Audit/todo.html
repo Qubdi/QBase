@@ -16,10 +16,10 @@
     <span><b>linked</b> open findings from <a href="audit.html">the audit</a></span>
   </div>
   <div class="note crit">
-    <span class="pill crit">Act first</span>
+    <span class="pill good">Done</span>
     <span><ul class="body">
-      <li>Not in <code>TODO.md</code> yet: <code>SEC-016</code> (Crit) &mdash; note Markdown renders raw HTML; stored XSS reaches admins.</li>
-      <li>MFA step 1 = <code>SEC-001</code>: rate limit and lockout on <code>/auth/*</code>. Prerequisite for MFA and the password rules.</li>
+      <li><code>SEC-016</code> (note Markdown rendered raw HTML) is fixed: <code>rehype-raw</code> is gone.</li>
+      <li>MFA step 1 = <code>SEC-001</code> is done: per-address rate limit and per-account lockout on <code>/auth/*</code>. MFA and the password rules can build on it.</li>
     </ul></span>
   </div>
   <div class="split-nav">
@@ -170,7 +170,7 @@
     <table>
       <thead><tr><th>#</th><th>Status</th><th class="wrap-cell">Step</th><th>Finding</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td><span class="pill crit">Blocker</span></td><td class="wrap-cell">Rate limit <code>/auth/*</code> with per-account lockout</td><td><code>SEC-001</code></td></tr>
+        <tr><td>1</td><td><span class="pill good">Done</span></td><td class="wrap-cell">Rate limit <code>/auth/*</code> with per-account lockout</td><td><code>SEC-001</code></td></tr>
         <tr><td>2</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">DB and config: MFA columns, recovery codes, challenges; <code>MFA_ENABLED</code>, <code>MFA_WINDOW_STEPS</code></td><td>&mdash;</td></tr>
         <tr><td>3</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">TOTP core pure functions with RFC 6238 vectors</td><td>&mdash;</td></tr>
         <tr><td>4</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Server: two-step sign-in, setup, enable, disable, recovery codes, audit</td><td><code>SEC-009</code></td></tr>

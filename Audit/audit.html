@@ -8,19 +8,12 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 13</b></div>
-  <h1>18 open across four lenses: 1 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 14</b></div>
+  <h1>2 open across four lenses: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (669 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (199 files, 2032 tests, all pass), vite build · server lint, typecheck, build, vitest (697 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
-  </div>
-  <div class="note crit">
-    <span class="pill crit">Act first</span>
-    <span><ul class="body">
-      <li><code>SEC-016</code> &mdash; Note Markdown renders raw HTML; any editor can run script as an admin.</li>
-      <li><code>SEC-001</code> &mdash; <code>/auth/login</code>, <code>/auth/register</code> and <code>/auth/change-password</code> accept unlimited guesses.</li>
-    </ul></span>
   </div>
   <div class="split-nav">
     <b>Part of a 4-file audit split &mdash;</b>
@@ -41,11 +34,11 @@
     <table>
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
-        <tr><td>Security &amp; secrets</td><td>16</td><td>1</td><td>1</td><td>4</td><td>0</td></tr>
+        <tr><td>Security &amp; secrets</td><td>0</td><td>0</td><td>0</td><td>20</td><td>0</td></tr>
         <tr><td>Repository</td><td>1</td><td>0</td><td>0</td><td>32</td><td>0</td></tr>
         <tr><td>Server</td><td>1</td><td>0</td><td>0</td><td>32</td><td>0</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>27</td><td>1</td></tr>
-        <tr><td>Total</td><td>18</td><td>1</td><td>1</td><td>95</td><td>1</td></tr>
+        <tr><td>Total</td><td>2</td><td>0</td><td>0</td><td>111</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -55,8 +48,8 @@
   <div class="section-head"><span class="snum">02</span><h2>Lenses</h2></div>
   <a class="idx-card sec" href="audit-security.html">
     <h3>Security &amp; secrets</h3>
-    <p>Stored XSS in notes and unthrottled auth lead the list.</p>
-    <p class="lbl">16 open &middot; 1 Crit &middot; 1 High &middot; 4 fixed &middot; 0 accepted</p>
+    <p>All findings fixed.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 20 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
@@ -94,6 +87,7 @@
         <tr><td>11</td><td>2026-10-17</td><td class="wrap-cell">0 new, 22 fixed (all open Client findings), 0 dropped; CLI-014 and CLI-023 fixed in part, see their rows</td></tr>
         <tr><td>12</td><td>2026-10-17</td><td class="wrap-cell">0 new, 13 fixed (all open Server findings but SRV-032), 0 dropped; SRV-022 fixed in part, see its row</td></tr>
         <tr><td>13</td><td>2026-10-17</td><td class="wrap-cell">0 new, 19 fixed (all open Repository findings but REPO-008), 0 dropped</td></tr>
+        <tr><td>14</td><td>2026-10-17</td><td class="wrap-cell">0 new, 16 fixed (all open Security findings), 0 dropped; SEC-007 not tested in a browser</td></tr>
       </tbody>
     </table>
   </div>
