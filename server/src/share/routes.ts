@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -169,16 +169,26 @@ export const shareManagementRoutes =
             const link = await findLink(id, linkId);
             if (!link) return reply.code(404).send({ error: 'not_found' });
             if (!link.revokedAt) {
-                await db
+                // the UPDATE itself says who revoked it: of two racing requests
+                // only one changes the row, so only one writes the audit entry
+                const revoked = await db
                     .update(shareLinks)
                     .set({ revokedAt: new Date() })
-                    .where(eq(shareLinks.id, linkId));
-                await audit(db, {
-                    userId: req.user!.id,
-                    action: 'share.revoke',
-                    diagramId: id,
-                    meta: { linkId },
-                });
+                    .where(
+                        and(
+                            eq(shareLinks.id, linkId),
+                            isNull(shareLinks.revokedAt)
+                        )
+                    )
+                    .returning({ id: shareLinks.id });
+                if (revoked.length > 0) {
+                    await audit(db, {
+                        userId: req.user!.id,
+                        action: 'share.revoke',
+                        diagramId: id,
+                        meta: { linkId },
+                    });
+                }
             }
             emitLinkChanged(linkId);
             return reply.code(204).send();

@@ -194,6 +194,23 @@ describe('share links', () => {
                 'share.revoke',
             ]);
         });
+
+        it('audits a revoke once when two requests revoke at the same time', async () => {
+            const fresh = await createDiagram(ctx.app, owner, 'Double revoke');
+            const made = (await createLink(owner, {}, fresh)).json();
+            const revoke = () =>
+                ctx.app.inject({
+                    method: 'DELETE',
+                    url: `/diagrams/${fresh}/share-links/${made.id}`,
+                    headers: as(owner),
+                });
+            const results = await Promise.all([revoke(), revoke(), revoke()]);
+            expect(results.map((r) => r.statusCode)).toEqual([204, 204, 204]);
+            const revokes = (await ctx.db.select().from(auditLog)).filter(
+                (r) => r.diagramId === fresh && r.action === 'share.revoke'
+            );
+            expect(revokes).toHaveLength(1);
+        });
     });
 
     describe('public route', () => {
