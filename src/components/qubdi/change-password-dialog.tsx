@@ -9,6 +9,10 @@ import {
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { api, errorMessage } from '@/lib/qubdi/api';
+import { useQubdi } from '@/hooks/use-qubdi';
+import { usePasswordMinLength } from '@/hooks/use-password-min-length';
+import { PasswordField } from './password-field';
+import { checkPassword } from '../../../shared/password';
 
 export interface ChangePasswordDialogProps {
     open: boolean;
@@ -23,6 +27,10 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     const [next, setNext] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [done, setDone] = useState(false);
+    const { user } = useQubdi();
+    const minLength = usePasswordMinLength(open);
+    const weak =
+        checkPassword(next, { minLength, email: user?.email }).length > 0;
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -61,14 +69,12 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                         onChange={(e) => setCurrent(e.target.value)}
                         required
                     />
-                    <Input
-                        type="password"
-                        placeholder="New password (min 8 characters)"
-                        autoComplete="new-password"
+                    <PasswordField
                         value={next}
-                        onChange={(e) => setNext(e.target.value)}
-                        minLength={8}
-                        required
+                        onChange={setNext}
+                        minLength={minLength}
+                        email={user?.email}
+                        placeholder="New password"
                     />
                     {error ? (
                         <p role="alert" className="text-sm text-red-500">
@@ -80,7 +86,9 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                             Password changed. Other devices were signed out.
                         </p>
                     ) : null}
-                    <Button type="submit">Change password</Button>
+                    <Button type="submit" disabled={weak}>
+                        Change password
+                    </Button>
                 </form>
             </DialogContent>
         </Dialog>

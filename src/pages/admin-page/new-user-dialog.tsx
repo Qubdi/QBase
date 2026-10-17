@@ -9,6 +9,9 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { errorMessage } from '@/lib/qubdi/api';
+import { PasswordField } from '@/components/qubdi/password-field';
+import { usePasswordMinLength } from '@/hooks/use-password-min-length';
+import { checkPassword } from '../../../shared/password';
 
 export interface NewUserDialogProps {
     open: boolean;
@@ -32,6 +35,9 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
     const [isAdmin, setIsAdmin] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+    const minLength = usePasswordMinLength(open);
+    const weak =
+        checkPassword(password, { minLength, email: email.trim() }).length > 0;
 
     // each time it opens it is a blank form, so a password never lingers
     useEffect(() => {
@@ -82,15 +88,12 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
                         required
                         autoFocus
                     />
-                    <Input
-                        type="password"
-                        aria-label="Temporary password"
-                        placeholder="Temporary password (min 8)"
-                        autoComplete="new-password"
+                    <PasswordField
+                        placeholder="Temporary password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        minLength={8}
-                        required
+                        onChange={setPassword}
+                        minLength={minLength}
+                        email={email.trim()}
                     />
                     <label className="flex items-center gap-2 text-sm">
                         <input
@@ -116,7 +119,7 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={busy || !email.trim() || !password}
+                            disabled={busy || !email.trim() || weak}
                         >
                             Create user
                         </Button>

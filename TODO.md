@@ -190,7 +190,11 @@ They apply when a password is **set**, never when it is checked at sign-in.
        compares with the target's own email. `PASSWORD_MIN_LENGTH` is read into config (default 12, floor 8)
        and passed through `docker-compose.yml`. Tests use `Password-123!`; the server suite can run against a
        throwaway Postgres with `TEST_PG_PORT`.
-3. [ ] **Client:** `PasswordField` with the checklist in the four dialogs.
+3. [x] **Client:** `PasswordField` (`components/qubdi/password-field.tsx`) with a tick or cross per rule, in the four
+       dialogs: first-admin sign-up, change password, admin New user and admin Reset password. The button is held
+       until every rule is met. Sign-in is a plain field with no rules and no `minLength`. The minimum length comes
+       from `GET /auth/setup-status` (`passwordMinLength`), once per page load (`usePasswordMinLength`), and is the
+       default 12 until it arrives. The email rule uses the typed email, the signed-in email, or the account being reset.
 4. [ ] **`must_change_password`:** migration, the admin create and reset set it, the forced-change
        flow.
 5. [ ] **Docs:** the rules and `PASSWORD_MIN_LENGTH` in `README` and `.env.example`.

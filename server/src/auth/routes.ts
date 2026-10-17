@@ -100,7 +100,11 @@ export const authRoutes =
         // lets the UI show the first-run "create admin" form only when it applies
         app.get('/setup-status', async () => {
             const [{ value }] = await db.select({ value: count() }).from(users);
-            return { needsSetup: value === 0 };
+            // the form needs the minimum length to tick its checklist as people type
+            return {
+                needsSetup: value === 0,
+                passwordMinLength: config.passwordMinLength,
+            };
         });
 
         app.post('/register', limit, async (req, reply) => {

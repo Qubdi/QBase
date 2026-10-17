@@ -23,13 +23,13 @@ describe('NewUserDialog', () => {
                 onCreate={onCreate}
             />
         );
-        fill(' ann@corp.io ', 'long-enough-pw');
+        fill(' ann@corp.io ', 'Long-enough-pw-1!');
         fireEvent.click(screen.getByLabelText('Make this user an admin'));
         fireEvent.click(screen.getByRole('button', { name: 'Create user' }));
         await waitFor(() =>
             expect(onCreate).toHaveBeenCalledWith({
                 email: 'ann@corp.io',
-                password: 'long-enough-pw',
+                password: 'Long-enough-pw-1!',
                 isAdmin: true,
             })
         );
@@ -46,7 +46,7 @@ describe('NewUserDialog', () => {
                 onCreate={onCreate}
             />
         );
-        fill('ann@corp.io', 'long-enough-pw');
+        fill('ann@corp.io', 'Long-enough-pw-1!');
         fireEvent.click(screen.getByRole('button', { name: 'Create user' }));
         expect(await screen.findByRole('alert')).toBeTruthy();
         expect(onOpenChange).not.toHaveBeenCalledWith(false);
@@ -56,6 +56,35 @@ describe('NewUserDialog', () => {
         render(
             <NewUserDialog open onOpenChange={vi.fn()} onCreate={vi.fn()} />
         );
+        expect(
+            (
+                screen.getByRole('button', {
+                    name: 'Create user',
+                }) as HTMLButtonElement
+            ).disabled
+        ).toBe(true);
+    });
+});
+
+describe('NewUserDialog password rules', () => {
+    it('holds the button until the temporary password meets the rules', () => {
+        render(
+            <NewUserDialog open onOpenChange={vi.fn()} onCreate={vi.fn()} />
+        );
+        const create = screen.getByRole('button', {
+            name: 'Create user',
+        }) as HTMLButtonElement;
+        fill('ann@corp.io', 'password123');
+        expect(create.disabled).toBe(true);
+        fill('ann@corp.io', 'Long-enough-pw-1!');
+        expect(create.disabled).toBe(false);
+    });
+
+    it('does not accept a password made from the new email', () => {
+        render(
+            <NewUserDialog open onOpenChange={vi.fn()} onCreate={vi.fn()} />
+        );
+        fill('annabel@corp.io', 'Annabel-Annabel-1!');
         expect(
             (
                 screen.getByRole('button', {

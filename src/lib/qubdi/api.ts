@@ -450,7 +450,10 @@ export function createApi(
 
     return {
         setupStatus: () =>
-            request<{ needsSetup: boolean }>('GET', '/auth/setup-status'),
+            request<{ needsSetup: boolean; passwordMinLength: number }>(
+                'GET',
+                '/auth/setup-status'
+            ),
         register: (email: string, password: string) =>
             request<RemoteUser>('POST', '/auth/register', { email, password }),
         login: (email: string, password: string) =>
@@ -779,6 +782,8 @@ export const errorMessage = (e: unknown): string => {
                 'Accounts are created by an admin. Ask yours for access.',
             invalid_request: 'Please check the values you entered.',
             wrong_password: 'Current password is incorrect.',
+            weak_password: 'That password does not meet the rules below.',
+            same_password: 'Choose a password different from the current one.',
             user_not_found: 'No account with that email exists yet.',
             already_member: 'That person already has access.',
             forbidden: 'You do not have permission to do that.',

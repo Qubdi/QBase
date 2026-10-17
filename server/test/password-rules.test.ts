@@ -266,3 +266,19 @@ describe('PASSWORD_MIN_LENGTH', () => {
         }
     });
 });
+
+describe('setup-status', () => {
+    it('tells the form the minimum length, before anyone has signed in', async () => {
+        const ctx = await createTestApp({ passwordMinLength: 14 });
+        try {
+            const res = await ctx.app.inject({ url: '/auth/setup-status' });
+            expect(res.statusCode).toBe(200);
+            expect(res.json()).toEqual({
+                needsSetup: true,
+                passwordMinLength: 14,
+            });
+        } finally {
+            await ctx.close();
+        }
+    });
+});

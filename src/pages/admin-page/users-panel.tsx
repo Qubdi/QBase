@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { KeyRound, Monitor, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { Badge } from '@/components/badge/badge';
-import { Input } from '@/components/input/input';
 import {
     Table,
     TableBody,
@@ -41,6 +40,9 @@ import {
     type UserStatus,
 } from '@/lib/qubdi/api';
 import { ago, exactTime } from '@/lib/qubdi/when';
+import { PasswordField } from '@/components/qubdi/password-field';
+import { usePasswordMinLength } from '@/hooks/use-password-min-length';
+import { checkPassword } from '../../../shared/password';
 import { NewUserDialog } from './new-user-dialog';
 import { UserSessionsDialog } from './user-sessions-dialog';
 
@@ -81,6 +83,10 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
     const [busy, setBusy] = useState(false);
     const [resetFor, setResetFor] = useState<AdminUser | null>(null);
     const [newPassword, setNewPassword] = useState('');
+    const minLength = usePasswordMinLength(resetFor !== null);
+    const resetWeak =
+        checkPassword(newPassword, { minLength, email: resetFor?.email })
+            .length > 0;
     const [deleteFor, setDeleteFor] = useState<AdminUser | null>(null);
     const [sessionsFor, setSessionsFor] = useState<AdminUser | null>(null);
     // the people ticked for a bulk action, and the action waiting to be confirmed
@@ -594,16 +600,15 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             });
                         }}
                     >
-                        <Input
-                            type="password"
-                            placeholder="New password (min 8)"
-                            autoComplete="new-password"
+                        <PasswordField
+                            placeholder="New password"
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            minLength={8}
-                            required
+                            onChange={setNewPassword}
+                            minLength={minLength}
+                            email={resetFor?.email}
+                            autoFocus
                         />
-                        <Button type="submit" disabled={busy}>
+                        <Button type="submit" disabled={busy || resetWeak}>
                             Set password
                         </Button>
                     </form>
