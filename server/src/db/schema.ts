@@ -56,6 +56,12 @@ export const users = pgTable(
         // set at every sign-in; null until the person signs in after this
         // column was added (and for an account nobody has signed in to yet)
         lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+        // true while the password is a temporary one an admin chose (a new
+        // account, or a reset): the API refuses everything but changing it,
+        // signing out and `me` until the person sets their own
+        mustChangePassword: boolean('must_change_password')
+            .notNull()
+            .default(false),
     },
     (t) => [
         // the app lowercases emails; this makes the database refuse a second

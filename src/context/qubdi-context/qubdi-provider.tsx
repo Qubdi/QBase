@@ -82,6 +82,10 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         window.location.replace('/');
     }, []);
 
+    const refreshUser = useCallback(async () => {
+        setUser(await api.me());
+    }, []);
+
     const syncDiagram = useCallback(
         async (
             diagram: Diagram,
@@ -147,10 +151,11 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
             login,
             register,
             logout,
+            refreshUser,
             syncDiagram,
             remoteIdFor: getRemoteId,
         }),
-        [user, sessionEnded, login, register, logout, syncDiagram]
+        [user, sessionEnded, login, register, logout, refreshUser, syncDiagram]
     );
 
     return (

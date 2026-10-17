@@ -224,8 +224,16 @@ They apply when a password is **set**, never when it is checked at sign-in.
        until every rule is met. Sign-in is a plain field with no rules and no `minLength`. The minimum length comes
        from `GET /auth/setup-status` (`passwordMinLength`), once per page load (`usePasswordMinLength`), and is the
        default 12 until it arrives. The email rule uses the typed email, the signed-in email, or the account being reset.
-4. [ ] **`must_change_password`:** migration, the admin create and reset set it, the forced-change
-       flow.
+4. [x] **`must_change_password`** (`0017_users_must_change_password`, one `add column boolean not null
+       default false`; existing accounts stay false, so nobody is forced to change). Set by admin create and by
+       admin reset (not when an admin resets their own), cleared by change-password. While it is true the API
+       answers `403 password_change_required` to everything except `/health`, `/auth/me`, `/auth/change-password`,
+       `/auth/logout`, `/auth/login`, `/auth/register` and `/auth/setup-status` (`OPEN_TO_TEMPORARY_PASSWORD` in
+       `app.ts`). `me` and the sign-in answer carry `mustChangePassword`. The UI opens an undismissable
+       "Choose your own password" dialog over every page (`ForcedPasswordChange`) with Sign out as the way out.
+       No index (never filtered on), no retention (a column, not a table). Undo: drop the column and the hook.
+       Fixtures: `registerUser` settles the flag unless `{ temporary: true }`. Left for later: a "Temporary
+       password" badge in the admin Users list.
 5. [ ] **Docs:** the rules and `PASSWORD_MIN_LENGTH` in `README` and `.env.example`.
 6. [ ] **Every step ends with:** tests, lint, type check and the full suite in a container,
        screenshots for UI steps, the database checklist at the top of this file when there is a

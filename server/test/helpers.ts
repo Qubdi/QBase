@@ -1,7 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 import { buildApp, type AppDeps } from '../src/app.js';
 import { loadConfig, type Config } from '../src/config.js';
+import { eq } from 'drizzle-orm';
 import { createDb } from '../src/db/client.js';
+import { users } from '../src/db/schema.js';
 
 export const TEST_DB = 'qubdidb_test';
 // TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
@@ -14,6 +16,8 @@ let adminCookie: string | null = null;
 let adminEmail: string | null = null;
 // one shared project that test diagrams live in (every diagram needs a project)
 let testProjectId: string | null = null;
+// the database of the app made last, so a fixture can settle an account without the API
+let fixtureDb: ReturnType<typeof createDb>['db'] | null = null;
 
 export interface TestCtx {
     app: FastifyInstance;
@@ -40,6 +44,7 @@ export async function createTestApp(
         ...overrides,
     };
     const { db, pool } = createDb(TEST_URL);
+    fixtureDb = db;
     if (reset) {
         adminCookie = null;
         adminEmail = null;
@@ -69,7 +74,13 @@ export interface TestUser {
 export async function registerUser(
     app: FastifyInstance,
     email: string,
-    password = 'Password-123!'
+    password = 'Password-123!',
+    /**
+     * An account an admin creates starts on a temporary password and may only
+     * change it. Fixtures normally settle that, so the account can be used at
+     * once; pass `temporary: true` to keep it as the API leaves it.
+     */
+    options: { temporary?: boolean } = {}
 ): Promise<TestUser> {
     if (adminCookie) {
         // self sign-up is closed: an admin creates the account, then it signs in
@@ -83,6 +94,12 @@ export async function registerUser(
             throw new Error(
                 `create user failed: ${created.statusCode} ${created.body}`
             );
+        }
+        if (!options.temporary) {
+            await fixtureDb!
+                .update(users)
+                .set({ mustChangePassword: false })
+                .where(eq(users.email, email));
         }
         return loginUser(app, email, password);
     }

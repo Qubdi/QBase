@@ -152,6 +152,7 @@ export const authRoutes =
                 id: user.id,
                 email: user.email,
                 isAdmin: user.isAdmin,
+                mustChangePassword: false,
             });
         });
 
@@ -185,7 +186,12 @@ export const authRoutes =
             }
             await startSession(req, reply, user.id);
             await audit(db, { userId: user.id, action: 'user.sign_in' });
-            return { id: user.id, email: user.email, isAdmin: user.isAdmin };
+            return {
+                id: user.id,
+                email: user.email,
+                isAdmin: user.isAdmin,
+                mustChangePassword: user.mustChangePassword,
+            };
         });
 
         app.post('/logout', async (req, reply) => {
@@ -235,7 +241,11 @@ export const authRoutes =
             failures.reset(key);
             await db
                 .update(users)
-                .set({ passwordHash: await hashPassword(body.newPassword) })
+                .set({
+                    passwordHash: await hashPassword(body.newPassword),
+                    // their own password now, not the temporary one
+                    mustChangePassword: false,
+                })
                 .where(eq(users.id, user.id));
             await destroyOtherSessions(
                 db,

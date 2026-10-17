@@ -11,6 +11,8 @@ export interface QubdiContext {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    /** asks the server who is signed in again, e.g. after the password was changed */
+    refreshUser: () => Promise<void>;
     /**
      * Uploads the local diagram; returns the server diagram id. An unbound
      * diagram needs a `projectId` to be created in; without one this rejects.
@@ -32,6 +34,7 @@ export const qubdiContext = createContext<QubdiContext>({
     login: reject,
     register: reject,
     logout: reject,
+    refreshUser: reject,
     syncDiagram: reject,
     remoteIdFor: () => undefined,
 });

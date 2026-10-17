@@ -41,6 +41,17 @@ export interface AppDeps {
 const trustHops = (hops: number) => (_address: string, hop: number) =>
     hop < hops;
 
+/** What a session on a temporary password may still call (the sign-in routes need no session). */
+export const OPEN_TO_TEMPORARY_PASSWORD: ReadonlySet<string> = new Set([
+    '/health',
+    '/auth/me',
+    '/auth/change-password',
+    '/auth/logout',
+    '/auth/login',
+    '/auth/register',
+    '/auth/setup-status',
+]);
+
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const app = Fastify({
         // closing the server also ends open SSE streams instead of waiting on them
@@ -91,6 +102,15 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
 
     app.addHook('preHandler', async (req) => {
         req.user = await getSessionUser(db, req.cookies[SESSION_COOKIE]);
+    });
+
+    // someone on a temporary password may only change it, ask who they are, or
+    // sign out; everything else waits until they have chosen their own
+    app.addHook('preHandler', async (req, reply) => {
+        if (!req.user?.mustChangePassword) return;
+        const path = req.url.split('?')[0];
+        if (OPEN_TO_TEMPORARY_PASSWORD.has(path)) return;
+        return reply.code(403).send({ error: 'password_change_required' });
     });
 
     app.setErrorHandler((err, req, reply) => {

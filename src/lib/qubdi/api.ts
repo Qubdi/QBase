@@ -8,6 +8,8 @@ export interface RemoteUser {
     id: string;
     email: string;
     isAdmin: boolean;
+    /** the password is a temporary one an admin chose: only changing it works until then */
+    mustChangePassword: boolean;
 }
 
 export type ProjectRole = 'editor' | 'viewer';
@@ -784,6 +786,8 @@ export const errorMessage = (e: unknown): string => {
             wrong_password: 'Current password is incorrect.',
             weak_password: 'That password does not meet the rules below.',
             same_password: 'Choose a password different from the current one.',
+            password_change_required:
+                'Choose your own password before you continue.',
             user_not_found: 'No account with that email exists yet.',
             already_member: 'That person already has access.',
             forbidden: 'You do not have permission to do that.',

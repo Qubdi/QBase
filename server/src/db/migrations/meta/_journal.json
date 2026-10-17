@@ -120,6 +120,13 @@
       "when": 1792163858744,
       "tag": "0016_audit_meta_and_sign_in_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792260759493,
+      "tag": "0017_users_must_change_password",
+      "breakpoints": true
     }
   ]
 }

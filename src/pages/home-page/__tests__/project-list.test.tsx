@@ -43,8 +43,18 @@ const renderList = (user: RemoteUser) =>
         </MemoryRouter>
     );
 
-const member: RemoteUser = { id: 'u', email: 'm@x.io', isAdmin: false };
-const admin: RemoteUser = { id: 'a', email: 'a@x.io', isAdmin: true };
+const member: RemoteUser = {
+    id: 'u',
+    email: 'm@x.io',
+    isAdmin: false,
+    mustChangePassword: false,
+};
+const admin: RemoteUser = {
+    id: 'a',
+    email: 'a@x.io',
+    isAdmin: true,
+    mustChangePassword: false,
+};
 
 describe('home page project list', () => {
     // a block body: a returned function would be run by vitest as a cleanup hook

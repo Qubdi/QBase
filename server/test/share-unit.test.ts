@@ -18,7 +18,7 @@ const link = (over: Partial<ShareLinkRow> = {}): ShareLinkRow => ({
     revokedAt: null,
     ...over,
 });
-const user = { id: 'u', email: 'u@x.co', isAdmin: false };
+const user = { id: 'u', email: 'u@x.co', isAdmin: false, mustChangePassword: false };
 const now = new Date('2026-01-01T00:00:00Z');
 
 describe('tokens', () => {

@@ -277,6 +277,9 @@ export const adminRoutes =
                     .values({
                         email: body.email,
                         passwordHash,
+                        // the password is the admin's choice, so the person
+                        // picks their own at first sign-in
+                        mustChangePassword: true,
                         isAdmin: body.isAdmin,
                     })
                     .returning();
@@ -323,6 +326,8 @@ export const adminRoutes =
                 const weak = weakPassword(config, body.password, account.email);
                 if (weak) return reply.code(400).send(weak);
                 patch.passwordHash = await hashPassword(body.password);
+                // a reset is a temporary password, unless the admin set their own
+                patch.mustChangePassword = id !== req.user!.id;
             }
             // the check and the write happen under one lock, so two admins
             // demoting each other at once cannot leave nobody
