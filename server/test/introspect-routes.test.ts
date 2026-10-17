@@ -532,18 +532,58 @@ describe('introspect HTTP layer (fake driver)', () => {
                 const res = await edit(
                     bob,
                     editId,
-                    withoutPassword({ name: 'renamed', host: '93.184.216.35', database: 'shop2', port: 5433 })
+                    withoutPassword({ name: 'renamed', database: 'shop2', user: 'reader2', ssl: false })
                 );
                 expect(res.statusCode).toBe(200);
                 expect(res.json()).toMatchObject({
                     id: editId,
                     name: 'renamed',
-                    host: '93.184.216.35',
                     database: 'shop2',
-                    port: 5433,
+                    user: 'reader2',
                 });
                 expect(res.body).not.toContain('p@ss-w0rd-SECRET');
                 expect(await storedPassword(editId)).toBe('p@ss-w0rd-SECRET');
+            });
+
+            it('needs the password typed again to point the connection somewhere else', async () => {
+                const before = await storedPassword(editId);
+                for (const move of [
+                    { host: '93.184.216.35' },
+                    { port: 5433 },
+                    { dialect: 'sqlserver' },
+                ]) {
+                    const res = await edit(bob, editId, withoutPassword({ name: 'renamed', ...move }));
+                    expect(res.statusCode, JSON.stringify(move)).toBe(400);
+                    expect(res.json().error).toBe('password_required');
+                }
+                // nothing moved, and the stored password is untouched
+                const [row] = await ctx.db
+                    .select()
+                    .from(savedConnections)
+                    .where(eq(savedConnections.id, editId));
+                expect(row.host).toBe(conn().host);
+                expect(await storedPassword(editId)).toBe(before);
+
+                // the same host in another case, or the default port written out, is not a move
+                const same = await edit(
+                    bob,
+                    editId,
+                    withoutPassword({ name: 'renamed', host: conn().host.toUpperCase(), port: 5432 })
+                );
+                expect(same.statusCode).toBe(200);
+
+                // with the password it may move; the new target is checked as usual
+                const moved = await edit(bob, editId, {
+                    ...conn(),
+                    name: 'renamed',
+                    host: '93.184.216.35',
+                    password: 'typed-again',
+                });
+                expect(moved.statusCode).toBe(200);
+                expect(moved.json().host).toBe('93.184.216.35');
+                // put it back for the tests that follow
+                const back = await edit(bob, editId, { ...conn(), name: 'renamed', password: 'p@ss-w0rd-SECRET' });
+                expect(back.statusCode).toBe(200);
             });
 
             it('replaces the password when a new one is sent, and never returns it', async () => {

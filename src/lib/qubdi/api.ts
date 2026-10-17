@@ -786,6 +786,10 @@ export const errorMessage = (e: unknown): string => {
             encryption_not_configured:
                 'This server cannot store passwords (CONNECTION_KEY is not set).',
             name_taken: 'That name is already in use.',
+            password_required:
+                'Type the password again to change the host, port or type of a saved connection.',
+            too_many_attempts:
+                'Too many failed attempts. Wait a few minutes and try again.',
             invalid_webhook: 'That webhook URL is not valid.',
             connection_required: 'Choose a saved connection first.',
             connection_not_found: 'That saved connection does not exist.',
