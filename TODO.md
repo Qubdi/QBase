@@ -53,7 +53,7 @@ used by the UI (the Comments panel was removed); decide whether to drop them or 
 
 ## Backlog: share links
 
-Two small UI tasks. Nothing started yet. Neither touches the database.
+Three small UI tasks. Nothing started yet. Neither touches the database.
 
 1. [ ] **The share-link table must look and sit exactly the same everywhere.** Today the editor's
        Share dialog (`components/qubdi/share-dialog.tsx`, a list of bordered cards) and the admin
@@ -65,12 +65,20 @@ Two small UI tasks. Nothing started yet. Neither touches the database.
        link of <diagram>", `lib/qubdi/activity.ts`, action `share.revoke`). Say which link: for example
        when it was made and by whom, its access, and when it was revoked. The audit row already has
        `meta.linkId` and `meta.access`.
+3. [ ] **Not duplicated, one reference.** The share-link table (columns, states, the revoke action, the
+       status wording) is written once and both dialogs use it, so the two can never drift apart again.
+       Today each dialog has its own copy of the markup and the status text (`lib/qubdi/share-links.ts`
+       already holds some shared helpers). Remove the second copy; a test renders both dialogs and
+       checks they show the same table.
 
 Open questions:
 
 - [ ] Task 1: which two screens must match, exactly? (Reading: the editor's Share dialog and the admin
       "Share links" dialog.) A screenshot of the one to copy would settle it.
 - [ ] Task 2: is it the Share dialog list, the Activity log, or both?
+- [ ] Task 3: I read "not duplicated reference" as no copied code (one shared component that both
+      dialogs reference). If you meant something else, for example that the same link must not be listed
+      twice, say so.
 
 ## Backlog: real-time co-editing
 
