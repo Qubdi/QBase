@@ -96,13 +96,12 @@ jobs:
         with:
           node-version: 24.x
 
-      # Fails on critical advisories in what ships. High ones in the Tailwind 3
-      # toolchain are tracked in Audit/audit.md until that migration is done.
+      # Fails on high and critical advisories in what ships.
       - name: Audit editor dependencies
-        run: npm audit --omit=dev --audit-level=critical
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Audit server dependencies
-        run: npm audit --omit=dev --audit-level=critical
+        run: npm audit --omit=dev --audit-level=high
         working-directory: server
 
       - name: Scan for committed secrets
