@@ -1,7 +1,7 @@
 # QubdiDB — Audit
 
-**rev** 10 · **date** 2026-10-17
-**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (200 files, 2067 tests, 1 fails), vite build · server lint, typecheck, build, vitest (665 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
+**rev** 11 · **date** 2026-10-17
+**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (665 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
@@ -9,8 +9,8 @@
 | Security & secrets | 16 | 1 | 1 | 4 | 0 |
 | Repository | 20 | 0 | 0 | 13 | 0 |
 | Server | 14 | 0 | 0 | 19 | 0 |
-| Client | 22 | 0 | 0 | 5 | 1 |
-| **Total** | 72 | 1 | 1 | 41 | 1 |
+| Client | 0 | 0 | 0 | 27 | 1 |
+| **Total** | 50 | 1 | 1 | 63 | 1 |
 
 ## Act first
 
@@ -88,30 +88,7 @@
 
 ### Client
 
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| CLI-007 | Med | A 404 on save clears the remote id; every later save fails `no_project` | `src/context/qubdi-context/qubdi-provider.tsx:112` | Keep the remote id without a `projectId`; surface the error |
-| CLI-008 | Med | Unsent local edits are never uploaded after reload, re-login or reopen | `src/lib/qubdi/autosave.ts:77` | Compare local copy with base on open; mark it pending |
-| CLI-009 | Med | Keepalive size check counts UTF-16 characters, not bytes; Georgian saves lost | `src/lib/qubdi/api.ts:421` | Measure with `TextEncoder` byte length |
-| CLI-010 | Med | Lost edit lock never shown; a 423 on save retries forever | `src/components/qubdi/use-edit-lock.ts:42` | On 423, switch to read-only and tell the user |
-| CLI-016 | Med | Old cross-dialect PG exporter cluster (~2,400 lines) reached only by tests | `src/lib/data/sql-export/cross-dialect/index.ts:80` | Delete the cluster and its test; keep `escapeSQLComment` |
-| CLI-017 | Med | Comments API methods and `comments-store` dead since the panel was removed | `src/lib/qubdi/api.ts:663` | Delete the five methods, the store and its test |
-| CLI-018 | Med | Members dialog owner branches never render; they call nonexistent endpoints | `src/components/qubdi/members-dialog.tsx:54` | Remove `isOwner` branches and the three member-write API methods |
-| CLI-024 | Med | Clipboard hook test still expects the old +30/+50 paste offset; client CI fails | `src/hooks/__tests__/use-table-clipboard.test.ts:180` | Update the test to the side-by-side paste offset |
-| CLI-011 | Low | API `fetch` has no timeout; one hung save stalls autosave | `src/lib/qubdi/api.ts:411` | Pass `AbortSignal.timeout(30_000)` to `fetch` |
-| CLI-012 | Low | Lock release on `pagehide` races the final keepalive save | `src/components/qubdi/use-edit-lock.ts:53` | Release the lock after the final save settles |
-| CLI-013 | Low | Change-password and create-relationship dialogs lack a description | `src/components/qubdi/change-password-dialog.tsx:47` | Add `DialogDescription` or `aria-describedby={undefined}` |
-| CLI-014 | Low | Monaco bundles unused TypeScript, CSS and HTML workers | `src/components/code-snippet/config.ts:6` | Keep only the editor and JSON workers |
-| CLI-015 | Low | No `manualChunks`; bundle visualizer runs on every build | `vite.config.ts:11` | Split vendor chunks; run the visualizer on demand |
-| CLI-019 | Low | Combobox component is never imported | `src/components/combobox/combobox.tsx:1` | Delete the file |
-| CLI-020 | Low | `applyIds` (328 lines) is reached only by its test | `src/lib/utils/apply-ids.ts:70` | Delete the file, barrel line and test |
-| CLI-021 | Low | Zod diagram-diff schema tree (~300 lines) is never used | `src/lib/domain/diff/diff.ts:44` | Delete the schema code |
-| CLI-022 | Low | ChartDB cloud, analytics flags and `github_repo_opened` setting never read | `src/lib/env.ts:1` | Remove flags, their Docker/nginx plumbing and the setting |
-| CLI-023 | Low | Unreferenced exports: `applyFilterOnDiagram`, `quickValidate`, `getNeighbors`, `listVersions`, `listDriftReports`, others | `src/lib/domain/diagram-filter/filter.ts:76` | Remove the unreferenced exports |
-| CLI-025 | Low | `flex-shrink-0` and `flex-grow` were removed in Tailwind 4; they emit nothing | `src/components/tree-view/tree-view.tsx:370` | Rename to `shrink-0` and `grow` |
-| CLI-026 | Low | 73 `shadow-sm`, `rounded-sm`, `outline-none` uses changed meaning under Tailwind 4 | `src/components/menubar/menubar.tsx:28` | Run the `@tailwindcss/upgrade` rename pass, or accept new sizes |
-| CLI-027 | Low | Ctrl+O opens the local Open-diagram dialog with the server enabled | `src/context/keyboard-shortcuts-context/keyboard-shortcuts-provider.tsx:42` | Navigate to `/` when `QUBDI_BACKEND_ENABLED`, as the menu did |
-| CLI-028 | Low | `menu.actions.new` and `menu.actions.browse` keys orphaned after the menu removal | `src/i18n/locales/en.ts:17` | Delete both keys from every locale |
+None open.
 
 ---
 
@@ -160,6 +137,28 @@
 | CLI-003 | Client | SQL import validators for MySQL, SQLite and SQL Server were stubs; now implemented |
 | CLI-004 | Client | Star-us dialog and its GIF were never opened; deleted with i18n keys |
 | CLI-005 | Client | Hard-coded `qubdi.example` in template pages; host now from `VITE_HOST_URL` |
+| CLI-007 | Client | A 404 on save cleared the remote id and later saves failed `no_project`; the id is kept unless a project is known to re-create it |
+| CLI-008 | Client | Unsent local edits were never uploaded after reload; on open the copy is compared with the server and marked pending |
+| CLI-009 | Client | Keepalive size check counted UTF-16 characters; now measured in UTF-8 bytes |
+| CLI-010 | Client | A 423 on save retried forever; the editor now goes read-only |
+| CLI-011 | Client | API `fetch` had no timeout; every request now aborts after 30 s |
+| CLI-012 | Client | Lock release raced the final keepalive save; it now waits for that save to settle |
+| CLI-013 | Client | Change-password dialog now has a description; create-relationship opts out with `aria-describedby={undefined}` |
+| CLI-014 | Client | Monaco worker imports for TypeScript, CSS and HTML removed (Monaco itself still emits an unused `ts.worker` file) |
+| CLI-015 | Client | Vendor chunks for react, xyflow and radix; the bundle visualizer runs only with `ANALYZE=1` |
+| CLI-016 | Client | Old cross-dialect PG exporter cluster and its test deleted; `escapeSQLComment` kept |
+| CLI-017 | Client | Dead comments API methods and `comments-store` deleted |
+| CLI-018 | Client | Members dialog is read-only; the member-write API methods are gone |
+| CLI-019 | Client | Unused combobox component deleted |
+| CLI-020 | Client | `applyIds` and its test deleted |
+| CLI-021 | Client | Unused zod diagram-diff schemas deleted |
+| CLI-022 | Client | Unread cloud and analytics flags, their Docker/nginx plumbing and `github_repo_opened` removed |
+| CLI-023 | Client | The five exports named (`applyFilterOnDiagram`, `quickValidate`, `getNeighbors`, `listVersions`, `listDriftReports`) removed; the audit did not list the others |
+| CLI-024 | Client | Clipboard hook test updated to the side-by-side paste offset |
+| CLI-025 | Client | `flex-shrink-0` and `flex-grow` renamed to `shrink-0` and `grow` |
+| CLI-026 | Client | `shadow-sm`, `rounded-sm` and `outline-none` renamed to `shadow-xs`, `rounded-xs` and `outline-hidden` |
+| CLI-027 | Client | Ctrl+O opens the project list when the server is enabled |
+| CLI-028 | Client | Orphaned `menu.actions.new` and `menu.actions.browse` keys deleted from every locale |
 
 ---
 
@@ -192,3 +191,4 @@
 | 8 | 2026-10-14 | 0 new, 12 fixed, 0 dropped; 2 findings narrowed |
 | 9 | 2026-10-17 | 53 new (1 Crit, 11 dead code), 1 fixed, 1 reopened (REPO-011), 0 dropped; 6 re-anchored |
 | 10 | 2026-10-17 | 6 new, 2 fixed, 1 reopened (REPO-012), 0 dropped; REPO-016 narrowed to Low; 5 re-anchored |
+| 11 | 2026-10-17 | 0 new, 22 fixed (all open Client findings), 0 dropped; CLI-014 and CLI-023 fixed in part, see their rows |
