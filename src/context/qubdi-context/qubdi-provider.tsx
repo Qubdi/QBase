@@ -22,6 +22,10 @@ import {
     setRemoteId,
 } from '@/lib/qubdi/remote-map';
 import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
+import {
+    confirmSentContent,
+    rememberSentContent,
+} from '@/lib/qubdi/sent-content';
 import { resetAdminLanding } from '@/lib/qubdi/admin-landing';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/lib/domain/diagram';
@@ -88,6 +92,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                     const base =
                         getBaseUpdatedAt(diagram.id) ??
                         (await api.getDiagram(remoteId)).updatedAt;
+                    rememberSentContent(diagram.id, content);
                     const updated = await api.updateDiagram(
                         remoteId,
                         {
@@ -99,6 +104,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                         options
                     );
                     setBaseUpdatedAt(diagram.id, updated.updatedAt);
+                    confirmSentContent(diagram.id);
                     return updated.id;
                 } catch (e) {
                     // deleted or access revoked on the server: fall through and re-create

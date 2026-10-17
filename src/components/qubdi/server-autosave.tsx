@@ -5,6 +5,7 @@ import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, ApiError } from '@/lib/qubdi/api';
 import { setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
+import { isLastSentContent } from '@/lib/qubdi/sent-content';
 import {
     AUTOSAVE_DELAY_MS,
     createAutosaver,
@@ -78,6 +79,21 @@ export const ServerAutosave: React.FC = () => {
                                   })
                                   .catch(() => undefined)
                         : null;
+                if (conflict && current.status === 'editor') {
+                    // a save of ours that landed without its reply is not a
+                    // conflict: take the server's version and save again
+                    void api
+                        .getDiagram(current.remoteId)
+                        .then((d) => {
+                            if (!isLastSentContent(diagramId, d.content)) {
+                                throw new Error('changed by someone else');
+                            }
+                            setBaseUpdatedAt(diagramId, d.updatedAt);
+                            return saver.flush();
+                        })
+                        .catch(() => setSaveStatus(status, retry, overwrite));
+                    return;
+                }
                 setSaveStatus(status, retry, overwrite);
             },
         });
