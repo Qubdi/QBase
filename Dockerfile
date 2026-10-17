@@ -1,4 +1,4 @@
-FROM node:24-alpine AS builder
+FROM node:25-alpine AS builder
 
 ARG VITE_HIDE_CLOUD
 ARG VITE_DISABLE_ANALYTICS
