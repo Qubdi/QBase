@@ -1,9 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { buildApp, type AppDeps } from '../src/app.js';
 import { loadConfig, type Config } from '../src/config.js';
-import { eq } from 'drizzle-orm';
+import pg from 'pg';
 import { createDb } from '../src/db/client.js';
-import { users } from '../src/db/schema.js';
 
 export const TEST_DB = 'qubdidb_test';
 // TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
@@ -16,8 +15,6 @@ let adminCookie: string | null = null;
 let adminEmail: string | null = null;
 // one shared project that test diagrams live in (every diagram needs a project)
 let testProjectId: string | null = null;
-// the database of the app made last, so a fixture can settle an account without the API
-let fixtureDb: ReturnType<typeof createDb>['db'] | null = null;
 
 export interface TestCtx {
     app: FastifyInstance;
@@ -44,7 +41,6 @@ export async function createTestApp(
         ...overrides,
     };
     const { db, pool } = createDb(TEST_URL);
-    fixtureDb = db;
     if (reset) {
         adminCookie = null;
         adminEmail = null;
@@ -71,6 +67,23 @@ export interface TestUser {
     cookie: string;
 }
 
+/**
+ * Marks an account's password as its own. It uses a connection of its own, so
+ * it works whichever of several test apps is still open.
+ */
+async function settlePassword(email: string) {
+    const client = new pg.Client({ connectionString: TEST_URL });
+    await client.connect();
+    try {
+        await client.query(
+            'update users set must_change_password = false where email = $1',
+            [email]
+        );
+    } finally {
+        await client.end();
+    }
+}
+
 export async function registerUser(
     app: FastifyInstance,
     email: string,
@@ -95,12 +108,7 @@ export async function registerUser(
                 `create user failed: ${created.statusCode} ${created.body}`
             );
         }
-        if (!options.temporary) {
-            await fixtureDb!
-                .update(users)
-                .set({ mustChangePassword: false })
-                .where(eq(users.email, email));
-        }
+        if (!options.temporary) await settlePassword(email);
         return loginUser(app, email, password);
     }
     const res = await app.inject({
