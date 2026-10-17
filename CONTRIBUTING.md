@@ -18,7 +18,7 @@ To submit a pull request:
 
 If you find a bug, check [GitHub issues](https://github.com/qubdi/qubdidb/issues) to see if it’s already reported. If not, feel free to [report it](https://github.com/qubdi/qubdidb/issues/new?labels=bug).
 
-For questions about using QubdiDB, reach out to us via Email (the project maintainers) or [Discord](https://discord.gg/QeFwyWSKwC). For feature requests, create a [new feature](https://github.com/qubdi/qubdidb/issues/new?labels=enhancement).
+For questions about using QubdiDB, [email the project maintainers](mailto:support@qubdi.dev). For feature requests, create a [new feature](https://github.com/qubdi/qubdidb/issues/new?labels=enhancement).
 
 ### Creating a Branch
 
