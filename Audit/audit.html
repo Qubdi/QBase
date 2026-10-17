@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 12</b></div>
-  <h1>37 open across four lenses: 1 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 13</b></div>
+  <h1>18 open across four lenses: 1 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (669 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
@@ -42,10 +42,10 @@
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
         <tr><td>Security &amp; secrets</td><td>16</td><td>1</td><td>1</td><td>4</td><td>0</td></tr>
-        <tr><td>Repository</td><td>20</td><td>0</td><td>0</td><td>13</td><td>0</td></tr>
+        <tr><td>Repository</td><td>1</td><td>0</td><td>0</td><td>32</td><td>0</td></tr>
         <tr><td>Server</td><td>1</td><td>0</td><td>0</td><td>32</td><td>0</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>27</td><td>1</td></tr>
-        <tr><td>Total</td><td>37</td><td>1</td><td>1</td><td>76</td><td>1</td></tr>
+        <tr><td>Total</td><td>18</td><td>1</td><td>1</td><td>95</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -60,8 +60,8 @@
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
-    <p>Images on EOL Node 25, undeclared and unused packages, an ungated publish.</p>
-    <p class="lbl">20 open &middot; 0 Crit &middot; 0 High &middot; 13 fixed &middot; 0 accepted</p>
+    <p>One left: no CODEOWNERS file.</p>
+    <p class="lbl">1 open &middot; 0 Crit &middot; 0 High &middot; 32 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
@@ -93,6 +93,7 @@
         <tr><td>10</td><td>2026-10-17</td><td class="wrap-cell">6 new, 2 fixed, 1 reopened (REPO-012), 0 dropped; REPO-016 narrowed to Low; 5 re-anchored</td></tr>
         <tr><td>11</td><td>2026-10-17</td><td class="wrap-cell">0 new, 22 fixed (all open Client findings), 0 dropped; CLI-014 and CLI-023 fixed in part, see their rows</td></tr>
         <tr><td>12</td><td>2026-10-17</td><td class="wrap-cell">0 new, 13 fixed (all open Server findings but SRV-032), 0 dropped; SRV-022 fixed in part, see its row</td></tr>
+        <tr><td>13</td><td>2026-10-17</td><td class="wrap-cell">0 new, 19 fixed (all open Repository findings but REPO-008), 0 dropped</td></tr>
       </tbody>
     </table>
   </div>

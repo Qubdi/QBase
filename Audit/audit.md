@@ -1,16 +1,16 @@
 # QubdiDB — Audit
 
-**rev** 12 · **date** 2026-10-17
+**rev** 13 · **date** 2026-10-17
 **method** static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (669 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 16 | 1 | 1 | 4 | 0 |
-| Repository | 20 | 0 | 0 | 13 | 0 |
+| Repository | 1 | 0 | 0 | 32 | 0 |
 | Server | 1 | 0 | 0 | 32 | 0 |
 | Client | 0 | 0 | 0 | 27 | 1 |
-| **Total** | 37 | 1 | 1 | 76 | 1 |
+| **Total** | 18 | 1 | 1 | 95 | 1 |
 
 ## Act first
 
@@ -46,26 +46,7 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-012 | Med | Images on EOL Node 25; CI, `.nvmrc`, `engines` and README say 24 | `Dockerfile:1` | Return both images to `node:24-alpine`; ignore odd Node majors |
 | REPO-008 | Med | No `CODEOWNERS` file | `.github/` | Add `.github/CODEOWNERS` with the maintainers' GitHub handle |
-| REPO-017 | Med | `framer-motion`, `timeago.js`, `@dnd-kit/core`, `@dnd-kit/utilities` imported but undeclared | `src/components/tree-view/tree-view.tsx:8` | Declare the four packages in `package.json` |
-| REPO-019 | Med | Compose passes 6 of 19 server settings; `TRUST_PROXY`, `LOG_LEVEL` unreachable | `docker-compose.yml:26` | Pass the remaining server env vars through |
-| REPO-020 | Med | Publish runs on any `v*` tag with no tests or CI gate | `.github/workflows/publish.yaml:3` | Run tests or require CI success before pushing images |
-| REPO-011 | Low | GitHub star iframe from `ghbtns.com` contradicts README; leaks visitor IPs | `src/pages/templates-page/templates-page.tsx:49` | Remove the iframe |
-| REPO-016 | Low | Monaco pins `dompurify` 3.4.15 with a low XSS advisory; CI gates only critical | `package.json:60` | Override `dompurify` to a fixed release; gate CI audit at high |
-| REPO-018 | Low | `@radix-ui/react-collapsible`, `@uidotdev/usehooks`, `motion`, `timeago-react` never imported | `package.json:30` | Remove the four dependencies |
-| REPO-021 | Low | UI publish job grants unused `id-token: write` | `.github/workflows/publish.yaml:18` | Remove `id-token: write` |
-| REPO-022 | Low | CONTRIBUTING has a Discord invite and a broken Email link | `CONTRIBUTING.md:21` | Remove the Discord link; fix the Email link |
-| REPO-023 | Low | `.env.example` omits `VITE_*` keys and `LINT_RATE_LIMIT`, `OUTBOUND_RATE_LIMIT` | `server/src/config.ts:69` | Document the keys, or delete the dead ones |
-| REPO-024 | Low | Node 22 drift in server `@types/node` and the build-tasks doc | `server/package.json:34` | Bump `@types/node` to ^24; update the doc |
-| REPO-025 | Low | Empty CLA allowlist fails Dependabot PRs | `.github/workflows/cla.yaml:33` | Allowlist `dependabot[bot]` |
-| REPO-026 | Low | `tailwindcss-animate` in dependencies pulls Tailwind into the production audit | `package.json:77` | Move `tailwindcss-animate` to devDependencies |
-| REPO-027 | Low | Container images pinned by tag; compose images outside Dependabot | `docker-compose.yml:4` | Pin digests; add compose images to Dependabot |
-| REPO-028 | Low | Pre-commit hook lints only the editor, not the server | `.husky/pre-commit:2` | Also run server lint in the hook |
-| REPO-029 | Low | CI lints the editor twice (Lint step and `build` script) | `.github/workflows/ci.yaml:27` | Drop one of the two lint runs |
-| REPO-030 | Low | Root vitest `exclude` replaces the defaults | `vitest.config.ts:14` | Spread `configDefaults.exclude` into `exclude` |
-| REPO-032 | Low | TODO lists a removed `CommentMarker`; finished workspace URLs still "In progress" | `TODO.md:699` | Drop the stale leftover; mark the section done |
-| REPO-033 | Low | `drizzle-kit` pulls old esbuild: 4 moderate dev advisories in `server/` | `server/package.json:36` | Override nested esbuild to >= 0.25, or upgrade `drizzle-kit` |
 
 ### Server
 
@@ -160,6 +141,25 @@ None open.
 | CLI-027 | Client | Ctrl+O opens the project list when the server is enabled |
 | CLI-028 | Client | Orphaned `menu.actions.new` and `menu.actions.browse` keys deleted from every locale |
 
+| REPO-011 | Repository | GitHub star iframe from ghbtns.com removed from the templates page |
+| REPO-012 | Repository | Both images back on `node:24-alpine` (pinned by digest); Dependabot no longer bumps the Node major |
+| REPO-016 | Repository | dompurify overridden to a fixed release; the CI audit now fails on high as well as critical |
+| REPO-017 | Repository | `framer-motion`, `timeago.js`, `@dnd-kit/core` and `@dnd-kit/utilities` declared in `package.json` |
+| REPO-018 | Repository | `@radix-ui/react-collapsible`, `@uidotdev/usehooks`, `motion` and `timeago-react` removed |
+| REPO-019 | Repository | Compose passes the remaining server settings through, with the server's own defaults |
+| REPO-020 | Repository | Publishing now needs a `verify` job (lint, typecheck, editor and server tests) to pass first |
+| REPO-021 | Repository | Unused `id-token: write` removed from the UI publish job |
+| REPO-022 | Repository | Discord link removed and the Email link fixed in `CONTRIBUTING.md` |
+| REPO-023 | Repository | `VITE_APP_URL`, `LINT_RATE_LIMIT` and `OUTBOUND_RATE_LIMIT` documented in the env examples |
+| REPO-024 | Repository | Server `@types/node` bumped to 24; build-tasks doc says Node 24 |
+| REPO-025 | Repository | `dependabot[bot]` added to the CLA allowlist |
+| REPO-026 | Repository | `tailwindcss-animate` moved to `devDependencies` |
+| REPO-027 | Repository | Images pinned by digest; the compose file added to Dependabot |
+| REPO-028 | Repository | Pre-commit hook also lints the server |
+| REPO-029 | Repository | CI and publish lint the editor once; the build step no longer lints again |
+| REPO-030 | Repository | Root vitest `exclude` spreads `configDefaults.exclude` |
+| REPO-032 | Repository | Stale `CommentMarker` leftover dropped; workspace URLs section marked done |
+| REPO-033 | Repository | Nested esbuild under `drizzle-kit` overridden to `^0.25.12`; `npm audit` clean |
 ---
 
 ## Accepted
@@ -193,3 +193,4 @@ None open.
 | 10 | 2026-10-17 | 6 new, 2 fixed, 1 reopened (REPO-012), 0 dropped; REPO-016 narrowed to Low; 5 re-anchored |
 | 11 | 2026-10-17 | 0 new, 22 fixed (all open Client findings), 0 dropped; CLI-014 and CLI-023 fixed in part, see their rows |
 | 12 | 2026-10-17 | 0 new, 13 fixed (all open Server findings but SRV-032), 0 dropped; SRV-022 fixed in part, see its row |
+| 13 | 2026-10-17 | 0 new, 19 fixed (all open Repository findings but REPO-008), 0 dropped |

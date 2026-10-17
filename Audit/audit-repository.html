@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 12</b></div>
-  <h1>20 open.</h1>
+  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 13</b></div>
+  <h1>1 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (197 files, 2024 tests, all pass), vite build · server lint, typecheck, build, vitest (669 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
@@ -30,31 +30,12 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">20 open &middot; 0 Crit &middot; 0 High &middot; 5 Med &middot; 15 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 0 Crit &middot; 0 High &middot; 1 Med &middot; 0 Low. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">REPO-012</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Images on EOL Node 25; CI, <code>.nvmrc</code>, <code>engines</code> and README say 24</td><td><code>Dockerfile:1</code></td><td class="wrap-cell">Return both images to <code>node:24-alpine</code>; ignore odd Node majors</td></tr>
         <tr><td class="svc-name">REPO-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No <code>CODEOWNERS</code> file</td><td><code>.github/</code></td><td class="wrap-cell">Add <code>.github/CODEOWNERS</code> with the maintainers' GitHub handle</td></tr>
-        <tr><td class="svc-name">REPO-017</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>framer-motion</code>, <code>timeago.js</code>, <code>@dnd-kit/core</code>, <code>@dnd-kit/utilities</code> imported but undeclared</td><td><code>src/components/tree-view/tree-view.tsx:8</code></td><td class="wrap-cell">Declare the four packages in <code>package.json</code></td></tr>
-        <tr><td class="svc-name">REPO-019</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Compose passes 6 of 19 server settings; <code>TRUST_PROXY</code>, <code>LOG_LEVEL</code> unreachable</td><td><code>docker-compose.yml:26</code></td><td class="wrap-cell">Pass the remaining server env vars through</td></tr>
-        <tr><td class="svc-name">REPO-020</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish runs on any <code>v*</code> tag with no tests or CI gate</td><td><code>.github/workflows/publish.yaml:3</code></td><td class="wrap-cell">Run tests or require CI success before pushing images</td></tr>
-        <tr><td class="svc-name">REPO-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">GitHub star iframe from <code>ghbtns.com</code> contradicts README; leaks visitor IPs</td><td><code>src/pages/templates-page/templates-page.tsx:49</code></td><td class="wrap-cell">Remove the iframe</td></tr>
-        <tr><td class="svc-name">REPO-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Monaco pins <code>dompurify</code> 3.4.15 with a low XSS advisory; CI gates only critical</td><td><code>package.json:60</code></td><td class="wrap-cell">Override <code>dompurify</code> to a fixed release; gate CI audit at high</td></tr>
-        <tr><td class="svc-name">REPO-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>@radix-ui/react-collapsible</code>, <code>@uidotdev/usehooks</code>, <code>motion</code>, <code>timeago-react</code> never imported</td><td><code>package.json:30</code></td><td class="wrap-cell">Remove the four dependencies</td></tr>
-        <tr><td class="svc-name">REPO-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">UI publish job grants unused <code>id-token: write</code></td><td><code>.github/workflows/publish.yaml:18</code></td><td class="wrap-cell">Remove <code>id-token: write</code></td></tr>
-        <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CONTRIBUTING has a Discord invite and a broken Email link</td><td><code>CONTRIBUTING.md:21</code></td><td class="wrap-cell">Remove the Discord link; fix the Email link</td></tr>
-        <tr><td class="svc-name">REPO-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>.env.example</code> omits <code>VITE_*</code> keys and <code>LINT_RATE_LIMIT</code>, <code>OUTBOUND_RATE_LIMIT</code></td><td><code>server/src/config.ts:69</code></td><td class="wrap-cell">Document the keys, or delete the dead ones</td></tr>
-        <tr><td class="svc-name">REPO-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Node 22 drift in server <code>@types/node</code> and the build-tasks doc</td><td><code>server/package.json:34</code></td><td class="wrap-cell">Bump <code>@types/node</code> to ^24; update the doc</td></tr>
-        <tr><td class="svc-name">REPO-025</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Empty CLA allowlist fails Dependabot PRs</td><td><code>.github/workflows/cla.yaml:33</code></td><td class="wrap-cell">Allowlist <code>dependabot[bot]</code></td></tr>
-        <tr><td class="svc-name">REPO-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>tailwindcss-animate</code> in dependencies pulls Tailwind into the production audit</td><td><code>package.json:77</code></td><td class="wrap-cell">Move <code>tailwindcss-animate</code> to devDependencies</td></tr>
-        <tr><td class="svc-name">REPO-027</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Container images pinned by tag; compose images outside Dependabot</td><td><code>docker-compose.yml:4</code></td><td class="wrap-cell">Pin digests; add compose images to Dependabot</td></tr>
-        <tr><td class="svc-name">REPO-028</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Pre-commit hook lints only the editor, not the server</td><td><code>.husky/pre-commit:2</code></td><td class="wrap-cell">Also run server lint in the hook</td></tr>
-        <tr><td class="svc-name">REPO-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CI lints the editor twice (Lint step and <code>build</code> script)</td><td><code>.github/workflows/ci.yaml:27</code></td><td class="wrap-cell">Drop one of the two lint runs</td></tr>
-        <tr><td class="svc-name">REPO-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Root vitest <code>exclude</code> replaces the defaults</td><td><code>vitest.config.ts:14</code></td><td class="wrap-cell">Spread <code>configDefaults.exclude</code> into <code>exclude</code></td></tr>
-        <tr><td class="svc-name">REPO-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">TODO lists a removed <code>CommentMarker</code>; finished workspace URLs still "In progress"</td><td><code>TODO.md:699</code></td><td class="wrap-cell">Drop the stale leftover; mark the section done</td></tr>
-        <tr><td class="svc-name">REPO-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>drizzle-kit</code> pulls old esbuild: 4 moderate dev advisories in <code>server/</code></td><td><code>server/package.json:36</code></td><td class="wrap-cell">Override nested esbuild to &gt;= 0.25, or upgrade <code>drizzle-kit</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -62,7 +43,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (13)</summary>
+  <details><summary>Fixed (32)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -80,6 +61,25 @@
         <tr><td class="svc-name">REPO-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Root and server versions disagreed; release-please now bumps both</td></tr>
         <tr><td class="svc-name">REPO-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">UI image baked the backend URL at build; now served at run time via <code>/config.js</code></td></tr>
         <tr><td class="svc-name">REPO-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>tailwind.config.js</code> used CommonJS; now an ES module</td></tr>
+        <tr><td class="svc-name">REPO-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">GitHub star iframe from ghbtns.com removed from the templates page</td></tr>
+        <tr><td class="svc-name">REPO-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Both images back on <code>node:24-alpine</code> (pinned by digest); Dependabot no longer bumps the Node major</td></tr>
+        <tr><td class="svc-name">REPO-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">dompurify overridden to a fixed release; the CI audit now fails on high as well as critical</td></tr>
+        <tr><td class="svc-name">REPO-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>framer-motion</code>, <code>timeago.js</code>, <code>@dnd-kit/core</code> and <code>@dnd-kit/utilities</code> declared in <code>package.json</code></td></tr>
+        <tr><td class="svc-name">REPO-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>@radix-ui/react-collapsible</code>, <code>@uidotdev/usehooks</code>, <code>motion</code> and <code>timeago-react</code> removed</td></tr>
+        <tr><td class="svc-name">REPO-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Compose passes the remaining server settings through, with the server's own defaults</td></tr>
+        <tr><td class="svc-name">REPO-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publishing now needs a <code>verify</code> job (lint, typecheck, editor and server tests) to pass first</td></tr>
+        <tr><td class="svc-name">REPO-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused <code>id-token: write</code> removed from the UI publish job</td></tr>
+        <tr><td class="svc-name">REPO-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Discord link removed and the Email link fixed in <code>CONTRIBUTING.md</code></td></tr>
+        <tr><td class="svc-name">REPO-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>VITE_APP_URL</code>, <code>LINT_RATE_LIMIT</code> and <code>OUTBOUND_RATE_LIMIT</code> documented in the env examples</td></tr>
+        <tr><td class="svc-name">REPO-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server <code>@types/node</code> bumped to 24; build-tasks doc says Node 24</td></tr>
+        <tr><td class="svc-name">REPO-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>dependabot[bot]</code> added to the CLA allowlist</td></tr>
+        <tr><td class="svc-name">REPO-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>tailwindcss-animate</code> moved to <code>devDependencies</code></td></tr>
+        <tr><td class="svc-name">REPO-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Images pinned by digest; the compose file added to Dependabot</td></tr>
+        <tr><td class="svc-name">REPO-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Pre-commit hook also lints the server</td></tr>
+        <tr><td class="svc-name">REPO-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI and publish lint the editor once; the build step no longer lints again</td></tr>
+        <tr><td class="svc-name">REPO-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Root vitest <code>exclude</code> spreads <code>configDefaults.exclude</code></td></tr>
+        <tr><td class="svc-name">REPO-032</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Stale <code>CommentMarker</code> leftover dropped; workspace URLs section marked done</td></tr>
+        <tr><td class="svc-name">REPO-033</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Nested esbuild under <code>drizzle-kit</code> overridden to <code>^0.25.12</code>; <code>npm audit</code> clean</td></tr>
       </tbody>
     </table>
   </div>
