@@ -50,15 +50,40 @@ export async function pruneSnapshots(db: Db, keep: number): Promise<number> {
     return res.rowCount ?? 0;
 }
 
+/** Removes every drift report beyond the newest `keep` of its diagram. */
+export async function pruneDriftReports(db: Db, keep: number): Promise<number> {
+    if (!(keep > 0)) return 0;
+    const res = await db.execute(sql`
+        delete from drift_reports
+        where id in (
+            select id from (
+                select id,
+                       row_number() over (
+                           partition by diagram_id order by run_at desc, id desc
+                       ) as place
+                from drift_reports
+            ) ranked
+            where place > ${keep}
+        )
+    `);
+    return res.rowCount ?? 0;
+}
+
+type MaintenanceConfig = Pick<
+    Config,
+    'auditRetentionDays' | 'snapshotKeep' | 'driftReportKeep'
+>;
+
 export async function runMaintenance(
     db: Db,
-    config: Pick<Config, 'auditRetentionDays' | 'snapshotKeep'>,
+    config: MaintenanceConfig,
     now: Date = new Date()
 ) {
     return {
         sessions: await purgeExpiredSessions(db, now),
         audit: await purgeAuditLog(db, config.auditRetentionDays, now),
         snapshots: await pruneSnapshots(db, config.snapshotKeep),
+        driftReports: await pruneDriftReports(db, config.driftReportKeep),
     };
 }
 
@@ -67,7 +92,7 @@ export async function runMaintenance(
  * stops it and waits for a run that is already going.
  */
 export function startMaintenance(
-    deps: { db: Db; config: Pick<Config, 'auditRetentionDays' | 'snapshotKeep'> },
+    deps: { db: Db; config: MaintenanceConfig },
     intervalMs = 3_600_000
 ): () => Promise<void> {
     let current: Promise<void> | null = null;

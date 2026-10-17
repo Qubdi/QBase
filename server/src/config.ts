@@ -17,6 +17,8 @@ export interface Config {
     outboundRateLimit: number;
     /** newest snapshots kept per diagram; older ones are deleted. 0 keeps all */
     snapshotKeep: number;
+    /** newest drift reports kept per diagram; older ones are deleted. 0 keeps all */
+    driftReportKeep: number;
     /** largest request body on ordinary routes, in bytes */
     bodyLimit: number;
     /** largest request body on the routes that carry a whole diagram, in bytes */
@@ -69,6 +71,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         lintRateLimit: Number(env.LINT_RATE_LIMIT ?? 30),
         outboundRateLimit: Number(env.OUTBOUND_RATE_LIMIT ?? 20),
         snapshotKeep: Number(env.SNAPSHOT_KEEP ?? 200),
+        driftReportKeep: Number(env.DRIFT_REPORT_KEEP ?? 50),
         bodyLimit: Number(env.BODY_LIMIT_KB ?? 1024) * 1024,
         diagramBodyLimit: Number(env.DIAGRAM_BODY_LIMIT_MB ?? 50) * 1024 * 1024,
         auditRetentionDays: Number(env.AUDIT_RETENTION_DAYS ?? 365),

@@ -1,6 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { auditLog, sessions } from '../src/db/schema.js';
-import { purgeAuditLog, purgeExpiredSessions } from '../src/maintenance.js';
+import { and, eq } from 'drizzle-orm';
+import {
+    auditLog,
+    diagrams,
+    driftReports,
+    projects,
+    sessions,
+} from '../src/db/schema.js';
+import {
+    pruneDriftReports,
+    purgeAuditLog,
+    purgeExpiredSessions,
+} from '../src/maintenance.js';
 import { createTestApp, registerUser, type TestCtx } from './helpers.js';
 
 describe('maintenance', () => {
@@ -44,5 +55,45 @@ describe('maintenance', () => {
             at: daysAgo(5000),
         });
         expect(await purgeAuditLog(ctx.db, 0, now)).toBe(0);
+    });
+
+    it('keeps the newest drift reports of each diagram and prunes the rest', async () => {
+        const [project] = await ctx.db
+            .insert(projects)
+            .values({ name: 'Maintenance', slug: 'maintenance' })
+            .returning({ id: projects.id });
+        const [{ id: a }, { id: b }] = await ctx.db
+            .insert(diagrams)
+            .values([
+                { projectId: project.id, ownerId: userId, title: 'A', content: {} },
+                { projectId: project.id, ownerId: userId, title: 'B', content: {} },
+            ])
+            .returning({ id: diagrams.id });
+        const report = (diagramId: string, n: number) => ({
+            diagramId,
+            runAt: daysAgo(n),
+            status: 'clean' as const,
+            trigger: 'manual' as const,
+        });
+        await ctx.db
+            .insert(driftReports)
+            .values([1, 2, 3, 4].map((n) => report(a, n)).concat([report(b, 1)]));
+        expect(await pruneDriftReports(ctx.db, 2)).toBe(2);
+        const left = await ctx.db
+            .select({ runAt: driftReports.runAt })
+            .from(driftReports)
+            .where(eq(driftReports.diagramId, a));
+        expect(left.map((r) => r.runAt.getTime()).sort()).toEqual(
+            [daysAgo(2).getTime(), daysAgo(1).getTime()].sort()
+        );
+        const other = await ctx.db
+            .select()
+            .from(driftReports)
+            .where(and(eq(driftReports.diagramId, b)));
+        expect(other).toHaveLength(1);
+    });
+
+    it('keeps every drift report when the limit is 0', async () => {
+        expect(await pruneDriftReports(ctx.db, 0)).toBe(0);
     });
 });
