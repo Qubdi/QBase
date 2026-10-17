@@ -378,8 +378,7 @@ export const fr: LanguageTranslation = {
                 'Exportez le schéma de votre diagramme en script {{databaseType}}',
             close: 'Fermer',
             loading: {
-                text: "L'IA génère un SQL pour {{databaseType}}...",
-                description: "Cela devrait prendre jusqu'à 30 secondes.",
+                text: 'Génération du SQL pour {{databaseType}}...',
             },
             error: {
                 message:
@@ -502,7 +501,6 @@ export const fr: LanguageTranslation = {
             one_to_one: 'Un à Un',
             one_to_many: 'Un à Plusieurs',
             many_to_one: 'Plusieurs à Un',
-            many_to_many: 'Plusieurs à Plusieurs',
         },
 
         canvas_context_menu: {

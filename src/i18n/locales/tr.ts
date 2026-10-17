@@ -375,8 +375,7 @@ export const tr: LanguageTranslation = {
                 'Diyagram şemanızı {{databaseType}} betiğine dışa aktarın',
             close: 'Kapat',
             loading: {
-                text: 'AI, SQL oluşturuyor {{databaseType}}...',
-                description: 'Bu işlem en fazla 30 saniye sürecektir.',
+                text: '{{databaseType}} için SQL oluşturuluyor...',
             },
             error: {
                 message:
@@ -495,7 +494,6 @@ export const tr: LanguageTranslation = {
             one_to_one: 'Bir Bir',
             one_to_many: 'Bir Çok',
             many_to_one: 'Çok Bir',
-            many_to_many: 'Çok Çok',
         },
         canvas_context_menu: {
             new_table: 'Yeni Tablo',

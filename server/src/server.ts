@@ -2,8 +2,6 @@ import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
 import { startMaintenance } from './maintenance.js';
-import { startDriftScheduler } from './drift/service.js';
-import { defaultIntrospectorFactory } from './introspect/routes.js';
 
 // Settings live in server/.env (see .env.example); real environment variables win
 try {
@@ -17,12 +15,6 @@ const { db, pool } = createDb(config.databaseUrl, { max: config.dbPoolMax });
 await runMigrations(db);
 
 const app = buildApp({ config, db });
-// scheduled drift checks run inside this process
-const stopScheduler = startDriftScheduler({
-    db,
-    config,
-    factory: defaultIntrospectorFactory,
-});
 await app.listen({ port: config.port, host: config.host });
 console.log(`QubdiDB server listening on :${config.port}`);
 
@@ -39,7 +31,6 @@ const shutdown = async (signal: string) => {
     // a stuck request must not keep the process alive for ever
     setTimeout(() => process.exit(1), 10_000).unref();
     try {
-        await stopScheduler();
         await stopMaintenance();
         await app.close();
         await pool.end();

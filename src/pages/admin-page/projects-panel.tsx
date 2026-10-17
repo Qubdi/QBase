@@ -1,24 +1,26 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/button/button';
-import { OptionSelect } from '@/components/option-select/option-select';
-import { Input } from '@/components/input/input';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { Link } from 'react-router-dom';
-import { projectHomePath } from '@/lib/qubdi/project-path';
+import { FolderPlus, Plus } from 'lucide-react';
+import { Button } from '@/components/button/button';
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/tabs/tabs';
+import { ToastAction } from '@/components/toast/toast';
+import { useToast } from '@/components/toast/use-toast';
 import { ListPager } from '@/components/qubdi/list-pager';
 import { SearchInput } from '@/components/qubdi/search-input';
-import { UserPicker } from '@/components/qubdi/user-picker';
 import { usePagedList } from '@/hooks/use-paged-list';
+import { projectHomePath } from '@/lib/qubdi/project-path';
 import { cn } from '@/lib/utils';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/alert-dialog/alert-dialog';
 import {
     api,
     errorMessage,
@@ -27,20 +29,23 @@ import {
     type ProjectMember,
     type ProjectRole,
 } from '@/lib/qubdi/api';
+import { NewProjectDialog } from './new-project-dialog';
+import { ProjectMembers } from './project-members';
+import { ProjectSettings } from './project-settings';
 
 const PAGE_SIZE = 5;
 
-const ROLE_OPTIONS = [
-    { value: 'viewer', label: 'Viewer' },
-    { value: 'editor', label: 'Editor' },
-];
-
-const roleHelp: Record<ProjectRole, string> = {
-    editor: 'Can create and edit diagrams in this project',
-    viewer: 'Can only read published diagrams',
+const ROLE_NOUN: Record<ProjectRole, string> = {
+    viewer: 'a viewer',
+    editor: 'an editor',
 };
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+type Toast = Parameters<ReturnType<typeof useToast>['toast']>[0];
+
 export const ProjectsPanel: React.FC = () => {
+    const { toast } = useToast();
     const [members, setMembers] = useState<ProjectMember[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     // the chosen project can sit on another page or be filtered out of the list
@@ -49,13 +54,9 @@ export const ProjectsPanel: React.FC = () => {
     );
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [editName, setEditName] = useState('');
-    const [editDescription, setEditDescription] = useState('');
-    const [assignUser, setAssignUser] = useState<AdminUser | null>(null);
-    const [assignRole, setAssignRole] = useState<ProjectRole>('viewer');
-    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [tab, setTab] = useState('members');
+    const detail = useRef<HTMLElement>(null);
 
     // a fixed page size keeps the list the same height however many projects exist
     const list = usePagedList(
@@ -66,6 +67,8 @@ export const ProjectsPanel: React.FC = () => {
     const choose = useCallback((p: AdminProject | null) => {
         setSelectedId(p?.id ?? null);
         setSelectedCache(p);
+        // an error belongs to the project it happened in
+        setError(null);
     }, []);
 
     // the fresh copy from the list wins; the cache covers other pages
@@ -76,10 +79,16 @@ export const ProjectsPanel: React.FC = () => {
         [list.items, selectedId, selectedCache]
     );
 
-    // open the first project once the list arrives
+    // Open the first project once the list arrives, and again when the open one
+    // is gone. The updates are functional: this effect runs after the render it
+    // belongs to, and a project the person chose in between must not be replaced
+    // by the first one because this render still saw "nothing chosen".
     useEffect(() => {
-        if (!selectedId && list.items.length > 0) choose(list.items[0]);
-    }, [selectedId, list.items, choose]);
+        const first = list.items[0];
+        if (!first) return;
+        setSelectedId((current) => current ?? first.id);
+        setSelectedCache((current) => current ?? first);
+    }, [selectedId, list.items]);
 
     const reloadMembers = useCallback(async (id: string | null) => {
         if (!id) {
@@ -97,376 +106,313 @@ export const ProjectsPanel: React.FC = () => {
         void reloadMembers(selectedId);
     }, [selectedId, reloadMembers]);
 
-    useEffect(() => {
-        setEditName(selected?.name ?? '');
-        setEditDescription(selected?.description ?? '');
-    }, [selected?.id, selected?.name, selected?.description]);
-
-    const run = async (fn: () => Promise<unknown>) => {
+    /**
+     * Runs a change, then refreshes the list and the members, and says it worked
+     * with a toast. Resolves to whether it worked; a failure is shown in the page.
+     */
+    const run = async (
+        fn: () => Promise<unknown>,
+        options: { done?: Toast; reload?: boolean } = {}
+    ): Promise<boolean> => {
+        const { done, reload = true } = options;
         setError(null);
         setBusy(true);
         try {
             await fn();
             list.reload();
-            await reloadMembers(selectedId);
+            if (reload) await reloadMembers(selectedId);
+            if (done) toast(done);
+            return true;
         } catch (e) {
             setError(errorMessage(e));
+            return false;
         } finally {
             setBusy(false);
         }
     };
 
-    const memberIds = useMemo(
-        () => new Set(members.map((m) => m.userId)),
-        [members]
-    );
+    const open = (p: AdminProject) => {
+        choose(p);
+        // stacked on a phone, the details are far below the list: bring them up
+        if (window.matchMedia?.('(max-width: 767px)').matches) {
+            requestAnimationFrame(() =>
+                detail.current?.scrollIntoView?.({ block: 'start' })
+            );
+        }
+    };
+
+    const create = async (name: string, description: string) => {
+        const p = await api.adminCreateProject({ name, description });
+        list.reload();
+        choose(p);
+        setTab('members');
+        toast({
+            title: 'Project created',
+            description: `${p.name} is ready. Add the people who can use it.`,
+        });
+    };
+
+    const assign = (
+        project: AdminProject,
+        user: AdminUser,
+        role: ProjectRole
+    ) =>
+        run(() => api.adminSetProjectMember(project.id, user.id, role), {
+            done: {
+                title: `Added ${user.email}`,
+                description: `As ${ROLE_NOUN[role]} in ${project.name}.`,
+            },
+        });
+
+    const changeRole = (
+        project: AdminProject,
+        member: ProjectMember,
+        role: ProjectRole
+    ) =>
+        run(() => api.adminSetProjectMember(project.id, member.userId, role), {
+            done: { title: `${member.email} is now ${ROLE_NOUN[role]}` },
+        });
+
+    const remove = async (project: AdminProject, member: ProjectMember) => {
+        const ok = await run(() =>
+            api.adminRemoveProjectMember(project.id, member.userId)
+        );
+        if (!ok) return;
+        toast({
+            title: `Removed ${member.email}`,
+            description: `They no longer have access to ${project.name}.`,
+            action: (
+                <ToastAction
+                    altText={`Undo: give ${member.email} access again`}
+                    onClick={() =>
+                        void run(() =>
+                            api.adminSetProjectMember(
+                                project.id,
+                                member.userId,
+                                member.role
+                            )
+                        )
+                    }
+                >
+                    Undo
+                </ToastAction>
+            ),
+        });
+    };
+
+    const save = (project: AdminProject, name: string, description: string) =>
+        run(
+            async () => {
+                const updated = await api.adminUpdateProject(project.id, {
+                    name,
+                    description,
+                });
+                // keep the shown copy right when it is not on this page
+                setSelectedCache((c) => (c ? { ...c, ...updated } : c));
+            },
+            { done: { title: 'Changes saved' } }
+        );
+
+    const deleteProject = (project: AdminProject) =>
+        run(
+            async () => {
+                await api.adminDeleteProject(project.id);
+                choose(null);
+            },
+            {
+                // the project is gone, so there is nothing to reload members for
+                reload: false,
+                done: { title: 'Project deleted', description: project.name },
+            }
+        );
 
     return (
         <div className="grid gap-6 md:grid-cols-[280px_1fr]">
-            <div className="flex flex-col gap-4">
-                <form
-                    className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm"
-                    aria-label="Create project"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        void run(async () => {
-                            const p = await api.adminCreateProject({
-                                name,
-                                description,
-                            });
-                            setName('');
-                            setDescription('');
-                            choose(p);
-                        });
-                    }}
-                >
-                    <h2 className="font-primary text-base font-semibold">
-                        New project
-                    </h2>
-                    <Input
-                        placeholder="Project name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        maxLength={100}
-                        required
-                    />
-                    <Input
-                        placeholder="Description (optional)"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        maxLength={500}
-                    />
-                    <Button type="submit" disabled={busy}>
-                        Create project
-                    </Button>
-                </form>
+            <div className="flex flex-col gap-3">
+                <Button onClick={() => setCreating(true)}>
+                    <Plus className="mr-1.5 size-4" aria-hidden />
+                    New project
+                </Button>
 
                 {list.error ? (
                     <p role="alert" className="text-sm text-destructive">
                         {list.error}
                     </p>
                 ) : null}
-                <div className="flex flex-col gap-2">
-                    <SearchInput
-                        value={list.query}
-                        onChange={list.setQuery}
-                        placeholder="Search projects…"
-                        label="Search projects"
-                    />
-                    <ul
-                        className="flex max-h-[22rem] min-h-32 flex-col gap-1 overflow-y-auto"
-                        aria-label="Projects"
-                        data-testid="project-list"
-                    >
-                        {list.initialLoading ? (
-                            <li className="text-sm text-muted-foreground">
-                                Loading…
-                            </li>
-                        ) : list.items.length === 0 ? (
-                            <li className="text-sm text-muted-foreground">
-                                {list.query
-                                    ? `No projects match "${list.query}".`
-                                    : 'No projects yet. Create the first one above.'}
-                            </li>
-                        ) : (
-                            list.items.map((p) => (
-                                <li key={p.id}>
-                                    <button
-                                        type="button"
-                                        onClick={() => choose(p)}
-                                        className={cn(
-                                            'flex w-full flex-col items-start rounded-lg border px-3 py-2 text-left text-sm',
-                                            p.id === selectedId
-                                                ? 'border-primary bg-accent text-accent-foreground'
-                                                : 'border-transparent hover:bg-muted'
-                                        )}
-                                    >
-                                        <span className="font-medium">
-                                            {p.name}
+                <SearchInput
+                    value={list.query}
+                    onChange={list.setQuery}
+                    placeholder="Search projects…"
+                    label="Search projects"
+                />
+                <ul
+                    className="flex max-h-[22rem] min-h-32 flex-col gap-1 overflow-y-auto"
+                    aria-label="Projects"
+                    data-testid="project-list"
+                >
+                    {list.initialLoading ? (
+                        <li className="text-sm text-muted-foreground">
+                            Loading…
+                        </li>
+                    ) : list.items.length === 0 ? (
+                        <li className="text-sm text-muted-foreground">
+                            {list.query
+                                ? `No projects match "${list.query}".`
+                                : 'No projects yet.'}
+                        </li>
+                    ) : (
+                        list.items.map((p) => (
+                            <li key={p.id}>
+                                <button
+                                    type="button"
+                                    onClick={() => open(p)}
+                                    aria-current={
+                                        p.id === selectedId ? 'true' : undefined
+                                    }
+                                    className={cn(
+                                        'flex w-full flex-col items-start rounded-lg border px-3 py-2 text-left text-sm',
+                                        p.id === selectedId
+                                            ? 'border-primary bg-accent text-accent-foreground'
+                                            : 'border-transparent hover:bg-muted'
+                                    )}
+                                >
+                                    <span className="font-medium">
+                                        {p.name}
+                                    </span>
+                                    {p.description ? (
+                                        <span className="line-clamp-1 text-xs text-muted-foreground">
+                                            {p.description}
                                         </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {p.members} member
-                                            {p.members === 1 ? '' : 's'} ·{' '}
-                                            {p.diagrams} diagram
-                                            {p.diagrams === 1 ? '' : 's'}
-                                        </span>
-                                    </button>
-                                </li>
-                            ))
-                        )}
-                    </ul>
-                    <ListPager
-                        page={list.page}
-                        pageCount={list.pageCount}
-                        limit={list.limit}
-                        total={list.total}
-                        onPageChange={list.setPage}
-                        disabled={list.loading}
-                        noun="projects"
-                    />
-                </div>
+                                    ) : null}
+                                    <span className="text-xs text-muted-foreground">
+                                        {plural(p.members, 'member')} ·{' '}
+                                        {plural(p.diagrams, 'diagram')}
+                                    </span>
+                                </button>
+                            </li>
+                        ))
+                    )}
+                </ul>
+                <ListPager
+                    page={list.page}
+                    pageCount={list.pageCount}
+                    limit={list.limit}
+                    total={list.total}
+                    onPageChange={list.setPage}
+                    disabled={list.loading}
+                    noun="projects"
+                />
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex min-w-0 flex-col gap-4">
                 {error ? (
                     <p role="alert" className="text-sm text-destructive">
                         {error}
                     </p>
                 ) : null}
                 {selected ? (
-                    <>
-                        <form
-                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm"
-                            aria-label="Project details"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                void run(async () => {
-                                    const updated =
-                                        await api.adminUpdateProject(
-                                            selected.id,
-                                            {
-                                                name: editName,
-                                                description: editDescription,
-                                            }
-                                        );
-                                    // keep the shown copy right when it is not on this page
-                                    setSelectedCache((c) =>
-                                        c ? { ...c, ...updated } : c
-                                    );
-                                });
-                            }}
-                        >
-                            <div className="flex items-center justify-between gap-2">
-                                <h2 className="font-primary text-base font-semibold">
-                                    Project details
+                    <section
+                        ref={detail}
+                        aria-label={`Project ${selected.name}`}
+                        className="scroll-mt-4 rounded-xl border bg-card shadow-sm"
+                    >
+                        <header className="flex flex-wrap items-start justify-between gap-3 border-b p-4">
+                            <div className="min-w-0">
+                                <h2 className="truncate font-primary text-lg font-semibold">
+                                    {selected.name}
                                 </h2>
-                                <Button
-                                    asChild
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                >
-                                    <Link to={projectHomePath(selected.slug)}>
-                                        Open workspace
-                                    </Link>
-                                </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Web address:{' '}
-                                <code>{projectHomePath(selected.slug)}</code>.
-                                Renaming the project changes it.
-                            </p>
-                            <Input
-                                aria-label="Project name"
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                                maxLength={100}
-                                required
-                            />
-                            <Input
-                                aria-label="Project description"
-                                value={editDescription}
-                                onChange={(e) =>
-                                    setEditDescription(e.target.value)
-                                }
-                                maxLength={500}
-                                placeholder="Description"
-                            />
-                            <div className="flex justify-between">
-                                <Button
-                                    type="submit"
-                                    variant="secondary"
-                                    disabled={
-                                        busy ||
-                                        (editName === selected.name &&
-                                            editDescription ===
-                                                selected.description)
-                                    }
-                                >
-                                    Save changes
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    className="text-destructive hover:text-destructive"
-                                    disabled={busy}
-                                    onClick={() => setConfirmDelete(true)}
-                                >
-                                    Delete project
-                                </Button>
-                            </div>
-                        </form>
-
-                        <section
-                            className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm"
-                            aria-label="Project members"
-                        >
-                            <div>
-                                <h2 className="font-primary text-base font-semibold">
-                                    Members and permissions
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Admins always have full access. Everyone
-                                    else only sees projects they are assigned
-                                    to.
+                                <p className="truncate text-sm text-muted-foreground">
+                                    {selected.description || 'No description'}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    <code>
+                                        {projectHomePath(selected.slug)}
+                                    </code>{' '}
+                                    · {plural(selected.diagrams, 'diagram')}
                                 </p>
                             </div>
-
-                            <form
-                                className="flex flex-col gap-2 md:flex-row"
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    if (!assignUser) return;
-                                    void run(async () => {
-                                        await api.adminSetProjectMember(
-                                            selected.id,
-                                            assignUser.id,
-                                            assignRole
-                                        );
-                                        setAssignUser(null);
-                                    });
-                                }}
+                            <Button
+                                asChild
+                                type="button"
+                                variant="outline"
+                                size="sm"
                             >
-                                <div className="md:flex-1">
-                                    <UserPicker
-                                        selected={assignUser}
-                                        onSelect={setAssignUser}
-                                        excludeIds={memberIds}
-                                    />
-                                </div>
-                                <OptionSelect
-                                    aria-label="Permission for new member"
-                                    className="w-full md:w-32"
-                                    value={assignRole}
-                                    onValueChange={(v) =>
-                                        setAssignRole(v as ProjectRole)
+                                <Link to={projectHomePath(selected.slug)}>
+                                    Open workspace
+                                </Link>
+                            </Button>
+                        </header>
+                        <Tabs
+                            value={tab}
+                            onValueChange={setTab}
+                            className="p-4"
+                        >
+                            <TabsList>
+                                <TabsTrigger value="members">
+                                    Members
+                                </TabsTrigger>
+                                <TabsTrigger value="settings">
+                                    Settings
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="members" className="mt-4">
+                                <ProjectMembers
+                                    key={selected.id}
+                                    members={members}
+                                    busy={busy}
+                                    onAssign={(user, role) =>
+                                        assign(selected, user, role)
                                     }
-                                    options={ROLE_OPTIONS}
+                                    onChangeRole={(m, role) =>
+                                        void changeRole(selected, m, role)
+                                    }
+                                    onRemove={(m) => void remove(selected, m)}
                                 />
-                                <Button
-                                    type="submit"
-                                    disabled={busy || !assignUser}
-                                >
-                                    Assign
-                                </Button>
-                            </form>
-                            <p className="text-xs text-muted-foreground">
-                                {roleHelp[assignRole]}
-                            </p>
-
-                            <ul
-                                className="flex flex-col divide-y"
-                                aria-label="Assigned users"
-                            >
-                                {members.length === 0 ? (
-                                    <li className="py-2 text-sm text-muted-foreground">
-                                        Nobody is assigned yet.
-                                    </li>
-                                ) : (
-                                    members.map((m) => (
-                                        <li
-                                            key={m.userId}
-                                            className="flex items-center justify-between gap-2 py-2 text-sm"
-                                        >
-                                            <span className="truncate">
-                                                {m.email}
-                                            </span>
-                                            <span className="flex items-center gap-2">
-                                                <OptionSelect
-                                                    size="sm"
-                                                    className="w-28"
-                                                    aria-label={`Permission for ${m.email}`}
-                                                    value={m.role}
-                                                    disabled={busy}
-                                                    onValueChange={(v) =>
-                                                        void run(() =>
-                                                            api.adminSetProjectMember(
-                                                                selected.id,
-                                                                m.userId,
-                                                                v as ProjectRole
-                                                            )
-                                                        )
-                                                    }
-                                                    options={ROLE_OPTIONS}
-                                                />
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    disabled={busy}
-                                                    onClick={() =>
-                                                        run(() =>
-                                                            api.adminRemoveProjectMember(
-                                                                selected.id,
-                                                                m.userId
-                                                            )
-                                                        )
-                                                    }
-                                                >
-                                                    Remove
-                                                </Button>
-                                            </span>
-                                        </li>
-                                    ))
-                                )}
-                            </ul>
-                        </section>
-                    </>
-                ) : !list.initialLoading ? (
+                            </TabsContent>
+                            <TabsContent value="settings" className="mt-4">
+                                <ProjectSettings
+                                    project={selected}
+                                    busy={busy}
+                                    onSave={(name, description) =>
+                                        void save(selected, name, description)
+                                    }
+                                    onDelete={() =>
+                                        void deleteProject(selected)
+                                    }
+                                />
+                            </TabsContent>
+                        </Tabs>
+                    </section>
+                ) : list.initialLoading ? null : list.total === 0 &&
+                  !list.query ? (
+                    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-10 text-center">
+                        <FolderPlus
+                            className="size-8 text-muted-foreground"
+                            aria-hidden
+                        />
+                        <h2 className="font-primary text-base font-semibold">
+                            No projects yet
+                        </h2>
+                        <p className="max-w-sm text-sm text-muted-foreground">
+                            A project holds diagrams and decides who can see
+                            them. Create the first one, then choose its people.
+                        </p>
+                        <Button onClick={() => setCreating(true)}>
+                            New project
+                        </Button>
+                    </div>
+                ) : (
                     <p className="text-sm text-muted-foreground">
-                        Select or create a project to manage who can access it.
+                        Select a project to manage who can access it.
                     </p>
-                ) : null}
+                )}
             </div>
 
-            <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete project?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {selected?.name} and its member assignments will be
-                            removed. A project that still contains diagrams
-                            cannot be deleted.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={() => {
-                                if (selected) {
-                                    void run(async () => {
-                                        await api.adminDeleteProject(
-                                            selected.id
-                                        );
-                                        choose(null);
-                                    });
-                                }
-                            }}
-                        >
-                            Delete project
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <NewProjectDialog
+                open={creating}
+                onOpenChange={setCreating}
+                onCreate={create}
+            />
         </div>
     );
 };

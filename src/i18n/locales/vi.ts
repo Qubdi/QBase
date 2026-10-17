@@ -378,8 +378,7 @@ export const vi: LanguageTranslation = {
             description: 'Xuất sơ đồ của bạn sang {{databaseType}}',
             close: 'Đóng',
             loading: {
-                text: 'AI đang tạo SQL cho {{databaseType}}...',
-                description: 'Việc này có thể mất khoảng 30 giây.',
+                text: 'Đang tạo SQL cho {{databaseType}}...',
             },
             error: {
                 message:
@@ -503,7 +502,6 @@ export const vi: LanguageTranslation = {
             one_to_one: 'Quan hệ một-một',
             one_to_many: 'Quan hệ một-nhiều',
             many_to_one: 'Quan hệ nhiều-một',
-            many_to_many: 'Quan hệ nhiều-nhiều',
         },
 
         canvas_context_menu: {

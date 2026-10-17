@@ -38,12 +38,7 @@ import { useAlert } from '@/context/alert-context/alert-context';
 export interface MenuProps {}
 
 export const Menu: React.FC<MenuProps> = () => {
-    const {
-        clearDiagramData,
-        deleteDiagram,
-        updateDiagramUpdatedAt,
-        databaseType,
-    } = useDiagram();
+    const { clearDiagramData, deleteDiagram, databaseType } = useDiagram();
     const {
         openCreateDiagramDialog,
         openOpenDiagramDialog,
@@ -168,8 +163,6 @@ export const Menu: React.FC<MenuProps> = () => {
         setShowMiniMapOnCanvas(!showMiniMapOnCanvas);
     }, [showMiniMapOnCanvas, setShowMiniMapOnCanvas]);
 
-    const emojiAI = '✨';
-
     return (
         <Menubar className="h-8 items-center gap-0.5 border-none bg-transparent p-0 shadow-none md:h-9">
             <MenubarMenu>
@@ -184,16 +177,6 @@ export const Menu: React.FC<MenuProps> = () => {
                             {
                                 keyboardShortcutsForOS[
                                     KeyboardShortcutAction.OPEN_DIAGRAM
-                                ].keyCombinationLabel
-                            }
-                        </MenubarShortcut>
-                    </MenubarItem>
-                    <MenubarItem onClick={updateDiagramUpdatedAt}>
-                        {t('menu.actions.save')}
-                        <MenubarShortcut>
-                            {
-                                keyboardShortcutsForOS[
-                                    KeyboardShortcutAction.SAVE_DIAGRAM
                                 ].keyCombinationLabel
                             }
                         </MenubarShortcut>
@@ -261,9 +244,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['postgresql']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                             {databaseType !== DatabaseType.MYSQL ? (
@@ -273,9 +253,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['mysql']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                             {databaseType !== DatabaseType.SQL_SERVER ? (
@@ -285,9 +262,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['sql_server']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                             {databaseType !== DatabaseType.MARIADB ? (
@@ -297,9 +271,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['mariadb']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                             {databaseType !== DatabaseType.SQLITE ? (
@@ -309,9 +280,6 @@ export const Menu: React.FC<MenuProps> = () => {
                                     }
                                 >
                                     {databaseTypeToLabelMap['sqlite']}
-                                    <MenubarShortcut className="text-base">
-                                        {emojiAI}
-                                    </MenubarShortcut>
                                 </MenubarItem>
                             ) : null}
                         </MenubarSubContent>

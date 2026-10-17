@@ -8,7 +8,7 @@ import {
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
 import type { DBField } from '@/lib/domain/db-field';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
+import { collectForeignKeys } from '../foreign-keys';
 
 function parseMSSQLDefault(field: DBField): string {
     if (!field.default) {
@@ -39,6 +39,10 @@ function parseMSSQLDefault(field: DBField): string {
     } else if (defaultValue.match(/^\(getdate\(\)\)$/i)) {
         // Handle (getdate()) defaults
         return 'getdate()';
+    } else if (defaultValue.match(/^\(\s*[a-z_][\w.]*\s*\(.*\)\s*\)$/is)) {
+        // Handle any other (function()) default, such as (newid()): SQL Server
+        // reports its defaults wrapped in parentheses
+        return defaultValue.replace(/^\(\s*|\s*\)$/g, '');
     } else if (defaultValue.match(/^\('?\*'?\)$/i) || defaultValue === '*') {
         // Handle ('*') or (*) or * defaults - common for "all" values
         return "N'*'";
@@ -257,73 +261,28 @@ export function exportMSSQL({
         sqlScript += '\n-- Foreign key constraints\n';
 
         // Process all relationships and create FK objects with schema info
-        const foreignKeys = relationships
-            .map((r: DBRelationship) => {
-                const sourceTable = tables.find(
-                    (t) => t.id === r.sourceTableId
-                );
-                const targetTable = tables.find(
-                    (t) => t.id === r.targetTableId
-                );
-
-                if (
-                    !sourceTable ||
-                    !targetTable ||
-                    sourceTable.isView ||
-                    targetTable.isView
-                ) {
-                    return '';
-                }
-
-                const sourceField = sourceTable.fields.find(
-                    (f) => f.id === r.sourceFieldId
-                );
-                const targetField = targetTable.fields.find(
-                    (f) => f.id === r.targetFieldId
-                );
-
-                if (!sourceField || !targetField) {
-                    return '';
-                }
-
-                // Determine which table should have the foreign key based on cardinality
-                // - FK goes on the "many" side when cardinalities differ
-                // - FK goes on target when cardinalities are the same (one:one, many:many)
-                let fkTable, fkField, refTable, refField;
-
-                if (
-                    r.sourceCardinality === 'many' &&
-                    r.targetCardinality === 'many'
-                ) {
-                    // Many-to-many relationships need a junction table, skip
-                    return '';
-                } else if (
-                    r.sourceCardinality === 'many' &&
-                    r.targetCardinality === 'one'
-                ) {
-                    // FK goes on source table (the many side)
-                    fkTable = sourceTable;
-                    fkField = sourceField;
-                    refTable = targetTable;
-                    refField = targetField;
-                } else {
-                    // All other cases: FK goes on target table
-                    fkTable = targetTable;
-                    fkField = targetField;
-                    refTable = sourceTable;
-                    refField = sourceField;
-                }
-
+        const foreignKeys = collectForeignKeys({ tables, relationships })
+            .map((k) => {
+                const { fkTable, refTable } = k;
                 const fkTableName = fkTable.schema
                     ? `[${fkTable.schema}].[${fkTable.name}]`
                     : `[${fkTable.name}]`;
                 const refTableName = refTable.schema
                     ? `[${refTable.schema}].[${refTable.name}]`
                     : `[${refTable.name}]`;
+                const fkColumns = k.fkFields
+                    .map((f) => `[${f.name}]`)
+                    .join(', ');
+                const refColumns = k.refFields
+                    .map((f) => `[${f.name}]`)
+                    .join(', ');
+                const name =
+                    k.name ||
+                    `fk_${fkTable.name}_${k.fkFields.map((f) => f.name).join('_')}`;
 
                 return {
                     schema: fkTable.schema || 'dbo',
-                    sql: `ALTER TABLE ${fkTableName} ADD CONSTRAINT [${r.name}] FOREIGN KEY([${fkField.name}]) REFERENCES ${refTableName}([${refField.name}]);`,
+                    sql: `ALTER TABLE ${fkTableName} ADD CONSTRAINT [${name}] FOREIGN KEY(${fkColumns}) REFERENCES ${refTableName}(${refColumns});`,
                 };
             })
             .filter(Boolean); // Remove empty objects

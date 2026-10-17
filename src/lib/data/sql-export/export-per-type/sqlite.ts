@@ -8,7 +8,7 @@ import {
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
 import type { DBField } from '@/lib/domain/db-field';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
+import { collectForeignKeys } from '../foreign-keys';
 
 function parseSQLiteDefault(field: DBField): string {
     if (!field.default) {
@@ -216,75 +216,30 @@ export function exportSQLite({
 
                 // Collect foreign key constraints for this table
                 const tableForeignKeys: string[] = [];
-                relationships.forEach((r: DBRelationship) => {
-                    const sourceTable = tables.find(
-                        (t) => t.id === r.sourceTableId
-                    );
-                    const targetTable = tables.find(
-                        (t) => t.id === r.targetTableId
-                    );
-
-                    if (
-                        !sourceTable ||
-                        !targetTable ||
-                        sourceTable.isView ||
-                        targetTable.isView ||
-                        sqliteSystemTables.includes(
-                            sourceTable.name.toLowerCase()
-                        ) ||
-                        sqliteSystemTables.includes(
-                            targetTable.name.toLowerCase()
-                        )
-                    ) {
-                        return;
-                    }
-
-                    const sourceField = sourceTable.fields.find(
-                        (f) => f.id === r.sourceFieldId
-                    );
-                    const targetField = targetTable.fields.find(
-                        (f) => f.id === r.targetFieldId
-                    );
-
-                    if (!sourceField || !targetField) {
-                        return;
-                    }
-
-                    // Determine which table should have the foreign key based on cardinality
-                    // - FK goes on the "many" side when cardinalities differ
-                    // - FK goes on target when cardinalities are the same (one:one, many:many)
-                    let fkTable, fkField, refTable, refField;
-
-                    if (
-                        r.sourceCardinality === 'many' &&
-                        r.targetCardinality === 'many'
-                    ) {
-                        // Many-to-many relationships need a junction table, skip
-                        return;
-                    } else if (
-                        r.sourceCardinality === 'many' &&
-                        r.targetCardinality === 'one'
-                    ) {
-                        // FK goes on source table (the many side)
-                        fkTable = sourceTable;
-                        fkField = sourceField;
-                        refTable = targetTable;
-                        refField = targetField;
-                    } else {
-                        // All other cases: FK goes on target table
-                        fkTable = targetTable;
-                        fkField = targetField;
-                        refTable = sourceTable;
-                        refField = sourceField;
-                    }
-
-                    // If this foreign key belongs to the current table, add it
-                    if (fkTable.id === table.id) {
-                        tableForeignKeys.push(
-                            `    FOREIGN KEY("${fkField.name}") REFERENCES "${refTable.name}"("${refField.name}")`
-                        );
-                    }
-                });
+                collectForeignKeys({ tables, relationships })
+                    .filter(
+                        (k) =>
+                            !sqliteSystemTables.includes(
+                                k.fkTable.name.toLowerCase()
+                            ) &&
+                            !sqliteSystemTables.includes(
+                                k.refTable.name.toLowerCase()
+                            )
+                    )
+                    .forEach((k) => {
+                        // If this foreign key belongs to the current table, add it
+                        if (k.fkTable.id === table.id) {
+                            const fkColumns = k.fkFields
+                                .map((f) => `"${f.name}"`)
+                                .join(', ');
+                            const refColumns = k.refFields
+                                .map((f) => `"${f.name}"`)
+                                .join(', ');
+                            tableForeignKeys.push(
+                                `    FOREIGN KEY(${fkColumns}) REFERENCES "${k.refTable.name}"(${refColumns})`
+                            );
+                        }
+                    });
 
                 return `${schemaComment}${
                     table.comments ? formatTableComment(table.comments) : ''

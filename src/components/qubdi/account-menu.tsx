@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+    Database,
     FolderKanban,
     KeyRound,
     LogOut,
@@ -21,18 +22,23 @@ import {
 } from '@/components/dropdown-menu/dropdown-menu';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
+import { getProjectId } from '@/lib/qubdi/remote-map';
 import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
+import { ConnectionsDialog } from './connections-dialog';
 import { MembersDialog } from './members-dialog';
 import { OPEN_RESYNC_EVENT } from './drift-dialog';
 import { ResyncDialog } from './resync-dialog';
 import { ShareDialog } from './share-dialog';
+import { useWorkspace } from './workspace-context';
 
 export const AccountMenu: React.FC = () => {
     const { enabled, user, logout, syncDiagram, remoteIdFor } = useQubdi();
     const { currentDiagram } = useDiagram();
+    const workspace = useWorkspace();
     const navigate = useNavigate();
     const [authOpen, setAuthOpen] = useState(false);
+    const [connectionsOpen, setConnectionsOpen] = useState(false);
     const [membersOpen, setMembersOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
     const [shareOpen, setShareOpen] = useState(false);
@@ -46,6 +52,18 @@ export const AccountMenu: React.FC = () => {
     }, []);
 
     if (!enabled || user === undefined) return null;
+
+    // saved connections belong to a project, and only its editors can use them
+    const legacyProjectId = workspace
+        ? undefined
+        : getProjectId(currentDiagram.id);
+    const connectionsProject = workspace
+        ? workspace.project.role === 'viewer'
+            ? null
+            : workspace.project
+        : legacyProjectId
+          ? { id: legacyProjectId, name: 'this project' }
+          : null;
 
     if (user === null) {
         return (
@@ -92,6 +110,14 @@ export const AccountMenu: React.FC = () => {
                         <FolderKanban className="mr-2 size-4" />
                         Projects
                     </DropdownMenuItem>
+                    {connectionsProject ? (
+                        <DropdownMenuItem
+                            onClick={() => setConnectionsOpen(true)}
+                        >
+                            <Database className="mr-2 size-4" />
+                            Database connections
+                        </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuItem onClick={() => setResyncOpen(true)}>
                         <RefreshCw className="mr-2 size-4" />
                         Re-sync from database
@@ -127,6 +153,13 @@ export const AccountMenu: React.FC = () => {
                 remoteId={remoteIdFor(currentDiagram.id)}
                 currentUserId={user.id}
             />
+            {connectionsProject ? (
+                <ConnectionsDialog
+                    open={connectionsOpen}
+                    onOpenChange={setConnectionsOpen}
+                    project={connectionsProject}
+                />
+            ) : null}
             <ResyncDialog open={resyncOpen} onOpenChange={setResyncOpen} />
             <ShareDialog
                 open={shareOpen}

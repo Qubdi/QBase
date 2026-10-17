@@ -1,0 +1,7 @@
+# Keep LF in the working tree on every OS. Prettier (eslint) rejects CRLF, and CRLF
+# in entrypoint.sh breaks the shebang inside the Linux container. Without this,
+# core.autocrlf=true on Windows checks files out as CRLF and `docker compose build` fails.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.template text eol=lf

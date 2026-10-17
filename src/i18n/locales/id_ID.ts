@@ -378,8 +378,7 @@ export const id_ID: LanguageTranslation = {
             description: 'Ekspor skema diagram Anda ke skrip {{databaseType}}',
             close: 'Tutup',
             loading: {
-                text: 'AI sedang membuat SQL untuk {{databaseType}}...',
-                description: 'Ini akan memakan waktu hingga 30 detik.',
+                text: 'Membuat SQL untuk {{databaseType}}...',
             },
             error: {
                 message:
@@ -504,7 +503,6 @@ export const id_ID: LanguageTranslation = {
             one_to_one: 'Satu ke Satu',
             one_to_many: 'Satu ke Banyak',
             many_to_one: 'Banyak ke Satu',
-            many_to_many: 'Banyak ke Banyak',
         },
 
         canvas_context_menu: {

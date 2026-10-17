@@ -1,0 +1,312 @@
+<meta charset="utf-8">
+<title>QubdiDB &mdash; TODO</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to plan</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QubdiDB &middot; TODO &middot; <b>from <code>TODO.md</code></b></div>
+  <h1>Admin redesign shipped. Four backlogs not started; auth rate limit blocks MFA.</h1>
+  <div class="meta-row">
+    <span><b>read</b> 2026-10-17</span>
+    <span><b>source</b> <code>TODO.md</code> (rendered view; edit the Markdown, not this page)</span>
+    <span><b>linked</b> open findings from <a href="audit.html">the audit</a></span>
+  </div>
+  <div class="note crit">
+    <span class="pill crit">Act first</span>
+    <span><ul class="body">
+      <li>Not in <code>TODO.md</code> yet: <code>SEC-016</code> (Crit) &mdash; note Markdown renders raw HTML; stored XSS reaches admins.</li>
+      <li>MFA step 1 = <code>SEC-001</code>: rate limit and lockout on <code>/auth/*</code>. Prerequisite for MFA and the password rules.</li>
+    </ul></span>
+  </div>
+  <div class="split-nav">
+    <b>Audit &mdash;</b>
+    <a href="audit.html">Index</a>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-client.html">Client</a>
+    <span class="here">TODO (this file)</span>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="summary">
+  <div class="section-head"><span class="snum">01</span><h2>Workstreams</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Workstream</th><th>Status</th><th>Steps</th><th>Open Qs</th><th class="wrap-cell">Linked findings</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#ui">Editor UI changes</a></td><td><span class="pill flat">Not started</span></td><td>0 / 3</td><td>3</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td><a href="#rt">Real-time co-editing</a></td><td><span class="pill flat">Not started</span></td><td>0 / 8</td><td>4</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td><a href="#pw">Password rules</a></td><td><span class="pill flat">Not started</span></td><td>0 / 5</td><td>3</td><td class="wrap-cell"><code>SEC-001</code></td></tr>
+        <tr><td><a href="#mfa">Two-factor sign-in (TOTP)</a></td><td><span class="pill flat">Not started</span></td><td>0 / 7</td><td>4</td><td class="wrap-cell"><code>SEC-001</code>, <code>SEC-009</code></td></tr>
+        <tr><td><a href="#admin">Admin panel redesign</a></td><td><span class="pill good">Shipped</span></td><td>7 / 7</td><td>3</td><td class="wrap-cell"><code>SEC-010</code> fixed; <code>SRV-028</code>, <code>SRV-031</code></td></tr>
+        <tr><td><a href="#projux">Admin Projects page UX</a></td><td><span class="pill warn">In progress</span></td><td>5 done &middot; 3 left</td><td>1</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td><a href="#urls">Project workspace URLs</a></td><td><span class="pill good">Shipped</span></td><td>10 / 10</td><td>0</td><td class="wrap-cell">Heading still says &ldquo;In progress&rdquo; (<code>REPO-032</code>)</td></tr>
+        <tr><td><a href="#home">Admin panel and home page</a></td><td><span class="pill good">Shipped</span></td><td>5 / 5</td><td>2</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td><a href="#drag">Drag froze relationship lines</a></td><td><span class="pill good">Done</span></td><td>fix + 6 speed-ups</td><td>0</td><td class="wrap-cell">3 optional leftovers</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="section-note">Every step ends with: tests, lint, type check, full suite in a container, light and dark screenshots for UI, the DB gate below when there is a migration, a Docker rebuild, a commit.</p>
+</section>
+
+<section id="gate" class="repo-sector">
+  <div class="section-head"><span class="snum">02</span><h2>Gate &mdash; database model rule</h2></div>
+  <p class="section-note">Not a task: every migration below must pass all ten before its step is ticked.</p>
+  <details><summary>The ten checks</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Check</th><th class="wrap-cell">Rule</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Shape</td><td class="wrap-cell">One fact in one place; plural <code>snake_case</code> tables, <code>_at</code> times, <code>&lt;table&gt;_&lt;cols&gt;_idx</code></td></tr>
+        <tr><td>2</td><td>Types</td><td class="wrap-cell"><code>uuid</code> ids, identity <code>bigint</code> for append-only, <code>timestamptz</code>, enum or CHECK for closed sets</td></tr>
+        <tr><td>3</td><td>Integrity</td><td class="wrap-cell"><code>NOT NULL</code> by default, FKs (audit excepted), CHECKs, case-insensitive natural keys</td></tr>
+        <tr><td>4</td><td>Foreign keys</td><td class="wrap-cell"><code>on delete</code> chosen and commented; every FK column indexed</td></tr>
+        <tr><td>5</td><td>Indexes</td><td class="wrap-cell">Each justified by a named query; partial for hot subsets; drop unused after load test</td></tr>
+        <tr><td>6</td><td>Queries</td><td class="wrap-cell">No <code>select *</code> on big <code>jsonb</code>; aggregate in SQL; no N+1; keyset paging; capped <code>limit</code>; <code>EXPLAIN</code> in commit</td></tr>
+        <tr><td>7</td><td>Migrations</td><td class="wrap-cell">One per step, named, never edited; safe on populated DB; tested on throwaway Postgres</td></tr>
+        <tr><td>8</td><td>Lifecycle</td><td class="wrap-cell">Retention in <code>runMaintenance</code> with a test; secrets never logged or returned; no IPs</td></tr>
+        <tr><td>9</td><td>Explained</td><td class="wrap-cell">One-line comment in <code>schema.ts</code> per new table and odd column</td></tr>
+        <tr><td>10</td><td>Review note</td><td class="wrap-cell">Commit says what changed, index &rarr; query, retention, how to undo</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+<section id="ui" class="stg-sector">
+  <div class="section-head"><span class="snum">03</span><h2>Editor UI changes</h2></div>
+  <p class="section-note">No database work. Not started.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Status</th><th class="wrap-cell">Step</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Rework table visuals on canvas and side panel; keep drag smooth</td><td><code>canvas/table-node/table-node.tsx</code></td></tr>
+        <tr><td>2</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Rework the Lint settings dialog; settings stay per diagram in the browser</td><td><code>components/qubdi/lint-settings-dialog.tsx</code></td></tr>
+        <tr><td>3</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Remove &ldquo;All Databases&hellip;&rdquo; and &ldquo;New&hellip;&rdquo; from the Actions menu</td><td><code>top-navbar/menu/menu.tsx</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="wrap-cell">Open question</th><th class="wrap-cell">Default</th></tr></thead>
+      <tbody>
+        <tr><td class="wrap-cell">Tables visuals: which part, and what should change?</td><td class="wrap-cell">Needs a screenshot or sketch</td></tr>
+        <tr><td class="wrap-cell">Lint settings: what is wrong today, what should it look like?</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td class="wrap-cell">Keep the &ldquo;Open&rdquo; shortcut with the menu entry gone?</td><td class="wrap-cell">Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="rt" class="dev-sector">
+  <div class="section-head"><span class="snum">04</span><h2>Real-time co-editing</h2></div>
+  <p class="section-note">Biggest item; do last, start with a spike. Behind <code>REALTIME_ENABLED=false</code>. Today: one-editor lock, 409 on stale save, in-process SSE bus.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Status</th><th class="wrap-cell">Step</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Spike: server-ordered operations vs Yjs CRDT, tables only; record the decision</td></tr>
+        <tr><td>1</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Presence only: WebSocket, who is here, selection highlights; lock stays</td></tr>
+        <tr><td>2</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Shared document and persistence, written back to <code>content</code>; migration</td></tr>
+        <tr><td>3</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Every editor action on the shared document; per-user undo and redo</td></tr>
+        <tr><td>4</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Conflict cases, reconnect and resync, return from offline</td></tr>
+        <tr><td>5</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Lock policy switch; admin Diagrams lists collaborators</td></tr>
+        <tr><td>6</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Tests: convergence (randomized), reconnect, limits, load test</td></tr>
+        <tr><td>7</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Docs: <code>REALTIME_ENABLED</code>, WebSocket proxy, multi-process note</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="wrap-cell">Open question</th><th class="wrap-cell">Default</th></tr></thead>
+      <tbody>
+        <tr><td class="wrap-cell">How many people edit one diagram at once?</td><td class="wrap-cell">Example cap: 10</td></tr>
+        <tr><td class="wrap-cell">Require WebSocket through any proxy in front of the API?</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td class="wrap-cell">Keep it behind the switch, off by default?</td><td class="wrap-cell">Yes</td></tr>
+        <tr><td class="wrap-cell">Operations or CRDT?</td><td class="wrap-cell">Decided by the spike</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="pw" class="sec-sector">
+  <div class="section-head"><span class="snum">05</span><h2>Password rules</h2></div>
+  <p class="section-note">On set only, never at sign-in: <code>PASSWORD_MIN_LENGTH</code> (default 12, floor 8), a capital, a number, a symbol, not the email. Existing users keep their passwords.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Status</th><th class="wrap-cell">Step</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="pill flat">Open</span></td><td class="wrap-cell"><code>checkPassword</code> in <code>shared/</code>, tests for every rule and Unicode</td></tr>
+        <tr><td>2</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Server: split <code>signIn</code> / <code>newPassword</code> schemas; <code>weak_password</code> error; compliant test helpers</td></tr>
+        <tr><td>3</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Client: <code>PasswordField</code> with live checklist in four dialogs</td></tr>
+        <tr><td>4</td><td><span class="pill flat">Open</span></td><td class="wrap-cell"><code>must_change_password</code>: migration, admin create/reset set it, forced-change flow</td></tr>
+        <tr><td>5</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Docs: rules and <code>PASSWORD_MIN_LENGTH</code> in README and <code>.env.example</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="wrap-cell">Open question</th><th class="wrap-cell">Default</th></tr></thead>
+      <tbody>
+        <tr><td class="wrap-cell">Minimum length?</td><td class="wrap-cell">12</td></tr>
+        <tr><td class="wrap-cell">Force a change at first sign-in for admin-created users?</td><td class="wrap-cell">Yes</td></tr>
+        <tr><td class="wrap-cell">Ask existing users with weak passwords to change?</td><td class="wrap-cell">No</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="mfa" class="sec-sector">
+  <div class="section-head"><span class="snum">06</span><h2>Two-factor sign-in (TOTP)</h2></div>
+  <p class="section-note">RFC 6238 authenticator apps, optional, offline, no third party. <code>MFA_ENABLED=false</code> removes it. Server clock must be right.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Status</th><th class="wrap-cell">Step</th><th>Finding</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="pill crit">Blocker</span></td><td class="wrap-cell">Rate limit <code>/auth/*</code> with per-account lockout</td><td><code>SEC-001</code></td></tr>
+        <tr><td>2</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">DB and config: MFA columns, recovery codes, challenges; <code>MFA_ENABLED</code>, <code>MFA_WINDOW_STEPS</code></td><td>&mdash;</td></tr>
+        <tr><td>3</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">TOTP core pure functions with RFC 6238 vectors</td><td>&mdash;</td></tr>
+        <tr><td>4</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Server: two-step sign-in, setup, enable, disable, recovery codes, audit</td><td><code>SEC-009</code></td></tr>
+        <tr><td>5</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">UI: sign-in second step; account dialog with QR and recovery codes</td><td>&mdash;</td></tr>
+        <tr><td>6</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Admin badge and reset; <code>npm run mfa:reset</code> command</td><td>&mdash;</td></tr>
+        <tr><td>7</td><td><span class="pill flat">Open</span></td><td class="wrap-cell">Docs: README, <code>SECURITY.md</code>, <code>.env.example</code></td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="wrap-cell">Open question</th><th class="wrap-cell">Default</th></tr></thead>
+      <tbody>
+        <tr><td class="wrap-cell">Encrypt the secret with a new <code>SECRETS_KEY</code> or reuse <code>CONNECTION_KEY</code>?</td><td class="wrap-cell"><code>SECRETS_KEY</code>, falls back to <code>CONNECTION_KEY</code></td></tr>
+        <tr><td class="wrap-cell">Opt-in <code>MFA_REQUIRED_FOR_ADMINS</code>?</td><td class="wrap-cell">Off</td></tr>
+        <tr><td class="wrap-cell">Ask for a code again when changing the password?</td><td class="wrap-cell">Yes</td></tr>
+        <tr><td class="wrap-cell">&ldquo;Remember this browser for 30 days&rdquo;?</td><td class="wrap-cell">No</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="admin" class="dev-sector">
+  <div class="section-head"><span class="snum">07</span><h2>Admin panel redesign</h2></div>
+  <p class="section-note">Left sidebar: Overview, Projects, Users, Diagrams, Activity. All seven steps shipped.</p>
+  <details><summary>Shipped steps (7)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Status</th><th class="wrap-cell">Step</th><th class="wrap-cell">Key result</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="pill good">Shipped</span></td><td class="wrap-cell">Model review migration <code>0015_model_review</code></td><td class="wrap-cell">FK and audit indexes; <code>DESC NULLS FIRST</code> guarded by a test</td></tr>
+        <tr><td>2</td><td><span class="pill good">Shipped</span></td><td class="wrap-cell">Server groundwork <code>0016_audit_meta_and_sign_in_tracking</code></td><td class="wrap-cell">Audit <code>meta</code>, <code>last_login_at</code>, throttled <code>last_seen_at</code></td></tr>
+        <tr><td>3</td><td><span class="pill good">Shipped</span></td><td class="wrap-cell">Admin shell</td><td class="wrap-cell">Fixed child routes, not <code>:section</code>; top bar on phones</td></tr>
+        <tr><td>4</td><td><span class="pill good">Shipped</span></td><td class="wrap-cell">Activity</td><td class="wrap-cell">Keyset cursor <code>(at, id)</code>, filters, saves hidden by default</td></tr>
+        <tr><td>5</td><td><span class="pill good">Shipped</span></td><td class="wrap-cell">Overview</td><td class="wrap-cell"><code>GET /admin/stats</code>, six tiles, 7-day chart in viewer&rsquo;s time zone</td></tr>
+        <tr><td>6</td><td><span class="pill good">Shipped</span></td><td class="wrap-cell">Diagrams and sharing</td><td class="wrap-cell"><code>GET /admin/diagrams</code>; revoke links; never returns tokens</td></tr>
+        <tr><td>7</td><td><span class="pill good">Shipped</span></td><td class="wrap-cell">Stronger user management</td><td class="wrap-cell">Last sign-in, sign out everywhere, bulk enable/disable/delete</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="wrap-cell">Open question / left for later</th><th class="wrap-cell">Default</th></tr></thead>
+      <tbody>
+        <tr><td class="wrap-cell">Let admins release a stuck editing lock from Diagrams?</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td class="wrap-cell">Export the Activity list as CSV?</td><td class="wrap-cell">&mdash;</td></tr>
+        <tr><td class="wrap-cell">Drop the unused <code>comments</code> table, enum and routes, or keep for the share viewer?</td><td class="wrap-cell">Audit: <code>SRV-031</code>, <code>CLI-017</code> (editor routes and client are dead)</td></tr>
+        <tr><td class="wrap-cell">Re-measure the Diagrams sort near 200,000 diagrams</td><td class="wrap-cell">No <code>updated_at</code> index until then</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="projux" class="stg-sector">
+  <div class="section-head"><span class="snum">08</span><h2>Admin Projects page UX</h2></div>
+  <p class="section-note">Done so far: header + Members/Settings tabs, New project dialog, toasts with Undo, guarded delete, labels, admins hidden from &ldquo;add a person&rdquo;.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Status</th><th class="wrap-cell">Item</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill flat">Open</span></td><td class="wrap-cell">Re-check <code>/admin/projects</code> light, dark and phone width after the last two tweaks</td></tr>
+        <tr><td><span class="pill flat">Open</span></td><td class="wrap-cell">Shorten the tall candidate list under &ldquo;Search users by email&rdquo; on phones</td></tr>
+        <tr><td><span class="pill flat">Open</span></td><td class="wrap-cell">Same treatment for the Users page (create form above the table)?</td></tr>
+        <tr><td><span class="pill warn">Question</span></td><td class="wrap-cell">Let an admin move a diagram to another project from here?</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="done" class="repo-sector">
+  <div class="section-head"><span class="snum">09</span><h2>Shipped work and leftovers</h2></div>
+
+  <h3 id="urls">Project workspace URLs &mdash; 10 / 10</h3>
+  <p class="section-note"><code>/&lt;project&gt;/diagrams/</code> routes, slugs, workspace gate, project-aware Open and Create. All ticked; the heading in <code>TODO.md</code> still says &ldquo;In progress&rdquo;.</p>
+
+  <h3 id="home">Admin panel and home page &mdash; 5 / 5</h3>
+  <p class="section-note">Server paging, search, user status, home page paging, Radix selects replace 15 native ones.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="wrap-cell">Still open</th><th class="wrap-cell">Default</th></tr></thead>
+      <tbody>
+        <tr><td class="wrap-cell">Should admins see only assigned projects on <code>/</code>?</td><td class="wrap-cell">All projects (current)</td></tr>
+        <tr><td class="wrap-cell">Which dropdowns bother the user most?</td><td class="wrap-cell">&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="drag">Drag froze relationship lines &mdash; done</h3>
+  <p class="section-note">Reduced-motion CSS now <code>transition: none</code>, guarded by a test.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Status</th><th class="wrap-cell">Optional leftover</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill flat">Open</span></td><td class="wrap-cell">Auto-pan drag at viewport edge slower on 89-table template (300&ndash;500 ms frames)</td></tr>
+        <tr><td><span class="pill flat">Open</span></td><td class="wrap-cell">Line vanishes for one frame after a table drop</td></tr>
+        <tr><td><span class="pill warn">Stale</span></td><td class="wrap-cell"><code>CommentMarker</code>: one store subscription per field. Component no longer exists (<code>REPO-032</code>)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Audit &mdash;</b>
+    <a href="audit.html">Index</a>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-client.html">Client</a>
+    <span class="here">TODO (this file)</span>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qubdidb-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

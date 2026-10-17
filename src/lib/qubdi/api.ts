@@ -32,11 +32,33 @@ export interface AdminUser {
     /** a disabled user cannot sign in */
     isActive: boolean;
     createdAt: string;
+    /** the last time they signed in; null if they never have */
+    lastLoginAt: string | null;
+    /** when their live session was last used; null when they are not signed in */
+    lastActiveAt: string | null;
     /** number of projects the user is assigned to */
     projects: number;
 }
 
 export type UserStatus = 'active' | 'disabled';
+
+/** One sign-in of a user, as an admin may see it (no id, no token). */
+export interface AdminSession {
+    createdAt: string;
+    lastSeenAt: string;
+    expiresAt: string;
+    /** the browser's User-Agent; null when it did not say */
+    userAgent: string | null;
+}
+
+export type BulkUserAction = 'enable' | 'disable' | 'delete';
+
+export interface BulkUsersResult {
+    /** accounts the action was done to */
+    changed: number;
+    /** accounts left alone: already in that state, or no longer there */
+    unchanged: number;
+}
 
 export interface AdminProject {
     id: string;
@@ -52,6 +74,122 @@ export interface ProjectMember {
     userId: string;
     email: string;
     role: ProjectRole;
+}
+
+/** The figures on the admin Overview. */
+export interface AdminStats {
+    users: {
+        total: number;
+        /** accounts that can sign in */
+        active: number;
+        admins: number;
+        /** people with a live session right now */
+        signedIn: number;
+    };
+    projects: number;
+    diagrams: {
+        total: number;
+        /** diagrams with at least one published version */
+        published: number;
+    };
+    /** share links that can be opened right now */
+    activeLinks: number;
+    /** diagrams someone has open for editing right now */
+    editingNow: number;
+    /** database drift checks run in the last 24 hours */
+    driftChecks24h: number;
+    activity: {
+        timeZone: string;
+        /** events per day, oldest first and today last; saves are not counted */
+        days: { day: string; events: number }[];
+    };
+}
+
+/** A diagram as the admin Diagrams page lists it (never its content). */
+export interface AdminDiagram {
+    id: string;
+    title: string;
+    projectId: string;
+    projectName: string | null;
+    /** the project's web address, for a link into the editor */
+    projectSlug: string | null;
+    ownerId: string;
+    ownerEmail: string | null;
+    updatedAt: string;
+    /** the newest published version; null if it was never published */
+    publishedVersion: number | null;
+    /** who has it open for editing right now */
+    editingBy: { userId: string; email: string | null } | null;
+    /** share links that can be opened right now */
+    activeLinks: number;
+}
+
+export type ShareLinkStatus = 'active' | 'off' | 'expired' | 'revoked';
+
+/** A share link as an admin sees it: its state and who made it, never its address. */
+export interface AdminShareLink {
+    id: string;
+    access: 'anyone' | 'signed_in' | 'off';
+    /** viewers on it are sent each new version as it is published */
+    live: boolean;
+    expiresAt: string | null;
+    createdAt: string;
+    revokedAt: string | null;
+    createdById: string | null;
+    createdByEmail: string | null;
+    status: ShareLinkStatus;
+}
+
+/** The kinds of action the Activity filter offers; the server defines them. */
+export type ActivityGroup =
+    | 'users'
+    | 'projects'
+    | 'diagrams'
+    | 'sharing'
+    | 'checks'
+    | 'comments';
+
+/** One line of the audit log, with the names behind its ids (null when gone). */
+export interface ActivityItem {
+    id: number;
+    at: string;
+    /** `diagram.publish`, `project.member_set` and so on */
+    action: string;
+    userId: string | null;
+    userEmail: string | null;
+    diagramId: string | null;
+    diagramTitle: string | null;
+    projectId: string | null;
+    projectName: string | null;
+    /** the person an admin acted on (not the one who acted) */
+    targetUserId: string | null;
+    targetUserEmail: string | null;
+    meta: {
+        role?: ProjectRole;
+        version?: number;
+        access?: 'anyone' | 'signed_in' | 'off';
+        changed?: ('password' | 'isAdmin' | 'isActive')[];
+    } | null;
+}
+
+export interface ActivityPage {
+    items: ActivityItem[];
+    /** pass back as `cursor` for the next, older page; null on the last */
+    nextCursor: string | null;
+}
+
+export interface ActivityParams {
+    limit?: number;
+    cursor?: string | null;
+    group?: ActivityGroup;
+    /** who did it */
+    userId?: string;
+    diagramId?: string;
+    /** ISO times, both ends included */
+    from?: string;
+    to?: string;
+    /** `hide` leaves out saves, which are by far the most frequent action */
+    saves?: 'show' | 'hide';
 }
 
 export interface RemoteDiagramSummary {
@@ -190,9 +328,12 @@ export interface DriftBadge {
     reportId: string;
 }
 
+/** What a check answers with: its report, and the badge the diagram shows once it is stored. */
+export interface DriftCheckResult extends DriftReport {
+    badge: DriftBadge | null;
+}
+
 export interface DriftSettings {
-    enabled: boolean;
-    schedule: string;
     connectionId: string | null;
     schemas: string[];
     tables: string[];
@@ -201,7 +342,6 @@ export interface DriftSettings {
         columns: Record<string, string>;
     };
     webhookUrl: string | null;
-    nextRunAt: string | null;
 }
 
 export interface DriftOverview {
@@ -247,6 +387,13 @@ export interface CatalogResponse {
 
 type FetchLike = typeof fetch;
 
+// Called when a signed-in request is refused as signed out: the session ended,
+// for instance because the account signed in somewhere else.
+let sessionEndedHandler: (() => void) | null = null;
+export const setSessionEndedHandler = (fn: (() => void) | null) => {
+    sessionEndedHandler = fn;
+};
+
 /** Browsers cap the body of a keepalive request at 64 KiB. */
 export const KEEPALIVE_BODY_LIMIT = 60_000;
 
@@ -282,6 +429,10 @@ export function createApi(
         });
         if (res.status === 204) return undefined as T;
         const data = await res.json().catch(() => ({}));
+        // /auth/* answers 401 for ordinary reasons (no session yet, wrong password)
+        if (res.status === 401 && !path.startsWith('/auth/')) {
+            sessionEndedHandler?.();
+        }
         if (!res.ok) {
             throw new ApiError(
                 res.status,
@@ -346,6 +497,58 @@ export function createApi(
             ),
         adminDeleteUser: (id: string) =>
             request<void>('DELETE', `/admin/users/${id}`),
+        /** Enable, disable or delete up to 100 accounts; all or nothing. */
+        adminBulkUsers: (action: BulkUserAction, ids: string[]) =>
+            request<BulkUsersResult>('POST', '/admin/users/bulk', {
+                action,
+                ids,
+            }),
+        adminListUserSessions: (id: string) =>
+            request<AdminSession[]>('GET', `/admin/users/${id}/sessions`),
+        /** Ends every session of the user; says how many were live. */
+        adminSignOutUser: (id: string) =>
+            request<{ signedOut: number }>(
+                'DELETE',
+                `/admin/users/${id}/sessions`
+            ),
+        /** `timeZone` makes a "day" on the chart the viewer's own. */
+        adminStats: (timeZone?: string) =>
+            request<AdminStats>(
+                'GET',
+                `/admin/stats${listQuery(undefined, { tz: timeZone })}`
+            ),
+        adminListDiagrams: (params?: ListParams & { projectId?: string }) =>
+            request<Page<AdminDiagram>>(
+                'GET',
+                `/admin/diagrams${listQuery(params, { projectId: params?.projectId })}`
+            ),
+        adminListDiagramLinks: (id: string) =>
+            request<AdminShareLink[]>(
+                'GET',
+                `/admin/diagrams/${id}/share-links`
+            ),
+        /** Ends a share link at once, for anyone using it. */
+        adminRevokeDiagramLink: (id: string, linkId: string) =>
+            request<void>(
+                'DELETE',
+                `/admin/diagrams/${id}/share-links/${linkId}`
+            ),
+        adminListActivity: (params: ActivityParams = {}) =>
+            request<ActivityPage>(
+                'GET',
+                `/admin/audit${listQuery(
+                    { limit: params.limit },
+                    {
+                        cursor: params.cursor ?? undefined,
+                        group: params.group,
+                        userId: params.userId,
+                        diagramId: params.diagramId,
+                        from: params.from,
+                        to: params.to,
+                        saves: params.saves,
+                    }
+                )}`
+            ),
         adminListProjects: (params?: ListParams) =>
             request<Page<AdminProject>>(
                 'GET',
@@ -383,9 +586,25 @@ export function createApi(
                 autoPublish?: boolean;
                 /** `updatedAt` of the server copy the content is based on */
                 baseUpdatedAt?: string;
+                /** the open editor making the change, for the diagram's edit lock */
+                editorId?: string;
             },
             options?: RequestOptions
         ) => request<RemoteDiagram>('PUT', `/diagrams/${id}`, patch, options),
+        /** Only one editor at a time: `held: false` means someone else has it. */
+        acquireLock: (id: string, editorId: string) =>
+            request<{ held: true } | { held: false; holder: string }>(
+                'POST',
+                `/diagrams/${id}/lock`,
+                { editorId }
+            ),
+        releaseLock: (id: string, editorId: string, options?: RequestOptions) =>
+            request<void>(
+                'DELETE',
+                `/diagrams/${id}/lock?editorId=${encodeURIComponent(editorId)}`,
+                undefined,
+                options
+            ),
         publish: (id: string, note?: string) =>
             request<{
                 version: number;
@@ -511,6 +730,25 @@ export function createApi(
         saveConnection: (
             input: DbConnectionInput & { name: string; projectId: string }
         ) => request<SavedConnection>('POST', '/introspect/connections', input),
+        /** Leave `password` out to keep the one already saved. */
+        updateConnection: (
+            id: string,
+            input: Omit<DbConnectionInput, 'password'> & {
+                name: string;
+                password?: string;
+            }
+        ) =>
+            request<SavedConnection>(
+                'PUT',
+                `/introspect/connections/${id}`,
+                input
+            ),
+        /** Whether the server can store connection passwords (CONNECTION_KEY is set). */
+        introspectCapabilities: () =>
+            request<{ savedConnections: boolean }>(
+                'GET',
+                '/introspect/capabilities'
+            ),
         deleteSavedConnection: (id: string) =>
             request<void>('DELETE', `/introspect/connections/${id}`),
         getLintConfig: (id: string) =>
@@ -521,10 +759,17 @@ export function createApi(
             }),
         getDrift: (id: string) =>
             request<DriftOverview>('GET', `/diagrams/${id}/drift`),
-        saveDrift: (id: string, settings: Omit<DriftSettings, 'nextRunAt'>) =>
+        saveDrift: (id: string, settings: DriftSettings) =>
             request<DriftSettings>('PUT', `/diagrams/${id}/drift`, settings),
-        checkDrift: (id: string) =>
-            request<DriftReport>('POST', `/diagrams/${id}/drift/check`),
+        /**
+         * Reads the database and stores a report. With `cached`, a recent report
+         * of an unchanged diagram is handed back instead (opening a diagram).
+         */
+        checkDrift: (id: string, options?: { cached?: boolean }) =>
+            request<DriftCheckResult>(
+                'POST',
+                `/diagrams/${id}/drift/check${options?.cached ? '?cached=1' : ''}`
+            ),
         listDriftReports: (id: string, limit = 20) =>
             request<DriftReportSummary[]>(
                 'GET',
@@ -584,9 +829,8 @@ export const errorMessage = (e: unknown): string => {
             encryption_not_configured:
                 'This server cannot store passwords (CONNECTION_KEY is not set).',
             name_taken: 'That name is already in use.',
-            invalid_schedule: 'That schedule is not a valid cron expression.',
             invalid_webhook: 'That webhook URL is not valid.',
-            connection_required: 'Choose a saved connection to enable checks.',
+            connection_required: 'Choose a saved connection first.',
             connection_not_found: 'That saved connection does not exist.',
             not_configured: 'Save the drift settings first.',
             already_running: 'A check is already running.',
@@ -594,6 +838,8 @@ export const errorMessage = (e: unknown): string => {
                 'Open this diagram from a project before saving it to the server.',
             last_admin: 'There must be at least one admin who can sign in.',
             cannot_disable_self: 'You cannot disable your own account.',
+            cannot_sign_out_self:
+                'You cannot sign yourself out here. Use Sign out in the account menu.',
             account_disabled:
                 'This account has been disabled. Ask an admin to enable it.',
             invalid_name:
@@ -608,6 +854,9 @@ export const errorMessage = (e: unknown): string => {
         };
         if (e.code === 'target_blocked' || e.code === 'connection_failed') {
             return e.detail ?? `Request failed (${e.code}).`;
+        }
+        if (e.code === 'locked') {
+            return e.detail ?? 'Someone else is editing this diagram.';
         }
         return map[e.code] ?? `Request failed (${e.code}).`;
     }

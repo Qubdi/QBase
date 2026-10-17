@@ -5,6 +5,7 @@ import type {
     DBTable,
 } from '@/lib/domain';
 import { schemaNameToDomainSchemaName } from '@/lib/domain';
+import { normalizeCardinalities } from '@/lib/domain/db-relationship';
 import type { ForeignKeyInfo } from '../metadata-types/foreign-key-info';
 import { generateId } from '@/lib/utils';
 
@@ -58,14 +59,19 @@ export const createRelationshipsFromMetadata = ({
                 // In ForeignKeyInfo: schema/table/column = FK table, reference_* = PK table
                 // In DBRelationship: source = referenced table (PK), target = FK table
                 // So we swap them here
-                const sourceCardinality = determineCardinality(
-                    targetField,
-                    isTargetTablePKComplex
-                );
-                const targetCardinality = determineCardinality(
-                    sourceField,
-                    isSourceTablePKComplex
-                );
+                // each column of a composite key is not unique on its own, but
+                // the key as a whole is: normalizing keeps it a foreign key
+                const { sourceCardinality, targetCardinality } =
+                    normalizeCardinalities({
+                        sourceCardinality: determineCardinality(
+                            targetField,
+                            isTargetTablePKComplex
+                        ),
+                        targetCardinality: determineCardinality(
+                            sourceField,
+                            isSourceTablePKComplex
+                        ),
+                    });
 
                 return {
                     id: generateId(),

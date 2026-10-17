@@ -17,7 +17,7 @@ import { useDialog } from '@/hooks/use-dialog';
 import { exportBaseSQL } from '@/lib/data/sql-export/export-sql-script';
 import { databaseTypeToLabelMap } from '@/lib/databases';
 import { DatabaseType } from '@/lib/domain/database-type';
-import { Annoyed, Sparkles } from 'lucide-react';
+import { Annoyed } from 'lucide-react';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { BaseDialogProps } from '../common/base-dialog-props';
@@ -179,17 +179,11 @@ export const ExportSQLDialog: React.FC<ExportSQLDialogProps> = ({
             <div className="flex flex-col gap-2">
                 <Spinner />
                 <div className="flex items-center justify-center gap-1">
-                    <Sparkles className="h-5" />
                     <Label className="text-lg">
                         {t('export_sql_dialog.loading.text', {
                             databaseType:
                                 databaseTypeToLabelMap[targetDatabaseType],
                         })}
-                    </Label>
-                </div>
-                <div className="flex items-center justify-center gap-1">
-                    <Label className="text-sm">
-                        {t('export_sql_dialog.loading.description')}
                     </Label>
                 </div>
             </div>

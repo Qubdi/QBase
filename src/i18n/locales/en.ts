@@ -134,8 +134,8 @@ export const en = {
                     primary_key: 'Primary Key',
                     indexes: 'Indexes',
                     check_constraints: 'Check Constraints',
-                    comments: 'Comments',
-                    no_comments: 'No comments',
+                    comments: 'Description',
+                    no_comments: 'No description',
                     add_field: 'Add Field',
                     add_index: 'Add Index',
                     add_check: 'Add Check',
@@ -150,8 +150,8 @@ export const en = {
                         character_length: 'Max Length',
                         precision: 'Precision',
                         scale: 'Scale',
-                        comments: 'Comments',
-                        no_comments: 'No comments',
+                        comments: 'Description',
+                        no_comments: 'No description',
                         default_value: 'Default Value',
                         no_default: 'No default',
                         delete_field: 'Delete Field',
@@ -371,8 +371,7 @@ export const en = {
                 'Export your diagram schema to {{databaseType}} script',
             close: 'Close',
             loading: {
-                text: 'AI is generating SQL for {{databaseType}}...',
-                description: 'This should take up to 30 seconds.',
+                text: 'Generating SQL for {{databaseType}}...',
             },
             error: {
                 message:
@@ -495,7 +494,6 @@ export const en = {
             one_to_one: 'One to One',
             one_to_many: 'One to Many',
             many_to_one: 'Many to One',
-            many_to_many: 'Many to Many',
         },
 
         canvas_context_menu: {

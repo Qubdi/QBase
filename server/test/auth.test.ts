@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog, sessions, users } from '../src/db/schema.js';
 import {
@@ -115,16 +116,15 @@ describe('auth', () => {
         expect(res.statusCode).toBe(401);
     });
 
-    it('changes the password and invalidates other sessions', async () => {
+    it('changes the password and ends any other session', async () => {
         const user = await registerUser(ctx.app, 'pw@example.com');
-        const other = await ctx.app.inject({
-            method: 'POST',
-            url: '/auth/login',
-            payload: { email: 'pw@example.com', password: 'password123' },
+        // signing in leaves one session per account, so plant one that predates that
+        await ctx.db.insert(sessions).values({
+            id: createHash('sha256').update('older-session').digest('hex'),
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 3_600_000),
         });
-        const otherCookie = `qubdidb_session=${
-            other.cookies.find((x) => x.name === 'qubdidb_session')!.value
-        }`;
+        const otherCookie = 'qubdidb_session=older-session';
 
         const wrong = await ctx.app.inject({
             method: 'POST',
@@ -174,7 +174,12 @@ describe('auth', () => {
     });
 
     it('writes audit rows for self-registration and admin-created users', async () => {
-        const [first] = await ctx.db.select().from(users).limit(1);
+        // the first account is the admin who creates the others
+        const [first] = await ctx.db
+            .select()
+            .from(users)
+            .orderBy(users.createdAt)
+            .limit(1);
         await registerUser(ctx.app, 'audit@example.com');
         const rows = await ctx.db.select().from(auditLog);
         expect(rows.some((r) => r.action === 'user.register')).toBe(true);

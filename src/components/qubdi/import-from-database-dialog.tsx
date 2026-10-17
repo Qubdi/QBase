@@ -22,6 +22,7 @@ import {
     type DbDialect,
     type SavedConnection,
 } from '@/lib/qubdi/api';
+import { DEFAULT_PORT } from '@/lib/qubdi/connection-form';
 import { setSyncState } from '@/lib/qubdi/sync-state';
 import { snapshotSourceKeys } from '@/lib/qubdi/resync';
 import {
@@ -41,11 +42,6 @@ export interface ImportFromDatabaseDialogProps {
 }
 
 type Step = 'connect' | 'select' | 'preview';
-
-const DEFAULT_PORT: Record<DbDialect, string> = {
-    postgresql: '5432',
-    sqlserver: '1433',
-};
 
 const emptyForm = {
     dialect: 'postgresql' as DbDialect,
@@ -326,7 +322,7 @@ export const ImportFromDatabaseDialog: React.FC<
                             required={!savedId}
                         />
                         <div className="flex flex-wrap gap-4 text-sm">
-                            <label className="flex items-center gap-1">
+                            <label className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
                                     checked={form.ssl}
@@ -337,7 +333,7 @@ export const ImportFromDatabaseDialog: React.FC<
                                 />
                                 Use SSL / TLS
                             </label>
-                            <label className="flex items-center gap-1">
+                            <label className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
                                     checked={form.trustServerCertificate}
@@ -394,7 +390,7 @@ export const ImportFromDatabaseDialog: React.FC<
                                         className="rounded-md border p-2"
                                     >
                                         <legend className="px-1 text-sm font-medium">
-                                            <label className="flex items-center gap-1">
+                                            <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     aria-label={`Schema ${s.schema}`}
@@ -411,7 +407,7 @@ export const ImportFromDatabaseDialog: React.FC<
                                         <ul className="grid grid-cols-2 gap-x-3 text-sm">
                                             {keys.map((k) => (
                                                 <li key={k}>
-                                                    <label className="flex items-center gap-1">
+                                                    <label className="flex items-center gap-2">
                                                         <input
                                                             type="checkbox"
                                                             checked={selected.has(

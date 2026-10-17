@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -8,6 +8,7 @@ import {
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
 import { OptionSelect } from '@/components/option-select/option-select';
+import { cn } from '@/lib/utils';
 import {
     RULES,
     normalizeConfig,
@@ -36,6 +37,7 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
     onSave,
 }) => {
     const [draft, setDraft] = useState<LintConfig>(config);
+    const contentRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (open) setDraft(config);
     }, [open, config]);
@@ -58,7 +60,16 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl" showClose>
+            <DialogContent
+                ref={contentRef}
+                className="max-w-2xl focus:outline-none"
+                showClose
+                // the first checkbox would otherwise open with its focus ring on
+                onOpenAutoFocus={(e) => {
+                    e.preventDefault();
+                    contentRef.current?.focus();
+                }}
+            >
                 <DialogHeader>
                     <DialogTitle>Lint settings</DialogTitle>
                     <DialogDescription>
@@ -66,8 +77,10 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                         each one is.
                     </DialogDescription>
                 </DialogHeader>
+                {/* the padding gives a checkbox's focus ring room inside the
+                    scrolling list; the negative margin keeps the rows in place */}
                 <ul
-                    className="flex max-h-80 flex-col gap-2 overflow-y-auto"
+                    className="-m-1 flex max-h-80 flex-col gap-2 overflow-y-auto p-1"
                     aria-label="Rules"
                 >
                     {RULES.map((r) => {
@@ -87,8 +100,13 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                                 enabled: e.target.checked,
                                             })
                                         }
+                                        className="mt-0.5"
                                     />
-                                    <span>
+                                    <span
+                                        className={cn(
+                                            !s.enabled && 'opacity-60'
+                                        )}
+                                    >
                                         <span className="font-medium">
                                             {r.title}
                                         </span>
@@ -99,7 +117,10 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                 </label>
                                 <OptionSelect
                                     size="sm"
-                                    className="w-28 shrink-0"
+                                    className={cn(
+                                        'w-28 shrink-0',
+                                        !s.enabled && 'opacity-60'
+                                    )}
                                     aria-label={`Severity for ${r.title}`}
                                     value={s.severity}
                                     onValueChange={(v) =>

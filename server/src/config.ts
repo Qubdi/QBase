@@ -35,6 +35,12 @@ export interface Config {
     introspectAllowHosts: string[];
     /** secret for encrypting saved connection passwords; null disables saving */
     connectionKey: string | null;
+    /**
+     * How long a drift report may stand in for a new check when a diagram is
+     * opened, in seconds, as long as the diagram and its settings did not
+     * change. 0 always reads the database.
+     */
+    driftCacheSeconds: number;
 }
 
 export function parseTrustProxy(
@@ -76,5 +82,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
             .map((h) => h.trim())
             .filter(Boolean),
         connectionKey: env.CONNECTION_KEY ?? null,
+        driftCacheSeconds: Number(env.DRIFT_CACHE_SECONDS ?? 300),
     };
 }

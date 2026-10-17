@@ -9,9 +9,9 @@ import {
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
 import type { DBField } from '@/lib/domain/db-field';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
 import type { DBCustomType } from '@/lib/domain/db-custom-type';
 import { DBCustomTypeKind } from '@/lib/domain/db-custom-type';
+import { collectForeignKeys } from '../foreign-keys';
 
 // Build a unique, safe index name from table and index names,
 // respecting PostgreSQL's 63-character identifier limit
@@ -33,7 +33,8 @@ function parsePostgresDefault(field: DBField): string {
         return '';
     }
 
-    const defaultValue = field.default.trim();
+    // PostgreSQL reports a text default with its cast: 'new'::character varying
+    const defaultValue = stripStringCast(field.default.trim());
 
     // Handle specific PostgreSQL default values
     if (defaultValue.toLowerCase() === 'now()') {
@@ -65,6 +66,11 @@ function parsePostgresDefault(field: DBField): string {
         return defaultValue;
     }
 
+    // Any other call, such as gen_random_uuid(), is an expression and not text
+    if (/^[a-z_][\w.]*\s*\(.*\)$/is.test(defaultValue)) {
+        return defaultValue;
+    }
+
     // If it's a keyword, keep it as is
     if (isKeyword(defaultValue)) {
         return defaultValue;
@@ -82,6 +88,14 @@ function parsePostgresDefault(field: DBField): string {
 
     // For other cases, add quotes
     return `'${defaultValue.replace(/'/g, "''")}'`;
+}
+
+/** `'new'::character varying` -> `'new'`; anything else is left alone. */
+function stripStringCast(value: string): string {
+    const text = value.match(
+        /^('(?:[^']|'')*')::[a-z_][\w\s."[\]]*(\(\d+(,\s*\d+)?\))?$/is
+    );
+    return text ? text[1] : value;
 }
 
 // Map problematic types to PostgreSQL compatible types
@@ -333,9 +347,11 @@ export function exportPostgreSQL({
                             !field.primaryKey && field.unique ? ' UNIQUE' : '';
 
                         // Handle default value using PostgreSQL specific parser
+                        // a serial column already has its default: giving it a second one is an error
                         const defaultValue =
                             field.default &&
-                            !field.default.toLowerCase().includes('identity')
+                            !field.default.toLowerCase().includes('identity') &&
+                            !(serialType && field.default.includes('nextval'))
                                 ? ` DEFAULT ${parsePostgresDefault(field)}`
                                 : '';
 
@@ -471,74 +487,26 @@ export function exportPostgreSQL({
         sqlScript += '\n-- Foreign key constraints\n';
 
         // Process all relationships and create FK objects with schema info
-        const foreignKeys = relationships
-            .map((r: DBRelationship) => {
-                const sourceTable = tables.find(
-                    (t) => t.id === r.sourceTableId
-                );
-                const targetTable = tables.find(
-                    (t) => t.id === r.targetTableId
-                );
-
-                if (
-                    !sourceTable ||
-                    !targetTable ||
-                    sourceTable.isView ||
-                    targetTable.isView
-                ) {
-                    return '';
-                }
-
-                const sourceField = sourceTable.fields.find(
-                    (f) => f.id === r.sourceFieldId
-                );
-                const targetField = targetTable.fields.find(
-                    (f) => f.id === r.targetFieldId
-                );
-
-                if (!sourceField || !targetField) {
-                    return '';
-                }
-
-                // Determine which table should have the foreign key based on cardinality
-                // - FK goes on the "many" side when cardinalities differ
-                // - FK goes on target when cardinalities are the same (one:one, many:many)
-                let fkTable, fkField, refTable, refField;
-
-                if (
-                    r.sourceCardinality === 'many' &&
-                    r.targetCardinality === 'many'
-                ) {
-                    // Many-to-many relationships need a junction table, skip
-                    return '';
-                } else if (
-                    r.sourceCardinality === 'many' &&
-                    r.targetCardinality === 'one'
-                ) {
-                    // FK goes on source table (the many side)
-                    fkTable = sourceTable;
-                    fkField = sourceField;
-                    refTable = targetTable;
-                    refField = targetField;
-                } else {
-                    // All other cases: FK goes on target table
-                    fkTable = targetTable;
-                    fkField = targetField;
-                    refTable = sourceTable;
-                    refField = sourceField;
-                }
-
+        const foreignKeys = collectForeignKeys({ tables, relationships })
+            .map((k) => {
+                const { fkTable, refTable } = k;
                 const fkTableName = fkTable.schema
                     ? `"${fkTable.schema}"."${fkTable.name}"`
                     : `"${fkTable.name}"`;
                 const refTableName = refTable.schema
                     ? `"${refTable.schema}"."${refTable.name}"`
                     : `"${refTable.name}"`;
+                const fkColumns = k.fkFields
+                    .map((f) => `"${f.name}"`)
+                    .join(', ');
+                const refColumns = k.refFields
+                    .map((f) => `"${f.name}"`)
+                    .join(', ');
 
                 // Create a unique constraint name by combining table and field names
                 // Ensure it stays within PostgreSQL's 63-character limit for identifiers
                 // and doesn't get truncated in a way that breaks SQL syntax
-                const baseName = `fk_${fkTable.name}_${fkField.name}_${refTable.name}_${refField.name}`;
+                const baseName = `fk_${fkTable.name}_${k.fkFields.map((f) => f.name).join('_')}_${refTable.name}_${k.refFields.map((f) => f.name).join('_')}`;
                 // Limit to 60 chars (63 minus quotes) to ensure the whole identifier stays within limits
                 const safeConstraintName =
                     baseName.length > 60
@@ -551,7 +519,7 @@ export function exportPostgreSQL({
 
                 return {
                     schema: fkTable.schema || 'public',
-                    sql: `ALTER TABLE ${fkTableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY("${fkField.name}") REFERENCES ${refTableName}("${refField.name}");`,
+                    sql: `ALTER TABLE ${fkTableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY(${fkColumns}) REFERENCES ${refTableName}(${refColumns});`,
                 };
             })
             .filter(Boolean); // Remove empty objects

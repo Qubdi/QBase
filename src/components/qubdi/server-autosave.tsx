@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { AlertTriangle, Check, Loader2 } from 'lucide-react';
+import { AlertTriangle, CloudCheck, CloudUpload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -13,6 +13,7 @@ import {
 import type { Diagram } from '@/lib/domain/diagram';
 import { createRevisionTracker } from '@/lib/qubdi/revision';
 import {
+    registerSaveDiscard,
     resetSaveStatus,
     setSaveStatus,
     useSaveStatus,
@@ -81,6 +82,7 @@ export const ServerAutosave: React.FC = () => {
             },
         });
         saverRef.current = saver;
+        registerSaveDiscard(() => saver.discard());
         const flushOnLeave = () => {
             leavingRef.current = true;
             void saver.flush();
@@ -97,6 +99,7 @@ export const ServerAutosave: React.FC = () => {
             // leaving the diagram: send what is still pending
             void saver.flush().finally(() => saver.dispose());
             saverRef.current = null;
+            registerSaveDiscard(null);
             resetSaveStatus();
         };
     }, [canSave, diagramId]);
@@ -114,16 +117,62 @@ export const ServerAutosave: React.FC = () => {
     return null;
 };
 
-/** Small "Saved / Saving / Not saved" indicator for the navbar. */
-export const ServerSaveStatus: React.FC = () => {
+interface StatusIconProps {
+    /** the accessible name; also the tooltip */
+    label: string;
+    /** makes the icon a button */
+    onClick?: (() => void) | null;
+    className?: string;
+    children: React.ReactNode;
+}
+
+/** One navbar-sized icon with its label; a button only when it can act. */
+const StatusIcon: React.FC<StatusIconProps> = ({
+    label,
+    onClick,
+    className,
+    children,
+}) =>
+    onClick ? (
+        <Button
+            variant="ghost"
+            size="icon"
+            className={`relative size-8 ${className ?? ''}`}
+            aria-label={label}
+            title={label}
+            onClick={onClick}
+        >
+            {children}
+        </Button>
+    ) : (
+        <span
+            role="status"
+            aria-label={label}
+            title={label}
+            tabIndex={0}
+            className={`flex size-8 items-center justify-center rounded-md text-muted-foreground [&_svg]:size-4 ${className ?? ''}`}
+        >
+            {children}
+        </span>
+    );
+
+/**
+ * The save state of the open diagram as one icon in the navbar; the tooltip
+ * says what it means. `fallback` shows while there is nothing to report (or
+ * without a server).
+ */
+export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
+    fallback = null,
+}) => {
     const { enabled } = useQubdi();
     const { access } = useDiagramAccess();
     const { status, retry, overwrite } = useSaveStatus();
 
     if (!enabled || access.status !== 'editor' || status === 'idle') {
-        return null;
+        return <>{fallback}</>;
     }
 
+    // the one state that needs words: the user has to choose
     if (status === 'error' && overwrite) {
         return (
             <span
@@ -146,61 +195,43 @@ export const ServerSaveStatus: React.FC = () => {
 
     if (status === 'error') {
         return (
-            <span className="flex items-center gap-1 text-xs text-destructive">
-                <AlertTriangle className="size-3.5" />
-                Not saved
-                {retry ? (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={retry}
-                    >
-                        Retry
-                    </Button>
-                ) : null}
-            </span>
+            <StatusIcon
+                label={retry ? 'Not saved. Click to try again' : 'Not saved'}
+                onClick={retry}
+                className="text-destructive hover:text-destructive"
+            >
+                <AlertTriangle />
+            </StatusIcon>
         );
     }
 
     if (status === 'pending') {
         return (
-            <span
-                className="flex items-center gap-1 text-xs text-muted-foreground"
-                role="status"
+            <StatusIcon
+                label={
+                    retry
+                        ? 'Unsaved changes. Click to save now'
+                        : 'Unsaved changes'
+                }
+                onClick={retry}
             >
-                <span className="size-2 rounded-full bg-amber-500" />
-                Unsaved changes
-                {retry ? (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={retry}
-                    >
-                        Save now
-                    </Button>
-                ) : null}
-            </span>
+                <CloudUpload />
+                <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-amber-500" />
+            </StatusIcon>
+        );
+    }
+
+    if (status === 'saving') {
+        return (
+            <StatusIcon label="Saving…">
+                <Loader2 className="animate-spin" />
+            </StatusIcon>
         );
     }
 
     return (
-        <span
-            className="flex items-center gap-1 text-xs text-muted-foreground"
-            role="status"
-        >
-            {status === 'saving' ? (
-                <>
-                    <Loader2 className="size-3.5 animate-spin" />
-                    Saving…
-                </>
-            ) : (
-                <>
-                    <Check className="size-3.5 text-primary" />
-                    Saved to project
-                </>
-            )}
-        </span>
+        <StatusIcon label="Saved to project">
+            <CloudCheck className="text-primary" />
+        </StatusIcon>
     );
 };

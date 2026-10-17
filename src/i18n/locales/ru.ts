@@ -379,8 +379,7 @@ export const ru: LanguageTranslation = {
                 'Экспортируйте схему диаграммы в {{databaseType}} скрипт',
             close: 'Закрыть',
             loading: {
-                text: 'ИИ генерирует SQL для {{databaseType}}...',
-                description: 'Это должно занять до 30 секунд.',
+                text: 'Создание SQL для {{databaseType}}...',
             },
             error: {
                 message:
@@ -504,7 +503,6 @@ export const ru: LanguageTranslation = {
             one_to_one: 'Один к одному',
             one_to_many: 'Один ко многим',
             many_to_one: 'Многие к одному',
-            many_to_many: 'Многие ко многим',
         },
 
         canvas_context_menu: {

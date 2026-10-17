@@ -379,8 +379,7 @@ export const gu: LanguageTranslation = {
                 '{{databaseType}} સ્ક્રિપ્ટ માટે તમારું ડાયાગ્રામ સ્કીમા નિકાસ કરો',
             close: 'બંધ કરો',
             loading: {
-                text: '{{databaseType}} માટે AI SQL બનાવી રહ્યું છે...',
-                description: 'તેને 30 સેકંડ સુધીનો સમય લાગી શકે છે.',
+                text: '{{databaseType}} માટે SQL બનાવાઈ રહ્યું છે...',
             },
             error: {
                 message:
@@ -504,7 +503,6 @@ export const gu: LanguageTranslation = {
             one_to_one: 'એકથી એક',
             one_to_many: 'એકથી ઘણા',
             many_to_one: 'ઘણા થી એક',
-            many_to_many: 'ઘણાથી ઘણા',
         },
 
         canvas_context_menu: {

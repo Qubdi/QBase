@@ -191,7 +191,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                                     }
                                                 />
                                             </label>
-                                            <label className="flex items-center gap-1">
+                                            <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={l.live}

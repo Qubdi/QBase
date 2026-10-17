@@ -383,8 +383,7 @@ export const hi: LanguageTranslation = {
                 '{{databaseType}} स्क्रिप्ट के लिए आपका आरेख स्कीमा निर्यात करें',
             close: 'बंद करें',
             loading: {
-                text: '{{databaseType}} के लिए AI SQL बना रहा है...',
-                description: 'इसमें 30 सेकंड तक का समय लग सकता है।',
+                text: '{{databaseType}} के लिए SQL बनाया जा रहा है...',
             },
             error: {
                 message:
@@ -509,7 +508,6 @@ export const hi: LanguageTranslation = {
             one_to_one: 'एक से एक',
             one_to_many: 'एक से कई',
             many_to_one: 'कई से एक',
-            many_to_many: 'कई से कई',
         },
 
         canvas_context_menu: {

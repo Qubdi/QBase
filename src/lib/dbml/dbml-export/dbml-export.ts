@@ -6,7 +6,10 @@ import type { DBTable } from '@/lib/domain/db-table';
 import type { DBCustomType } from '@/lib/domain/db-custom-type';
 import { DBCustomTypeKind } from '@/lib/domain/db-custom-type';
 import { validateCheckConstraint } from '@/lib/check-constraints/check-constraints-validator';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
+import {
+    normalizeCardinalities,
+    type DBRelationship,
+} from '@/lib/domain/db-relationship';
 
 // Use DBCustomType for generating Enum DBML
 const generateEnumsDBML = (customTypes: DBCustomType[] | undefined): string => {
@@ -318,9 +321,9 @@ const findClosingBracket = (str: string, openBracketIndex: number): number => {
 const convertToInlineRefs = (dbml: string): string => {
     // Extract all Ref statements - Updated pattern to handle schema.table.field format
     // Matches both "table"."field" and "schema"."table"."field" formats
-    // Now supports cardinality symbols: < (one-to-many), > (many-to-one), - (one-to-one), <> (many-to-many)
+    // Now supports cardinality symbols: < (one-to-many), > (many-to-one), - (one-to-one)
     const refPattern =
-        /Ref\s+"([^"]+)"\s*:\s*(?:"([^"]+)"\.)?"([^"]+)"\."([^"]+)"\s*(<>|[<>\-*])\s*(?:"([^"]+)"\.)?"([^"]+)"\."([^"]+)"/g;
+        /Ref\s+"([^"]+)"\s*:\s*(?:"([^"]+)"\.)?"([^"]+)"\."([^"]+)"\s*([<>\-*])\s*(?:"([^"]+)"\.)?"([^"]+)"\."([^"]+)"/g;
     const refs: Array<{
         refName: string;
         sourceSchema?: string;
@@ -483,15 +486,6 @@ const convertToInlineRefs = (dbml: string): string => {
                 : ref.targetTable;
             fieldNameToModify = ref.targetField;
             inlineRefSyntax = `ref: - ${sourceRef}`;
-            relatedTable = ref.sourceTable;
-        } else if (ref.direction === '<>') {
-            // many-to-many: A <> B
-            // Convention: inline ref on B pointing to A
-            targetTableName = ref.targetSchema
-                ? `${ref.targetSchema}.${ref.targetTable}`
-                : ref.targetTable;
-            fieldNameToModify = ref.targetField;
-            inlineRefSyntax = `ref: <> ${sourceRef}`;
             relatedTable = ref.sourceTable;
         } else {
             // Default fallback (e.g., '*' or unknown)
@@ -1248,7 +1242,6 @@ const extractRelationshipsDbml = (dbml: string): string => {
 // - For many-to-one (source has FK): target [symbol] source
 // - For one-to-many (target has FK): source [symbol] target
 // - For one-to-one: target [symbol] source (convention)
-// - For many-to-many: target [symbol] source (convention)
 const generateRelationshipsDbmlFromDiagram = (
     relationships: DBRelationship[],
     tables: DBTable[]
@@ -1304,44 +1297,32 @@ const generateRelationshipsDbmlFromDiagram = (
         // - `A < B` means: A is ONE, B is MANY
         // - `A > B` means: A is MANY, B is ONE
         // - `A - B` means: one-to-one
-        // - `A <> B` means: many-to-many
         let leftRef: string;
         let rightRef: string;
         let symbol: string;
 
-        if (
-            rel.sourceCardinality === 'one' &&
-            rel.targetCardinality === 'many'
-        ) {
-            // one-to-many: source (one) has many target
-            // Format: source < target (source is one, target is many)
-            leftRef = sourceRef;
-            rightRef = targetRef;
-            symbol = '<';
-        } else if (
-            rel.sourceCardinality === 'many' &&
-            rel.targetCardinality === 'one'
-        ) {
+        // there is no many-to-many: normalizing keeps a legacy one a foreign key
+        const { sourceCardinality, targetCardinality } =
+            normalizeCardinalities(rel);
+
+        if (sourceCardinality === 'many' && targetCardinality === 'one') {
             // many-to-one: source (many) belongs to target (one)
             // Format: target < source (to match @dbml/core order, target is one, source is many)
             leftRef = targetRef;
             rightRef = sourceRef;
             symbol = '<';
-        } else if (
-            rel.sourceCardinality === 'one' &&
-            rel.targetCardinality === 'one'
-        ) {
+        } else if (sourceCardinality === 'one' && targetCardinality === 'one') {
             // one-to-one
             // Format: source - target
             leftRef = sourceRef;
             rightRef = targetRef;
             symbol = '-';
         } else {
-            // many-to-many
-            // Format: source <> target
+            // one-to-many: source (one) has many target
+            // Format: source < target (source is one, target is many)
             leftRef = sourceRef;
             rightRef = targetRef;
-            symbol = '<>';
+            symbol = '<';
         }
 
         // rel.name is already sanitized (fk_N_name format) by generateDBMLFromDiagram

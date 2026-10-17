@@ -375,8 +375,7 @@ export const hr: LanguageTranslation = {
                 'Izvezite shemu vašeg dijagrama u {{databaseType}} skriptu',
             close: 'Zatvori',
             loading: {
-                text: 'AI generira SQL za {{databaseType}}...',
-                description: 'Ovo bi trebalo potrajati do 30 sekundi.',
+                text: 'Generiranje SQL-a za {{databaseType}}...',
             },
             error: {
                 message:
@@ -500,7 +499,6 @@ export const hr: LanguageTranslation = {
             one_to_one: 'Jedan na jedan',
             one_to_many: 'Jedan na više',
             many_to_one: 'Više na jedan',
-            many_to_many: 'Više na više',
         },
 
         canvas_context_menu: {

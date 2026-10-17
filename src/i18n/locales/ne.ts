@@ -382,8 +382,7 @@ export const ne: LanguageTranslation = {
                 'तलको विकल्पहरूबाट तपाईंको डायाग्राम स्कीम निर्यात गर्नुहोस्।',
             close: 'बन्द गर्नुहोस्',
             loading: {
-                text: 'AI ले {{databaseType}} को लागि SQL उत्पन्न गर्दैछ...',
-                description: 'यो ३० सेकेण्डसम्म समय लिन्छ।',
+                text: '{{databaseType}} को लागि SQL बनाइँदैछ...',
             },
             error: {
                 message:
@@ -508,7 +507,6 @@ export const ne: LanguageTranslation = {
             one_to_one: 'एक देखि एक',
             one_to_many: 'एक देखि धेरै',
             many_to_one: 'धेरै देखि एक',
-            many_to_many: 'धेरै देखि धेरै',
         },
 
         canvas_context_menu: {

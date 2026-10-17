@@ -101,7 +101,7 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
                                 <TooltipContent>
                                     <div>
                                         <div className="font-normal text-white/70 dark:text-black/70">
-                                            Comment:
+                                            Description:
                                         </div>
                                         <div>{field.comments}</div>
                                     </div>

@@ -99,3 +99,27 @@ const getFirstErrorFromCompileError = (
 
     return null;
 };
+
+interface RefLike {
+    endpoints: ArrayLike<{ tableName: string; relation?: unknown }>;
+    token?: { start?: { line?: number; column?: number } };
+}
+
+/**
+ * There is no many-to-many relationship (`<>`): it needs a junction table. Say
+ * so, at the line of the reference, instead of importing something that
+ * cannot be exported as a foreign key.
+ */
+export const validateNoManyToManyRefs = (refs: ArrayLike<RefLike>): void => {
+    for (let i = 0; i < refs.length; i++) {
+        const ref = refs[i];
+        const [a, b] = [ref.endpoints[0], ref.endpoints[1]];
+        if (a?.relation === '*' && b?.relation === '*') {
+            throw new DBMLValidationError(
+                `Many-to-many references (<>) are not supported: "${a.tableName}" and "${b.tableName}". Add a junction table that references both.`,
+                ref.token?.start?.line ?? 1,
+                ref.token?.start?.column ?? 1
+            );
+        }
+    }
+};

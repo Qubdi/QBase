@@ -1,7 +1,11 @@
 import type { Diagram } from '@/lib/domain/diagram';
 import { generateDiagramId, generateId } from '@/lib/utils';
 import type { DBTable } from '@/lib/domain/db-table';
-import type { Cardinality, DBRelationship } from '@/lib/domain/db-relationship';
+import {
+    normalizeCardinalities,
+    type Cardinality,
+    type DBRelationship,
+} from '@/lib/domain/db-relationship';
 import type { DBField } from '@/lib/domain/db-field';
 import type { DBIndex } from '@/lib/domain/db-index';
 import type { DBCheckConstraint } from '@/lib/domain/db-check-constraint';
@@ -334,9 +338,11 @@ export function determineCardinality(
             targetCardinality: 'one',
         };
     } else {
+        // neither column is marked unique, but a foreign key still points at
+        // one row of the table it references (the target here)
         return {
             sourceCardinality: 'many',
-            targetCardinality: 'many',
+            targetCardinality: 'one',
         };
     }
 }
@@ -1021,12 +1027,20 @@ export function convertToDiagram(
         // Note: In SQLForeignKey, source = table with FK, target = referenced table
         // In DBRelationship, we want source = referenced table (PK), target = FK table
         // So we swap them here
-        const sourceCardinality =
-            rel.targetCardinality ||
-            (targetField.unique || targetField.primaryKey ? 'one' : 'many');
-        const targetCardinality =
-            rel.sourceCardinality ||
-            (sourceField.unique || sourceField.primaryKey ? 'one' : 'many');
+        const { sourceCardinality, targetCardinality } = normalizeCardinalities(
+            {
+                sourceCardinality:
+                    rel.targetCardinality ||
+                    (targetField.unique || targetField.primaryKey
+                        ? 'one'
+                        : 'many'),
+                targetCardinality:
+                    rel.sourceCardinality ||
+                    (sourceField.unique || sourceField.primaryKey
+                        ? 'one'
+                        : 'many'),
+            }
+        );
 
         relationships.push({
             id: generateId(),

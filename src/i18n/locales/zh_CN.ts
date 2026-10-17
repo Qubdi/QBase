@@ -372,8 +372,7 @@ export const zh_CN: LanguageTranslation = {
             description: '将您的图表模式导出为 {{databaseType}} 脚本。',
             close: '关闭',
             loading: {
-                text: 'AI 正在为 {{databaseType}} 生成 SQL 语句...',
-                description: '此操作最多需要 30 秒。',
+                text: '正在为 {{databaseType}} 生成 SQL...',
             },
             error: {
                 message:
@@ -496,7 +495,6 @@ export const zh_CN: LanguageTranslation = {
             one_to_one: '一对一',
             one_to_many: '一对多',
             many_to_one: '多对一',
-            many_to_many: '多对多',
         },
 
         canvas_context_menu: {

@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, type DriftBadge } from '@/lib/qubdi/api';
+import { checkDriftOnOpen } from '@/lib/qubdi/auto-drift';
 import {
     badgeLabel,
     badgeSeverity,
@@ -18,6 +19,9 @@ export const DriftControl: React.FC = () => {
     const [open, setOpen] = useState(false);
     const [badge, setBadge] = useState<DriftBadge | null>(null);
     const remoteId = remoteIdFor(currentDiagram.id);
+    const shownRemoteId = useRef(remoteId);
+    shownRemoteId.current = remoteId;
+    const checkedOnOpen = useRef<string | undefined>(undefined);
 
     const refresh = useCallback(async () => {
         if (!remoteId) {
@@ -37,6 +41,19 @@ export const DriftControl: React.FC = () => {
         const timer = setInterval(() => void refresh(), 60_000);
         return () => clearInterval(timer);
     }, [user, refresh]);
+
+    // opening a diagram fetches from its database once; the timer above only
+    // re-reads the stored result
+    useEffect(() => {
+        if (!user || !remoteId || checkedOnOpen.current === remoteId) return;
+        checkedOnOpen.current = remoteId;
+        void checkDriftOnOpen(remoteId).then((next) => {
+            // the person may have moved to another diagram while it ran
+            if (next !== undefined && shownRemoteId.current === remoteId) {
+                setBadge(next);
+            }
+        });
+    }, [user, remoteId]);
 
     if (!enabled || !user) return null;
 
