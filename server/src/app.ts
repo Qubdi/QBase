@@ -93,8 +93,10 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         return reply
             .code(status)
             .send({
+                // a server-side failure (500, 502, 503...) may carry driver or
+                // host details in its message: none of it goes to the client
                 error:
-                    status === 500
+                    status >= 500
                         ? 'internal_error'
                         : (err as Error).message,
             });
