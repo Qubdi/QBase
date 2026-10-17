@@ -28,8 +28,18 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Node moves a major at a time on purpose: the even (LTS) release only,
+    # kept in step with .nvmrc, engines and CI
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /server
     schedule:
       interval: weekly
+    # Node moves a major at a time on purpose: the even (LTS) release only,
+    # kept in step with .nvmrc, engines and CI
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

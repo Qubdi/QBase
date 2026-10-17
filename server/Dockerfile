@@ -1,6 +1,6 @@
 # Build from the repo root: docker build -f server/Dockerfile .
 # The server imports ../shared (and the editor's metadata types), so those are copied too.
-FROM node:25-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm ci
@@ -12,7 +12,7 @@ RUN ln -s /app/server/node_modules /app/node_modules \
     && npm run build \
     && npm prune --omit=dev
 
-FROM node:25-alpine
+FROM node:24-alpine
 ENV NODE_ENV=production
 WORKDIR /app/server
 COPY --from=build /app/server/package.json ./
