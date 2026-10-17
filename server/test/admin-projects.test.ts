@@ -384,4 +384,22 @@ describe('admin panel and projects', () => {
             expect(left).toHaveLength(0);
         });
     });
+
+    it('answers 409, not 500, when two requests race to create the same name', async () => {
+        const create = () =>
+            call('POST', '/admin/projects', admin, { name: 'Raced project' });
+        const statuses = (await Promise.all([create(), create(), create()]))
+            .map((r) => r.statusCode)
+            .sort();
+        expect(statuses).toEqual([201, 409, 409]);
+        const user = () =>
+            call('POST', '/admin/users', admin, {
+                email: 'raced@example.com',
+                password: 'password123',
+            });
+        const users = (await Promise.all([user(), user()]))
+            .map((r) => r.statusCode)
+            .sort();
+        expect(users).toEqual([201, 409]);
+    });
 });

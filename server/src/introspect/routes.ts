@@ -14,6 +14,7 @@ import {
     type LookupAll,
 } from './net-guard.js';
 import { connectPostgres } from './postgres.js';
+import { isUniqueViolation } from '../lib/pg-errors.js';
 import { UnsafeSqlError } from './readonly-guard.js';
 import { connectSqlServer } from './sqlserver.js';
 import {
@@ -306,7 +307,7 @@ export const introspectRoutes =
             if (dup.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
-            const [row] = await db
+            const row = await db
                 .insert(savedConnections)
                 .values({
                     projectId: body.projectId,
@@ -321,7 +322,16 @@ export const introspectRoutes =
                     ssl: body.ssl,
                     trustServerCertificate: body.trustServerCertificate,
                 })
-                .returning();
+                .returning()
+                .then(
+                    ([created]) => created,
+                    (err: unknown) => {
+                        // a racing request took the name between check and insert
+                        if (isUniqueViolation(err)) return null;
+                        throw err;
+                    }
+                );
+            if (!row) return reply.code(409).send({ error: 'name_taken' });
             return reply.code(201).send(summarize(row));
         });
 
@@ -361,33 +371,43 @@ export const introspectRoutes =
             if (dup.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
-            const row = await db.transaction(async (tx) => {
-                const [updated] = await tx
-                    .update(savedConnections)
-                    .set({
-                        name: body.name,
-                        dialect: body.dialect,
-                        host: body.host,
-                        port: body.port ?? DEFAULT_PORTS[body.dialect],
-                        database: body.database,
-                        username: body.user,
-                        ssl: body.ssl,
-                        trustServerCertificate: body.trustServerCertificate,
-                        ...(body.password !== undefined
-                            ? { passwordEnc: box!.encrypt(body.password) }
-                            : {}),
-                    })
-                    .where(eq(savedConnections.id, id))
-                    .returning();
-                // reports made with this connection's old details may describe
-                // another database: a settings change keeps them from being
-                // reused when a diagram is opened
-                await tx
-                    .update(driftSettings)
-                    .set({ updatedAt: new Date() })
-                    .where(eq(driftSettings.connectionId, id));
-                return updated;
-            });
+            let nameTaken = false;
+            const row = await db
+                .transaction(async (tx) => {
+                    const [updated] = await tx
+                        .update(savedConnections)
+                        .set({
+                            name: body.name,
+                            dialect: body.dialect,
+                            host: body.host,
+                            port: body.port ?? DEFAULT_PORTS[body.dialect],
+                            database: body.database,
+                            username: body.user,
+                            ssl: body.ssl,
+                            trustServerCertificate: body.trustServerCertificate,
+                            ...(body.password !== undefined
+                                ? { passwordEnc: box!.encrypt(body.password) }
+                                : {}),
+                        })
+                        .where(eq(savedConnections.id, id))
+                        .returning();
+                    // reports made with this connection's old details may describe
+                    // another database: a settings change keeps them from being
+                    // reused when a diagram is opened
+                    await tx
+                        .update(driftSettings)
+                        .set({ updatedAt: new Date() })
+                        .where(eq(driftSettings.connectionId, id));
+                    return updated;
+                })
+                .catch((err: unknown) => {
+                    // a racing request took the name between check and update
+                    if (!isUniqueViolation(err)) throw err;
+                    nameTaken = true;
+                    return undefined;
+                });
+            if (nameTaken) return reply.code(409).send({ error: 'name_taken' });
+            if (!row) return reply.code(404).send({ error: 'not_found' });
             return summarize(row);
         });
 

@@ -9,6 +9,7 @@ import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { users } from '../db/schema.js';
+import { isUniqueViolation } from '../lib/pg-errors.js';
 import { hashPassword, verifyPassword } from './password.js';
 import {
     createSession,
@@ -72,14 +73,19 @@ export const authRoutes =
             if (taken.length > 0) {
                 return reply.code(409).send({ error: 'email_taken' });
             }
-            const [user] = await db
-                .insert(users)
-                .values({
-                    email: body.email,
-                    passwordHash: await hashPassword(body.password),
-                    isAdmin: isFirst,
-                })
-                .returning();
+            const passwordHash = await hashPassword(body.password);
+            let user;
+            try {
+                [user] = await db
+                    .insert(users)
+                    .values({ email: body.email, passwordHash, isAdmin: isFirst })
+                    .returning();
+            } catch (err) {
+                if (isUniqueViolation(err)) {
+                    return reply.code(409).send({ error: 'email_taken' });
+                }
+                throw err;
+            }
             await audit(db, { userId: user.id, action: 'user.register' });
             await startSession(req, reply, user.id);
             return reply.code(201).send({

@@ -28,6 +28,7 @@ import {
     type AuditMeta,
 } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
+import { isUniqueViolation } from '../lib/pg-errors.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
 import { emitLinkChanged } from '../events.js';
@@ -263,14 +264,24 @@ export const adminRoutes =
             if (taken.length > 0) {
                 return reply.code(409).send({ error: 'email_taken' });
             }
-            const [user] = await db
-                .insert(users)
-                .values({
-                    email: body.email,
-                    passwordHash: await hashPassword(body.password),
-                    isAdmin: body.isAdmin,
-                })
-                .returning();
+            const passwordHash = await hashPassword(body.password);
+            let user;
+            try {
+                [user] = await db
+                    .insert(users)
+                    .values({
+                        email: body.email,
+                        passwordHash,
+                        isAdmin: body.isAdmin,
+                    })
+                    .returning();
+            } catch (err) {
+                // two requests passed the check above: the constraint decides
+                if (isUniqueViolation(err)) {
+                    return reply.code(409).send({ error: 'email_taken' });
+                }
+                throw err;
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'user.create',
@@ -642,10 +653,22 @@ export const adminRoutes =
             if (taken.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
-            const [p] = await db
-                .insert(projects)
-                .values({ ...body, slug: check.slug, createdBy: req.user!.id })
-                .returning();
+            let p;
+            try {
+                [p] = await db
+                    .insert(projects)
+                    .values({
+                        ...body,
+                        slug: check.slug,
+                        createdBy: req.user!.id,
+                    })
+                    .returning();
+            } catch (err) {
+                if (isUniqueViolation(err)) {
+                    return reply.code(409).send({ error: 'name_taken' });
+                }
+                throw err;
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.create',
@@ -680,11 +703,19 @@ export const adminRoutes =
                     return reply.code(409).send({ error: 'name_taken' });
                 }
             }
-            const [p] = await db
-                .update(projects)
-                .set(slug ? { ...body, slug } : body)
-                .where(eq(projects.id, id))
-                .returning();
+            let p;
+            try {
+                [p] = await db
+                    .update(projects)
+                    .set(slug ? { ...body, slug } : body)
+                    .where(eq(projects.id, id))
+                    .returning();
+            } catch (err) {
+                if (isUniqueViolation(err)) {
+                    return reply.code(409).send({ error: 'name_taken' });
+                }
+                throw err;
+            }
             if (!p) return reply.code(404).send({ error: 'not_found' });
             await audit(db, {
                 userId: req.user!.id,
