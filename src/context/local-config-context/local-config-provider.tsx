@@ -7,6 +7,7 @@ const themeKey = 'theme';
 const scrollActionKey = 'scroll_action';
 const showCardinalityKey = 'show_cardinality';
 const showFieldAttributesKey = 'show_field_attributes';
+const compactTablesKey = 'compact_tables';
 const githubRepoOpenedKey = 'github_repo_opened';
 const showMiniMapOnCanvasKey = 'show_minimap_on_canvas';
 const showDBViewsKey = 'show_db_views';
@@ -35,6 +36,10 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
             (localStorage.getItem(showFieldAttributesKey) || 'true') === 'true'
         );
 
+    const [compactTables, setCompactTables] = React.useState<boolean>(
+        (localStorage.getItem(compactTablesKey) || 'false') === 'true'
+    );
+
     const [githubRepoOpened, setGithubRepoOpened] = React.useState<boolean>(
         (localStorage.getItem(githubRepoOpenedKey) || 'false') === 'true'
     );
@@ -47,6 +52,10 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
     useEffect(() => {
         localStorage.setItem(githubRepoOpenedKey, githubRepoOpened.toString());
     }, [githubRepoOpened]);
+
+    useEffect(() => {
+        localStorage.setItem(compactTablesKey, compactTables.toString());
+    }, [compactTables]);
 
     useEffect(() => {
         localStorage.setItem(themeKey, theme);
@@ -84,6 +93,8 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
                 setShowCardinality,
                 showFieldAttributes,
                 setShowFieldAttributes,
+                compactTables,
+                setCompactTables,
                 setGithubRepoOpened,
                 githubRepoOpened,
                 showMiniMapOnCanvas,

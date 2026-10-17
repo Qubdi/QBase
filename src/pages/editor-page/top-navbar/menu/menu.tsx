@@ -55,6 +55,8 @@ export const Menu: React.FC<MenuProps> = () => {
         showCardinality,
         setShowFieldAttributes,
         showFieldAttributes,
+        compactTables,
+        setCompactTables,
         setShowMiniMapOnCanvas,
         showMiniMapOnCanvas,
         showDBViews,
@@ -144,6 +146,10 @@ export const Menu: React.FC<MenuProps> = () => {
     const showOrHideFieldAttributes = useCallback(() => {
         setShowFieldAttributes(!showFieldAttributes);
     }, [showFieldAttributes, setShowFieldAttributes]);
+
+    const toggleCompactTables = useCallback(() => {
+        setCompactTables(!compactTables);
+    }, [compactTables, setCompactTables]);
 
     const showOrHideMiniMap = useCallback(() => {
         setShowMiniMapOnCanvas(!showMiniMapOnCanvas);
@@ -361,6 +367,9 @@ export const Menu: React.FC<MenuProps> = () => {
                         {showFieldAttributes
                             ? t('menu.view.hide_field_attributes')
                             : t('menu.view.show_field_attributes')}
+                    </MenubarItem>
+                    <MenubarItem onClick={toggleCompactTables}>
+                        {compactTables ? 'Standard Tables' : 'Compact Tables'}
                     </MenubarItem>
                     <MenubarItem onClick={showOrHideMiniMap}>
                         {showMiniMapOnCanvas
