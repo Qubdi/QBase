@@ -27,6 +27,12 @@ export interface Config {
     auditRetentionDays: number;
     /** share links revoked or expired this many days ago are deleted; 0 keeps them all */
     deadLinkKeepDays: number;
+    /** sign-in, sign-up and change-password calls a minute per client address */
+    authRateLimit: number;
+    /** failed sign-ins (or password checks) one account may have in the lockout window */
+    authMaxFailures: number;
+    /** how long a locked-out account waits, in minutes */
+    authLockoutMinutes: number;
     /** most live (SSE) viewers one share link may have open at once */
     sseMaxPerLink: number;
     /** pino level: fatal, error, warn, info, debug, trace or silent */
@@ -78,6 +84,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         diagramBodyLimit: Number(env.DIAGRAM_BODY_LIMIT_MB ?? 50) * 1024 * 1024,
         auditRetentionDays: Number(env.AUDIT_RETENTION_DAYS ?? 365),
         deadLinkKeepDays: Number(env.DEAD_LINK_KEEP_DAYS ?? 30),
+        authRateLimit: Number(env.AUTH_RATE_LIMIT ?? 20),
+        authMaxFailures: Number(env.AUTH_MAX_FAILURES ?? 10),
+        authLockoutMinutes: Number(env.AUTH_LOCKOUT_MINUTES ?? 15),
         sseMaxPerLink: Number(env.SSE_MAX_PER_LINK ?? 100),
         trustProxy: parseTrustProxy(env.TRUST_PROXY),
         logLevel: env.LOG_LEVEL ?? 'info',

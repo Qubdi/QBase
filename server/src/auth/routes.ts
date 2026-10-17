@@ -9,6 +9,7 @@ import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { users } from '../db/schema.js';
+import { createFailureThrottle } from '../lib/failure-throttle.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
 import { hashPassword, verifyPassword } from './password.js';
 import {
@@ -31,6 +32,30 @@ const changePassword = z.object({
 export const authRoutes =
     (db: Db, config: Config): FastifyPluginAsync =>
     async (app) => {
+        // per client address; an account's failures are counted separately
+        // below, so one account cannot be guessed at from many addresses
+        const limit = {
+            config: {
+                rateLimit: {
+                    max: config.authRateLimit,
+                    timeWindow: '1 minute',
+                },
+            },
+        };
+        const failures = createFailureThrottle({
+            max: config.authMaxFailures,
+            windowMs: config.authLockoutMinutes * 60_000,
+        });
+        const locked = (reply: FastifyReply, key: string) => {
+            const wait = failures.blockedFor(key);
+            if (wait === 0) return false;
+            reply
+                .code(429)
+                .header('retry-after', wait)
+                .send({ error: 'too_many_attempts' });
+            return true;
+        };
+
         const startSession = async (
             req: FastifyRequest,
             reply: FastifyReply,
@@ -56,7 +81,7 @@ export const authRoutes =
             return { needsSetup: value === 0 };
         });
 
-        app.post('/register', async (req, reply) => {
+        app.post('/register', limit, async (req, reply) => {
             const body = credentials.parse(req.body);
             const [{ value: existing }] = await db
                 .select({ value: count() })
@@ -95,8 +120,11 @@ export const authRoutes =
             });
         });
 
-        app.post('/login', async (req, reply) => {
+        app.post('/login', limit, async (req, reply) => {
             const body = credentials.parse(req.body);
+            // unknown emails are counted too, so the lockout reveals nothing
+            const key = `login:${body.email}`;
+            if (locked(reply, key)) return;
             const [user] = await db
                 .select()
                 .from(users)
@@ -105,8 +133,10 @@ export const authRoutes =
                 !user ||
                 !(await verifyPassword(user.passwordHash, body.password))
             ) {
+                failures.recordFailure(key);
                 return reply.code(401).send({ error: 'invalid_credentials' });
             }
+            failures.reset(key);
             if (!user.isActive) {
                 return reply.code(403).send({ error: 'account_disabled' });
             }
@@ -127,11 +157,13 @@ export const authRoutes =
             return req.user;
         });
 
-        app.post('/change-password', async (req, reply) => {
+        app.post('/change-password', limit, async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
             }
             const body = changePassword.parse(req.body);
+            const key = `password:${req.user.id}`;
+            if (locked(reply, key)) return;
             const [user] = await db
                 .select()
                 .from(users)
@@ -139,8 +171,10 @@ export const authRoutes =
             if (
                 !(await verifyPassword(user.passwordHash, body.currentPassword))
             ) {
+                failures.recordFailure(key);
                 return reply.code(403).send({ error: 'wrong_password' });
             }
+            failures.reset(key);
             await db
                 .update(users)
                 .set({ passwordHash: await hashPassword(body.newPassword) })

@@ -31,6 +31,8 @@ export async function createTestApp(
             LOG_LEVEL: 'silent',
             LINT_RATE_LIMIT: '100000',
             OUTBOUND_RATE_LIMIT: '100000',
+            AUTH_RATE_LIMIT: '100000',
+            AUTH_MAX_FAILURES: '100000',
         }),
         databaseUrl: TEST_URL,
         ...overrides,

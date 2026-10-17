@@ -33,6 +33,9 @@ services:
       # the rest of the server's settings (see server/.env.example); the
       # defaults here are the server's own
       SESSION_DAYS: ${SESSION_DAYS:-30}
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-20}
+      AUTH_MAX_FAILURES: ${AUTH_MAX_FAILURES:-10}
+      AUTH_LOCKOUT_MINUTES: ${AUTH_LOCKOUT_MINUTES:-15}
       DRIFT_CACHE_SECONDS: ${DRIFT_CACHE_SECONDS:-300}
       SHARE_RATE_LIMIT: ${SHARE_RATE_LIMIT:-60}
       LINT_RATE_LIMIT: ${LINT_RATE_LIMIT:-30}

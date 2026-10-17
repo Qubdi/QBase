@@ -209,3 +209,115 @@ describe('closed signup', () => {
         }
     });
 });
+
+describe('auth throttling', () => {
+    const attempt = (ctx: TestCtx, email: string, password: string) =>
+        ctx.app.inject({
+            method: 'POST',
+            url: '/auth/login',
+            payload: { email, password },
+        });
+
+    it('locks an account after too many failures and refuses even the right password', async () => {
+        const ctx = await createTestApp({
+            authMaxFailures: 3,
+            authLockoutMinutes: 15,
+        });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            for (let i = 0; i < 3; i++) {
+                expect(
+                    (await attempt(ctx, 'a@example.com', 'wrong-password')).statusCode
+                ).toBe(401);
+            }
+            const locked = await attempt(ctx, 'a@example.com', 'password123');
+            expect(locked.statusCode).toBe(429);
+            expect(locked.json().error).toBe('too_many_attempts');
+            expect(Number(locked.headers['retry-after'])).toBeGreaterThan(0);
+            // another account is not affected
+            await registerUser(ctx.app, 'b@example.com');
+            expect((await attempt(ctx, 'b@example.com', 'password123')).statusCode).toBe(200);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('counts unknown emails too, so the lockout does not reveal accounts', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 2 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            for (let i = 0; i < 2; i++) {
+                await attempt(ctx, 'nobody@example.com', 'wrong-password');
+            }
+            expect((await attempt(ctx, 'nobody@example.com', 'wrong-password')).statusCode).toBe(429);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('forgets earlier failures after a successful sign-in', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 3 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            for (let round = 0; round < 3; round++) {
+                await attempt(ctx, 'a@example.com', 'wrong-password');
+                await attempt(ctx, 'a@example.com', 'wrong-password');
+                expect((await attempt(ctx, 'a@example.com', 'password123')).statusCode).toBe(200);
+            }
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('limits sign-in, sign-up and change-password calls per client address', async () => {
+        const ctx = await createTestApp({ authRateLimit: 3 });
+        try {
+            const user = await registerUser(ctx.app, 'a@example.com');
+            // each route has its own allowance of 3 a minute
+            const codes: number[] = [];
+            for (let i = 0; i < 4; i++) {
+                codes.push((await attempt(ctx, 'a@example.com', 'password123')).statusCode);
+            }
+            expect(codes).toEqual([200, 200, 200, 429]);
+            const change = (currentPassword: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/change-password',
+                    headers: as(user),
+                    payload: { currentPassword, newPassword: 'password456' },
+                });
+            // the sign-ins above replaced the session: sign in again is limited,
+            // so use the old cookie only to show the route counts on its own
+            const results = [];
+            for (let i = 0; i < 4; i++) results.push((await change('wrong-wrong')).statusCode);
+            expect(results.at(-1)).toBe(429);
+            const register = await ctx.app.inject({
+                method: 'POST',
+                url: '/auth/register',
+                payload: { email: 'x@example.com', password: 'password123' },
+            });
+            expect([403, 429]).toContain(register.statusCode);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('locks password changes after repeated wrong current passwords', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 2 });
+        try {
+            const user = await registerUser(ctx.app, 'a@example.com');
+            const change = (currentPassword: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/change-password',
+                    headers: as(user),
+                    payload: { currentPassword, newPassword: 'password456' },
+                });
+            expect((await change('nope-nope')).statusCode).toBe(403);
+            expect((await change('nope-nope')).statusCode).toBe(403);
+            expect((await change('password123')).statusCode).toBe(429);
+        } finally {
+            await ctx.close();
+        }
+    });
+});
