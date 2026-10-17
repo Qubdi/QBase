@@ -12,7 +12,6 @@ export const ACTIVITY_GROUP_OPTIONS: {
     { value: 'diagrams', label: 'Diagrams' },
     { value: 'sharing', label: 'Share links' },
     { value: 'checks', label: 'Database drift and lint' },
-    { value: 'comments', label: 'Comments' },
     { value: 'exports', label: 'Exports' },
 ];
 
@@ -194,6 +193,7 @@ export function describeActivity(item: ActivityItem): Segment[] {
             ];
         }
 
+        // rows from before comments were removed still read as they did
         case 'comment.create':
             return [who, text(' added a comment on '), diagram];
         case 'comment.update':

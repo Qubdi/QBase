@@ -1,7 +1,6 @@
 import { and, desc, eq, inArray, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { comments, diagrams, snapshots } from '../db/schema.js';
-import { planCarryForward } from '../comments/targets.js';
+import { diagrams, snapshots } from '../db/schema.js';
 import { diagramHash } from '../lib/hash.js';
 import { snapshotStatsColumns } from './summary.js';
 import { emitPublish } from '../events.js';
@@ -145,29 +144,6 @@ export async function publishSnapshot(
                 );
         }
 
-        // comments follow the diagram to the new version while their target
-        // exists; the rest are flagged as orphaned, never deleted
-        const existing = await tx
-            .select({
-                id: comments.id,
-                targetType: comments.targetType,
-                targetId: comments.targetId,
-            })
-            .from(comments)
-            .where(eq(comments.diagramId, diagramId));
-        const plan = planCarryForward(existing, d.content);
-        if (plan.carried.length > 0) {
-            await tx
-                .update(comments)
-                .set({ snapshotVersion: created.version, orphaned: false })
-                .where(inArray(comments.id, plan.carried));
-        }
-        if (plan.orphaned.length > 0) {
-            await tx
-                .update(comments)
-                .set({ orphaned: true })
-                .where(inArray(comments.id, plan.orphaned));
-        }
         return created;
     });
     if (row) emitPublish(diagramId, row.version);

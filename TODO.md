@@ -47,10 +47,6 @@ plain), `jsonb` only for document-like content, and an explicit `on delete` on e
 10. **Review note.** Each step that has a migration says, in its commit message, what changed, which
     index serves which query, the retention rule, and how the change is undone.
 
-Existing items this rule also picks up: the `comments` table, its enum and its routes are no longer
-used by the UI (the Comments panel was removed); decide whether to drop them or keep them
-(open question in the admin plan).
-
 ## Backlog: share links
 
 Three small UI tasks. Nothing started yet. Neither touches the database.
@@ -300,9 +296,6 @@ Left for later, from the shipped steps:
 Open questions:
 
 - [ ] Should admins be able to release a stuck editing lock from the Diagrams section?
-- [ ] The old comments feature: the `comments` table, its enum and the server routes are no longer
-      used by the editor. Drop them (a migration, after exporting any stored comments), or keep
-      them for the read-only share viewer?
 
 ## Leftovers from the table-drag fix (optional)
 

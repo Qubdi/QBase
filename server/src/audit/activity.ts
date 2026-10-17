@@ -62,7 +62,7 @@ export const activityQuery = z.object({
             return cursor;
         })
         .optional(),
-    /** what kind: users, projects, diagrams, sharing, checks or comments */
+    /** what kind: users, projects, diagrams, sharing, checks or exports */
     group: z.enum(AUDIT_GROUP_NAMES).optional(),
     /** one exact action, such as diagram.publish */
     action: z.string().trim().max(60).optional(),

@@ -28,10 +28,6 @@ export const AUDIT_ACTIONS = [
     'connection.create',
     'connection.update',
     'connection.delete',
-    'comment.create',
-    'comment.update',
-    'comment.resolve',
-    'comment.delete',
     'drift.configure',
     'drift.check',
     'drift.dismiss',
@@ -55,7 +51,6 @@ export const AUDIT_GROUPS = {
     checks: ['drift.', 'lint.'],
     // an admin took a copy of the log
     exports: ['audit.'],
-    comments: ['comment.'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type AuditGroup = keyof typeof AUDIT_GROUPS;

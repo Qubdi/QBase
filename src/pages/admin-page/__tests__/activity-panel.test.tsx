@@ -329,7 +329,7 @@ describe('ActivityPanel', () => {
         it('says the filters match nothing', async () => {
             render(<ActivityPanel />);
             await screen.findByText(/Nothing has happened yet\./);
-            await pick('Kind of activity', 'Comments');
+            await pick('Kind of activity', 'Exports');
             expect(
                 await screen.findByText(/Nothing matches these filters\./)
             ).toBeTruthy();

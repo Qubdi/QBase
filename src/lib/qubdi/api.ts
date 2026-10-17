@@ -143,13 +143,7 @@ export interface AdminShareLink {
 
 /** The kinds of action the Activity filter offers; the server defines them. */
 export type ActivityGroup =
-    | 'users'
-    | 'projects'
-    | 'diagrams'
-    | 'sharing'
-    | 'checks'
-    | 'comments'
-    | 'exports';
+    'users' | 'projects' | 'diagrams' | 'sharing' | 'checks' | 'exports';
 
 /** One line of the audit log, with the names behind its ids (null when gone). */
 export interface ActivityItem {
@@ -266,22 +260,6 @@ export interface PublicShare {
 
 export type PublicShareResult =
     | { status: 'ok'; share: PublicShare }
-    | { status: 'login_required' }
-    | { status: 'not_found' }
-    | { status: 'error' };
-
-/** A comment as read-only viewers see it: no author, no orphaned ones. */
-export interface PublicComment {
-    id: string;
-    targetType: 'table' | 'field' | 'relationship';
-    targetId: string;
-    body: string;
-    resolved: boolean;
-    createdAt: string;
-}
-
-export type PublicCommentsResult =
-    | { status: 'ok'; version: number; comments: PublicComment[] }
     | { status: 'login_required' }
     | { status: 'not_found' }
     | { status: 'error' };
@@ -705,29 +683,6 @@ export function createApi(
                 );
                 if (res.ok) {
                     return { status: 'ok', share: await res.json() };
-                }
-                if (res.status === 401) return { status: 'login_required' };
-                if (res.status === 404) return { status: 'not_found' };
-                return { status: 'error' };
-            } catch {
-                return { status: 'error' };
-            }
-        },
-        getPublicComments: async (
-            token: string
-        ): Promise<PublicCommentsResult> => {
-            try {
-                const res = await fetchImpl(
-                    `${baseUrl}/s/${encodeURIComponent(token)}/comments`,
-                    { credentials: 'include' }
-                );
-                if (res.ok) {
-                    const data = await res.json();
-                    return {
-                        status: 'ok',
-                        version: data.version,
-                        comments: data.comments,
-                    };
                 }
                 if (res.status === 401) return { status: 'login_required' };
                 if (res.status === 404) return { status: 'not_found' };

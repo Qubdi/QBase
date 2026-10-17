@@ -3,7 +3,7 @@
 Database schema diagrams you can keep on your own server. QubdiDB is an AGPL-3.0
 diagram editor with an optional self-hosted backend. The editor
 still works fully offline in the browser; the backend adds accounts, published
-versions, share links, comments, live-database import, re-sync, drift detection
+versions, share links, live-database import, re-sync, drift detection
 and schema lint.
 
 ## What is in here
@@ -19,11 +19,10 @@ and schema lint.
 1. **Accounts and permissions**: email and password (argon2, with [password rules](#passwords)), owner / editor / viewer per diagram, audit log.
 2. **Published snapshots**: viewers only ever see numbered published versions, never the working copy.
 3. **Read-only share links**: unguessable tokens (only a hash is stored), expiry, revoke, live updates over SSE, rate limited.
-4. **Comments** on tables, fields and relationships, shown read-only on shared views; carried forward on publish, orphaned ones are hidden. The editor has no way to write them.
-5. **Direct import** from PostgreSQL and SQL Server, read-only, with SSRF protection and encrypted saved connections.
-6. **Re-sync** a diagram from its database, keeping layout, colours, areas, notes and descriptions; undoable as one step.
-7. **Drift detection**: check a diagram against its live database on demand, severity classification, badge, optional webhook.
-8. **Schema lint**: 12 rules, per-diagram settings, safe one-click fixes, API endpoint and a CLI for CI.
+4. **Direct import** from PostgreSQL and SQL Server, read-only, with SSRF protection and encrypted saved connections.
+5. **Re-sync** a diagram from its database, keeping layout, colours, areas, notes and descriptions; undoable as one step.
+6. **Drift detection**: check a diagram against its live database on demand, severity classification, badge, optional webhook.
+7. **Schema lint**: 12 rules, per-diagram settings, safe one-click fixes, API endpoint and a CLI for CI.
 
 There are no external services: no analytics, no GitHub integration, no social links.
 

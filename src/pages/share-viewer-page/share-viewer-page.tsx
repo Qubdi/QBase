@@ -13,7 +13,7 @@ import { Input } from '@/components/input/input';
 import { Button } from '@/components/button/button';
 import { AuthDialog } from '@/components/qubdi/auth-dialog';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { api, type PublicComment, type PublicShare } from '@/lib/qubdi/api';
+import { api, type PublicShare } from '@/lib/qubdi/api';
 import { QUBDI_BACKEND_URL } from '@/lib/qubdi/config';
 import {
     buildViewerGraph,
@@ -21,7 +21,6 @@ import {
     relatedTableIds,
     searchTables,
 } from '@/lib/qubdi/viewer-model';
-import { describeTarget, tablesWithComments } from '@/lib/qubdi/comments-model';
 import { ViewerTableNode } from './viewer-table-node';
 
 type LoadState =
@@ -41,9 +40,6 @@ export const ShareViewerPage: React.FC = () => {
     const { token = '' } = useParams<{ token: string }>();
     const { user } = useQubdi();
     const [state, setState] = useState<LoadState>({ kind: 'loading' });
-    const [comments, setComments] = useState<PublicComment[]>([]);
-    const [showMarkers, setShowMarkers] = useState(true);
-    const [panelOpen, setPanelOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [authOpen, setAuthOpen] = useState(false);
@@ -52,8 +48,6 @@ export const ShareViewerPage: React.FC = () => {
         const res = await api.getPublicShare(token);
         if (res.status === 'ok') {
             setState({ kind: 'ok', share: res.share });
-            const c = await api.getPublicComments(token);
-            setComments(c.status === 'ok' ? c.comments : []);
         } else {
             setState({ kind: res.status });
         }
@@ -97,21 +91,6 @@ export const ShareViewerPage: React.FC = () => {
         [graph.tables]
     );
 
-    // open comments only, counted per table and per field, for the markers
-    const markerData = useMemo(() => {
-        const tableCounts: Record<string, number> = {};
-        const fieldCounts: Record<string, number> = {};
-        for (const c of comments) {
-            if (c.resolved) continue;
-            if (c.targetType === 'table') {
-                tableCounts[c.targetId] = (tableCounts[c.targetId] ?? 0) + 1;
-            } else if (c.targetType === 'field') {
-                fieldCounts[c.targetId] = (fieldCounts[c.targetId] ?? 0) + 1;
-            }
-        }
-        return { tableCounts, fieldCounts };
-    }, [comments]);
-
     const nodes: Node[] = useMemo(
         () =>
             graph.tables.map((t) => ({
@@ -129,13 +108,9 @@ export const ShareViewerPage: React.FC = () => {
                         (related === null &&
                             matches !== null &&
                             !matches.has(t.id)),
-                    tableComments: showMarkers
-                        ? (markerData.tableCounts[t.id] ?? 0)
-                        : 0,
-                    fieldComments: showMarkers ? markerData.fieldCounts : {},
                 },
             })),
-        [graph.tables, selectedId, matches, related, showMarkers, markerData]
+        [graph.tables, selectedId, matches, related]
     );
 
     const edges: Edge[] = useMemo(
@@ -160,18 +135,6 @@ export const ShareViewerPage: React.FC = () => {
                 };
             }),
         [graph.edges, selectedId, positions]
-    );
-
-    // clicking a comment focuses the table it belongs to
-    const focusComment = useCallback(
-        (c: PublicComment) => {
-            if (c.targetType === 'table') return setSelectedId(c.targetId);
-            if (c.targetType === 'field') {
-                const owner = [...tablesWithComments(graph, [c])][0];
-                if (owner) setSelectedId(owner);
-            }
-        },
-        [graph]
     );
 
     if (state.kind === 'loading') {
@@ -228,25 +191,6 @@ export const ShareViewerPage: React.FC = () => {
                     {share.live ? ' · live' : ''} · read-only
                 </span>
                 <div className="ml-auto flex items-center gap-2">
-                    {comments.length > 0 ? (
-                        <>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowMarkers((v) => !v)}
-                            >
-                                {showMarkers ? 'Hide markers' : 'Show markers'}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                aria-pressed={panelOpen}
-                                onClick={() => setPanelOpen((v) => !v)}
-                            >
-                                Comments ({comments.length})
-                            </Button>
-                        </>
-                    ) : null}
                     <div className="w-64">
                         <Input
                             type="search"
@@ -283,46 +227,6 @@ export const ShareViewerPage: React.FC = () => {
                         <MiniMap pannable zoomable />
                     </ReactFlow>
                 </div>
-                {panelOpen ? (
-                    <aside
-                        aria-label="Comments"
-                        data-testid="viewer-comments-panel"
-                        className="absolute inset-y-0 right-0 z-10 w-80 overflow-y-auto border-l bg-background p-3 text-sm shadow-lg"
-                    >
-                        <h2 className="mb-2 font-semibold">Comments</h2>
-                        <ul className="flex flex-col gap-2">
-                            {comments.map((c) => (
-                                <li
-                                    key={c.id}
-                                    className={[
-                                        'rounded-md border p-2',
-                                        c.resolved ? 'opacity-60' : '',
-                                    ].join(' ')}
-                                >
-                                    <button
-                                        type="button"
-                                        className="mb-1 text-left text-xs font-medium underline"
-                                        onClick={() => focusComment(c)}
-                                    >
-                                        {describeTarget(
-                                            graph,
-                                            c.targetType,
-                                            c.targetId
-                                        ) ?? c.targetType}
-                                    </button>
-                                    {c.resolved ? (
-                                        <span className="ml-1 text-xs text-muted-foreground">
-                                            resolved
-                                        </span>
-                                    ) : null}
-                                    <p className="whitespace-pre-wrap break-words">
-                                        {c.body}
-                                    </p>
-                                </li>
-                            ))}
-                        </ul>
-                    </aside>
-                ) : null}
             </div>
         </div>
     );

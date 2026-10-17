@@ -6,7 +6,6 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
-import { commentsForPublishedView } from '../comments/view.js';
 import { latestSnapshot } from '../diagrams/service.js';
 import {
     emitLinkChanged,
@@ -286,47 +285,6 @@ export const publicShareRoutes =
                 live: check.link.live,
             };
         });
-
-        app.get('/:token/comments', limit, async (req, reply) => {
-            const { token } = tokenParam.parse(req.params);
-            const check = await resolveToken(db, token, req.user);
-            if (!check.ok) {
-                return check.reason === 'login_required'
-                    ? reply.code(401).send({ error: 'login_required' })
-                    : reply.code(404).send({ error: 'not_found' });
-            }
-            const view = await commentsForPublishedView(
-                db,
-                check.link.diagramId
-            );
-            if (view.version === null) {
-                return reply.code(404).send({ error: 'not_found' });
-            }
-            return { version: view.version, comments: view.comments };
-        });
-
-        // Share links are read-only: any write attempt on comments is refused.
-        for (const url of [
-            '/:token/comments',
-            '/:token/comments/:commentId',
-            '/:token/comments/:commentId/resolve',
-        ]) {
-            app.route({
-                method: ['POST', 'PUT', 'PATCH', 'DELETE'],
-                url,
-                ...limit,
-                handler: async (req, reply) => {
-                    const { token } = tokenParam.parse(req.params);
-                    const check = await resolveToken(db, token, req.user);
-                    if (!check.ok) {
-                        return check.reason === 'login_required'
-                            ? reply.code(401).send({ error: 'login_required' })
-                            : reply.code(404).send({ error: 'not_found' });
-                    }
-                    return reply.code(403).send({ error: 'read_only' });
-                },
-            });
-        }
 
         app.get('/:token/events', limit, async (req, reply) => {
             const { token } = tokenParam.parse(req.params);

@@ -24,12 +24,6 @@ export const shareAccess = pgEnum('share_access', [
     'off',
 ]);
 
-export const commentTarget = pgEnum('comment_target', [
-    'table',
-    'field',
-    'relationship',
-]);
-
 export const driftStatus = pgEnum('drift_status', [
     'clean',
     'drifted',
@@ -299,34 +293,6 @@ export const shareLinks = pgTable(
             t.createdAt.desc().nullsFirst()
         ),
     ]
-);
-
-export const comments = pgTable(
-    'comments',
-    {
-        id: uuid('id').primaryKey().defaultRandom(),
-        diagramId: uuid('diagram_id')
-            .notNull()
-            .references(() => diagrams.id, { onDelete: 'cascade' }),
-        // latest published version this comment has been carried to (0 = none yet)
-        snapshotVersion: integer('snapshot_version').notNull().default(0),
-        targetType: commentTarget('target_type').notNull(),
-        targetId: text('target_id').notNull(),
-        body: text('body').notNull(),
-        authorId: uuid('author_id').references(() => users.id, {
-            onDelete: 'set null',
-        }),
-        resolved: boolean('resolved').notNull().default(false),
-        // true when the target no longer exists in the latest published version
-        orphaned: boolean('orphaned').notNull().default(false),
-        createdAt: timestamp('created_at', { withTimezone: true })
-            .notNull()
-            .defaultNow(),
-        updatedAt: timestamp('updated_at', { withTimezone: true })
-            .notNull()
-            .defaultNow(),
-    },
-    (t) => [index('comments_diagram_idx').on(t.diagramId)]
 );
 
 export const savedConnections = pgTable(

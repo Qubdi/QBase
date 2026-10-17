@@ -324,7 +324,6 @@ describe('the filter options', () => {
             'diagrams',
             'sharing',
             'checks',
-            'comments',
             'exports',
         ]);
     });

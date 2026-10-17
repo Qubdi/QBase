@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { KeyRound, MessageSquare } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
 import type { ViewerTable } from '@/lib/qubdi/viewer-model';
 
 export interface ViewerTableNodeData extends Record<string, unknown> {
@@ -8,27 +8,12 @@ export interface ViewerTableNodeData extends Record<string, unknown> {
     dimmed: boolean;
     selected: boolean;
     matched: boolean;
-    /** open comments on the table itself */
-    tableComments: number;
-    /** open comments per field id */
-    fieldComments: Record<string, number>;
 }
 
 const hiddenHandle = { opacity: 0, pointerEvents: 'none' as const };
 
-const Badge: React.FC<{ count: number }> = ({ count }) => (
-    <span
-        data-testid="viewer-comment-marker"
-        title={`${count} comment${count === 1 ? '' : 's'}`}
-        className="flex shrink-0 items-center gap-0.5 rounded-full bg-amber-400 px-1.5 text-[10px] font-semibold leading-4 text-black"
-    >
-        <MessageSquare className="size-2.5" />
-        {count}
-    </span>
-);
-
 export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
-    const { table, dimmed, selected, matched, tableComments, fieldComments } =
+    const { table, dimmed, selected, matched } =
         data as unknown as ViewerTableNodeData;
     return (
         <div
@@ -74,7 +59,6 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                     {table.name}
                     {table.isView ? ' (view)' : ''}
                 </span>
-                {tableComments > 0 ? <Badge count={tableComments} /> : null}
             </div>
             <ul className="max-h-[320px] divide-y overflow-y-auto">
                 {table.fields.map((f) => (
@@ -87,9 +71,6 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                                 <KeyRound className="size-3 shrink-0 text-yellow-500" />
                             ) : null}
                             <span className="truncate">{f.name}</span>
-                            {fieldComments[f.id] ? (
-                                <Badge count={fieldComments[f.id]} />
-                            ) : null}
                         </span>
                         <span className="shrink-0 text-xs text-muted-foreground">
                             {f.type}
