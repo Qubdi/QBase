@@ -906,63 +906,35 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         ]
     );
 
+    // The overlap graph is rebuilt from the tables as they are drawn, so a
+    // border left by an earlier position or size can never outlive it.
     const updateOverlappingGraphOnChanges = useCallback(
         ({
             positionChanges,
             sizeChanges,
+            force,
         }: {
             positionChanges: NodePositionChange[];
             sizeChanges: NodeDimensionChange[];
+            /** rebuild even when nothing moved (tables were added) */
+            force?: boolean;
         }) => {
-            if (positionChanges.length > 0 || sizeChanges.length > 0) {
-                let newOverlappingGraph: Graph<string> = overlapGraph;
-
-                for (const change of positionChanges) {
-                    const node = getNode(change.id) as NodeType;
-                    if (!node) {
-                        continue;
-                    }
-
-                    if (node.type !== 'table') {
-                        continue;
-                    }
-
-                    newOverlappingGraph = findTableOverlapping(
-                        { node: node as TableNodeType },
-                        {
-                            nodes: nodes.filter(
-                                (node) => !node.hidden && node.type === 'table'
-                            ) as TableNodeType[],
-                        },
-                        newOverlappingGraph
-                    );
-                }
-
-                for (const change of sizeChanges) {
-                    const node = getNode(change.id) as NodeType;
-                    if (!node) {
-                        continue;
-                    }
-
-                    if (node.type !== 'table') {
-                        continue;
-                    }
-
-                    newOverlappingGraph = findTableOverlapping(
-                        { node: node as TableNodeType },
-                        {
-                            nodes: nodes.filter(
-                                (node) => !node.hidden && node.type === 'table'
-                            ) as TableNodeType[],
-                        },
-                        newOverlappingGraph
-                    );
-                }
-
-                setOverlapGraph(newOverlappingGraph);
+            if (
+                !force &&
+                positionChanges.length === 0 &&
+                sizeChanges.length === 0
+            ) {
+                return;
             }
+            setOverlapGraph(
+                findOverlappingTables({
+                    nodes: nodes.filter(
+                        (node) => !node.hidden && node.type === 'table'
+                    ) as TableNodeType[],
+                })
+            );
         },
-        [nodes, overlapGraph, setOverlapGraph, getNode]
+        [nodes, setOverlapGraph]
     );
 
     // One debounced function for the life of the canvas, always calling the latest
@@ -1414,19 +1386,12 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         (event: DiagramEvent) => {
             let newOverlappingGraph: Graph<string> = overlapGraph;
             if (event.action === 'add_tables') {
-                for (const table of event.data.tables) {
-                    newOverlappingGraph = findTableOverlapping(
-                        { node: getNode(table.id) as TableNodeType },
-                        {
-                            nodes: nodes.filter(
-                                (node) => !node.hidden && node.type === 'table'
-                            ) as TableNodeType[],
-                        },
-                        overlapGraph
-                    );
-                }
-
-                setOverlapGraph(newOverlappingGraph);
+                // the new nodes are not drawn yet: check once they are
+                updateOverlappingGraphOnChangesDebounced({
+                    positionChanges: [],
+                    sizeChanges: [],
+                    force: true,
+                });
             } else if (event.action === 'remove_tables') {
                 for (const tableId of event.data.tableIds) {
                     newOverlappingGraph = removeVertex(
@@ -1529,6 +1494,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         [
             overlapGraph,
             setOverlapGraph,
+            updateOverlappingGraphOnChangesDebounced,
             getNode,
             nodes,
             filter,
