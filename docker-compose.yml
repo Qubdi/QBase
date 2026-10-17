@@ -1,7 +1,7 @@
 # Configuration comes from .env (see .env.example); the defaults suit local development.
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-qubdidb}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qubdidb}
@@ -50,7 +50,7 @@ services:
   #   docker compose --profile mssql up -d mssql
   mssql:
     profiles: ["mssql"]
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:cf8f0ab2ebe61feec2eed2629061a07d247f791c2a8ddda74a4ac9f06a291718
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Qubdi_Strong_Pass1}

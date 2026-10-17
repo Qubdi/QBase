@@ -43,3 +43,9 @@ updates:
     ignore:
       - dependency-name: node
         update-types: ["version-update:semver-major"]
+
+  # the compose file's images (Postgres, SQL Server) are pinned by digest too
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
