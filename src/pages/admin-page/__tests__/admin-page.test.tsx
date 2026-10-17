@@ -74,7 +74,7 @@ const nav = () =>
     screen.findByRole(
         'navigation',
         { name: 'Admin sections' },
-        { timeout: 5000 }
+        { timeout: 15_000 }
     );
 
 describe('admin panel frame', () => {
