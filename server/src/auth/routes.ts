@@ -11,7 +11,11 @@ import type { Db } from '../db/client.js';
 import { users } from '../db/schema.js';
 import { createFailureThrottle } from '../lib/failure-throttle.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
-import { hashPassword, verifyPassword } from './password.js';
+import {
+    hashPassword,
+    verifyAgainstNobody,
+    verifyPassword,
+} from './password.js';
 import {
     createSession,
     destroyOtherSessions,
@@ -135,10 +139,10 @@ export const authRoutes =
                 .select()
                 .from(users)
                 .where(eq(users.email, body.email));
-            if (
-                !user ||
-                !(await verifyPassword(user.passwordHash, body.password))
-            ) {
+            const ok = user
+                ? await verifyPassword(user.passwordHash, body.password)
+                : await verifyAgainstNobody(body.password);
+            if (!user || !ok) {
                 failures.recordFailure(key);
                 return reply.code(401).send({ error: 'invalid_credentials' });
             }
