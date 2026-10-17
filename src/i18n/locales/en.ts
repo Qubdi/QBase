@@ -14,8 +14,6 @@ export const en = {
         menu: {
             actions: {
                 actions: 'Actions',
-                new: 'New...',
-                browse: 'All Databases...',
                 save: 'Save',
                 import: 'Import',
                 export_sql: 'Export SQL',

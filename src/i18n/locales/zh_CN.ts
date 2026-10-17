@@ -14,8 +14,6 @@ export const zh_CN: LanguageTranslation = {
         menu: {
             actions: {
                 actions: '操作',
-                new: '新建...',
-                browse: '所有数据库...',
                 save: '保存',
                 import: '导入数据库',
                 export_sql: '导出 SQL 语句',

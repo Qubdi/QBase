@@ -14,8 +14,6 @@ export const gu: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'ક્રિયાઓ',
-                new: 'નવું...',
-                browse: 'બધા ડેટાબેસ...',
                 save: 'સાચવો',
                 import: 'ડેટાબેસ આયાત કરો',
                 export_sql: 'SQL નિકાસ કરો',

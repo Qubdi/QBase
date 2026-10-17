@@ -14,8 +14,6 @@ export const ru: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'Действия',
-                new: 'Новая...',
-                browse: 'Все базы данных...',
                 save: 'Сохранить',
                 import: 'Импортировать базу данных',
                 export_sql: 'Экспорт SQL',

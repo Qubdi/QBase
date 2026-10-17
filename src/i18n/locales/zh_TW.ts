@@ -14,8 +14,6 @@ export const zh_TW: LanguageTranslation = {
         menu: {
             actions: {
                 actions: '操作',
-                new: '新增...',
-                browse: '所有資料庫...',
                 save: '儲存',
                 import: '匯入資料庫',
                 export_sql: '匯出 SQL',

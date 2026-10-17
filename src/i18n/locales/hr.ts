@@ -14,8 +14,6 @@ export const hr: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'Akcije',
-                new: 'Novi...',
-                browse: 'Sve baze podataka...',
                 save: 'Spremi',
                 import: 'Uvezi',
                 export_sql: 'Izvezi SQL',

@@ -14,8 +14,6 @@ export const pt_BR: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'Ações',
-                new: 'Novo...',
-                browse: 'Todos os bancos de dados...',
                 save: 'Salvar',
                 import: 'Importar Banco de Dados',
                 export_sql: 'Exportar SQL',

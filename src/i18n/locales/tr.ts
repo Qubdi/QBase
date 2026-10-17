@@ -14,8 +14,6 @@ export const tr: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'Eylemler',
-                new: 'Yeni...',
-                browse: 'Tüm veritabanları...',
                 save: 'Kaydet',
                 import: 'Veritabanı İçe Aktar',
                 export_sql: 'SQL Olarak Dışa Aktar',

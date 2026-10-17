@@ -14,8 +14,6 @@ export const te: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'చర్యలు',
-                new: 'కొత్తది...',
-                browse: 'అన్ని డేటాబేస్‌లు...',
                 save: 'సేవ్',
                 import: 'డేటాబేస్‌ను దిగుమతి చేసుకోండి',
                 export_sql: 'SQL ఎగుమతి',

@@ -14,8 +14,6 @@ export const ko_KR: LanguageTranslation = {
         menu: {
             actions: {
                 actions: '작업',
-                new: '새로 만들기...',
-                browse: '모든 데이터베이스...',
                 save: '저장',
                 import: '데이터베이스 가져오기',
                 export_sql: 'SQL로 저장',

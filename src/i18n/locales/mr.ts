@@ -14,8 +14,6 @@ export const mr: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'क्रिया',
-                new: 'नवीन...',
-                browse: 'सर्व डेटाबेस...',
                 save: 'जतन करा',
                 import: 'डेटाबेस इम्पोर्ट करा',
                 export_sql: 'SQL एक्स्पोर्ट करा',

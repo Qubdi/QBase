@@ -14,8 +14,6 @@ export const ja: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'アクション',
-                new: '新規...',
-                browse: 'すべてのデータベース...',
                 save: '保存',
                 import: 'データベースをインポート',
                 export_sql: 'SQLをエクスポート',
