@@ -125,6 +125,13 @@ describe('classifyIp', () => {
         ['::ffff:8.8.8.8', 'public'],
         ['::ffff:7f00:1', 'loopback'],
         ['64:ff9b::a00:1', 'private'],
+        // IPv4 hidden in transition ranges
+        ['2002:7f00:1::1', 'reserved'],
+        ['2002:a00:1::', 'reserved'],
+        ['2001:0:4136:e378:8000:63bf:3fff:fdd2', 'reserved'],
+        ['::7f00:1', 'reserved'],
+        ['::10.0.0.1', 'reserved'],
+        ['::808:808', 'reserved'],
     ];
     it.each(cases)('%s is %s', (ip, expected) => {
         expect(classifyIp(ip)).toBe(expected);
