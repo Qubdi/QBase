@@ -75,6 +75,7 @@ import {
     findFreeShift,
     findOverlappingTables,
     findTableOverlapping,
+    carryMeasured,
 } from './canvas-utils';
 import type { Graph } from '@/lib/graph';
 import { removeVertex } from '@/lib/graph';
@@ -595,7 +596,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         });
 
         setNodes((prevNodes) => {
-            const newNodes = [
+            const newNodes = carryMeasured(prevNodes, [
                 ...tables.map((table) => {
                     const isOverlapping =
                         (overlapGraph.graph.get(table.id) ?? []).length > 0;
@@ -652,7 +653,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                         n.type === 'temp-cursor' ||
                         n.type === 'create-relationship'
                 ),
-            ];
+            ]);
 
             // Check if nodes actually changed
             if (equal(prevNodes, newNodes)) {

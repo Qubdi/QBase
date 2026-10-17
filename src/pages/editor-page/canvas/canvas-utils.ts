@@ -162,3 +162,26 @@ export const findFreeShift = (
 
     return candidates.find((c) => free(c.dx, c.dy)) ?? { dx: 0, dy: 0 };
 };
+
+/**
+ * Gives each new node the measured size its previous version had.
+ *
+ * A node handed to React Flow without `measured` is treated as not drawn yet,
+ * and every line that ends on it disappears until the browser measures it
+ * again, which is one frame. Nodes are rebuilt from the diagram whenever it
+ * changes, for example when a dropped table's new position is saved, and
+ * neither a move nor a rename changes a size. A real size change is measured
+ * again by React Flow itself, so a carried value never stays wrong.
+ */
+export const carryMeasured = <
+    N extends { id: string; measured?: { width?: number; height?: number } },
+>(
+    previous: readonly N[],
+    next: readonly N[]
+): N[] => {
+    const before = new Map(previous.map((node) => [node.id, node.measured]));
+    return next.map((node) => {
+        const measured = before.get(node.id);
+        return node.measured || !measured ? node : { ...node, measured };
+    });
+};

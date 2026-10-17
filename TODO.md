@@ -299,8 +299,19 @@ Open questions:
 
 ## Leftovers from the table-drag fix (optional)
 
-- [ ] A fast drag that reaches the viewport edge (auto-pan) is still slower than the original
-      on the 89-table monica template (300-500 ms frames vs 130-220 ms).
-- [ ] The line disappears for one frame right after a table is dropped (edges are rebuilt
-      after the drag ends).
+- [ ] A fast drag that reaches the viewport edge (auto-pan) is slower than the original on the
+      89-table monica template (300-500 ms frames vs 130-220 ms on the reporter's machine).
+      Measured again, headless Chrome on the dev build: a frame is 17-83 ms at the median with
+      occasional 500 ms spikes, and the numbers move a lot between runs, so a gain of the size
+      reported could not be told from noise. What the CPU profile shows: React Flow's per-edge
+      position work (`getEdgePosition`, about a fifth of the script time) and painting, not the
+      editor's own handlers. Passing no edges at all did not give a consistent gain. On this template
+      every edge logs "Couldn't create edge for target handle" (the target handles of the fields that
+      are not drawn do not exist), and React Flow retries each of them on every update: worth a look
+      before anything else. Needs a profile from the reporter's browser to go further.
+- Fixed: the line no longer disappears for a frame after a drop. Cause: saving the new position
+  rebuilt every node without its measured size, so React Flow treated all tables as not drawn yet
+  and no edge could find its ends until the next measure (`carryMeasured` in `canvas-utils.ts`).
+  Checked by sampling every frame after a drop on the airbnb template: 1 frame with no lines before,
+  0 in six runs after.
 - Keep: under reduced motion the rule is `transition: none !important` (a test guards it).
