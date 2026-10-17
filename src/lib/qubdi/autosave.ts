@@ -15,6 +15,11 @@ export interface AutosaverOptions<T> {
 export interface Autosaver<T> {
     /** Report the current value. The first one only sets the baseline. */
     update: (value: T) => void;
+    /**
+     * The value reported first turned out not to be on the server: treat it as
+     * an unsent change and save it after the usual pause.
+     */
+    markUnsaved: () => void;
     /** Send any unsent change now (also retries after a failure). */
     flush: () => Promise<void>;
     /** Forget every unsent change and stop saving (the user threw them away). */
@@ -93,6 +98,15 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
                 pending = true;
                 onStatus('pending');
             }
+            timer = setTimeout(() => void run(), delayMs);
+        },
+        markUnsaved() {
+            if (disposed || !latest || pending) return;
+            // a key no value can have, so the value is never "already saved"
+            baseline = '';
+            pending = true;
+            onStatus('pending');
+            clear();
             timer = setTimeout(() => void run(), delayMs);
         },
         flush() {

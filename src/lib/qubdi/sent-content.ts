@@ -62,6 +62,12 @@ const write = (localId: string, prints: string[]) => {
 const sentOf = (localId: string): string[] =>
     memory[localId] ?? read()[localId] ?? [];
 
+/** True when both contents are the same apart from key order and `updatedAt`. */
+export const sameContent = (
+    a: Record<string, unknown>,
+    b: Record<string, unknown>
+): boolean => fingerprint(a) === fingerprint(b);
+
 /** Call just before sending `content`, since the reply may never arrive. */
 export const rememberSentContent = (
     localId: string,

@@ -4,8 +4,9 @@ import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, ApiError } from '@/lib/qubdi/api';
-import { setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
-import { isLastSentContent } from '@/lib/qubdi/sent-content';
+import { isLastSentContent, sameContent } from '@/lib/qubdi/sent-content';
+import { diagramToServerContent } from '@/lib/qubdi/content';
+import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 import {
     AUTOSAVE_DELAY_MS,
     createAutosaver,
@@ -45,6 +46,8 @@ export const ServerAutosave: React.FC = () => {
     accessRef.current = access;
     // set while the page is closing, so the final save survives the unload
     const leavingRef = useRef(false);
+    // the newest diagram the editor reported, for the check on open
+    const latestRef = useRef<Diagram | null>(null);
 
     const canSave = access.status === 'editor' && !!diagramId;
 
@@ -98,6 +101,31 @@ export const ServerAutosave: React.FC = () => {
             },
         });
         saverRef.current = saver;
+        // Edits made before a reload, re-login or reopen may never have been
+        // sent. If the server still holds the version this copy was based on
+        // but its content differs from ours, the difference is unsent work.
+        const opened = accessRef.current;
+        let checked = false;
+        if (opened.status === 'editor') {
+            void api
+                .getDiagram(opened.remoteId)
+                .then((remote) => {
+                    const local = latestRef.current;
+                    if (
+                        checked ||
+                        !local ||
+                        !remote.content ||
+                        remote.updatedAt !== getBaseUpdatedAt(diagramId) ||
+                        sameContent(
+                            remote.content,
+                            diagramToServerContent(local)
+                        )
+                    )
+                        return;
+                    saver.markUnsaved();
+                })
+                .catch(() => undefined);
+        }
         registerSaveDiscard(() => saver.discard());
         const flushOnLeave = () => {
             leavingRef.current = true;
@@ -110,6 +138,7 @@ export const ServerAutosave: React.FC = () => {
         window.addEventListener('pagehide', flushOnLeave);
         window.addEventListener('pageshow', resumed);
         return () => {
+            checked = true;
             window.removeEventListener('pagehide', flushOnLeave);
             window.removeEventListener('pageshow', resumed);
             // leaving the diagram: send what is still pending
@@ -123,6 +152,7 @@ export const ServerAutosave: React.FC = () => {
     useEffect(() => {
         // ignore the empty placeholder shown while another diagram is loading
         if (saverRef.current && currentDiagram.id === diagramId) {
+            latestRef.current = currentDiagram;
             saverRef.current.update({
                 diagram: currentDiagram,
                 revision: revisionOf(currentDiagram),
