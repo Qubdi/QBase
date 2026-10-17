@@ -1,6 +1,11 @@
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, Table2, View } from 'lucide-react';
+import {
+    FIELD_TYPE_KIND_CLASS,
+    fieldTypeKind,
+} from '@/pages/editor-page/canvas/table-node/field-type-kind';
+import { cn } from '@/lib/utils';
 import type { ViewerTable } from '@/lib/qubdi/viewer-model';
 
 export interface ViewerTableNodeData extends Record<string, unknown> {
@@ -15,11 +20,14 @@ const hiddenHandle = { opacity: 0, pointerEvents: 'none' as const };
 export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
     const { table, dimmed, selected, matched } =
         data as unknown as ViewerTableNodeData;
+    const subtitle = [table.schema, table.isView ? 'view' : null]
+        .filter(Boolean)
+        .join(' · ');
     return (
         <div
             data-testid={`viewer-table-${table.name}`}
             className={[
-                'w-[260px] overflow-hidden rounded-md border bg-background text-sm shadow-xs transition-opacity',
+                'w-[260px] overflow-hidden rounded-xl border bg-card text-sm shadow-xs transition-opacity',
                 dimmed ? 'opacity-25' : 'opacity-100',
                 selected ? 'ring-2 ring-primary' : '',
                 matched ? 'ring-2 ring-yellow-400' : '',
@@ -50,36 +58,98 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                 position={Position.Right}
                 style={hiddenHandle}
             />
+            {/* the editor's table card, without its editing parts */}
             <div
-                className="flex items-center justify-between gap-2 px-3 py-2 font-semibold text-black"
-                style={{ backgroundColor: table.color }}
+                className="flex h-12 items-center gap-2.5 border-b px-3"
+                style={{
+                    backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${table.color} 20%, transparent), color-mix(in srgb, ${table.color} 6%, transparent))`,
+                }}
             >
-                <span className="truncate">
-                    {table.schema ? `${table.schema}.` : ''}
-                    {table.name}
-                    {table.isView ? ' (view)' : ''}
+                {table.isView ? (
+                    <span
+                        className="flex size-7 shrink-0 items-center justify-center rounded-lg border-[1.5px] border-dashed"
+                        style={{
+                            borderColor: table.color,
+                            color: table.color,
+                        }}
+                    >
+                        <View className="size-4" />
+                    </span>
+                ) : (
+                    <span
+                        className="flex size-7 shrink-0 items-center justify-center rounded-lg text-white"
+                        style={{ backgroundColor: table.color }}
+                    >
+                        <Table2 className="size-4" />
+                    </span>
+                )}
+                <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13.5px] font-semibold leading-tight">
+                        {table.name}
+                    </div>
+                    {subtitle ? (
+                        <div className="mt-0.5 truncate text-[11px] leading-tight text-muted-foreground">
+                            {subtitle}
+                        </div>
+                    ) : null}
+                </div>
+                <span
+                    className="shrink-0 rounded-full bg-background/70 px-1.5 text-[11px] font-semibold leading-4 tabular-nums text-muted-foreground"
+                    title={`${table.fields.length} fields`}
+                >
+                    {table.fields.length}
                 </span>
             </div>
-            <ul className="max-h-[320px] divide-y overflow-y-auto">
+            <ul className="max-h-[320px] overflow-y-auto">
                 {table.fields.map((f) => (
                     <li
                         key={f.id}
-                        className="flex items-center justify-between gap-2 px-3 py-1"
+                        className="flex h-8 items-center justify-between gap-1 border-t px-3 text-sm first:border-t-0"
                     >
-                        <span className="flex min-w-0 items-center gap-1">
+                        <span className="flex size-4 shrink-0 items-center justify-center">
                             {f.primaryKey ? (
-                                <KeyRound className="size-3 shrink-0 text-yellow-500" />
+                                <KeyRound
+                                    size={14}
+                                    className="text-amber-500"
+                                />
                             ) : null}
-                            <span className="truncate">{f.name}</span>
                         </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                            {f.type}
-                            {f.nullable ? '' : ' •'}
+                        <span
+                            className={cn(
+                                'min-w-0 flex-1 truncate text-left',
+                                (f.primaryKey || f.unique) && 'font-semibold'
+                            )}
+                        >
+                            {f.name}
+                        </span>
+                        <span className="ml-auto flex shrink-0 items-center gap-1">
+                            {f.unique && !f.primaryKey ? (
+                                <span
+                                    className="shrink-0 rounded-xs border px-1 text-[9px] font-semibold leading-3 text-muted-foreground"
+                                    title="Unique"
+                                >
+                                    UQ
+                                </span>
+                            ) : null}
+                            <span
+                                className={cn(
+                                    'min-w-0 overflow-hidden rounded-md px-1.5 py-0.5 text-right font-mono text-[11px] font-semibold',
+                                    FIELD_TYPE_KIND_CLASS[fieldTypeKind(f.type)]
+                                )}
+                            >
+                                <span className="block truncate">{f.type}</span>
+                            </span>
+                            {f.nullable ? null : (
+                                <span
+                                    className="size-1 shrink-0 rounded-full bg-muted-foreground"
+                                    title="Not null"
+                                />
+                            )}
                         </span>
                     </li>
                 ))}
                 {table.fields.length === 0 ? (
-                    <li className="px-3 py-1 text-xs text-muted-foreground">
+                    <li className="h-8 border-t px-3 text-xs leading-8 text-muted-foreground">
                         No fields
                     </li>
                 ) : null}
