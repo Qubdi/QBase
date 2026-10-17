@@ -34,7 +34,7 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
         <div
             data-testid={`viewer-table-${table.name}`}
             className={[
-                'w-[260px] overflow-hidden rounded-md border bg-background text-sm shadow-sm transition-opacity',
+                'w-[260px] overflow-hidden rounded-md border bg-background text-sm shadow-xs transition-opacity',
                 dimmed ? 'opacity-25' : 'opacity-100',
                 selected ? 'ring-2 ring-primary' : '',
                 matched ? 'ring-2 ring-yellow-400' : '',

@@ -16,7 +16,7 @@ export interface TopNavbarProps {}
 
 export const TopNavbar: React.FC<TopNavbarProps> = () => {
     return (
-        <nav className="flex flex-col justify-between border-b bg-background/80 px-3 shadow-sm backdrop-blur md:h-12 md:flex-row md:items-center md:px-4">
+        <nav className="flex flex-col justify-between border-b bg-background/80 px-3 shadow-xs backdrop-blur md:h-12 md:flex-row md:items-center md:px-4">
             <div className="flex flex-1 flex-col justify-between md:flex-row md:items-center md:justify-normal md:gap-x-3">
                 <div className="flex h-10 items-center justify-between font-primary md:h-12">
                     <Link to="/" className="flex h-full items-center">

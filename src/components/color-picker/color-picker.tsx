@@ -21,7 +21,7 @@ export interface ColorPickerProps {
 }
 
 const swatch =
-    'size-8 cursor-pointer rounded-md border-2 border-muted transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+    'size-8 cursor-pointer rounded-md border-2 border-muted transition-shadow hover:shadow-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring';
 
 const Swatch: React.FC<{
     color: string;

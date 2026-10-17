@@ -1935,7 +1935,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     {/* Empty state when all tables are hidden by filter */}
                     {allTablesHiddenByFilter && (
                         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-                            <div className="pointer-events-auto flex items-center gap-3 rounded-lg border bg-background/90 px-4 py-3 shadow-sm backdrop-blur-sm">
+                            <div className="pointer-events-auto flex items-center gap-3 rounded-lg border bg-background/90 px-4 py-3 shadow-xs backdrop-blur-sm">
                                 <EyeOff className="size-5 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">
                                     {t('canvas.all_tables_hidden')}

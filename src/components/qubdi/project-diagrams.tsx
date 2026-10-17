@@ -196,7 +196,7 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                             data-diagram-id={d.id}
                             data-state={selectedId === d.id ? 'selected' : ''}
                             tabIndex={0}
-                            className="cursor-pointer focus:bg-accent focus:outline-none"
+                            className="cursor-pointer focus:bg-accent focus:outline-hidden"
                             onFocus={() => onSelect(d.id)}
                             onClick={(e) => {
                                 onSelect(d.id);

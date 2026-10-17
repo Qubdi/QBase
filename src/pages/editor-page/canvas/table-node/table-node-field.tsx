@@ -52,7 +52,7 @@ export const TARGET_ID_PREFIX = 'target_rel_';
 // hollow ring that fills and grows under the pointer; the invisible ring around
 // it makes it easy to grab.
 const CONNECT_HANDLE_CLASS =
-    '!size-3 !rounded-full !border-2 !border-primary !bg-card !shadow-sm !transition-all !duration-150 !cursor-crosshair hover:!scale-150 hover:!bg-primary hover:!shadow-[0_0_0_4px_hsl(var(--primary)/0.2)] after:absolute after:-inset-2 after:content-[""]';
+    '!size-3 !rounded-full !border-2 !border-primary !bg-card !shadow-xs !transition-all !duration-150 !cursor-crosshair hover:!scale-150 hover:!bg-primary hover:!shadow-[0_0_0_4px_hsl(var(--primary)/0.2)] after:absolute after:-inset-2 after:content-[""]';
 
 export interface TableNodeFieldProps {
     tableNodeId: string;
@@ -567,7 +567,7 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                 >
                     {field.unique && !field.primaryKey ? (
                         <span
-                            className="shrink-0 rounded-sm border px-1 text-[9px] font-semibold leading-3 text-muted-foreground"
+                            className="shrink-0 rounded-xs border px-1 text-[9px] font-semibold leading-3 text-muted-foreground"
                             title="Unique"
                         >
                             UQ

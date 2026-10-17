@@ -10,7 +10,7 @@ export const TreeItemSkeleton: React.FC<TreeItemSkeletonProps> = ({
 }) => {
     return (
         <div className={cn('px-2 py-1', className)} style={style}>
-            <Skeleton className="h-3.5 w-full rounded-sm" />
+            <Skeleton className="h-3.5 w-full rounded-xs" />
         </div>
     );
 };

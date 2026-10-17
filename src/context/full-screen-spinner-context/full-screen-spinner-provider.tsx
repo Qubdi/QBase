@@ -38,7 +38,7 @@ export const FullScreenLoaderProvider: React.FC<React.PropsWithChildren> = ({
         >
             {children}
             <Dialog open={open}>
-                <DialogContent className="justify-center border-none bg-transparent shadow-none outline-none">
+                <DialogContent className="justify-center border-none bg-transparent shadow-none outline-hidden">
                     <DialogTitle className="hidden"></DialogTitle>
                     <DialogDescription className="hidden" />
                     <div className="w-fit rounded-xl bg-primary-foreground p-3">

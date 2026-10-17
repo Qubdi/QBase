@@ -89,7 +89,7 @@ export const ProjectList: React.FC = () => {
                             <li key={p.id}>
                                 <Link
                                     to={projectHomePath(p.slug)}
-                                    className="flex h-full min-h-28 flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+                                    className="flex h-full min-h-28 flex-col gap-2 rounded-xl border bg-card p-4 shadow-xs transition-shadow hover:shadow-md"
                                 >
                                     <div className="flex items-start justify-between gap-2">
                                         <span className="font-primary text-base font-semibold">

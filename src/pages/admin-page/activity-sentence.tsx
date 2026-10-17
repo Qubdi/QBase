@@ -61,7 +61,7 @@ export const ActivitySentence: React.FC<ActivitySentenceProps> = ({
                         ? `Show only what ${s.text} did`
                         : `Show only the activity on ${s.text}`
                 }
-                className="break-words rounded-sm text-left font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="break-words rounded-xs text-left font-medium underline-offset-2 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={choose}
             >
                 {s.text}

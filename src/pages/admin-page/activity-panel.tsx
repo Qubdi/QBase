@@ -67,7 +67,7 @@ export const ActivityPanel: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm">
+        <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-xs">
             <div className="flex flex-wrap items-end gap-2">
                 <div className="flex w-full flex-col gap-1 sm:w-52">
                     <span className="text-xs text-muted-foreground">What</span>

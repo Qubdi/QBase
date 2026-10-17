@@ -69,7 +69,7 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 ref={contentRef}
-                className="max-w-2xl gap-5 p-0 focus:outline-none"
+                className="max-w-2xl gap-5 p-0 focus:outline-hidden"
                 showClose
                 // the first checkbox would otherwise open with its focus ring on
                 onOpenAutoFocus={(e) => {

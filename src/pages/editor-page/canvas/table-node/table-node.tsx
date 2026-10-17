@@ -347,7 +347,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
         const tableClassName = useMemo(
             () =>
                 cn(
-                    'flex w-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm',
+                    'flex w-full flex-col overflow-hidden rounded-xl border bg-card shadow-xs',
                     table.isView ? 'border-dashed' : '',
                     selected || isTarget || isPartOfCreatingRelationship
                         ? 'border-primary ring-2 ring-primary/25'
@@ -587,7 +587,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                         )}
                         <div className="min-w-0 flex-1">
                             {tableChangedName ? (
-                                <Label className="flex h-5 items-center truncate rounded-sm bg-sky-200 px-2 text-sm font-normal text-sky-900 dark:bg-sky-800 dark:text-sky-200">
+                                <Label className="flex h-5 items-center truncate rounded-xs bg-sky-200 px-2 text-sm font-normal text-sky-900 dark:bg-sky-800 dark:text-sky-200">
                                     <span className="truncate">
                                         {tableChangedName.old}
                                     </span>
@@ -603,14 +603,14 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                                     className={cn(
                                         'block truncate text-[13.5px] font-semibold leading-tight',
                                         isDiffNewTable &&
-                                            'rounded-sm bg-green-200 px-2 font-normal text-green-900 dark:bg-green-800 dark:text-green-200',
+                                            'rounded-xs bg-green-200 px-2 font-normal text-green-900 dark:bg-green-800 dark:text-green-200',
                                         isDiffTableRemoved &&
-                                            'rounded-sm bg-red-200 px-2 font-normal text-red-900 dark:bg-red-800 dark:text-red-200',
+                                            'rounded-xs bg-red-200 px-2 font-normal text-red-900 dark:bg-red-800 dark:text-red-200',
                                         isDiffTableChanged &&
                                             !isSummaryOnly &&
                                             !isDiffNewTable &&
                                             !isDiffTableRemoved &&
-                                            'rounded-sm bg-sky-200 px-2 font-normal text-sky-900 dark:bg-sky-800 dark:text-sky-200'
+                                            'rounded-xs bg-sky-200 px-2 font-normal text-sky-900 dark:bg-sky-800 dark:text-sky-200'
                                     )}
                                 >
                                     {table.name}

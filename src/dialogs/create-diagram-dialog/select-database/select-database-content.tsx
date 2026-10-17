@@ -157,13 +157,13 @@ export const SelectDatabaseContent: React.FC<SelectDatabaseContentProps> = ({
                 <TabsList className="mb-2 grid size-auto grid-cols-2 gap-1 rounded-xl border bg-background p-1">
                     <TabsTrigger
                         value="transactional"
-                        className="gap-1.5 rounded-lg px-3 py-1 text-sm font-medium transition-all data-[state=active]:bg-sky-600 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-muted/50 data-[state=inactive]:hover:text-foreground dark:data-[state=active]:bg-sky-500"
+                        className="gap-1.5 rounded-lg px-3 py-1 text-sm font-medium transition-all data-[state=active]:bg-sky-600 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-xs data-[state=inactive]:hover:bg-muted/50 data-[state=inactive]:hover:text-foreground dark:data-[state=active]:bg-sky-500"
                     >
                         Transactional
                     </TabsTrigger>
                     <TabsTrigger
                         value="analytical"
-                        className="gap-1.5 rounded-lg px-3 py-1 text-sm font-medium transition-all data-[state=active]:bg-sky-600 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-muted/50 data-[state=inactive]:hover:text-foreground dark:data-[state=active]:bg-sky-500"
+                        className="gap-1.5 rounded-lg px-3 py-1 text-sm font-medium transition-all data-[state=active]:bg-sky-600 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-xs data-[state=inactive]:hover:bg-muted/50 data-[state=inactive]:hover:text-foreground dark:data-[state=active]:bg-sky-500"
                     >
                         Analytical
                     </TabsTrigger>

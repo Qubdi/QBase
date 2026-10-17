@@ -21,7 +21,7 @@ export const ListMenu = React.forwardRef<HTMLDivElement, ListMenuProps>(
                     <Link
                         key={item.href}
                         className={cn(
-                            'flex h-7 w-full text-teal-600 dark:text-white items-center gap-1 rounded-sm p-1 text-sm transition-colors hover:bg-teal-100 dark:hover:bg-teal-900 hover:no-underline',
+                            'flex h-7 w-full text-teal-600 dark:text-white items-center gap-1 rounded-xs p-1 text-sm transition-colors hover:bg-teal-100 dark:hover:bg-teal-900 hover:no-underline',
                             item.selected
                                 ? 'bg-teal-100 dark:bg-teal-900 font-semibold'
                                 : 'text-muted-foreground hover:bg-teal-50 dark:hover:bg-teal-950 hover:text-teal-600 dark:hover:text-white'

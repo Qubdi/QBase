@@ -25,7 +25,7 @@ export interface ShareDialogProps {
 
 // same look as the dropdown next to it
 const DATE_INPUT_CLASS =
-    'h-8 rounded-md border border-input bg-background px-2 text-xs shadow-sm transition-colors hover:border-muted-foreground/40 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30';
+    'h-8 rounded-md border border-input bg-background px-2 text-xs shadow-xs transition-colors hover:border-muted-foreground/40 focus-visible:border-ring focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/30';
 
 const ACCESS_OPTIONS = [
     { value: 'anyone', label: 'Anyone with the link' },

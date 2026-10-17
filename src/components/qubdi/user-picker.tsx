@@ -39,7 +39,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                 <button
                     type="button"
                     aria-label="Choose a different user"
-                    className="rounded-sm hover:text-foreground"
+                    className="rounded-xs hover:text-foreground"
                     onClick={() => onSelect(null)}
                 >
                     <X className="size-4" />

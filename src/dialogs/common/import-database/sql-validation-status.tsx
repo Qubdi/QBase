@@ -90,7 +90,7 @@ export const SQLValidationStatus: React.FC<SQLValidationStatusProps> = ({
                                                 onClick={() =>
                                                     onErrorClick?.(error.line)
                                                 }
-                                                className="rounded font-medium underline hover:text-red-600 focus:outline-none focus:ring-1 focus:ring-red-500 dark:hover:text-red-200"
+                                                className="rounded font-medium underline hover:text-red-600 focus:outline-hidden focus:ring-1 focus:ring-red-500 dark:hover:text-red-200"
                                                 type="button"
                                             >
                                                 Line {error.line}

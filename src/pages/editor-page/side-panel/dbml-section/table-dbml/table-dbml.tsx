@@ -375,14 +375,14 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
                                   icon: Check,
                                   onClick: acceptChanges,
                                   className:
-                                      'h-7 items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-600 shadow-sm hover:bg-green-100 dark:border-green-800 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700',
+                                      'h-7 items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-600 shadow-xs hover:bg-green-100 dark:border-green-800 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700',
                               },
                               {
                                   label: 'Undo Changes',
                                   icon: Undo2,
                                   onClick: undoChanges,
                                   className:
-                                      'h-7 items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 shadow-sm hover:bg-red-100 dark:border-red-800 dark:bg-red-800 dark:text-red-200 dark:hover:bg-red-700',
+                                      'h-7 items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 shadow-xs hover:bg-red-100 dark:border-red-800 dark:bg-red-800 dark:text-red-200 dark:hover:bg-red-700',
                               },
                           ]
                         : isEditMode && !hasDiff

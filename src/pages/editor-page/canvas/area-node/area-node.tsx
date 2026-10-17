@@ -119,7 +119,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
         const containerClassName = useMemo(
             () =>
                 cn(
-                    'relative flex h-full flex-col rounded-md border-2 shadow-sm',
+                    'relative flex h-full flex-col rounded-md border-2 shadow-xs',
                     selected ? 'border-teal-600' : 'border-transparent',
                     isDiffNewArea
                         ? 'outline outline-[3px] outline-green-500 dark:outline-green-900 outline-offset-[5px]'
@@ -220,7 +220,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
                             ) : isDiffNewArea ? (
                                 <div
                                     className={cn(
-                                        'flex h-5 items-center truncate rounded-sm bg-green-200 px-2 py-0.5 text-sm font-normal text-green-900 dark:bg-green-800 dark:text-green-200'
+                                        'flex h-5 items-center truncate rounded-xs bg-green-200 px-2 py-0.5 text-sm font-normal text-green-900 dark:bg-green-800 dark:text-green-200'
                                     )}
                                 >
                                     {area.name}
@@ -228,7 +228,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
                             ) : isDiffAreaRemoved ? (
                                 <div
                                     className={cn(
-                                        'flex h-5 items-center truncate rounded-sm bg-red-200 px-2 py-0.5 text-sm font-normal text-red-900 dark:bg-red-800 dark:text-red-200'
+                                        'flex h-5 items-center truncate rounded-xs bg-red-200 px-2 py-0.5 text-sm font-normal text-red-900 dark:bg-red-800 dark:text-red-200'
                                     )}
                                 >
                                     {area.name}

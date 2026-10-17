@@ -175,7 +175,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
         <div className="flex flex-col gap-6">
             <form
                 onSubmit={createUser}
-                className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm"
+                className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-xs"
                 aria-label="Create user"
             >
                 <div>
@@ -231,7 +231,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                 </p>
             ) : null}
 
-            <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm">
+            <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-xs">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <SearchInput
                         className="flex-1"

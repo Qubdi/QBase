@@ -49,7 +49,7 @@ export const DiagramsPanel: React.FC = () => {
                 </p>
             ) : null}
 
-            <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm">
+            <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-xs">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <SearchInput
                         className="flex-1"

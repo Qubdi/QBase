@@ -173,7 +173,7 @@ export const OverviewPanel: React.FC = () => {
 
             <section
                 aria-labelledby="recent-activity-title"
-                className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm"
+                className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-xs"
             >
                 <header className="flex items-center justify-between gap-2">
                     <h2
