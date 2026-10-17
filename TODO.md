@@ -696,10 +696,8 @@ Leftovers (optional):
       on the 89-table monica template (300–500 ms frames vs 130–220 ms).
 - [ ] The line disappears for one frame right after a table is dropped (edges are rebuilt
       after the drag ends).
-- [ ] `CommentMarker`: one store subscription per field that re-renders on any comment change;
-      select per target instead.
 
-## In progress: project workspace URLs
+## ✅ Done: project workspace URLs
 
 Choosing a project goes straight to its workspace, `/<project>/diagrams/`, with no
 UUID and no separate project page. Diagrams are created inside the workspace.
