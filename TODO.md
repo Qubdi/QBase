@@ -68,7 +68,13 @@ key. It is not "sign in with Google or Microsoft" (SSO); nothing is sent to a th
   accepted within about 30 seconds either way. Say so in the docs, and make the window a setting
   (`MFA_WINDOW_STEPS`, default 1).
 
-Nothing started yet.
+Built on branch `feature/two-factor-sign-in`; steps 2 to 7 are ticked below. Decisions taken while building
+(review these): the TOTP code is written in `server/src/auth/totp.ts` with `node:crypto` (about 150 lines, tested against
+the RFC 4226 and 6238 vectors) instead of adding `otplib`; the key is `SECRETS_KEY` falling back to `CONNECTION_KEY`;
+it stays always optional; changing the password asks for a code; no "remember this browser"; one box takes a code or a
+recovery code in the change-password and turn-off forms; an account with it on fails closed (503) if the key is gone,
+but `MFA_ENABLED=false` switches the check off with the rest of the feature. Not done: screenshots of the new screens
+(the browser extension was not connected).
 
 ### What the code looks like today (read from the code)
 
@@ -138,16 +144,16 @@ Nothing started yet.
 1. [x] **Rate limit `/auth/*`** (login, change-password), with a per-account lockout. Already
        shipped in `6d70667` (SEC-001): `AUTH_RATE_LIMIT`, `AUTH_MAX_FAILURES`, `AUTH_LOCKOUT_MINUTES`,
        `createFailureThrottle`, tests in `server/test/auth.test.ts`. The second step reuses it.
-2. [ ] **Database and config:** the columns and two tables above, the key setting,
+2. [x] **Database and config:** the columns and two tables above, the key setting,
        `MFA_ENABLED` and `MFA_WINDOW_STEPS`, migration and tests.
-3. [ ] **TOTP core:** pure functions (new secret, `otpauth://` address, verify with the window and
+3. [x] **TOTP core:** pure functions (new secret, `otpauth://` address, verify with the window and
        the replay step, recovery-code generation and hashing) with the RFC 6238 vectors.
-4. [ ] **Server:** the two-step sign-in, setup, enable, disable and recovery-code endpoints,
+4. [x] **Server:** the two-step sign-in, setup, enable, disable and recovery-code endpoints,
        audit entries and `me.mfaEnabled`, with tests.
-5. [ ] **UI:** the sign-in second step and the account-menu dialog with the QR code and the
+5. [x] **UI:** the sign-in second step and the account-menu dialog with the QR code and the
        recovery codes.
-6. [ ] **Admin and recovery:** MFA badge and reset in Users, and the `mfa:reset` command.
-7. [ ] **Docs:** `README` / `SECURITY.md` and `.env.example`.
+6. [x] **Admin and recovery:** MFA badge and reset in Users, and the `mfa:reset` command.
+7. [x] **Docs:** `README` / `SECURITY.md` and `.env.example`.
 8. [ ] **Every step ends with:** tests, lint, type check and the full suite in a container,
        screenshots for UI steps, the database checklist at the top of this file when there is a
        migration, a Docker rebuild, then a commit.

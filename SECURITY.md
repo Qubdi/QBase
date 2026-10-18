@@ -17,6 +17,14 @@ before you share it more widely.
 
 Only the latest release is supported with security fixes.
 
+## Two-factor sign-in
+
+Accounts can add an authenticator app (TOTP, RFC 6238) to the password. The
+secret is encrypted with `SECRETS_KEY` (or `CONNECTION_KEY`), recovery codes
+are stored hashed, a code works once, and the second step has its own attempt
+limits. Keep the key and the server clock safe; see "Two-factor sign-in" in the
+README.
+
 ## Scope
 
 In scope: the editor, the backend in `server/`, and the Docker images built
