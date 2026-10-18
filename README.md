@@ -107,7 +107,7 @@ After the password, a person can be asked for the 6-digit code their authenticat
 
 ### Upgrading the bundled database (PostgreSQL 16 to 18)
 
-The bundled `db` container now runs PostgreSQL 18 on a new volume, `qubdidb-pg18`. A PostgreSQL 16 data folder cannot be opened by 18, so your data moves by a dump and restore. Do it before you pull the new `docker-compose.yml`, or `git stash` it for the first step. Your old volume `qubdidb-data` is never modified, so you can go back until you delete it yourself.
+The bundled `db` container now runs PostgreSQL 18 on a new volume, `postgres-data` (`qubdidb_postgres-data` in `docker volume ls`). A PostgreSQL 16 data folder cannot be opened by 18, so your data moves by a dump and restore. Do it before you pull the new `docker-compose.yml`, or `git stash` it for the first step. Your old volume `qubdidb-data` is never modified, so you can go back until you delete it yourself.
 
 ```bash
 # 1. with the OLD setup still running: dump everything (database, users, passwords)
@@ -120,7 +120,7 @@ docker compose exec -T db psql -U qubdidb -d postgres < qubdidb-backup.sql
 #    two "already exists" errors (the qubdidb role and database) are expected
 docker compose up -d --build server ui
 # 4. when you have checked everything works, remove the old data
-docker volume rm <project>_qubdidb-data      # `docker volume ls` shows the exact name
+docker volume rm qubdidb_qubdidb-data        # `docker volume ls` shows the exact name
 ```
 
 A fresh install needs none of this. If you use your own Postgres (`POSTGRES_HOST`), nothing changes: QubdiDB runs on 16 and newer.
