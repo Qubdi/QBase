@@ -47,35 +47,6 @@ plain), `jsonb` only for document-like content, and an explicit `on delete` on e
 10. **Review note.** Each step that has a migration says, in its commit message, what changed, which
     index serves which query, the retention rule, and how the change is undone.
 
-## Backlog: share links
-
-Three small UI tasks. Nothing started yet. Neither touches the database.
-
-1. [x] **The share-link table must look and sit exactly the same everywhere.** Today the editor's
-       Share dialog (`components/qubdi/share-dialog.tsx`, a list of bordered cards) and the admin
-       Diagrams "Share links" dialog (`pages/admin-page/diagram-links-dialog.tsx`) show the same links
-       in different layouts. Make the table, its columns, its order and its position the same in both
-       (one shared component is the safe way), light and dark, desktop and phone.
-2. [x] **Every revoked link reads just "Revoked link".** In the Share dialog all revoked links show the
-       same grey text, so you cannot tell them apart (and the Activity line says only "revoked a share
-       link of <diagram>", `lib/qubdi/activity.ts`, action `share.revoke`). Say which link: for example
-       when it was made and by whom, its access, and when it was revoked. The audit row already has
-       `meta.linkId` and `meta.access`.
-3. [x] **Not duplicated, one reference.** The share-link table (columns, states, the revoke action, the
-       status wording) is written once and both dialogs use it, so the two can never drift apart again.
-       Today each dialog has its own copy of the markup and the status text (`lib/qubdi/share-links.ts`
-       already holds some shared helpers). Remove the second copy; a test renders both dialogs and
-       checks they show the same table.
-
-Open questions:
-
-- [ ] Task 1: which two screens must match, exactly? (Reading: the editor's Share dialog and the admin
-      "Share links" dialog.) A screenshot of the one to copy would settle it.
-- [ ] Task 2: is it the Share dialog list, the Activity log, or both?
-- [ ] Task 3: I read "not duplicated reference" as no copied code (one shared component that both
-      dialogs reference). If you meant something else, for example that the same link must not be listed
-      twice, say so.
-
 ## Backlog: two-factor sign-in with an authenticator app (Google or Microsoft Authenticator)
 
 After the password, the person types the 6-digit code their authenticator app shows. This is the
