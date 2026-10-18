@@ -141,6 +141,13 @@
       "when": 1792273946018,
       "tag": "0019_share_link_token_enc",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792316148072,
+      "tag": "0020_two_factor",
+      "breakpoints": true
     }
   ]
 }

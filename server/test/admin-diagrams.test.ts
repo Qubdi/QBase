@@ -408,7 +408,11 @@ describe('admin diagrams and their share links', () => {
             const logged = await rows(link.id);
             expect(logged).toHaveLength(1);
             expect(logged[0].userId).toBe(admin.id);
-            expect(logged[0].meta).toEqual({ linkId: link.id });
+            // also says which link it was: its access and when it was made
+            expect(logged[0].meta).toMatchObject({
+                linkId: link.id,
+                access: 'anyone',
+            });
         });
 
         it('tells anyone watching it live, so they are cut off', async () => {

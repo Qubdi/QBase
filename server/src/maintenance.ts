@@ -1,7 +1,7 @@
 import { and, isNotNull, lt, or, sql } from 'drizzle-orm';
 import type { Config } from './config.js';
 import type { Db } from './db/client.js';
-import { diagramLocks, shareLinks, sessions } from './db/schema.js';
+import { diagramLocks, mfaChallenges, shareLinks, sessions } from './db/schema.js';
 
 const DAY_MS = 86_400_000;
 
@@ -15,6 +15,17 @@ export async function purgeExpiredSessions(
         .where(lt(sessions.expiresAt, now))
         .returning({ id: sessions.id });
     return rows.length;
+}
+
+/** Deletes second-step sign-in challenges that ran out. They are already refused. */
+export async function purgeExpiredMfaChallenges(
+    db: Db,
+    now: Date = new Date()
+): Promise<number> {
+    const res = await db
+        .delete(mfaChallenges)
+        .where(lt(mfaChallenges.expiresAt, now));
+    return res.rowCount ?? 0;
 }
 
 /** Deletes edit locks nobody renewed. They are already ignored. */
@@ -129,6 +140,7 @@ export async function runMaintenance(
 ) {
     return {
         sessions: await purgeExpiredSessions(db, now),
+        mfaChallenges: await purgeExpiredMfaChallenges(db, now),
         locks: await purgeExpiredLocks(db, now),
         links: await purgeDeadLinks(db, config.deadLinkKeepDays, now),
         audit: await purgeAuditLog(db, config.auditRetentionDays, now),

@@ -32,3 +32,30 @@ describe('parseCookieSecure', () => {
         expect(parseCookieSecure('yes')).toBe('auto');
     });
 });
+
+describe('two-factor settings', () => {
+    it('is on by default, with a window of one step', () => {
+        const c = loadConfig({});
+        expect(c.mfaEnabled).toBe(true);
+        expect(c.mfaWindowSteps).toBe(1);
+    });
+
+    it('MFA_ENABLED=false switches it off', () => {
+        expect(loadConfig({ MFA_ENABLED: 'false' }).mfaEnabled).toBe(false);
+    });
+
+    it('reads the window and ignores nonsense', () => {
+        expect(loadConfig({ MFA_WINDOW_STEPS: '2' }).mfaWindowSteps).toBe(2);
+        expect(loadConfig({ MFA_WINDOW_STEPS: '0' }).mfaWindowSteps).toBe(0);
+        expect(loadConfig({ MFA_WINDOW_STEPS: '-1' }).mfaWindowSteps).toBe(1);
+        expect(loadConfig({ MFA_WINDOW_STEPS: 'x' }).mfaWindowSteps).toBe(1);
+    });
+
+    it('encrypts with SECRETS_KEY, else the connection key, else nothing', () => {
+        expect(loadConfig({}).secretsKey).toBeNull();
+        expect(loadConfig({ CONNECTION_KEY: 'c'.repeat(20) }).secretsKey).toBe('c'.repeat(20));
+        expect(
+            loadConfig({ CONNECTION_KEY: 'c'.repeat(20), SECRETS_KEY: 's'.repeat(20) }).secretsKey
+        ).toBe('s'.repeat(20));
+    });
+});

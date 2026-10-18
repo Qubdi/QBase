@@ -55,11 +55,26 @@ export interface Config {
     /** secret for encrypting saved connection passwords; null disables saving */
     connectionKey: string | null;
     /**
+     * Secret for encrypting authenticator secrets: SECRETS_KEY, else the
+     * connection key. null = nobody can set two-factor up (not an error).
+     */
+    secretsKey: string | null;
+    /** false removes two-factor completely: no endpoints, no UI */
+    mfaEnabled: boolean;
+    /** 30-second steps a code is accepted either side of now (clock drift) */
+    mfaWindowSteps: number;
+    /**
      * How long a drift report may stand in for a new check when a diagram is
      * opened, in seconds, as long as the diagram and its settings did not
      * change. 0 always reads the database.
      */
     driftCacheSeconds: number;
+}
+
+/** Whole steps, 0 to 5; anything else is the default of 1. */
+export function parseWindowSteps(value: string | undefined): number {
+    const n = Number(value);
+    return value?.trim() && Number.isInteger(n) && n >= 0 && n <= 5 ? n : 1;
 }
 
 export function parseCookieSecure(
@@ -118,6 +133,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
             .map((h) => h.trim())
             .filter(Boolean),
         connectionKey: env.CONNECTION_KEY ?? null,
+        secretsKey: env.SECRETS_KEY || env.CONNECTION_KEY || null,
+        mfaEnabled: env.MFA_ENABLED?.trim().toLowerCase() !== 'false',
+        mfaWindowSteps: parseWindowSteps(env.MFA_WINDOW_STEPS),
         driftCacheSeconds: Number(env.DRIFT_CACHE_SECONDS ?? 300),
     };
 }

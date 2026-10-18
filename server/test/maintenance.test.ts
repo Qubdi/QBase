@@ -5,6 +5,7 @@ import {
     diagramLocks,
     diagrams,
     driftReports,
+    mfaChallenges,
     projects,
     sessions,
     shareLinks,
@@ -13,6 +14,7 @@ import {
     pruneDriftReports,
     purgeDeadLinks,
     purgeExpiredLocks,
+    purgeExpiredMfaChallenges,
     purgeAuditLog,
     purgeExpiredSessions,
     startMaintenance,
@@ -30,6 +32,17 @@ describe('maintenance', () => {
         userId = (await registerUser(ctx.app, 'a@example.com')).id;
     });
     afterAll(() => ctx.close());
+
+    it('deletes expired second-step challenges and keeps live ones', async () => {
+        await ctx.db.delete(mfaChallenges);
+        await ctx.db.insert(mfaChallenges).values([
+            { id: 'old', userId, expiresAt: daysAgo(1) },
+            { id: 'new', userId, expiresAt: new Date(now.getTime() + 1000) },
+        ]);
+        expect(await purgeExpiredMfaChallenges(ctx.db, now)).toBe(1);
+        const left = await ctx.db.select().from(mfaChallenges);
+        expect(left.map((c) => c.id)).toEqual(['new']);
+    });
 
     it('deletes expired sessions and keeps live ones', async () => {
         await ctx.db.delete(sessions);

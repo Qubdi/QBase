@@ -12,6 +12,7 @@ import {
     uuid,
     boolean,
     integer,
+    smallint,
     uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import type { AuditMeta } from '../audit/audit.js';
@@ -56,11 +57,69 @@ export const users = pgTable(
         mustChangePassword: boolean('must_change_password')
             .notNull()
             .default(false),
+        // authenticator-app secret, AES-256-GCM (never plain, never returned
+        // after setup). Set while setting up; null = no authenticator
+        mfaSecretEnc: text('mfa_secret_enc'),
+        // when two-factor was switched on; null = off, or still being set up
+        mfaEnabledAt: timestamp('mfa_enabled_at', { withTimezone: true }),
+        // the last 30-second step whose code was accepted, so a code cannot be
+        // used twice
+        mfaLastStep: bigint('mfa_last_step', { mode: 'number' }),
     },
     (t) => [
         // the app lowercases emails; this makes the database refuse a second
         // account that differs only by case
         uniqueIndex('users_email_lower_idx').on(sql`lower(${t.email})`),
+        // two-factor cannot be on without a secret to check codes against
+        check(
+            'users_mfa_secret_when_enabled',
+            sql`${t.mfaEnabledAt} is null or ${t.mfaSecretEnc} is not null`
+        ),
+    ]
+);
+
+// One-time codes for a lost phone. Only a hash is kept (sha256 is enough for
+// long random codes); a code is spent by setting used_at.
+export const mfaRecoveryCodes = pgTable(
+    'mfa_recovery_codes',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        // deleted with the user; the unique index below leads with user_id, so
+        // it also serves the cascade and "codes left for this user"
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        codeHash: text('code_hash').notNull(),
+        usedAt: timestamp('used_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (t) => [uniqueIndex('mfa_recovery_codes_user_hash_idx').on(t.userId, t.codeHash)]
+);
+
+// The pending second step of a sign-in: the password was right, the code is
+// still to come. Stateful on purpose: one-time use and an attempt counter.
+// Purged by the hourly maintenance once expired.
+export const mfaChallenges = pgTable(
+    'mfa_challenges',
+    {
+        // sha256 of the ticket given to the browser; the ticket is never stored
+        id: text('id').primaryKey(),
+        // deleted with the user
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+        // wrong codes so far; the challenge dies after a few
+        attempts: smallint('attempts').notNull().default(0),
+    },
+    (t) => [
+        // a new challenge replaces the user's older ones; also the cascade
+        index('mfa_challenges_user_idx').on(t.userId),
+        // the hourly purge of expired rows
+        index('mfa_challenges_expires_idx').on(t.expiresAt),
+        check('mfa_challenges_attempts_nonneg', sql`${t.attempts} >= 0`),
     ]
 );
 

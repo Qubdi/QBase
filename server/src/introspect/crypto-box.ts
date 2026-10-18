@@ -11,7 +11,7 @@ export class CryptoBox {
 
     constructor(secret: string) {
         if (secret.length < 16) {
-            throw new Error('CONNECTION_KEY must be at least 16 characters');
+            throw new Error('The encryption key (SECRETS_KEY or CONNECTION_KEY) must be at least 16 characters');
         }
         // fixed salt is fine: the secret itself is the entropy source
         this.key = scryptSync(secret, 'qubdidb-connection-box-v1', 32);
