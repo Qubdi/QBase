@@ -10,6 +10,8 @@ import { useDialog } from '@/hooks/use-dialog';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useLayout } from '@/hooks/use-layout';
 import { useReactFlow } from '@xyflow/react';
+import { useNavigate } from 'react-router-dom';
+import { QUBDI_BACKEND_ENABLED } from '@/lib/qubdi/config';
 
 export const KeyboardShortcutsProvider: React.FC<React.PropsWithChildren> = ({
     children,
@@ -19,6 +21,7 @@ export const KeyboardShortcutsProvider: React.FC<React.PropsWithChildren> = ({
     const { updateDiagramUpdatedAt } = useDiagram();
     const { toggleSidePanel } = useLayout();
     const { fitView } = useReactFlow();
+    const navigate = useNavigate();
 
     useHotkeys(
         keyboardShortcutsForOS[KeyboardShortcutAction.REDO].keyCombination,
@@ -39,11 +42,12 @@ export const KeyboardShortcutsProvider: React.FC<React.PropsWithChildren> = ({
     useHotkeys(
         keyboardShortcutsForOS[KeyboardShortcutAction.OPEN_DIAGRAM]
             .keyCombination,
-        () => openOpenDiagramDialog(),
+        // with the server, diagrams live in projects: the project list is "Open"
+        () => (QUBDI_BACKEND_ENABLED ? navigate('/') : openOpenDiagramDialog()),
         {
             preventDefault: true,
         },
-        [openOpenDiagramDialog]
+        [openOpenDiagramDialog, navigate]
     );
     useHotkeys(
         keyboardShortcutsForOS[KeyboardShortcutAction.SAVE_DIAGRAM]

@@ -4,7 +4,10 @@ import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, ApiError } from '@/lib/qubdi/api';
-import { setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
+import { reportLockLost } from '@/lib/qubdi/lock-lost';
+import { isLastSentContent, sameContent } from '@/lib/qubdi/sent-content';
+import { diagramToServerContent } from '@/lib/qubdi/content';
+import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 import {
     AUTOSAVE_DELAY_MS,
     createAutosaver,
@@ -13,9 +16,11 @@ import {
 import type { Diagram } from '@/lib/domain/diagram';
 import { createRevisionTracker } from '@/lib/qubdi/revision';
 import {
+    registerFinalFlush,
     registerSaveDiscard,
     resetSaveStatus,
     setSaveStatus,
+    trackFinalSave,
     useSaveStatus,
 } from '@/lib/qubdi/save-status-store';
 import { useDiagramAccess } from './diagram-access-context';
@@ -44,6 +49,8 @@ export const ServerAutosave: React.FC = () => {
     accessRef.current = access;
     // set while the page is closing, so the final save survives the unload
     const leavingRef = useRef(false);
+    // the newest diagram the editor reported, for the check on open
+    const latestRef = useRef<Diagram | null>(null);
 
     const canSave = access.status === 'editor' && !!diagramId;
 
@@ -61,6 +68,15 @@ export const ServerAutosave: React.FC = () => {
             onStatus: (status, error) => {
                 const retry = () => void saver.flush();
                 const current = accessRef.current;
+                // the lock went to someone else: go read-only, do not retry
+                if (
+                    error instanceof ApiError &&
+                    error.status === 423 &&
+                    current.status === 'editor'
+                ) {
+                    reportLockLost(current.remoteId);
+                    return;
+                }
                 const conflict =
                     error instanceof ApiError &&
                     error.status === 409 &&
@@ -78,27 +94,75 @@ export const ServerAutosave: React.FC = () => {
                                   })
                                   .catch(() => undefined)
                         : null;
+                if (conflict && current.status === 'editor') {
+                    // a save of ours that landed without its reply is not a
+                    // conflict: take the server's version and save again
+                    void api
+                        .getDiagram(current.remoteId)
+                        .then((d) => {
+                            if (!isLastSentContent(diagramId, d.content)) {
+                                throw new Error('changed by someone else');
+                            }
+                            setBaseUpdatedAt(diagramId, d.updatedAt);
+                            return saver.flush();
+                        })
+                        .catch(() => setSaveStatus(status, retry, overwrite));
+                    return;
+                }
                 setSaveStatus(status, retry, overwrite);
             },
         });
         saverRef.current = saver;
+        // Edits made before a reload, re-login or reopen may never have been
+        // sent. If the server still holds the version this copy was based on
+        // but its content differs from ours, the difference is unsent work.
+        const opened = accessRef.current;
+        let checked = false;
+        if (opened.status === 'editor') {
+            void api
+                .getDiagram(opened.remoteId)
+                .then((remote) => {
+                    const local = latestRef.current;
+                    if (
+                        checked ||
+                        !local ||
+                        !remote.content ||
+                        remote.updatedAt !== getBaseUpdatedAt(diagramId) ||
+                        sameContent(
+                            remote.content,
+                            diagramToServerContent(local)
+                        )
+                    )
+                        return;
+                    saver.markUnsaved();
+                })
+                .catch(() => undefined);
+        }
         registerSaveDiscard(() => saver.discard());
         const flushOnLeave = () => {
             leavingRef.current = true;
-            void saver.flush();
+            const sent = saver.flush();
+            trackFinalSave(sent);
+            return sent;
         };
+        registerFinalFlush(flushOnLeave);
         // the page may come back from the back/forward cache
         const resumed = () => {
             leavingRef.current = false;
+            registerFinalFlush(flushOnLeave);
         };
         window.addEventListener('pagehide', flushOnLeave);
         window.addEventListener('pageshow', resumed);
         return () => {
+            checked = true;
             window.removeEventListener('pagehide', flushOnLeave);
             window.removeEventListener('pageshow', resumed);
             // leaving the diagram: send what is still pending
-            void saver.flush().finally(() => saver.dispose());
+            const sent = saver.flush();
+            trackFinalSave(sent);
+            void sent.finally(() => saver.dispose());
             saverRef.current = null;
+            registerFinalFlush(null);
             registerSaveDiscard(null);
             resetSaveStatus();
         };
@@ -107,6 +171,7 @@ export const ServerAutosave: React.FC = () => {
     useEffect(() => {
         // ignore the empty placeholder shown while another diagram is loading
         if (saverRef.current && currentDiagram.id === diagramId) {
+            latestRef.current = currentDiagram;
             saverRef.current.update({
                 diagram: currentDiagram,
                 revision: revisionOf(currentDiagram),

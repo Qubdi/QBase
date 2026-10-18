@@ -177,8 +177,9 @@ describe('useTableClipboard', () => {
         const [first, second] = createTable.mock.calls.map(
             (c) => c[0] as DBTable
         );
-        expect(second.x - first.x).toBe(30);
-        expect(second.y - first.y).toBe(50);
+        // one table width (224) plus the 40px gap
+        expect(second.x - first.x).toBe(264);
+        expect(second.y - first.y).toBe(0);
     });
 
     it('lets a read-only diagram copy a table but not paste one', async () => {

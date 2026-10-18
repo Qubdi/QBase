@@ -13,9 +13,10 @@ import {
 import { Logo } from '@/components/logo/logo';
 import { Spinner } from '@/components/spinner/spinner';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
+import { PageFooter } from './powered-by';
 import { SessionEndedNotice } from './session-ended-notice';
+import { SignInPrompt } from './sign-in-prompt';
 
 /**
  * Frame for the pages outside the editor (projects, diagrams of a project).
@@ -24,12 +25,11 @@ import { SessionEndedNotice } from './session-ended-notice';
 export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
     const { enabled, user, logout } = useQubdi();
     const navigate = useNavigate();
-    const [authOpen, setAuthOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
 
     return (
         <section className="flex min-h-screen w-screen flex-col bg-background">
-            <nav className="flex h-12 items-center justify-between border-b bg-background/80 px-4 backdrop-blur">
+            <nav className="flex h-12 items-center justify-between bg-background/80 px-4 backdrop-blur">
                 <Link to="/" className="flex h-full items-center">
                     <Logo />
                 </Link>
@@ -82,25 +82,21 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
             </nav>
 
             {!enabled ? (
-                <p className="mx-auto mt-24 max-w-sm px-4 text-center text-muted-foreground">
+                <p className="m-auto max-w-sm px-4 text-center text-muted-foreground">
                     Projects need a QubdiDB server. Set VITE_QUBDI_BACKEND_URL
                     and sign in to use them.
                 </p>
             ) : user === undefined ? (
-                <Spinner size="large" className="mx-auto mt-24 text-primary" />
+                <Spinner size="large" className="m-auto text-primary" />
             ) : user === null ? (
-                <div className="mx-auto mt-24 flex max-w-sm flex-col items-center gap-3 px-4 text-center">
+                <div className="m-auto flex max-w-sm flex-col items-center gap-3 px-4 text-center">
                     <SessionEndedNotice />
-                    <p className="text-sm text-muted-foreground">
-                        Sign in to see your projects. Accounts are created by an
-                        admin.
-                    </p>
-                    <Button onClick={() => setAuthOpen(true)}>Sign in</Button>
-                    <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
+                    <SignInPrompt verb="see" />
                 </div>
             ) : (
                 children
             )}
+            <PageFooter />
             <ChangePasswordDialog
                 open={passwordOpen}
                 onOpenChange={setPasswordOpen}

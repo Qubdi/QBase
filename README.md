@@ -3,7 +3,7 @@
 Database schema diagrams you can keep on your own server. QubdiDB is an AGPL-3.0
 diagram editor with an optional self-hosted backend. The editor
 still works fully offline in the browser; the backend adds accounts, published
-versions, share links, comments, live-database import, re-sync, drift detection
+versions, share links, live-database import, re-sync, drift detection
 and schema lint.
 
 ## What is in here
@@ -16,21 +16,23 @@ and schema lint.
 
 ## Features
 
-1. **Accounts and permissions**: email and password (argon2), owner / editor / viewer per diagram, audit log.
+1. **Accounts and permissions**: email and password (argon2, with [password rules](#passwords)), owner / editor / viewer per diagram, audit log.
 2. **Published snapshots**: viewers only ever see numbered published versions, never the working copy.
 3. **Read-only share links**: unguessable tokens (only a hash is stored), expiry, revoke, live updates over SSE, rate limited.
-4. **Comments** on tables, fields and relationships; carried forward on publish, orphaned ones are flagged.
-5. **Direct import** from PostgreSQL and SQL Server, read-only, with SSRF protection and encrypted saved connections.
-6. **Re-sync** a diagram from its database, keeping layout, colours, areas, notes and descriptions; undoable as one step.
-7. **Drift detection**: check a diagram against its live database on demand, severity classification, badge, optional webhook.
-8. **Schema lint**: 12 rules, per-diagram settings, safe one-click fixes, API endpoint and a CLI for CI.
+4. **Direct import** from PostgreSQL and SQL Server, read-only, with SSRF protection and encrypted saved connections.
+5. **Re-sync** a diagram from its database, keeping layout, colours, areas, notes and descriptions; undoable as one step.
+6. **Drift detection**: check a diagram against its live database on demand, severity classification, badge, optional webhook.
+7. **Schema lint**: 12 rules, per-diagram settings, safe one-click fixes, API endpoint and a CLI for CI.
 
 There are no external services: no analytics, no GitHub integration, no social links.
 
 ## Run it
 
 ```bash
-# 1. database (and optionally the backend) with Docker
+# 1. database (and optionally the backend) with Docker. Compose needs a
+#    POSTGRES_PASSWORD in .env (copy .env.example and fill it in); services
+#    listen on 127.0.0.1 unless you set a *_BIND_IP
+cp .env.example .env
 docker compose up -d db
 
 # 2. backend
@@ -64,17 +66,37 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `DATABASE_URL` | `postgres://qubdidb:qubdidb@localhost:5433/qubdidb` | Where QubdiDB stores its own data |
 | `HOST` | `0.0.0.0` | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
-| `SESSION_SECRET` | dev value | Set this in production |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
-| `CONNECTION_KEY` | unset | Encrypts saved database passwords (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it |
+| `CONNECTION_KEY` | unset | Encrypts saved database passwords and the tokens of active share links (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it; without it a share link's URL is shown only once, when it is created or regenerated |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default |
 | `SHARE_RATE_LIMIT` | `60` | Public share requests per minute per IP |
+| `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`) |
+| `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
+| `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) before an account is locked |
+| `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |
+| `PASSWORD_MIN_LENGTH` | `12` | Fewest characters of a new password. Cannot be set below 8. Applies when a password is set, never at sign-in |
+
+### Passwords
+
+A password that is being **set** (the first admin's sign-up, changing your own, an admin creating a user or resetting one) must have:
+
+- at least `PASSWORD_MIN_LENGTH` characters (12 unless you change it; never fewer than 8) and at most 200,
+- a capital letter, a number and a symbol (any character that is not a letter, a number or a space; spaces are allowed but do not count). Letters and digits from other alphabets count, so a Georgian or Cyrillic capital works,
+- nothing that is the account's email address or contains the part before the `@` (a part shorter than 3 characters is not compared),
+- and, when changing it, not the same as the current password.
+
+The forms show these as a checklist while you type; the server checks them again and answers `400 { "error": "weak_password", "rules": [...] }` listing what is missing.
+
+Signing in does not apply the rules, so people who chose a password before they existed keep working, and nobody is asked to change one. Passwords are stored only as argon2 hashes.
+
+An admin who creates a user or resets a password is choosing a **temporary** password: the person is asked to choose their own at their next sign-in and can do nothing else until they have (the API answers `403 password_change_required`). Signing out is always possible.
 
 ## Tests
 
 ```bash
 npx vitest run                 # editor and shared logic
-cd server && npx vitest run    # backend (needs `docker compose up -d db`)
+cd server && npx vitest run    # backend (needs the database up with POSTGRES_PASSWORD=qubdidb:
+                               # the tests connect as qubdidb/qubdidb on port 5433)
 ```
 
 The SQL Server tests need the optional container and skip cleanly without it:
@@ -100,5 +122,11 @@ The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
   before it is sent, and PostgreSQL runs inside a read-only transaction. SQL Server has no
   read-only transaction, so use a login that only has read access.
 - Drift checks compare the server's copy of the diagram, so the editor syncs it first.
+- Run one server process. Rate limits, the per-link live-viewer cap, the shared lint and outbound
+  allowances and the guard against two drift checks of one diagram at once are kept in the memory
+  of each process. Behind several processes (or replicas) each one counts on its own, so the
+  effective limits multiply and two drift checks can overlap. Scale the database, not the server,
+  or put a limiter in front of it. Edit locks, sessions and everything else are in Postgres and
+  are safe to share.
 
 QubdiDB is licensed under the AGPL-3.0, like the project it is forked from.

@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { KeyRound, Monitor, Trash2 } from 'lucide-react';
+import { KeyRound, Monitor, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { Badge } from '@/components/badge/badge';
-import { Input } from '@/components/input/input';
 import {
     Table,
     TableBody,
@@ -41,6 +40,10 @@ import {
     type UserStatus,
 } from '@/lib/qubdi/api';
 import { ago, exactTime } from '@/lib/qubdi/when';
+import { PasswordField } from '@/components/qubdi/password-field';
+import { usePasswordMinLength } from '@/hooks/use-password-min-length';
+import { checkPassword } from '../../../shared/password';
+import { NewUserDialog } from './new-user-dialog';
 import { UserSessionsDialog } from './user-sessions-dialog';
 
 const PAGE_SIZE = 10;
@@ -76,12 +79,14 @@ export interface UsersPanelProps {
 export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
     const { toast } = useToast();
     const [error, setError] = useState<string | null>(null);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [creating, setCreating] = useState(false);
     const [busy, setBusy] = useState(false);
     const [resetFor, setResetFor] = useState<AdminUser | null>(null);
     const [newPassword, setNewPassword] = useState('');
+    const minLength = usePasswordMinLength(resetFor !== null);
+    const resetWeak =
+        checkPassword(newPassword, { minLength, email: resetFor?.email })
+            .length > 0;
     const [deleteFor, setDeleteFor] = useState<AdminUser | null>(null);
     const [sessionsFor, setSessionsFor] = useState<AdminUser | null>(null);
     // the people ticked for a bulk action, and the action waiting to be confirmed
@@ -138,12 +143,16 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
             return next;
         });
 
-    const run = async (fn: () => Promise<unknown>) => {
+    const run = async (
+        fn: () => Promise<unknown>,
+        done?: { title: string; description?: string }
+    ) => {
         setError(null);
         setBusy(true);
         try {
             await fn();
             list.reload();
+            if (done) toast(done);
         } catch (e) {
             setError(errorMessage(e));
         } finally {
@@ -161,64 +170,21 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
         });
     };
 
-    const createUser = (e: React.FormEvent) => {
-        e.preventDefault();
-        void run(async () => {
-            await api.adminCreateUser({ email, password, isAdmin });
-            setEmail('');
-            setPassword('');
-            setIsAdmin(false);
+    const createUser = async (user: {
+        email: string;
+        password: string;
+        isAdmin: boolean;
+    }) => {
+        await api.adminCreateUser(user);
+        list.reload();
+        toast({
+            title: 'User created',
+            description: `${user.email} can sign in now. Assign them to projects next.`,
         });
     };
 
     return (
         <div className="flex flex-col gap-6">
-            <form
-                onSubmit={createUser}
-                className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm"
-                aria-label="Create user"
-            >
-                <div>
-                    <h2 className="font-primary text-base font-semibold">
-                        Create user
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                        People cannot sign themselves up. Create their account
-                        here, then assign them to projects.
-                    </p>
-                </div>
-                <div className="flex flex-col gap-2 md:flex-row">
-                    <Input
-                        type="email"
-                        placeholder="Email"
-                        autoComplete="off"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                    <Input
-                        type="password"
-                        placeholder="Temporary password (min 8)"
-                        autoComplete="new-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        minLength={8}
-                        required
-                    />
-                    <Button type="submit" disabled={busy}>
-                        Create user
-                    </Button>
-                </div>
-                <label className="flex items-center gap-2 text-sm">
-                    <input
-                        type="checkbox"
-                        checked={isAdmin}
-                        onChange={(e) => setIsAdmin(e.target.checked)}
-                    />
-                    Make this user an admin
-                </label>
-            </form>
-
             {error ? (
                 <p role="alert" className="text-sm text-destructive">
                     {error}
@@ -231,7 +197,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                 </p>
             ) : null}
 
-            <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm">
+            <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-xs">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <SearchInput
                         className="flex-1"
@@ -240,6 +206,15 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                         placeholder="Search users by email…"
                         label="Search users"
                     />
+                    <Button
+                        type="button"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => setCreating(true)}
+                    >
+                        <Plus className="mr-1.5 size-4" aria-hidden />
+                        New user
+                    </Button>
                     <div
                         role="group"
                         aria-label="Filter by status"
@@ -476,14 +451,22 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         size="sm"
                                                         disabled={busy || self}
                                                         onClick={() =>
-                                                            run(() =>
-                                                                api.adminUpdateUser(
-                                                                    u.id,
-                                                                    {
-                                                                        isAdmin:
-                                                                            !u.isAdmin,
-                                                                    }
-                                                                )
+                                                            run(
+                                                                () =>
+                                                                    api.adminUpdateUser(
+                                                                        u.id,
+                                                                        {
+                                                                            isAdmin:
+                                                                                !u.isAdmin,
+                                                                        }
+                                                                    ),
+                                                                {
+                                                                    title: u.isAdmin
+                                                                        ? 'Admin removed'
+                                                                        : 'Made admin',
+                                                                    description:
+                                                                        u.email,
+                                                                }
                                                             )
                                                         }
                                                     >
@@ -496,14 +479,22 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         size="sm"
                                                         disabled={busy || self}
                                                         onClick={() =>
-                                                            run(() =>
-                                                                api.adminUpdateUser(
-                                                                    u.id,
-                                                                    {
-                                                                        isActive:
-                                                                            !u.isActive,
-                                                                    }
-                                                                )
+                                                            run(
+                                                                () =>
+                                                                    api.adminUpdateUser(
+                                                                        u.id,
+                                                                        {
+                                                                            isActive:
+                                                                                !u.isActive,
+                                                                        }
+                                                                    ),
+                                                                {
+                                                                    title: u.isActive
+                                                                        ? 'User disabled'
+                                                                        : 'User enabled',
+                                                                    description:
+                                                                        u.email,
+                                                                }
                                                             )
                                                         }
                                                     >
@@ -602,19 +593,22 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                     password: newPassword,
                                 });
                                 setResetFor(null);
+                                toast({
+                                    title: 'Password changed',
+                                    description: `${target.email} was signed out everywhere.`,
+                                });
                             });
                         }}
                     >
-                        <Input
-                            type="password"
-                            placeholder="New password (min 8)"
-                            autoComplete="new-password"
+                        <PasswordField
+                            placeholder="New password"
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            minLength={8}
-                            required
+                            onChange={setNewPassword}
+                            minLength={minLength}
+                            email={resetFor?.email}
+                            autoFocus
                         />
-                        <Button type="submit" disabled={busy}>
+                        <Button type="submit" disabled={busy || resetWeak}>
                             Set password
                         </Button>
                     </form>
@@ -640,8 +634,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             onClick={() => {
                                 const target = deleteFor;
                                 if (target) {
-                                    void run(() =>
-                                        api.adminDeleteUser(target.id)
+                                    void run(
+                                        () => api.adminDeleteUser(target.id),
+                                        {
+                                            title: 'User deleted',
+                                            description: target.email,
+                                        }
                                     );
                                 }
                             }}
@@ -682,6 +680,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <NewUserDialog
+                open={creating}
+                onOpenChange={setCreating}
+                onCreate={createUser}
+            />
 
             <UserSessionsDialog
                 user={sessionsFor}

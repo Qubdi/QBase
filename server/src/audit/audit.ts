@@ -9,6 +9,9 @@ export const AUDIT_ACTIONS = [
     'user.disable',
     'user.enable',
     'user.sign_out',
+    'user.sign_in',
+    'user.sign_in_failed',
+    'user.password_change',
     'project.create',
     'project.update',
     'project.delete',
@@ -22,14 +25,14 @@ export const AUDIT_ACTIONS = [
     'share.update',
     'share.revoke',
     'share.regenerate',
-    'comment.create',
-    'comment.update',
-    'comment.resolve',
-    'comment.delete',
+    'connection.create',
+    'connection.update',
+    'connection.delete',
     'drift.configure',
     'drift.check',
     'drift.dismiss',
     'lint.configure',
+    'audit.export',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -41,11 +44,13 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number];
  */
 export const AUDIT_GROUPS = {
     users: ['user.'],
-    projects: ['project.'],
+    // a saved connection belongs to a project
+    projects: ['project.', 'connection.'],
     diagrams: ['diagram.'],
     sharing: ['share.'],
     checks: ['drift.', 'lint.'],
-    comments: ['comment.'],
+    // an admin took a copy of the log
+    exports: ['audit.'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type AuditGroup = keyof typeof AUDIT_GROUPS;
@@ -75,8 +80,12 @@ export interface AuditMeta {
     version?: number;
     linkId?: string;
     access?: 'anyone' | 'signed_in' | 'off';
+    /** share.revoke: when the link was made (ISO), to tell links apart */
+    madeAt?: string;
     /** the project's name or the diagram's title, for when it no longer exists */
     name?: string;
+    /** audit.export: how many rows the file held */
+    rows?: number;
     /** user.update: what the admin changed */
     changed?: ('password' | 'isAdmin' | 'isActive')[];
 }

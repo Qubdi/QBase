@@ -182,7 +182,7 @@ export const OpenDiagramDialog: React.FC<OpenDiagramDialogProps> = ({
                                         onFocus={() =>
                                             onFocusHandler(diagram.id)
                                         }
-                                        className="focus:bg-accent focus:outline-none"
+                                        className="focus:bg-accent focus:outline-hidden"
                                         onClick={(e) => {
                                             switch (e.detail) {
                                                 case 1:

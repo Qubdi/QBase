@@ -45,7 +45,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
     return (
         <section
             aria-labelledby="activity-chart-title"
-            className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm"
+            className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-xs"
         >
             <header className="flex flex-wrap items-start justify-between gap-2">
                 <div>
@@ -111,7 +111,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                                         <button
                                             type="button"
                                             aria-label={`${labels[i].full}: ${plural(d.events, 'event')}`}
-                                            className="group relative flex size-full items-end justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            className="group relative flex size-full items-end justify-center rounded-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                                             onMouseEnter={() => setActive(i)}
                                             onMouseLeave={() => setActive(null)}
                                             onFocus={() => setActive(i)}

@@ -1,6 +1,22 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { auditLog, sessions } from '../src/db/schema.js';
-import { purgeAuditLog, purgeExpiredSessions } from '../src/maintenance.js';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { and, eq } from 'drizzle-orm';
+import {
+    auditLog,
+    diagramLocks,
+    diagrams,
+    driftReports,
+    projects,
+    sessions,
+    shareLinks,
+} from '../src/db/schema.js';
+import {
+    pruneDriftReports,
+    purgeDeadLinks,
+    purgeExpiredLocks,
+    purgeAuditLog,
+    purgeExpiredSessions,
+    startMaintenance,
+} from '../src/maintenance.js';
 import { createTestApp, registerUser, type TestCtx } from './helpers.js';
 
 describe('maintenance', () => {
@@ -37,6 +53,20 @@ describe('maintenance', () => {
         expect(left.map((r) => r.action)).toEqual(['diagram.create']);
     });
 
+    it('deletes a backlog across several batches and counts every row', async () => {
+        await ctx.db.delete(auditLog);
+        await ctx.db.insert(auditLog).values([
+            ...Array.from({ length: 7 }, () => ({
+                userId,
+                action: 'user.register' as const,
+                at: daysAgo(400),
+            })),
+            { userId, action: 'diagram.create' as const, at: daysAgo(1) },
+        ]);
+        expect(await purgeAuditLog(ctx.db, 365, now, 3)).toBe(7);
+        expect(await ctx.db.select().from(auditLog)).toHaveLength(1);
+    });
+
     it('keeps every audit row when retention is 0', async () => {
         await ctx.db.insert(auditLog).values({
             userId,
@@ -44,5 +74,151 @@ describe('maintenance', () => {
             at: daysAgo(5000),
         });
         expect(await purgeAuditLog(ctx.db, 0, now)).toBe(0);
+    });
+
+    it('keeps the newest drift reports of each diagram and prunes the rest', async () => {
+        const [project] = await ctx.db
+            .insert(projects)
+            .values({ name: 'Maintenance', slug: 'maintenance' })
+            .returning({ id: projects.id });
+        const [{ id: a }, { id: b }] = await ctx.db
+            .insert(diagrams)
+            .values([
+                { projectId: project.id, ownerId: userId, title: 'A', content: {} },
+                { projectId: project.id, ownerId: userId, title: 'B', content: {} },
+            ])
+            .returning({ id: diagrams.id });
+        const report = (diagramId: string, n: number) => ({
+            diagramId,
+            runAt: daysAgo(n),
+            status: 'clean' as const,
+            trigger: 'manual' as const,
+        });
+        await ctx.db
+            .insert(driftReports)
+            .values([1, 2, 3, 4].map((n) => report(a, n)).concat([report(b, 1)]));
+        expect(await pruneDriftReports(ctx.db, 2)).toBe(2);
+        const left = await ctx.db
+            .select({ runAt: driftReports.runAt })
+            .from(driftReports)
+            .where(eq(driftReports.diagramId, a));
+        expect(left.map((r) => r.runAt.getTime()).sort()).toEqual(
+            [daysAgo(2).getTime(), daysAgo(1).getTime()].sort()
+        );
+        const other = await ctx.db
+            .select()
+            .from(driftReports)
+            .where(and(eq(driftReports.diagramId, b)));
+        expect(other).toHaveLength(1);
+    });
+
+    it('keeps every drift report when the limit is 0', async () => {
+        expect(await pruneDriftReports(ctx.db, 0)).toBe(0);
+    });
+
+    describe('locks and dead share links', () => {
+        let diagramId: string;
+        beforeAll(async () => {
+            const [project] = await ctx.db
+                .insert(projects)
+                .values({ name: 'Dead links', slug: 'dead-links' })
+                .returning({ id: projects.id });
+            [{ id: diagramId }] = await ctx.db
+                .insert(diagrams)
+                .values({
+                    projectId: project.id,
+                    ownerId: userId,
+                    title: 'Links',
+                    content: {},
+                })
+                .returning({ id: diagrams.id });
+        });
+
+        it('deletes edit locks that were not renewed', async () => {
+            await ctx.db.delete(diagramLocks);
+            await ctx.db.insert(diagramLocks).values({
+                diagramId,
+                userId,
+                editorId: 'tab',
+                expiresAt: daysAgo(1),
+            });
+            expect(await purgeExpiredLocks(ctx.db, now)).toBe(1);
+            await ctx.db.insert(diagramLocks).values({
+                diagramId,
+                userId,
+                editorId: 'tab',
+                expiresAt: new Date(now.getTime() + 60_000),
+            });
+            expect(await purgeExpiredLocks(ctx.db, now)).toBe(0);
+        });
+
+        it('deletes links revoked or expired long ago and keeps the rest', async () => {
+            const link = (name: string, over: object) => ({
+                diagramId,
+                tokenHash: `hash-${name}`,
+                ...over,
+            });
+            await ctx.db.insert(shareLinks).values([
+                link('revoked-old', { revokedAt: daysAgo(40) }),
+                link('expired-old', { expiresAt: daysAgo(40) }),
+                link('revoked-recent', { revokedAt: daysAgo(2) }),
+                link('expired-recent', { expiresAt: daysAgo(2) }),
+                link('live', {}),
+                link('future', { expiresAt: new Date(now.getTime() + 86_400_000) }),
+            ]);
+            expect(await purgeDeadLinks(ctx.db, 30, now)).toBe(2);
+            const left = (await ctx.db.select().from(shareLinks))
+                .map((l) => l.tokenHash)
+                .sort();
+            expect(left).toEqual([
+                'hash-expired-recent',
+                'hash-future',
+                'hash-live',
+                'hash-revoked-recent',
+            ]);
+            expect(await purgeDeadLinks(ctx.db, 0, now)).toBe(0);
+        });
+    });
+
+    describe('startMaintenance', () => {
+        const config = {
+            auditRetentionDays: 0,
+            snapshotKeep: 0,
+            driftReportKeep: 0,
+            deadLinkKeepDays: 0,
+        };
+        const expired = (id: string) => ({
+            id,
+            userId,
+            expiresAt: new Date(Date.now() - 1000),
+        });
+        const left = async () =>
+            (await ctx.db.select().from(sessions)).map((s) => s.id);
+
+        it('cleans up at once, again on every interval, and stops when told', async () => {
+            await ctx.db.delete(sessions);
+            await ctx.db.insert(sessions).values(expired('first'));
+            const stop = startMaintenance({ db: ctx.db, config }, 25);
+            // the first run is immediate
+            await vi.waitFor(async () => expect(await left()).toEqual([]));
+            // a later interval picks up new work
+            await ctx.db.insert(sessions).values(expired('second'));
+            await vi.waitFor(async () => expect(await left()).toEqual([]));
+
+            await stop();
+            // after stop() resolves nothing runs any more
+            await ctx.db.insert(sessions).values(expired('third'));
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            expect(await left()).toEqual(['third']);
+        });
+
+        it('lets the first run finish, then never runs again after an immediate stop', async () => {
+            await ctx.db.delete(sessions);
+            const stop = startMaintenance({ db: ctx.db, config }, 60_000);
+            await stop();
+            await ctx.db.insert(sessions).values(expired('late'));
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            expect(await left()).toEqual(['late']);
+        });
     });
 });

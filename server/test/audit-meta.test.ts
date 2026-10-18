@@ -114,7 +114,7 @@ describe('audit meta: what an action was done to', () => {
         it('records the user on create', async () => {
             const created = await call(admin, 'POST', '/admin/users', {
                 email: 'target@example.com',
-                password: 'password123',
+                password: 'Password-123!',
             });
             expect(created.statusCode).toBe(201);
             targetId = created.json().id;
@@ -125,7 +125,7 @@ describe('audit meta: what an action was done to', () => {
 
         it('records what an update changed', async () => {
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
-                password: 'another-password',
+                password: 'Another-password-1!',
             });
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,
@@ -144,7 +144,7 @@ describe('audit meta: what an action was done to', () => {
         it('does not list a field that was sent but did not change', async () => {
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
                 isAdmin: true,
-                password: 'a-third-password',
+                password: 'A-third-password-1!',
             });
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,
@@ -171,7 +171,11 @@ describe('audit meta: what an action was done to', () => {
         });
 
         it('records the id of a deleted user', async () => {
-            const gone = await call(admin, 'DELETE', `/admin/users/${targetId}`);
+            const gone = await call(
+                admin,
+                'DELETE',
+                `/admin/users/${targetId}`
+            );
             expect(gone.statusCode).toBe(204);
             expect((await latest('user.delete')).meta).toEqual({
                 targetUserId: targetId,
@@ -195,8 +199,9 @@ describe('audit meta: what an action was done to', () => {
 
         it('records the project and title on create', async () => {
             diagramId = await createDiagram(ctx.app, admin, 'Orders');
-            projectId = (await call(admin, 'GET', `/diagrams/${diagramId}`)).json()
-                .projectId;
+            projectId = (
+                await call(admin, 'GET', `/diagrams/${diagramId}`)
+            ).json().projectId;
             const row = await latest('diagram.create');
             expect(row.diagramId).toBe(diagramId);
             expect(row.meta).toEqual({ projectId, name: 'Orders' });
@@ -229,7 +234,10 @@ describe('audit meta: what an action was done to', () => {
             ).json();
             const saved = await call(admin, 'PUT', `/diagrams/${diagramId}`, {
                 autoPublish: true,
-                content: { ...current.content, name: 'Changed for auto publish' },
+                content: {
+                    ...current.content,
+                    name: 'Changed for auto publish',
+                },
                 baseUpdatedAt: current.updatedAt,
             });
             expect(saved.statusCode).toBe(200);
@@ -286,7 +294,11 @@ describe('audit meta: what an action was done to', () => {
                 'DELETE',
                 `/diagrams/${diagramId}/share-links/${linkId}`
             );
-            expect((await latest('share.revoke')).meta).toEqual({ linkId });
+            expect((await latest('share.revoke')).meta).toEqual({
+                linkId,
+                access: 'signed_in',
+                madeAt: expect.stringMatching(/^\d{4}-\d\d-\d\dT/),
+            });
 
             const everything = JSON.stringify(
                 (await call(admin, 'GET', '/admin/audit?limit=100')).json()

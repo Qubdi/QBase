@@ -2,26 +2,45 @@ import React, { useState } from 'react';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { api, errorMessage } from '@/lib/qubdi/api';
+import { useQubdi } from '@/hooks/use-qubdi';
+import { usePasswordMinLength } from '@/hooks/use-password-min-length';
+import { PasswordField } from './password-field';
+import { checkPassword } from '../../../shared/password';
 
 export interface ChangePasswordDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /**
+     * The password is a temporary one an admin chose: the person must set their
+     * own before anything else works, so the dialog cannot be dismissed and
+     * offers signing out instead.
+     */
+    forced?: boolean;
+    /** called once the password was changed */
+    onChanged?: () => void;
 }
 
 export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     open,
     onOpenChange,
+    forced = false,
+    onChanged,
 }) => {
     const [current, setCurrent] = useState('');
     const [next, setNext] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [done, setDone] = useState(false);
+    const { user, logout } = useQubdi();
+    const minLength = usePasswordMinLength(open);
+    const weak =
+        checkPassword(next, { minLength, email: user?.email }).length > 0;
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,6 +50,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             setDone(true);
             setCurrent('');
             setNext('');
+            onChanged?.();
         } catch (err) {
             setError(errorMessage(err));
         }
@@ -40,13 +60,30 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         <Dialog
             open={open}
             onOpenChange={(o) => {
+                if (forced && !o) return;
                 if (!o) setDone(false);
                 onOpenChange(o);
             }}
         >
-            <DialogContent className="max-w-sm" showClose>
+            <DialogContent
+                className="max-w-sm"
+                showClose={!forced}
+                onEscapeKeyDown={forced ? (e) => e.preventDefault() : undefined}
+                onInteractOutside={
+                    forced ? (e) => e.preventDefault() : undefined
+                }
+            >
                 <DialogHeader>
-                    <DialogTitle>Change password</DialogTitle>
+                    <DialogTitle>
+                        {forced
+                            ? 'Choose your own password'
+                            : 'Change password'}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {forced
+                            ? 'An admin set a temporary password for your account. Enter it as the current password, then choose one only you know.'
+                            : 'Enter your current password and choose a new one.'}
+                    </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="flex flex-col gap-3">
                     <Input
@@ -57,14 +94,12 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                         onChange={(e) => setCurrent(e.target.value)}
                         required
                     />
-                    <Input
-                        type="password"
-                        placeholder="New password (min 8 characters)"
-                        autoComplete="new-password"
+                    <PasswordField
                         value={next}
-                        onChange={(e) => setNext(e.target.value)}
-                        minLength={8}
-                        required
+                        onChange={setNext}
+                        minLength={minLength}
+                        email={user?.email}
+                        placeholder="New password"
                     />
                     {error ? (
                         <p role="alert" className="text-sm text-red-500">
@@ -76,7 +111,18 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                             Password changed. Other devices were signed out.
                         </p>
                     ) : null}
-                    <Button type="submit">Change password</Button>
+                    <Button type="submit" disabled={weak}>
+                        Change password
+                    </Button>
+                    {forced ? (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => void logout()}
+                        >
+                            Sign out
+                        </Button>
+                    ) : null}
                 </form>
             </DialogContent>
         </Dialog>

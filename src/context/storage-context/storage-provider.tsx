@@ -18,12 +18,13 @@ import type { Area } from '@/lib/domain/area';
 import type { DBCustomType } from '@/lib/domain/db-custom-type';
 import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
 import type { Note } from '@/lib/domain/note';
+import { LOCAL_DB_NAME } from '@/lib/qubdi/local-data';
 
 export const StorageProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
     const db = useMemo(() => {
-        const dexieDB = new Dexie('QubdiDB') as Dexie & {
+        const dexieDB = new Dexie(LOCAL_DB_NAME) as Dexie & {
             diagrams: EntityTable<
                 Diagram,
                 'id' // primary key "id" (for the typings only)

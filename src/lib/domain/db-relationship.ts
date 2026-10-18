@@ -14,6 +14,32 @@ export interface DBRelationship {
     createdAt: number;
 }
 
+export type RelationshipEnds = Pick<
+    DBRelationship,
+    'sourceTableId' | 'sourceFieldId' | 'targetTableId' | 'targetFieldId'
+>;
+
+/**
+ * The relationship that already joins these two fields, whichever of them it
+ * has as its source, or undefined. A second one between the same fields draws
+ * a second line and adds nothing.
+ */
+export const findRelationshipBetween = <R extends RelationshipEnds>(
+    relationships: R[],
+    ends: RelationshipEnds
+): R | undefined =>
+    relationships.find(
+        (r) =>
+            (r.sourceTableId === ends.sourceTableId &&
+                r.sourceFieldId === ends.sourceFieldId &&
+                r.targetTableId === ends.targetTableId &&
+                r.targetFieldId === ends.targetFieldId) ||
+            (r.sourceTableId === ends.targetTableId &&
+                r.sourceFieldId === ends.targetFieldId &&
+                r.targetTableId === ends.sourceTableId &&
+                r.targetFieldId === ends.sourceFieldId)
+    );
+
 export type Cardinality = 'one' | 'many';
 
 /**

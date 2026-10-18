@@ -93,6 +93,13 @@ export function classifyIp(ip: string): IpClass {
     if (b[0] === 0 && b[1] === 0x64 && b[2] === 0xff && b[3] === 0x9b) {
         return classifyV4(b.slice(12));
     }
+    // transition ranges that wrap an IPv4 address in a form the checks above do
+    // not decode: never a place to connect to
+    if (b[0] === 0x20 && b[1] === 0x02) return 'reserved'; // 6to4, 2002::/16
+    if (b[0] === 0x20 && b[1] === 0x01 && b[2] === 0 && b[3] === 0) {
+        return 'reserved'; // Teredo, 2001::/32
+    }
+    if (b.slice(0, 12).every((x) => x === 0)) return 'reserved'; // ::a.b.c.d, ::/96
     if (b[0] === 0xfe && (b[1] & 0xc0) === 0x80) return 'link_local';
     if ((b[0] & 0xfe) === 0xfc) return 'private'; // fc00::/7
     if (b[0] === 0xff) return 'multicast';

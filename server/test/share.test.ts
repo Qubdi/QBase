@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog, shareLinks } from '../src/db/schema.js';
+import { MAX_LISTED_LINKS } from '../src/share/routes.js';
 import {
     as,
     createDiagram,
@@ -90,6 +91,21 @@ describe('share links', () => {
             const text = list.body;
             expect(text).not.toContain(body.token);
             expect(text).not.toContain(row.tokenHash);
+        });
+
+        it('caps the list at the newest links', async () => {
+            const crowded = await createDiagram(ctx.app, owner, 'Crowded');
+            await ctx.db.insert(shareLinks).values(
+                Array.from({ length: MAX_LISTED_LINKS + 5 }, (_, n) => ({
+                    diagramId: crowded,
+                    tokenHash: `crowded-${n}`,
+                }))
+            );
+            const list = await ctx.app.inject({
+                url: `/diagrams/${crowded}/share-links`,
+                headers: as(owner),
+            });
+            expect(list.json()).toHaveLength(MAX_LISTED_LINKS);
         });
 
         it('hides the list from viewers and strangers', async () => {
@@ -193,6 +209,23 @@ describe('share links', () => {
                 'share.regenerate',
                 'share.revoke',
             ]);
+        });
+
+        it('audits a revoke once when two requests revoke at the same time', async () => {
+            const fresh = await createDiagram(ctx.app, owner, 'Double revoke');
+            const made = (await createLink(owner, {}, fresh)).json();
+            const revoke = () =>
+                ctx.app.inject({
+                    method: 'DELETE',
+                    url: `/diagrams/${fresh}/share-links/${made.id}`,
+                    headers: as(owner),
+                });
+            const results = await Promise.all([revoke(), revoke(), revoke()]);
+            expect(results.map((r) => r.statusCode)).toEqual([204, 204, 204]);
+            const revokes = (await ctx.db.select().from(auditLog)).filter(
+                (r) => r.diagramId === fresh && r.action === 'share.revoke'
+            );
+            expect(revokes).toHaveLength(1);
         });
     });
 

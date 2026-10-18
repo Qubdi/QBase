@@ -71,7 +71,7 @@ describe('admin panel and projects', () => {
                 expect((await call('GET', '/admin/projects', u)).statusCode).toBe(404);
                 const create = await call('POST', '/admin/users', u, {
                     email: 'sneaky@example.com',
-                    password: 'password123',
+                    password: 'Password-123!',
                 });
                 expect(create.statusCode).toBe(404);
                 const proj = await call('POST', '/admin/projects', u, { name: 'Mine' });
@@ -82,7 +82,7 @@ describe('admin panel and projects', () => {
         it('lets an admin create users and promote them', async () => {
             const res = await call('POST', '/admin/users', admin, {
                 email: 'New.Person@Example.com',
-                password: 'password123',
+                password: 'Password-123!',
             });
             expect(res.statusCode).toBe(201);
             expect(res.json().email).toBe('new.person@example.com');
@@ -109,7 +109,7 @@ describe('admin panel and projects', () => {
         it('resets a password and signs the user out everywhere', async () => {
             const target = await registerUser(ctx.app, 'reset@example.com');
             const reset = await call('PATCH', `/admin/users/${target.id}`, admin, {
-                password: 'brand-new-password',
+                password: 'Brand-new-password-1!',
             });
             expect(reset.statusCode).toBe(200);
             expect((await call('GET', '/auth/me', target)).statusCode).toBe(401);
@@ -120,12 +120,12 @@ describe('admin panel and projects', () => {
                         url: '/auth/login',
                         payload: {
                             email: 'reset@example.com',
-                            password: 'password123',
+                            password: 'Password-123!',
                         },
                     })
                 ).statusCode
             ).toBe(401);
-            await loginUser(ctx.app, 'reset@example.com', 'brand-new-password');
+            await loginUser(ctx.app, 'reset@example.com', 'Brand-new-password-1!');
         });
     });
 
@@ -383,5 +383,23 @@ describe('admin panel and projects', () => {
             const left = await ctx.db.select().from(sessions).where(eq(sessions.userId, author.id));
             expect(left).toHaveLength(0);
         });
+    });
+
+    it('answers 409, not 500, when two requests race to create the same name', async () => {
+        const create = () =>
+            call('POST', '/admin/projects', admin, { name: 'Raced project' });
+        const statuses = (await Promise.all([create(), create(), create()]))
+            .map((r) => r.statusCode)
+            .sort();
+        expect(statuses).toEqual([201, 409, 409]);
+        const user = () =>
+            call('POST', '/admin/users', admin, {
+                email: 'raced@example.com',
+                password: 'Password-123!',
+            });
+        const users = (await Promise.all([user(), user()]))
+            .map((r) => r.statusCode)
+            .sort();
+        expect(users).toEqual([201, 409]);
     });
 });

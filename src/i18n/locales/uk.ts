@@ -14,8 +14,6 @@ export const uk: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'Дії',
-                new: 'Нова...',
-                browse: 'Усі бази даних...',
                 save: 'Зберегти',
                 import: 'Імпорт бази даних',
                 export_sql: 'Експорт SQL',

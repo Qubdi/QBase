@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronsUpDown, RefreshCw, X } from 'lucide-react';
+import { ChevronsUpDown, Download, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { OptionSelect } from '@/components/option-select/option-select';
@@ -16,7 +16,14 @@ import {
     groupByDay,
     startOfDay,
 } from '@/lib/qubdi/activity';
-import { api, type ActivityGroup, type ActivityItem } from '@/lib/qubdi/api';
+import {
+    api,
+    errorMessage,
+    type ActivityGroup,
+    type ActivityItem,
+} from '@/lib/qubdi/api';
+import { localDateStamp, saveBlob } from '@/lib/qubdi/save-blob';
+import { useToast } from '@/components/toast/use-toast';
 import { cn } from '@/lib/utils';
 import { ActivitySentence, type Named } from './activity-sentence';
 
@@ -38,6 +45,9 @@ export const ActivityPanel: React.FC = () => {
     const [to, setTo] = useState('');
     const [showSaves, setShowSaves] = useState(false);
     const [pickerOpen, setPickerOpen] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const [exportError, setExportError] = useState<string | null>(null);
+    const { toast } = useToast();
 
     const list = useCursorList<ActivityItem>(
         (cursor) =>
@@ -58,6 +68,33 @@ export const ActivityPanel: React.FC = () => {
     const filtered =
         group !== '' || person !== null || diagram !== null || from || to;
 
+    /** The file holds what the list would show with these filters, not only what is loaded. */
+    const exportCsv = async () => {
+        setExporting(true);
+        setExportError(null);
+        try {
+            const { blob, rows, truncated } = await api.adminExportActivity({
+                group: group || undefined,
+                userId: person?.id,
+                diagramId: diagram?.id,
+                from: from ? startOfDay(from) : undefined,
+                to: to ? endOfDay(to) : undefined,
+                saves: showSaves ? 'show' : 'hide',
+            });
+            saveBlob(blob, `qubdidb-activity-${localDateStamp()}.csv`);
+            toast({
+                title: 'Activity exported',
+                description: truncated
+                    ? `The newest ${rows} rows. More matched: narrow the dates to get the rest.`
+                    : `${rows} ${rows === 1 ? 'row' : 'rows'} saved as CSV.`,
+            });
+        } catch (e) {
+            setExportError(errorMessage(e));
+        } finally {
+            setExporting(false);
+        }
+    };
+
     const clearFilters = () => {
         setGroup('');
         setPerson(null);
@@ -67,7 +104,7 @@ export const ActivityPanel: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm">
+        <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-xs">
             <div className="flex flex-wrap items-end gap-2">
                 <div className="flex w-full flex-col gap-1 sm:w-52">
                     <span className="text-xs text-muted-foreground">What</span>
@@ -186,19 +223,40 @@ export const ActivityPanel: React.FC = () => {
                         </Button>
                     ) : null}
                 </div>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={list.loading}
-                    onClick={list.reload}
-                >
-                    <RefreshCw
-                        className={cn('size-4', list.loading && 'animate-spin')}
-                    />
-                    Refresh
-                </Button>
+                <div className="flex items-center gap-1">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={exporting}
+                        onClick={() => void exportCsv()}
+                    >
+                        <Download className="size-4" />
+                        {exporting ? 'Exporting…' : 'Export CSV'}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={list.loading}
+                        onClick={list.reload}
+                    >
+                        <RefreshCw
+                            className={cn(
+                                'size-4',
+                                list.loading && 'animate-spin'
+                            )}
+                        />
+                        Refresh
+                    </Button>
+                </div>
             </div>
+
+            {exportError ? (
+                <p role="alert" className="px-1 text-sm text-destructive">
+                    {exportError}
+                </p>
+            ) : null}
 
             {list.error ? (
                 <p role="alert" className="px-1 text-sm text-destructive">

@@ -157,7 +157,9 @@ export const CustomTypeListItemContent: React.FC<
 
                     <Select
                         value={customType.kind}
-                        onValueChange={updateCustomTypeKind}
+                        onValueChange={(kind) =>
+                            updateCustomTypeKind(kind as DBCustomTypeKind)
+                        }
                         disabled={readonly}
                     >
                         <SelectTrigger className="h-8">

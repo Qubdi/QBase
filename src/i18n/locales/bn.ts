@@ -14,8 +14,6 @@ export const bn: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'কার্য',
-                new: 'নতুন...',
-                browse: 'সমস্ত ডেটাবেস...',
                 save: 'সংরক্ষণ করুন',
                 import: 'ডাটাবেস আমদানি করুন',
                 export_sql: 'SQL রপ্তানি করুন',

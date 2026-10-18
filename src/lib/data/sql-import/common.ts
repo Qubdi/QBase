@@ -150,9 +150,7 @@ export interface SQLNumberNode extends SQLASTNode {
 }
 
 export type SQLASTArg =
-    | SQLColumnRef
-    | SQLStringLiteral
-    | { type: string; value: string | number };
+    SQLColumnRef | SQLStringLiteral | { type: string; value: string | number };
 
 export interface SQLCustomType {
     name: string;

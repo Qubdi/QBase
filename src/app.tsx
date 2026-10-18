@@ -5,6 +5,7 @@ import { TooltipProvider } from './components/tooltip/tooltip';
 import { HelmetData } from './helmet/helmet-data';
 import { HelmetProvider } from 'react-helmet-async';
 import { QubdiProvider } from './context/qubdi-context/qubdi-provider';
+import { ForcedPasswordChange } from './components/qubdi/forced-password-change';
 
 export const App = () => {
     return (
@@ -13,6 +14,7 @@ export const App = () => {
             <TooltipProvider>
                 <QubdiProvider>
                     <RouterProvider router={router} />
+                    <ForcedPasswordChange />
                 </QubdiProvider>
             </TooltipProvider>
         </HelmetProvider>

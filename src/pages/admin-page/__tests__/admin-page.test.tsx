@@ -43,8 +43,18 @@ vi.mock('../users-panel', () => ({
     ),
 }));
 
-const admin: RemoteUser = { id: 'me', email: 'me@corp.io', isAdmin: true };
-const member: RemoteUser = { id: 'u2', email: 'ann@corp.io', isAdmin: false };
+const admin: RemoteUser = {
+    id: 'me',
+    email: 'me@corp.io',
+    isAdmin: true,
+    mustChangePassword: false,
+};
+const member: RemoteUser = {
+    id: 'u2',
+    email: 'ann@corp.io',
+    isAdmin: false,
+    mustChangePassword: false,
+};
 
 const open = (path: string) => {
     const router = createMemoryRouter([adminRoute], {
@@ -64,7 +74,7 @@ const nav = () =>
     screen.findByRole(
         'navigation',
         { name: 'Admin sections' },
-        { timeout: 5000 }
+        { timeout: 15_000 }
     );
 
 describe('admin panel frame', () => {

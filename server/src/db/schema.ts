@@ -24,12 +24,6 @@ export const shareAccess = pgEnum('share_access', [
     'off',
 ]);
 
-export const commentTarget = pgEnum('comment_target', [
-    'table',
-    'field',
-    'relationship',
-]);
-
 export const driftStatus = pgEnum('drift_status', [
     'clean',
     'drifted',
@@ -56,6 +50,12 @@ export const users = pgTable(
         // set at every sign-in; null until the person signs in after this
         // column was added (and for an account nobody has signed in to yet)
         lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+        // true while the password is a temporary one an admin chose (a new
+        // account, or a reset): the API refuses everything but changing it,
+        // signing out and `me` until the person sets their own
+        mustChangePassword: boolean('must_change_password')
+            .notNull()
+            .default(false),
     },
     (t) => [
         // the app lowercases emails; this makes the database refuse a second
@@ -273,6 +273,10 @@ export const shareLinks = pgTable(
             .references(() => diagrams.id, { onDelete: 'cascade' }),
         // sha256 of the URL token; the raw token is shown once and never stored
         tokenHash: text('token_hash').notNull().unique(),
+        // AES-256-GCM of the token (key from CONNECTION_KEY) so an editor can copy
+        // an active link again; null when the server has no key, for links made
+        // before this column, and cleared when the link is revoked
+        tokenEnc: text('token_enc'),
         access: shareAccess('access').notNull().default('anyone'),
         expiresAt: timestamp('expires_at', { withTimezone: true }),
         live: boolean('live').notNull().default(false),
@@ -293,34 +297,6 @@ export const shareLinks = pgTable(
             t.createdAt.desc().nullsFirst()
         ),
     ]
-);
-
-export const comments = pgTable(
-    'comments',
-    {
-        id: uuid('id').primaryKey().defaultRandom(),
-        diagramId: uuid('diagram_id')
-            .notNull()
-            .references(() => diagrams.id, { onDelete: 'cascade' }),
-        // latest published version this comment has been carried to (0 = none yet)
-        snapshotVersion: integer('snapshot_version').notNull().default(0),
-        targetType: commentTarget('target_type').notNull(),
-        targetId: text('target_id').notNull(),
-        body: text('body').notNull(),
-        authorId: uuid('author_id').references(() => users.id, {
-            onDelete: 'set null',
-        }),
-        resolved: boolean('resolved').notNull().default(false),
-        // true when the target no longer exists in the latest published version
-        orphaned: boolean('orphaned').notNull().default(false),
-        createdAt: timestamp('created_at', { withTimezone: true })
-            .notNull()
-            .defaultNow(),
-        updatedAt: timestamp('updated_at', { withTimezone: true })
-            .notNull()
-            .defaultNow(),
-    },
-    (t) => [index('comments_diagram_idx').on(t.diagramId)]
 );
 
 export const savedConnections = pgTable(

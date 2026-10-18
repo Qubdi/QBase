@@ -114,7 +114,7 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                 <h3 className="text-sm font-semibold">Delete this project</h3>
                 <p className="text-sm text-muted-foreground">
                     {blocked
-                        ? `It still holds ${plural(project.diagrams, 'diagram')}. Delete or move them first, then it can be deleted.`
+                        ? `It still holds ${plural(project.diagrams, 'diagram')}. Delete them, or move them to another project in the editor, then it can be deleted.`
                         : 'Removes the project and who was assigned to it.'}
                 </p>
                 <div>

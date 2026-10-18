@@ -41,6 +41,28 @@ export const registerSaveDiscard = (fn: (() => void) | null) => {
 
 export const discardUnsavedChanges = () => discard?.();
 
+// The edit lock may only be let go once the final save has settled: released
+// first, the server would hand the lock to someone else (or give it back to
+// the late save) while that save is still on its way.
+let finalFlush: (() => Promise<void>) | null = null;
+let finalSave: Promise<void> | null = null;
+
+/** The running autosaver's "send everything now"; null when it stops. */
+export const registerFinalFlush = (fn: (() => Promise<void>) | null) => {
+    finalFlush = fn;
+    // a new saver starts with no save on the way out
+    if (fn) finalSave = null;
+};
+
+/** Remembers the last save sent while leaving the page or the diagram. */
+export const trackFinalSave = (save: Promise<void>) => {
+    finalSave = save;
+};
+
+/** Settles when the save sent on the way out has; at once when none is due. */
+export const settleFinalSave = (): Promise<void> =>
+    (finalSave ?? finalFlush?.() ?? Promise.resolve()).catch(() => undefined);
+
 const subscribe = (l: () => void) => {
     listeners.add(l);
     return () => listeners.delete(l);

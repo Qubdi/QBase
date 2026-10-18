@@ -20,8 +20,9 @@ export interface LocalConfigContext {
     showFieldAttributes: boolean;
     setShowFieldAttributes: (showFieldAttributes: boolean) => void;
 
-    githubRepoOpened: boolean;
-    setGithubRepoOpened: (githubRepoOpened: boolean) => void;
+    // tables show names only (no types or nullability marks)
+    compactTables: boolean;
+    setCompactTables: (compactTables: boolean) => void;
 
     showMiniMapOnCanvas: boolean;
     setShowMiniMapOnCanvas: (showMiniMapOnCanvas: boolean) => void;
@@ -43,8 +44,8 @@ export const LocalConfigContext = createContext<LocalConfigContext>({
     showFieldAttributes: true,
     setShowFieldAttributes: emptyFn,
 
-    githubRepoOpened: false,
-    setGithubRepoOpened: emptyFn,
+    compactTables: false,
+    setCompactTables: emptyFn,
 
     showMiniMapOnCanvas: false,
     setShowMiniMapOnCanvas: emptyFn,

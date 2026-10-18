@@ -81,7 +81,7 @@ const IndexTypeOption: React.FC<IndexTypeOptionProps> = ({
     const content = (
         <div
             className={cn(
-                'flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm',
+                'flex cursor-pointer items-center rounded-xs px-2 py-1.5 text-sm',
                 option.disabled
                     ? 'cursor-not-allowed opacity-50'
                     : 'hover:bg-accent',

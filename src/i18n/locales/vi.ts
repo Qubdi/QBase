@@ -14,8 +14,6 @@ export const vi: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'Hành động',
-                new: 'Mới...',
-                browse: 'Tất cả cơ sở dữ liệu...',
                 save: 'Lưu',
                 import: 'Nhập cơ sở dữ liệu',
                 export_sql: 'Xuất SQL',

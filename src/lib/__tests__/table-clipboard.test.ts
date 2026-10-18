@@ -180,14 +180,15 @@ describe('table clipboard', () => {
             expect(names).toEqual(['users', 'users_copy']);
         });
 
-        it('moves each paste a little further so copies do not stack', () => {
+        it('puts each paste beside the last so copies do not overlap', () => {
             copyTables([table('t1', 'users', { x: 100, y: 200 })]);
             const first = planPaste([], keep)[0];
             const second = planPaste([], keep)[0];
             const third = planPaste([], keep)[0];
-            expect([first.x, first.y]).toEqual([130, 250]);
-            expect([second.x, second.y]).toEqual([160, 300]);
-            expect([third.x, third.y]).toEqual([190, 350]);
+            // a 224 wide table plus a 40 gap
+            expect([first.x, first.y]).toEqual([364, 200]);
+            expect([second.x, second.y]).toEqual([628, 200]);
+            expect([third.x, third.y]).toEqual([892, 200]);
         });
 
         it('keeps copied tables in the same arrangement as the originals', () => {
@@ -204,7 +205,7 @@ describe('table clipboard', () => {
             planPaste([], keep);
             planPaste([], keep);
             copyTables([table('t1', 'users', { x: 0, y: 0 })]);
-            expect(planPaste([], keep)[0].x).toBe(30);
+            expect(planPaste([], keep)[0].x).toBe(264);
         });
 
         it('drops the schema for a database that has none', () => {

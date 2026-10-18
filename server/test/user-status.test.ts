@@ -25,7 +25,7 @@ describe('user status (active / disabled)', () => {
             headers: as(who),
             payload: body,
         });
-    const login = (email: string, password = 'password123') =>
+    const login = (email: string, password = 'Password-123!') =>
         ctx.app.inject({
             method: 'POST',
             url: '/auth/login',
@@ -212,7 +212,7 @@ describe('user status (active / disabled)', () => {
                 headers: as(admin),
                 payload: {
                     email: 'spare-admin@example.com',
-                    password: 'password123',
+                    password: 'Password-123!',
                     isAdmin: true,
                 },
             });

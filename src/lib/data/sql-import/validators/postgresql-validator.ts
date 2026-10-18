@@ -291,19 +291,3 @@ export function formatValidationMessage(result: ValidationResult): string {
 
     return message || '✅ SQL syntax appears valid.';
 }
-
-/**
- * Quick validation that can be run as user types
- */
-export function quickValidate(sql: string): {
-    hasErrors: boolean;
-    errorCount: number;
-} {
-    // Just check for the most common error (cast operators)
-    const castOperatorMatches = (sql.match(/:\s+:/g) || []).length;
-
-    return {
-        hasErrors: castOperatorMatches > 0,
-        errorCount: castOperatorMatches,
-    };
-}

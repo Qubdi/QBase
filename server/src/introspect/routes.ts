@@ -5,7 +5,11 @@ import type { Config } from '../config.js';
 import type { RequestHook } from '../lib/rate-key.js';
 import type { Db } from '../db/client.js';
 import { driftSettings, savedConnections } from '../db/schema.js';
-import { canWrite, getProjectRole } from '../diagrams/permissions.js';
+import {
+    canWrite,
+    canWriteAnywhere,
+    getProjectRole,
+} from '../diagrams/permissions.js';
 import { CryptoBox } from './crypto-box.js';
 import { filterMetadata } from './filter.js';
 import {
@@ -14,6 +18,8 @@ import {
     type LookupAll,
 } from './net-guard.js';
 import { connectPostgres } from './postgres.js';
+import { audit } from '../audit/audit.js';
+import { isUniqueViolation } from '../lib/pg-errors.js';
 import { UnsafeSqlError } from './readonly-guard.js';
 import { connectSqlServer } from './sqlserver.js';
 import {
@@ -130,6 +136,12 @@ export const introspectRoutes =
             reply: FastifyReply
         ): Promise<ConnectionParams | null> => {
             if ('connection' in body) {
+                // opening a connection to any host the guard allows is a
+                // writer's tool: viewers and project-less accounts may not
+                if (!(await canWriteAnywhere(db, userId))) {
+                    reply.code(403).send({ error: 'forbidden' });
+                    return null;
+                }
                 const c = body.connection;
                 return {
                     ...c,
@@ -306,7 +318,7 @@ export const introspectRoutes =
             if (dup.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
-            const [row] = await db
+            const row = await db
                 .insert(savedConnections)
                 .values({
                     projectId: body.projectId,
@@ -321,7 +333,21 @@ export const introspectRoutes =
                     ssl: body.ssl,
                     trustServerCertificate: body.trustServerCertificate,
                 })
-                .returning();
+                .returning()
+                .then(
+                    ([created]) => created,
+                    (err: unknown) => {
+                        // a racing request took the name between check and insert
+                        if (isUniqueViolation(err)) return null;
+                        throw err;
+                    }
+                );
+            if (!row) return reply.code(409).send({ error: 'name_taken' });
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'connection.create',
+                meta: { projectId: row.projectId, name: row.name },
+            });
             return reply.code(201).send(summarize(row));
         });
 
@@ -342,6 +368,17 @@ export const introspectRoutes =
             ) {
                 return;
             }
+            // Pointing the connection somewhere else would send the stored
+            // password to a host the editor chose, and show it to them. So a
+            // new host, port or dialect needs the password typed again.
+            const movesTarget =
+                body.dialect !== conn.dialect ||
+                body.host.trim().toLowerCase() !==
+                    conn.host.trim().toLowerCase() ||
+                (body.port ?? DEFAULT_PORTS[body.dialect]) !== conn.port;
+            if (movesTarget && body.password === undefined) {
+                return reply.code(400).send({ error: 'password_required' });
+            }
             // only a new password needs the key; the rest is plain settings
             if (body.password !== undefined && !box) {
                 return reply
@@ -361,32 +398,47 @@ export const introspectRoutes =
             if (dup.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
-            const row = await db.transaction(async (tx) => {
-                const [updated] = await tx
-                    .update(savedConnections)
-                    .set({
-                        name: body.name,
-                        dialect: body.dialect,
-                        host: body.host,
-                        port: body.port ?? DEFAULT_PORTS[body.dialect],
-                        database: body.database,
-                        username: body.user,
-                        ssl: body.ssl,
-                        trustServerCertificate: body.trustServerCertificate,
-                        ...(body.password !== undefined
-                            ? { passwordEnc: box!.encrypt(body.password) }
-                            : {}),
-                    })
-                    .where(eq(savedConnections.id, id))
-                    .returning();
-                // reports made with this connection's old details may describe
-                // another database: a settings change keeps them from being
-                // reused when a diagram is opened
-                await tx
-                    .update(driftSettings)
-                    .set({ updatedAt: new Date() })
-                    .where(eq(driftSettings.connectionId, id));
-                return updated;
+            let nameTaken = false;
+            const row = await db
+                .transaction(async (tx) => {
+                    const [updated] = await tx
+                        .update(savedConnections)
+                        .set({
+                            name: body.name,
+                            dialect: body.dialect,
+                            host: body.host,
+                            port: body.port ?? DEFAULT_PORTS[body.dialect],
+                            database: body.database,
+                            username: body.user,
+                            ssl: body.ssl,
+                            trustServerCertificate: body.trustServerCertificate,
+                            ...(body.password !== undefined
+                                ? { passwordEnc: box!.encrypt(body.password) }
+                                : {}),
+                        })
+                        .where(eq(savedConnections.id, id))
+                        .returning();
+                    // reports made with this connection's old details may describe
+                    // another database: a settings change keeps them from being
+                    // reused when a diagram is opened
+                    await tx
+                        .update(driftSettings)
+                        .set({ updatedAt: new Date() })
+                        .where(eq(driftSettings.connectionId, id));
+                    return updated;
+                })
+                .catch((err: unknown) => {
+                    // a racing request took the name between check and update
+                    if (!isUniqueViolation(err)) throw err;
+                    nameTaken = true;
+                    return undefined;
+                });
+            if (nameTaken) return reply.code(409).send({ error: 'name_taken' });
+            if (!row) return reply.code(404).send({ error: 'not_found' });
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'connection.update',
+                meta: { projectId: row.projectId, name: row.name },
             });
             return summarize(row);
         });
@@ -394,7 +446,10 @@ export const introspectRoutes =
         app.delete('/connections/:id', async (req, reply) => {
             const { id } = z.object({ id: uuid }).parse(req.params);
             const [conn] = await db
-                .select({ projectId: savedConnections.projectId })
+                .select({
+                    projectId: savedConnections.projectId,
+                    name: savedConnections.name,
+                })
                 .from(savedConnections)
                 .where(eq(savedConnections.id, id));
             if (!conn) return reply.code(404).send({ error: 'not_found' });
@@ -410,6 +465,11 @@ export const introspectRoutes =
             await db
                 .delete(savedConnections)
                 .where(eq(savedConnections.id, id));
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'connection.delete',
+                meta: { projectId: conn.projectId, name: conn.name },
+            });
             return reply.code(204).send();
         });
     };

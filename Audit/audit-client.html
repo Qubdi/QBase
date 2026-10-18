@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 9</b></div>
-  <h1>17 open.</h1>
+  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 14</b></div>
+  <h1>0 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
-    <span><b>method</b> static analysis · whole-tree read · import-graph dead-code scan · eslint, tsc -b, vitest run (197 files, 2042 tests) in a node:24 container · npm audit via registry bulk API (no Node on host) · server tests skipped (no Node on host) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (199 files, 2032 tests, all pass), vite build · server lint, typecheck, build, vitest (697 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -30,36 +30,13 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">17 open &middot; 0 Crit &middot; 0 High &middot; 7 Med &middot; 10 Low. Source of truth: <code>Audit/audit.md</code>.</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
-      <tbody>
-        <tr><td class="svc-name">CLI-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">A 404 on save clears the remote id; every later save fails <code>no_project</code></td><td><code>src/context/qubdi-context/qubdi-provider.tsx:103</code></td><td class="wrap-cell">Keep the remote id without a <code>projectId</code>; surface the error</td></tr>
-        <tr><td class="svc-name">CLI-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Unsent local edits are never uploaded after reload, re-login or reopen</td><td><code>src/lib/qubdi/autosave.ts:77</code></td><td class="wrap-cell">Compare local copy with base on open; mark it pending</td></tr>
-        <tr><td class="svc-name">CLI-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Keepalive size check counts UTF-16 characters, not bytes; Georgian saves lost</td><td><code>src/lib/qubdi/api.ts:425</code></td><td class="wrap-cell">Measure with <code>TextEncoder</code> byte length</td></tr>
-        <tr><td class="svc-name">CLI-010</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Lost edit lock never shown; a 423 on save retries forever</td><td><code>src/components/qubdi/use-edit-lock.ts:42</code></td><td class="wrap-cell">On 423, switch to read-only and tell the user</td></tr>
-        <tr><td class="svc-name">CLI-016</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Old cross-dialect PG exporter cluster (~2,400 lines) reached only by tests</td><td><code>src/lib/data/sql-export/cross-dialect/index.ts:80</code></td><td class="wrap-cell">Delete the cluster and its test; keep <code>escapeSQLComment</code></td></tr>
-        <tr><td class="svc-name">CLI-017</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Comments API methods and <code>comments-store</code> dead since the panel was removed</td><td><code>src/lib/qubdi/api.ts:668</code></td><td class="wrap-cell">Delete the five methods, the store and its test</td></tr>
-        <tr><td class="svc-name">CLI-018</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Members dialog owner branches never render; they call nonexistent endpoints</td><td><code>src/components/qubdi/members-dialog.tsx:54</code></td><td class="wrap-cell">Remove <code>isOwner</code> branches and the three member-write API methods</td></tr>
-        <tr><td class="svc-name">CLI-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">API <code>fetch</code> has no timeout; one hung save stalls autosave</td><td><code>src/lib/qubdi/api.ts:416</code></td><td class="wrap-cell">Pass <code>AbortSignal.timeout(30_000)</code> to <code>fetch</code></td></tr>
-        <tr><td class="svc-name">CLI-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lock release on <code>pagehide</code> races the final keepalive save</td><td><code>src/components/qubdi/use-edit-lock.ts:53</code></td><td class="wrap-cell">Release the lock after the final save settles</td></tr>
-        <tr><td class="svc-name">CLI-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Change-password and create-relationship dialogs lack a description</td><td><code>src/components/qubdi/change-password-dialog.tsx:47</code></td><td class="wrap-cell">Add <code>DialogDescription</code> or <code>aria-describedby={undefined}</code></td></tr>
-        <tr><td class="svc-name">CLI-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Monaco bundles unused TypeScript, CSS and HTML workers</td><td><code>src/components/code-snippet/config.ts:6</code></td><td class="wrap-cell">Keep only the editor and JSON workers</td></tr>
-        <tr><td class="svc-name">CLI-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No <code>manualChunks</code>; bundle visualizer runs on every build</td><td><code>vite.config.ts:11</code></td><td class="wrap-cell">Split vendor chunks; run the visualizer on demand</td></tr>
-        <tr><td class="svc-name">CLI-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Combobox component is never imported</td><td><code>src/components/combobox/combobox.tsx:1</code></td><td class="wrap-cell">Delete the file</td></tr>
-        <tr><td class="svc-name">CLI-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>applyIds</code> (328 lines) is reached only by its test</td><td><code>src/lib/utils/apply-ids.ts:70</code></td><td class="wrap-cell">Delete the file, barrel line and test</td></tr>
-        <tr><td class="svc-name">CLI-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Zod diagram-diff schema tree (~300 lines) is never used</td><td><code>src/lib/domain/diff/diff.ts:44</code></td><td class="wrap-cell">Delete the schema code</td></tr>
-        <tr><td class="svc-name">CLI-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">ChartDB cloud, analytics flags and <code>github_repo_opened</code> setting never read</td><td><code>src/lib/env.ts:1</code></td><td class="wrap-cell">Remove flags, their Docker/nginx plumbing and the setting</td></tr>
-        <tr><td class="svc-name">CLI-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unreferenced exports: <code>applyFilterOnDiagram</code>, <code>quickValidate</code>, <code>getNeighbors</code>, <code>listVersions</code>, <code>listDriftReports</code>, others</td><td><code>src/lib/domain/diagram-filter/filter.ts:76</code></td><td class="wrap-cell">Remove the unreferenced exports</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <p class="section-note">0 open &middot; 27 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p>None open.</p>
 </section>
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (5)</summary>
+  <details><summary>Fixed (27)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -69,6 +46,28 @@
         <tr><td class="svc-name">CLI-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL import validators for MySQL, SQLite and SQL Server were stubs; now implemented</td></tr>
         <tr><td class="svc-name">CLI-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Star-us dialog and its GIF were never opened; deleted with i18n keys</td></tr>
         <tr><td class="svc-name">CLI-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Hard-coded <code>qubdi.example</code> in template pages; host now from <code>VITE_HOST_URL</code></td></tr>
+        <tr><td class="svc-name">CLI-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">A 404 on save cleared the remote id and later saves failed <code>no_project</code>; the id is kept unless a project is known to re-create it</td></tr>
+        <tr><td class="svc-name">CLI-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unsent local edits were never uploaded after reload; on open the copy is compared with the server and marked pending</td></tr>
+        <tr><td class="svc-name">CLI-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Keepalive size check counted UTF-16 characters; now measured in UTF-8 bytes</td></tr>
+        <tr><td class="svc-name">CLI-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">A 423 on save retried forever; the editor now goes read-only</td></tr>
+        <tr><td class="svc-name">CLI-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">API <code>fetch</code> had no timeout; every request now aborts after 30 s</td></tr>
+        <tr><td class="svc-name">CLI-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lock release raced the final keepalive save; it now waits for that save to settle</td></tr>
+        <tr><td class="svc-name">CLI-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Change-password dialog now has a description; create-relationship opts out with <code>aria-describedby={undefined}</code></td></tr>
+        <tr><td class="svc-name">CLI-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Monaco worker imports for TypeScript, CSS and HTML removed (Monaco itself still emits an unused <code>ts.worker</code> file)</td></tr>
+        <tr><td class="svc-name">CLI-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Vendor chunks for react, xyflow and radix; the bundle visualizer runs only with <code>ANALYZE=1</code></td></tr>
+        <tr><td class="svc-name">CLI-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Old cross-dialect PG exporter cluster and its test deleted; <code>escapeSQLComment</code> kept</td></tr>
+        <tr><td class="svc-name">CLI-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dead comments API methods and <code>comments-store</code> deleted</td></tr>
+        <tr><td class="svc-name">CLI-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Members dialog is read-only; the member-write API methods are gone</td></tr>
+        <tr><td class="svc-name">CLI-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused combobox component deleted</td></tr>
+        <tr><td class="svc-name">CLI-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>applyIds</code> and its test deleted</td></tr>
+        <tr><td class="svc-name">CLI-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused zod diagram-diff schemas deleted</td></tr>
+        <tr><td class="svc-name">CLI-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unread cloud and analytics flags, their Docker/nginx plumbing and <code>github_repo_opened</code> removed</td></tr>
+        <tr><td class="svc-name">CLI-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">The five exports named (<code>applyFilterOnDiagram</code>, <code>quickValidate</code>, <code>getNeighbors</code>, <code>listVersions</code>, <code>listDriftReports</code>) removed; the audit did not list the others</td></tr>
+        <tr><td class="svc-name">CLI-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Clipboard hook test updated to the side-by-side paste offset</td></tr>
+        <tr><td class="svc-name">CLI-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>flex-shrink-0</code> and <code>flex-grow</code> renamed to <code>shrink-0</code> and <code>grow</code></td></tr>
+        <tr><td class="svc-name">CLI-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>shadow-sm</code>, <code>rounded-sm</code> and <code>outline-none</code> renamed to <code>shadow-xs</code>, <code>rounded-xs</code> and <code>outline-hidden</code></td></tr>
+        <tr><td class="svc-name">CLI-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Ctrl+O opens the project list when the server is enabled</td></tr>
+        <tr><td class="svc-name">CLI-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Orphaned <code>menu.actions.new</code> and <code>menu.actions.browse</code> keys deleted from every locale</td></tr>
       </tbody>
     </table>
   </div>
@@ -78,7 +77,7 @@
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">CLI-006</td><td><span class="pill warn">Accepted</span></td><td class="wrap-cell">10 lint suppressions remain in app code: parser AST typing, hook deps, third-party classes</td><td class="wrap-cell">Each has a stated reason; removing them risks behaviour</td></tr>
+        <tr><td class="svc-name">CLI-006</td><td><span class="pill warn">Accepted</span></td><td class="wrap-cell">7 lint suppressions remain in app code: parser AST <code>any</code> typing, hook deps</td><td class="wrap-cell">Each has a stated reason; removing them risks behaviour</td></tr>
       </tbody>
     </table>
   </div>

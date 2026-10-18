@@ -14,8 +14,6 @@ export const ar: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'الإجراءات',
-                new: 'جديد...',
-                browse: 'جميع قواعد البيانات...',
                 save: 'حفظ',
                 import: 'استيراد قاعدة بيانات',
                 export_sql: 'SQL تصدير',

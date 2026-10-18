@@ -319,14 +319,12 @@ export function adjustTablePositionsWithoutAreas(
 
             for (const area of areas) {
                 // Check if the table position would overlap with the area (with buffer)
-                if (
-                    !(
-                        x + currentWidth < area.x - buffer ||
-                        x > area.x + area.width + buffer ||
-                        y + currentHeight < area.y - buffer ||
-                        y > area.y + area.height + buffer
-                    )
-                ) {
+                if (!(
+                    x + currentWidth < area.x - buffer ||
+                    x > area.x + area.width + buffer ||
+                    y + currentHeight < area.y - buffer ||
+                    y > area.y + area.height + buffer
+                )) {
                     return true;
                 }
             }
@@ -530,7 +528,7 @@ export const calcTableHeight = (table?: DBTable): number => {
 
     const FIELD_HEIGHT = 32; // h-8 per field
     const TABLE_FOOTER_HEIGHT = 32; // h-8 for show more button
-    const TABLE_HEADER_HEIGHT = 42;
+    const TABLE_HEADER_HEIGHT = 50; // h-12 header plus the card border
     // Calculate how many fields are visible
     const fieldCount = table.fields.length;
     let visibleFieldCount = fieldCount;

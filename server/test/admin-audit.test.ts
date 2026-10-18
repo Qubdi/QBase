@@ -124,7 +124,10 @@ describe('GET /admin/audit', () => {
             const { items } = await page(`?userId=${admin.id}`);
             expect(items.length).toBeGreaterThan(0);
             expect(items.every((r) => r.userId === admin.id)).toBe(true);
-            expect((await page(`?userId=${member.id}`)).items).toEqual([]);
+            // someone who did nothing has no rows (signing in is itself logged)
+            expect((await page(`?userId=${randomUUID()}`)).items).toEqual([]);
+            const theirs = (await page(`?userId=${member.id}`)).items;
+            expect(theirs.every((r) => r.userId === member.id)).toBe(true);
         });
 
         it('by group: only that kind of action', async () => {
@@ -136,7 +139,11 @@ describe('GET /admin/audit', () => {
             const projects = await inGroup('projects');
             expect(projects.length).toBeGreaterThan(0);
             expect(
-                projects.every((r) => r.action.startsWith('project.'))
+                projects.every(
+                    (r) =>
+                        r.action.startsWith('project.') ||
+                        r.action.startsWith('connection.')
+                )
             ).toBe(true);
             expect((await list(admin, '?group=nonsense')).statusCode).toBe(400);
         });
@@ -334,7 +341,7 @@ describe('GET /admin/audit', () => {
         it('names the person an admin acted on, and keeps the row when they are deleted', async () => {
             const created = await call('POST', '/admin/users', {
                 email: 'target@example.com',
-                password: 'password123',
+                password: 'Password-123!',
             });
             const targetId = created.json().id;
 

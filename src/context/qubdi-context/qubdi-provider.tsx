@@ -21,7 +21,12 @@ import {
     setProjectId,
     setRemoteId,
 } from '@/lib/qubdi/remote-map';
+import { clearLocalUserData } from '@/lib/qubdi/local-data';
 import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
+import {
+    confirmSentContent,
+    rememberSentContent,
+} from '@/lib/qubdi/sent-content';
 import { resetAdminLanding } from '@/lib/qubdi/admin-landing';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/lib/domain/diagram';
@@ -71,6 +76,14 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         resetAdminLanding();
         setSessionEnded(false);
         setUser(null);
+        // the next person on this browser must not find this one's diagrams;
+        // the reload drops what the page still holds in memory
+        await clearLocalUserData();
+        window.location.replace('/');
+    }, []);
+
+    const refreshUser = useCallback(async () => {
+        setUser(await api.me());
     }, []);
 
     const syncDiagram = useCallback(
@@ -88,6 +101,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                     const base =
                         getBaseUpdatedAt(diagram.id) ??
                         (await api.getDiagram(remoteId)).updatedAt;
+                    rememberSentContent(diagram.id, content);
                     const updated = await api.updateDiagram(
                         remoteId,
                         {
@@ -99,10 +113,18 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                         options
                     );
                     setBaseUpdatedAt(diagram.id, updated.updatedAt);
+                    confirmSentContent(diagram.id);
                     return updated.id;
                 } catch (e) {
-                    // deleted or access revoked on the server: fall through and re-create
-                    if (!(e instanceof ApiError) || e.status !== 404) throw e;
+                    // deleted or access revoked on the server: re-create it, but
+                    // only when a project is known. Without one, keep the id so
+                    // the real error surfaces instead of a later `no_project`.
+                    if (
+                        !(e instanceof ApiError) ||
+                        e.status !== 404 ||
+                        !projectId
+                    )
+                        throw e;
                     clearRemoteId(diagram.id);
                 }
             }
@@ -129,10 +151,11 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
             login,
             register,
             logout,
+            refreshUser,
             syncDiagram,
             remoteIdFor: getRemoteId,
         }),
-        [user, sessionEnded, login, register, logout, syncDiagram]
+        [user, sessionEnded, login, register, logout, refreshUser, syncDiagram]
     );
 
     return (

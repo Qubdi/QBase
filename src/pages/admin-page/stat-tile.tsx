@@ -39,14 +39,14 @@ export const StatTile: React.FC<StatTileProps> = ({
         </>
     );
     const shape =
-        'flex min-h-[6.5rem] flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm';
+        'flex min-h-[6.5rem] flex-col gap-2 rounded-xl border bg-card p-4 shadow-xs';
 
     return to ? (
         <Link
             to={to}
             className={cn(
                 shape,
-                'transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                'transition-colors hover:bg-accent/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
             )}
         >
             {body}

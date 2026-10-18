@@ -55,6 +55,7 @@ export interface SourceKeys {
     columns: Record<string, string>;
 }
 
+// diagrams with a check in progress; per process, like the rate limits
 const running = new Set<string>();
 
 /** Compact view of a report, used for lists and the diagram badge. */

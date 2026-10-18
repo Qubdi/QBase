@@ -18,6 +18,8 @@ export interface SessionUser {
     id: string;
     email: string;
     isAdmin: boolean;
+    /** the password is a temporary one: only changing it is allowed until then */
+    mustChangePassword: boolean;
 }
 
 const hashToken = (token: string) =>
@@ -70,6 +72,7 @@ export async function getSessionUser(
             id: users.id,
             email: users.email,
             isAdmin: users.isAdmin,
+            mustChangePassword: users.mustChangePassword,
             seenLongAgo: sql<boolean>`${stale}`,
         })
         .from(sessions)
@@ -92,7 +95,12 @@ export async function getSessionUser(
             .where(and(eq(sessions.id, id), stale))
             .catch(() => undefined);
     }
-    return { id: row.id, email: row.email, isAdmin: row.isAdmin };
+    return {
+        id: row.id,
+        email: row.email,
+        isAdmin: row.isAdmin,
+        mustChangePassword: row.mustChangePassword,
+    };
 }
 
 export async function destroySession(db: Db, token: string | undefined) {

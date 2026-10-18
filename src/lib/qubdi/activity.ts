@@ -1,6 +1,7 @@
 // The Activity page's wording and dates. Plain functions, no React.
 
 import type { ActivityGroup, ActivityItem } from './api';
+import { ago } from './when';
 
 export const ACTIVITY_GROUP_OPTIONS: {
     value: '' | ActivityGroup;
@@ -12,7 +13,7 @@ export const ACTIVITY_GROUP_OPTIONS: {
     { value: 'diagrams', label: 'Diagrams' },
     { value: 'sharing', label: 'Share links' },
     { value: 'checks', label: 'Database drift and lint' },
-    { value: 'comments', label: 'Comments' },
+    { value: 'exports', label: 'Exports' },
 ];
 
 /**
@@ -38,6 +39,15 @@ const ACCESS_WORDS: Record<
     anyone: 'anyone with the link',
     signed_in: 'signed-in users only',
     off: 'off',
+};
+
+/** Which link was revoked: " (anyone with the link, made 2 days ago)". Old rows have neither. */
+const revokedDetail = (meta: ActivityItem['meta']): Segment[] => {
+    const parts = [
+        ...(meta?.access ? [ACCESS_WORDS[meta.access]] : []),
+        ...(meta?.madeAt ? [`made ${ago(meta.madeAt)}`] : []),
+    ];
+    return parts.length > 0 ? [text(` (${parts.join(', ')})`)] : [];
 };
 
 const CHANGED_WORDS = {
@@ -100,6 +110,12 @@ export function describeActivity(item: ActivityItem): Segment[] {
             return [who, text(' enabled the account of '), target];
         case 'user.sign_out':
             return [who, text(' signed '), target, text(' out everywhere')];
+        case 'user.sign_in':
+            return [who, text(' signed in')];
+        case 'user.sign_in_failed':
+            return [who, text(' had a failed sign-in or password check')];
+        case 'user.password_change':
+            return [who, text(' changed their password')];
 
         case 'project.create':
             return [who, text(' created the project '), project];
@@ -161,7 +177,12 @@ export function describeActivity(item: ActivityItem): Segment[] {
                     : []),
             ];
         case 'share.revoke':
-            return [who, text(' revoked a share link of '), diagram];
+            return [
+                who,
+                text(' revoked a share link of '),
+                diagram,
+                ...revokedDetail(meta),
+            ];
         case 'share.regenerate':
             return [
                 who,
@@ -169,6 +190,25 @@ export function describeActivity(item: ActivityItem): Segment[] {
                 diagram,
             ];
 
+        case 'connection.create':
+        case 'connection.update':
+        case 'connection.delete': {
+            const verb = {
+                'connection.create': ' saved the connection ',
+                'connection.update': ' changed the connection ',
+                'connection.delete': ' deleted the connection ',
+            }[item.action];
+            return [
+                who,
+                text(verb),
+                meta?.name
+                    ? { text: meta.name, kind: 'name' as const }
+                    : { text: 'a connection', kind: 'gone' as const },
+                ...inProject,
+            ];
+        }
+
+        // rows from before comments were removed still read as they did
         case 'comment.create':
             return [who, text(' added a comment on '), diagram];
         case 'comment.update':
@@ -190,6 +230,15 @@ export function describeActivity(item: ActivityItem): Segment[] {
             return [who, text(' dismissed the database drift of '), diagram];
         case 'lint.configure':
             return [who, text(' changed the lint settings of '), diagram];
+        case 'audit.export':
+            return [
+                who,
+                text(
+                    meta?.rows === undefined
+                        ? ' exported the activity log'
+                        : ` exported the activity log (${meta.rows} ${meta.rows === 1 ? 'row' : 'rows'})`
+                ),
+            ];
 
         default:
             // an action a newer server added: say it rather than hide it

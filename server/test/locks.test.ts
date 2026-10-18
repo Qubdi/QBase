@@ -170,7 +170,12 @@ describe('diagram edit lock', () => {
             await lock(a, 'tab-a');
             const res = await save(a, 'by a', 'tab-a');
             expect(res.statusCode).toBe(200);
-            expect(res.json().content.name).toBe('by a');
+            expect(res.json().content).toBeUndefined();
+            const stored = await ctx.app.inject({
+                url: `/diagrams/${id}`,
+                headers: as(a),
+            });
+            expect(stored.json().content.name).toBe('by a');
         });
 
         it('refuses a save from someone else and leaves the diagram alone', async () => {

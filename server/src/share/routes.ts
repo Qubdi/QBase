@@ -1,20 +1,19 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
+import { CryptoBox } from '../introspect/crypto-box.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
-import { commentsForPublishedView } from '../comments/routes.js';
 import { latestSnapshot } from '../diagrams/service.js';
-import {
-    emitLinkChanged,
-    onLinkChanged,
-    onPublish,
-} from '../events.js';
+import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
 import { generateToken, hashToken } from './tokens.js';
+
+/** Most links the editor's list returns for one diagram, newest first. */
+export const MAX_LISTED_LINKS = 200;
 
 const diagramParam = z.object({ id: z.string().uuid() });
 const linkParam = z.object({
@@ -35,7 +34,7 @@ const createBody = z
         expiresAt: futureDate.nullable().optional(),
         live: z.boolean().default(false),
     })
-    .default({});
+    .default({ access: 'anyone', live: false });
 
 const patchBody = z
     .object({
@@ -57,8 +56,25 @@ const presentLink = (l: ShareLinkRow) => ({
 
 /** Editor-facing management of a diagram's share links. */
 export const shareManagementRoutes =
-    (db: Db): FastifyPluginAsync =>
+    (db: Db, config: Config): FastifyPluginAsync =>
     async (app) => {
+        // Active links stay copyable: the token is kept encrypted while the
+        // link lives and wiped when it is revoked. Without a key, tokens are
+        // shown once, as before.
+        const box = config.connectionKey
+            ? new CryptoBox(config.connectionKey)
+            : null;
+        const sealed = (token: string) => box?.encrypt(token) ?? null;
+        const unsealed = (l: ShareLinkRow) => {
+            if (!box || !l.tokenEnc || l.revokedAt) return undefined;
+            try {
+                return box.decrypt(l.tokenEnc);
+            } catch {
+                // a changed key: the link works, only its URL cannot be shown
+                return undefined;
+            }
+        };
+
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -103,8 +119,9 @@ export const shareManagementRoutes =
                 .select()
                 .from(shareLinks)
                 .where(eq(shareLinks.diagramId, id))
-                .orderBy(desc(shareLinks.createdAt));
-            return rows.map(presentLink);
+                .orderBy(desc(shareLinks.createdAt))
+                .limit(MAX_LISTED_LINKS);
+            return rows.map((l) => ({ ...presentLink(l), token: unsealed(l) }));
         });
 
         app.post('/:id/share-links', async (req, reply) => {
@@ -117,6 +134,7 @@ export const shareManagementRoutes =
                 .values({
                     diagramId: id,
                     tokenHash: hashToken(token),
+                    tokenEnc: sealed(token),
                     access: body.access,
                     expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
                     live: body.live,
@@ -129,7 +147,6 @@ export const shareManagementRoutes =
                 diagramId: id,
                 meta: { linkId: link.id, access: link.access },
             });
-            // the raw token is returned exactly once
             return reply.code(201).send({ ...presentLink(link), token });
         });
 
@@ -169,16 +186,30 @@ export const shareManagementRoutes =
             const link = await findLink(id, linkId);
             if (!link) return reply.code(404).send({ error: 'not_found' });
             if (!link.revokedAt) {
-                await db
+                // the UPDATE itself says who revoked it: of two racing requests
+                // only one changes the row, so only one writes the audit entry
+                const revoked = await db
                     .update(shareLinks)
-                    .set({ revokedAt: new Date() })
-                    .where(eq(shareLinks.id, linkId));
-                await audit(db, {
-                    userId: req.user!.id,
-                    action: 'share.revoke',
-                    diagramId: id,
-                    meta: { linkId },
-                });
+                    .set({ revokedAt: new Date(), tokenEnc: null })
+                    .where(
+                        and(
+                            eq(shareLinks.id, linkId),
+                            isNull(shareLinks.revokedAt)
+                        )
+                    )
+                    .returning({ id: shareLinks.id });
+                if (revoked.length > 0) {
+                    await audit(db, {
+                        userId: req.user!.id,
+                        action: 'share.revoke',
+                        diagramId: id,
+                        meta: {
+                            linkId,
+                            access: link.access,
+                            madeAt: link.createdAt.toISOString(),
+                        },
+                    });
+                }
             }
             emitLinkChanged(linkId);
             return reply.code(204).send();
@@ -195,7 +226,7 @@ export const shareManagementRoutes =
             const token = generateToken();
             const [updated] = await db
                 .update(shareLinks)
-                .set({ tokenHash: hashToken(token) })
+                .set({ tokenHash: hashToken(token), tokenEnc: sealed(token) })
                 .where(eq(shareLinks.id, linkId))
                 .returning();
             await audit(db, {
@@ -245,6 +276,8 @@ export const publicShareRoutes =
                 (c) => c.ok && c.link.live && c.link.tokenHash === openedWith
             );
             rechecks.set(key, { at: Date.now(), result });
+            // a failed check must not be served from the cache
+            result.catch(() => rechecks.delete(key));
             // forget old entries so the map stays small
             for (const [k, v] of rechecks) {
                 if (Date.now() - v.at > RECHECK_TTL_MS) rechecks.delete(k);
@@ -261,7 +294,8 @@ export const publicShareRoutes =
                     : reply.code(404).send({ error: 'not_found' });
             }
             const snap = await latestSnapshot(db, check.link.diagramId);
-            if (!snap) return reply.code(404).send({ error: 'not_found' });
+            // the link is fine; nothing has been published to show yet
+            if (!snap) return reply.code(404).send({ error: 'not_published' });
             return {
                 title: snap.title,
                 content: snap.content,
@@ -270,47 +304,6 @@ export const publicShareRoutes =
                 live: check.link.live,
             };
         });
-
-        app.get('/:token/comments', limit, async (req, reply) => {
-            const { token } = tokenParam.parse(req.params);
-            const check = await resolveToken(db, token, req.user);
-            if (!check.ok) {
-                return check.reason === 'login_required'
-                    ? reply.code(401).send({ error: 'login_required' })
-                    : reply.code(404).send({ error: 'not_found' });
-            }
-            const view = await commentsForPublishedView(
-                db,
-                check.link.diagramId
-            );
-            if (view.version === null) {
-                return reply.code(404).send({ error: 'not_found' });
-            }
-            return { version: view.version, comments: view.comments };
-        });
-
-        // Share links are read-only: any write attempt on comments is refused.
-        for (const url of [
-            '/:token/comments',
-            '/:token/comments/:commentId',
-            '/:token/comments/:commentId/resolve',
-        ]) {
-            app.route({
-                method: ['POST', 'PUT', 'PATCH', 'DELETE'],
-                url,
-                ...limit,
-                handler: async (req, reply) => {
-                    const { token } = tokenParam.parse(req.params);
-                    const check = await resolveToken(db, token, req.user);
-                    if (!check.ok) {
-                        return check.reason === 'login_required'
-                            ? reply.code(401).send({ error: 'login_required' })
-                            : reply.code(404).send({ error: 'not_found' });
-                    }
-                    return reply.code(403).send({ error: 'read_only' });
-                },
-            });
-        }
 
         app.get('/:token/events', limit, async (req, reply) => {
             const { token } = tokenParam.parse(req.params);
@@ -336,6 +329,8 @@ export const publicShareRoutes =
             raw.writeHead(200, {
                 'content-type': 'text/event-stream',
                 'cache-control': 'no-cache, no-transform',
+                // the stream bypasses the app's onSend hook
+                'x-content-type-options': 'nosniff',
                 connection: 'keep-alive',
                 ...(config.corsOrigin
                     ? {
@@ -363,19 +358,38 @@ export const publicShareRoutes =
             const stillValid = () =>
                 stillValidShared(linkId, openedWith, req.user);
 
+            // The listeners run detached from any request, so a database error
+            // in one would be an unhandled rejection and end the process. The
+            // viewer's stream closes instead; the browser reconnects.
             cleanup.push(
                 onPublish(async (changedDiagramId, version) => {
                     if (closed || changedDiagramId !== diagramId) return;
-                    if (!(await stillValid())) return close();
-                    raw.write(
-                        `event: version\ndata: ${JSON.stringify({ version })}\n\n`
-                    );
+                    try {
+                        if (!(await stillValid())) return close();
+                        raw.write(
+                            `event: version\ndata: ${JSON.stringify({ version })}\n\n`
+                        );
+                    } catch (err) {
+                        req.log.error(
+                            { err },
+                            'share events: publish check failed'
+                        );
+                        close();
+                    }
                 })
             );
             cleanup.push(
                 onLinkChanged(async (changedLinkId) => {
                     if (closed || changedLinkId !== linkId) return;
-                    if (!(await stillValid())) close();
+                    try {
+                        if (!(await stillValid())) close();
+                    } catch (err) {
+                        req.log.error(
+                            { err },
+                            'share events: link check failed'
+                        );
+                        close();
+                    }
                 })
             );
 

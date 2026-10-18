@@ -1,13 +1,13 @@
 # Configuration comes from .env (see .env.example); the defaults suit local development.
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-qubdidb}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qubdidb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}
       POSTGRES_DB: ${POSTGRES_DB:-qubdidb}
     ports:
-      - "${POSTGRES_BIND_IP:-0.0.0.0}:${POSTGRES_PUBLISH_PORT:-5433}:5432"
+      - "${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_PUBLISH_PORT:-5433}:5432"
     volumes:
       - qubdidb-data:/var/lib/postgresql/data
     healthcheck:
@@ -24,14 +24,35 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-qubdidb}:${POSTGRES_PASSWORD:-qubdidb}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-qubdidb}
-      SESSION_SECRET: ${SESSION_SECRET:-change-me}
+      DATABASE_URL: postgres://${POSTGRES_USER:-qubdidb}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-qubdidb}
       CONNECTION_KEY: ${CONNECTION_KEY:-}
       INTROSPECT_ALLOW_HOSTS: ${INTROSPECT_ALLOW_HOSTS:-}
       PORT: "3001"
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      # the rest of the server's settings (see server/.env.example); the
+      # defaults here are the server's own
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      COOKIE_SECURE: ${COOKIE_SECURE:-auto}
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-20}
+      AUTH_MAX_FAILURES: ${AUTH_MAX_FAILURES:-10}
+      AUTH_LOCKOUT_MINUTES: ${AUTH_LOCKOUT_MINUTES:-15}
+      PASSWORD_MIN_LENGTH: ${PASSWORD_MIN_LENGTH:-12}
+      DRIFT_CACHE_SECONDS: ${DRIFT_CACHE_SECONDS:-300}
+      SHARE_RATE_LIMIT: ${SHARE_RATE_LIMIT:-60}
+      LINT_RATE_LIMIT: ${LINT_RATE_LIMIT:-30}
+      OUTBOUND_RATE_LIMIT: ${OUTBOUND_RATE_LIMIT:-20}
+      BODY_LIMIT_KB: ${BODY_LIMIT_KB:-1024}
+      DIAGRAM_BODY_LIMIT_MB: ${DIAGRAM_BODY_LIMIT_MB:-50}
+      SNAPSHOT_KEEP: ${SNAPSHOT_KEEP:-200}
+      DRIFT_REPORT_KEEP: ${DRIFT_REPORT_KEEP:-50}
+      DEAD_LINK_KEEP_DAYS: ${DEAD_LINK_KEEP_DAYS:-30}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-365}
+      SSE_MAX_PER_LINK: ${SSE_MAX_PER_LINK:-100}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
     ports:
-      - "${SERVER_BIND_IP:-0.0.0.0}:${SERVER_PORT:-3001}:3001"
+      - "${SERVER_BIND_IP:-127.0.0.1}:${SERVER_PORT:-3001}:3001"
 
   ui:
     build:
@@ -44,13 +65,13 @@ services:
     depends_on:
       - server
     ports:
-      - "${UI_BIND_IP:-0.0.0.0}:${UI_PORT:-8080}:80"
+      - "${UI_BIND_IP:-127.0.0.1}:${UI_PORT:-8080}:80"
 
   # Optional: only needed to run the SQL Server introspection tests.
   #   docker compose --profile mssql up -d mssql
   mssql:
     profiles: ["mssql"]
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:cf8f0ab2ebe61feec2eed2629061a07d247f791c2a8ddda74a4ac9f06a291718
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Qubdi_Strong_Pass1}

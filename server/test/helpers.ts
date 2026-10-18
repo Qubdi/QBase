@@ -1,11 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { buildApp, type AppDeps } from '../src/app.js';
 import { loadConfig, type Config } from '../src/config.js';
+import pg from 'pg';
 import { createDb } from '../src/db/client.js';
 
 export const TEST_DB = 'qubdidb_test';
-export const ADMIN_URL = 'postgres://qubdidb:qubdidb@localhost:5433/postgres';
-export const TEST_URL = `postgres://qubdidb:qubdidb@localhost:5433/${TEST_DB}`;
+// TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
+const PG_PORT = process.env.TEST_PG_PORT ?? '5433';
+export const ADMIN_URL = `postgres://qubdidb:qubdidb@localhost:${PG_PORT}/postgres`;
+export const TEST_URL = `postgres://qubdidb:qubdidb@localhost:${PG_PORT}/${TEST_DB}`;
 
 // the first user on a fresh database is the admin; they create everyone else
 let adminCookie: string | null = null;
@@ -31,6 +34,8 @@ export async function createTestApp(
             LOG_LEVEL: 'silent',
             LINT_RATE_LIMIT: '100000',
             OUTBOUND_RATE_LIMIT: '100000',
+            AUTH_RATE_LIMIT: '100000',
+            AUTH_MAX_FAILURES: '100000',
         }),
         databaseUrl: TEST_URL,
         ...overrides,
@@ -62,10 +67,33 @@ export interface TestUser {
     cookie: string;
 }
 
+/**
+ * Marks an account's password as its own. It uses a connection of its own, so
+ * it works whichever of several test apps is still open.
+ */
+async function settlePassword(email: string) {
+    const client = new pg.Client({ connectionString: TEST_URL });
+    await client.connect();
+    try {
+        await client.query(
+            'update users set must_change_password = false where email = $1',
+            [email]
+        );
+    } finally {
+        await client.end();
+    }
+}
+
 export async function registerUser(
     app: FastifyInstance,
     email: string,
-    password = 'password123'
+    password = 'Password-123!',
+    /**
+     * An account an admin creates starts on a temporary password and may only
+     * change it. Fixtures normally settle that, so the account can be used at
+     * once; pass `temporary: true` to keep it as the API leaves it.
+     */
+    options: { temporary?: boolean } = {}
 ): Promise<TestUser> {
     if (adminCookie) {
         // self sign-up is closed: an admin creates the account, then it signs in
@@ -80,6 +108,7 @@ export async function registerUser(
                 `create user failed: ${created.statusCode} ${created.body}`
             );
         }
+        if (!options.temporary) await settlePassword(email);
         return loginUser(app, email, password);
     }
     const res = await app.inject({
@@ -100,7 +129,7 @@ export async function registerUser(
 export async function loginUser(
     app: FastifyInstance,
     email: string,
-    password = 'password123'
+    password = 'Password-123!'
 ): Promise<TestUser> {
     const res = await app.inject({
         method: 'POST',

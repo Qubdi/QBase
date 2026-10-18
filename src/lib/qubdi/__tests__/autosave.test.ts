@@ -33,6 +33,16 @@ describe('createAutosaver', () => {
         expect(saved).toEqual([]);
     });
 
+    it('saves the baseline value once it is marked as unsaved', async () => {
+        const { saver, saved, statuses } = setup();
+        saver.update({ n: 1 });
+        saver.markUnsaved();
+        expect(statuses).toEqual(['pending']);
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(saved).toEqual([1]);
+        expect(statuses).toEqual(['pending', 'saving', 'saved']);
+    });
+
     it('saves a change once the edits pause', async () => {
         const { saver, saved, statuses } = setup();
         saver.update({ n: 1 });

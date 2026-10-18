@@ -187,6 +187,14 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
     const isNew = editing === 'new';
     // only a password needs the server's key; the rest of an edit is plain settings
     const needsKey = isNew || !!form.password;
+    // sending the saved password to another host, port or dialect needs it typed again
+    const target = formToConnection(form);
+    const movesTarget =
+        !!editing &&
+        editing !== 'new' &&
+        (target.host.trim().toLowerCase() !== editing.host.toLowerCase() ||
+            target.dialect !== editing.dialect ||
+            (target.port !== undefined && target.port !== editing.port));
 
     return (
         <>
@@ -379,7 +387,9 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 placeholder={
                                     isNew
                                         ? 'Password'
-                                        : 'Password (leave empty to keep the saved one)'
+                                        : movesTarget
+                                          ? 'Password (required to change the host, port or type)'
+                                          : 'Password (leave empty to keep the saved one)'
                                 }
                                 aria-label="Password"
                                 autoComplete="new-password"
@@ -387,7 +397,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 onChange={(e) =>
                                     set('password', e.target.value)
                                 }
-                                required={isNew}
+                                required={isNew || movesTarget}
                             />
                             <div className="flex flex-wrap gap-4 text-sm">
                                 <label className="flex items-center gap-2">

@@ -65,7 +65,7 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
         return (
             <div
                 className={cn(
-                    'flex flex-1 flex-row justify-between gap-2 p-1 transition-colors duration-1000 ease-out',
+                    'flex flex-1 flex-row justify-between gap-2 rounded-md px-1.5 py-0.5 transition-colors duration-1000 ease-out hover:bg-muted/40',
                     {
                         'bg-sky-100 dark:bg-sky-950': showHighlight,
                     }
@@ -77,7 +77,7 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
                             <TooltipTrigger asChild>
                                 <Input
                                     ref={inputRef}
-                                    className="h-8 w-full !truncate bg-background focus-visible:ring-0"
+                                    className="h-8 w-full !truncate border-transparent bg-transparent font-medium hover:border-input focus-visible:border-input focus-visible:bg-background focus-visible:ring-0"
                                     type="text"
                                     placeholder={t(
                                         'side_panel.tables_section.table.field_name'
@@ -116,7 +116,7 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
                         >
                             <span>
                                 <SelectBox
-                                    className="flex h-8 min-h-8 w-full bg-background"
+                                    className="flex h-8 min-h-8 w-full border-transparent bg-transparent hover:border-input"
                                     popoverClassName="min-w-[200px]"
                                     options={dataFieldOptions}
                                     placeholder={t(

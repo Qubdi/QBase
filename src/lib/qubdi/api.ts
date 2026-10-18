@@ -1,5 +1,4 @@
 import { QUBDI_BACKEND_URL } from './config';
-import type { EditorComment } from './comments-store';
 import type { LintConfig } from '../../../shared/lint';
 import { listQuery, type ListParams, type Page } from './paging';
 
@@ -9,6 +8,8 @@ export interface RemoteUser {
     id: string;
     email: string;
     isAdmin: boolean;
+    /** the password is a temporary one an admin chose: only changing it works until then */
+    mustChangePassword: boolean;
 }
 
 export type ProjectRole = 'editor' | 'viewer';
@@ -142,12 +143,7 @@ export interface AdminShareLink {
 
 /** The kinds of action the Activity filter offers; the server defines them. */
 export type ActivityGroup =
-    | 'users'
-    | 'projects'
-    | 'diagrams'
-    | 'sharing'
-    | 'checks'
-    | 'comments';
+    'users' | 'projects' | 'diagrams' | 'sharing' | 'checks' | 'exports';
 
 /** One line of the audit log, with the names behind its ids (null when gone). */
 export interface ActivityItem {
@@ -168,7 +164,13 @@ export interface ActivityItem {
         role?: ProjectRole;
         version?: number;
         access?: 'anyone' | 'signed_in' | 'off';
+        /** share.revoke: when the link was made */
+        madeAt?: string;
         changed?: ('password' | 'isAdmin' | 'isActive')[];
+        /** a saved connection's name, for the connection actions */
+        name?: string;
+        /** audit.export: how many rows the file held */
+        rows?: number;
     } | null;
 }
 
@@ -243,9 +245,11 @@ export interface RemoteShareLink {
     live: boolean;
     createdAt: string;
     revokedAt: string | null;
+    /** an active link's token, when the server can keep it (CONNECTION_KEY is set) */
+    token?: string;
 }
 
-/** Returned once, on create and regenerate. */
+/** Returned on create and regenerate. */
 export interface RemoteShareLinkWithToken extends RemoteShareLink {
     token: string;
 }
@@ -262,22 +266,7 @@ export type PublicShareResult =
     | { status: 'ok'; share: PublicShare }
     | { status: 'login_required' }
     | { status: 'not_found' }
-    | { status: 'error' };
-
-/** A comment as read-only viewers see it: no author, no orphaned ones. */
-export interface PublicComment {
-    id: string;
-    targetType: 'table' | 'field' | 'relationship';
-    targetId: string;
-    body: string;
-    resolved: boolean;
-    createdAt: string;
-}
-
-export type PublicCommentsResult =
-    | { status: 'ok'; version: number; comments: PublicComment[] }
-    | { status: 'login_required' }
-    | { status: 'not_found' }
+    | { status: 'not_published' }
     | { status: 'error' };
 
 export class ApiError extends Error {
@@ -394,8 +383,15 @@ export const setSessionEndedHandler = (fn: (() => void) | null) => {
     sessionEndedHandler = fn;
 };
 
+/** How long any API request may take before it is given up. */
+export const REQUEST_TIMEOUT_MS = 30_000;
+
 /** Browsers cap the body of a keepalive request at 64 KiB. */
 export const KEEPALIVE_BODY_LIMIT = 60_000;
+
+// the browser's cap counts bytes; `string.length` counts UTF-16 units, which
+// is a third of the bytes for Georgian and other non-Latin text
+const utf8Bytes = (text: string) => new TextEncoder().encode(text).length;
 
 export interface RequestOptions {
     /** Let the request finish even if the page is closing (small bodies only). */
@@ -421,9 +417,11 @@ export function createApi(
                     ? {}
                     : { 'content-type': 'application/json' },
             body: json,
+            // one hung request must not stall autosave behind it
+            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
             // an oversized keepalive request would be rejected outright
             ...(options?.keepalive &&
-            (json?.length ?? 0) <= KEEPALIVE_BODY_LIMIT
+            (json === undefined ? 0 : utf8Bytes(json)) <= KEEPALIVE_BODY_LIMIT
                 ? { keepalive: true }
                 : {}),
         });
@@ -445,7 +443,10 @@ export function createApi(
 
     return {
         setupStatus: () =>
-            request<{ needsSetup: boolean }>('GET', '/auth/setup-status'),
+            request<{ needsSetup: boolean; passwordMinLength: number }>(
+                'GET',
+                '/auth/setup-status'
+            ),
         register: (email: string, password: string) =>
             request<RemoteUser>('POST', '/auth/register', { email, password }),
         login: (email: string, password: string) =>
@@ -549,6 +550,38 @@ export function createApi(
                     }
                 )}`
             ),
+        /**
+         * The activity log as a CSV file, for the same filters as the list.
+         * `truncated` means more rows matched than one file holds.
+         */
+        adminExportActivity: async (
+            params: Omit<ActivityParams, 'limit' | 'cursor'> = {}
+        ): Promise<{ blob: Blob; rows: number; truncated: boolean }> => {
+            const res = await fetchImpl(
+                `${baseUrl}/admin/audit/export${listQuery(undefined, {
+                    group: params.group,
+                    userId: params.userId,
+                    diagramId: params.diagramId,
+                    from: params.from,
+                    to: params.to,
+                    saves: params.saves,
+                })}`,
+                {
+                    credentials: 'include',
+                    // a long log takes a while to read
+                    signal: AbortSignal.timeout(120_000),
+                }
+            );
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new ApiError(res.status, data?.error ?? 'request_failed');
+            }
+            return {
+                blob: await res.blob(),
+                rows: Number(res.headers.get('x-row-count') ?? 0),
+                truncated: res.headers.get('x-truncated') === 'true',
+            };
+        },
         adminListProjects: (params?: ListParams) =>
             request<Page<AdminProject>>(
                 'GET',
@@ -611,8 +644,6 @@ export function createApi(
                 note: string | null;
                 publishedAt: string;
             }>('POST', `/diagrams/${id}/publish`, note ? { note } : {}),
-        listVersions: (id: string) =>
-            request<RemoteVersion[]>('GET', `/diagrams/${id}/versions`),
         listShareLinks: (id: string) =>
             request<RemoteShareLink[]>('GET', `/diagrams/${id}/share-links`),
         createShareLink: (
@@ -659,54 +690,17 @@ export function createApi(
                     return { status: 'ok', share: await res.json() };
                 }
                 if (res.status === 401) return { status: 'login_required' };
-                if (res.status === 404) return { status: 'not_found' };
-                return { status: 'error' };
-            } catch {
-                return { status: 'error' };
-            }
-        },
-        listComments: (id: string) =>
-            request<EditorComment[]>('GET', `/diagrams/${id}/comments`),
-        addComment: (
-            id: string,
-            body: {
-                targetType: 'table' | 'field' | 'relationship';
-                targetId: string;
-                body: string;
-            }
-        ) => request<EditorComment>('POST', `/diagrams/${id}/comments`, body),
-        updateComment: (id: string, commentId: string, body: string) =>
-            request<EditorComment>(
-                'PUT',
-                `/diagrams/${id}/comments/${commentId}`,
-                { body }
-            ),
-        resolveComment: (id: string, commentId: string, resolved: boolean) =>
-            request<EditorComment>(
-                'POST',
-                `/diagrams/${id}/comments/${commentId}/resolve`,
-                { resolved }
-            ),
-        deleteComment: (id: string, commentId: string) =>
-            request<void>('DELETE', `/diagrams/${id}/comments/${commentId}`),
-        getPublicComments: async (
-            token: string
-        ): Promise<PublicCommentsResult> => {
-            try {
-                const res = await fetchImpl(
-                    `${baseUrl}/s/${encodeURIComponent(token)}/comments`,
-                    { credentials: 'include' }
-                );
-                if (res.ok) {
-                    const data = await res.json();
+                if (res.status === 404) {
+                    const body = (await res.json().catch(() => null)) as {
+                        error?: string;
+                    } | null;
                     return {
-                        status: 'ok',
-                        version: data.version,
-                        comments: data.comments,
+                        status:
+                            body?.error === 'not_published'
+                                ? 'not_published'
+                                : 'not_found',
                     };
                 }
-                if (res.status === 401) return { status: 'login_required' };
-                if (res.status === 404) return { status: 'not_found' };
                 return { status: 'error' };
             } catch {
                 return { status: 'error' };
@@ -770,11 +764,6 @@ export function createApi(
                 'POST',
                 `/diagrams/${id}/drift/check${options?.cached ? '?cached=1' : ''}`
             ),
-        listDriftReports: (id: string, limit = 20) =>
-            request<DriftReportSummary[]>(
-                'GET',
-                `/diagrams/${id}/drift/reports?limit=${limit}`
-            ),
         getDriftReport: (id: string, reportId: string) =>
             request<DriftReport>(
                 'GET',
@@ -790,23 +779,6 @@ export function createApi(
 
         listMembers: (id: string) =>
             request<RemoteMember[]>('GET', `/diagrams/${id}/members`),
-        addMember: (id: string, email: string, role: 'editor' | 'viewer') =>
-            request<RemoteMember>('POST', `/diagrams/${id}/members`, {
-                email,
-                role,
-            }),
-        changeMemberRole: (
-            id: string,
-            userId: string,
-            role: 'editor' | 'viewer'
-        ) =>
-            request<{ userId: string; role: MemberRole }>(
-                'PATCH',
-                `/diagrams/${id}/members/${userId}`,
-                { role }
-            ),
-        removeMember: (id: string, userId: string) =>
-            request<void>('DELETE', `/diagrams/${id}/members/${userId}`),
     };
 }
 
@@ -822,6 +794,10 @@ export const errorMessage = (e: unknown): string => {
                 'Accounts are created by an admin. Ask yours for access.',
             invalid_request: 'Please check the values you entered.',
             wrong_password: 'Current password is incorrect.',
+            weak_password: 'That password does not meet the rules below.',
+            same_password: 'Choose a password different from the current one.',
+            password_change_required:
+                'Choose your own password before you continue.',
             user_not_found: 'No account with that email exists yet.',
             already_member: 'That person already has access.',
             forbidden: 'You do not have permission to do that.',
@@ -829,6 +805,10 @@ export const errorMessage = (e: unknown): string => {
             encryption_not_configured:
                 'This server cannot store passwords (CONNECTION_KEY is not set).',
             name_taken: 'That name is already in use.',
+            password_required:
+                'Type the password again to change the host, port or type of a saved connection.',
+            too_many_attempts:
+                'Too many failed attempts. Wait a few minutes and try again.',
             invalid_webhook: 'That webhook URL is not valid.',
             connection_required: 'Choose a saved connection first.',
             connection_not_found: 'That saved connection does not exist.',

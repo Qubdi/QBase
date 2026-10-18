@@ -14,8 +14,6 @@ export const ne: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'कार्यहरू',
-                new: 'नयाँ...',
-                browse: 'सबै डाटाबेसहरू...',
                 save: 'सुरक्षित गर्नुहोस्',
                 import: 'डाटाबेस आयात गर्नुहोस्',
                 export_sql: 'SQL निर्यात गर्नुहोस्',

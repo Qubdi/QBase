@@ -1,21 +1,16 @@
 # QubdiDB — Audit
 
-**rev** 9 · **date** 2026-10-17
-**method** static analysis · whole-tree read · import-graph dead-code scan · eslint, tsc -b, vitest run (197 files, 2042 tests) in a node:24 container · npm audit via registry bulk API (no Node on host) · server tests skipped (no Node on host) · no secret read
+**rev** 14 · **date** 2026-10-17
+**method** static analysis · whole-tree read · eslint, tsc -b, vitest run (199 files, 2032 tests, all pass), vite build · server lint, typecheck, build, vitest (697 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and `server/` · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 16 | 1 | 1 | 4 | 0 |
-| Repository | 20 | 0 | 0 | 12 | 0 |
-| Server | 14 | 0 | 0 | 19 | 0 |
-| Client | 17 | 0 | 0 | 5 | 1 |
-| **Total** | 67 | 1 | 1 | 40 | 1 |
-
-## Act first
-
-- `SEC-016` — Note Markdown renders raw HTML; any editor can run script as an admin.
-- `SEC-001` — `/auth/login`, `/auth/register` and `/auth/change-password` accept unlimited guesses.
+| Security & secrets | 0 | 0 | 0 | 20 | 0 |
+| Repository | 1 | 0 | 0 | 32 | 0 |
+| Server | 1 | 0 | 0 | 32 | 0 |
+| Client | 0 | 0 | 0 | 27 | 1 |
+| **Total** | 2 | 0 | 0 | 111 | 1 |
 
 ---
 
@@ -23,90 +18,23 @@
 
 ### Security & secrets
 
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| SEC-016 | Crit | Note Markdown renders raw HTML via `rehype-raw`, unsanitised; stored XSS reaches admins | `src/pages/editor-page/canvas/note-node/note-node.tsx:200` | Add `rehype-sanitize` after `rehype-raw`, or drop `rehype-raw` |
-| SEC-001 | High | No rate limit or lockout on `/auth/login`, `/auth/register`, `/auth/change-password` | `server/src/auth/routes.ts:92` | Add per-IP and per-email rate limit to auth routes |
-| SEC-004 | Med | Any signed-in user can open DB connections via `/introspect`, no project role | `server/src/introspect/routes.ts:132` | Require project writer role for inline connections |
-| SEC-005 | Med | Session cookie has no `secure` flag | `server/src/auth/routes.ts:44` | Set `secure` behind HTTPS via a config flag |
-| SEC-006 | Med | Login skips argon2 for unknown emails; timing reveals registered accounts | `server/src/auth/routes.ts:99` | Verify against a dummy hash when the user is missing |
-| SEC-007 | Med | No CSP, `X-Frame-Options` or `nosniff` headers from nginx or Fastify | `default.conf.template:1` | Add security headers in nginx and the server |
-| SEC-008 | Med | Compose defaults the DB password and `change-me` secret; ports bind all interfaces | `docker-compose.yml:7` | Bind ports to `127.0.0.1`; require secrets in `.env` |
-| SEC-009 | Med | Audit log omits sign-in, failed sign-in, own password change, saved-connection changes | `server/src/audit/audit.ts:4` | Add actions; emit them from auth and connection routes |
-| SEC-017 | Med | Editor can repoint a saved connection's host and receive its stored password | `server/src/introspect/routes.ts:376` | Require password re-entry when host, port or dialect changes |
-| SEC-020 | Med | Logout leaves the previous user's local diagram copies and id maps | `src/context/qubdi-context/qubdi-provider.tsx:69` | Clear Dexie diagrams and `qubdidb.*` keys on logout |
-| SEC-012 | Low | `SESSION_SECRET` defaults to a known value and signs nothing | `server/src/config.ts:64` | Delete the setting, or fail startup when unset |
-| SEC-013 | Low | Server image runs as root | `server/Dockerfile:15` | Add `USER node` |
-| SEC-014 | Low | Google Fonts request leaks visitor IPs; README claims no external services | `index.html:9` | Self-host the fonts |
-| SEC-015 | Low | Net guard classifies 6to4, Teredo and `::a.b.c.d` IPv6 as public | `server/src/introspect/net-guard.ts:102` | Classify `2002::/16`, `2001::/32`, `::/96` as reserved |
-| SEC-018 | Low | Concurrent first-run `/auth/register` calls can create several admins | `server/src/auth/routes.ts:60` | Count and insert under an advisory lock |
-| SEC-019 | Low | Error handler returns raw `err.message` for 5xx statuses other than 500 | `server/src/app.ts:98` | Hide the message for every status >= 500 |
+None open.
 
 ### Repository
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-005 | Med | 6 high npm advisories (braces, no upstream fix), all in Tailwind 3 toolchain | `package.json:112` | Migrate to Tailwind 4; rerun `npm audit` |
 | REPO-008 | Med | No `CODEOWNERS` file | `.github/` | Add `.github/CODEOWNERS` with the maintainers' GitHub handle |
-| REPO-016 | Med | Monaco pins `dompurify` 3.2.7: 13 moderate XSS advisories; CI gates only critical | `package.json:60` | Add `overrides` for `dompurify` >= 3.4.17; gate audit at high |
-| REPO-017 | Med | `framer-motion`, `timeago.js`, `@dnd-kit/core`, `@dnd-kit/utilities` imported but undeclared | `src/components/tree-view/tree-view.tsx:8` | Declare the four packages in `package.json` |
-| REPO-019 | Med | Compose passes 6 of 19 server settings; `TRUST_PROXY`, `LOG_LEVEL` unreachable | `docker-compose.yml:26` | Pass the remaining server env vars through |
-| REPO-020 | Med | Publish runs on any `v*` tag with no tests or CI gate | `.github/workflows/publish.yaml:3` | Run tests or require CI success before pushing images |
-| REPO-011 | Low | GitHub star iframe from `ghbtns.com` contradicts README; leaks visitor IPs | `src/pages/templates-page/templates-page.tsx:49` | Remove the iframe |
-| REPO-018 | Low | `@radix-ui/react-collapsible`, `@uidotdev/usehooks`, `motion`, `timeago-react` never imported | `package.json:30` | Remove the four dependencies |
-| REPO-021 | Low | UI publish job grants unused `id-token: write` | `.github/workflows/publish.yaml:18` | Remove `id-token: write` |
-| REPO-022 | Low | CONTRIBUTING has a Discord invite and a broken Email link | `CONTRIBUTING.md:21` | Remove the Discord link; fix the Email link |
-| REPO-023 | Low | `.env.example` omits `VITE_*` keys and `LINT_RATE_LIMIT`, `OUTBOUND_RATE_LIMIT` | `server/src/config.ts:69` | Document the keys, or delete the dead ones |
-| REPO-024 | Low | Node 22 drift in server `@types/node` and the build-tasks doc | `server/package.json:34` | Bump `@types/node` to ^24; update the doc |
-| REPO-025 | Low | Empty CLA allowlist fails Dependabot PRs | `.github/workflows/cla.yaml:33` | Allowlist `dependabot[bot]` |
-| REPO-026 | Low | `tailwindcss-animate` in dependencies pulls Tailwind into the production audit | `package.json:77` | Move `tailwindcss-animate` to devDependencies |
-| REPO-027 | Low | Container images pinned by tag; compose images outside Dependabot | `docker-compose.yml:4` | Pin digests; add compose images to Dependabot |
-| REPO-028 | Low | Pre-commit hook lints only the editor, not the server | `.husky/pre-commit:2` | Also run server lint in the hook |
-| REPO-029 | Low | CI lints the editor twice (Lint step and `build` script) | `.github/workflows/ci.yaml:27` | Drop one of the two lint runs |
-| REPO-030 | Low | Root vitest `exclude` replaces the defaults | `vitest.config.ts:14` | Spread `configDefaults.exclude` into `exclude` |
-| REPO-031 | Low | `tailwind.config.js` uses CommonJS in a `"type": "module"` package | `tailwind.config.js:4` | Use `export default` and `import` |
-| REPO-032 | Low | TODO lists a removed `CommentMarker`; finished workspace URLs still "In progress" | `TODO.md:699` | Drop the stale leftover; mark the section done |
 
 ### Server
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SRV-020 | Med | Async SSE listeners reject unhandled on a DB error and exit the process | `server/src/share/routes.ts:367` | Wrap listener bodies in try/catch |
-| SRV-021 | Med | Every save reads the full latest snapshot and returns the full content | `server/src/diagrams/service.ts:16` | Select snapshot metadata only; drop `content` from the PUT reply |
-| SRV-022 | Med | `GET /diagrams` is unpaged and loads full snapshot content for viewer stats | `server/src/diagrams/routes.ts:96` | Page the list; compute viewer stats in SQL |
-| SRV-023 | Med | `drift_reports` has no retention; the report list loads full `jsonb` | `server/src/maintenance.ts:53` | Prune old drift reports per diagram in `runMaintenance` |
-| SRV-024 | Med | Rate limits, SSE caps and drift guard are per process; undocumented | `server/src/lib/rate-key.ts:43` | Document single-process deployment, or move state to Postgres |
-| SRV-031 | Med | Editor comment CRUD routes still registered and writable; no client calls them | `server/src/comments/routes.ts:133` | Unregister editor comment routes; keep the public viewer read |
-| SRV-025 | Low | Check-then-insert on unique names returns 500 when two requests race | `server/src/admin/routes.ts:259` | Map unique violation `23505` to 409 |
-| SRV-026 | Low | Audit purge is one unbatched DELETE returning every deleted id | `server/src/maintenance.ts:27` | Delete in batches; return the row count only |
-| SRV-027 | Low | Editor share-link revoke can write the audit row twice | `server/src/share/routes.ts:171` | Add `isNull(revokedAt)` to the UPDATE; audit only on change |
-| SRV-028 | Low | Overview counts distinct diagram ids over every snapshot on each load | `server/src/admin/stats.ts:105` | Count with `exists` per diagram |
-| SRV-029 | Low | Lint routes load the full diagram row to read `lintConfig` | `server/src/lint/routes.ts:68` | Select `lintConfig` only; `content` only when needed |
-| SRV-030 | Low | Editor share-link list uncapped; expired locks and dead links never purged | `server/src/share/routes.ts:102` | Cap the list; purge expired locks and dead links |
 | SRV-032 | Low | Version-history and drift-list endpoints have no client | `server/src/diagrams/routes.ts:345` | Remove them, or wire them to a UI |
-| SRV-033 | Low | No test covers the maintenance stop or SIGTERM shutdown | `server/src/server.ts:34` | Test `startMaintenance` stop and the shutdown path |
 
 ### Client
 
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| CLI-007 | Med | A 404 on save clears the remote id; every later save fails `no_project` | `src/context/qubdi-context/qubdi-provider.tsx:103` | Keep the remote id without a `projectId`; surface the error |
-| CLI-008 | Med | Unsent local edits are never uploaded after reload, re-login or reopen | `src/lib/qubdi/autosave.ts:77` | Compare local copy with base on open; mark it pending |
-| CLI-009 | Med | Keepalive size check counts UTF-16 characters, not bytes; Georgian saves lost | `src/lib/qubdi/api.ts:425` | Measure with `TextEncoder` byte length |
-| CLI-010 | Med | Lost edit lock never shown; a 423 on save retries forever | `src/components/qubdi/use-edit-lock.ts:42` | On 423, switch to read-only and tell the user |
-| CLI-016 | Med | Old cross-dialect PG exporter cluster (~2,400 lines) reached only by tests | `src/lib/data/sql-export/cross-dialect/index.ts:80` | Delete the cluster and its test; keep `escapeSQLComment` |
-| CLI-017 | Med | Comments API methods and `comments-store` dead since the panel was removed | `src/lib/qubdi/api.ts:668` | Delete the five methods, the store and its test |
-| CLI-018 | Med | Members dialog owner branches never render; they call nonexistent endpoints | `src/components/qubdi/members-dialog.tsx:54` | Remove `isOwner` branches and the three member-write API methods |
-| CLI-011 | Low | API `fetch` has no timeout; one hung save stalls autosave | `src/lib/qubdi/api.ts:416` | Pass `AbortSignal.timeout(30_000)` to `fetch` |
-| CLI-012 | Low | Lock release on `pagehide` races the final keepalive save | `src/components/qubdi/use-edit-lock.ts:53` | Release the lock after the final save settles |
-| CLI-013 | Low | Change-password and create-relationship dialogs lack a description | `src/components/qubdi/change-password-dialog.tsx:47` | Add `DialogDescription` or `aria-describedby={undefined}` |
-| CLI-014 | Low | Monaco bundles unused TypeScript, CSS and HTML workers | `src/components/code-snippet/config.ts:6` | Keep only the editor and JSON workers |
-| CLI-015 | Low | No `manualChunks`; bundle visualizer runs on every build | `vite.config.ts:11` | Split vendor chunks; run the visualizer on demand |
-| CLI-019 | Low | Combobox component is never imported | `src/components/combobox/combobox.tsx:1` | Delete the file |
-| CLI-020 | Low | `applyIds` (328 lines) is reached only by its test | `src/lib/utils/apply-ids.ts:70` | Delete the file, barrel line and test |
-| CLI-021 | Low | Zod diagram-diff schema tree (~300 lines) is never used | `src/lib/domain/diff/diff.ts:44` | Delete the schema code |
-| CLI-022 | Low | ChartDB cloud, analytics flags and `github_repo_opened` setting never read | `src/lib/env.ts:1` | Remove flags, their Docker/nginx plumbing and the setting |
-| CLI-023 | Low | Unreferenced exports: `applyFilterOnDiagram`, `quickValidate`, `getNeighbors`, `listVersions`, `listDriftReports`, others | `src/lib/domain/diagram-filter/filter.ts:76` | Remove the unreferenced exports |
+None open.
 
 ---
 
@@ -118,18 +46,35 @@
 | SEC-003 | Security & secrets | `VITE_OPENAI_API_KEY` baked into the JS bundle; build args removed |
 | SEC-010 | Security & secrets | Audit rows had no target id; `meta` now carries project, user and link ids |
 | SEC-011 | Security & secrets | Cross-dialect SQL export sent the schema to an external LLM; AI export removed |
+| SEC-001 | Security & secrets | `/auth/login`, `/auth/register` and `/auth/change-password` had no rate limit or lockout; per-address limit plus a per-account lockout (`AUTH_RATE_LIMIT`, `AUTH_MAX_FAILURES`, `AUTH_LOCKOUT_MINUTES`) |
+| SEC-004 | Security & secrets | Any signed-in user could open DB connections via `/introspect`; inline connections now need the editor role in some project (or admin) |
+| SEC-005 | Security & secrets | Session cookie had no `Secure` flag; new `COOKIE_SECURE` setting, `auto` by default (follows HTTPS behind a trusted proxy) |
+| SEC-006 | Security & secrets | Login skipped argon2 for unknown emails; an unknown email is now checked against a dummy hash |
+| SEC-007 | Security & secrets | No CSP or security headers; nginx sends a CSP, nosniff, frame and referrer headers and the API sends its own (the CSP was not exercised in a real browser) |
+| SEC-008 | Security & secrets | Compose defaulted the DB password and bound every port to all interfaces; `POSTGRES_PASSWORD` is now required and ports bind to `127.0.0.1` by default |
+| SEC-009 | Security & secrets | Audit log omitted sign-in, failed sign-in, own password change and saved-connection changes; all now recorded |
+| SEC-012 | Security & secrets | `SESSION_SECRET` defaulted to a known value and signed nothing; the setting is deleted |
+| SEC-013 | Security & secrets | Server image ran as root; now `USER node` |
+| SEC-014 | Security & secrets | Google Fonts request leaked visitor IPs; Inter, JetBrains Mono and Manrope are self-hosted |
+| SEC-015 | Security & secrets | Net guard classified 6to4, Teredo and `::a.b.c.d` IPv6 as public; now reserved |
+| SEC-016 | Security & secrets | Note Markdown rendered raw HTML via `rehype-raw`; the plugin and dependency are removed |
+| SEC-017 | Security & secrets | An editor could repoint a saved connection's host and receive its stored password; host, port or dialect changes now need the password typed again |
+| SEC-018 | Security & secrets | Concurrent first-run `/auth/register` calls could create several admins; count and insert run under an advisory lock |
+| SEC-019 | Security & secrets | Error handler returned raw `err.message` for 5xx other than 500; every status 500 and above is hidden |
+| SEC-020 | Security & secrets | Logout left the previous user's local diagram copies and id maps; logout clears the Dexie database and `qubdidb.*` keys, then reloads |
 | REPO-001 | Repository | CI never built or tested `server/`; now lint, typecheck, build and tests on Postgres |
 | REPO-002 | Repository | `.dockerignore` let `server/node_modules` and `server/.env` into images; patterns match at any depth |
 | REPO-003 | Repository | ESLint ignored `server/`; it now has its own config and `npm run lint` |
 | REPO-004 | Repository | Publish workflow built only the UI image; it now also pushes the server image |
+| REPO-005 | Repository | 6 high braces advisories in the Tailwind 3 toolchain; migrated to Tailwind 4 |
 | REPO-006 | Repository | Server `drizzle-orm` high advisory; upgraded to 0.45.4, vitest to 5 |
 | REPO-007 | Repository | Workflow actions pinned to mutable tags; all pinned to full commit SHAs |
 | REPO-009 | Repository | CI ran no `npm audit`, secret scan or Docker build; all three added |
 | REPO-010 | Repository | README and configs listed a missing `OLD/` folder; removed |
-| REPO-012 | Repository | Node 24 in CI but 22 in the server image and README; all on 24, `engines` added |
 | REPO-013 | Repository | Placeholder `public/sitemap.xml` while robots blocks all; sitemap deleted |
 | REPO-014 | Repository | Root and server versions disagreed; release-please now bumps both |
 | REPO-015 | Repository | UI image baked the backend URL at build; now served at run time via `/config.js` |
+| REPO-031 | Repository | `tailwind.config.js` used CommonJS; now an ES module |
 | SRV-001 | Server | `PUT /diagrams/:id` was last-write-wins; a save on an older copy now gets 409 |
 | SRV-002 | Server | Version fetch loaded every snapshot; now filtered in SQL |
 | SRV-003 | Server | No snapshot retention; `SNAPSHOT_KEEP` prunes at publish and on a timer |
@@ -149,11 +94,66 @@
 | SRV-017 | Server | Production ran through `tsx`; now compiled and run with `node` |
 | SRV-018 | Server | Any editor could change others' comments; now author or owner only |
 | SRV-019 | Server | `audit_log` had no index, read route or retention; all three added |
+| SRV-020 | Server | Async SSE listeners rejected unhandled on a DB error and ended the process; they now log and close the stream, and a failed check is not cached |
+| SRV-021 | Server | Every save read the full latest snapshot and returned the full content; writers now read snapshot metadata only and the save reply omits `content` |
+| SRV-022 | Server | `GET /diagrams` loaded full snapshot content for viewer stats; stats are computed in SQL and `limit` / `offset` are accepted (the editor does not page yet) |
+| SRV-023 | Server | `drift_reports` had no retention; maintenance keeps the newest `DRIFT_REPORT_KEEP` (50) per diagram |
+| SRV-024 | Server | Per-process rate limits, SSE caps and drift guard are now documented as requiring one server process (README, code comments) |
+| SRV-025 | Server | Racing creates returned 500 on a unique violation; users, projects and saved connections now answer 409 |
+| SRV-026 | Server | Audit purge was one unbatched DELETE returning every id; now batched and counted |
+| SRV-027 | Server | Share-link revoke could write the audit row twice; the UPDATE is conditional and audits only on change |
+| SRV-028 | Server | Overview counted distinct diagram ids over every snapshot; now `exists` per diagram |
+| SRV-029 | Server | Lint routes loaded the full diagram row; they select `lintConfig`, and `content` only for the working copy |
+| SRV-030 | Server | Share-link list was uncapped and dead links and expired locks never purged; list capped at 200, maintenance purges expired locks and links dead 30+ days (`DEAD_LINK_KEEP_DAYS`) |
+| SRV-031 | Server | Editor comment routes unregistered; the public viewer read stays and the tests insert rows directly |
+| SRV-033 | Server | No test covered the maintenance stop or SIGTERM shutdown; shutdown extracted to `shutdown.ts` and both are tested |
 | CLI-001 | Client | Autosave serialised the whole diagram on every change; now compares a revision number |
 | CLI-002 | Client | Leave-page save used plain `fetch`; now sent with `keepalive` |
 | CLI-003 | Client | SQL import validators for MySQL, SQLite and SQL Server were stubs; now implemented |
 | CLI-004 | Client | Star-us dialog and its GIF were never opened; deleted with i18n keys |
 | CLI-005 | Client | Hard-coded `qubdi.example` in template pages; host now from `VITE_HOST_URL` |
+| CLI-007 | Client | A 404 on save cleared the remote id and later saves failed `no_project`; the id is kept unless a project is known to re-create it |
+| CLI-008 | Client | Unsent local edits were never uploaded after reload; on open the copy is compared with the server and marked pending |
+| CLI-009 | Client | Keepalive size check counted UTF-16 characters; now measured in UTF-8 bytes |
+| CLI-010 | Client | A 423 on save retried forever; the editor now goes read-only |
+| CLI-011 | Client | API `fetch` had no timeout; every request now aborts after 30 s |
+| CLI-012 | Client | Lock release raced the final keepalive save; it now waits for that save to settle |
+| CLI-013 | Client | Change-password dialog now has a description; create-relationship opts out with `aria-describedby={undefined}` |
+| CLI-014 | Client | Monaco worker imports for TypeScript, CSS and HTML removed (Monaco itself still emits an unused `ts.worker` file) |
+| CLI-015 | Client | Vendor chunks for react, xyflow and radix; the bundle visualizer runs only with `ANALYZE=1` |
+| CLI-016 | Client | Old cross-dialect PG exporter cluster and its test deleted; `escapeSQLComment` kept |
+| CLI-017 | Client | Dead comments API methods and `comments-store` deleted |
+| CLI-018 | Client | Members dialog is read-only; the member-write API methods are gone |
+| CLI-019 | Client | Unused combobox component deleted |
+| CLI-020 | Client | `applyIds` and its test deleted |
+| CLI-021 | Client | Unused zod diagram-diff schemas deleted |
+| CLI-022 | Client | Unread cloud and analytics flags, their Docker/nginx plumbing and `github_repo_opened` removed |
+| CLI-023 | Client | The five exports named (`applyFilterOnDiagram`, `quickValidate`, `getNeighbors`, `listVersions`, `listDriftReports`) removed; the audit did not list the others |
+| CLI-024 | Client | Clipboard hook test updated to the side-by-side paste offset |
+| CLI-025 | Client | `flex-shrink-0` and `flex-grow` renamed to `shrink-0` and `grow` |
+| CLI-026 | Client | `shadow-sm`, `rounded-sm` and `outline-none` renamed to `shadow-xs`, `rounded-xs` and `outline-hidden` |
+| CLI-027 | Client | Ctrl+O opens the project list when the server is enabled |
+| CLI-028 | Client | Orphaned `menu.actions.new` and `menu.actions.browse` keys deleted from every locale |
+
+| REPO-011 | Repository | GitHub star iframe from ghbtns.com removed from the templates page |
+| REPO-012 | Repository | Both images back on `node:24-alpine` (pinned by digest); Dependabot no longer bumps the Node major |
+| REPO-016 | Repository | dompurify overridden to a fixed release; the CI audit now fails on high as well as critical |
+| REPO-017 | Repository | `framer-motion`, `timeago.js`, `@dnd-kit/core` and `@dnd-kit/utilities` declared in `package.json` |
+| REPO-018 | Repository | `@radix-ui/react-collapsible`, `@uidotdev/usehooks`, `motion` and `timeago-react` removed |
+| REPO-019 | Repository | Compose passes the remaining server settings through, with the server's own defaults |
+| REPO-020 | Repository | Publishing now needs a `verify` job (lint, typecheck, editor and server tests) to pass first |
+| REPO-021 | Repository | Unused `id-token: write` removed from the UI publish job |
+| REPO-022 | Repository | Discord link removed and the Email link fixed in `CONTRIBUTING.md` |
+| REPO-023 | Repository | `VITE_APP_URL`, `LINT_RATE_LIMIT` and `OUTBOUND_RATE_LIMIT` documented in the env examples |
+| REPO-024 | Repository | Server `@types/node` bumped to 24; build-tasks doc says Node 24 |
+| REPO-025 | Repository | `dependabot[bot]` added to the CLA allowlist |
+| REPO-026 | Repository | `tailwindcss-animate` moved to `devDependencies` |
+| REPO-027 | Repository | Images pinned by digest; the compose file added to Dependabot |
+| REPO-028 | Repository | Pre-commit hook also lints the server |
+| REPO-029 | Repository | CI and publish lint the editor once; the build step no longer lints again |
+| REPO-030 | Repository | Root vitest `exclude` spreads `configDefaults.exclude` |
+| REPO-032 | Repository | Stale `CommentMarker` leftover dropped; workspace URLs section marked done |
+| REPO-033 | Repository | Nested esbuild under `drizzle-kit` overridden to `^0.25.12`; `npm audit` clean |
 
 ---
 
@@ -161,7 +161,7 @@
 
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
-| CLI-006 | Client | 10 lint suppressions remain in app code: parser AST typing, hook deps, third-party classes | Each has a stated reason; removing them risks behaviour |
+| CLI-006 | Client | 7 lint suppressions remain in app code: parser AST `any` typing, hook deps | Each has a stated reason; removing them risks behaviour |
 
 ---
 
@@ -185,3 +185,8 @@
 | 7 | 2026-10-14 | 0 new, 19 fixed, 0 dropped; 2 findings re-anchored |
 | 8 | 2026-10-14 | 0 new, 12 fixed, 0 dropped; 2 findings narrowed |
 | 9 | 2026-10-17 | 53 new (1 Crit, 11 dead code), 1 fixed, 1 reopened (REPO-011), 0 dropped; 6 re-anchored |
+| 10 | 2026-10-17 | 6 new, 2 fixed, 1 reopened (REPO-012), 0 dropped; REPO-016 narrowed to Low; 5 re-anchored |
+| 11 | 2026-10-17 | 0 new, 22 fixed (all open Client findings), 0 dropped; CLI-014 and CLI-023 fixed in part, see their rows |
+| 12 | 2026-10-17 | 0 new, 13 fixed (all open Server findings but SRV-032), 0 dropped; SRV-022 fixed in part, see its row |
+| 13 | 2026-10-17 | 0 new, 19 fixed (all open Repository findings but REPO-008), 0 dropped |
+| 14 | 2026-10-17 | 0 new, 16 fixed (all open Security findings), 0 dropped; SEC-007 not tested in a browser |

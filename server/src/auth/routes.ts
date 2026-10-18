@@ -1,4 +1,4 @@
-import { count, eq } from 'drizzle-orm';
+import { count, eq, sql } from 'drizzle-orm';
 import type {
     FastifyPluginAsync,
     FastifyReply,
@@ -9,7 +9,14 @@ import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { users } from '../db/schema.js';
-import { hashPassword, verifyPassword } from './password.js';
+import { createFailureThrottle } from '../lib/failure-throttle.js';
+import { isUniqueViolation } from '../lib/pg-errors.js';
+import {
+    hashPassword,
+    verifyAgainstNobody,
+    verifyPassword,
+} from './password.js';
+import { weakPassword } from './password-rules.js';
 import {
     createSession,
     destroyOtherSessions,
@@ -17,19 +24,59 @@ import {
     SESSION_COOKIE,
 } from './sessions.js';
 
-const credentials = z.object({
+// advisory-lock key for the first-run sign-up (distinct from the admin-set lock)
+const FIRST_USER_LOCK = 7_301_001;
+
+// Sign-in only checks that something was sent: the rules for a good password
+// apply when one is SET (see weakPassword), never here, so people who chose a
+// password under older rules can still get in.
+const signIn = z.object({
     email: z.string().trim().toLowerCase().email(),
-    password: z.string().min(8).max(200),
+    password: z.string().min(1).max(200),
+});
+
+const newAccount = z.object({
+    email: z.string().trim().toLowerCase().email(),
+    password: z.string().max(200),
 });
 
 const changePassword = z.object({
     currentPassword: z.string(),
-    newPassword: z.string().min(8).max(200),
+    newPassword: z.string().max(200),
 });
 
 export const authRoutes =
     (db: Db, config: Config): FastifyPluginAsync =>
     async (app) => {
+        // per client address; an account's failures are counted separately
+        // below, so one account cannot be guessed at from many addresses
+        const limit = {
+            config: {
+                rateLimit: {
+                    max: config.authRateLimit,
+                    timeWindow: '1 minute',
+                },
+            },
+        };
+        const failures = createFailureThrottle({
+            max: config.authMaxFailures,
+            windowMs: config.authLockoutMinutes * 60_000,
+        });
+        const locked = (reply: FastifyReply, key: string) => {
+            const wait = failures.blockedFor(key);
+            if (wait === 0) return false;
+            reply
+                .code(429)
+                .header('retry-after', wait)
+                .send({ error: 'too_many_attempts' });
+            return true;
+        };
+
+        const cookieSecure = (req: FastifyRequest) =>
+            config.cookieSecure === 'auto'
+                ? req.protocol === 'https'
+                : config.cookieSecure;
+
         const startSession = async (
             req: FastifyRequest,
             reply: FastifyReply,
@@ -45,6 +92,7 @@ export const authRoutes =
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
+                secure: cookieSecure(req),
                 expires: expiresAt,
             });
         };
@@ -52,65 +100,106 @@ export const authRoutes =
         // lets the UI show the first-run "create admin" form only when it applies
         app.get('/setup-status', async () => {
             const [{ value }] = await db.select({ value: count() }).from(users);
-            return { needsSetup: value === 0 };
+            // the form needs the minimum length to tick its checklist as people type
+            return {
+                needsSetup: value === 0,
+                passwordMinLength: config.passwordMinLength,
+            };
         });
 
-        app.post('/register', async (req, reply) => {
-            const body = credentials.parse(req.body);
-            const [{ value: existing }] = await db
-                .select({ value: count() })
-                .from(users);
-            const isFirst = existing === 0;
-            // accounts are created by an admin; only the very first one may self-register
-            if (!isFirst) {
-                return reply.code(403).send({ error: 'signup_disabled' });
+        app.post('/register', limit, async (req, reply) => {
+            const body = newAccount.parse(req.body);
+            const weak = weakPassword(config, body.password, body.email);
+            if (weak) return reply.code(400).send(weak);
+            const passwordHash = await hashPassword(body.password);
+            // Counting and inserting happen under one lock: two first-run
+            // sign-ups arriving together would both see an empty table and
+            // both become admin.
+            const result = await db.transaction(async (tx) => {
+                await tx.execute(
+                    sql`select pg_advisory_xact_lock(${FIRST_USER_LOCK})`
+                );
+                const [{ value: existing }] = await tx
+                    .select({ value: count() })
+                    .from(users);
+                // accounts are created by an admin; only the very first one may self-register
+                if (existing > 0) return { error: 'signup_disabled' as const };
+                const taken = await tx
+                    .select({ id: users.id })
+                    .from(users)
+                    .where(eq(users.email, body.email));
+                if (taken.length > 0) return { error: 'email_taken' as const };
+                const [created] = await tx
+                    .insert(users)
+                    .values({ email: body.email, passwordHash, isAdmin: true })
+                    .returning();
+                return { user: created };
+            }).catch((err: unknown) => {
+                if (isUniqueViolation(err)) {
+                    return { error: 'email_taken' as const };
+                }
+                throw err;
+            });
+            if ('error' in result) {
+                return reply
+                    .code(result.error === 'signup_disabled' ? 403 : 409)
+                    .send({ error: result.error });
             }
-            const taken = await db
-                .select({ id: users.id })
-                .from(users)
-                .where(eq(users.email, body.email));
-            if (taken.length > 0) {
-                return reply.code(409).send({ error: 'email_taken' });
-            }
-            const [user] = await db
-                .insert(users)
-                .values({
-                    email: body.email,
-                    passwordHash: await hashPassword(body.password),
-                    isAdmin: isFirst,
-                })
-                .returning();
+            const { user } = result;
             await audit(db, { userId: user.id, action: 'user.register' });
             await startSession(req, reply, user.id);
             return reply.code(201).send({
                 id: user.id,
                 email: user.email,
                 isAdmin: user.isAdmin,
+                mustChangePassword: false,
             });
         });
 
-        app.post('/login', async (req, reply) => {
-            const body = credentials.parse(req.body);
+        app.post('/login', limit, async (req, reply) => {
+            const body = signIn.parse(req.body);
+            // unknown emails are counted too, so the lockout reveals nothing
+            const key = `login:${body.email}`;
+            if (locked(reply, key)) return;
             const [user] = await db
                 .select()
                 .from(users)
                 .where(eq(users.email, body.email));
-            if (
-                !user ||
-                !(await verifyPassword(user.passwordHash, body.password))
-            ) {
+            const ok = user
+                ? await verifyPassword(user.passwordHash, body.password)
+                : await verifyAgainstNobody(body.password);
+            if (!user || !ok) {
+                failures.recordFailure(key);
+                // only for an account that exists: guesses at made-up emails
+                // would otherwise fill the log
+                if (user) {
+                    await audit(db, {
+                        userId: user.id,
+                        action: 'user.sign_in_failed',
+                    });
+                }
                 return reply.code(401).send({ error: 'invalid_credentials' });
             }
+            failures.reset(key);
             if (!user.isActive) {
                 return reply.code(403).send({ error: 'account_disabled' });
             }
             await startSession(req, reply, user.id);
-            return { id: user.id, email: user.email, isAdmin: user.isAdmin };
+            await audit(db, { userId: user.id, action: 'user.sign_in' });
+            return {
+                id: user.id,
+                email: user.email,
+                isAdmin: user.isAdmin,
+                mustChangePassword: user.mustChangePassword,
+            };
         });
 
         app.post('/logout', async (req, reply) => {
             await destroySession(db, req.cookies[SESSION_COOKIE]);
-            reply.clearCookie(SESSION_COOKIE, { path: '/' });
+            reply.clearCookie(SESSION_COOKIE, {
+                path: '/',
+                secure: cookieSecure(req),
+            });
             return { ok: true };
         });
 
@@ -121,11 +210,13 @@ export const authRoutes =
             return req.user;
         });
 
-        app.post('/change-password', async (req, reply) => {
+        app.post('/change-password', limit, async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
             }
             const body = changePassword.parse(req.body);
+            const key = `password:${req.user.id}`;
+            if (locked(reply, key)) return;
             const [user] = await db
                 .select()
                 .from(users)
@@ -133,17 +224,35 @@ export const authRoutes =
             if (
                 !(await verifyPassword(user.passwordHash, body.currentPassword))
             ) {
+                failures.recordFailure(key);
+                await audit(db, {
+                    userId: user.id,
+                    action: 'user.sign_in_failed',
+                });
                 return reply.code(403).send({ error: 'wrong_password' });
             }
+            // the current password was right, so saying why the new one is not
+            // acceptable tells a stranger nothing
+            if (body.newPassword === body.currentPassword) {
+                return reply.code(400).send({ error: 'same_password' });
+            }
+            const weak = weakPassword(config, body.newPassword, user.email);
+            if (weak) return reply.code(400).send(weak);
+            failures.reset(key);
             await db
                 .update(users)
-                .set({ passwordHash: await hashPassword(body.newPassword) })
+                .set({
+                    passwordHash: await hashPassword(body.newPassword),
+                    // their own password now, not the temporary one
+                    mustChangePassword: false,
+                })
                 .where(eq(users.id, user.id));
             await destroyOtherSessions(
                 db,
                 user.id,
                 req.cookies[SESSION_COOKIE]
             );
+            await audit(db, { userId: user.id, action: 'user.password_change' });
             return { ok: true };
         });
     };

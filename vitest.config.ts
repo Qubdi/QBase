@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
@@ -11,7 +11,8 @@ export default defineConfig({
         // already allow 20 s.
         testTimeout: 20_000,
         globals: true,
-        exclude: ['node_modules/**', 'server/**'],
+        // the server has its own vitest run; keep the defaults (dist, .git, ...)
+        exclude: [...configDefaults.exclude, 'server/**'],
         environment: 'happy-dom',
         setupFiles: './src/test/setup.ts',
         coverage: {

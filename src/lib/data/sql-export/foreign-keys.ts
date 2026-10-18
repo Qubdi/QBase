@@ -117,8 +117,8 @@ export function collectForeignKeys({
             )
         ) {
             // in the order of the primary key
-            const ordered = pk.map(
-                (p) => members.find((i) => ones[i].refField.id === p.id)!
+            const ordered = pk.map((p) =>
+                members.find((i) => ones[i].refField.id === p.id)!
             );
             composite.set(Math.min(...members), ordered);
             members.forEach((i) => merged.add(i));

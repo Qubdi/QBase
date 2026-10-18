@@ -14,8 +14,6 @@ export const id_ID: LanguageTranslation = {
         menu: {
             actions: {
                 actions: 'Aksi',
-                new: 'Baru...',
-                browse: 'Semua database...',
                 save: 'Simpan',
                 import: 'Impor Database',
                 export_sql: 'Ekspor SQL',

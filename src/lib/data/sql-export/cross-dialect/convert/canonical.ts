@@ -13,11 +13,7 @@ import {
 } from '@/lib/domain/db-custom-type';
 
 export type SourceDialect =
-    | 'postgresql'
-    | 'mysql'
-    | 'sqlserver'
-    | 'sqlite'
-    | 'generic';
+    'postgresql' | 'mysql' | 'sqlserver' | 'sqlite' | 'generic';
 export type TargetDialect = 'postgresql' | 'mysql' | 'sqlserver' | 'sqlite';
 
 export const sourceDialectOf = (

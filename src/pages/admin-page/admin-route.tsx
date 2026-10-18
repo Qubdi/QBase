@@ -23,14 +23,12 @@ export const adminRoute: RouteObject = {
             index: true,
             element: <Navigate to={adminPath(DEFAULT_ADMIN_SECTION)} replace />,
         },
-        ...ADMIN_SECTION_IDS.map(
-            (id): RouteObject => ({
-                path: id,
-                async lazy() {
-                    const { AdminSection } = await import('./admin-section');
-                    return { element: <AdminSection id={id} /> };
-                },
-            })
-        ),
+        ...ADMIN_SECTION_IDS.map((id): RouteObject => ({
+            path: id,
+            async lazy() {
+                const { AdminSection } = await import('./admin-section');
+                return { element: <AdminSection id={id} /> };
+            },
+        })),
     ],
 };

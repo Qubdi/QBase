@@ -1,6 +1,13 @@
 import { Input } from '@/components/input/input';
 import type { DBTable } from '@/lib/domain';
-import { FileType2, X, SquarePlus, CircleDotDashed } from 'lucide-react';
+import {
+    FileType2,
+    X,
+    SquarePlus,
+    CircleDotDashed,
+    Table2,
+    View,
+} from 'lucide-react';
 import React, {
     useEffect,
     useState,
@@ -13,7 +20,6 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/scroll-area/scroll-area';
 import { Button } from '@/components/button/button';
 import { ColorPicker } from '@/components/color-picker/color-picker';
-import { Separator } from '@/components/separator/separator';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useUpdateTable } from '@/hooks/use-update-table';
 import { useTranslation } from 'react-i18next';
@@ -211,7 +217,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
             <div
                 ref={containerRef}
                 className={cn(
-                    'flex z-50 border-slate-500 dark:border-slate-700 flex-col border-2 bg-slate-50 dark:bg-slate-950 rounded-lg shadow-lg absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-auto transition-all duration-100 ease-out',
+                    'flex z-50 flex-col overflow-hidden rounded-xl border border-primary bg-card ring-2 ring-primary/25 shadow-lg absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-auto transition-all duration-100 ease-out',
                     {
                         'opacity-100 scale-100': isVisible,
                         'opacity-0 scale-95': !isVisible,
@@ -226,11 +232,28 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="h-2 cursor-move rounded-t-[6px]"
-                    style={{ backgroundColor: color }}
-                ></div>
-                <div className="group flex h-9 cursor-move items-center justify-between gap-2 bg-slate-200 px-2 dark:bg-slate-900">
+                    className="group flex h-12 shrink-0 cursor-move items-center justify-between gap-2.5 border-b px-3"
+                    // the same wash of the table's colour as the table header
+                    style={{
+                        backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${color} 20%, transparent), color-mix(in srgb, ${color} 6%, transparent))`,
+                    }}
+                >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
+                        {table.isView ? (
+                            <span
+                                className="flex size-7 shrink-0 items-center justify-center rounded-lg border-[1.5px] border-dashed"
+                                style={{ borderColor: color, color }}
+                            >
+                                <View className="size-4" />
+                            </span>
+                        ) : (
+                            <span
+                                className="flex size-7 shrink-0 items-center justify-center rounded-lg text-white"
+                                style={{ backgroundColor: color }}
+                            >
+                                <Table2 className="size-4" />
+                            </span>
+                        )}
                         {supportsSchemas && !isCreatingNewSchema && (
                             <SelectBox
                                 options={schemaOptions}
@@ -241,7 +264,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                                 placeholder={
                                     defaultSchemaName || 'Select schema'
                                 }
-                                className="h-6 min-h-6 w-20 shrink-0 rounded-sm border-input bg-background py-0 pl-2 pr-0.5 text-sm"
+                                className="h-7 min-h-7 w-20 shrink-0 rounded-md border-input bg-background/80 py-0 pl-2 pr-0.5 text-sm"
                                 popoverClassName="w-[200px]"
                                 commandOnMouseDown={(e) => e.stopPropagation()}
                                 commandOnClick={(e) => e.stopPropagation()}
@@ -268,7 +291,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                                     setNewSchemaName(e.target.value)
                                 }
                                 placeholder={`Enter schema name${defaultSchemaName ? ` (e.g. ${defaultSchemaName})` : ''}`}
-                                className="h-6 w-28 shrink-0 rounded-sm border-input bg-background text-sm"
+                                className="h-7 w-28 shrink-0 rounded-md border-input bg-background/80 text-sm"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         handleCreateNewSchema();
@@ -282,7 +305,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                         )}
                         <Input
                             ref={inputRef}
-                            className="h-6 flex-1 rounded-sm border-input bg-background text-sm"
+                            className="h-7 flex-1 rounded-md border-input bg-background/80 text-[13.5px] font-semibold"
                             placeholder="Table name"
                             value={tableName}
                             onChange={(e) =>
@@ -294,7 +317,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="size-6 p-0 text-slate-500 hover:bg-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                            className="size-6 p-0 text-slate-500 hover:bg-primary-foreground hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                             onClick={openTableInEditor}
                         >
                             <CircleDotDashed className="size-4" />
@@ -302,7 +325,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="size-6 p-0 hover:bg-slate-300 dark:hover:bg-slate-700"
+                            className="size-6 p-0 text-slate-500 hover:bg-primary-foreground hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                             onClick={onClose}
                         >
                             <X className="size-4" />
@@ -310,7 +333,10 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                     </div>
                 </div>
 
-                <ScrollArea ref={scrollAreaRef} className="nodrag flex-1 p-2">
+                <ScrollArea
+                    ref={scrollAreaRef}
+                    className="nodrag flex-1 px-1.5 py-1"
+                >
                     {table.fields.map((field) => (
                         <div key={field.id} ref={setFieldRef(field.id)}>
                             <TableEditModeField
@@ -323,8 +349,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                     ))}
                 </ScrollArea>
 
-                <Separator />
-                <div className="flex cursor-move items-center justify-between p-2">
+                <div className="flex shrink-0 cursor-move items-center justify-between border-t bg-muted/30 px-3 py-2">
                     <div className="flex items-center gap-2">
                         {!table.isView ? (
                             <>
@@ -342,7 +367,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                         )}
                         <Button
                             variant="outline"
-                            className="h-8 p-2 text-xs"
+                            className="h-8 bg-background p-2 text-xs"
                             onClick={handleAddField}
                         >
                             <FileType2 className="mr-1 h-4" />

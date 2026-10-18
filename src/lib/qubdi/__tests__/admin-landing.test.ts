@@ -2,8 +2,18 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { RemoteUser } from '../api';
 import { consumeAdminLanding, resetAdminLanding } from '../admin-landing';
 
-const admin: RemoteUser = { id: '1', email: 'a@x.io', isAdmin: true };
-const member: RemoteUser = { id: '2', email: 'b@x.io', isAdmin: false };
+const admin: RemoteUser = {
+    id: '1',
+    email: 'a@x.io',
+    isAdmin: true,
+    mustChangePassword: false,
+};
+const member: RemoteUser = {
+    id: '2',
+    email: 'b@x.io',
+    isAdmin: false,
+    mustChangePassword: false,
+};
 
 describe('admin landing', () => {
     beforeEach(() => sessionStorage.clear());

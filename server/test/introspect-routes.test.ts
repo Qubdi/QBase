@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { savedConnections } from '../src/db/schema.js';
+import { auditLog, savedConnections } from '../src/db/schema.js';
 import { CryptoBox } from '../src/introspect/crypto-box.js';
 import { defaultIntrospectorFactory } from '../src/introspect/routes.js';
 import type {
@@ -108,6 +108,23 @@ describe('introspect HTTP layer (fake driver)', () => {
         }
     });
 
+    it('keeps inline connections for people who may write in a project', async () => {
+        const viewer = await registerUser(ctx.app, 'inline-viewer@example.com');
+        await grant(ctx.app, viewer, 'viewer');
+        const nobody = await registerUser(ctx.app, 'inline-nobody@example.com');
+        const before = calls.length;
+        for (const who of [viewer, nobody]) {
+            for (const url of ['/introspect/catalog', '/introspect']) {
+                const res = await post(who, url, { connection: conn() });
+                expect(res.statusCode, `${who.email} ${url}`).toBe(403);
+            }
+        }
+        // nothing was opened for them
+        expect(calls.length).toBe(before);
+        expect((await post(bob, '/introspect/catalog', { connection: conn() })).statusCode).toBe(200);
+        expect((await post(alice, '/introspect/catalog', { connection: conn() })).statusCode).toBe(200);
+    });
+
     it('returns the catalog and closes the connection afterwards', async () => {
         const before = calls.length;
         const res = await post(alice, '/introspect/catalog', { connection: conn() });
@@ -205,6 +222,7 @@ describe('introspect HTTP layer (fake driver)', () => {
             );
             try {
                 const u = await registerUser(leaky.app, 'leaky@example.com');
+                await grant(leaky.app, u, 'editor');
                 const res = await leaky.app.inject({
                     method: 'POST',
                     url: '/introspect/catalog',
@@ -274,6 +292,7 @@ describe('introspect HTTP layer (fake driver)', () => {
             );
             try {
                 const u = await registerUser(allowed.app, 'allowed@example.com');
+                await grant(allowed.app, u, 'editor');
                 const res = await allowed.app.inject({
                     method: 'POST',
                     url: '/introspect/catalog',
@@ -437,6 +456,52 @@ describe('introspect HTTP layer (fake driver)', () => {
             expect(row.ownerId).toBeNull();
         });
 
+        it('records creating, changing and deleting a connection in the audit log', async () => {
+            const make = await ctx.app.inject({
+                method: 'POST',
+                url: '/introspect/connections',
+                headers: as(bob),
+                payload: { ...conn(), name: 'Audited connection', projectId },
+            });
+            expect(make.statusCode).toBe(201);
+            const id = make.json().id as string;
+            const change = await ctx.app.inject({
+                method: 'PUT',
+                url: `/introspect/connections/${id}`,
+                headers: as(bob),
+                payload: { ...conn(), password: undefined, name: 'Audited connection' },
+            });
+            expect(change.statusCode).toBe(200);
+            const gone = await ctx.app.inject({
+                method: 'DELETE',
+                url: `/introspect/connections/${id}`,
+                headers: as(bob),
+            });
+            expect(gone.statusCode).toBe(204);
+            const rows = (await ctx.db.select().from(auditLog)).filter((r) =>
+                r.action.startsWith('connection.')
+            );
+            const mine = rows.filter(
+                (r) =>
+                    r.userId === bob.id &&
+                    (r.meta as { name?: string } | null)?.name ===
+                        'Audited connection'
+            );
+            expect(mine.map((r) => r.action)).toEqual([
+                'connection.create',
+                'connection.update',
+                'connection.delete',
+            ]);
+            for (const r of mine) {
+                expect(r.meta).toEqual({
+                    projectId,
+                    name: 'Audited connection',
+                });
+                // never the password or host
+                expect(JSON.stringify(r.meta)).not.toContain(conn().password);
+            }
+        });
+
         describe('editing', () => {
             let editId: string;
             const edit = (u: TestUser, id: string, payload: object) =>
@@ -467,18 +532,58 @@ describe('introspect HTTP layer (fake driver)', () => {
                 const res = await edit(
                     bob,
                     editId,
-                    withoutPassword({ name: 'renamed', host: '93.184.216.35', database: 'shop2', port: 5433 })
+                    withoutPassword({ name: 'renamed', database: 'shop2', user: 'reader2', ssl: false })
                 );
                 expect(res.statusCode).toBe(200);
                 expect(res.json()).toMatchObject({
                     id: editId,
                     name: 'renamed',
-                    host: '93.184.216.35',
                     database: 'shop2',
-                    port: 5433,
+                    user: 'reader2',
                 });
                 expect(res.body).not.toContain('p@ss-w0rd-SECRET');
                 expect(await storedPassword(editId)).toBe('p@ss-w0rd-SECRET');
+            });
+
+            it('needs the password typed again to point the connection somewhere else', async () => {
+                const before = await storedPassword(editId);
+                for (const move of [
+                    { host: '93.184.216.35' },
+                    { port: 5433 },
+                    { dialect: 'sqlserver' },
+                ]) {
+                    const res = await edit(bob, editId, withoutPassword({ name: 'renamed', ...move }));
+                    expect(res.statusCode, JSON.stringify(move)).toBe(400);
+                    expect(res.json().error).toBe('password_required');
+                }
+                // nothing moved, and the stored password is untouched
+                const [row] = await ctx.db
+                    .select()
+                    .from(savedConnections)
+                    .where(eq(savedConnections.id, editId));
+                expect(row.host).toBe(conn().host);
+                expect(await storedPassword(editId)).toBe(before);
+
+                // the same host in another case, or the default port written out, is not a move
+                const same = await edit(
+                    bob,
+                    editId,
+                    withoutPassword({ name: 'renamed', host: conn().host.toUpperCase(), port: 5432 })
+                );
+                expect(same.statusCode).toBe(200);
+
+                // with the password it may move; the new target is checked as usual
+                const moved = await edit(bob, editId, {
+                    ...conn(),
+                    name: 'renamed',
+                    host: '93.184.216.35',
+                    password: 'typed-again',
+                });
+                expect(moved.statusCode).toBe(200);
+                expect(moved.json().host).toBe('93.184.216.35');
+                // put it back for the tests that follow
+                const back = await edit(bob, editId, { ...conn(), name: 'renamed', password: 'p@ss-w0rd-SECRET' });
+                expect(back.statusCode).toBe(200);
             });
 
             it('replaces the password when a new one is sent, and never returns it', async () => {
@@ -599,6 +704,7 @@ describe('introspect end to end against the real sample database', () => {
         const blocked = await createTestApp({}, { factory: defaultIntrospectorFactory }, false);
         try {
             const u = await registerUser(blocked.app, 'blocked@example.com');
+            await grant(blocked.app, u, 'editor');
             const res = await blocked.app.inject({
                 method: 'POST',
                 url: '/introspect/catalog',

@@ -162,7 +162,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                     .map((option) => (
                         <span
                             key={option.value}
-                            className={`inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border py-0.5 pl-2 pr-1 text-xs font-medium text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${oneLine ? 'mx-0.5' : ''}`}
+                            className={`inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border py-0.5 pl-2 pr-1 text-xs font-medium text-foreground transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 ${oneLine ? 'mx-0.5' : ''}`}
                         >
                             <span>{option.label}</span>
                             {!readonly ? (
@@ -171,7 +171,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                         e.preventDefault();
                                         handleSelect(option.value);
                                     }}
-                                    className="flex items-center rounded-sm px-px text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground"
+                                    className="flex items-center rounded-xs px-px text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground"
                                 >
                                     <Cross2Icon />
                                 </span>
@@ -261,7 +261,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                         {multiple && (
                             <div
                                 className={cn(
-                                    'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                                    'mr-2 flex h-4 w-4 items-center justify-center rounded-xs border border-primary',
                                     isSelected
                                         ? 'bg-primary text-primary-foreground'
                                         : 'opacity-50 [&_svg]:invisible'
@@ -326,7 +326,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                             className={cn(
                                 'items-center gap-1 overflow-hidden text-sm',
                                 multiple
-                                    ? 'flex flex-grow flex-wrap'
+                                    ? 'flex grow flex-wrap'
                                     : 'inline-flex whitespace-nowrap'
                             )}
                         >

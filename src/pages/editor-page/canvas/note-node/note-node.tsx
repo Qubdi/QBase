@@ -12,7 +12,6 @@ import type { CanvasEvent } from '@/context/canvas-context/canvas-context';
 import { useTheme } from '@/hooks/use-theme';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { getIsOldSafari } from '@/safari-compat';
 
 export interface NoteNodeProps extends NodeProps {
@@ -177,7 +176,7 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                 {editMode ? (
                     <textarea
                         ref={textareaRef}
-                        className="nodrag size-full resize-none overflow-auto border-none bg-transparent p-0 text-sm leading-relaxed text-gray-700 outline-none dark:text-gray-300"
+                        className="nodrag size-full resize-none overflow-auto border-none bg-transparent p-0 text-sm leading-relaxed text-gray-700 outline-hidden dark:text-gray-300"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
@@ -197,7 +196,6 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                                 remarkPlugins={
                                     getIsOldSafari() ? [] : [remarkGfm]
                                 }
-                                rehypePlugins={[rehypeRaw]}
                                 components={{
                                     h1: (props) => (
                                         <h1

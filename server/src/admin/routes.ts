@@ -21,6 +21,7 @@ import {
 } from './diagrams.js';
 import { adminStats, statsQuery } from './stats.js';
 import { activityQuery, listActivity } from '../audit/activity.js';
+import { exportActivityCsv, exportQuery } from '../audit/export.js';
 import {
     audit,
     auditMany,
@@ -28,6 +29,9 @@ import {
     type AuditMeta,
 } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
+import { weakPassword } from '../auth/password-rules.js';
+import type { Config } from '../config.js';
+import { isUniqueViolation } from '../lib/pg-errors.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
 import { emitLinkChanged } from '../events.js';
@@ -61,13 +65,14 @@ const memberParam = z.object({
 
 const createUserBody = z.object({
     email: z.string().trim().toLowerCase().email(),
-    password: z.string().min(8).max(200),
+    // the rules are checked in the route (weakPassword), so the answer can list them
+    password: z.string().max(200),
     isAdmin: z.boolean().default(false),
 });
 
 const updateUserBody = z
     .object({
-        password: z.string().min(8).max(200).optional(),
+        password: z.string().max(200).optional(),
         isAdmin: z.boolean().optional(),
         isActive: z.boolean().optional(),
     })
@@ -159,7 +164,7 @@ const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
 
 /** Everything under /admin is admin-only; non-admins get a 404, not a 403. */
 export const adminRoutes =
-    (db: Db): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'passwordMinLength'>): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -184,6 +189,32 @@ export const adminRoutes =
         app.get('/audit', async (req) =>
             listActivity(db, activityQuery.parse(req.query))
         );
+
+        // the same filters as the list, as a CSV file (newest first, at most
+        // EXPORT_MAX_ROWS rows). An admin taking a copy of who did what is
+        // itself logged.
+        app.get('/audit/export', async (req, reply) => {
+            const { csv, rows, truncated } = await exportActivityCsv(
+                db,
+                exportQuery.parse(req.query)
+            );
+            await audit(db, {
+                userId: req.user!.id,
+                action: 'audit.export',
+                meta: { rows },
+            });
+            const day = new Date().toISOString().slice(0, 10);
+            return reply
+                .header('content-type', 'text/csv; charset=utf-8')
+                .header(
+                    'content-disposition',
+                    `attachment; filename="qubdidb-activity-${day}.csv"`
+                )
+                .header('cache-control', 'no-store')
+                .header('x-row-count', String(rows))
+                .header('x-truncated', String(truncated))
+                .send(csv);
+        });
 
         // ---- users ----
 
@@ -256,6 +287,8 @@ export const adminRoutes =
 
         app.post('/users', async (req, reply) => {
             const body = createUserBody.parse(req.body);
+            const weak = weakPassword(config, body.password, body.email);
+            if (weak) return reply.code(400).send(weak);
             const taken = await db
                 .select({ id: users.id })
                 .from(users)
@@ -263,14 +296,27 @@ export const adminRoutes =
             if (taken.length > 0) {
                 return reply.code(409).send({ error: 'email_taken' });
             }
-            const [user] = await db
-                .insert(users)
-                .values({
-                    email: body.email,
-                    passwordHash: await hashPassword(body.password),
-                    isAdmin: body.isAdmin,
-                })
-                .returning();
+            const passwordHash = await hashPassword(body.password);
+            let user;
+            try {
+                [user] = await db
+                    .insert(users)
+                    .values({
+                        email: body.email,
+                        passwordHash,
+                        // the password is the admin's choice, so the person
+                        // picks their own at first sign-in
+                        mustChangePassword: true,
+                        isAdmin: body.isAdmin,
+                    })
+                    .returning();
+            } catch (err) {
+                // two requests passed the check above: the constraint decides
+                if (isUniqueViolation(err)) {
+                    return reply.code(409).send({ error: 'email_taken' });
+                }
+                throw err;
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'user.create',
@@ -298,7 +344,18 @@ export const adminRoutes =
             if (body.isAdmin !== undefined) patch.isAdmin = body.isAdmin;
             if (body.isActive !== undefined) patch.isActive = body.isActive;
             if (body.password !== undefined) {
+                // the rules compare with the account's own email
+                const [account] = await db
+                    .select({ email: users.email })
+                    .from(users)
+                    .where(eq(users.id, id));
+                if (!account)
+                    return reply.code(404).send({ error: 'not_found' });
+                const weak = weakPassword(config, body.password, account.email);
+                if (weak) return reply.code(400).send(weak);
                 patch.passwordHash = await hashPassword(body.password);
+                // a reset is a temporary password, unless the admin set their own
+                patch.mustChangePassword = id !== req.user!.id;
             }
             // the check and the write happen under one lock, so two admins
             // demoting each other at once cannot leave nobody
@@ -330,7 +387,8 @@ export const adminRoutes =
                 await destroyOtherSessions(db, id, undefined);
             }
             const statusChanged =
-                body.isActive !== undefined && body.isActive !== target.isActive;
+                body.isActive !== undefined &&
+                body.isActive !== target.isActive;
             // what this request actually changed (a password counts every time)
             const changed: NonNullable<AuditMeta['changed']> = [];
             if (body.password !== undefined) changed.push('password');
@@ -427,7 +485,8 @@ export const adminRoutes =
                           : true
                 );
                 const changingIds = changing.map((u) => u.id);
-                if (changingIds.length === 0) return { changed: [] as string[] };
+                if (changingIds.length === 0)
+                    return { changed: [] as string[] };
 
                 // admins who can sign in are lost to a disable or a delete;
                 // someone else must remain
@@ -563,7 +622,11 @@ export const adminRoutes =
         app.delete('/diagrams/:id/share-links/:linkId', async (req, reply) => {
             const { id, linkId } = linkParam.parse(req.params);
             const [link] = await db
-                .select({ id: shareLinks.id })
+                .select({
+                    id: shareLinks.id,
+                    access: shareLinks.access,
+                    createdAt: shareLinks.createdAt,
+                })
                 .from(shareLinks)
                 .where(
                     and(eq(shareLinks.id, linkId), eq(shareLinks.diagramId, id))
@@ -573,7 +636,7 @@ export const adminRoutes =
             // revoking at once leave one row
             const revoked = await db
                 .update(shareLinks)
-                .set({ revokedAt: new Date() })
+                .set({ revokedAt: new Date(), tokenEnc: null })
                 .where(
                     and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt))
                 )
@@ -583,7 +646,11 @@ export const adminRoutes =
                     userId: req.user!.id,
                     action: 'share.revoke',
                     diagramId: id,
-                    meta: { linkId },
+                    meta: {
+                        linkId,
+                        access: link.access,
+                        madeAt: link.createdAt.toISOString(),
+                    },
                 });
             }
             emitLinkChanged(linkId);
@@ -642,10 +709,22 @@ export const adminRoutes =
             if (taken.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
-            const [p] = await db
-                .insert(projects)
-                .values({ ...body, slug: check.slug, createdBy: req.user!.id })
-                .returning();
+            let p;
+            try {
+                [p] = await db
+                    .insert(projects)
+                    .values({
+                        ...body,
+                        slug: check.slug,
+                        createdBy: req.user!.id,
+                    })
+                    .returning();
+            } catch (err) {
+                if (isUniqueViolation(err)) {
+                    return reply.code(409).send({ error: 'name_taken' });
+                }
+                throw err;
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.create',
@@ -680,11 +759,19 @@ export const adminRoutes =
                     return reply.code(409).send({ error: 'name_taken' });
                 }
             }
-            const [p] = await db
-                .update(projects)
-                .set(slug ? { ...body, slug } : body)
-                .where(eq(projects.id, id))
-                .returning();
+            let p;
+            try {
+                [p] = await db
+                    .update(projects)
+                    .set(slug ? { ...body, slug } : body)
+                    .where(eq(projects.id, id))
+                    .returning();
+            } catch (err) {
+                if (isUniqueViolation(err)) {
+                    return reply.code(409).send({ error: 'name_taken' });
+                }
+                throw err;
+            }
             if (!p) return reply.code(404).send({ error: 'not_found' });
             await audit(db, {
                 userId: req.user!.id,

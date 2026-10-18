@@ -114,6 +114,34 @@ describe('describeActivity', () => {
             expect(sentence({ action, ...target })).toBe(expected);
         });
 
+        it.each([
+            ['user.sign_in', 'anna@corp.io signed in'],
+            [
+                'user.sign_in_failed',
+                'anna@corp.io had a failed sign-in or password check',
+            ],
+            ['user.password_change', 'anna@corp.io changed their password'],
+        ])('%s', (action, expected) => {
+            expect(sentence({ action })).toBe(expected);
+        });
+
+        it('names a saved connection and its project', () => {
+            expect(
+                sentence({
+                    action: 'connection.create',
+                    projectName: 'Shop',
+                    meta: { name: 'Prod replica' },
+                })
+            ).toBe('anna@corp.io saved the connection Prod replica in Shop');
+            expect(
+                sentence({
+                    action: 'connection.delete',
+                    projectName: null,
+                    meta: null,
+                })
+            ).toBe('anna@corp.io deleted the connection a connection');
+        });
+
         it('says what an update changed', () => {
             expect(
                 sentence({
@@ -231,9 +259,26 @@ describe('describeActivity', () => {
         });
 
         it('revokes and regenerates', () => {
+            // rows from before the link was described name no link
             expect(sentence({ action: 'share.revoke' })).toBe(
                 'anna@corp.io revoked a share link of Orders'
             );
+            expect(
+                sentence({
+                    action: 'share.revoke',
+                    meta: {
+                        access: 'signed_in',
+                        madeAt: new Date(
+                            Date.now() - 2 * 86_400_000
+                        ).toISOString(),
+                    },
+                })
+            ).toBe(
+                'anna@corp.io revoked a share link of Orders (signed-in users only, made 2 days ago)'
+            );
+            expect(
+                sentence({ action: 'share.revoke', meta: { access: 'off' } })
+            ).toBe('anna@corp.io revoked a share link of Orders (off)');
             expect(sentence({ action: 'share.regenerate' })).toBe(
                 'anna@corp.io made a new address for a share link of Orders'
             );
@@ -266,6 +311,18 @@ describe('describeActivity', () => {
         ])('%s', (action, expected) => {
             expect(sentence({ action })).toBe(expected);
         });
+
+        it('audit.export says how many rows the file held', () => {
+            expect(
+                sentence({ action: 'audit.export', meta: { rows: 120 } })
+            ).toBe('anna@corp.io exported the activity log (120 rows)');
+            expect(
+                sentence({ action: 'audit.export', meta: { rows: 1 } })
+            ).toBe('anna@corp.io exported the activity log (1 row)');
+            expect(sentence({ action: 'audit.export' })).toBe(
+                'anna@corp.io exported the activity log'
+            );
+        });
     });
 
     it('shows an action it has no wording for rather than hiding the row', () => {
@@ -284,7 +341,7 @@ describe('the filter options', () => {
             'diagrams',
             'sharing',
             'checks',
-            'comments',
+            'exports',
         ]);
     });
 });

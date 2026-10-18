@@ -1,8 +1,7 @@
 import type { Canon, SourceDialect, TargetDialect } from './canonical';
 
 export type CheckResult =
-    | { ok: true; sql: string }
-    | { ok: false; reason: string };
+    { ok: true; sql: string } | { ok: false; reason: string };
 
 type Token =
     | { t: 'id'; name: string }

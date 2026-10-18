@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 9</b></div>
-  <h1>14 open.</h1>
+  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 14</b></div>
+  <h1>1 open.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-17</span>
-    <span><b>method</b> static analysis · whole-tree read · import-graph dead-code scan · eslint, tsc -b, vitest run (197 files, 2042 tests) in a node:24 container · npm audit via registry bulk API (no Node on host) · server tests skipped (no Node on host) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (199 files, 2032 tests, all pass), vite build · server lint, typecheck, build, vitest (697 pass, 13 skipped) in a node:24 container on a throwaway Postgres · npm audit root and <code>server/</code> · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -30,25 +30,12 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">14 open &middot; 0 Crit &middot; 0 High &middot; 6 Med &middot; 8 Low. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 0 Crit &middot; 0 High &middot; 0 Med &middot; 1 Low. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">SRV-020</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Async SSE listeners reject unhandled on a DB error and exit the process</td><td><code>server/src/share/routes.ts:367</code></td><td class="wrap-cell">Wrap listener bodies in try/catch</td></tr>
-        <tr><td class="svc-name">SRV-021</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Every save reads the full latest snapshot and returns the full content</td><td><code>server/src/diagrams/service.ts:16</code></td><td class="wrap-cell">Select snapshot metadata only; drop <code>content</code> from the PUT reply</td></tr>
-        <tr><td class="svc-name">SRV-022</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>GET /diagrams</code> is unpaged and loads full snapshot content for viewer stats</td><td><code>server/src/diagrams/routes.ts:96</code></td><td class="wrap-cell">Page the list; compute viewer stats in SQL</td></tr>
-        <tr><td class="svc-name">SRV-023</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>drift_reports</code> has no retention; the report list loads full <code>jsonb</code></td><td><code>server/src/maintenance.ts:53</code></td><td class="wrap-cell">Prune old drift reports per diagram in <code>runMaintenance</code></td></tr>
-        <tr><td class="svc-name">SRV-024</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Rate limits, SSE caps and drift guard are per process; undocumented</td><td><code>server/src/lib/rate-key.ts:43</code></td><td class="wrap-cell">Document single-process deployment, or move state to Postgres</td></tr>
-        <tr><td class="svc-name">SRV-031</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Editor comment CRUD routes still registered and writable; no client calls them</td><td><code>server/src/comments/routes.ts:133</code></td><td class="wrap-cell">Unregister editor comment routes; keep the public viewer read</td></tr>
-        <tr><td class="svc-name">SRV-025</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Check-then-insert on unique names returns 500 when two requests race</td><td><code>server/src/admin/routes.ts:259</code></td><td class="wrap-cell">Map unique violation <code>23505</code> to 409</td></tr>
-        <tr><td class="svc-name">SRV-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Audit purge is one unbatched DELETE returning every deleted id</td><td><code>server/src/maintenance.ts:27</code></td><td class="wrap-cell">Delete in batches; return the row count only</td></tr>
-        <tr><td class="svc-name">SRV-027</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Editor share-link revoke can write the audit row twice</td><td><code>server/src/share/routes.ts:171</code></td><td class="wrap-cell">Add <code>isNull(revokedAt)</code> to the UPDATE; audit only on change</td></tr>
-        <tr><td class="svc-name">SRV-028</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Overview counts distinct diagram ids over every snapshot on each load</td><td><code>server/src/admin/stats.ts:105</code></td><td class="wrap-cell">Count with <code>exists</code> per diagram</td></tr>
-        <tr><td class="svc-name">SRV-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lint routes load the full diagram row to read <code>lintConfig</code></td><td><code>server/src/lint/routes.ts:68</code></td><td class="wrap-cell">Select <code>lintConfig</code> only; <code>content</code> only when needed</td></tr>
-        <tr><td class="svc-name">SRV-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Editor share-link list uncapped; expired locks and dead links never purged</td><td><code>server/src/share/routes.ts:102</code></td><td class="wrap-cell">Cap the list; purge expired locks and dead links</td></tr>
         <tr><td class="svc-name">SRV-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Version-history and drift-list endpoints have no client</td><td><code>server/src/diagrams/routes.ts:345</code></td><td class="wrap-cell">Remove them, or wire them to a UI</td></tr>
-        <tr><td class="svc-name">SRV-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No test covers the maintenance stop or SIGTERM shutdown</td><td><code>server/src/server.ts:34</code></td><td class="wrap-cell">Test <code>startMaintenance</code> stop and the shutdown path</td></tr>
       </tbody>
     </table>
   </div>
@@ -56,7 +43,7 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (19)</summary>
+  <details><summary>Fixed (32)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -80,6 +67,19 @@
         <tr><td class="svc-name">SRV-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Production ran through <code>tsx</code>; now compiled and run with <code>node</code></td></tr>
         <tr><td class="svc-name">SRV-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Any editor could change others' comments; now author or owner only</td></tr>
         <tr><td class="svc-name">SRV-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>audit_log</code> had no index, read route or retention; all three added</td></tr>
+        <tr><td class="svc-name">SRV-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Async SSE listeners rejected unhandled on a DB error and ended the process; they now log and close the stream, and a failed check is not cached</td></tr>
+        <tr><td class="svc-name">SRV-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Every save read the full latest snapshot and returned the full content; writers now read snapshot metadata only and the save reply omits <code>content</code></td></tr>
+        <tr><td class="svc-name">SRV-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>GET /diagrams</code> loaded full snapshot content for viewer stats; stats are computed in SQL and <code>limit</code> / <code>offset</code> are accepted (the editor does not page yet)</td></tr>
+        <tr><td class="svc-name">SRV-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>drift_reports</code> had no retention; maintenance keeps the newest <code>DRIFT_REPORT_KEEP</code> (50) per diagram</td></tr>
+        <tr><td class="svc-name">SRV-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Per-process rate limits, SSE caps and drift guard are now documented as requiring one server process (README, code comments)</td></tr>
+        <tr><td class="svc-name">SRV-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Racing creates returned 500 on a unique violation; users, projects and saved connections now answer 409</td></tr>
+        <tr><td class="svc-name">SRV-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Audit purge was one unbatched DELETE returning every id; now batched and counted</td></tr>
+        <tr><td class="svc-name">SRV-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-link revoke could write the audit row twice; the UPDATE is conditional and audits only on change</td></tr>
+        <tr><td class="svc-name">SRV-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Overview counted distinct diagram ids over every snapshot; now <code>exists</code> per diagram</td></tr>
+        <tr><td class="svc-name">SRV-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lint routes loaded the full diagram row; they select <code>lintConfig</code>, and <code>content</code> only for the working copy</td></tr>
+        <tr><td class="svc-name">SRV-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-link list was uncapped and dead links and expired locks never purged; list capped at 200, maintenance purges expired locks and links dead 30+ days (<code>DEAD_LINK_KEEP_DAYS</code>)</td></tr>
+        <tr><td class="svc-name">SRV-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Editor comment routes unregistered; the public viewer read stays and the tests insert rows directly</td></tr>
+        <tr><td class="svc-name">SRV-033</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No test covered the maintenance stop or SIGTERM shutdown; shutdown extracted to <code>shutdown.ts</code> and both are tested</td></tr>
       </tbody>
     </table>
   </div>

@@ -30,16 +30,19 @@ export interface PasteOptions {
     areaIds?: ReadonlySet<string>;
 }
 
-const OFFSET_X = 30;
-const OFFSET_Y = 50;
+// a table's width when it has not been resized, and the space left between a
+// paste and what it was copied from
+const DEFAULT_WIDTH = 224;
+const GAP = 40;
 
 const slot = (schema: string | null | undefined, name: string) =>
     `${schema ?? ''}|${name.toLowerCase()}`;
 
 /**
  * The tables to add for a paste. Every id is new, names are made unique
- * (`users` becomes `users_copy`, then `users_copy2`), and each paste lands a
- * little further down and right than the last so copies do not stack.
+ * (`users` becomes `users_copy`, then `users_copy2`), and each paste lands
+ * beside the copied tables, one slot further right each time, so copies never
+ * overlap the originals or each other.
  */
 export function planPaste(
     existing: Pick<DBTable, 'name' | 'schema'>[],
@@ -48,6 +51,12 @@ export function planPaste(
     if (!copied) return [];
     const step = copied.pastes + 1;
     copied.pastes = step;
+
+    const left = Math.min(...copied.tables.map((t) => t.x));
+    const right = Math.max(
+        ...copied.tables.map((t) => t.x + (t.width || DEFAULT_WIDTH))
+    );
+    const shiftX = (right - left + GAP) * step;
 
     const taken = new Set(existing.map((t) => slot(t.schema, t.name)));
 
@@ -67,8 +76,7 @@ export function planPaste(
             ...table,
             name,
             schema,
-            x: table.x + OFFSET_X * step,
-            y: table.y + OFFSET_Y * step,
+            x: table.x + shiftX,
             parentAreaId: inThisDiagram ? table.parentAreaId : null,
         };
     });

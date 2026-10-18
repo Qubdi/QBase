@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { comments, diagrams, snapshots } from '../db/schema.js';
-import { planCarryForward } from '../comments/targets.js';
+import { diagrams, snapshots } from '../db/schema.js';
 import { diagramHash } from '../lib/hash.js';
+import { snapshotStatsColumns } from './summary.js';
 import { emitPublish } from '../events.js';
 import { canWrite, type Role } from './permissions.js';
 
@@ -22,14 +22,34 @@ export async function latestSnapshot(
     return row;
 }
 
-/** The latest snapshot of each given diagram, in one query. */
-export async function latestSnapshots(
-    db: Db,
-    diagramIds: string[]
-): Promise<Map<string, SnapshotRow>> {
+/** The latest snapshot without its (large) content. */
+export async function latestSnapshotMeta(db: Db, diagramId: string) {
+    const [row] = await db
+        .select({
+            version: snapshots.version,
+            publishedAt: snapshots.publishedAt,
+            contentHash: snapshots.contentHash,
+        })
+        .from(snapshots)
+        .where(eq(snapshots.diagramId, diagramId))
+        .orderBy(desc(snapshots.version))
+        .limit(1);
+    return row;
+}
+
+/**
+ * What the list shows of each given diagram's latest snapshot: title, publish
+ * time and the stats computed in the database, never the content itself.
+ */
+export async function latestSnapshotListing(db: Db, diagramIds: string[]) {
     if (diagramIds.length === 0) return new Map();
     const rows = await db
-        .selectDistinctOn([snapshots.diagramId])
+        .selectDistinctOn([snapshots.diagramId], {
+            diagramId: snapshots.diagramId,
+            title: snapshots.title,
+            publishedAt: snapshots.publishedAt,
+            ...snapshotStatsColumns,
+        })
         .from(snapshots)
         .where(inArray(snapshots.diagramId, diagramIds))
         .orderBy(snapshots.diagramId, desc(snapshots.version));
@@ -41,18 +61,14 @@ export async function latestSnapshots(
  * ever get the latest published snapshot (or no content if nothing is published).
  */
 export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
-    const last = await latestSnapshot(db, d.id);
-    const base = {
-        id: d.id,
-        ownerId: d.ownerId,
-        projectId: d.projectId,
-        role,
-        publishedVersion: last?.version ?? null,
-        publishedAt: last?.publishedAt ?? null,
-    };
+    const common = { id: d.id, ownerId: d.ownerId, projectId: d.projectId, role };
     if (canWrite(role)) {
+        // a writer needs the snapshot's version and hash, not its content
+        const last = await latestSnapshotMeta(db, d.id);
         return {
-            ...base,
+            ...common,
+            publishedVersion: last?.version ?? null,
+            publishedAt: last?.publishedAt ?? null,
             title: d.title,
             content: d.content,
             updatedAt: d.updatedAt,
@@ -61,8 +77,11 @@ export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
                 !last || last.contentHash !== diagramHash(d.title, d.content),
         };
     }
+    const last = await latestSnapshot(db, d.id);
     return {
-        ...base,
+        ...common,
+        publishedVersion: last?.version ?? null,
+        publishedAt: last?.publishedAt ?? null,
         title: last?.title ?? d.title,
         content: last?.content ?? null,
         updatedAt: last?.publishedAt ?? d.updatedAt,
@@ -125,29 +144,6 @@ export async function publishSnapshot(
                 );
         }
 
-        // comments follow the diagram to the new version while their target
-        // exists; the rest are flagged as orphaned, never deleted
-        const existing = await tx
-            .select({
-                id: comments.id,
-                targetType: comments.targetType,
-                targetId: comments.targetId,
-            })
-            .from(comments)
-            .where(eq(comments.diagramId, diagramId));
-        const plan = planCarryForward(existing, d.content);
-        if (plan.carried.length > 0) {
-            await tx
-                .update(comments)
-                .set({ snapshotVersion: created.version, orphaned: false })
-                .where(inArray(comments.id, plan.carried));
-        }
-        if (plan.orphaned.length > 0) {
-            await tx
-                .update(comments)
-                .set({ orphaned: true })
-                .where(inArray(comments.id, plan.orphaned));
-        }
         return created;
     });
     if (row) emitPublish(diagramId, row.version);

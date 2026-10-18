@@ -1,7 +1,6 @@
 import { fixupConfigRules, fixupPluginRules } from '@eslint/compat';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import cssModules from 'eslint-plugin-css-modules';
-import tailwindcss from 'eslint-plugin-tailwindcss';
 import jsxA11Y from 'eslint-plugin-jsx-a11y';
 import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
@@ -35,7 +34,6 @@ export default [
             'plugin:@typescript-eslint/recommended',
             'plugin:react-hooks/recommended',
             'plugin:css-modules/recommended',
-            'plugin:tailwindcss/recommended',
             'plugin:prettier/recommended'
         )
     ),
@@ -43,7 +41,6 @@ export default [
         plugins: {
             'react-refresh': reactRefresh,
             'css-modules': fixupPluginRules(cssModules),
-            tailwindcss: fixupPluginRules(tailwindcss),
             'jsx-a11y': jsxA11Y,
         },
 
