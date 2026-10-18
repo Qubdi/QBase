@@ -212,3 +212,13 @@ Open questions:
   Checked by sampling every frame after a drop on the airbnb template: 1 frame with no lines before,
   0 in six runs after.
 - Keep: under reduced motion the rule is `transition: none !important` (a test guards it).
+
+## Leftovers from the eslint-plugin-react-hooks 7 update (optional)
+
+- [ ] Migrate the components the new React Compiler rules flag, then delete the four `react-hooks/*` lines
+      set to `off` in `eslint.config.mjs`. Measured on the update: 79 places in about 55 files, 64 of them
+      `set-state-in-effect` (mostly "reset the form when the dialog opens": the usual fix is to remount the
+      content with a `key`, or to derive the value instead of copying it into state), 13 `refs` (a ref read
+      while rendering, e.g. `server-autosave.tsx`, `use-cursor-list.ts`, `use-paged-list.ts`, `canvas.tsx`),
+      one `preserve-manual-memoization` and one `use-memo`. Do it a file at a time with its tests; each one
+      changes when effects run, so check the dialogs in a browser.
