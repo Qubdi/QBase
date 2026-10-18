@@ -16,6 +16,8 @@ import {
     verifyAgainstNobody,
     verifyPassword,
 } from './password.js';
+import { createMfa, mfaAvailable } from './mfa.js';
+import { mfaRoutes } from './mfa-routes.js';
 import { weakPassword } from './password-rules.js';
 import {
     createSession,
@@ -43,6 +45,9 @@ const newAccount = z.object({
 const changePassword = z.object({
     currentPassword: z.string(),
     newPassword: z.string().max(200),
+    // with two-factor on, changing the password needs a code (or a recovery code)
+    code: z.string().max(20).optional(),
+    recoveryCode: z.string().max(40).optional(),
 });
 
 export const authRoutes =
@@ -97,6 +102,8 @@ export const authRoutes =
             });
         };
 
+        const mfa = createMfa(db, config);
+
         // lets the UI show the first-run "create admin" form only when it applies
         app.get('/setup-status', async () => {
             const [{ value }] = await db.select({ value: count() }).from(users);
@@ -104,8 +111,16 @@ export const authRoutes =
             return {
                 needsSetup: value === 0,
                 passwordMinLength: config.passwordMinLength,
+                // whether the account menu offers two-factor at all
+                mfaAvailable: mfaAvailable(config),
             };
         });
+
+        if (config.mfaEnabled) {
+            await app.register(
+                mfaRoutes({ db, config, mfa, failures, locked, limit, startSession })
+            );
+        }
 
         app.post('/register', limit, async (req, reply) => {
             const body = newAccount.parse(req.body);
@@ -153,6 +168,7 @@ export const authRoutes =
                 email: user.email,
                 isAdmin: user.isAdmin,
                 mustChangePassword: false,
+                mfaEnabled: false,
             });
         });
 
@@ -184,6 +200,18 @@ export const authRoutes =
             if (!user.isActive) {
                 return reply.code(403).send({ error: 'account_disabled' });
             }
+            // password right, but there is a second step: no cookie yet, only
+            // a ticket for POST /auth/login/mfa
+            if (config.mfaEnabled && user.mfaEnabledAt) {
+                if (!config.secretsKey) {
+                    // codes cannot be checked without the key, so fail closed
+                    return reply.code(503).send({ error: 'mfa_unavailable' });
+                }
+                return {
+                    mfaRequired: true,
+                    challenge: await mfa.createChallenge(user.id),
+                };
+            }
             await startSession(req, reply, user.id);
             await audit(db, { userId: user.id, action: 'user.sign_in' });
             return {
@@ -191,6 +219,7 @@ export const authRoutes =
                 email: user.email,
                 isAdmin: user.isAdmin,
                 mustChangePassword: user.mustChangePassword,
+                mfaEnabled: false,
             };
         });
 
@@ -207,7 +236,11 @@ export const authRoutes =
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
             }
-            return req.user;
+            // the feature switched off server-wide reads as off
+            return {
+                ...req.user,
+                mfaEnabled: config.mfaEnabled && req.user.mfaEnabled,
+            };
         });
 
         app.post('/change-password', limit, async (req, reply) => {
@@ -238,6 +271,31 @@ export const authRoutes =
             }
             const weak = weakPassword(config, body.newPassword, user.email);
             if (weak) return reply.code(400).send(weak);
+            // a stolen session alone cannot change the password of an account
+            // that has a second factor
+            if (config.mfaEnabled && user.mfaEnabledAt) {
+                if (body.code === undefined && body.recoveryCode === undefined) {
+                    return reply.code(403).send({ error: 'mfa_code_required' });
+                }
+                if (!config.secretsKey) {
+                    return reply.code(503).send({ error: 'mfa_unavailable' });
+                }
+                const mfaKey = `mfa:${user.id}`;
+                if (locked(reply, mfaKey)) return;
+                const ok =
+                    body.code !== undefined
+                        ? await mfa.checkCode(user.id, body.code)
+                        : await mfa.spendRecoveryCode(user.id, body.recoveryCode!);
+                if (!ok) {
+                    failures.recordFailure(mfaKey);
+                    await audit(db, { userId: user.id, action: 'mfa.failed' });
+                    return reply.code(403).send({ error: 'invalid_code' });
+                }
+                failures.reset(mfaKey);
+                if (body.code === undefined) {
+                    await audit(db, { userId: user.id, action: 'mfa.recovery_used' });
+                }
+            }
             failures.reset(key);
             await db
                 .update(users)

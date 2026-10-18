@@ -12,6 +12,12 @@ export const AUDIT_ACTIONS = [
     'user.sign_in',
     'user.sign_in_failed',
     'user.password_change',
+    'mfa.enable',
+    'mfa.disable',
+    'mfa.reset',
+    'mfa.recovery_used',
+    'mfa.recovery_renew',
+    'mfa.failed',
     'project.create',
     'project.update',
     'project.delete',
@@ -43,7 +49,7 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number];
  * name; `test/admin-audit.test.ts` fails if one fits none.
  */
 export const AUDIT_GROUPS = {
-    users: ['user.'],
+    users: ['user.', 'mfa.'],
     // a saved connection belongs to a project
     projects: ['project.', 'connection.'],
     diagrams: ['diagram.'],

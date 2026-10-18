@@ -276,6 +276,7 @@ describe('setup-status', () => {
             expect(res.json()).toEqual({
                 needsSetup: true,
                 passwordMinLength: 14,
+                mfaAvailable: false,
             });
         } finally {
             await ctx.close();

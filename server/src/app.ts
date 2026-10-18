@@ -45,6 +45,7 @@ export const OPEN_TO_TEMPORARY_PASSWORD: ReadonlySet<string> = new Set([
     '/auth/change-password',
     '/auth/logout',
     '/auth/login',
+    '/auth/login/mfa',
     '/auth/register',
     '/auth/setup-status',
 ]);

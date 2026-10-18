@@ -204,6 +204,7 @@ describe('must change password', () => {
             'email',
             'id',
             'isAdmin',
+            'mfaEnabled',
             'mustChangePassword',
         ]);
     });

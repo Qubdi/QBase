@@ -61,7 +61,7 @@ describe('which share links are active', () => {
         ];
 
         // a signed-in visitor can open every link that can be opened at all
-        const visitor = { id: admin.id, email: admin.email, isAdmin: true, mustChangePassword: false };
+        const visitor = { id: admin.id, email: admin.email, isAdmin: true, mustChangePassword: false, mfaEnabled: false };
         const inCode = new Set(
             links
                 .filter((l) => checkLinkUsable(l, visitor).ok)

@@ -20,6 +20,8 @@ export interface SessionUser {
     isAdmin: boolean;
     /** the password is a temporary one: only changing it is allowed until then */
     mustChangePassword: boolean;
+    /** two-factor sign-in is on for this account */
+    mfaEnabled: boolean;
 }
 
 const hashToken = (token: string) =>
@@ -73,6 +75,7 @@ export async function getSessionUser(
             email: users.email,
             isAdmin: users.isAdmin,
             mustChangePassword: users.mustChangePassword,
+            mfaEnabledAt: users.mfaEnabledAt,
             seenLongAgo: sql<boolean>`${stale}`,
         })
         .from(sessions)
@@ -100,6 +103,7 @@ export async function getSessionUser(
         email: row.email,
         isAdmin: row.isAdmin,
         mustChangePassword: row.mustChangePassword,
+        mfaEnabled: row.mfaEnabledAt !== null,
     };
 }
 
