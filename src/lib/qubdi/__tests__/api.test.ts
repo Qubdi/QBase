@@ -5,6 +5,7 @@ import {
     errorMessage,
     KEEPALIVE_BODY_LIMIT,
     setSessionEndedHandler,
+    type RemoteUser,
 } from '../api';
 
 const jsonResponse = (status: number, body: unknown) =>
@@ -82,7 +83,7 @@ describe('qubdi api client', () => {
             'http://srv',
             fetchMock as unknown as typeof fetch
         );
-        const user = await api.login('a@b.co', 'password123');
+        const user = (await api.login('a@b.co', 'password123')) as RemoteUser;
         expect(user.email).toBe('a@b.co');
         const [url, init] = fetchMock.mock.calls[0] as unknown as [
             string,

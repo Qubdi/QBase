@@ -8,6 +8,7 @@ import {
     RefreshCw,
     Share2,
     ShieldCheck,
+    Smartphone,
     UserRound,
     Users,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/dropdown-menu/dropdown-menu';
 import { useDiagram } from '@/hooks/use-diagram';
+import { useMfaAvailable } from '@/hooks/use-mfa-available';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { getProjectId } from '@/lib/qubdi/remote-map';
 import { AuthDialog } from './auth-dialog';
@@ -30,6 +32,7 @@ import { MembersDialog } from './members-dialog';
 import { OPEN_RESYNC_EVENT } from './drift-dialog';
 import { ResyncDialog } from './resync-dialog';
 import { ShareDialog } from './share-dialog';
+import { TwoFactorDialog } from './two-factor-dialog';
 import { useWorkspace } from './workspace-context';
 
 export const AccountMenu: React.FC = () => {
@@ -41,6 +44,8 @@ export const AccountMenu: React.FC = () => {
     const [connectionsOpen, setConnectionsOpen] = useState(false);
     const [membersOpen, setMembersOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
+    const [twoFactorOpen, setTwoFactorOpen] = useState(false);
+    const mfaAvailable = useMfaAvailable(!!user);
     const [shareOpen, setShareOpen] = useState(false);
     const [resyncOpen, setResyncOpen] = useState(false);
 
@@ -140,6 +145,14 @@ export const AccountMenu: React.FC = () => {
                         <KeyRound className="mr-2 size-4" />
                         Change password
                     </DropdownMenuItem>
+                    {mfaAvailable || user.mfaEnabled ? (
+                        <DropdownMenuItem
+                            onClick={() => setTwoFactorOpen(true)}
+                        >
+                            <Smartphone className="mr-2 size-4" />
+                            Two-factor authentication
+                        </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => void logout()}>
                         <LogOut className="mr-2 size-4" />
@@ -169,6 +182,12 @@ export const AccountMenu: React.FC = () => {
                 open={passwordOpen}
                 onOpenChange={setPasswordOpen}
             />
+            {mfaAvailable || user.mfaEnabled ? (
+                <TwoFactorDialog
+                    open={twoFactorOpen}
+                    onOpenChange={setTwoFactorOpen}
+                />
+            ) : null}
         </>
     );
 };

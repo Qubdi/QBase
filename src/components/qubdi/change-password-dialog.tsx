@@ -11,6 +11,8 @@ import { Input } from '@/components/input/input';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { usePasswordMinLength } from '@/hooks/use-password-min-length';
+import { factorFrom } from '@/lib/qubdi/second-factor';
+import { CodeField } from './code-field';
 import { PasswordField } from './password-field';
 import { checkPassword } from '../../../shared/password';
 
@@ -35,6 +37,8 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 }) => {
     const [current, setCurrent] = useState('');
     const [next, setNext] = useState('');
+    // with two-factor on, a code (or a recovery code) goes with the change
+    const [factor, setFactor] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [done, setDone] = useState(false);
     const { user, logout } = useQubdi();
@@ -46,10 +50,15 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         e.preventDefault();
         setError(null);
         try {
-            await api.changePassword(current, next);
+            if (user?.mfaEnabled) {
+                await api.changePassword(current, next, factorFrom(factor));
+            } else {
+                await api.changePassword(current, next);
+            }
             setDone(true);
             setCurrent('');
             setNext('');
+            setFactor('');
             onChanged?.();
         } catch (err) {
             setError(errorMessage(err));
@@ -101,6 +110,15 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                         email={user?.email}
                         placeholder="New password"
                     />
+                    {user?.mfaEnabled ? (
+                        <CodeField
+                            value={factor}
+                            onChange={setFactor}
+                            either
+                            placeholder="Authenticator or recovery code"
+                            label="Authenticator or recovery code"
+                        />
+                    ) : null}
                     {error ? (
                         <p role="alert" className="text-sm text-red-500">
                             {error}

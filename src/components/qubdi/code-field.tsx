@@ -1,0 +1,50 @@
+import React from 'react';
+import { Input } from '@/components/input/input';
+
+export interface CodeFieldProps {
+    value: string;
+    onChange: (value: string) => void;
+    /** a recovery code is letters and a dash, not six digits */
+    recovery?: boolean;
+    /** takes either kind: the box where it does not matter which one is typed */
+    either?: boolean;
+    placeholder?: string;
+    autoFocus?: boolean;
+    label?: string;
+}
+
+/**
+ * Where a second factor is typed. For an authenticator code the phone's number
+ * pad opens and the browser or phone may offer the code it received
+ * (`one-time-code`); a recovery code is plain text.
+ */
+export const CodeField: React.FC<CodeFieldProps> = ({
+    value,
+    onChange,
+    recovery = false,
+    either = false,
+    placeholder,
+    autoFocus,
+    label,
+}) => (
+    <Input
+        type="text"
+        name={recovery ? 'recovery-code' : 'one-time-code'}
+        aria-label={
+            label ?? (recovery ? 'Recovery code' : 'Authenticator code')
+        }
+        placeholder={
+            placeholder ?? (recovery ? 'Recovery code' : '6-digit code')
+        }
+        autoComplete={recovery ? 'off' : 'one-time-code'}
+        inputMode={recovery || either ? 'text' : 'numeric'}
+        pattern={recovery || either ? undefined : '[0-9 ]*'}
+        maxLength={recovery || either ? 20 : 7}
+        autoCapitalize={recovery ? 'characters' : 'off'}
+        spellCheck={false}
+        autoFocus={autoFocus}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+    />
+);

@@ -12,6 +12,7 @@ import {
     setSessionEndedHandler,
     type RemoteUser,
     type RequestOptions,
+    type SecondFactor,
 } from '@/lib/qubdi/api';
 import { getEditorId } from '@/lib/qubdi/editor-id';
 import { QUBDI_BACKEND_ENABLED } from '@/lib/qubdi/config';
@@ -62,9 +63,20 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
     }, []);
 
     const login = useCallback(async (email: string, password: string) => {
-        setUser(await api.login(email, password));
+        const result = await api.login(email, password);
+        // password right, a code still to come: no session yet
+        if ('mfaRequired' in result) return { mfaChallenge: result.challenge };
+        setUser(result);
         setSessionEnded(false);
     }, []);
+
+    const loginMfa = useCallback(
+        async (challenge: string, factor: SecondFactor) => {
+            setUser(await api.loginMfa(challenge, factor));
+            setSessionEnded(false);
+        },
+        []
+    );
 
     const register = useCallback(async (email: string, password: string) => {
         setUser(await api.register(email, password));
@@ -149,13 +161,23 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
             user,
             sessionEnded,
             login,
+            loginMfa,
             register,
             logout,
             refreshUser,
             syncDiagram,
             remoteIdFor: getRemoteId,
         }),
-        [user, sessionEnded, login, register, logout, refreshUser, syncDiagram]
+        [
+            user,
+            sessionEnded,
+            login,
+            loginMfa,
+            register,
+            logout,
+            refreshUser,
+            syncDiagram,
+        ]
     );
 
     return (

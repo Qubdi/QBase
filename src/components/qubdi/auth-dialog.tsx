@@ -8,9 +8,11 @@ import {
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
-import { api, errorMessage } from '@/lib/qubdi/api';
+import { api, ApiError, errorMessage } from '@/lib/qubdi/api';
+import { codeDigits, isCode } from '@/lib/qubdi/second-factor';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { usePasswordMinLength } from '@/hooks/use-password-min-length';
+import { CodeField } from './code-field';
 import { PasswordField } from './password-field';
 import { checkPassword } from '../../../shared/password';
 
@@ -23,7 +25,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
     open,
     onOpenChange,
 }) => {
-    const { login, register } = useQubdi();
+    const { login, loginMfa, register } = useQubdi();
     // self-registration only exists on a brand-new server, to create its admin
     const [needsSetup, setNeedsSetup] = useState(false);
     const mode = needsSetup ? 'register' : 'login';
@@ -31,6 +33,10 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+    // the second step of signing in, once the password was right
+    const [challenge, setChallenge] = useState<string | null>(null);
+    const [recovery, setRecovery] = useState(false);
+    const [code, setCode] = useState('');
     const minLength = usePasswordMinLength(open);
     // the rules apply to a password being chosen, never to signing in
     const weak =
@@ -44,12 +50,31 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
             .catch(() => setNeedsSetup(false));
     }, [open]);
 
+    const close = (o: boolean) => {
+        if (!o) leaveCodeStep();
+        onOpenChange(o);
+    };
+
+    const leaveCodeStep = () => {
+        setChallenge(null);
+        setRecovery(false);
+        setCode('');
+    };
+
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
         setBusy(true);
         setError(null);
         try {
-            await (mode === 'login' ? login : register)(email, password);
+            const result =
+                mode === 'login'
+                    ? await login(email, password)
+                    : await register(email, password);
+            if (result && 'mfaChallenge' in result) {
+                setChallenge(result.mfaChallenge);
+                setPassword('');
+                return;
+            }
             setPassword('');
             onOpenChange(false);
         } catch (err) {
@@ -59,8 +84,102 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
         }
     };
 
+    const submitCode = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!challenge) return;
+        setBusy(true);
+        setError(null);
+        try {
+            await loginMfa(
+                challenge,
+                recovery
+                    ? { recoveryCode: code.trim() }
+                    : { code: codeDigits(code) }
+            );
+            leaveCodeStep();
+            onOpenChange(false);
+        } catch (err) {
+            // the ticket ran out or was used up: only the password can start again
+            if (err instanceof ApiError && err.code === 'invalid_challenge') {
+                leaveCodeStep();
+            }
+            setCode('');
+            setError(errorMessage(err));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    if (challenge) {
+        return (
+            <Dialog open={open} onOpenChange={close}>
+                <DialogContent className="max-w-sm" showClose>
+                    <DialogHeader>
+                        <DialogTitle>Two-factor authentication</DialogTitle>
+                        <DialogDescription>
+                            {recovery
+                                ? 'Enter one of your recovery codes. Each one works only once.'
+                                : 'Enter the 6-digit code your authenticator app shows for QubdiDB.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form
+                        onSubmit={submitCode}
+                        className="flex flex-col gap-3"
+                        data-testid="mfa-form"
+                    >
+                        <CodeField
+                            value={code}
+                            onChange={setCode}
+                            recovery={recovery}
+                            autoFocus
+                        />
+                        {error ? (
+                            <p role="alert" className="text-sm text-red-500">
+                                {error}
+                            </p>
+                        ) : null}
+                        <Button
+                            type="submit"
+                            disabled={
+                                busy ||
+                                (recovery ? !code.trim() : !isCode(code))
+                            }
+                        >
+                            Verify
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                setRecovery((r) => !r);
+                                setCode('');
+                                setError(null);
+                            }}
+                        >
+                            {recovery
+                                ? 'Use the authenticator app instead'
+                                : 'Use a recovery code instead'}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                leaveCodeStep();
+                                setError(null);
+                            }}
+                        >
+                            Back
+                        </Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={close}>
             <DialogContent className="max-w-sm" showClose>
                 <DialogHeader>
                     <DialogTitle>

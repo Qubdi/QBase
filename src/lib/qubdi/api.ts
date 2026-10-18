@@ -10,6 +10,23 @@ export interface RemoteUser {
     isAdmin: boolean;
     /** the password is a temporary one an admin chose: only changing it works until then */
     mustChangePassword: boolean;
+    /** signing in asks for a code from an authenticator app (absent = off) */
+    mfaEnabled?: boolean;
+}
+
+/** What POST /auth/login answers: signed in, or a ticket for the code step. */
+export type LoginResult = RemoteUser | { mfaRequired: true; challenge: string };
+
+/** One second factor: a code from the app, or one recovery code. */
+export type SecondFactor = { code: string } | { recoveryCode: string };
+
+/** The account's own two-factor state (GET /auth/mfa). */
+export interface MfaStatus {
+    /** the server offers it (switched on and has a key) */
+    available: boolean;
+    enabled: boolean;
+    enabledAt: string | null;
+    recoveryCodesLeft: number;
 }
 
 export type ProjectRole = 'editor' | 'viewer';
@@ -39,6 +56,8 @@ export interface AdminUser {
     lastActiveAt: string | null;
     /** number of projects the user is assigned to */
     projects: number;
+    /** signs in with an authenticator app as well as the password (absent = off) */
+    mfaEnabled?: boolean;
 }
 
 export type UserStatus = 'active' | 'disabled';
@@ -443,20 +462,58 @@ export function createApi(
 
     return {
         setupStatus: () =>
-            request<{ needsSetup: boolean; passwordMinLength: number }>(
-                'GET',
-                '/auth/setup-status'
-            ),
+            request<{
+                needsSetup: boolean;
+                passwordMinLength: number;
+                /** the server offers two-factor sign-in */
+                mfaAvailable?: boolean;
+            }>('GET', '/auth/setup-status'),
         register: (email: string, password: string) =>
             request<RemoteUser>('POST', '/auth/register', { email, password }),
         login: (email: string, password: string) =>
-            request<RemoteUser>('POST', '/auth/login', { email, password }),
+            request<LoginResult>('POST', '/auth/login', { email, password }),
+        /** The second step of signing in, with the ticket the password step gave. */
+        loginMfa: (challenge: string, factor: SecondFactor) =>
+            request<RemoteUser>('POST', '/auth/login/mfa', {
+                challenge,
+                ...factor,
+            }),
+        mfaStatus: () => request<MfaStatus>('GET', '/auth/mfa'),
+        /** A new secret, not yet on: the address for the QR code and the key to type. */
+        mfaSetup: () =>
+            request<{ secret: string; otpauthUrl: string }>(
+                'POST',
+                '/auth/mfa/setup',
+                {}
+            ),
+        /** Checks a code from the app, switches it on; the recovery codes come back once. */
+        mfaEnable: (code: string) =>
+            request<{ recoveryCodes: string[] }>('POST', '/auth/mfa/enable', {
+                code,
+            }),
+        mfaDisable: (password: string, factor: SecondFactor) =>
+            request<{ ok: true }>('POST', '/auth/mfa/disable', {
+                password,
+                ...factor,
+            }),
+        mfaNewRecoveryCodes: (password: string, code: string) =>
+            request<{ recoveryCodes: string[] }>(
+                'POST',
+                '/auth/mfa/recovery-codes',
+                { password, code }
+            ),
         logout: () => request<{ ok: true }>('POST', '/auth/logout'),
         me: () => request<RemoteUser>('GET', '/auth/me'),
-        changePassword: (currentPassword: string, newPassword: string) =>
+        changePassword: (
+            currentPassword: string,
+            newPassword: string,
+            /** asked for when the account has two-factor on */
+            factor?: SecondFactor
+        ) =>
             request<{ ok: true }>('POST', '/auth/change-password', {
                 currentPassword,
                 newPassword,
+                ...factor,
             }),
 
         listDiagrams: () => request<RemoteDiagramSummary[]>('GET', '/diagrams'),
@@ -512,6 +569,9 @@ export function createApi(
                 'DELETE',
                 `/admin/users/${id}/sessions`
             ),
+        /** Switches off a person's two-factor sign-in (lost phone) and signs them out. */
+        adminResetMfa: (id: string) =>
+            request<{ reset: boolean }>('POST', `/admin/users/${id}/mfa/reset`),
         /** `timeZone` makes a "day" on the chart the viewer's own. */
         adminStats: (timeZone?: string) =>
             request<AdminStats>(
@@ -794,6 +854,19 @@ export const errorMessage = (e: unknown): string => {
                 'Accounts are created by an admin. Ask yours for access.',
             invalid_request: 'Please check the values you entered.',
             wrong_password: 'Current password is incorrect.',
+            invalid_code:
+                'That code is not right. Check the app and try again.',
+            invalid_challenge:
+                'That sign-in took too long or had too many wrong codes. Enter your password again.',
+            mfa_code_required:
+                'Enter the code from your authenticator app (or a recovery code).',
+            mfa_unavailable:
+                'Two-factor sign-in cannot be used on this server right now (its encryption key is missing).',
+            already_enabled: 'Two-factor sign-in is already on.',
+            not_enabled: 'Two-factor sign-in is not on.',
+            setup_first: 'Start the set-up first.',
+            cannot_reset_self:
+                'Turn your own two-factor sign-in off from the account menu.',
             weak_password: 'That password does not meet the rules below.',
             same_password: 'Choose a password different from the current one.',
             password_change_required:
