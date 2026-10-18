@@ -117,6 +117,27 @@ export function describeActivity(item: ActivityItem): Segment[] {
         case 'user.password_change':
             return [who, text(' changed their password')];
 
+        case 'mfa.enable':
+            return [who, text(' turned on two-factor sign-in')];
+        case 'mfa.disable':
+            return [who, text(' turned off two-factor sign-in')];
+        case 'mfa.reset':
+            // the command-line reset has no admin: the row names the account itself
+            return item.userId && item.userId === item.targetUserId
+                ? [
+                      who,
+                      text(
+                          ' had two-factor sign-in reset from the command line'
+                      ),
+                  ]
+                : [who, text(' reset the two-factor sign-in of '), target];
+        case 'mfa.recovery_used':
+            return [who, text(' used a recovery code')];
+        case 'mfa.recovery_renew':
+            return [who, text(' made new recovery codes')];
+        case 'mfa.failed':
+            return [who, text(' entered a wrong two-factor code')];
+
         case 'project.create':
             return [who, text(' created the project '), project];
         case 'project.update':

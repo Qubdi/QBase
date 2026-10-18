@@ -121,8 +121,32 @@ describe('describeActivity', () => {
                 'anna@corp.io had a failed sign-in or password check',
             ],
             ['user.password_change', 'anna@corp.io changed their password'],
+            ['mfa.enable', 'anna@corp.io turned on two-factor sign-in'],
+            ['mfa.disable', 'anna@corp.io turned off two-factor sign-in'],
+            ['mfa.recovery_used', 'anna@corp.io used a recovery code'],
+            ['mfa.recovery_renew', 'anna@corp.io made new recovery codes'],
+            ['mfa.failed', 'anna@corp.io entered a wrong two-factor code'],
         ])('%s', (action, expected) => {
             expect(sentence({ action })).toBe(expected);
+        });
+
+        it('mfa.reset by an admin names the person', () => {
+            expect(sentence({ action: 'mfa.reset', ...target })).toBe(
+                'anna@corp.io reset the two-factor sign-in of bob@corp.io'
+            );
+        });
+
+        it('mfa.reset from the command line names no admin', () => {
+            expect(
+                sentence({
+                    action: 'mfa.reset',
+                    userId: 'u1',
+                    targetUserId: 'u1',
+                    targetUserEmail: 'anna@corp.io',
+                })
+            ).toBe(
+                'anna@corp.io had two-factor sign-in reset from the command line'
+            );
         });
 
         it('names a saved connection and its project', () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { KeyRound, Monitor, Plus, Trash2 } from 'lucide-react';
+import { KeyRound, Monitor, Plus, Smartphone, Trash2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { Badge } from '@/components/badge/badge';
 import {
@@ -88,6 +88,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
         checkPassword(newPassword, { minLength, email: resetFor?.email })
             .length > 0;
     const [deleteFor, setDeleteFor] = useState<AdminUser | null>(null);
+    const [mfaResetFor, setMfaResetFor] = useState<AdminUser | null>(null);
     const [sessionsFor, setSessionsFor] = useState<AdminUser | null>(null);
     // the people ticked for a bulk action, and the action waiting to be confirmed
     const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -404,17 +405,27 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        u.isActive
-                                                            ? 'outline'
-                                                            : 'destructive'
-                                                    }
-                                                >
-                                                    {u.isActive
-                                                        ? 'Active'
-                                                        : 'Disabled'}
-                                                </Badge>
+                                                <div className="flex flex-wrap gap-1">
+                                                    <Badge
+                                                        variant={
+                                                            u.isActive
+                                                                ? 'outline'
+                                                                : 'destructive'
+                                                        }
+                                                    >
+                                                        {u.isActive
+                                                            ? 'Active'
+                                                            : 'Disabled'}
+                                                    </Badge>
+                                                    {u.mfaEnabled ? (
+                                                        <Badge
+                                                            variant="secondary"
+                                                            title="Signs in with an authenticator app as well as the password"
+                                                        >
+                                                            2FA
+                                                        </Badge>
+                                                    ) : null}
+                                                </div>
                                             </TableCell>
                                             <TableCell className="whitespace-nowrap">
                                                 {u.lastLoginAt ? (
@@ -516,6 +527,23 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                     >
                                                         <KeyRound />
                                                     </Button>
+                                                    {u.mfaEnabled && !self ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-8"
+                                                            aria-label={`Reset two-factor of ${u.email}`}
+                                                            title="Reset two-factor (lost phone)"
+                                                            disabled={busy}
+                                                            onClick={() =>
+                                                                setMfaResetFor(
+                                                                    u
+                                                                )
+                                                            }
+                                                        >
+                                                            <Smartphone />
+                                                        </Button>
+                                                    ) : null}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -645,6 +673,45 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             }}
                         >
                             Delete user
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
+                open={mfaResetFor !== null}
+                onOpenChange={(o) => !o && setMfaResetFor(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Reset two-factor sign-in?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {mfaResetFor?.email} will be signed out everywhere
+                            and can then sign in with the password alone. Use
+                            this when they have lost their phone and their
+                            recovery codes. They can set it up again in the
+                            account menu.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                const target = mfaResetFor;
+                                if (target) {
+                                    void run(
+                                        () => api.adminResetMfa(target.id),
+                                        {
+                                            title: 'Two-factor reset',
+                                            description: `${target.email} was signed out everywhere.`,
+                                        }
+                                    );
+                                }
+                            }}
+                        >
+                            Reset two-factor
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
