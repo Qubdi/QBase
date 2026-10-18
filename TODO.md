@@ -79,8 +79,8 @@ Nothing started yet.
 - `CryptoBox` (AES-256-GCM, `v1:` prefix so the format can be versioned) encrypts the secret, but
   its key is `CONNECTION_KEY`, which is optional today and switches saved connections off when
   unset.
-- Nothing rate-limits `/auth/*`. A 6-digit code has only a million values, so attempt limits are
-  a hard requirement, not a nice-to-have.
+- `/auth/*` is rate-limited per address and locks an account after repeated failures (step 1).
+  A 6-digit code has only a million values, so the second step needs its own attempt limits too.
 - The admin Users page and `server/src/cli` are where "reset MFA" and the lost-device
   command-line fallback belong.
 
@@ -135,8 +135,9 @@ Nothing started yet.
 
 ### Steps (tick when shipped, note the commit)
 
-1. [ ] **Rate limit `/auth/*`** (login, change-password), with a per-account lockout. A gap today
-       and a prerequisite for the rest.
+1. [x] **Rate limit `/auth/*`** (login, change-password), with a per-account lockout. Already
+       shipped in `6d70667` (SEC-001): `AUTH_RATE_LIMIT`, `AUTH_MAX_FAILURES`, `AUTH_LOCKOUT_MINUTES`,
+       `createFailureThrottle`, tests in `server/test/auth.test.ts`. The second step reuses it.
 2. [ ] **Database and config:** the columns and two tables above, the key setting,
        `MFA_ENABLED` and `MFA_WINDOW_STEPS`, migration and tests.
 3. [ ] **TOTP core:** pure functions (new secret, `otpauth://` address, verify with the window and
