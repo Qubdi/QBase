@@ -29,6 +29,7 @@ import {
     type AuditMeta,
 } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
+import { createMfa } from '../auth/mfa.js';
 import { weakPassword } from '../auth/password-rules.js';
 import type { Config } from '../config.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
@@ -164,7 +165,13 @@ const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
 
 /** Everything under /admin is admin-only; non-admins get a 404, not a 403. */
 export const adminRoutes =
-    (db: Db, config: Pick<Config, 'passwordMinLength'>): FastifyPluginAsync =>
+    (
+        db: Db,
+        config: Pick<
+            Config,
+            'passwordMinLength' | 'mfaEnabled' | 'secretsKey' | 'mfaWindowSteps'
+        >
+    ): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -240,6 +247,7 @@ export const adminRoutes =
                     isActive: users.isActive,
                     createdAt: users.createdAt,
                     lastLoginAt: users.lastLoginAt,
+                    mfaEnabled: sql<boolean>`${users.mfaEnabledAt} is not null`,
                     projects: sql<number>`(select count(*)::int from project_members pm where pm.user_id = users.id)`,
                 })
                 .from(users)
@@ -546,6 +554,36 @@ export const adminRoutes =
                 unchanged: ids.length - outcome.changed.length,
             };
         });
+
+        // ---- a user's two-factor sign-in ----
+
+        // The lost-phone fallback after the recovery codes: clears the secret
+        // and the codes and signs that person out everywhere. Not for yourself:
+        // turning your own off needs your password and a code (account menu).
+        if (config.mfaEnabled) {
+            const mfa = createMfa(db, config);
+            app.post('/users/:id/mfa/reset', async (req, reply) => {
+                const { id } = idParam.parse(req.params);
+                if (id === req.user!.id) {
+                    return reply.code(400).send({ error: 'cannot_reset_self' });
+                }
+                const [target] = await db
+                    .select({ enabledAt: users.mfaEnabledAt })
+                    .from(users)
+                    .where(eq(users.id, id));
+                if (!target) return reply.code(404).send({ error: 'not_found' });
+                // nothing to reset is not an event
+                if (target.enabledAt === null) return { reset: false };
+                await mfa.clear(id);
+                await destroyOtherSessions(db, id, undefined);
+                await audit(db, {
+                    userId: req.user!.id,
+                    action: 'mfa.reset',
+                    meta: { targetUserId: id },
+                });
+                return { reset: true };
+            });
+        }
 
         // ---- a user's sessions ----
 
