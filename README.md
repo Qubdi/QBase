@@ -105,6 +105,26 @@ After the password, a person can be asked for the 6-digit code their authenticat
 - **A lost phone:** use a recovery code (each works once). Otherwise an admin opens *Admin > Users* and chooses *Reset two-factor* for that person, who is signed out everywhere and can sign in with the password alone. If the only admin is locked out, run on the server `npm run mfa:reset -- person@example.com` (from `server/`), or in Docker `docker compose exec server node dist/server/src/cli/mfa-reset.js person@example.com`.
 - **Activity log:** `mfa.enable`, `mfa.disable`, `mfa.reset`, `mfa.recovery_used`, `mfa.recovery_renew` and `mfa.failed`.
 
+### Upgrading the bundled database (PostgreSQL 16 to 18)
+
+The bundled `db` container now runs PostgreSQL 18 on a new volume, `qubdidb-pg18`. A PostgreSQL 16 data folder cannot be opened by 18, so your data moves by a dump and restore. Do it before you pull the new `docker-compose.yml`, or `git stash` it for the first step. Your old volume `qubdidb-data` is never modified, so you can go back until you delete it yourself.
+
+```bash
+# 1. with the OLD setup still running: dump everything (database, users, passwords)
+docker compose exec -T db pg_dumpall -U qubdidb > qubdidb-backup.sql
+# 2. stop it, then switch to the new docker-compose.yml (git pull)
+docker compose down
+docker compose up -d db                      # starts empty on the new volume
+# 3. restore, then start the rest
+docker compose exec -T db psql -U qubdidb -d postgres < qubdidb-backup.sql
+#    two "already exists" errors (the qubdidb role and database) are expected
+docker compose up -d --build server ui
+# 4. when you have checked everything works, remove the old data
+docker volume rm <project>_qubdidb-data      # `docker volume ls` shows the exact name
+```
+
+A fresh install needs none of this. If you use your own Postgres (`POSTGRES_HOST`), nothing changes: QubdiDB runs on 16 and newer.
+
 ## Tests
 
 ```bash

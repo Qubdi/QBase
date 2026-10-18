@@ -71,6 +71,15 @@ export default [
                 },
             ],
 
+            // eslint-plugin-react-hooks 7 adds rules from the React Compiler.
+            // The existing components were written before them (about 80
+            // places reset state in an effect or read a ref while rendering),
+            // so they stay off until those are migrated; see TODO.md.
+            'react-hooks/set-state-in-effect': 'off',
+            'react-hooks/refs': 'off',
+            'react-hooks/preserve-manual-memoization': 'off',
+            'react-hooks/use-memo': 'off',
+
             'react/no-unescaped-entities': 'off',
             'react/prop-types': 'off',
             '@typescript-eslint/no-empty-object-type': 'off',
