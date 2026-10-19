@@ -1,4 +1,4 @@
-# Ignore node_modules and build directories, at any depth (server/ has its own)
+# Ignore node_modules and build directories, at any depth (including server/)
 **/node_modules
 **/dist
 **/build
