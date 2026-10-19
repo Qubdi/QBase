@@ -13,6 +13,7 @@ import { useToast } from '@/components/toast/use-toast';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, errorMessage } from '@/lib/qubdi/api';
+import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import {
     publishStatusBadge,
     publishStatusText,
@@ -83,6 +84,9 @@ export const PublishControl: React.FC = () => {
     const publish = async () => {
         setBusy(true);
         try {
+            // the autosaver may be holding or sending edits: let it finish, so
+            // this save and its own never go out with the same base version
+            await flushPendingSave();
             const id = await syncDiagram(currentDiagram);
             if (autoPublish) await api.updateDiagram(id, { autoPublish });
             const res = await api.publish(id, note.trim() || undefined);

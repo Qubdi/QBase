@@ -18,6 +18,7 @@ import { createRevisionTracker } from '@/lib/qubdi/revision';
 import {
     registerFinalFlush,
     hasUnsavedChanges,
+    registerFlushNow,
     registerSaveDiscard,
     resetSaveStatus,
     setSaveStatus,
@@ -140,6 +141,7 @@ export const ServerAutosave: React.FC = () => {
                 .catch(() => undefined);
         }
         registerSaveDiscard(() => saver.discard());
+        registerFlushNow(() => saver.flush());
         const flushOnLeave = () => {
             leavingRef.current = true;
             const sent = saver.flush();
@@ -175,6 +177,7 @@ export const ServerAutosave: React.FC = () => {
             saverRef.current = null;
             registerFinalFlush(null);
             registerSaveDiscard(null);
+            registerFlushNow(null);
             resetSaveStatus();
         };
     }, [canSave, diagramId]);
