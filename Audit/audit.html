@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 1</b></div>
-  <h1>80 open across four lenses: 0 Crit, 3 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 2</b></div>
+  <h1>79 open across four lenses: 0 Crit, 3 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-19</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (211 files, 2140 tests, all pass) in a node:24 container · server eslint and tsc clean · npm audit root and <code>server/</code> (0 vulnerabilities) · server tests skipped: only the live dev Postgres was up · no secret read</span>
@@ -35,9 +35,9 @@
       <tbody>
         <tr><td>Security &amp; secrets</td><td>23</td><td>0</td><td>2</td><td>0</td><td>0</td></tr>
         <tr><td>Repository</td><td>22</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>Server</td><td>16</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Server</td><td>15</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
         <tr><td>Client</td><td>19</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
-        <tr><td>Total</td><td>80</td><td>0</td><td>3</td><td>0</td><td>0</td></tr>
+        <tr><td>Total</td><td>79</td><td>0</td><td>3</td><td>1</td><td>0</td></tr>
       </tbody>
     </table>
   </div>
@@ -58,7 +58,7 @@
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
     <p>Top: <code>GET /diagrams</code> loads every visible diagram, then sorts and pages in JS</p>
-    <p class="lbl">16 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p class="lbl">15 open &middot; 0 Crit &middot; 0 High &middot; 1 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
@@ -74,6 +74,7 @@
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
         <tr><td>1</td><td>2026-10-19</td><td class="wrap-cell">First pass on a fresh audit: 80 new, 0 fixed, 0 dropped</td></tr>
+        <tr><td>2</td><td>2026-10-19</td><td class="wrap-cell">1 fixed</td></tr>
       </tbody>
     </table>
   </div>

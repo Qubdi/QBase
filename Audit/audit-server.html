@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 1</b></div>
-  <h1>16 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 2</b></div>
+  <h1>15 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-19</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (211 files, 2140 tests, all pass) in a node:24 container · server eslint and tsc clean · npm audit root and <code>server/</code> (0 vulnerabilities) · server tests skipped: only the live dev Postgres was up · no secret read</span>
@@ -29,7 +29,7 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">16 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">15 open &middot; 1 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -42,7 +42,6 @@
         <tr><td class="svc-name">SRV-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Stored-diagram lint runs on up to 50 MB, bypassing 5 MB cap</td><td><code>server/src/lint/routes.ts:86</code></td><td class="wrap-cell">Refuse content over <code>LINT_BODY_LIMIT</code> before <code>lint</code></td></tr>
         <tr><td class="svc-name">SRV-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Drift signature ignores change details; a second type change stays dismissed</td><td><code>shared/drift.ts:132</code></td><td class="wrap-cell">Hash each change's fields into the signature</td></tr>
         <tr><td class="svc-name">SRV-008</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>pairUp</code> guesses when two left items share one right key</td><td><code>shared/reconcile.ts:158</code></td><td class="wrap-cell">Skip keys held by more than one left item</td></tr>
-        <tr><td class="svc-name">SRV-009</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>POST /lint</code> with a table lacking <code>fields</code> throws TypeError, returns 500</td><td><code>shared/schema-desc.ts:289</code></td><td class="wrap-cell">Validate table and field shape with zod</td></tr>
         <tr><td class="svc-name">SRV-010</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Project delete checks emptiness then deletes; concurrent create hits FK 500</td><td><code>server/src/admin/routes.ts:829</code></td><td class="wrap-cell">Catch 23503; return 409 <code>project_not_empty</code></td></tr>
         <tr><td class="svc-name">SRV-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Sign-up hashes the password before checking sign-up is closed</td><td><code>server/src/auth/routes.ts:129</code></td><td class="wrap-cell">Count users before hashing</td></tr>
         <tr><td class="svc-name">SRV-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Link regenerate update lacks <code>revokedAt</code> guard; races a concurrent revoke</td><td><code>server/src/share/routes.ts:228</code></td><td class="wrap-cell">Add <code>isNull(revokedAt)</code> to the update's where</td></tr>
@@ -57,11 +56,12 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (0)</summary>
+  <details><summary>Fixed (1)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SRV-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>POST /lint</code> with a table lacking <code>fields</code> throws TypeError, returns 500</td></tr>
       </tbody>
     </table>
   </div>

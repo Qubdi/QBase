@@ -1,6 +1,6 @@
 # QubdiDB — Audit
 
-**rev** 1 · **date** 2026-10-19
+**rev** 2 · **date** 2026-10-19
 **method** static analysis · whole-tree read · eslint, tsc -b, vitest run (211 files, 2140 tests, all pass) in a node:24 container · server eslint and tsc clean · npm audit root and `server/` (0 vulnerabilities) · server tests skipped: only the live dev Postgres was up · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -8,9 +8,9 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 23 | 0 | 2 | 0 | 0 |
 | Repository | 22 | 0 | 0 | 0 | 0 |
-| Server | 16 | 0 | 0 | 0 | 0 |
+| Server | 15 | 0 | 0 | 1 | 0 |
 | Client | 19 | 0 | 1 | 0 | 0 |
-| **Total** | 80 | 0 | 3 | 0 | 0 |
+| **Total** | 79 | 0 | 3 | 1 | 0 |
 
 ## Act first
 
@@ -89,7 +89,6 @@
 | SRV-006 | Med | Stored-diagram lint runs on up to 50 MB, bypassing 5 MB cap | `server/src/lint/routes.ts:86` | Refuse content over `LINT_BODY_LIMIT` before `lint` |
 | SRV-007 | Med | Drift signature ignores change details; a second type change stays dismissed | `shared/drift.ts:132` | Hash each change's fields into the signature |
 | SRV-008 | Low | `pairUp` guesses when two left items share one right key | `shared/reconcile.ts:158` | Skip keys held by more than one left item |
-| SRV-009 | Low | `POST /lint` with a table lacking `fields` throws TypeError, returns 500 | `shared/schema-desc.ts:289` | Validate table and field shape with zod |
 | SRV-010 | Low | Project delete checks emptiness then deletes; concurrent create hits FK 500 | `server/src/admin/routes.ts:829` | Catch 23503; return 409 `project_not_empty` |
 | SRV-011 | Low | Sign-up hashes the password before checking sign-up is closed | `server/src/auth/routes.ts:129` | Count users before hashing |
 | SRV-012 | Low | Link regenerate update lacks `revokedAt` guard; races a concurrent revoke | `server/src/share/routes.ts:228` | Add `isNull(revokedAt)` to the update's where |
@@ -128,6 +127,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SRV-009 | Server | `POST /lint` with a table lacking `fields` throws TypeError, returns 500 |
 
 ---
 
@@ -150,3 +150,4 @@
 | Rev | Date | Change |
 |-----|------|--------|
 | 1 | 2026-10-19 | First pass on a fresh audit: 80 new, 0 fixed, 0 dropped |
+| 2 | 2026-10-19 | 1 fixed |
