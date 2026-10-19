@@ -1,6 +1,7 @@
 FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS builder
 
 ARG VITE_HOST_URL
+ARG VITE_APP_URL
 
 WORKDIR /usr/src/app
 
@@ -12,7 +13,7 @@ COPY . .
 
 # The backend URL is not baked in: nginx serves it at run time through
 # /config.js (QUBDI_BACKEND_URL), so one image fits every environment.
-RUN echo "VITE_HOST_URL=${VITE_HOST_URL}" > .env
+RUN printf 'VITE_HOST_URL=%s\nVITE_APP_URL=%s\n' "${VITE_HOST_URL}" "${VITE_APP_URL}" > .env
 
 RUN npm run build
 
