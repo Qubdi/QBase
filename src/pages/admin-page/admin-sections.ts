@@ -1,45 +1,33 @@
 // The admin panel's sections. Plain data, no React, so the router can use it
 // without pulling the admin page into the main bundle.
 
+import { i18n } from '@/i18n/i18n';
+
 export interface AdminSectionInfo {
     id: string;
-    label: string;
+    /** read when rendered, so a language change applies */
+    readonly label: string;
     /** one line under the section's title */
-    description: string;
+    readonly description: string;
 }
 
+const section = <Id extends string>(id: Id): AdminSectionInfo & { id: Id } => ({
+    id,
+    get label() {
+        return i18n.t(`qubdi.adminUsers.sections.${id}.label`);
+    },
+    get description() {
+        return i18n.t(`qubdi.adminUsers.sections.${id}.description`);
+    },
+});
+
 export const ADMIN_SECTIONS = [
-    {
-        id: 'overview',
-        label: 'Overview',
-        description:
-            'Totals for users, projects, diagrams and share links, and the latest activity.',
-    },
-    {
-        id: 'projects',
-        label: 'Projects',
-        description:
-            'Organise diagrams into projects and choose who can access each one.',
-    },
-    {
-        id: 'users',
-        label: 'Users',
-        description:
-            'Create users, choose who is an admin, and turn accounts on or off.',
-    },
-    {
-        id: 'diagrams',
-        label: 'Diagrams',
-        description:
-            'Every diagram with its project, owner and share links, so a link can be revoked.',
-    },
-    {
-        id: 'activity',
-        label: 'Activity',
-        description:
-            'Who did what and when, newest first: publishes, share links and changes to users and projects.',
-    },
-] as const satisfies readonly AdminSectionInfo[];
+    section('overview'),
+    section('projects'),
+    section('users'),
+    section('diagrams'),
+    section('activity'),
+] as const;
 
 export type AdminSectionId = (typeof ADMIN_SECTIONS)[number]['id'];
 

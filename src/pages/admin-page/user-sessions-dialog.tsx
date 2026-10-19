@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import {
     Dialog,
@@ -32,6 +33,7 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
     onClose,
     onSignedOut,
 }) => {
+    const { t } = useTranslation();
     const { toast } = useToast();
     const [sessions, setSessions] = useState<AdminSession[] | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -64,11 +66,19 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
             setSessions([]);
             onSignedOut();
             toast({
-                title: signedOut > 0 ? 'Signed out' : 'Already signed out',
+                title:
+                    signedOut > 0
+                        ? t('qubdi.adminUsers.sessions.signedOutTitle')
+                        : t('qubdi.adminUsers.sessions.alreadySignedOutTitle'),
                 description:
                     signedOut > 0
-                        ? `${user.email} has been signed out everywhere.`
-                        : `${user.email} was not signed in.`,
+                        ? t('qubdi.adminUsers.sessions.signedOutDescription', {
+                              email: user.email,
+                          })
+                        : t(
+                              'qubdi.adminUsers.sessions.notSignedInDescription',
+                              { email: user.email }
+                          ),
             });
         } catch (e) {
             setError(errorMessage(e));
@@ -81,10 +91,13 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
         <Dialog open={user !== null} onOpenChange={(o) => !o && onClose()}>
             <DialogContent className="max-w-md" showClose>
                 <DialogHeader>
-                    <DialogTitle>Sessions</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.adminUsers.sessions.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        {user?.email}. An account has one live session: signing
-                        in somewhere else ends the one before it.
+                        {t('qubdi.adminUsers.sessions.description', {
+                            email: user?.email ?? '',
+                        })}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -95,14 +108,16 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
                 ) : null}
 
                 {sessions === null && !error ? (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
+                    <p className="text-sm text-muted-foreground">
+                        {t('qubdi.adminUsers.sessions.loading')}
+                    </p>
                 ) : sessions !== null && sessions.length === 0 ? (
                     <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-                        Not signed in anywhere.
+                        {t('qubdi.adminUsers.sessions.none')}
                     </p>
                 ) : (
                     <ul
-                        aria-label="Live sessions"
+                        aria-label={t('qubdi.adminUsers.sessions.listLabel')}
                         className="flex flex-col gap-2"
                     >
                         {sessions?.map((s) => (
@@ -114,14 +129,14 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
                                     {describeBrowser(s.userAgent)}
                                 </span>
                                 <span className="text-muted-foreground">
-                                    Signed in{' '}
+                                    {t('qubdi.adminUsers.sessions.signedIn')}{' '}
                                     <time
                                         dateTime={s.createdAt}
                                         title={exactTime(s.createdAt)}
                                     >
                                         {ago(s.createdAt)}
                                     </time>
-                                    , last active{' '}
+                                    {t('qubdi.adminUsers.sessions.lastActive')}{' '}
                                     <time
                                         dateTime={s.lastSeenAt}
                                         title={exactTime(s.lastSeenAt)}
@@ -136,7 +151,7 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
 
                 <DialogFooter className="gap-2 sm:gap-0">
                     <Button type="button" variant="outline" onClick={onClose}>
-                        Close
+                        {t('qubdi.adminUsers.sessions.close')}
                     </Button>
                     <Button
                         type="button"
@@ -144,7 +159,7 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
                         disabled={busy || !sessions || sessions.length === 0}
                         onClick={() => void signOut()}
                     >
-                        Sign out everywhere
+                        {t('qubdi.adminUsers.sessions.signOutEverywhere')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -2,6 +2,7 @@
 // sessions apart without reading a User-Agent string. It is a best guess from
 // a string the browser chooses itself: good for "which of these is mine", not
 // for deciding anything about security.
+import { i18n } from '@/i18n/i18n';
 
 /** Checked in this order: most browsers also say "Chrome" or "Safari". */
 const BROWSERS: [name: string, pattern: RegExp][] = [
@@ -27,9 +28,12 @@ const firstMatch = (list: [string, RegExp][], userAgent: string) =>
 
 /** "Chrome on Windows", "Firefox on Linux", or "Unknown browser". */
 export function describeBrowser(userAgent: string | null | undefined): string {
-    if (!userAgent) return 'Unknown browser';
+    const unknown = () => i18n.t('qubdi.adminUsers.sessions.unknownBrowser');
+    if (!userAgent) return unknown();
     const browser = firstMatch(BROWSERS, userAgent);
-    if (!browser) return 'Unknown browser';
+    if (!browser) return unknown();
     const system = firstMatch(SYSTEMS, userAgent);
-    return system ? `${browser} on ${system}` : browser;
+    return system
+        ? i18n.t('qubdi.adminUsers.sessions.browserOn', { browser, system })
+        : browser;
 }

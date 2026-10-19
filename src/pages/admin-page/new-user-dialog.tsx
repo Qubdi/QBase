@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import {
@@ -30,6 +31,7 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
     onOpenChange,
     onCreate,
 }) => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isAdmin, setIsAdmin] = useState(false);
@@ -67,21 +69,22 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
         <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
             <DialogContent className="max-w-md" showClose>
                 <DialogHeader>
-                    <DialogTitle>New user</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.adminUsers.newUser.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        People cannot sign themselves up. Create their account
-                        here, then assign them to projects.
+                        {t('qubdi.adminUsers.newUser.description')}
                     </DialogDescription>
                 </DialogHeader>
                 <form
                     className="flex flex-col gap-3"
-                    aria-label="Create user"
+                    aria-label={t('qubdi.adminUsers.newUser.formLabel')}
                     onSubmit={(e) => void submit(e)}
                 >
                     <Input
                         type="email"
-                        aria-label="Email"
-                        placeholder="Email"
+                        aria-label={t('qubdi.adminUsers.newUser.email')}
+                        placeholder={t('qubdi.adminUsers.newUser.email')}
                         autoComplete="off"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -89,7 +92,9 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
                         autoFocus
                     />
                     <PasswordField
-                        placeholder="Temporary password"
+                        placeholder={t(
+                            'qubdi.adminUsers.newUser.temporaryPassword'
+                        )}
                         value={password}
                         onChange={setPassword}
                         minLength={minLength}
@@ -101,7 +106,7 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
                             checked={isAdmin}
                             onChange={(e) => setIsAdmin(e.target.checked)}
                         />
-                        Make this user an admin
+                        {t('qubdi.adminUsers.newUser.makeAdmin')}
                     </label>
                     {error ? (
                         <p role="alert" className="text-sm text-destructive">
@@ -115,13 +120,13 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
                             disabled={busy}
                             onClick={() => onOpenChange(false)}
                         >
-                            Cancel
+                            {t('qubdi.adminUsers.newUser.cancel')}
                         </Button>
                         <Button
                             type="submit"
                             disabled={busy || !email.trim() || weak}
                         >
-                            Create user
+                            {t('qubdi.adminUsers.newUser.create')}
                         </Button>
                     </div>
                 </form>
