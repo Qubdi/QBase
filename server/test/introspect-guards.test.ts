@@ -124,6 +124,17 @@ describe('classifyIp', () => {
         ['::ffff:10.1.2.3', 'private'],
         ['::ffff:8.8.8.8', 'public'],
         ['::ffff:7f00:1', 'loopback'],
+        // IPv4-translated: the IPv4 target sits in the last four bytes
+        ['::ffff:0:a00:1', 'private'],
+        ['::ffff:0:7f00:1', 'loopback'],
+        ['::ffff:0:a9fe:a9fe', 'link_local'],
+        ['::ffff:0:808:808', 'public'],
+        // NAT64: only the well-known 64:ff9b::/96 is decoded; the local-use
+        // range hides the IPv4 address in another place, so it is never trusted
+        ['64:ff9b::a00:1', 'private'],
+        ['64:ff9b::808:808', 'public'],
+        ['64:ff9b:1::808:808', 'reserved'],
+        ['64:ff9b:1:a00:0:0:808:808', 'reserved'],
         ['64:ff9b::a00:1', 'private'],
         // IPv4 hidden in transition ranges
         ['2002:7f00:1::1', 'reserved'],

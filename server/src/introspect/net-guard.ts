@@ -90,8 +90,22 @@ export function classifyIp(ip: string): IpClass {
     ) {
         return classifyV4(b.slice(12));
     }
-    if (b[0] === 0 && b[1] === 0x64 && b[2] === 0xff && b[3] === 0x9b) {
+    // IPv4-translated (::ffff:0:a.b.c.d, RFC 2765) names an IPv4 target the same way
+    if (
+        b.slice(0, 8).every((x) => x === 0) &&
+        b[8] === 0xff &&
+        b[9] === 0xff &&
+        b[10] === 0 &&
+        b[11] === 0
+    ) {
         return classifyV4(b.slice(12));
+    }
+    if (b[0] === 0 && b[1] === 0x64 && b[2] === 0xff && b[3] === 0x9b) {
+        // 64:ff9b::/96 holds the IPv4 address in its last four bytes; the rest of
+        // 64:ff9b::/32 (the local-use 64:ff9b:1::/48 included) puts it elsewhere
+        return b.slice(4, 12).every((x) => x === 0)
+            ? classifyV4(b.slice(12))
+            : 'reserved';
     }
     // transition ranges that wrap an IPv4 address in a form the checks above do
     // not decode: never a place to connect to
