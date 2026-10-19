@@ -358,6 +358,34 @@ describe('admin panel and projects', () => {
             expect(res.json().error).toBe('project_not_empty');
         });
 
+        it('answers 409, not 500, when a diagram lands between the check and the delete', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Racy' })).json();
+            let release!: () => void;
+            const held = new Promise<void>((resolve) => (release = resolve));
+            let inserted!: () => void;
+            const insertedFirst = new Promise<void>((resolve) => (inserted = resolve));
+            // an open transaction holds a new diagram in the project, uncommitted:
+            // the route's count sees nothing, and its delete waits on the row lock
+            const creating = ctx.db.transaction(async (tx) => {
+                await tx.insert(diagrams).values({
+                    ownerId: admin.id,
+                    projectId: p.id,
+                    title: 'Late',
+                    content: sampleContent,
+                });
+                inserted();
+                await held;
+            });
+            await insertedFirst;
+            const deleting = call('DELETE', `/admin/projects/${p.id}`, admin);
+            await new Promise((r) => setTimeout(r, 300));
+            release();
+            await creating;
+            const res = await deleting;
+            expect(res.statusCode).toBe(409);
+            expect(res.json().error).toBe('project_not_empty');
+        });
+
         it('deletes an empty project', async () => {
             const p = await call('POST', '/admin/projects', admin, { name: 'Scratch' });
             const res = await call('DELETE', `/admin/projects/${p.json().id}`, admin);
