@@ -274,6 +274,25 @@ describe('items, counts and signatures', () => {
         );
     });
 
+    it('treats a second change to the same column as different drift', () => {
+        const typeChange = (to: string): Change => ({
+            id: 'column_changed:public.t.c',
+            kind: 'column_changed',
+            tableKey: 'public.t',
+            before: col('c'),
+            after: { ...col('c'), type: to },
+            changes: [{ field: 'type', from: 'integer', to }],
+        });
+        const first = toDriftItems([typeChange('bigint')]);
+        const second = toDriftItems([typeChange('text')]);
+        expect(first[0].id).toBe(second[0].id);
+        expect(driftSignature(first)).not.toBe(driftSignature(second));
+        // the same change again is still the same drift
+        expect(driftSignature(toDriftItems([typeChange('bigint')]))).toBe(
+            driftSignature(first)
+        );
+    });
+
     it('words rename hints', () => {
         const r: PossibleRename[] = [
             {

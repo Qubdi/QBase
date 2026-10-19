@@ -124,16 +124,53 @@ export function worstSeverity(
     );
 }
 
+/** JSON with object keys in a fixed order, so equal values give equal text. */
+function stableText(value: unknown): string {
+    if (Array.isArray(value)) return `[${value.map(stableText).join(',')}]`;
+    if (value !== null && typeof value === 'object') {
+        const o = value as Record<string, unknown>;
+        return `{${Object.keys(o)
+            .filter((k) => o[k] !== undefined)
+            .sort()
+            .map((k) => `${JSON.stringify(k)}:${stableText(o[k])}`)
+            .join(',')}}`;
+    }
+    return JSON.stringify(value) ?? 'null';
+}
+
+/** A short, stable, non-cryptographic hash of a string (cyrb53). */
+function shortHash(text: string): string {
+    let h1 = 0xdeadbeef;
+    let h2 = 0x41c6ce57;
+    for (let i = 0; i < text.length; i++) {
+        const c = text.charCodeAt(i);
+        h1 = Math.imul(h1 ^ c, 2654435761);
+        h2 = Math.imul(h2 ^ c, 1597334677);
+    }
+    h1 =
+        Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^
+        Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 =
+        Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^
+        Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
 /**
  * Identifies a particular set of differences. Two runs with the same signature
  * found the same drift, so a notification is not repeated and a dismissal
- * stays dismissed.
+ * stays dismissed. An item's details are part of it (when it carries them): a
+ * column that changed type again is new drift even though its id is the same.
  */
 export function driftSignature(
-    items: Array<{ id: string; severity: Severity }>
+    items: Array<{ id: string; severity: Severity; change?: Change }>
 ): string {
     return items
-        .map((i) => `${i.severity[0]}:${i.id}`)
+        .map(
+            (i) =>
+                `${i.severity[0]}:${i.id}` +
+                (i.change ? `:${shortHash(stableText(i.change))}` : '')
+        )
         .sort()
         .join('|');
 }
