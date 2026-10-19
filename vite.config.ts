@@ -37,7 +37,6 @@ export default defineConfig({
     },
     build: {
         rollupOptions: {
-            external: (id) => /__test__/.test(id),
             output: {
                 // vendor code changes far less often than the app, so it gets
                 // its own long-cached chunks
