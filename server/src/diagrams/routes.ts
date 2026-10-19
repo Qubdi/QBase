@@ -14,6 +14,8 @@ import {
     publishSnapshot,
 } from './service.js';
 
+/** `limit` stand-in when the list is not paged (Postgres' largest integer). */
+const NO_LIMIT = 2_147_483_647;
 const idParam = z.object({ id: z.string().uuid() });
 const listQuery = z.object({
     limit: z.coerce.number().int().min(1).max(500).optional(),
@@ -108,6 +110,10 @@ export const diagramRoutes =
                 projectId: diagrams.projectId,
                 ...statsColumns,
             };
+            // paging is optional: without `limit` the whole list comes back; the
+            // database orders and cuts the list, so a page never reads the rest
+            const { limit, offset } = listQuery.parse(req.query);
+            const order = [desc(diagrams.updatedAt), diagrams.id];
             // admins see every project's diagrams; others only their projects'
             const rows = me.isAdmin
                 ? (
@@ -115,6 +121,9 @@ export const diagramRoutes =
                           .select(select)
                           .from(diagrams)
                           .leftJoin(users, eq(users.id, diagrams.ownerId))
+                          .orderBy(...order)
+                          .limit(limit ?? NO_LIMIT)
+                          .offset(offset)
                   ).map((d) => ({
                       ...d,
                       role: 'owner' as const,
@@ -127,8 +136,10 @@ export const diagramRoutes =
                           eq(diagrams.projectId, projectMembers.projectId)
                       )
                       .leftJoin(users, eq(users.id, diagrams.ownerId))
-                      .where(eq(projectMembers.userId, me.id));
-            rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+                      .where(eq(projectMembers.userId, me.id))
+                      .orderBy(...order)
+                      .limit(limit ?? NO_LIMIT)
+                      .offset(offset);
             // viewers must not learn about unpublished renames
             const latest = await latestSnapshotListing(
                 db,
@@ -154,11 +165,7 @@ export const diagramRoutes =
                         : diagramStats(undefined)),
                 };
             });
-            // paging is optional: without `limit` the whole list comes back
-            const { limit, offset } = listQuery.parse(req.query);
-            return limit === undefined
-                ? all.slice(offset)
-                : all.slice(offset, offset + limit);
+            return all;
         });
 
         app.post('/', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {

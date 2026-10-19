@@ -273,6 +273,23 @@ describe('diagrams and permissions', () => {
         ]);
         expect(rows.every((r) => r.userId === owner.id)).toBe(true);
     });
+
+    it('lists newest first and pages in the database, for admins and members alike', async () => {
+        await createDiagram(ctx.app, owner);
+        await createDiagram(ctx.app, owner);
+        for (const who of [owner, editor]) {
+            const list = async (qs = '') =>
+                (await ctx.app.inject({ url: `/diagrams${qs}`, headers: as(who) })).json() as Array<{ id: string; updatedAt: string }>;
+            const all = await list();
+            expect(all.length).toBeGreaterThanOrEqual(3);
+            const times = all.map((d) => Date.parse(d.updatedAt));
+            expect(times).toEqual([...times].sort((x, y) => y - x));
+            expect((await list('?limit=2')).map((d) => d.id)).toEqual(all.slice(0, 2).map((d) => d.id));
+            expect((await list('?limit=2&offset=1')).map((d) => d.id)).toEqual(all.slice(1, 3).map((d) => d.id));
+            expect((await list(`?offset=${all.length}`))).toEqual([]);
+            expect((await list('?offset=1')).map((d) => d.id)).toEqual(all.slice(1).map((d) => d.id));
+        }
+    });
 });
 
 describe('request body limits', () => {
