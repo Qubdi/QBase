@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -9,11 +9,15 @@ import { CryptoBox } from '../introspect/crypto-box.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { latestSnapshot } from '../diagrams/service.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
+import { activeLinkSql } from './active.js';
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
 import { generateToken, hashToken } from './tokens.js';
 
 /** Most links the editor's list returns for one diagram, newest first. */
 export const MAX_LISTED_LINKS = 200;
+
+/** Most links one diagram may have open at once; revoke one to make another. */
+export const MAX_ACTIVE_LINKS = 100;
 
 const diagramParam = z.object({ id: z.string().uuid() });
 const linkParam = z.object({
@@ -128,6 +132,13 @@ export const shareManagementRoutes =
             const { id } = diagramParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const body = createBody.parse(req.body ?? {});
+            const [{ open }] = await db
+                .select({ open: count() })
+                .from(shareLinks)
+                .where(and(eq(shareLinks.diagramId, id), activeLinkSql()));
+            if (open >= MAX_ACTIVE_LINKS) {
+                return reply.code(409).send({ error: 'too_many_links' });
+            }
             const token = generateToken();
             const [link] = await db
                 .insert(shareLinks)

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog, shareLinks } from '../src/db/schema.js';
-import { MAX_LISTED_LINKS } from '../src/share/routes.js';
+import { MAX_ACTIVE_LINKS, MAX_LISTED_LINKS } from '../src/share/routes.js';
 import {
     as,
     createDiagram,
@@ -106,6 +106,26 @@ describe('share links', () => {
                 headers: as(owner),
             });
             expect(list.json()).toHaveLength(MAX_LISTED_LINKS);
+        });
+
+        it('stops at the cap of open links per diagram, and revoking makes room', async () => {
+            const busy = await createDiagram(ctx.app, owner, 'Busy');
+            await ctx.db.insert(shareLinks).values(
+                Array.from({ length: MAX_ACTIVE_LINKS }, (_, n) => ({
+                    diagramId: busy,
+                    tokenHash: `busy-${n}`,
+                }))
+            );
+            const refused = await createLink(owner, {}, busy);
+            expect(refused.statusCode).toBe(409);
+            expect(refused.json().error).toBe('too_many_links');
+            // links nobody can open do not count against the cap
+            await ctx.db
+                .update(shareLinks)
+                .set({ revokedAt: new Date() })
+                .where(eq(shareLinks.tokenHash, 'busy-0'));
+            expect((await createLink(owner, {}, busy)).statusCode).toBe(201);
+            expect((await createLink(owner, {}, busy)).statusCode).toBe(409);
         });
 
         it('hides the list from viewers and strangers', async () => {
