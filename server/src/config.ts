@@ -46,6 +46,10 @@ export interface Config {
     passwordMinLength: number;
     /** most live (SSE) viewers one share link may have open at once */
     sseMaxPerLink: number;
+    /** most live (SSE) viewers one client address may have open at once, over all links */
+    sseMaxPerIp: number;
+    /** seconds between the pings that keep a live stream open (and re-check who is on it) */
+    sseHeartbeatSeconds: number;
     /** pino level: fatal, error, warn, info, debug, trace or silent */
     logLevel: string;
     /** most database connections the pool opens at once */
@@ -165,6 +169,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
                 : undefined
         ),
         sseMaxPerLink: int('SSE_MAX_PER_LINK', 100, 1),
+        sseMaxPerIp: int('SSE_MAX_PER_IP', 20, 1),
+        sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1),
         trustProxy: parseTrustProxy(env.TRUST_PROXY),
         logLevel: env.LOG_LEVEL ?? 'info',
         dbPoolMax: int('DB_POOL_MAX', 10, 1),

@@ -75,6 +75,45 @@ describe('live share stream headers', () => {
     });
 });
 
+describe('live share viewer cap per address', () => {
+    it('stops one address at its limit across links, and frees the slot on close', async () => {
+        const ctx = await createTestApp({ sseMaxPerIp: 2 });
+        try {
+            const owner = await registerUser(ctx.app, 'owner@example.com');
+            const urls: string[] = [];
+            const base = await ctx.app.listen({ port: 0, host: '127.0.0.1' });
+            for (let n = 0; n < 3; n++) {
+                const id = await createDiagram(ctx.app, owner, `Diagram ${n}`);
+                await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/publish`, headers: as(owner), payload: {} });
+                const { token } = (
+                    await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/share-links`, headers: as(owner), payload: { live: true } })
+                ).json();
+                urls.push(`${base}/s/${token}/events`);
+            }
+            const a = await openStream(urls[0]);
+            const b = await openStream(urls[1]);
+            await a.readUntil(': connected');
+            await b.readUntil(': connected');
+            // a third link, same address: refused even though that link has no viewers
+            const c = await openStream(urls[2]);
+            expect(c.status).toBe(429);
+            c.close();
+            a.close();
+            let status = 429;
+            for (let i = 0; i < 20 && status === 429; i++) {
+                await new Promise((r) => setTimeout(r, 100));
+                const d = await openStream(urls[2]);
+                status = d.status;
+                d.close();
+            }
+            expect(status).toBe(200);
+            b.close();
+        } finally {
+            await ctx.close();
+        }
+    });
+});
+
 describe('live share viewer cap', () => {
     it('refuses viewers past the per-link limit and frees the slot on close', async () => {
         const ctx = await createTestApp({ sseMaxPerLink: 2 });
