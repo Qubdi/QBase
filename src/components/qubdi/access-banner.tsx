@@ -15,6 +15,7 @@ export const AccessBanner: React.FC = () => {
     const { syncDiagram, user } = useQubdi();
     const { currentDiagram } = useDiagram();
     const [projects, setProjects] = useState<MyProject[]>([]);
+    const [projectName, setProjectName] = useState<string | undefined>();
     const [choice, setChoice] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -26,21 +27,33 @@ export const AccessBanner: React.FC = () => {
             ? access.projectId
             : undefined;
 
+    // the projects to choose from when moving a diagram into one
     useEffect(() => {
-        if (!unbound && !projectId) return;
+        if (!unbound) return;
         api.listProjects({ limit: 100 })
             .then((page) => setProjects(page.items))
             .catch(() => setProjects([]));
-    }, [unbound, projectId]);
+    }, [unbound]);
+
+    // the diagram's own project, by id: it may be beyond the first page of projects
+    useEffect(() => {
+        if (!projectId) {
+            setProjectName(undefined);
+            return;
+        }
+        let cancelled = false;
+        api.getProject(projectId)
+            .then((project) => !cancelled && setProjectName(project.name))
+            .catch(() => !cancelled && setProjectName(undefined));
+        return () => {
+            cancelled = true;
+        };
+    }, [projectId]);
 
     if (!isLocked(access)) return null;
 
     const writable = projects.filter((p) => p.role !== 'viewer');
-    const reason = lockedReason(
-        access,
-        projects.find((p) => p.id === projectId)?.name,
-        user?.email
-    );
+    const reason = lockedReason(access, projectName, user?.email);
 
     if (!reason) return null;
 
