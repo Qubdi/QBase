@@ -121,6 +121,7 @@ import { CanvasFilter } from './canvas-filter/canvas-filter';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useTableClipboard } from '@/hooks/use-table-clipboard';
 import { ShowAllButton } from './show-all-button';
+import { FieldTypeLegend } from './table-node/field-type-legend';
 import { useIsLostInCanvas } from './hooks/use-is-lost-in-canvas';
 import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
 import { useDiagramFilter } from '@/context/diagram-filter-context/use-diagram-filter';
@@ -1956,6 +1957,11 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                             }}
                         />
                     )}
+                    {isDesktop ? (
+                        <Panel position="bottom-left" style={{ margin: 8 }}>
+                            <FieldTypeLegend />
+                        </Panel>
+                    ) : null}
                     <Panel position="bottom-right" style={{ margin: 8 }}>
                         <PoweredByMark />
                     </Panel>
