@@ -50,6 +50,14 @@ export const OPEN_TO_TEMPORARY_PASSWORD: ReadonlySet<string> = new Set([
     '/auth/setup-status',
 ]);
 
+/**
+ * A share link's token is the credential for it, and it sits in the URL
+ * (`/s/<token>`, `/s/<token>/events`): the request log must not keep it.
+ */
+export function redactShareToken(url: string): string {
+    return url.replace(/^\/s\/[^/?#]+/, '/s/[redacted]');
+}
+
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const app = Fastify({
         // closing the server also ends open SSE streams instead of waiting on them
@@ -60,7 +68,24 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
                 ? trustHops(config.trustProxy)
                 : config.trustProxy,
         logger:
-            config.logLevel === 'silent' ? false : { level: config.logLevel },
+            config.logLevel === 'silent'
+                ? false
+                : {
+                      level: config.logLevel,
+                      serializers: {
+                          // Fastify's usual request fields, with the token hidden
+                          req(req) {
+                              return {
+                                  method: req.method,
+                                  url: redactShareToken(req.url ?? ''),
+                                  version: req.headers['accept-version'] as string | undefined,
+                                  host: req.host,
+                                  remoteAddress: req.ip,
+                                  remotePort: req.socket?.remotePort,
+                              };
+                          },
+                      },
+                  },
         // small by default; the routes that carry a whole diagram raise it
         bodyLimit: config.bodyLimit,
         routerOptions: { maxParamLength: 1000 },
