@@ -77,6 +77,9 @@ export const ServerAutosave: React.FC = () => {
                     current.status === 'editor'
                 ) {
                     reportLockLost(current.remoteId);
+                    // this editor can no longer save: drop what is unsent, so
+                    // leaving does not send one more request bound to fail
+                    saver.discard();
                     return;
                 }
                 const conflict =
