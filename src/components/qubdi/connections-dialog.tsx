@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Database, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -58,6 +59,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
     project,
     onChanged,
 }) => {
+    const { t } = useTranslation();
     const [connections, setConnections] = useState<SavedConnection[] | null>(
         null
     );
@@ -160,7 +162,10 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
             });
             const n = res.schemas.length;
             setTested(
-                `Connected to ${res.database}. Found ${n} schema${n === 1 ? '' : 's'}.`
+                t('qubdi.database.connections.tested', {
+                    database: res.database,
+                    count: n,
+                })
             );
         } catch (err) {
             setError(errorMessage(err));
@@ -203,15 +208,22 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                     <DialogHeader>
                         <DialogTitle>
                             {editing === null
-                                ? 'Database connections'
+                                ? t('qubdi.database.connections.title')
                                 : isNew
-                                  ? 'New connection'
-                                  : 'Edit connection'}
+                                  ? t('qubdi.database.connections.titleNew')
+                                  : t('qubdi.database.connections.titleEdit')}
                         </DialogTitle>
                         <DialogDescription>
                             {editing === null
-                                ? `Saved for ${project.name}. Its editors use them to import, re-sync and check drift. Passwords are stored encrypted and are never shown again.`
-                                : 'Connects read-only to read the schema.'}
+                                ? t(
+                                      'qubdi.database.connections.descriptionList',
+                                      {
+                                          project: project.name,
+                                      }
+                                  )
+                                : t(
+                                      'qubdi.database.connections.descriptionForm'
+                                  )}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -220,10 +232,10 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                             role="alert"
                             className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm"
                         >
-                            This server cannot store passwords yet, so no
-                            connection can be saved. Whoever runs it needs to
-                            set <code>CONNECTION_KEY</code> (at least 16
-                            characters) and restart it.
+                            <Trans
+                                i18nKey="qubdi.database.connections.noStore"
+                                components={{ code: <code /> }}
+                            />
                         </p>
                     ) : null}
 
@@ -231,16 +243,18 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                         <div className="flex flex-col gap-3">
                             {connections === null ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Loading…
+                                    {t('qubdi.database.connections.loading')}
                                 </p>
                             ) : connections.length === 0 ? (
                                 <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
                                     <Database className="mx-auto mb-2 size-6" />
-                                    No connections yet.
+                                    {t('qubdi.database.connections.empty')}
                                 </p>
                             ) : (
                                 <ul
-                                    aria-label="Connections"
+                                    aria-label={t(
+                                        'qubdi.database.connections.listLabel'
+                                    )}
                                     className="flex max-h-72 flex-col gap-2 overflow-y-auto"
                                 >
                                     {connections.map((c) => (
@@ -261,7 +275,10 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                                     variant="ghost"
                                                     size="icon"
                                                     className="size-8"
-                                                    aria-label={`Edit ${c.name}`}
+                                                    aria-label={t(
+                                                        'qubdi.database.connections.editAria',
+                                                        { name: c.name }
+                                                    )}
                                                     onClick={() =>
                                                         startEditing(c)
                                                     }
@@ -272,7 +289,10 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                                     variant="ghost"
                                                     size="icon"
                                                     className="size-8"
-                                                    aria-label={`Delete ${c.name}`}
+                                                    aria-label={t(
+                                                        'qubdi.database.connections.deleteAria',
+                                                        { name: c.name }
+                                                    )}
                                                     onClick={() =>
                                                         setConfirmDelete(c)
                                                     }
@@ -298,7 +318,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 onClick={() => startEditing('new')}
                             >
                                 <Plus />
-                                Add connection
+                                {t('qubdi.database.connections.add')}
                             </Button>
                         </div>
                     ) : (
@@ -308,8 +328,12 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                             data-testid="connection-form"
                         >
                             <Input
-                                placeholder="Name, e.g. Production replica"
-                                aria-label="Name"
+                                placeholder={t(
+                                    'qubdi.database.connections.namePlaceholder'
+                                )}
+                                aria-label={t(
+                                    'qubdi.database.connections.nameLabel'
+                                )}
                                 value={form.name}
                                 onChange={(e) => set('name', e.target.value)}
                                 maxLength={100}
@@ -317,7 +341,9 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                             />
                             <div className="flex gap-2">
                                 <OptionSelect
-                                    aria-label="Database type"
+                                    aria-label={t(
+                                        'qubdi.database.connections.dialectLabel'
+                                    )}
                                     className="w-40 shrink-0"
                                     value={form.dialect}
                                     onValueChange={(v) => {
@@ -346,8 +372,12 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                     ]}
                                 />
                                 <Input
-                                    placeholder="Host"
-                                    aria-label="Host"
+                                    placeholder={t(
+                                        'qubdi.database.connections.host'
+                                    )}
+                                    aria-label={t(
+                                        'qubdi.database.connections.host'
+                                    )}
                                     value={form.host}
                                     onChange={(e) =>
                                         set('host', e.target.value)
@@ -356,8 +386,12 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 />
                                 <Input
                                     className="w-24"
-                                    placeholder="Port"
-                                    aria-label="Port"
+                                    placeholder={t(
+                                        'qubdi.database.connections.port'
+                                    )}
+                                    aria-label={t(
+                                        'qubdi.database.connections.port'
+                                    )}
                                     inputMode="numeric"
                                     value={form.port}
                                     onChange={(e) =>
@@ -366,8 +400,12 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 />
                             </div>
                             <Input
-                                placeholder="Database"
-                                aria-label="Database"
+                                placeholder={t(
+                                    'qubdi.database.connections.database'
+                                )}
+                                aria-label={t(
+                                    'qubdi.database.connections.database'
+                                )}
                                 value={form.database}
                                 onChange={(e) =>
                                     set('database', e.target.value)
@@ -375,8 +413,12 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 required
                             />
                             <Input
-                                placeholder="User"
-                                aria-label="User"
+                                placeholder={t(
+                                    'qubdi.database.connections.user'
+                                )}
+                                aria-label={t(
+                                    'qubdi.database.connections.user'
+                                )}
                                 autoComplete="off"
                                 value={form.user}
                                 onChange={(e) => set('user', e.target.value)}
@@ -386,12 +428,20 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 type="password"
                                 placeholder={
                                     isNew
-                                        ? 'Password'
+                                        ? t(
+                                              'qubdi.database.connections.password'
+                                          )
                                         : movesTarget
-                                          ? 'Password (required to change the host, port or type)'
-                                          : 'Password (leave empty to keep the saved one)'
+                                          ? t(
+                                                'qubdi.database.connections.passwordMoves'
+                                            )
+                                          : t(
+                                                'qubdi.database.connections.passwordKeep'
+                                            )
                                 }
-                                aria-label="Password"
+                                aria-label={t(
+                                    'qubdi.database.connections.password'
+                                )}
                                 autoComplete="new-password"
                                 value={form.password}
                                 onChange={(e) =>
@@ -408,7 +458,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                             set('ssl', e.target.checked)
                                         }
                                     />
-                                    Use SSL / TLS
+                                    {t('qubdi.database.connections.ssl')}
                                 </label>
                                 <label className="flex items-center gap-2">
                                     <input
@@ -421,7 +471,9 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                             )
                                         }
                                     />
-                                    Trust server certificate
+                                    {t(
+                                        'qubdi.database.connections.trustCertificate'
+                                    )}
                                 </label>
                             </div>
                             {tested ? (
@@ -445,11 +497,13 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                     title={
                                         form.password
                                             ? undefined
-                                            : 'Type the password to test the connection'
+                                            : t(
+                                                  'qubdi.database.connections.testNeedsPassword'
+                                              )
                                     }
                                     onClick={() => void test()}
                                 >
-                                    Test connection
+                                    {t('qubdi.database.connections.test')}
                                 </Button>
                                 <span className="flex gap-2">
                                     <Button
@@ -458,7 +512,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                         disabled={busy}
                                         onClick={() => startEditing(null)}
                                     >
-                                        Back
+                                        {t('qubdi.database.connections.back')}
                                     </Button>
                                     <Button
                                         type="submit"
@@ -467,7 +521,13 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                             (canStore === false && needsKey)
                                         }
                                     >
-                                        {busy ? 'Working…' : 'Save'}
+                                        {busy
+                                            ? t(
+                                                  'qubdi.database.connections.working'
+                                              )
+                                            : t(
+                                                  'qubdi.database.connections.save'
+                                              )}
                                     </Button>
                                 </span>
                             </div>
@@ -485,15 +545,18 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            Delete this connection?
+                            {t('qubdi.database.connections.deleteTitle')}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            {`"${confirmDelete?.name ?? ''}" is removed for everyone in ${project.name}. Anything that uses it, such as a drift check, needs another connection.`}
+                            {t('qubdi.database.connections.deleteBody', {
+                                name: confirmDelete?.name ?? '',
+                                project: project.name,
+                            })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={busy}>
-                            Cancel
+                            {t('qubdi.database.connections.cancel')}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             disabled={busy}
@@ -502,7 +565,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 void remove();
                             }}
                         >
-                            Delete
+                            {t('qubdi.database.connections.delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

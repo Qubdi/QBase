@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Dialog,
     DialogContent,
@@ -41,6 +42,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
     open,
     onOpenChange,
 }) => {
+    const { t } = useTranslation();
     const { currentDiagram, updateDiagramData } = useDiagram();
     const { addUndoAction, resetRedoStack } = useRedoUndoStack();
     const { syncDiagram, remoteIdFor } = useQubdi();
@@ -73,7 +75,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
         if (!state) return;
         const ref = toConnectionRef(state, password || undefined);
         if (!ref) {
-            setError('Enter the database password to continue.');
+            setError(t('qubdi.database.resync.passwordRequired'));
             return;
         }
         setBusy(true);
@@ -137,7 +139,9 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
             if (remoteIdFor(currentDiagram.id)) {
                 await syncDiagram(next).catch(() => undefined);
             }
-            toast({ title: `Applied ${selected.size} change(s)` });
+            toast({
+                title: t('qubdi.database.resync.applied', { n: selected.size }),
+            });
             onOpenChange(false);
         } catch (e) {
             setError(errorMessage(e));
@@ -150,18 +154,17 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-xl" showClose>
                 <DialogHeader>
-                    <DialogTitle>Re-sync from database</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.database.resync.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        Pull changes from the live database. Layout, colours,
-                        areas, notes and descriptions are kept.
+                        {t('qubdi.database.resync.description')}
                     </DialogDescription>
                 </DialogHeader>
 
                 {!state ? (
                     <p className="text-sm text-muted-foreground">
-                        This diagram was not imported from a database in this
-                        browser, so there is no source to re-sync from. Use
-                        Import from database to create one.
+                        {t('qubdi.database.resync.noSource')}
                     </p>
                 ) : !plan ? (
                     <form
@@ -172,15 +175,22 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                         }}
                     >
                         <p className="text-sm text-muted-foreground">
-                            Last synced{' '}
-                            {new Date(state.lastSyncedAt).toLocaleString()}.
+                            {t('qubdi.database.resync.lastSynced', {
+                                date: new Date(
+                                    state.lastSyncedAt
+                                ).toLocaleString(),
+                            })}
                         </p>
                         {needsPassword(state) ||
                         state.source.kind === 'inline' ? (
                             <Input
                                 type="password"
-                                aria-label="Database password"
-                                placeholder="Database password"
+                                aria-label={t(
+                                    'qubdi.database.resync.passwordLabel'
+                                )}
+                                placeholder={t(
+                                    'qubdi.database.resync.passwordLabel'
+                                )}
                                 autoComplete="new-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -192,13 +202,15 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                             </p>
                         ) : null}
                         <Button type="submit" disabled={busy}>
-                            {busy ? 'Checking…' : 'Check for changes'}
+                            {busy
+                                ? t('qubdi.database.resync.checking')
+                                : t('qubdi.database.resync.check')}
                         </Button>
                     </form>
                 ) : plan.cs.changes.length === 0 &&
                   plan.cs.possibleRenames.length === 0 ? (
                     <p className="text-sm" data-testid="resync-clean">
-                        No changes. The diagram matches the database.
+                        {t('qubdi.database.resync.clean')}
                     </p>
                 ) : (
                     <div className="flex flex-col gap-3">
@@ -209,7 +221,9 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                             {plan.cs.possibleRenames.length > 0 ? (
                                 <fieldset className="rounded-md border p-2">
                                     <legend className="px-1 text-sm font-medium">
-                                        Possible renames
+                                        {t(
+                                            'qubdi.database.resync.possibleRenames'
+                                        )}
                                     </legend>
                                     <ul className="flex flex-col gap-1 text-sm">
                                         {plan.cs.possibleRenames.map((r) => (
@@ -276,15 +290,17 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                                 variant="ghost"
                                 onClick={() => setPlan(null)}
                             >
-                                Back
+                                {t('qubdi.database.resync.back')}
                             </Button>
                             <Button
                                 disabled={busy || selected.size === 0}
                                 onClick={() => void apply()}
                             >
                                 {busy
-                                    ? 'Applying…'
-                                    : `Apply ${selected.size} selected`}
+                                    ? t('qubdi.database.resync.applying')
+                                    : t('qubdi.database.resync.apply', {
+                                          n: selected.size,
+                                      })}
                             </Button>
                         </div>
                     </div>

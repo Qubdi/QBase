@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -15,6 +16,7 @@ import { DriftDialog } from './drift-dialog';
 
 /** Toolbar entry for drift detection: shows a badge when the database has drifted. */
 export const DriftControl: React.FC = () => {
+    const { t } = useTranslation();
     const { enabled, user, remoteIdFor } = useQubdi();
     const { currentDiagram } = useDiagram();
     const { access } = useDiagramAccess();
@@ -91,7 +93,7 @@ export const DriftControl: React.FC = () => {
                 onClick={() => setOpen(true)}
             >
                 <Activity className="size-4" />
-                Drift
+                {t('qubdi.database.drift.control')}
                 {label && severity ? (
                     <span
                         data-testid="drift-badge"
