@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, CloudCheck, CloudUpload, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -246,6 +247,7 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
     fallback = null,
 }) => {
+    const { t } = useTranslation();
     const { enabled } = useQubdi();
     const { access } = useDiagramAccess();
     const { status, retry, overwrite } = useSaveStatus();
@@ -262,14 +264,14 @@ export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
                 role="alert"
             >
                 <AlertTriangle className="size-3.5" />
-                Someone else saved a newer version
+                {t('qubdi.workspace.autosave.conflict')}
                 <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 px-2 text-xs"
                     onClick={overwrite}
                 >
-                    Overwrite with mine
+                    {t('qubdi.workspace.autosave.overwrite')}
                 </Button>
             </span>
         );
@@ -278,7 +280,11 @@ export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
     if (status === 'error') {
         return (
             <StatusIcon
-                label={retry ? 'Not saved. Click to try again' : 'Not saved'}
+                label={
+                    retry
+                        ? t('qubdi.workspace.autosave.notSavedRetry')
+                        : t('qubdi.workspace.autosave.notSaved')
+                }
                 onClick={retry}
                 className="text-destructive hover:text-destructive"
             >
@@ -292,8 +298,8 @@ export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
             <StatusIcon
                 label={
                     retry
-                        ? 'Unsaved changes. Click to save now'
-                        : 'Unsaved changes'
+                        ? t('qubdi.workspace.autosave.unsavedRetry')
+                        : t('qubdi.workspace.autosave.unsaved')
                 }
                 onClick={retry}
             >
@@ -305,14 +311,14 @@ export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
 
     if (status === 'saving') {
         return (
-            <StatusIcon label="Saving…">
+            <StatusIcon label={t('qubdi.workspace.autosave.saving')}>
                 <Loader2 className="animate-spin" />
             </StatusIcon>
         );
     }
 
     return (
-        <StatusIcon label="Saved to project">
+        <StatusIcon label={t('qubdi.workspace.autosave.saved')}>
             <CloudCheck className="text-primary" />
         </StatusIcon>
     );

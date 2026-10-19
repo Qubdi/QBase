@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { OptionSelect } from '@/components/option-select/option-select';
 import {
@@ -42,6 +43,7 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
     projectSlug,
     onImport,
 }) => {
+    const { t } = useTranslation();
     const { addDiagram, deleteDiagram } = useStorage();
     const { syncDiagram } = useQubdi();
     const navigate = useNavigate();
@@ -77,23 +79,28 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-sm" showClose>
                 <DialogHeader>
-                    <DialogTitle>New diagram</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.workspace.newDiagram.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        It will be created in {projectName}, and everyone
-                        assigned there can open it.
+                        {t('qubdi.workspace.newDiagram.description', {
+                            project: projectName,
+                        })}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={create} className="flex flex-col gap-3">
                     <Input
-                        aria-label="Diagram name"
-                        placeholder="Diagram name"
+                        aria-label={t('qubdi.workspace.newDiagram.nameLabel')}
+                        placeholder={t('qubdi.workspace.newDiagram.nameLabel')}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         maxLength={200}
                         autoFocus
                     />
                     <OptionSelect
-                        aria-label="Database type"
+                        aria-label={t(
+                            'qubdi.workspace.newDiagram.databaseType'
+                        )}
                         value={databaseType}
                         onValueChange={(v) =>
                             setDatabaseType(v as DatabaseType)
@@ -106,7 +113,9 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
                         </p>
                     ) : null}
                     <Button type="submit" disabled={busy}>
-                        {busy ? 'Creating…' : 'Create diagram'}
+                        {busy
+                            ? t('qubdi.workspace.newDiagram.creating')
+                            : t('qubdi.workspace.newDiagram.create')}
                     </Button>
                     {onImport ? (
                         <Button
@@ -114,7 +123,7 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
                             variant="outline"
                             onClick={onImport}
                         >
-                            Import from database…
+                            {t('qubdi.workspace.newDiagram.import')}
                         </Button>
                     ) : null}
                 </form>

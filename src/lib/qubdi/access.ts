@@ -1,3 +1,4 @@
+import { i18n } from '@/i18n/i18n';
 import type { RemoteDiagramSummary } from './api';
 
 /**
@@ -100,16 +101,24 @@ export function lockedReason(
     switch (a.status) {
         case 'taken':
             return a.holder && a.holder === selfEmail
-                ? 'This diagram is open for editing in another tab or window, so it is read-only here.'
-                : `${a.holder ?? 'Someone else'} is editing this diagram, so it is read-only for you for now.`;
+                ? i18n.t('qubdi.workspace.lockedReason.takenSelf')
+                : i18n.t('qubdi.workspace.lockedReason.takenOther', {
+                      holder:
+                          a.holder ??
+                          i18n.t('qubdi.workspace.lockedReason.someoneElse'),
+                  });
         case 'unbound':
-            return 'This diagram is not in a project, so it is read-only. Move it into a project to edit it.';
+            return i18n.t('qubdi.workspace.lockedReason.unbound');
         case 'lost':
-            return 'You no longer have access to this diagram on the server, so it is read-only.';
+            return i18n.t('qubdi.workspace.lockedReason.lost');
         case 'viewer':
-            return `You have view-only access${projectName ? ` to ${projectName}` : ' to this project'}. Ask an admin for the Editor role to make changes.`;
+            return projectName
+                ? i18n.t('qubdi.workspace.lockedReason.viewerProject', {
+                      project: projectName,
+                  })
+                : i18n.t('qubdi.workspace.lockedReason.viewerThis');
         case 'error':
-            return 'Could not reach the server, so this diagram is read-only for now.';
+            return i18n.t('qubdi.workspace.lockedReason.error');
         default:
             return null;
     }

@@ -1,5 +1,6 @@
 // How a share link reads in the admin pages. Plain functions, no React.
 
+import { i18n } from '@/i18n/i18n';
 import type { AdminShareLink, ShareLinkStatus } from './api';
 import { ago } from './when';
 
@@ -31,17 +32,33 @@ export function linkStatus(
     return 'active';
 }
 
+// Getters, so the text is looked up when it is read (in the current language)
+// and not once when this module loads.
 export const ACCESS_LABEL: Record<AdminShareLink['access'], string> = {
-    anyone: 'Anyone with the link',
-    signed_in: 'Signed-in users only',
-    off: 'Switched off',
+    get anyone() {
+        return i18n.t('qubdi.workspace.shareLinks.access.anyone');
+    },
+    get signed_in() {
+        return i18n.t('qubdi.workspace.shareLinks.access.signed_in');
+    },
+    get off() {
+        return i18n.t('qubdi.workspace.shareLinks.access.off');
+    },
 };
 
 export const STATUS_LABEL: Record<ShareLinkStatus, string> = {
-    active: 'Active',
-    off: 'Off',
-    expired: 'Expired',
-    revoked: 'Revoked',
+    get active() {
+        return i18n.t('qubdi.workspace.shareLinks.status.active');
+    },
+    get off() {
+        return i18n.t('qubdi.workspace.shareLinks.status.off');
+    },
+    get expired() {
+        return i18n.t('qubdi.workspace.shareLinks.status.expired');
+    },
+    get revoked() {
+        return i18n.t('qubdi.workspace.shareLinks.status.revoked');
+    },
 };
 
 /** When a link stops (or stopped) working: "Expires in 3 days", "Revoked 2 hours ago". */
@@ -49,11 +66,20 @@ export function expiryText(
     link: Pick<AdminShareLink, 'expiresAt' | 'revokedAt'>,
     now: Date = new Date()
 ): string {
-    if (link.revokedAt) return `Revoked ${ago(link.revokedAt, now)}`;
-    if (!link.expiresAt) return 'Never expires';
-    return Date.parse(link.expiresAt) <= now.getTime()
-        ? `Expired ${ago(link.expiresAt, now)}`
-        : `Expires ${ago(link.expiresAt, now)}`;
+    if (link.revokedAt) {
+        return i18n.t('qubdi.workspace.shareLinks.expiry.revoked', {
+            when: ago(link.revokedAt, now),
+        });
+    }
+    if (!link.expiresAt) {
+        return i18n.t('qubdi.workspace.shareLinks.expiry.never');
+    }
+    return i18n.t(
+        Date.parse(link.expiresAt) <= now.getTime()
+            ? 'qubdi.workspace.shareLinks.expiry.expired'
+            : 'qubdi.workspace.shareLinks.expiry.expires',
+        { when: ago(link.expiresAt, now) }
+    );
 }
 
 /**

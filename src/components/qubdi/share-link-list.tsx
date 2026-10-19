@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/badge/badge';
 import { Button } from '@/components/button/button';
 import type { ShareLinkStatus } from '@/lib/qubdi/api';
@@ -52,13 +53,16 @@ export function ShareLinkList<L extends ShareLinkFields>({
     hideRevoked = false,
     renderControls,
 }: ShareLinkListProps<L>) {
+    const { t } = useTranslation();
     // the link waiting for a second click, and the one being ended
     const [confirming, setConfirming] = useState<string | null>(null);
     const [busy, setBusy] = useState<string | null>(null);
 
     if (links === null) {
         return failed ? null : (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">
+                {t('qubdi.workspace.shareList.loading')}
+            </p>
         );
     }
     const shown = hideRevoked
@@ -67,7 +71,7 @@ export function ShareLinkList<L extends ShareLinkFields>({
     if (shown.length === 0) {
         return (
             <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-                This diagram has no share links.
+                {t('qubdi.workspace.shareList.empty')}
             </p>
         );
     }
@@ -83,7 +87,7 @@ export function ShareLinkList<L extends ShareLinkFields>({
 
     return (
         <ul
-            aria-label="Share links"
+            aria-label={t('qubdi.workspace.shareList.label')}
             className="flex max-h-96 flex-col gap-2 overflow-y-auto"
         >
             {shown.map((l) => {
@@ -111,23 +115,29 @@ export function ShareLinkList<L extends ShareLinkFields>({
                                 {ACCESS_LABEL[l.access]}
                             </span>
                             {l.live ? (
-                                <Badge variant="secondary">Live</Badge>
+                                <Badge variant="secondary">
+                                    {t('qubdi.workspace.shareList.live')}
+                                </Badge>
                             ) : null}
                         </div>
                         <div className="flex flex-wrap items-end justify-between gap-2">
                             <div className="flex flex-col text-muted-foreground">
                                 <span data-slot="maker">
                                     {l.createdByEmail === undefined ? (
-                                        'Made'
+                                        t('qubdi.workspace.shareList.made')
                                     ) : l.createdByEmail ? (
                                         <>
-                                            Made by{' '}
+                                            {t(
+                                                'qubdi.workspace.shareList.madeBy'
+                                            )}{' '}
                                             <span className="text-foreground">
                                                 {l.createdByEmail}
                                             </span>
                                         </>
                                     ) : (
-                                        'Made by a deleted user'
+                                        t(
+                                            'qubdi.workspace.shareList.madeByDeleted'
+                                        )
                                     )}{' '}
                                     <time
                                         dateTime={l.createdAt}
@@ -151,7 +161,9 @@ export function ShareLinkList<L extends ShareLinkFields>({
                                             disabled={busy !== null}
                                             onClick={() => void revoke(l)}
                                         >
-                                            Yes, revoke
+                                            {t(
+                                                'qubdi.workspace.shareList.confirmRevoke'
+                                            )}
                                         </Button>
                                         <Button
                                             type="button"
@@ -160,7 +172,9 @@ export function ShareLinkList<L extends ShareLinkFields>({
                                             disabled={busy !== null}
                                             onClick={() => setConfirming(null)}
                                         >
-                                            Keep
+                                            {t(
+                                                'qubdi.workspace.shareList.keep'
+                                            )}
                                         </Button>
                                     </div>
                                 ) : (
@@ -173,16 +187,14 @@ export function ShareLinkList<L extends ShareLinkFields>({
                                         disabled={busy !== null}
                                         onClick={() => setConfirming(l.id)}
                                     >
-                                        Revoke
+                                        {t('qubdi.workspace.shareList.revoke')}
                                     </Button>
                                 )
                             ) : null}
                         </div>
                         {confirming === l.id ? (
                             <p className="text-xs text-muted-foreground">
-                                Anyone using this link loses access at once,
-                                including people watching it live. This cannot
-                                be undone.
+                                {t('qubdi.workspace.shareList.revokeWarning')}
                             </p>
                         ) : null}
                         {canRevoke({ status }) && renderControls ? (

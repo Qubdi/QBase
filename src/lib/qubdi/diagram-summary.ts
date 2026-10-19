@@ -1,3 +1,4 @@
+import { i18n } from '@/i18n/i18n';
 import { DatabaseEdition } from '@/lib/domain/database-edition';
 import { DatabaseType } from '@/lib/domain/database-type';
 
@@ -24,5 +25,7 @@ export function formatWhen(value: string | null | undefined): string {
 }
 
 /** "3 tables" style label for screen readers and tooltips. */
-export const countLabel = (n: number | null | undefined, noun: string) =>
-    `${n ?? 0} ${noun}${n === 1 ? '' : 's'}`;
+export const countLabel = (
+    n: number | null | undefined,
+    noun: 'table' | 'relationship'
+) => i18n.t(`qubdi.workspace.diagramSummary.${noun}`, { count: n ?? 0 });
