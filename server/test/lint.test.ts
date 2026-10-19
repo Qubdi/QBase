@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog } from '../src/db/schema.js';
+import { LINT_BODY_LIMIT } from '../src/lint/routes.js';
 import { parseArgs, runCli, type CliIo } from '../src/cli/lint.js';
 import diagramFixture from './fixtures/postgres-diagram.json' with { type: 'json' };
 import {
@@ -131,6 +132,17 @@ describe('lint API', () => {
             const res = await get(viewer, `/diagrams/${id}/lint?source=published`);
             expect(res.statusCode).toBe(200);
             expect(res.json().source).toBe('published');
+        });
+
+        it('refuses a stored diagram over the size cap, working and published', async () => {
+            const fat = { ...clone(content), padding: 'x'.repeat(LINT_BODY_LIMIT + 1024) };
+            const big = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { title: 'Fat', content: fat, projectId: await projectFor(ctx.app) } })).json().id;
+            const working = await get(owner, `/diagrams/${big}/lint`);
+            expect(working.statusCode).toBe(413);
+            expect(working.json().error).toBe('diagram_too_large');
+            await ctx.app.inject({ method: 'POST', url: `/diagrams/${big}/publish`, headers: as(owner), payload: {} });
+            const published = await get(owner, `/diagrams/${big}/lint?source=published`);
+            expect(published.statusCode).toBe(413);
         });
 
         it('lints the published copy, not later edits', async () => {

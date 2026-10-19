@@ -1,9 +1,9 @@
-import { eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import type { Db } from '../db/client.js';
-import { diagrams } from '../db/schema.js';
+import { diagrams, snapshots } from '../db/schema.js';
 import type { Config } from '../config.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { perUserLimit } from '../lib/rate-key.js';
@@ -81,22 +81,42 @@ export const lintRoutes =
             if (source === 'working' && !canWrite(role)) {
                 return reply.code(403).send({ error: 'forbidden' });
             }
-            // the working copy is the large column: read it only when it is linted
+            // the working copy is the large column: read it only when it is linted,
+            // and only if it fits the cap the stateless route enforces
             const [d] = await db
                 .select({
                     lintConfig: diagrams.lintConfig,
-                    content:
+                    size:
                         source === 'working'
-                            ? diagrams.content
-                            : sql<null>`null`,
+                            ? sql<number>`octet_length(${diagrams.content}::text)`.mapWith(Number)
+                            : sql<number>`0`,
                 })
                 .from(diagrams)
                 .where(eq(diagrams.id, id));
-            let content: unknown = d.content;
-            if (source === 'published') {
-                const snap = await latestSnapshot(db, id);
-                if (!snap) return reply.code(404).send({ error: 'not_published' });
-                content = snap.content;
+            let content: unknown;
+            if (source === 'working') {
+                if (d.size > LINT_BODY_LIMIT) {
+                    return reply.code(413).send({ error: 'diagram_too_large' });
+                }
+                const [row] = await db
+                    .select({ content: diagrams.content })
+                    .from(diagrams)
+                    .where(eq(diagrams.id, id));
+                content = row.content;
+            } else {
+                const [latest] = await db
+                    .select({
+                        size: sql<number>`octet_length(${snapshots.content}::text)`.mapWith(Number),
+                    })
+                    .from(snapshots)
+                    .where(eq(snapshots.diagramId, id))
+                    .orderBy(desc(snapshots.version))
+                    .limit(1);
+                if (!latest) return reply.code(404).send({ error: 'not_published' });
+                if (latest.size > LINT_BODY_LIMIT) {
+                    return reply.code(413).send({ error: 'diagram_too_large' });
+                }
+                content = (await latestSnapshot(db, id))!.content;
             }
             const config = normalizeConfig(d.lintConfig);
             const findings = lint(content as LintInput, config);
