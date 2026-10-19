@@ -436,6 +436,15 @@ describe('qubdi api client', () => {
             expect(ended).not.toHaveBeenCalled();
         });
 
+        it('is reported when the activity export comes back signed out', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await expect(
+                apiAnswering(401).adminExportActivity()
+            ).rejects.toMatchObject({ status: 401 });
+            expect(ended).toHaveBeenCalledTimes(1);
+        });
+
         it('is not reported for other failures', async () => {
             const ended = vi.fn();
             setSessionEndedHandler(ended);

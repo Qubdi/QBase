@@ -647,6 +647,7 @@ export function createApi(
                     signal: AbortSignal.timeout(120_000),
                 }
             );
+            if (res.status === 401) sessionEndedHandler?.();
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new ApiError(res.status, data?.error ?? 'request_failed');
