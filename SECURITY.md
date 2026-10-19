@@ -32,5 +32,5 @@ from this repository.
 
 Out of scope: problems that need a malicious server administrator, and
 findings that only apply to a deployment with the documented secrets
-(`SESSION_SECRET`, `CONNECTION_KEY`, database passwords) left at their example
+(`SECRETS_KEY`, `CONNECTION_KEY`, database passwords) left at their example
 values. Set your own before exposing QubdiDB.
