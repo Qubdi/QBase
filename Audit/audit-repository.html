@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 2</b></div>
-  <h1>22 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 3</b></div>
+  <h1>2 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-19</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (211 files, 2140 tests, all pass) in a node:24 container · server eslint and tsc clean · npm audit root and <code>server/</code> (0 vulnerabilities) · server tests skipped: only the live dev Postgres was up · no secret read</span>
+    <span><b>audit date</b> 2026-10-20</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (218 files, 2197 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -29,33 +29,13 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">22 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">2 open &middot; 20 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">REPO-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">CI runs on pull requests only; direct pushes to <code>main</code> unchecked</td><td><code>.github/workflows/ci.yaml:4</code></td><td class="wrap-cell">Add <code>push: branches: [main]</code>; protect <code>main</code></td></tr>
-        <tr><td class="svc-name">REPO-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README step 3 repeats <code>cp .env.example .env</code>, overwriting step 1 edits</td><td><code>README.md:48</code></td><td class="wrap-cell">Drop the second <code>cp</code></td></tr>
-        <tr><td class="svc-name">REPO-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README server command keeps default <code>DATABASE_URL</code>, not chosen <code>POSTGRES_PASSWORD</code></td><td><code>README.md:41</code></td><td class="wrap-cell">Document setting <code>DATABASE_URL</code> for the local server</td></tr>
-        <tr><td class="svc-name">REPO-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>SECURITY.md</code> names <code>SESSION_SECRET</code>, which exists nowhere in code</td><td><code>SECURITY.md:35</code></td><td class="wrap-cell">Replace <code>SESSION_SECRET</code> with <code>SECRETS_KEY</code></td></tr>
-        <tr><td class="svc-name">REPO-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">release-please needs Conventional Commits; 2 of 426 commits follow them</td><td><code>release-please-config.json</code>; <code>git log</code></td><td class="wrap-cell">Document Conventional Commits; add a PR-title check</td></tr>
-        <tr><td class="svc-name">REPO-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>VITE_APP_URL</code> documented but never passed as Docker build arg</td><td><code>.env.example:60</code>; <code>Dockerfile</code></td><td class="wrap-cell">Add <code>VITE_APP_URL</code> build arg to <code>Dockerfile</code> and compose</td></tr>
-        <tr><td class="svc-name">REPO-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Server <code>@types/node</code> is <code>^26</code> against the Node 24 runtime</td><td><code>server/package.json:35</code></td><td class="wrap-cell">Pin <code>@types/node</code> to <code>^24</code></td></tr>
         <tr><td class="svc-name">REPO-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README says forked but never names the upstream project</td><td><code>README.md:166</code></td><td class="wrap-cell">Name and link the upstream project</td></tr>
-        <tr><td class="svc-name">REPO-009</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">ESLint comment points to <code>TODO.md</code>, which is empty</td><td><code>eslint.config.mjs:77</code></td><td class="wrap-cell">List the disabled rules in <code>TODO.md</code> or drop reference</td></tr>
-        <tr><td class="svc-name">REPO-010</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Build-tasks doc still specifies the removed Comments feature</td><td><code>QubdiDB-build-tasks.md:72</code></td><td class="wrap-cell">Mark Task 4 removed</td></tr>
-        <tr><td class="svc-name">REPO-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>test:coverage</code> needs <code>@vitest/coverage-v8</code>, which is not installed</td><td><code>package.json:19</code></td><td class="wrap-cell">Add <code>@vitest/coverage-v8</code> or remove the script</td></tr>
-        <tr><td class="svc-name">REPO-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Preload plugin matches <code>logo-*.png</code>; only <code>qubdi-logo-*.svg</code> exist</td><td><code>vite.config.ts:23</code></td><td class="wrap-cell">Remove <code>UnpluginInjectPreload</code> or match the svg logos</td></tr>
-        <tr><td class="svc-name">REPO-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Rollup <code>external</code> regex <code>/__test__/</code> matches nothing</td><td><code>vite.config.ts:40</code></td><td class="wrap-cell">Delete the <code>external</code> rule</td></tr>
-        <tr><td class="svc-name">REPO-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>.dockerignore</code> comment claims <code>server/</code> has its own; none exists</td><td><code>.dockerignore:1</code></td><td class="wrap-cell">Fix the comment</td></tr>
-        <tr><td class="svc-name">REPO-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">gitleaks and CI Postgres service images pinned by tag only</td><td><code>.github/workflows/ci.yaml:46</code>, <code>:110</code>; <code>publish.yaml:23</code></td><td class="wrap-cell">Pin images by <code>@sha256</code> digest</td></tr>
-        <tr><td class="svc-name">REPO-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No CODEOWNERS, PR template or issue templates</td><td><code>.github/</code></td><td class="wrap-cell">Add <code>.github/CODEOWNERS</code> covering workflows and Dockerfiles</td></tr>
-        <tr><td class="svc-name">REPO-017</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Broken maintainer mail link; no CLA, setup or test sections</td><td><code>CONTRIBUTING.md:38</code></td><td class="wrap-cell">Fix the link; add CLA, setup, test sections</td></tr>
-        <tr><td class="svc-name">REPO-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CLA cites "Section 1"; its sections are unnumbered</td><td><code>CLA.md:17</code></td><td class="wrap-cell">Number the sections</td></tr>
-        <tr><td class="svc-name">REPO-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Neither package declares a <code>license</code> field</td><td><code>package.json</code>, <code>server/package.json</code></td><td class="wrap-cell">Add <code>"license": "AGPL-3.0-only"</code> to both</td></tr>
-        <tr><td class="svc-name">REPO-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Publish job builds client on host, then Docker rebuilds it</td><td><code>.github/workflows/publish.yaml:89</code></td><td class="wrap-cell">Drop the host install, lint and build steps</td></tr>
-        <tr><td class="svc-name">REPO-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">nginx not <code>exec</code>'d; shell stays PID 1, SIGTERM not forwarded</td><td><code>entrypoint.sh:7</code></td><td class="wrap-cell">Use <code>exec nginx -g "daemon off;"</code></td></tr>
-        <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Release workflow grants <code>GITHUB_TOKEN</code> write yet acts with <code>OSS_RELEASE</code> PAT</td><td><code>.github/workflows/release.yaml:9</code></td><td class="wrap-cell">Reduce <code>permissions</code> to <code>contents: read</code></td></tr>
+        <tr><td class="svc-name">REPO-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No CODEOWNERS file</td><td><code>.github/</code></td><td class="wrap-cell">Add <code>.github/CODEOWNERS</code> covering workflows and Dockerfiles</td></tr>
       </tbody>
     </table>
   </div>
@@ -63,11 +43,31 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (0)</summary>
+  <details><summary>Fixed (20)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI runs on pull requests only; direct pushes to <code>main</code> unchecked</td></tr>
+        <tr><td class="svc-name">REPO-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README step 3 repeats <code>cp .env.example .env</code>, overwriting step 1 edits</td></tr>
+        <tr><td class="svc-name">REPO-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README server command keeps default <code>DATABASE_URL</code>, not chosen <code>POSTGRES_PASSWORD</code></td></tr>
+        <tr><td class="svc-name">REPO-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>SECURITY.md</code> names <code>SESSION_SECRET</code>, which exists nowhere in code</td></tr>
+        <tr><td class="svc-name">REPO-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">release-please needs Conventional Commits; 2 of 426 commits follow them</td></tr>
+        <tr><td class="svc-name">REPO-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>VITE_APP_URL</code> documented but never passed as Docker build arg</td></tr>
+        <tr><td class="svc-name">REPO-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server <code>@types/node</code> is <code>^26</code> against the Node 24 runtime</td></tr>
+        <tr><td class="svc-name">REPO-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">ESLint comment points to <code>TODO.md</code>, which is empty</td></tr>
+        <tr><td class="svc-name">REPO-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Build-tasks doc still specifies the removed Comments feature</td></tr>
+        <tr><td class="svc-name">REPO-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>test:coverage</code> needs <code>@vitest/coverage-v8</code>, which is not installed</td></tr>
+        <tr><td class="svc-name">REPO-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Preload plugin matches <code>logo-*.png</code>; only <code>qubdi-logo-*.svg</code> exist</td></tr>
+        <tr><td class="svc-name">REPO-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Rollup <code>external</code> regex <code>/__test__/</code> matches nothing</td></tr>
+        <tr><td class="svc-name">REPO-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>.dockerignore</code> comment claims <code>server/</code> has its own; none exists</td></tr>
+        <tr><td class="svc-name">REPO-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">gitleaks and CI Postgres service images pinned by tag only</td></tr>
+        <tr><td class="svc-name">REPO-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Broken maintainer mail link; no CLA, setup or test sections</td></tr>
+        <tr><td class="svc-name">REPO-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CLA cites "Section 1"; its sections are unnumbered</td></tr>
+        <tr><td class="svc-name">REPO-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Neither package declares a <code>license</code> field</td></tr>
+        <tr><td class="svc-name">REPO-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish job builds client on host, then Docker rebuilds it</td></tr>
+        <tr><td class="svc-name">REPO-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">nginx not <code>exec</code>'d; shell stays PID 1, SIGTERM not forwarded</td></tr>
+        <tr><td class="svc-name">REPO-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Release workflow grants <code>GITHUB_TOKEN</code> write yet acts with <code>OSS_RELEASE</code> PAT</td></tr>
       </tbody>
     </table>
   </div>
