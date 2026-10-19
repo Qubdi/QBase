@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, lte } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { diagrams, snapshots } from '../db/schema.js';
 import { diagramHash } from '../lib/hash.js';
@@ -60,6 +60,19 @@ export async function latestSnapshotListing(db: Db, diagramIds: string[]) {
  * What a member is allowed to see. Writers get the working copy; viewers only
  * ever get the latest published snapshot (or no content if nothing is published).
  */
+/** The hash of a diagram's title and content: the stored one, filled in first if the row has none yet. */
+async function currentHash(db: Db, d: DiagramRow): Promise<string> {
+    if (d.contentHash) return d.contentHash;
+    const hash = diagramHash(d.title, d.content);
+    // best effort and only into an empty slot: a save that landed meanwhile keeps its own
+    await db
+        .update(diagrams)
+        .set({ contentHash: hash })
+        .where(and(eq(diagrams.id, d.id), isNull(diagrams.contentHash)))
+        .catch(() => undefined);
+    return hash;
+}
+
 export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
     const common = { id: d.id, ownerId: d.ownerId, projectId: d.projectId, role };
     if (canWrite(role)) {
@@ -74,7 +87,7 @@ export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
             updatedAt: d.updatedAt,
             autoPublish: d.autoPublish,
             unpublishedChanges:
-                !last || last.contentHash !== diagramHash(d.title, d.content),
+                !last || last.contentHash !== (await currentHash(db, d)),
         };
     }
     const last = await latestSnapshot(db, d.id);

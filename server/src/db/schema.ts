@@ -210,6 +210,10 @@ export const diagrams = pgTable(
             .references(() => projects.id, { onDelete: 'restrict' }),
         title: text('title').notNull(),
         content: jsonb('content').notNull(),
+        // `diagramHash(title, content)`, kept up to date by every save so that
+        // reading a diagram never has to hash its (large) content. Null for a
+        // row not yet hashed; the next read fills it in.
+        contentHash: text('content_hash'),
         autoPublish: boolean('auto_publish').notNull().default(false),
         // per-diagram lint rule settings (enabled rules, severities, naming style)
         lintConfig: jsonb('lint_config').notNull().default({}),

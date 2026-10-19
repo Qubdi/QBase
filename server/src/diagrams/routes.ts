@@ -13,6 +13,7 @@ import {
     presentDiagram,
     publishSnapshot,
 } from './service.js';
+import { diagramHash } from '../lib/hash.js';
 
 /** `limit` stand-in when the list is not paged (Postgres' largest integer). */
 const NO_LIMIT = 2_147_483_647;
@@ -210,6 +211,7 @@ export const diagramRoutes =
                     projectId: body.projectId,
                     title: body.title,
                     content: body.content,
+                    contentHash: diagramHash(body.title, body.content),
                 })
                 .returning();
             await audit(db, {
@@ -267,9 +269,33 @@ export const diagramRoutes =
             // the compare and the write are one statement, so two saves based
             // on the same copy cannot both win. Times are compared to the
             // millisecond: that is all JSON carries.
+            // The hash of what is saved, worked out here once so no read has to.
+            // A rename alone leaves it empty: the content is not in hand, and
+            // the next read fills it in.
+            let contentHash: string | null | undefined;
+            if (changes.content !== undefined) {
+                const title =
+                    changes.title ??
+                    (
+                        await db
+                            .select({ title: diagrams.title })
+                            .from(diagrams)
+                            .where(eq(diagrams.id, id))
+                    )[0]?.title;
+                contentHash =
+                    title === undefined
+                        ? null
+                        : diagramHash(title, changes.content);
+            } else if (changes.title !== undefined) {
+                contentHash = null;
+            }
             const [d] = await db
                 .update(diagrams)
-                .set({ ...changes, updatedAt: new Date() })
+                .set({
+                    ...changes,
+                    ...(contentHash !== undefined ? { contentHash } : {}),
+                    updatedAt: new Date(),
+                })
                 .where(
                     and(
                         eq(diagrams.id, id),
