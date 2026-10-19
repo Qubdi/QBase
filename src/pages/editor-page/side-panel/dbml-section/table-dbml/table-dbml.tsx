@@ -103,10 +103,8 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
 
             // Register DBML completion provider
             completionManagerRef.current?.dispose();
-            completionManagerRef.current = registerDBMLCompletionProvider(
-                monacoInstance,
-                editor.getValue()
-            );
+            completionManagerRef.current =
+                registerDBMLCompletionProvider(monacoInstance);
         },
         []
     );
@@ -326,11 +324,6 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
         resetDiff,
         dbmlToDisplay,
     ]);
-
-    // Update completion provider when editor content changes
-    useEffect(() => {
-        completionManagerRef.current?.updateSource(editedDbml);
-    }, [editedDbml]);
 
     useEffect(() => {
         isMountedRef.current = true;

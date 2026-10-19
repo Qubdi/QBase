@@ -18,7 +18,7 @@ Let Dependabot's minor and patch PRs merge as they come; take majors here, on pu
    React 19 removed: `defaultProps` on function components, string refs, legacy context,
    `ReactDOM.render`/`findDOMNode`, and `@types/react` 19 type changes (`useRef` needs an
    argument, `JSX` namespace). Check Radix, xyflow, monaco and cmdk still render and behave.
-3. [ ] **@dbml/core and @dbml/parse 3.x/5.x → 10.x, only when there is a reason** (newer DBML
+3. [x] **@dbml/core and @dbml/parse 3.x/5.x → 10.x, only when there is a reason** (newer DBML
    syntax or a parser fix we need). It is the core of DBML import/export; run the `dbml-export`
    cases and the import tests, and compare the output of the existing cases before and after.
 4. [ ] **Only when needed or when step 2 forces it:** react-resizable-panels 2 → 4 (API changed),

@@ -1,18 +1,22 @@
 import type { Monaco } from '@monaco-editor/react';
-import type { IDisposable } from 'monaco-editor';
-import { Compiler, services } from '@dbml/parse';
+import type { IDisposable, languages } from 'monaco-editor';
+import {
+    Compiler,
+    DBMLCompletionItemProvider,
+    Filepath,
+    MemoryProjectLayout,
+} from '@dbml/parse';
 
 /**
  * Creates and manages a DBML completion provider using @dbml/parse.
  *
- * The provider maintains a Compiler instance that needs to be kept in sync
- * with the editor content to provide context-aware completions.
+ * The compiler reads sources from an in-memory project layout. Before each
+ * completion request the editor model's text is written into that layout under
+ * the model's own URI, so the compiler always sees what the editor shows.
  */
 export interface DBMLCompletionManager {
     /** Disposable to clean up the completion provider registration */
     dispose: () => void;
-    /** Update the compiler with new DBML content */
-    updateSource: (content: string) => void;
 }
 
 // Trigger characters for DBML completions
@@ -28,37 +32,30 @@ const TRIGGER_CHARACTERS = [' ', '[', ':', '.', '>', '<', '-'];
  * - Ref operator suggestions (>, <, -, <>)
  *
  * @param monaco - Monaco editor instance
- * @param initialContent - Initial DBML content to parse
- * @returns Manager object with dispose and updateSource methods
+ * @returns Manager object with a dispose method
  */
 export function registerDBMLCompletionProvider(
-    monaco: Monaco,
-    initialContent: string = ''
+    monaco: Monaco
 ): DBMLCompletionManager {
-    const compiler = new Compiler();
-
-    // Initialize with content if provided
-    if (initialContent) {
-        compiler.setSource(initialContent);
-    }
-
-    // Create the completion provider from @dbml/parse
-    const completionProvider = new services.DBMLCompletionItemProvider(
-        compiler,
-        TRIGGER_CHARACTERS
+    const layout = new MemoryProjectLayout();
+    const completionProvider = new DBMLCompletionItemProvider(
+        new Compiler(layout),
+        { triggerCharacters: TRIGGER_CHARACTERS }
     );
 
-    // Register with Monaco
-    const disposable: IDisposable =
-        monaco.languages.registerCompletionItemProvider(
-            'dbml',
-            completionProvider
-        );
-
-    return {
-        dispose: () => disposable.dispose(),
-        updateSource: (content: string) => {
-            compiler.setSource(content);
+    const provider: languages.CompletionItemProvider = {
+        triggerCharacters: completionProvider.triggerCharacters,
+        provideCompletionItems: (model, position) => {
+            layout.setSource(
+                Filepath.fromUri(String(model.uri)),
+                model.getValue()
+            );
+            return completionProvider.provideCompletionItems(model, position);
         },
     };
+
+    const disposable: IDisposable =
+        monaco.languages.registerCompletionItemProvider('dbml', provider);
+
+    return { dispose: () => disposable.dispose() };
 }

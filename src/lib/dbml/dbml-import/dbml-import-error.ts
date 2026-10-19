@@ -1,4 +1,4 @@
-import type { CompilerError } from '@dbml/core/types/parse/error';
+import type { CompilerError } from '@dbml/core';
 import type { DatabaseType } from '@/lib/domain/database-type';
 import { databaseSupportsArrays } from '@/lib/domain/database-capabilities';
 

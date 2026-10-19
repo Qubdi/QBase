@@ -14,7 +14,7 @@ import {
 } from '@/lib/data/data-types/data-types';
 import { defaultTableColor } from '@/lib/colors';
 import { DatabaseType } from '@/lib/domain/database-type';
-import type Field from '@dbml/core/types/model_structure/field';
+import type { Field } from '@dbml/core';
 import {
     getTableIndexesWithPrimaryKey,
     type DBIndex,
