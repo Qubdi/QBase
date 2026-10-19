@@ -564,3 +564,35 @@ describe('getPublicShare', () => {
         }
     });
 });
+
+describe('getDiagramSummary', () => {
+    it('reads one row from the summary route, not the whole list', async () => {
+        const row = {
+            id: 'r1',
+            title: 'Shop',
+            role: 'editor',
+            projectId: 'p1',
+        };
+        const fetchMock = vi.fn(async () => jsonResponse(200, row));
+        const api = createApi(
+            'http://srv',
+            fetchMock as unknown as typeof fetch
+        );
+        await expect(api.getDiagramSummary('r1')).resolves.toEqual(row);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchMock.mock.calls[0] as unknown as [
+            string,
+            RequestInit,
+        ];
+        expect(url).toBe('http://srv/diagrams/r1/summary');
+        expect(init.method).toBe('GET');
+    });
+
+    it('turns a 404 into an ApiError the gate can read as a missing diagram', async () => {
+        const api = createApi('http://srv', (async () =>
+            jsonResponse(404, { error: 'not_found' })) as typeof fetch);
+        await expect(api.getDiagramSummary('gone')).rejects.toMatchObject({
+            status: 404,
+        });
+    });
+});

@@ -532,6 +532,12 @@ export function createApi(
             }),
 
         listDiagrams: () => request<RemoteDiagramSummary[]>('GET', '/diagrams'),
+        /** One row of the list, without the content; 404 unless the user may see it. */
+        getDiagramSummary: (id: string) =>
+            request<RemoteDiagramSummary>(
+                'GET',
+                `/diagrams/${encodeURIComponent(id)}/summary`
+            ),
         createDiagram: (
             title: string,
             content: Record<string, unknown>,

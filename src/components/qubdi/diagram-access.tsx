@@ -123,11 +123,11 @@ function useWorkspaceResolution(
                 });
             }
 
-            const diagrams = await api.listDiagrams();
-            const found = diagrams.find(
-                (d) => d.id === remoteDiagramId && d.projectId === project.id
-            );
-            if (!found) return done({ kind: 'diagram_missing' });
+            // this diagram's own row, not the list of every diagram the user can see
+            const found = await api.getDiagramSummary(remoteDiagramId);
+            if (found.projectId !== project.id) {
+                return done({ kind: 'diagram_missing' });
+            }
 
             const local = await listDiagrams();
             const { localId } = await ensureLocalCopy({
@@ -153,7 +153,7 @@ function useWorkspaceResolution(
                     localDiagramId: localId,
                     remoteDiagramId,
                 },
-                access: resolveAccess(remoteDiagramId, diagrams),
+                access: resolveAccess(remoteDiagramId, [found]),
             });
         })().catch((e: unknown) => {
             if (e instanceof ApiError && e.status === 404) {
