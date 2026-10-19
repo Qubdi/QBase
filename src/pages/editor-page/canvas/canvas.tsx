@@ -1958,7 +1958,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                         />
                     )}
                     {isDesktop ? (
-                        <Panel position="bottom-left" style={{ margin: 8 }}>
+                        <Panel position="top-right" style={{ margin: 8 }}>
                             <FieldTypeLegend />
                         </Panel>
                     ) : null}

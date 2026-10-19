@@ -38,7 +38,7 @@ export const FieldTypeLegend: React.FC = () => (
                 Type colours
             </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" side="top" className="w-64 p-3">
+        <PopoverContent align="end" side="bottom" className="w-64 p-3">
             <ul className="flex flex-col gap-2 text-xs">
                 {LEGEND.map(({ kind, label, examples }) => (
                     <li key={kind} className="flex items-center gap-2">
