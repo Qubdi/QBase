@@ -26,6 +26,7 @@ import { claimLocalData, clearLocalUserData } from '@/lib/qubdi/local-data';
 import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 import {
     confirmSentContent,
+    markSyncedContent,
     rememberSentContent,
 } from '@/lib/qubdi/sent-content';
 import { resetAdminLanding } from '@/lib/qubdi/admin-landing';
@@ -144,6 +145,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                     );
                     setBaseUpdatedAt(diagram.id, updated.updatedAt);
                     confirmSentContent(diagram.id);
+                    markSyncedContent(diagram.id, content);
                     return updated.id;
                 } catch (e) {
                     // deleted or access revoked on the server: re-create it, but
@@ -167,6 +169,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
             );
             setRemoteId(diagram.id, created.id);
             setBaseUpdatedAt(diagram.id, created.updatedAt);
+            markSyncedContent(diagram.id, content);
             setProjectId(diagram.id, projectId);
             return created.id;
         },

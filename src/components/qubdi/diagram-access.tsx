@@ -90,7 +90,8 @@ function useWorkspaceResolution(
     remoteDiagramId: string | undefined
 ): Resolution {
     const { user } = useQubdi();
-    const { listDiagrams, addDiagram } = useStorage();
+    const { listDiagrams, addDiagram, getDiagram, deleteDiagram } =
+        useStorage();
     const [state, setState] = useState<Resolution>({ kind: 'loading' });
 
     useEffect(() => {
@@ -136,6 +137,14 @@ function useWorkspaceResolution(
                 fetchRemote: (id) => api.getDiagram(id),
                 addDiagram: (diagram) => addDiagram({ diagram }),
                 newId: generateId,
+                // a copy that is behind the server and has nothing unsent is
+                // brought up to date, so a reopen never shows a stale diagram
+                refresh: {
+                    serverUpdatedAt: found.updatedAt,
+                    readOnly: found.role === 'viewer',
+                    getLocal: (id) => getDiagram(id),
+                    deleteLocal: (id) => deleteDiagram(id),
+                },
             });
             done({
                 kind: 'ready',
