@@ -13,7 +13,7 @@ Let Dependabot's minor and patch PRs merge as they come; take majors here, on pu
 1. [x] **zod 3.25 → 4 on the client.** Small, and puts the client on the same major as the server
    (already zod 4). Watch for changed error formatting (`.format()`/`.flatten()`, `message` →
    `error`) and `.default()`/`.optional()` behaviour in form and import schemas.
-2. [ ] **React 18.3 → 19, in one PR together with the libraries that follow it:**
+2. [x] **React 18.3 → 19, in one PR together with the libraries that follow it:**
    react-helmet-async 2 → 3, vaul 0.9 → 1, framer-motion 12 → 14. Before starting, scan for what
    React 19 removed: `defaultProps` on function components, string refs, legacy context,
    `ReactDOM.render`/`findDOMNode`, and `@types/react` 19 type changes (`useRef` needs an
