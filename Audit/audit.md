@@ -1,7 +1,7 @@
 # QubdiDB — Audit
 
-**rev** 4 · **date** 2026-10-20
-**method** static analysis · whole-tree read · eslint, tsc -b, `npm run build`, client vitest run (218 files, 2197 tests, all pass), server vitest run against the dev Postgres's `qubdidb_test` database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and `server/` (0 vulnerabilities) · no secret read
+**rev** 5 · **date** 2026-10-20
+**method** static analysis · whole-tree read · eslint, tsc -b, `npm run build`, client vitest run (224 files, 2618 tests, all pass), server vitest run against the dev Postgres's `qubdidb_test` database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and `server/` (0 vulnerabilities) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
@@ -9,8 +9,8 @@
 | Security & secrets | 1 | 0 | 1 | 22 | 0 |
 | Repository | 1 | 0 | 0 | 21 | 0 |
 | Server | 0 | 0 | 0 | 16 | 0 |
-| Client | 2 | 0 | 0 | 17 | 0 |
-| **Total** | 4 | 0 | 1 | 76 | 0 |
+| Client | 1 | 0 | 0 | 18 | 0 |
+| **Total** | 3 | 0 | 1 | 77 | 0 |
 
 ## Act first
 
@@ -36,7 +36,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-007 | Med | Qubdi and admin UI strings hard-coded English; 0 files use `useTranslation` | `src/components/qubdi/`, `src/pages/admin-page/` | Move strings to locale keys under `qubdi.` |
 | CLI-008 | Low | Lock release on `pagehide` waits behind the final-save promise | `src/components/qubdi/use-edit-lock.ts:59` | Send the keepalive release synchronously in the handler |
 
 ---
@@ -121,6 +120,7 @@
 | CLI-018 | Client | 3 `exhaustive-deps` suppressions in Qubdi code |
 | CLI-019 | Client | Arabic registered but document `dir` never set to RTL |
 | REPO-008 | Repository | README says forked but never names the upstream project |
+| CLI-007 | Client | Qubdi and admin UI strings hard-coded English; 0 files use `useTranslation` |
 
 ---
 
@@ -146,3 +146,4 @@
 | 2 | 2026-10-19 | 1 fixed |
 | 3 | 2026-10-20 | 74 fixed; SEC-001 and REPO-016 narrowed to what is left |
 | 4 | 2026-10-20 | 1 fixed |
+| 5 | 2026-10-20 | 1 fixed |
