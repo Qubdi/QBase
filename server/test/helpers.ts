@@ -31,6 +31,7 @@ export async function createTestApp(
     const config = {
         // tests make many calls; the limits are exercised with explicit overrides
         ...loadConfig({
+            DATABASE_URL: TEST_URL,
             LOG_LEVEL: 'silent',
             LINT_RATE_LIMIT: '100000',
             OUTBOUND_RATE_LIMIT: '100000',

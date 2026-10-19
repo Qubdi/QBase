@@ -38,6 +38,7 @@ docker compose up -d db
 # 2. backend
 cd server
 npm install
+DATABASE_URL="postgres://qubdidb:<POSTGRES_PASSWORD>@localhost:5433/qubdidb" \
 CONNECTION_KEY="a-long-random-secret" \
 INTROSPECT_ALLOW_HOSTS="" \
 npm start                      # compiles to dist/, then runs it: http://localhost:3001
@@ -63,8 +64,8 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `DATABASE_URL` | `postgres://qubdidb:qubdidb@localhost:5433/qubdidb` | Where QubdiDB stores its own data |
-| `HOST` | `0.0.0.0` | Interface the server listens on |
+| `DATABASE_URL` | none, required | Where QubdiDB stores its own data |
+| `HOST` | `127.0.0.1` (`0.0.0.0` in the Docker image) | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
 | `CONNECTION_KEY` | unset | Encrypts saved database passwords and the tokens of active share links (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it; without it a share link's URL is shown only once, when it is created or regenerated |

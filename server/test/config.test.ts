@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, loadConfig, parseCookieSecure, parseTrustProxy } from '../src/config.js';
+import {
+    ConfigError,
+    loadConfig as loadConfigFrom,
+    parseCookieSecure,
+    parseTrustProxy,
+} from '../src/config.js';
+
+/** `loadConfig` with the one setting that has no default. */
+const loadConfig = (env: NodeJS.ProcessEnv = {}) =>
+    loadConfigFrom({ DATABASE_URL: 'postgres://u:p@localhost:5432/db', ...env });
 
 describe('parseTrustProxy', () => {
     it('trusts nothing by default', () => {
@@ -90,5 +99,18 @@ describe('boot-time validation', () => {
         expect(() => loadConfig({ SECRETS_KEY: 'short' })).toThrow(/SECRETS_KEY must be at least 16/);
         expect(() => loadConfig({ CONNECTION_KEY: 'short' })).toThrow(/CONNECTION_KEY must be at least 16/);
         expect(() => loadConfig({ SECRETS_KEY: 'k'.repeat(16) })).not.toThrow();
+    });
+});
+
+describe('connection and listening defaults', () => {
+    it('has no built-in database URL', () => {
+        expect(() => loadConfigFrom({})).toThrow(/DATABASE_URL is required/);
+        expect(() => loadConfigFrom({ DATABASE_URL: '  ' })).toThrow(/DATABASE_URL is required/);
+        expect(loadConfig({ DATABASE_URL: 'postgres://a:b@db/x' }).databaseUrl).toBe('postgres://a:b@db/x');
+    });
+
+    it('listens on loopback unless HOST says otherwise', () => {
+        expect(loadConfig().host).toBe('127.0.0.1');
+        expect(loadConfig({ HOST: '0.0.0.0' }).host).toBe('0.0.0.0');
     });
 });

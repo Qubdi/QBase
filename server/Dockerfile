@@ -14,6 +14,8 @@ RUN ln -s /app/server/node_modules /app/node_modules \
 
 FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
 ENV NODE_ENV=production
+# the image is reached through the container network, so it listens on every interface
+ENV HOST=0.0.0.0
 WORKDIR /app/server
 COPY --from=build /app/server/package.json ./
 COPY --from=build /app/server/node_modules ./node_modules

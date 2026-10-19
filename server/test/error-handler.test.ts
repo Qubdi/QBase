@@ -7,7 +7,7 @@ import { TEST_URL } from './helpers.js';
 describe('error handler', () => {
     const { db, pool } = createDb(TEST_URL);
     const app = buildApp({
-        config: { ...loadConfig({ LOG_LEVEL: 'silent' }), databaseUrl: TEST_URL },
+        config: { ...loadConfig({ DATABASE_URL: TEST_URL, LOG_LEVEL: 'silent' }), databaseUrl: TEST_URL },
         db,
     });
     const fail = (status: number, message: string) =>

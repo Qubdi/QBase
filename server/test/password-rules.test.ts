@@ -229,20 +229,28 @@ describe('first-admin sign-up', () => {
 });
 
 describe('PASSWORD_MIN_LENGTH', () => {
+    const env = (extra: NodeJS.ProcessEnv = {}) => ({
+        DATABASE_URL: 'postgres://u:p@localhost:5432/db',
+        ...extra,
+    });
+
     it('defaults to 12', () => {
-        expect(loadConfig({}).passwordMinLength).toBe(12);
+        expect(loadConfig(env()).passwordMinLength).toBe(12);
     });
 
     it('can be raised, and never goes below 8', () => {
         expect(
-            loadConfig({ PASSWORD_MIN_LENGTH: '16' }).passwordMinLength
+            loadConfig(env({ PASSWORD_MIN_LENGTH: '16' })).passwordMinLength
         ).toBe(16);
-        expect(loadConfig({ PASSWORD_MIN_LENGTH: '3' }).passwordMinLength).toBe(
-            8
-        );
         expect(
-            loadConfig({ PASSWORD_MIN_LENGTH: 'abc' }).passwordMinLength
-        ).toBe(12);
+            loadConfig(env({ PASSWORD_MIN_LENGTH: '3' })).passwordMinLength
+        ).toBe(8);
+    });
+
+    it('is refused at boot when it is not a number', () => {
+        expect(() => loadConfig(env({ PASSWORD_MIN_LENGTH: 'abc' }))).toThrow(
+            /PASSWORD_MIN_LENGTH/
+        );
     });
 
     it('is the length the server enforces', async () => {

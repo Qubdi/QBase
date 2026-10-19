@@ -132,13 +132,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         return value;
     };
 
+    // no built-in fallback: a default credential would be a known password
+    const databaseUrl = env.DATABASE_URL?.trim() ?? '';
+    if (!databaseUrl) problems.push('DATABASE_URL is required');
     const connectionKey = key('CONNECTION_KEY');
     const secretsKey = key('SECRETS_KEY') ?? connectionKey;
     const config: Config = {
-        databaseUrl:
-            env.DATABASE_URL ??
-            'postgres://qubdidb:qubdidb@localhost:5433/qubdidb',
-        host: env.HOST ?? '0.0.0.0',
+        databaseUrl,
+        // loopback unless told otherwise; the Docker image sets 0.0.0.0
+        host: env.HOST ?? '127.0.0.1',
         port: int('PORT', 3001, 1, 65535),
         corsOrigin: env.CORS_ORIGIN ?? null,
         sessionDays: int('SESSION_DAYS', 30, 1),
