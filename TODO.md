@@ -21,6 +21,6 @@ Let Dependabot's minor and patch PRs merge as they come; take majors here, on pu
 3. [x] **@dbml/core and @dbml/parse 3.x/5.x → 10.x, only when there is a reason** (newer DBML
    syntax or a parser fix we need). It is the core of DBML import/export; run the `dbml-export`
    cases and the import tests, and compare the output of the existing cases before and after.
-4. [ ] **Only when needed or when step 2 forces it:** react-resizable-panels 2 → 4 (API changed),
+4. [x] **Only when needed or when step 2 forces it:** react-resizable-panels 2 → 4 (API changed),
    @dnd-kit/sortable 8 → 10, nanoid 5 → 6.
 5. [x] **tailwind-merge 2 → 3 only together with a Tailwind 4 move**, not on its own.

@@ -577,13 +577,13 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
             <DialogInternalContent>
                 {isDesktop ? (
                     <ResizablePanelGroup
-                        direction={isDesktop ? 'horizontal' : 'vertical'}
+                        orientation={isDesktop ? 'horizontal' : 'vertical'}
                         className="min-h-[500px]"
                     >
                         <ResizablePanel
-                            defaultSize={25}
-                            minSize={25}
-                            maxSize={99}
+                            defaultSize="25%"
+                            minSize="25%"
+                            maxSize="99%"
                             className="min-h-fit rounded-md bg-gradient-to-b from-slate-50 to-slate-100 p-2 dark:from-slate-900 dark:to-slate-800 md:min-h-fit md:min-w-[350px] md:rounded-l-md md:p-2"
                         >
                             {renderInstructions()}

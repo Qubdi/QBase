@@ -32,11 +32,11 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
                 className="h-full min-h-0"
             >
                 <EditorSidebar />
-                <ResizablePanelGroup direction="horizontal">
+                <ResizablePanelGroup orientation="horizontal">
                     <ResizablePanel
-                        defaultSize={25}
-                        minSize={25}
-                        maxSize={isSidePanelShowed ? 99 : 0}
+                        defaultSize="25%"
+                        minSize="25%"
+                        maxSize={isSidePanelShowed ? '99%' : '0%'}
                         className={cn('transition-[flex-grow] duration-200', {
                             'min-w-[350px]': isSidePanelShowed,
                         })}
@@ -47,7 +47,7 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
                         disabled={!isSidePanelShowed}
                         className={!isSidePanelShowed ? 'hidden' : ''}
                     />
-                    <ResizablePanel defaultSize={75}>
+                    <ResizablePanel defaultSize="75%">
                         <Canvas initialTables={initialDiagram?.tables ?? []} />
                     </ResizablePanel>
                 </ResizablePanelGroup>
