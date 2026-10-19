@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -55,6 +55,10 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         setLinks(await api.listShareLinks(id));
     }, []);
 
+    // the parent makes a new function each render: only opening starts a load
+    const ensureRef = useRef(ensureRemoteId);
+    ensureRef.current = ensureRemoteId;
+
     useEffect(() => {
         if (!open) return;
         setError(null);
@@ -62,15 +66,14 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         setLinks(null);
         void (async () => {
             try {
-                const id = await ensureRemoteId();
+                const id = await ensureRef.current();
                 setRemoteId(id);
                 await reload(id);
             } catch (e) {
                 setError(errorMessage(e));
             }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open]);
+    }, [open, reload]);
 
     // "Copied" is a brief confirmation, not a state the button stays in
     useEffect(() => {

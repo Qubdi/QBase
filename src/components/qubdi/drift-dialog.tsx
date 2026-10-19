@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -126,9 +126,11 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         );
     }, [projectId]);
 
+    // loads when the dialog opens, not whenever one of what `load` reads changes
+    const loadRef = useRef(load);
+    loadRef.current = load;
     useEffect(() => {
-        if (open) void load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (open) void loadRef.current();
     }, [open]);
 
     const run = async (fn: (remoteId: string) => Promise<void>) => {

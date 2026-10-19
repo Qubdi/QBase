@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/button/button';
 import { Logo } from '@/components/logo/logo';
@@ -90,8 +96,11 @@ function useWorkspaceResolution(
     remoteDiagramId: string | undefined
 ): Resolution {
     const { user } = useQubdi();
-    const { listDiagrams, addDiagram, getDiagram, deleteDiagram } =
-        useStorage();
+    const storage = useStorage();
+    // the effect below reads the storage calls when it runs, but must not
+    // start over (and show "loading") whenever the storage context changes
+    const storageRef = useRef(storage);
+    storageRef.current = storage;
     const [state, setState] = useState<Resolution>({ kind: 'loading' });
 
     useEffect(() => {
@@ -129,6 +138,8 @@ function useWorkspaceResolution(
                 return done({ kind: 'diagram_missing' });
             }
 
+            const { listDiagrams, addDiagram, getDiagram, deleteDiagram } =
+                storageRef.current;
             const local = await listDiagrams();
             const { localId } = await ensureLocalCopy({
                 remoteId: remoteDiagramId,
@@ -171,8 +182,6 @@ function useWorkspaceResolution(
         return () => {
             cancelled = true;
         };
-        // listDiagrams/addDiagram are stable storage calls
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, slug, remoteDiagramId]);
 
     return state;
