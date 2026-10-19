@@ -1,7 +1,7 @@
 # QubdiDB — Audit
 
 **rev** 5 · **date** 2026-10-20
-**method** static analysis · whole-tree read · eslint, tsc -b, `npm run build`, client vitest run (224 files, 2618 tests, all pass), server vitest run against the dev Postgres's `qubdidb_test` database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and `server/` (0 vulnerabilities) · no secret read
+**method** static analysis · whole-tree read · eslint, tsc -b, `npm run build`, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's `qubdidb_test` database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and `server/` (0 vulnerabilities) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
