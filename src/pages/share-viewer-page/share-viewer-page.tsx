@@ -52,7 +52,13 @@ export const ShareViewerPage: React.FC = () => {
         if (res.status === 'ok') {
             setState({ kind: 'ok', share: res.share });
         } else {
-            setState({ kind: res.status });
+            // a reload that failed (a dropped connection, a timeout) must not
+            // blank a diagram that is already on screen
+            setState((prev) =>
+                res.status === 'error' && prev.kind === 'ok'
+                    ? prev
+                    : { kind: res.status }
+            );
         }
     }, [token]);
 

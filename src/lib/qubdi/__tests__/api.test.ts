@@ -6,6 +6,7 @@ import {
     KEEPALIVE_BODY_LIMIT,
     setSessionEndedHandler,
     type RemoteUser,
+    REQUEST_TIMEOUT_MS,
 } from '../api';
 
 const jsonResponse = (status: number, body: unknown) =>
@@ -533,5 +534,33 @@ describe('qubdi api client', () => {
                 code: 'not_found',
             });
         });
+    });
+});
+
+describe('getPublicShare', () => {
+    it('gives up on a request that never answers instead of waiting forever', async () => {
+        const controller = new AbortController();
+        const timeout = vi
+            .spyOn(AbortSignal, 'timeout')
+            .mockReturnValue(controller.signal);
+        try {
+            const api = createApi(
+                'http://srv',
+                ((_url: string, init?: RequestInit) =>
+                    new Promise<Response>((_resolve, reject) => {
+                        init?.signal?.addEventListener('abort', () =>
+                            reject(init.signal?.reason)
+                        );
+                    })) as typeof fetch
+            );
+            const pending = api.getPublicShare('tok');
+            // the request was given the standard time limit...
+            expect(timeout).toHaveBeenCalledWith(REQUEST_TIMEOUT_MS);
+            // ...and when it runs out the page gets an answer, not a hang
+            controller.abort(new DOMException('timed out', 'TimeoutError'));
+            await expect(pending).resolves.toEqual({ status: 'error' });
+        } finally {
+            timeout.mockRestore();
+        }
     });
 });

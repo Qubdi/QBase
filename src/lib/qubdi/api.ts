@@ -760,7 +760,11 @@ export function createApi(
             try {
                 const res = await fetchImpl(
                     `${baseUrl}/s/${encodeURIComponent(token)}`,
-                    { credentials: 'include' }
+                    {
+                        credentials: 'include',
+                        // a request that never answers must not leave the page waiting
+                        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+                    }
                 );
                 if (res.ok) {
                     return { status: 'ok', share: await res.json() };
