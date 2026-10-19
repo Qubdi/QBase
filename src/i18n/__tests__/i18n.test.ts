@@ -75,3 +75,21 @@ describe('document direction', () => {
         await i18n.changeLanguage('en');
     });
 });
+
+describe('the server screens in other languages', () => {
+    it('show their English text until a language translates them', async () => {
+        const english = i18n.getFixedT('en')(
+            'qubdi.adminUsers.sessions.unknownBrowser'
+        );
+        expect(english).toBe('Unknown browser');
+        await i18n.changeLanguage('fr');
+        await expect
+            .poll(() => i18n.hasResourceBundle('fr', 'translation'))
+            .toBe(true);
+        // French has no `qubdi` text yet: the key must still read as English
+        expect(i18n.t('qubdi.adminUsers.sessions.unknownBrowser')).toBe(
+            english
+        );
+        await i18n.changeLanguage('en');
+    });
+});
