@@ -532,15 +532,10 @@ describe('introspect HTTP layer (fake driver)', () => {
                 const res = await edit(
                     bob,
                     editId,
-                    withoutPassword({ name: 'renamed', database: 'shop2', user: 'reader2', ssl: false })
+                    withoutPassword({ name: 'renamed' })
                 );
                 expect(res.statusCode).toBe(200);
-                expect(res.json()).toMatchObject({
-                    id: editId,
-                    name: 'renamed',
-                    database: 'shop2',
-                    user: 'reader2',
-                });
+                expect(res.json()).toMatchObject({ id: editId, name: 'renamed' });
                 expect(res.body).not.toContain('p@ss-w0rd-SECRET');
                 expect(await storedPassword(editId)).toBe('p@ss-w0rd-SECRET');
             });
@@ -551,6 +546,10 @@ describe('introspect HTTP layer (fake driver)', () => {
                     { host: '93.184.216.35' },
                     { port: 5433 },
                     { dialect: 'sqlserver' },
+                    { database: 'another_database' },
+                    { user: 'another_user' },
+                    { ssl: true },
+                    { trustServerCertificate: true },
                 ]) {
                     const res = await edit(bob, editId, withoutPassword({ name: 'renamed', ...move }));
                     expect(res.statusCode, JSON.stringify(move)).toBe(400);

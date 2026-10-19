@@ -369,13 +369,19 @@ export const introspectRoutes =
                 return;
             }
             // Pointing the connection somewhere else would send the stored
-            // password to a host the editor chose, and show it to them. So a
-            // new host, port or dialect needs the password typed again.
+            // password to a host the editor chose, and show it to them. The same
+            // goes for another account or database on that host, and for turning
+            // off the checks on the connection. So any of these needs the
+            // password typed again.
             const movesTarget =
                 body.dialect !== conn.dialect ||
                 body.host.trim().toLowerCase() !==
                     conn.host.trim().toLowerCase() ||
-                (body.port ?? DEFAULT_PORTS[body.dialect]) !== conn.port;
+                (body.port ?? DEFAULT_PORTS[body.dialect]) !== conn.port ||
+                body.user !== conn.username ||
+                body.database !== conn.database ||
+                body.ssl !== conn.ssl ||
+                body.trustServerCertificate !== conn.trustServerCertificate;
             if (movesTarget && body.password === undefined) {
                 return reply.code(400).send({ error: 'password_required' });
             }
