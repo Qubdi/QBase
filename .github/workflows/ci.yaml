@@ -3,6 +3,9 @@ name: CI
 on:
   pull_request:
     branches: [main]
+  # a direct push to main is checked too
+  push:
+    branches: [main]
 
 permissions:
   contents: read
