@@ -28,6 +28,26 @@ To get started:
 2. Create a branch from `main`.
 3. If you’re new to GitHub pull requests, check out [this video series](https://egghead.io/courses/how-to-contribute-to-an-open-source-project-on-github).
 
+### Contributor License Agreement
+
+Before a first pull request can be merged you sign the [CLA](CLA.md). A bot comments on the pull
+request with how; it takes one reply.
+
+### Setting up
+
+You need Node 24 (see `.nvmrc`) and Docker. The steps in the [README](README.md#run-it) start the
+database, the server and the editor.
+
+### Running the tests
+
+```bash
+npm run lint && npx vitest run       # editor: lint and tests
+npm run build                        # editor: lint, type check and bundle
+cd server && npm run lint && npx vitest run   # server (needs the Postgres from `docker compose up -d db`)
+```
+
+The server tests create their own `qubdidb_test` database next to the one the app uses.
+
 ### License
 
 By contributing, you agree that your work will be licensed under QubdiDB's [license](https://github.com/qubdi/qubdidb/blob/main/LICENSE).
@@ -35,7 +55,7 @@ By contributing, you agree that your work will be licensed under QubdiDB's [lice
 ## Questions?
 
 Feel free to ask in `#contributing` on [Discord](https://discord.gg/QeFwyWSKwC) if you have questions about our process, how to proceed, etc.
-or [Email](the project maintainers)
+or [email the project maintainers](mailto:support@qubdi.dev).
 
 ---
 
