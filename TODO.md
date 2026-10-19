@@ -24,3 +24,16 @@ Let Dependabot's minor and patch PRs merge as they come; take majors here, on pu
 4. [x] **Only when needed or when step 2 forces it:** react-resizable-panels 2 → 4 (API changed),
    @dnd-kit/sortable 8 → 10, nanoid 5 → 6.
 5. [x] **tailwind-merge 2 → 3 only together with a Tailwind 4 move**, not on its own.
+
+## React Compiler lint rules
+
+`eslint-plugin-react-hooks` 7 adds rules from the React Compiler. The existing
+components were written before them (about 80 places reset state in an effect or
+read a ref while rendering), so `eslint.config.mjs` keeps these four off until
+those places are migrated. Turn each on, fix what it reports, then remove its
+line from the config.
+
+1. [ ] `react-hooks/set-state-in-effect`
+2. [ ] `react-hooks/refs`
+3. [ ] `react-hooks/preserve-manual-memoization`
+4. [ ] `react-hooks/use-memo`
