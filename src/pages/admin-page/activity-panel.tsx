@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronsUpDown, Download, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
@@ -11,7 +12,7 @@ import {
 import { UserPicker } from '@/components/qubdi/user-picker';
 import { useCursorList } from '@/hooks/use-cursor-list';
 import {
-    ACTIVITY_GROUP_OPTIONS,
+    activityGroupOptions,
     endOfDay,
     groupByDay,
     startOfDay,
@@ -38,6 +39,7 @@ const timeOf = (iso: string) =>
 
 /** Who did what and when, newest first, with filters and "Load more". */
 export const ActivityPanel: React.FC = () => {
+    const { t } = useTranslation();
     const [group, setGroup] = useState<'' | ActivityGroup>('');
     const [person, setPerson] = useState<Named | null>(null);
     const [diagram, setDiagram] = useState<Named | null>(null);
@@ -83,10 +85,14 @@ export const ActivityPanel: React.FC = () => {
             });
             saveBlob(blob, `qubdidb-activity-${localDateStamp()}.csv`);
             toast({
-                title: 'Activity exported',
+                title: t('qubdi.adminProjects.activity.exportedTitle'),
                 description: truncated
-                    ? `The newest ${rows} rows. More matched: narrow the dates to get the rest.`
-                    : `${rows} ${rows === 1 ? 'row' : 'rows'} saved as CSV.`,
+                    ? t('qubdi.adminProjects.activity.exportedTruncated', {
+                          rows,
+                      })
+                    : t('qubdi.adminProjects.activity.exportedRows', {
+                          count: rows,
+                      }),
             });
         } catch (e) {
             setExportError(errorMessage(e));
@@ -107,24 +113,30 @@ export const ActivityPanel: React.FC = () => {
         <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 shadow-xs">
             <div className="flex flex-wrap items-end gap-2">
                 <div className="flex w-full flex-col gap-1 sm:w-52">
-                    <span className="text-xs text-muted-foreground">What</span>
+                    <span className="text-xs text-muted-foreground">
+                        {t('qubdi.adminProjects.activity.what')}
+                    </span>
                     <OptionSelect
-                        aria-label="Kind of activity"
+                        aria-label={t('qubdi.adminProjects.activity.kindLabel')}
                         value={group}
                         onValueChange={(v) => setGroup(v as '' | ActivityGroup)}
-                        options={ACTIVITY_GROUP_OPTIONS}
+                        options={activityGroupOptions()}
                     />
                 </div>
 
                 <div className="flex w-full flex-col gap-1 sm:w-56">
-                    <span className="text-xs text-muted-foreground">Who</span>
+                    <span className="text-xs text-muted-foreground">
+                        {t('qubdi.adminProjects.activity.who')}
+                    </span>
                     <div className="flex gap-1">
                         <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                             <PopoverTrigger asChild>
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    aria-label="Choose who did it"
+                                    aria-label={t(
+                                        'qubdi.adminProjects.activity.chooseWho'
+                                    )}
                                     className="min-w-0 flex-1 justify-between font-normal"
                                 >
                                     <span
@@ -133,7 +145,10 @@ export const ActivityPanel: React.FC = () => {
                                             !person && 'text-muted-foreground'
                                         )}
                                     >
-                                        {person?.label ?? 'Anyone'}
+                                        {person?.label ??
+                                            t(
+                                                'qubdi.adminProjects.activity.anyone'
+                                            )}
                                     </span>
                                     <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
                                 </Button>
@@ -155,7 +170,9 @@ export const ActivityPanel: React.FC = () => {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                aria-label="Show everyone's activity"
+                                aria-label={t(
+                                    'qubdi.adminProjects.activity.everyone'
+                                )}
                                 onClick={() => setPerson(null)}
                             >
                                 <X className="size-4" />
@@ -165,7 +182,7 @@ export const ActivityPanel: React.FC = () => {
                 </div>
 
                 <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                    From
+                    {t('qubdi.adminProjects.activity.from')}
                     <Input
                         type="date"
                         value={from}
@@ -175,7 +192,7 @@ export const ActivityPanel: React.FC = () => {
                     />
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                    To
+                    {t('qubdi.adminProjects.activity.to')}
                     <Input
                         type="date"
                         value={to}
@@ -194,16 +211,20 @@ export const ActivityPanel: React.FC = () => {
                             checked={showSaves}
                             onChange={(e) => setShowSaves(e.target.checked)}
                         />
-                        Show every save
+                        {t('qubdi.adminProjects.activity.showSaves')}
                     </label>
                     {diagram ? (
                         <span className="flex items-center gap-1 rounded-full border bg-accent py-0.5 pl-3 pr-1 text-sm text-accent-foreground">
                             <span className="max-w-64 truncate">
-                                Diagram: {diagram.label}
+                                {t('qubdi.adminProjects.activity.diagramChip', {
+                                    label: diagram.label,
+                                })}
                             </span>
                             <button
                                 type="button"
-                                aria-label="Show every diagram"
+                                aria-label={t(
+                                    'qubdi.adminProjects.activity.showEveryDiagram'
+                                )}
                                 className="rounded-full p-0.5 hover:bg-background/60"
                                 onClick={() => setDiagram(null)}
                             >
@@ -219,7 +240,7 @@ export const ActivityPanel: React.FC = () => {
                             className="h-auto p-0"
                             onClick={clearFilters}
                         >
-                            Clear filters
+                            {t('qubdi.adminProjects.activity.clearFilters')}
                         </Button>
                     ) : null}
                 </div>
@@ -232,7 +253,9 @@ export const ActivityPanel: React.FC = () => {
                         onClick={() => void exportCsv()}
                     >
                         <Download className="size-4" />
-                        {exporting ? 'Exporting…' : 'Export CSV'}
+                        {exporting
+                            ? t('qubdi.adminProjects.activity.exporting')
+                            : t('qubdi.adminProjects.activity.exportCsv')}
                     </Button>
                     <Button
                         type="button"
@@ -247,7 +270,7 @@ export const ActivityPanel: React.FC = () => {
                                 list.loading && 'animate-spin'
                             )}
                         />
-                        Refresh
+                        {t('qubdi.adminProjects.activity.refresh')}
                     </Button>
                 </div>
             </div>
@@ -270,15 +293,15 @@ export const ActivityPanel: React.FC = () => {
             >
                 {list.loading && list.items.length === 0 ? (
                     <p className="p-4 text-sm text-muted-foreground">
-                        Loading…
+                        {t('qubdi.adminProjects.activity.loading')}
                     </p>
                 ) : list.items.length === 0 ? (
                     <p className="p-4 text-sm text-muted-foreground">
                         {filtered
-                            ? 'Nothing matches these filters.'
-                            : 'Nothing has happened yet.'}
+                            ? t('qubdi.adminProjects.activity.noMatch')
+                            : t('qubdi.adminProjects.activity.empty')}
                         {!showSaves && !list.error
-                            ? ' Saves are hidden: tick "Show every save" to include them.'
+                            ? t('qubdi.adminProjects.activity.savesHidden')
                             : ''}
                     </p>
                 ) : (
@@ -321,7 +344,13 @@ export const ActivityPanel: React.FC = () => {
                 <span aria-live="polite">
                     {list.items.length === 0
                         ? ''
-                        : `${list.items.length} shown${list.hasMore ? '' : ', that is everything'}`}
+                        : list.hasMore
+                          ? t('qubdi.adminProjects.activity.shown', {
+                                count: list.items.length,
+                            })
+                          : t('qubdi.adminProjects.activity.shownAll', {
+                                count: list.items.length,
+                            })}
                 </span>
                 {list.hasMore ? (
                     <Button
@@ -331,7 +360,9 @@ export const ActivityPanel: React.FC = () => {
                         disabled={list.loadingMore || list.loading}
                         onClick={list.loadMore}
                     >
-                        {list.loadingMore ? 'Loading…' : 'Load more'}
+                        {list.loadingMore
+                            ? t('qubdi.adminProjects.activity.loading')
+                            : t('qubdi.adminProjects.activity.loadMore')}
                     </Button>
                 ) : null}
             </div>

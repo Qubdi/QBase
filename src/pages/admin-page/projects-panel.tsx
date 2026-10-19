@@ -6,6 +6,7 @@ import React, {
     useState,
 } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FolderPlus, Plus } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import {
@@ -35,17 +36,18 @@ import { ProjectSettings } from './project-settings';
 
 const PAGE_SIZE = 5;
 
-const ROLE_NOUN: Record<ProjectRole, string> = {
-    viewer: 'a viewer',
-    editor: 'an editor',
+const ROLE_NOUN_KEYS: Record<ProjectRole, string> = {
+    viewer: 'roleViewer',
+    editor: 'roleEditor',
 };
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 type Toast = Parameters<ReturnType<typeof useToast>['toast']>[0];
 
 export const ProjectsPanel: React.FC = () => {
+    const { t } = useTranslation();
     const { toast } = useToast();
+    const roleNoun = (role: ProjectRole) =>
+        t(`qubdi.adminProjects.projects.${ROLE_NOUN_KEYS[role]}`);
     const [members, setMembers] = useState<ProjectMember[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     // the chosen project can sit on another page or be filtered out of the list
@@ -147,8 +149,10 @@ export const ProjectsPanel: React.FC = () => {
         choose(p);
         setTab('members');
         toast({
-            title: 'Project created',
-            description: `${p.name} is ready. Add the people who can use it.`,
+            title: t('qubdi.adminProjects.projects.createdTitle'),
+            description: t('qubdi.adminProjects.projects.createdBody', {
+                name: p.name,
+            }),
         });
     };
 
@@ -159,8 +163,13 @@ export const ProjectsPanel: React.FC = () => {
     ) =>
         run(() => api.adminSetProjectMember(project.id, user.id, role), {
             done: {
-                title: `Added ${user.email}`,
-                description: `As ${ROLE_NOUN[role]} in ${project.name}.`,
+                title: t('qubdi.adminProjects.projects.addedTitle', {
+                    email: user.email,
+                }),
+                description: t('qubdi.adminProjects.projects.addedBody', {
+                    role: roleNoun(role),
+                    project: project.name,
+                }),
             },
         });
 
@@ -170,7 +179,12 @@ export const ProjectsPanel: React.FC = () => {
         role: ProjectRole
     ) =>
         run(() => api.adminSetProjectMember(project.id, member.userId, role), {
-            done: { title: `${member.email} is now ${ROLE_NOUN[role]}` },
+            done: {
+                title: t('qubdi.adminProjects.projects.roleChangedTitle', {
+                    email: member.email,
+                    role: roleNoun(role),
+                }),
+            },
         });
 
     const remove = async (project: AdminProject, member: ProjectMember) => {
@@ -179,11 +193,17 @@ export const ProjectsPanel: React.FC = () => {
         );
         if (!ok) return;
         toast({
-            title: `Removed ${member.email}`,
-            description: `They no longer have access to ${project.name}.`,
+            title: t('qubdi.adminProjects.projects.removedTitle', {
+                email: member.email,
+            }),
+            description: t('qubdi.adminProjects.projects.removedBody', {
+                project: project.name,
+            }),
             action: (
                 <ToastAction
-                    altText={`Undo: give ${member.email} access again`}
+                    altText={t('qubdi.adminProjects.projects.undoAlt', {
+                        email: member.email,
+                    })}
                     onClick={() =>
                         void run(() =>
                             api.adminSetProjectMember(
@@ -194,7 +214,7 @@ export const ProjectsPanel: React.FC = () => {
                         )
                     }
                 >
-                    Undo
+                    {t('qubdi.adminProjects.projects.undo')}
                 </ToastAction>
             ),
         });
@@ -210,7 +230,7 @@ export const ProjectsPanel: React.FC = () => {
                 // keep the shown copy right when it is not on this page
                 setSelectedCache((c) => (c ? { ...c, ...updated } : c));
             },
-            { done: { title: 'Changes saved' } }
+            { done: { title: t('qubdi.adminProjects.projects.savedTitle') } }
         );
 
     const deleteProject = (project: AdminProject) =>
@@ -222,7 +242,10 @@ export const ProjectsPanel: React.FC = () => {
             {
                 // the project is gone, so there is nothing to reload members for
                 reload: false,
-                done: { title: 'Project deleted', description: project.name },
+                done: {
+                    title: t('qubdi.adminProjects.projects.deletedTitle'),
+                    description: project.name,
+                },
             }
         );
 
@@ -231,7 +254,7 @@ export const ProjectsPanel: React.FC = () => {
             <div className="flex flex-col gap-3">
                 <Button onClick={() => setCreating(true)}>
                     <Plus className="mr-1.5 size-4" aria-hidden />
-                    New project
+                    {t('qubdi.adminProjects.projects.newProject')}
                 </Button>
 
                 {list.error ? (
@@ -242,23 +265,27 @@ export const ProjectsPanel: React.FC = () => {
                 <SearchInput
                     value={list.query}
                     onChange={list.setQuery}
-                    placeholder="Search projects…"
-                    label="Search projects"
+                    placeholder={t(
+                        'qubdi.adminProjects.projects.searchPlaceholder'
+                    )}
+                    label={t('qubdi.adminProjects.projects.searchLabel')}
                 />
                 <ul
                     className="flex max-h-[22rem] min-h-32 flex-col gap-1 overflow-y-auto"
-                    aria-label="Projects"
+                    aria-label={t('qubdi.adminProjects.projects.listLabel')}
                     data-testid="project-list"
                 >
                     {list.initialLoading ? (
                         <li className="text-sm text-muted-foreground">
-                            Loading…
+                            {t('qubdi.adminProjects.projects.loading')}
                         </li>
                     ) : list.items.length === 0 ? (
                         <li className="text-sm text-muted-foreground">
                             {list.query
-                                ? `No projects match "${list.query}".`
-                                : 'No projects yet.'}
+                                ? t('qubdi.adminProjects.projects.noMatch', {
+                                      query: list.query,
+                                  })
+                                : t('qubdi.adminProjects.projects.none')}
                         </li>
                     ) : (
                         list.items.map((p) => (
@@ -285,8 +312,19 @@ export const ProjectsPanel: React.FC = () => {
                                         </span>
                                     ) : null}
                                     <span className="text-xs text-muted-foreground">
-                                        {plural(p.members, 'member')} ·{' '}
-                                        {plural(p.diagrams, 'diagram')}
+                                        {t(
+                                            'qubdi.adminProjects.projects.members',
+                                            {
+                                                count: p.members,
+                                            }
+                                        )}{' '}
+                                        ·{' '}
+                                        {t(
+                                            'qubdi.adminProjects.projects.diagrams',
+                                            {
+                                                count: p.diagrams,
+                                            }
+                                        )}
                                     </span>
                                 </button>
                             </li>
@@ -300,7 +338,7 @@ export const ProjectsPanel: React.FC = () => {
                     total={list.total}
                     onPageChange={list.setPage}
                     disabled={list.loading}
-                    noun="projects"
+                    noun={t('qubdi.adminProjects.projects.pagerNoun')}
                 />
             </div>
 
@@ -313,7 +351,12 @@ export const ProjectsPanel: React.FC = () => {
                 {selected ? (
                     <section
                         ref={detail}
-                        aria-label={`Project ${selected.name}`}
+                        aria-label={t(
+                            'qubdi.adminProjects.projects.projectLabel',
+                            {
+                                name: selected.name,
+                            }
+                        )}
                         className="scroll-mt-4 rounded-xl border bg-card shadow-xs"
                     >
                         <header className="flex flex-wrap items-start justify-between gap-3 border-b p-4">
@@ -322,13 +365,22 @@ export const ProjectsPanel: React.FC = () => {
                                     {selected.name}
                                 </h2>
                                 <p className="truncate text-sm text-muted-foreground">
-                                    {selected.description || 'No description'}
+                                    {selected.description ||
+                                        t(
+                                            'qubdi.adminProjects.projects.noDescription'
+                                        )}
                                 </p>
                                 <p className="mt-1 text-xs text-muted-foreground">
                                     <code>
                                         {projectHomePath(selected.slug)}
                                     </code>{' '}
-                                    · {plural(selected.diagrams, 'diagram')}
+                                    ·{' '}
+                                    {t(
+                                        'qubdi.adminProjects.projects.diagrams',
+                                        {
+                                            count: selected.diagrams,
+                                        }
+                                    )}
                                 </p>
                             </div>
                             <Button
@@ -338,7 +390,9 @@ export const ProjectsPanel: React.FC = () => {
                                 size="sm"
                             >
                                 <Link to={projectHomePath(selected.slug)}>
-                                    Open workspace
+                                    {t(
+                                        'qubdi.adminProjects.projects.openWorkspace'
+                                    )}
                                 </Link>
                             </Button>
                         </header>
@@ -349,10 +403,14 @@ export const ProjectsPanel: React.FC = () => {
                         >
                             <TabsList>
                                 <TabsTrigger value="members">
-                                    Members
+                                    {t(
+                                        'qubdi.adminProjects.projects.tabMembers'
+                                    )}
                                 </TabsTrigger>
                                 <TabsTrigger value="settings">
-                                    Settings
+                                    {t(
+                                        'qubdi.adminProjects.projects.tabSettings'
+                                    )}
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="members" className="mt-4">
@@ -391,19 +449,18 @@ export const ProjectsPanel: React.FC = () => {
                             aria-hidden
                         />
                         <h2 className="font-primary text-base font-semibold">
-                            No projects yet
+                            {t('qubdi.adminProjects.projects.emptyTitle')}
                         </h2>
                         <p className="max-w-sm text-sm text-muted-foreground">
-                            A project holds diagrams and decides who can see
-                            them. Create the first one, then choose its people.
+                            {t('qubdi.adminProjects.projects.emptyBody')}
                         </p>
                         <Button onClick={() => setCreating(true)}>
-                            New project
+                            {t('qubdi.adminProjects.projects.newProject')}
                         </Button>
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground">
-                        Select a project to manage who can access it.
+                        {t('qubdi.adminProjects.projects.selectPrompt')}
                     </p>
                 )}
             </div>

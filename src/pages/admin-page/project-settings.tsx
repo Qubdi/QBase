@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { Label } from '@/components/label/label';
@@ -22,8 +23,6 @@ export interface ProjectSettingsProps {
     onDelete: () => void;
 }
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
 /** Rename or describe the project, or delete it when it holds no diagrams. */
 export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     project,
@@ -31,6 +30,7 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     onSave,
     onDelete,
 }) => {
+    const { t } = useTranslation();
     const [name, setName] = useState(project.name);
     const [description, setDescription] = useState(project.description);
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -51,14 +51,16 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
         <div className="flex flex-col gap-6">
             <form
                 className="flex flex-col gap-3"
-                aria-label="Project details"
+                aria-label={t('qubdi.adminProjects.settings.detailsLabel')}
                 onSubmit={(e) => {
                     e.preventDefault();
                     onSave(name, description);
                 }}
             >
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor={`${fieldId}-name`}>Project name</Label>
+                    <Label htmlFor={`${fieldId}-name`}>
+                        {t('qubdi.adminProjects.settings.projectName')}
+                    </Label>
                     <Input
                         id={`${fieldId}-name`}
                         value={name}
@@ -69,19 +71,24 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                 </div>
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor={`${fieldId}-description`}>
-                        Description
+                        {t('qubdi.adminProjects.settings.description')}
                     </Label>
                     <Input
                         id={`${fieldId}-description`}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         maxLength={500}
-                        placeholder="What the diagrams in this project are for"
+                        placeholder={t(
+                            'qubdi.adminProjects.settings.descriptionPlaceholder'
+                        )}
                     />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                    Web address: <code>{projectHomePath(project.slug)}</code>.
-                    Renaming the project changes it.
+                    <Trans
+                        i18nKey="qubdi.adminProjects.settings.webAddress"
+                        values={{ path: projectHomePath(project.slug) }}
+                        components={{ code: <code /> }}
+                    />
                 </p>
                 <div className="flex gap-2">
                     <Button
@@ -89,7 +96,7 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                         variant="secondary"
                         disabled={busy || unchanged || !name.trim()}
                     >
-                        Save changes
+                        {t('qubdi.adminProjects.settings.saveChanges')}
                     </Button>
                     {!unchanged ? (
                         <Button
@@ -101,21 +108,25 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                                 setDescription(project.description);
                             }}
                         >
-                            Discard
+                            {t('qubdi.adminProjects.settings.discard')}
                         </Button>
                     ) : null}
                 </div>
             </form>
 
             <section
-                aria-label="Delete project"
+                aria-label={t('qubdi.adminProjects.settings.deleteLabel')}
                 className="flex flex-col gap-2 rounded-lg border border-destructive/40 p-4"
             >
-                <h3 className="text-sm font-semibold">Delete this project</h3>
+                <h3 className="text-sm font-semibold">
+                    {t('qubdi.adminProjects.settings.deleteHeading')}
+                </h3>
                 <p className="text-sm text-muted-foreground">
                     {blocked
-                        ? `It still holds ${plural(project.diagrams, 'diagram')}. Delete them, or move them to another project in the editor, then it can be deleted.`
-                        : 'Removes the project and who was assigned to it.'}
+                        ? t('qubdi.adminProjects.settings.blocked', {
+                              count: project.diagrams,
+                          })
+                        : t('qubdi.adminProjects.settings.removes')}
                 </p>
                 <div>
                     <Button
@@ -125,7 +136,7 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                         disabled={busy || blocked}
                         onClick={() => setConfirmDelete(true)}
                     >
-                        Delete project
+                        {t('qubdi.adminProjects.settings.deleteButton')}
                     </Button>
                 </div>
             </section>
@@ -133,16 +144,21 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
             <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete project?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            {t('qubdi.adminProjects.settings.confirmTitle')}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            {project.name} and its member assignments will be
-                            removed. This cannot be undone.
+                            {t('qubdi.adminProjects.settings.confirmBody', {
+                                name: project.name,
+                            })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                            {t('qubdi.adminProjects.settings.cancel')}
+                        </AlertDialogCancel>
                         <AlertDialogAction onClick={onDelete}>
-                            Delete project
+                            {t('qubdi.adminProjects.settings.deleteButton')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

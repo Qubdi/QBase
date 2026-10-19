@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { describeActivity, type Segment } from '@/lib/qubdi/activity';
 import type { ActivityItem } from '@/lib/qubdi/api';
 
@@ -28,6 +29,7 @@ export const ActivitySentence: React.FC<ActivitySentenceProps> = ({
     activeUserId,
     activeDiagramId,
 }) => {
+    const { t } = useTranslation();
     const piece = (s: Segment, i: number) => {
         if (s.kind === 'gone') {
             return (
@@ -58,8 +60,12 @@ export const ActivitySentence: React.FC<ActivitySentenceProps> = ({
                 type="button"
                 title={
                     s.userId
-                        ? `Show only what ${s.text} did`
-                        : `Show only the activity on ${s.text}`
+                        ? t('qubdi.adminProjects.activity.showOnlyPerson', {
+                              name: s.text,
+                          })
+                        : t('qubdi.adminProjects.activity.showOnlyDiagram', {
+                              name: s.text,
+                          })
                 }
                 className="break-words rounded-xs text-left font-medium underline-offset-2 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={choose}

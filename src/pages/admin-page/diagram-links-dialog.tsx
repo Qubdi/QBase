@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import {
     Dialog,
@@ -31,6 +32,7 @@ export const DiagramLinksDialog: React.FC<DiagramLinksDialogProps> = ({
     onClose,
     onChanged,
 }) => {
+    const { t } = useTranslation();
     const { toast } = useToast();
     const [links, setLinks] = useState<AdminShareLink[] | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -62,9 +64,8 @@ export const DiagramLinksDialog: React.FC<DiagramLinksDialogProps> = ({
                 setLinks(await api.adminListDiagramLinks(diagramId));
                 onChanged();
                 toast({
-                    title: 'Link revoked',
-                    description:
-                        'Its address no longer opens the diagram, for anyone.',
+                    title: t('qubdi.adminProjects.links.revokedTitle'),
+                    description: t('qubdi.adminProjects.links.revokedBody'),
                 });
                 return true;
             } catch (e) {
@@ -72,18 +73,20 @@ export const DiagramLinksDialog: React.FC<DiagramLinksDialogProps> = ({
                 return false;
             }
         },
-        [diagramId, onChanged, toast]
+        [diagramId, onChanged, toast, t]
     );
 
     return (
         <Dialog open={diagram !== null} onOpenChange={(o) => !o && onClose()}>
             <DialogContent className="max-w-lg" showClose>
                 <DialogHeader>
-                    <DialogTitle>Share links</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.adminProjects.links.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        {diagram?.title}. The address of a link is shown once,
-                        to the person who made it, so it cannot be listed here;
-                        it can be ended.
+                        {t('qubdi.adminProjects.links.description', {
+                            title: diagram?.title ?? '',
+                        })}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -102,7 +105,7 @@ export const DiagramLinksDialog: React.FC<DiagramLinksDialogProps> = ({
 
                 <DialogFooter>
                     <Button type="button" variant="outline" onClick={onClose}>
-                        Close
+                        {t('qubdi.adminProjects.links.close')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
