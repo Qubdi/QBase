@@ -10,6 +10,9 @@ To submit a pull request:
 
 1. Fork the repository, create a branch from `main`, and focus on a single change.
 2. Write clear, concise commit messages and ensure your code follows the project's guidelines.
+   Releases are generated from them, so use [Conventional Commits](https://www.conventionalcommits.org/):
+   `fix(server): reject empty names`, `feat(client): add a share dialog`, `docs: fix a typo`. The pull
+   request title follows the same form (a check enforces it), since it becomes the commit when the PR is squashed.
 3. Open a pull request and clearly state what issue it addresses.
 4. If needed, provide a brief explanation of your solution.
 5. Submit your pull request for review.
