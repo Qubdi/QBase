@@ -222,11 +222,11 @@ export const LintControl: React.FC = () => {
                                               <li
                                                   key={f.id}
                                                   data-testid="lint-finding"
-                                                  className="flex items-start gap-2 rounded-md border p-2"
+                                                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border p-2"
                                               >
                                                   <button
                                                       type="button"
-                                                      className="flex-1 text-left"
+                                                      className="col-start-1 min-w-0 text-left [overflow-wrap:anywhere]"
                                                       title={t(
                                                           'qubdi.database.lint.showOnCanvas'
                                                       )}
@@ -247,6 +247,7 @@ export const LintControl: React.FC = () => {
                                                       <Button
                                                           size="sm"
                                                           variant="outline"
+                                                          className="col-start-2 justify-self-end"
                                                           onClick={() =>
                                                               void applyFix(f)
                                                           }
