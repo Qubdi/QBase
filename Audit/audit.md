@@ -1,16 +1,16 @@
 # QubdiDB — Audit
 
-**rev** 3 · **date** 2026-10-20
+**rev** 4 · **date** 2026-10-20
 **method** static analysis · whole-tree read · eslint, tsc -b, `npm run build`, client vitest run (218 files, 2197 tests, all pass), server vitest run against the dev Postgres's `qubdidb_test` database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and `server/` (0 vulnerabilities) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 1 | 0 | 1 | 22 | 0 |
-| Repository | 2 | 0 | 0 | 20 | 0 |
+| Repository | 1 | 0 | 0 | 21 | 0 |
 | Server | 0 | 0 | 0 | 16 | 0 |
 | Client | 2 | 0 | 0 | 17 | 0 |
-| **Total** | 5 | 0 | 1 | 75 | 0 |
+| **Total** | 4 | 0 | 1 | 76 | 0 |
 
 ## Act first
 
@@ -30,7 +30,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-008 | Med | README says forked but never names the upstream project | `README.md:166` | Name and link the upstream project |
 | REPO-016 | Low | No CODEOWNERS file | `.github/` | Add `.github/CODEOWNERS` covering workflows and Dockerfiles |
 
 ### Client
@@ -121,6 +120,7 @@
 | CLI-017 | Client | Drift badge polls every 60 s while the tab is hidden |
 | CLI-018 | Client | 3 `exhaustive-deps` suppressions in Qubdi code |
 | CLI-019 | Client | Arabic registered but document `dir` never set to RTL |
+| REPO-008 | Repository | README says forked but never names the upstream project |
 
 ---
 
@@ -145,3 +145,4 @@
 | 1 | 2026-10-19 | First pass on a fresh audit: 80 new, 0 fixed, 0 dropped |
 | 2 | 2026-10-19 | 1 fixed |
 | 3 | 2026-10-20 | 74 fixed; SEC-001 and REPO-016 narrowed to what is left |
+| 4 | 2026-10-20 | 1 fixed |
