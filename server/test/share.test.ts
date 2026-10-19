@@ -349,6 +349,17 @@ describe('share links', () => {
             expect(named.statusCode).toBe(200);
         });
 
+        it('tells caches not to keep what a link shows, found or not', async () => {
+            await publish();
+            const made = (await createLink(owner)).json();
+            const ok = await open(made.token);
+            expect(ok.statusCode).toBe(200);
+            expect(ok.headers['cache-control']).toBe('no-store');
+            const missing = await open('x'.repeat(43));
+            expect(missing.statusCode).toBe(404);
+            expect(missing.headers['cache-control']).toBe('no-store');
+        });
+
         it('invalidates the old token on regenerate', async () => {
             const made = (await createLink(owner)).json();
             const re = await ctx.app.inject({

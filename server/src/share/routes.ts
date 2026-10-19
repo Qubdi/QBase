@@ -268,6 +268,12 @@ export const publicShareRoutes =
         };
         const tokenParam = z.object({ token: z.string() });
 
+        // what a link shows is for whoever holds it now: never for a shared
+        // cache or the browser's history (the event stream sets its own)
+        app.addHook('onSend', async (_req, reply) => {
+            reply.header('cache-control', 'no-store');
+        });
+
         // open live viewers per link, so one link cannot hold unlimited sockets
         const viewers = new Map<string, number>();
         // One publish wakes every viewer of a link. They share one re-check
