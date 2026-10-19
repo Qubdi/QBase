@@ -417,6 +417,18 @@ describe('reconcile: columns', () => {
         ]);
     });
 
+    it('does not guess when two diagram columns share one database column name', () => {
+        const diagram = table('t', [col('Id'), col('ID')]);
+        const db = table('t', [col('id')]);
+        const cs = reconcile(schema([diagram]), schema([db]));
+        // neither diagram column may be matched to the database's `id`
+        expect(cs.changes.map((c) => c.kind).sort()).toEqual([
+            'column_added',
+            'column_removed',
+            'column_removed',
+        ]);
+    });
+
     it('lists every changed attribute of a column', () => {
         const db = users();
         db.columns[1] = col('email', {

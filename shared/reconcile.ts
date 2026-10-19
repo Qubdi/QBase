@@ -153,12 +153,19 @@ function pairUp<T>(
             const k = rightKeys[i](x);
             index.set(k, [...(index.get(k) ?? []), x]);
         }
+        // a key two left items share is ambiguous from their side too
+        const leftCounts = new Map<string, number>();
+        for (const x of l) {
+            const k = leftKey(x);
+            if (k !== undefined)
+                leftCounts.set(k, (leftCounts.get(k) ?? 0) + 1);
+        }
         const nextL: T[] = [];
         const taken = new Set<T>();
         for (const x of l) {
             const k = leftKey(x);
             const cands =
-                k === undefined
+                k === undefined || leftCounts.get(k)! > 1
                     ? []
                     : (index.get(k) ?? []).filter((c) => !taken.has(c));
             // an ambiguous name-only pass must never guess
