@@ -166,4 +166,4 @@ The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
   or put a limiter in front of it. Edit locks, sessions and everything else are in Postgres and
   are safe to share.
 
-QubdiDB is licensed under the AGPL-3.0, like the project it is forked from.
+QubdiDB is licensed under the AGPL-3.0.
