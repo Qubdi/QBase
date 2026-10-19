@@ -182,6 +182,15 @@ export const introspectRoutes =
             };
         };
 
+        // typed-in credentials leave no other trace: record that someone read a
+        // database, and which one (never the user, database or password)
+        const auditRun = (userId: string, params: ConnectionParams) =>
+            audit(db, {
+                userId,
+                action: 'introspect.run',
+                meta: { dialect: params.dialect, host: params.host },
+            });
+
         /** Connects (after the SSRF check), runs `fn`, always closes. */
         const withIntrospector = async <T>(
             params: ConnectionParams,
@@ -228,6 +237,7 @@ export const introspectRoutes =
             const body = requestConnection.parse(req.body);
             const params = await resolveParams(body, req.user!.id, reply);
             if (!params) return;
+            await auditRun(req.user!.id, params);
             const schemas = await withIntrospector(params, reply, (i) =>
                 i.catalog()
             );
@@ -243,6 +253,7 @@ export const introspectRoutes =
             const body = introspectBody.parse(req.body);
             const params = await resolveParams(body, req.user!.id, reply);
             if (!params) return;
+            await auditRun(req.user!.id, params);
             const metadata = await withIntrospector(params, reply, (i) =>
                 i.introspect({ schemas: body.schemas ?? [] })
             );

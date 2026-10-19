@@ -190,6 +190,9 @@ export interface ActivityItem {
         name?: string;
         /** audit.export: how many rows the file held */
         rows?: number;
+        /** introspect.run: the kind of database and the host it was read from */
+        dialect?: DbDialect;
+        host?: string;
     } | null;
 }
 

@@ -251,6 +251,15 @@ export function describeActivity(item: ActivityItem): Segment[] {
             return [who, text(' dismissed the database drift of '), diagram];
         case 'lint.configure':
             return [who, text(' changed the lint settings of '), diagram];
+        case 'introspect.run':
+            return [
+                who,
+                text(
+                    meta?.host
+                        ? ` read the database at ${meta.host}`
+                        : ' read a database'
+                ),
+            ];
         case 'audit.export':
             return [
                 who,
