@@ -22,7 +22,7 @@ export function useDebounce<T extends (...args: never[]) => unknown>(
     delay: number
 ): (...args: Parameters<T>) => void {
     // Use a ref to store the debounced function
-    const debouncedFnRef = useRef<DebouncedFunction<T>>();
+    const debouncedFnRef = useRef<DebouncedFunction<T> | undefined>(undefined);
 
     // Update the debounced function when dependencies change
     useEffect(() => {

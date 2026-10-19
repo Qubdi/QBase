@@ -60,10 +60,15 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
     const isMountedRef = useRef(true);
     const [isEditButtonEmphasized, setIsEditButtonEmphasized] = useState(false);
 
-    const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
-    const decorationsCollection =
-        useRef<monaco.editor.IEditorDecorationsCollection>();
-    const completionManagerRef = useRef<DBMLCompletionManager>();
+    const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | undefined>(
+        undefined
+    );
+    const decorationsCollection = useRef<
+        monaco.editor.IEditorDecorationsCollection | undefined
+    >(undefined);
+    const completionManagerRef = useRef<DBMLCompletionManager | undefined>(
+        undefined
+    );
 
     const handleEditorDidMount = useCallback(
         (
@@ -127,8 +132,10 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
     const [warningMessage, setWarningMessage] = useState<string>();
     const { t } = useTranslation();
     const { hideLoader, showLoader } = useFullScreenLoader();
-    const emphasisTimeoutRef = useRef<NodeJS.Timeout>();
-    const readOnlyDisposableRef = useRef<monaco.IDisposable>();
+    const emphasisTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    const readOnlyDisposableRef = useRef<monaco.IDisposable | undefined>(
+        undefined
+    );
     const currentDiagramRef = useRef<Diagram>(currentDiagram);
     const originalDiagramRef = useRef<Diagram | null>(originalDiagram);
 

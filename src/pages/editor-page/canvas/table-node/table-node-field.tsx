@@ -363,7 +363,9 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
 
         // details of the column appear once the mouse has rested on the row
         const rowRef = useRef<HTMLDivElement>(null);
-        const hoverTimer = useRef<ReturnType<typeof setTimeout>>();
+        const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+            undefined
+        );
         const [cardAnchor, setCardAnchor] = useState<DOMRect | null>(null);
         const hideCard = useCallback(() => {
             clearTimeout(hoverTimer.current);
