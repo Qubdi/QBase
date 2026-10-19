@@ -1,3 +1,8 @@
+import { account } from '../qubdi/account';
+import { database } from '../qubdi/database';
+import { workspace } from '../qubdi/workspace';
+import { adminUsers } from '../qubdi/admin-users';
+import { adminProjects } from '../qubdi/admin-projects';
 export const en = {
     translation: {
         editor_sidebar: {
@@ -537,5 +542,15 @@ export const en = {
 
         on: 'On',
         off: 'Off',
+
+        // the screens that need a QubdiDB server: sign-in, projects, sharing,
+        // drift, the admin panel. One file per area in src/i18n/qubdi/.
+        qubdi: {
+            account,
+            database,
+            workspace,
+            adminUsers,
+            adminProjects,
+        },
     },
 };
