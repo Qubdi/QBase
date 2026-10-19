@@ -46,6 +46,7 @@ services:
       # the rest of the server's settings (see server/.env.example); the
       # defaults here are the server's own
       SESSION_DAYS: ${SESSION_DAYS:-30}
+      SESSION_IDLE_DAYS: ${SESSION_IDLE_DAYS:-14}
       COOKIE_SECURE: ${COOKIE_SECURE:-auto}
       AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-20}
       AUTH_MAX_FAILURES: ${AUTH_MAX_FAILURES:-10}

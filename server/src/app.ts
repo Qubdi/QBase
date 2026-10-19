@@ -129,7 +129,11 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     });
 
     app.addHook('preHandler', async (req) => {
-        req.user = await getSessionUser(db, req.cookies[SESSION_COOKIE]);
+        req.user = await getSessionUser(
+            db,
+            req.cookies[SESSION_COOKIE],
+            config.sessionIdleDays * 86_400
+        );
     });
 
     // someone on a temporary password may only change it, ask who they are, or

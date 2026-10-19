@@ -7,6 +7,8 @@ export interface Config {
     port: number;
     corsOrigin: string | null;
     sessionDays: number;
+    /** a session unused for this many days ends, well before `sessionDays`; 0 turns it off */
+    sessionIdleDays: number;
     /**
      * Which proxies to trust for the client address (Fastify `trustProxy`):
      * true, a hop count, or a list of addresses. False = use the socket's.
@@ -144,6 +146,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         port: int('PORT', 3001, 1, 65535),
         corsOrigin: env.CORS_ORIGIN ?? null,
         sessionDays: int('SESSION_DAYS', 30, 1),
+        sessionIdleDays: int('SESSION_IDLE_DAYS', 14),
         lintRateLimit: int('LINT_RATE_LIMIT', 30, 1),
         outboundRateLimit: int('OUTBOUND_RATE_LIMIT', 20, 1),
         snapshotKeep: int('SNAPSHOT_KEEP', 200),

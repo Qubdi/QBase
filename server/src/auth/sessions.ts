@@ -63,7 +63,9 @@ export async function createSession(
 
 export async function getSessionUser(
     db: Db,
-    token: string | undefined
+    token: string | undefined,
+    /** a session unused this long is over, however far off its expiry is; 0 = no limit */
+    idleSeconds = 0
 ): Promise<SessionUser | null> {
     if (!token) return null;
     const id = hashToken(token);
@@ -84,7 +86,10 @@ export async function getSessionUser(
             and(
                 eq(sessions.id, id),
                 gt(sessions.expiresAt, new Date()),
-                eq(users.isActive, true)
+                eq(users.isActive, true),
+                idleSeconds > 0
+                    ? sql`${sessions.lastSeenAt} > now() - make_interval(secs => ${idleSeconds})`
+                    : undefined
             )
         );
     const row = rows[0];
