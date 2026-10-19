@@ -7,6 +7,8 @@ import {
 } from '@/context/qubdi-context/qubdi-context';
 import type { DriftBadge, DriftOverview } from '@/lib/qubdi/api';
 import { DriftControl } from '../drift-control';
+import { DiagramAccessContext } from '../diagram-access-context';
+import type { AccessState } from '@/lib/qubdi/access';
 
 const getDrift = vi.fn();
 const checkDrift = vi.fn();
@@ -51,7 +53,16 @@ const configured = (over: Partial<DriftOverview> = {}): DriftOverview => ({
     ...over,
 });
 
-const tree = (user: unknown = { email: 'a@b.c' }) => (
+const editor: AccessState = {
+    status: 'editor',
+    projectId: 'p1',
+    remoteId: 'r1',
+};
+
+const tree = (
+    user: unknown = { email: 'a@b.c' },
+    access: AccessState = editor
+) => (
     <qubdiContext.Provider
         value={
             {
@@ -61,7 +72,11 @@ const tree = (user: unknown = { email: 'a@b.c' }) => (
             } as unknown as QubdiContext
         }
     >
-        <DriftControl />
+        <DiagramAccessContext.Provider
+            value={{ access, refresh: () => undefined }}
+        >
+            <DriftControl />
+        </DiagramAccessContext.Provider>
     </qubdiContext.Provider>
 );
 
@@ -139,4 +154,30 @@ describe('DriftControl when a diagram is opened', () => {
         await show();
         expect(screen.getByTestId('drift-badge').textContent).toBe('Drift: 2');
     });
+});
+
+describe('DriftControl for people who cannot edit', () => {
+    it.each([
+        ['a viewer', { status: 'viewer', projectId: 'p1', remoteId: 'r1' }],
+        [
+            'an editor who lost the lock',
+            {
+                status: 'taken',
+                projectId: 'p1',
+                remoteId: 'r1',
+                holder: 'sam@b.c',
+            },
+        ],
+    ] as const)(
+        'shows nothing, and asks the server nothing, for %s',
+        async (_who, access) => {
+            getDrift.mockReset();
+            const view = render(
+                tree({ email: 'a@b.c' }, access as unknown as AccessState)
+            );
+            await settle();
+            expect(view.container.textContent).toBe('');
+            expect(getDrift).not.toHaveBeenCalled();
+        }
+    );
 });

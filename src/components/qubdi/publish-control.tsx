@@ -12,6 +12,7 @@ import { Input } from '@/components/input/input';
 import { useToast } from '@/components/toast/use-toast';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
+import { useDiagramAccess } from './diagram-access-context';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import {
@@ -38,6 +39,7 @@ const DOT_CLASS: Record<PublishTone, string> = {
 export const PublishControl: React.FC = () => {
     const { enabled, user, syncDiagram, remoteIdFor } = useQubdi();
     const { currentDiagram } = useDiagram();
+    const { access } = useDiagramAccess();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [note, setNote] = useState('');
@@ -73,11 +75,15 @@ export const PublishControl: React.FC = () => {
         }
     }, [remoteId]);
 
-    useEffect(() => {
-        if (user) void refresh();
-    }, [user, refresh, currentDiagram.id]);
+    const canPublish = access.status === 'editor';
 
-    if (!enabled || !user) return null;
+    useEffect(() => {
+        if (user && canPublish) void refresh();
+    }, [user, canPublish, refresh, currentDiagram.id]);
+
+    // only the editor who holds the diagram publishes: a viewer, or an editor
+    // whose lock went to someone else, has nothing to publish from here
+    if (!enabled || !user || !canPublish) return null;
 
     const badge = publishStatusBadge(status);
 

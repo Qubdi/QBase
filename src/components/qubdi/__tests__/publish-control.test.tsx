@@ -155,3 +155,41 @@ describe('PublishControl publishing', () => {
         }
     });
 });
+
+describe('PublishControl for people who cannot edit', () => {
+    it.each([
+        ['a viewer', { status: 'viewer', projectId: 'p1', remoteId: 'r1' }],
+        [
+            'an editor who lost the lock',
+            {
+                status: 'taken',
+                projectId: 'p1',
+                remoteId: 'r1',
+                holder: 'sam@b.c',
+            },
+        ],
+    ] as const)('shows nothing for %s', (_who, access) => {
+        const view = render(
+            <qubdiContext.Provider
+                value={
+                    {
+                        enabled: true,
+                        user: { email: 'a@b.c' },
+                        remoteIdFor: () => 'r1',
+                        syncDiagram,
+                    } as unknown as QubdiContext
+                }
+            >
+                <DiagramAccessContext.Provider
+                    value={{
+                        access: access as never,
+                        refresh: () => undefined,
+                    }}
+                >
+                    <PublishControl />
+                </DiagramAccessContext.Provider>
+            </qubdiContext.Provider>
+        );
+        expect(view.container.textContent).toBe('');
+    });
+});
