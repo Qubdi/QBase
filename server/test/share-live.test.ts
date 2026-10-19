@@ -50,6 +50,31 @@ async function openStream(url: string) {
     };
 }
 
+describe('live share stream headers', () => {
+    it('carries the same security headers as every other API response', async () => {
+        const ctx = await createTestApp();
+        try {
+            const owner = await registerUser(ctx.app, 'owner@example.com');
+            const id = await createDiagram(ctx.app, owner);
+            await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/publish`, headers: as(owner), payload: {} });
+            const { token } = (
+                await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/share-links`, headers: as(owner), payload: { live: true } })
+            ).json();
+            const base = await ctx.app.listen({ port: 0, host: '127.0.0.1' });
+            const controller = new AbortController();
+            const stream = await fetch(`${base}/s/${token}/events`, { signal: controller.signal });
+            const normal = await ctx.app.inject({ url: `/s/${token}` });
+            controller.abort();
+            expect(stream.status).toBe(200);
+            for (const name of ['x-content-type-options', 'x-frame-options', 'referrer-policy', 'content-security-policy']) {
+                expect(stream.headers.get(name), name).toBe(String(normal.headers[name]));
+            }
+        } finally {
+            await ctx.close();
+        }
+    });
+});
+
 describe('live share viewer cap', () => {
     it('refuses viewers past the per-link limit and frees the slot on close', async () => {
         const ctx = await createTestApp({ sseMaxPerLink: 2 });

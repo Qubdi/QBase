@@ -6,6 +6,7 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { CryptoBox } from '../introspect/crypto-box.js';
+import { API_SECURITY_HEADERS } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { latestSnapshot } from '../diagrams/service.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
@@ -349,7 +350,7 @@ export const publicShareRoutes =
                 'content-type': 'text/event-stream',
                 'cache-control': 'no-cache, no-transform',
                 // the stream bypasses the app's onSend hook
-                'x-content-type-options': 'nosniff',
+                ...API_SECURITY_HEADERS,
                 connection: 'keep-alive',
                 ...(config.corsOrigin
                     ? {
