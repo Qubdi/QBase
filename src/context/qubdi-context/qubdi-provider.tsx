@@ -22,7 +22,7 @@ import {
     setProjectId,
     setRemoteId,
 } from '@/lib/qubdi/remote-map';
-import { clearLocalUserData } from '@/lib/qubdi/local-data';
+import { claimLocalData, clearLocalUserData } from '@/lib/qubdi/local-data';
 import { getBaseUpdatedAt, setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 import {
     confirmSentContent,
@@ -43,12 +43,23 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
     const signedIn = useRef(false);
     signedIn.current = !!user;
 
+    // Makes `next` the signed-in person. If the diagrams in this browser are
+    // another account's (a session ended, or someone signed in without signing
+    // out), they are cleared and the page reloads, so nobody sees them.
+    const adopt = useCallback(async (next: RemoteUser) => {
+        if (await claimLocalData(next.id)) {
+            window.location.reload();
+            return;
+        }
+        setUser(next);
+    }, []);
+
     useEffect(() => {
         if (!QUBDI_BACKEND_ENABLED) return;
         api.me()
-            .then(setUser)
+            .then(adopt)
             .catch(() => setUser(null));
-    }, []);
+    }, [adopt]);
 
     // the server refused a signed-in request as signed out: say so, instead of
     // leaving the user with pages that quietly stop working
@@ -62,26 +73,33 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         return () => setSessionEndedHandler(null);
     }, []);
 
-    const login = useCallback(async (email: string, password: string) => {
-        const result = await api.login(email, password);
-        // password right, a code still to come: no session yet
-        if ('mfaRequired' in result) return { mfaChallenge: result.challenge };
-        setUser(result);
-        setSessionEnded(false);
-    }, []);
+    const login = useCallback(
+        async (email: string, password: string) => {
+            const result = await api.login(email, password);
+            // password right, a code still to come: no session yet
+            if ('mfaRequired' in result)
+                return { mfaChallenge: result.challenge };
+            await adopt(result);
+            setSessionEnded(false);
+        },
+        [adopt]
+    );
 
     const loginMfa = useCallback(
         async (challenge: string, factor: SecondFactor) => {
-            setUser(await api.loginMfa(challenge, factor));
+            await adopt(await api.loginMfa(challenge, factor));
             setSessionEnded(false);
         },
-        []
+        [adopt]
     );
 
-    const register = useCallback(async (email: string, password: string) => {
-        setUser(await api.register(email, password));
-        setSessionEnded(false);
-    }, []);
+    const register = useCallback(
+        async (email: string, password: string) => {
+            await adopt(await api.register(email, password));
+            setSessionEnded(false);
+        },
+        [adopt]
+    );
 
     const logout = useCallback(async () => {
         await api.logout().catch(() => undefined);
