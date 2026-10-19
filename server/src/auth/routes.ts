@@ -126,6 +126,15 @@ export const authRoutes =
             const body = newAccount.parse(req.body);
             const weak = weakPassword(config, body.password, body.email);
             if (weak) return reply.code(400).send(weak);
+            // Once sign-up is closed, say so before the (slow) hash: otherwise anyone
+            // can make the server spend a hash per request. The count inside the
+            // transaction below is the one that decides; this only saves work.
+            const [{ value: already }] = await db
+                .select({ value: count() })
+                .from(users);
+            if (already > 0) {
+                return reply.code(403).send({ error: 'signup_disabled' });
+            }
             const passwordHash = await hashPassword(body.password);
             // Counting and inserting happen under one lock: two first-run
             // sign-ups arriving together would both see an empty table and
