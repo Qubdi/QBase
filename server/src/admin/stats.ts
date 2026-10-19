@@ -1,4 +1,4 @@
-import { and, count, eq, exists, gt, gte, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { AUDIT_ACTIONS } from '../audit/audit.js';
 import type { Db } from '../db/client.js';
@@ -68,84 +68,66 @@ const EVENT_ACTIONS = AUDIT_ACTIONS.filter((a) => a !== 'diagram.update');
 const DAY_MS = 86_400_000;
 
 /**
- * The figures on the admin Overview. Each one is its own small aggregate, run
- * together: counts the database answers from an index or a table that is small
- * (users, sessions, locks, projects), and two that read the logs' indexes
- * (`audit_log_action_at_idx` for the drift checks and the daily chart).
+ * The figures on the admin Overview. The counts are one statement, so the page
+ * takes one pooled connection for them instead of one each; the chart is its
+ * own query. The counts are answered from an index or from a table that is
+ * small (users, sessions, locks, projects); the drift checks and the daily
+ * chart read the log's index (`audit_log_action_at_idx`).
  */
 export async function adminStats(db: Db, timeZone: string): Promise<AdminStats> {
-    const [
-        userRow,
-        signedIn,
-        projectCount,
-        diagramCount,
-        published,
-        links,
-        editing,
-        checks,
-        activity,
-    ] = await Promise.all([
-        db
-            .select({
-                total: count(),
-                active: sql<number>`count(*) filter (where ${users.isActive})`.mapWith(Number),
-                admins: sql<number>`count(*) filter (where ${users.isAdmin})`.mapWith(Number),
-            })
-            .from(users),
-        db
-            .select({
-                n: sql<number>`count(distinct ${sessions.userId})`.mapWith(Number),
-            })
-            .from(sessions)
-            .where(gt(sessions.expiresAt, new Date())),
-        db.select({ n: count() }).from(projects),
-        db.select({ n: count() }).from(diagrams),
-        // published = has at least one snapshot; `exists` stops at the first
-        // one instead of reading every snapshot of every diagram
-        db
-            .select({ n: count() })
-            .from(diagrams)
-            .where(
-                exists(
-                    db
-                        .select({ one: sql`1` })
-                        .from(snapshots)
-                        .where(eq(snapshots.diagramId, diagrams.id))
-                )
-            ),
-        db.select({ n: count() }).from(shareLinks).where(activeLinkSql()),
-        // a lease nobody renewed is not someone editing
-        db
-            .select({ n: count() })
-            .from(diagramLocks)
-            .where(gt(diagramLocks.expiresAt, new Date())),
-        db
-            .select({ n: count() })
-            .from(auditLog)
-            .where(
-                and(
-                    eq(auditLog.action, 'drift.check'),
-                    gte(auditLog.at, new Date(Date.now() - DAY_MS))
-                )
-            ),
+    const [counts, activity] = await Promise.all([
+        db.execute<{
+            users_total: number;
+            users_active: number;
+            users_admins: number;
+            signed_in: number;
+            projects: number;
+            diagrams: number;
+            published: number;
+            links: number;
+            editing: number;
+            checks: number;
+        }>(sql`
+            select
+                (select count(*) from ${users})::int as users_total,
+                (select count(*) from ${users} where ${users.isActive})::int as users_active,
+                (select count(*) from ${users} where ${users.isAdmin})::int as users_admins,
+                (select count(distinct ${sessions.userId}) from ${sessions}
+                    where ${sessions.expiresAt} > now())::int as signed_in,
+                (select count(*) from ${projects})::int as projects,
+                (select count(*) from ${diagrams})::int as diagrams,
+                -- published = has at least one snapshot; EXISTS stops at the first
+                -- one instead of reading every snapshot of every diagram
+                (select count(*) from ${diagrams}
+                    where exists (select 1 from ${snapshots}
+                        where ${snapshots.diagramId} = ${diagrams.id}))::int as published,
+                (select count(*) from ${shareLinks} where ${activeLinkSql()})::int as links,
+                -- a lease nobody renewed is not someone editing
+                (select count(*) from ${diagramLocks}
+                    where ${diagramLocks.expiresAt} > now())::int as editing,
+                (select count(*) from ${auditLog}
+                    where ${auditLog.action} = 'drift.check'
+                    and ${auditLog.at} >= ${new Date(Date.now() - DAY_MS)})::int as checks
+        `),
         activityByDay(db, timeZone).catch(() =>
             // a zone this database does not know: show UTC days instead
             activityByDay(db, 'UTC')
         ),
     ]);
+    const c = counts.rows[0];
 
     return {
         users: {
-            total: userRow[0].total,
-            active: userRow[0].active,
-            admins: userRow[0].admins,
-            signedIn: signedIn[0].n,
+            total: c.users_total,
+            active: c.users_active,
+            admins: c.users_admins,
+            signedIn: c.signed_in,
         },
-        projects: projectCount[0].n,
-        diagrams: { total: diagramCount[0].n, published: published[0].n },
-        activeLinks: links[0].n,
-        editingNow: editing[0].n,
-        driftChecks24h: checks[0].n,
+        projects: c.projects,
+        diagrams: { total: c.diagrams, published: c.published },
+        activeLinks: c.links,
+        editingNow: c.editing,
+        driftChecks24h: c.checks,
         activity,
     };
 }
