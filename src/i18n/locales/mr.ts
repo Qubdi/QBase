@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const mr: LanguageTranslation = {
     translation: {
@@ -563,10 +563,4 @@ export const mr: LanguageTranslation = {
         on: 'चालू',
         off: 'बंद',
     },
-};
-
-export const mrMetadata: LanguageMetadata = {
-    name: 'Marathi',
-    nativeName: 'मराठी',
-    code: 'mr',
 };

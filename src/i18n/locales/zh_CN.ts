@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const zh_CN: LanguageTranslation = {
     translation: {
@@ -541,10 +541,4 @@ export const zh_CN: LanguageTranslation = {
         on: '开启',
         off: '关闭',
     },
-};
-
-export const zh_CNMetadata: LanguageMetadata = {
-    name: 'Chinese (Simplified)',
-    nativeName: '简体中文',
-    code: 'zh_CN',
 };

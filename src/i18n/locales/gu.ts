@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const gu: LanguageTranslation = {
     translation: {
@@ -551,10 +551,4 @@ export const gu: LanguageTranslation = {
         on: 'ચાલુ',
         off: 'બંધ',
     },
-};
-
-export const guMetadata: LanguageMetadata = {
-    name: 'Gujarati',
-    nativeName: 'ગુજરાતી',
-    code: 'gu',
 };

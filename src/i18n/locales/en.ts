@@ -1,5 +1,3 @@
-import type { LanguageMetadata } from '../types';
-
 export const en = {
     translation: {
         editor_sidebar: {
@@ -540,10 +538,4 @@ export const en = {
         on: 'On',
         off: 'Off',
     },
-};
-
-export const enMetadata: LanguageMetadata = {
-    name: 'English',
-    nativeName: 'English',
-    code: 'en',
 };

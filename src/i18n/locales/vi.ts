@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const vi: LanguageTranslation = {
     translation: {
@@ -550,10 +550,4 @@ export const vi: LanguageTranslation = {
         on: 'Bật',
         off: 'Tắt',
     },
-};
-
-export const viMetadata: LanguageMetadata = {
-    name: 'Vietnamese',
-    nativeName: 'Tiếng Việt',
-    code: 'vi',
 };

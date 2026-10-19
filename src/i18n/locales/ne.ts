@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const ne: LanguageTranslation = {
     translation: {
@@ -555,10 +555,4 @@ export const ne: LanguageTranslation = {
         on: 'सक्रिय',
         off: 'निष्क्रिय',
     },
-};
-
-export const neMetadata: LanguageMetadata = {
-    name: 'Nepali',
-    nativeName: 'नेपाली',
-    code: 'ne',
 };

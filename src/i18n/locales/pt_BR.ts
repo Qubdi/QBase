@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const pt_BR: LanguageTranslation = {
     translation: {
@@ -554,10 +554,4 @@ export const pt_BR: LanguageTranslation = {
         on: 'Ligado',
         off: 'Desligado',
     },
-};
-
-export const pt_BRMetadata: LanguageMetadata = {
-    name: 'Portuguese',
-    nativeName: 'Português',
-    code: 'pt_BR',
 };
