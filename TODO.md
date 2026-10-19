@@ -23,4 +23,4 @@ Let Dependabot's minor and patch PRs merge as they come; take majors here, on pu
    cases and the import tests, and compare the output of the existing cases before and after.
 4. [ ] **Only when needed or when step 2 forces it:** react-resizable-panels 2 → 4 (API changed),
    @dnd-kit/sortable 8 → 10, nanoid 5 → 6.
-5. [ ] **tailwind-merge 2 → 3 only together with a Tailwind 4 move**, not on its own.
+5. [x] **tailwind-merge 2 → 3 only together with a Tailwind 4 move**, not on its own.
