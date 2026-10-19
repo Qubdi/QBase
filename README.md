@@ -134,10 +134,12 @@ cd server && npx vitest run    # backend (needs the database up with POSTGRES_PA
                                # the tests connect as qubdidb/qubdidb on port 5433)
 ```
 
-The SQL Server tests need the optional container and skip cleanly without it:
+The SQL Server tests need the optional container and skip cleanly without it. Choose a
+password of your own and give it to both the container and the tests:
 
 ```bash
-docker compose --profile mssql up -d mssql
+export MSSQL_SA_PASSWORD='<a strong password>'
+docker compose -f docker-compose.mssql.yml up -d
 ```
 
 ## Schema lint in CI

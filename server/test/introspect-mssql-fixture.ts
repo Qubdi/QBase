@@ -3,7 +3,8 @@ import sql from 'mssql';
 export const MSSQL_HOST = '127.0.0.1';
 export const MSSQL_PORT = 14333;
 export const MSSQL_USER = 'sa';
-export const MSSQL_PASSWORD = 'Qubdi_Strong_Pass1';
+// chosen by whoever starts the container (see docker-compose.mssql.yml); without it the tests skip
+export const MSSQL_PASSWORD = process.env.MSSQL_SA_PASSWORD ?? '';
 export const MSSQL_DB = 'qubdi_sample';
 
 const config = (database: string): sql.config => ({
@@ -64,6 +65,8 @@ export async function mssqlAvailable(): Promise<boolean> {
 
 /** Waits for the container to accept logins (it needs a while on first start). */
 export async function waitForMssql(timeoutMs = 90_000): Promise<boolean> {
+    // no password, no container to reach: skip at once instead of waiting for one
+    if (!MSSQL_PASSWORD) return false;
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
         if (await mssqlAvailable()) return true;

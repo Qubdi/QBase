@@ -14,7 +14,7 @@ import {
     waitForMssql,
 } from './introspect-mssql-fixture.js';
 
-// Needs the optional container:  docker compose --profile mssql up -d mssql
+// Needs the optional container and its password: see docker-compose.mssql.yml
 const up = await waitForMssql(Number(process.env.MSSQL_WAIT_MS ?? 90_000));
 
 describe.skipIf(!up)('SQL Server introspection against a real database', () => {

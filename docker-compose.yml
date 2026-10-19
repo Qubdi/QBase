@@ -86,17 +86,5 @@ services:
     ports:
       - "${UI_BIND_IP:-127.0.0.1}:${UI_PORT:-8080}:80"
 
-  # Optional: only needed to run the SQL Server introspection tests.
-  #   docker compose --profile mssql up -d mssql
-  mssql:
-    container_name: qubdidb-mssql
-    profiles: ["mssql"]
-    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:cf8f0ab2ebe61feec2eed2629061a07d247f791c2a8ddda74a4ac9f06a291718
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Qubdi_Strong_Pass1}
-    ports:
-      - "${MSSQL_BIND_IP:-127.0.0.1}:${MSSQL_PORT:-14333}:1433"
-
 volumes:
   postgres-data:
