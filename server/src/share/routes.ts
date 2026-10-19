@@ -2,6 +2,7 @@ import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
+import { SESSION_COOKIE, getSessionUser } from '../auth/sessions.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
@@ -421,9 +422,27 @@ export const publicShareRoutes =
                 })
             );
 
-            const heartbeat = setInterval(() => {
+            // A link that needs a sign-in also needs the viewer to stay signed in:
+            // each ping first checks the session is still alive (an ended session
+            // or a disabled account would otherwise keep reading until the next
+            // publish). The check is skipped for links open to anyone.
+            const heartbeat = setInterval(async () => {
+                if (closed) return;
+                if (check.link.access === 'signed_in' && req.user) {
+                    try {
+                        const still = await getSessionUser(
+                            db,
+                            req.cookies[SESSION_COOKIE],
+                            config.sessionIdleDays * 86_400
+                        );
+                        if (!still || still.id !== req.user.id) return close();
+                    } catch (err) {
+                        req.log.error({ err }, 'share events: session check failed');
+                        return close();
+                    }
+                }
                 if (!closed) raw.write(': ping\n\n');
-            }, 25_000);
+            }, config.sseHeartbeatSeconds * 1000);
             cleanup.push(() => clearInterval(heartbeat));
 
             if (check.link.expiresAt) {
