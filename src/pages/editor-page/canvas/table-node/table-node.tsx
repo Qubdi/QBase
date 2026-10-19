@@ -88,6 +88,21 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
     }) => {
         const { updateTable, relationships, readonly } = useDiagram();
         const edges = useStore((store) => store.edges) as EdgeType[];
+        // With a table selected, tables not linked to it fade back, so the
+        // connected ones stand out on a crowded canvas.
+        const isUnrelatedToSelection = useStore((store) => {
+            const selectedIds = new Set<string>();
+            for (const node of store.nodes) {
+                if (node.type === 'table' && node.selected)
+                    selectedIds.add(node.id);
+            }
+            if (selectedIds.size === 0 || selectedIds.has(id)) return false;
+            return !store.edges.some(
+                (edge) =>
+                    (edge.source === id && selectedIds.has(edge.target)) ||
+                    (edge.target === id && selectedIds.has(edge.source))
+            );
+        });
         const {
             openTableFromSidebar,
             selectSidebarSection,
@@ -344,11 +359,14 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
             [tempFloatingEdge, id, isRelationshipCreatingTarget, isHovering]
         );
 
+        const isFaded = isUnrelatedToSelection && !isHovering;
+
         const tableClassName = useMemo(
             () =>
                 cn(
-                    'flex w-full flex-col overflow-hidden rounded-xl border bg-card shadow-xs',
+                    'flex w-full flex-col overflow-hidden rounded-xl border bg-card shadow-xs transition-[opacity,filter] duration-200',
                     table.isView ? 'border-dashed' : '',
+                    isFaded ? 'opacity-40 grayscale' : '',
                     selected || isTarget || isPartOfCreatingRelationship
                         ? 'border-primary ring-2 ring-primary/25'
                         : 'border-border',
@@ -396,6 +414,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                 editTableMode,
                 isPartOfCreatingRelationship,
                 table.isView,
+                isFaded,
             ]
         );
 
