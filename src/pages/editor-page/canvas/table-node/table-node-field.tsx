@@ -28,11 +28,6 @@ import {
 import { generateDBFieldSuffix, type DBField } from '@/lib/domain/db-field';
 import { useDiagram } from '@/hooks/use-diagram';
 import { cn } from '@/lib/utils';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/tooltip/tooltip';
 import { useDiff } from '@/context/diff-context/use-diff';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import {
@@ -548,16 +543,9 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                         )}
                     </span>
                     {field.comments ? (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="shrink-0 cursor-pointer text-muted-foreground">
-                                    <MessageCircleMore size={14} />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs whitespace-pre-wrap break-words">
-                                {field.comments}
-                            </TooltipContent>
-                        </Tooltip>
+                        <div className="shrink-0 cursor-pointer text-muted-foreground">
+                            <MessageCircleMore size={14} />
+                        </div>
                     ) : null}
                 </div>
 

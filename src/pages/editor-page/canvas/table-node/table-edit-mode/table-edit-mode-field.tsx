@@ -4,11 +4,6 @@ import { Input } from '@/components/input/input';
 import { generateDBFieldSuffix, type DBField } from '@/lib/domain/db-field';
 import type { DatabaseType, DBTable } from '@/lib/domain';
 import { useUpdateTableField } from '@/hooks/use-update-table-field';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/tooltip/tooltip';
 import { useTranslation } from 'react-i18next';
 import { SelectBox } from '@/components/select-box/select-box';
 import { cn } from '@/lib/utils';
@@ -73,128 +68,73 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
             >
                 <div className="flex flex-1 items-center justify-start gap-1 overflow-hidden">
                     <span className="relative min-w-0 flex-1">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Input
-                                    ref={inputRef}
-                                    className="h-8 w-full !truncate border-transparent bg-transparent font-medium hover:border-input focus-visible:border-input focus-visible:bg-background focus-visible:ring-0"
-                                    type="text"
-                                    placeholder={t(
-                                        'side_panel.tables_section.table.field_name'
-                                    )}
-                                    value={fieldName}
-                                    onChange={(e) =>
-                                        handleNameChange(e.target.value)
-                                    }
-                                    autoFocus={focused}
-                                />
-                            </TooltipTrigger>
-                            <TooltipContent>{fieldName}</TooltipContent>
-                        </Tooltip>
+                        <Input
+                            ref={inputRef}
+                            className="h-8 w-full !truncate border-transparent bg-transparent font-medium hover:border-input focus-visible:border-input focus-visible:bg-background focus-visible:ring-0"
+                            type="text"
+                            placeholder={t(
+                                'side_panel.tables_section.table.field_name'
+                            )}
+                            value={fieldName}
+                            onChange={(e) => handleNameChange(e.target.value)}
+                            autoFocus={focused}
+                        />
+
                         {field.comments ? (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className="absolute right-0 top-0 h-full w-[10px] cursor-pointer">
-                                        <div className="pointer-events-none absolute right-0 top-0 size-0 border-l-[10px] border-t-[10px] border-l-transparent border-t-teal-500" />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <div>
-                                        <div className="font-normal text-white/70 dark:text-black/70">
-                                            Description:
-                                        </div>
-                                        <div>{field.comments}</div>
-                                    </div>
-                                </TooltipContent>
-                            </Tooltip>
+                            <div className="absolute right-0 top-0 h-full w-[10px] cursor-pointer">
+                                <div className="pointer-events-none absolute right-0 top-0 size-0 border-l-[10px] border-t-[10px] border-l-transparent border-t-teal-500" />
+                            </div>
                         ) : null}
                     </span>
-                    <Tooltip>
-                        <TooltipTrigger
-                            className="flex h-8 min-w-0 flex-1"
-                            asChild
-                        >
-                            <span>
-                                <SelectBox
-                                    className="flex h-8 min-h-8 w-full border-transparent bg-transparent hover:border-input"
-                                    popoverClassName="min-w-[200px]"
-                                    options={dataFieldOptions}
-                                    placeholder={t(
-                                        'side_panel.tables_section.table.field_type'
-                                    )}
-                                    value={field.type.id}
-                                    valueSuffix={generateDBFieldSuffix(field, {
-                                        databaseType,
-                                    })}
-                                    optionSuffix={(option) =>
-                                        generateFieldSuffix(option.value)
-                                    }
-                                    onChange={handleDataTypeChange}
-                                    emptyPlaceholder={t(
-                                        'side_panel.tables_section.table.no_types_found'
-                                    )}
-                                    commandOnClick={(e) => e.stopPropagation()}
-                                    commandOnMouseDown={(e) =>
-                                        e.stopPropagation()
-                                    }
-                                />
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            {field.type.name}
-                            {generateDBFieldSuffix(field, {
+                    <span className="flex h-8 min-w-0 flex-1">
+                        <SelectBox
+                            className="flex h-8 min-h-8 w-full border-transparent bg-transparent hover:border-input"
+                            popoverClassName="min-w-[200px]"
+                            options={dataFieldOptions}
+                            placeholder={t(
+                                'side_panel.tables_section.table.field_type'
+                            )}
+                            value={field.type.id}
+                            valueSuffix={generateDBFieldSuffix(field, {
                                 databaseType,
                             })}
-                        </TooltipContent>
-                    </Tooltip>
+                            optionSuffix={(option) =>
+                                generateFieldSuffix(option.value)
+                            }
+                            onChange={handleDataTypeChange}
+                            emptyPlaceholder={t(
+                                'side_panel.tables_section.table.no_types_found'
+                            )}
+                            commandOnClick={(e) => e.stopPropagation()}
+                            commandOnMouseDown={(e) => e.stopPropagation()}
+                        />
+                    </span>
                 </div>
                 <div className="flex shrink-0 items-center justify-end gap-1">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span>
-                                <TableFieldToggle
-                                    pressed={nullable}
-                                    onPressedChange={handleNullableToggle}
-                                    disabled={typeRequiresNotNull || primaryKey}
-                                >
-                                    N
-                                </TableFieldToggle>
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            {nullable ? 'Null' : 'Not Null'}
-                        </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span>
-                                <TableFieldToggle
-                                    pressed={primaryKey}
-                                    onPressedChange={handlePrimaryKeyToggle}
-                                >
-                                    <KeyRound className="h-3.5" />
-                                </TableFieldToggle>
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            {t('side_panel.tables_section.table.primary_key')}
-                        </TooltipContent>
-                    </Tooltip>
+                    <span>
+                        <TableFieldToggle
+                            pressed={nullable}
+                            onPressedChange={handleNullableToggle}
+                            disabled={typeRequiresNotNull || primaryKey}
+                        >
+                            N
+                        </TableFieldToggle>
+                    </span>
 
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span>
-                                <TableFieldToggle onPressedChange={removeField}>
-                                    <Trash2 className="h-3.5 text-red-700" />
-                                </TableFieldToggle>
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            {t(
-                                'side_panel.tables_section.table.field_actions.delete_field'
-                            )}
-                        </TooltipContent>
-                    </Tooltip>
+                    <span>
+                        <TableFieldToggle
+                            pressed={primaryKey}
+                            onPressedChange={handlePrimaryKeyToggle}
+                        >
+                            <KeyRound className="h-3.5" />
+                        </TableFieldToggle>
+                    </span>
+
+                    <span>
+                        <TableFieldToggle onPressedChange={removeField}>
+                            <Trash2 className="h-3.5 text-red-700" />
+                        </TableFieldToggle>
+                    </span>
                 </div>
             </div>
         );
