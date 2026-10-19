@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { api } from '@/lib/qubdi/api';
 import { AuthDialog } from './auth-dialog';
@@ -9,6 +10,7 @@ import { AuthDialog } from './auth-dialog';
  * the visitor to ask an admin for one.
  */
 export const SignInPrompt: React.FC<{ verb: 'see' | 'open' }> = ({ verb }) => {
+    const { t } = useTranslation();
     const [authOpen, setAuthOpen] = useState(false);
     const [needsSetup, setNeedsSetup] = useState(false);
 
@@ -22,11 +24,15 @@ export const SignInPrompt: React.FC<{ verb: 'see' | 'open' }> = ({ verb }) => {
         <>
             <p className="max-w-sm text-sm text-muted-foreground">
                 {needsSetup
-                    ? 'This server has no users yet. Create the admin account to get started.'
-                    : `Sign in to ${verb} your projects. Accounts are created by an admin.`}
+                    ? t('qubdi.account.signInPrompt.needsSetup')
+                    : verb === 'see'
+                      ? t('qubdi.account.signInPrompt.signInSee')
+                      : t('qubdi.account.signInPrompt.signInOpen')}
             </p>
             <Button onClick={() => setAuthOpen(true)}>
-                {needsSetup ? 'Create admin account' : 'Sign in'}
+                {needsSetup
+                    ? t('qubdi.account.signInPrompt.createAdmin')
+                    : t('qubdi.account.signInPrompt.signIn')}
             </Button>
             <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
         </>

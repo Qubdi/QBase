@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, X } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { usePagedList } from '@/hooks/use-paged-list';
@@ -24,6 +25,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     excludeIds,
     hideAdmins = false,
 }) => {
+    const { t } = useTranslation();
     const list = usePagedList(
         ({ page, limit, q }) => api.adminListUsers({ page, limit, q }),
         { limit: 20 }
@@ -38,7 +40,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                 </span>
                 <button
                     type="button"
-                    aria-label="Choose a different user"
+                    aria-label={t('qubdi.account.userPicker.change')}
                     className="rounded-xs hover:text-foreground"
                     onClick={() => onSelect(null)}
                 >
@@ -58,23 +60,23 @@ export const UserPicker: React.FC<UserPickerProps> = ({
             <SearchInput
                 value={list.query}
                 onChange={list.setQuery}
-                placeholder="Search users by email…"
-                label="Search users to assign"
+                placeholder={t('qubdi.account.userPicker.placeholder')}
+                label={t('qubdi.account.userPicker.label')}
             />
             <ul
                 className="max-h-28 min-h-10 overflow-y-auto rounded-md border md:max-h-40"
-                aria-label="Matching users"
+                aria-label={t('qubdi.account.userPicker.matching')}
             >
                 {list.initialLoading ? (
                     <li className="px-3 py-2 text-sm text-muted-foreground">
-                        Loading…
+                        {t('qubdi.account.userPicker.loading')}
                     </li>
                 ) : candidates.length === 0 ? (
                     <li className="px-3 py-2 text-sm text-muted-foreground">
                         {list.query
-                            ? 'No matching user that is not already assigned.'
-                            : 'Everyone is already assigned.'}
-                        {more ? ' Type more to narrow the search.' : ''}
+                            ? t('qubdi.account.userPicker.noMatch')
+                            : t('qubdi.account.userPicker.everyone')}
+                        {more ? t('qubdi.account.userPicker.narrow') : ''}
                     </li>
                 ) : (
                     candidates.map((u) => (

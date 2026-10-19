@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     Database,
     FolderKanban,
@@ -36,6 +37,7 @@ import { TwoFactorDialog } from './two-factor-dialog';
 import { useWorkspace } from './workspace-context';
 
 export const AccountMenu: React.FC = () => {
+    const { t } = useTranslation();
     const { enabled, user, logout, syncDiagram, remoteIdFor } = useQubdi();
     const { currentDiagram } = useDiagram();
     const workspace = useWorkspace();
@@ -67,7 +69,10 @@ export const AccountMenu: React.FC = () => {
             ? null
             : workspace.project
         : legacyProjectId
-          ? { id: legacyProjectId, name: 'this project' }
+          ? {
+                id: legacyProjectId,
+                name: t('qubdi.account.accountMenu.thisProject'),
+            }
           : null;
 
     if (user === null) {
@@ -78,7 +83,7 @@ export const AccountMenu: React.FC = () => {
                     size="sm"
                     onClick={() => setAuthOpen(true)}
                 >
-                    Sign in
+                    {t('qubdi.account.accountMenu.signIn')}
                 </Button>
                 <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
             </>
@@ -95,7 +100,7 @@ export const AccountMenu: React.FC = () => {
                     onClick={() => navigate('/admin')}
                 >
                     <ShieldCheck className="size-4" />
-                    Admin
+                    {t('qubdi.account.accountMenu.admin')}
                 </Button>
             ) : null}
             <DropdownMenu>
@@ -108,55 +113,57 @@ export const AccountMenu: React.FC = () => {
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>
                         {user.email}
-                        {user.isAdmin ? ' (admin)' : ''}
+                        {user.isAdmin
+                            ? t('qubdi.account.accountMenu.adminSuffix')
+                            : ''}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/')}>
                         <FolderKanban className="mr-2 size-4" />
-                        Projects
+                        {t('qubdi.account.accountMenu.projects')}
                     </DropdownMenuItem>
                     {connectionsProject ? (
                         <DropdownMenuItem
                             onClick={() => setConnectionsOpen(true)}
                         >
                             <Database className="mr-2 size-4" />
-                            Database connections
+                            {t('qubdi.account.accountMenu.databaseConnections')}
                         </DropdownMenuItem>
                     ) : null}
                     <DropdownMenuItem onClick={() => setResyncOpen(true)}>
                         <RefreshCw className="mr-2 size-4" />
-                        Re-sync from database
+                        {t('qubdi.account.accountMenu.resync')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShareOpen(true)}>
                         <Share2 className="mr-2 size-4" />
-                        Share
+                        {t('qubdi.account.accountMenu.share')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setMembersOpen(true)}>
                         <Users className="mr-2 size-4" />
-                        Members
+                        {t('qubdi.account.accountMenu.members')}
                     </DropdownMenuItem>
                     {user.isAdmin ? (
                         <DropdownMenuItem onClick={() => navigate('/admin')}>
                             <ShieldCheck className="mr-2 size-4" />
-                            Admin panel
+                            {t('qubdi.account.accountMenu.adminPanel')}
                         </DropdownMenuItem>
                     ) : null}
                     <DropdownMenuItem onClick={() => setPasswordOpen(true)}>
                         <KeyRound className="mr-2 size-4" />
-                        Change password
+                        {t('qubdi.account.accountMenu.changePassword')}
                     </DropdownMenuItem>
                     {mfaAvailable || user.mfaEnabled ? (
                         <DropdownMenuItem
                             onClick={() => setTwoFactorOpen(true)}
                         >
                             <Smartphone className="mr-2 size-4" />
-                            Two-factor authentication
+                            {t('qubdi.account.accountMenu.twoFactor')}
                         </DropdownMenuItem>
                     ) : null}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => void logout()}>
                         <LogOut className="mr-2 size-4" />
-                        Sign out
+                        {t('qubdi.account.accountMenu.signOut')}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

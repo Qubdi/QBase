@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { pageRange } from '@/lib/qubdi/paging';
@@ -22,22 +23,29 @@ export const ListPager: React.FC<ListPagerProps> = ({
     total,
     onPageChange,
     disabled,
-    noun = 'items',
+    noun,
 }) => {
+    const { t } = useTranslation();
+    const what = noun ?? t('qubdi.account.listPager.defaultNoun');
     const { from, to } = pageRange(page, limit, total);
     return (
         <div className="flex h-9 items-center justify-between gap-2 text-sm text-muted-foreground">
             <span aria-live="polite">
                 {total === 0
-                    ? `No ${noun}`
-                    : `${from}–${to} of ${total} ${noun}`}
+                    ? t('qubdi.account.listPager.none', { noun: what })
+                    : t('qubdi.account.listPager.range', {
+                          from,
+                          to,
+                          total,
+                          noun: what,
+                      })}
             </span>
             <div className="flex items-center gap-1">
                 <Button
                     variant="outline"
                     size="icon"
                     className="size-8"
-                    aria-label="Previous page"
+                    aria-label={t('qubdi.account.listPager.previous')}
                     disabled={disabled || page <= 1}
                     onClick={() => onPageChange(page - 1)}
                 >
@@ -50,7 +58,7 @@ export const ListPager: React.FC<ListPagerProps> = ({
                     variant="outline"
                     size="icon"
                     className="size-8"
-                    aria-label="Next page"
+                    aria-label={t('qubdi.account.listPager.next')}
                     disabled={disabled || page >= pageCount}
                     onClick={() => onPageChange(page + 1)}
                 >

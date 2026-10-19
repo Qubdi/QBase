@@ -1,4 +1,5 @@
 import { QUBDI_BACKEND_URL } from './config';
+import { i18n } from '@/i18n/i18n';
 import type { LintConfig } from '../../../shared/lint';
 import { listQuery, type ListParams, type Page } from './paging';
 
@@ -873,71 +874,19 @@ export const api: QubdiApi = createApi();
 
 export const errorMessage = (e: unknown): string => {
     if (e instanceof ApiError) {
-        const map: Record<string, string> = {
-            invalid_credentials: 'Wrong email or password.',
-            email_taken: 'That email is already registered.',
-            signup_disabled:
-                'Accounts are created by an admin. Ask yours for access.',
-            invalid_request: 'Please check the values you entered.',
-            wrong_password: 'Current password is incorrect.',
-            invalid_code:
-                'That code is not right. Check the app and try again.',
-            invalid_challenge:
-                'That sign-in took too long or had too many wrong codes. Enter your password again.',
-            mfa_code_required:
-                'Enter the code from your authenticator app (or a recovery code).',
-            mfa_unavailable:
-                'Two-factor sign-in cannot be used on this server right now (its encryption key is missing).',
-            already_enabled: 'Two-factor sign-in is already on.',
-            not_enabled: 'Two-factor sign-in is not on.',
-            setup_first: 'Start the set-up first.',
-            cannot_reset_self:
-                'Turn your own two-factor sign-in off from the account menu.',
-            weak_password: 'That password does not meet the rules below.',
-            same_password: 'Choose a password different from the current one.',
-            password_change_required:
-                'Choose your own password before you continue.',
-            user_not_found: 'No account with that email exists yet.',
-            already_member: 'That person already has access.',
-            forbidden: 'You do not have permission to do that.',
-            not_found: 'Not found.',
-            encryption_not_configured:
-                'This server cannot store passwords (CONNECTION_KEY is not set).',
-            name_taken: 'That name is already in use.',
-            password_required:
-                'Type the password again to change the host, port or type of a saved connection.',
-            too_many_attempts:
-                'Too many failed attempts. Wait a few minutes and try again.',
-            invalid_webhook: 'That webhook URL is not valid.',
-            connection_required: 'Choose a saved connection first.',
-            connection_not_found: 'That saved connection does not exist.',
-            not_configured: 'Save the drift settings first.',
-            already_running: 'A check is already running.',
-            no_project:
-                'Open this diagram from a project before saving it to the server.',
-            last_admin: 'There must be at least one admin who can sign in.',
-            cannot_disable_self: 'You cannot disable your own account.',
-            cannot_sign_out_self:
-                'You cannot sign yourself out here. Use Sign out in the account menu.',
-            account_disabled:
-                'This account has been disabled. Ask an admin to enable it.',
-            invalid_name:
-                'Use letters or numbers in the project name; it becomes its web address.',
-            reserved_name:
-                'That name is used by the app itself. Choose another one.',
-            cannot_delete_self: 'You cannot delete your own account.',
-            project_not_empty:
-                'This project still has diagrams. Delete them first.',
-            managed_by_project:
-                'Access is managed by the project. Ask an admin to change it.',
-        };
         if (e.code === 'target_blocked' || e.code === 'connection_failed') {
-            return e.detail ?? `Request failed (${e.code}).`;
+            return (
+                e.detail ??
+                i18n.t('qubdi.account.errors.requestFailed', { code: e.code })
+            );
         }
         if (e.code === 'locked') {
-            return e.detail ?? 'Someone else is editing this diagram.';
+            return e.detail ?? i18n.t('qubdi.account.errors.locked');
         }
-        return map[e.code] ?? `Request failed (${e.code}).`;
+        const key = `qubdi.account.errors.${e.code}`;
+        // only server codes (word characters) are looked up; the fallback names the code
+        if (/^\w+$/.test(e.code) && i18n.exists(key)) return i18n.t(key);
+        return i18n.t('qubdi.account.errors.requestFailed', { code: e.code });
     }
-    return 'Could not reach the server.';
+    return i18n.t('qubdi.account.errors.unreachable');
 };
