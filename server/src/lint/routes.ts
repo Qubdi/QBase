@@ -19,8 +19,24 @@ import {
 const idParam = z.object({ id: z.string().uuid() });
 const lintQuery = z.object({ source: z.enum(['working', 'published']).default('working') });
 const configBody = z.object({ config: z.record(z.string(), z.unknown()) });
+// The parts of a diagram the linter dereferences. Everything else passes through.
+const lintField = z.looseObject({
+    id: z.string(),
+    name: z.string(),
+    type: z.looseObject({ name: z.string() }),
+});
+const lintTable = z.looseObject({
+    id: z.string(),
+    name: z.string(),
+    fields: z.array(lintField),
+    indexes: z.array(z.looseObject({ fieldIds: z.array(z.string()) })).optional(),
+});
+const lintDiagram = z.looseObject({
+    tables: z.array(lintTable).optional(),
+    relationships: z.array(z.looseObject({})).optional(),
+});
 const statelessBody = z.object({
-    diagram: z.record(z.string(), z.unknown()),
+    diagram: lintDiagram,
     config: z.record(z.string(), z.unknown()).optional(),
 });
 
