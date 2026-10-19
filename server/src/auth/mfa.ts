@@ -68,9 +68,11 @@ export function createMfa(
     db: Db,
     config: Pick<Config, 'secretsKey' | 'mfaWindowSteps'>
 ): Mfa {
+    // deriving the key is slow on purpose (scrypt), so it is done once, on first use
+    let sealed: CryptoBox | undefined;
     const box = () => {
         if (!config.secretsKey) throw new Error('No key to encrypt secrets with');
-        return new CryptoBox(config.secretsKey);
+        return (sealed ??= new CryptoBox(config.secretsKey));
     };
     // the secret is sealed together with its owner's id, so a copied value
     // does not open under another account
