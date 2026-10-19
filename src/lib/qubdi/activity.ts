@@ -112,8 +112,12 @@ export function describeActivity(item: ActivityItem): Segment[] {
             return [who, text(' signed '), target, text(' out everywhere')];
         case 'user.sign_in':
             return [who, text(' signed in')];
+        case 'user.logout':
+            return [who, text(' signed out')];
         case 'user.sign_in_failed':
             return [who, text(' had a failed sign-in or password check')];
+        case 'user.password_check_failed':
+            return [who, text(' typed a wrong current password')];
         case 'user.password_change':
             return [who, text(' changed their password')];
 

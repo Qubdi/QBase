@@ -43,7 +43,8 @@ const newAccount = z.object({
 });
 
 const changePassword = z.object({
-    currentPassword: z.string(),
+    // as long as any password the server accepts: a hash of megabytes is a cheap attack
+    currentPassword: z.string().max(200),
     newPassword: z.string().max(200),
     // with two-factor on, changing the password needs a code (or a recovery code)
     code: z.string().max(20).optional(),
@@ -233,6 +234,10 @@ export const authRoutes =
         });
 
         app.post('/logout', async (req, reply) => {
+            // a call with no live session signs nobody out, so it leaves no row
+            if (req.user) {
+                await audit(db, { userId: req.user.id, action: 'user.logout' });
+            }
             await destroySession(db, req.cookies[SESSION_COOKIE]);
             reply.clearCookie(SESSION_COOKIE, {
                 path: '/',
@@ -267,9 +272,10 @@ export const authRoutes =
                 !(await verifyPassword(user.passwordHash, body.currentPassword))
             ) {
                 failures.recordFailure(key);
+                // a signed-in person mistyping their password is not a sign-in attempt
                 await audit(db, {
                     userId: user.id,
-                    action: 'user.sign_in_failed',
+                    action: 'user.password_check_failed',
                 });
                 return reply.code(403).send({ error: 'wrong_password' });
             }

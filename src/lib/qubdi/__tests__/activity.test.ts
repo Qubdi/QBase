@@ -116,9 +116,14 @@ describe('describeActivity', () => {
 
         it.each([
             ['user.sign_in', 'anna@corp.io signed in'],
+            ['user.logout', 'anna@corp.io signed out'],
             [
                 'user.sign_in_failed',
                 'anna@corp.io had a failed sign-in or password check',
+            ],
+            [
+                'user.password_check_failed',
+                'anna@corp.io typed a wrong current password',
             ],
             ['user.password_change', 'anna@corp.io changed their password'],
             ['mfa.enable', 'anna@corp.io turned on two-factor sign-in'],

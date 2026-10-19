@@ -460,7 +460,7 @@ describe('auth audit trail', () => {
             const actions = await actionsOf(ctx);
             expect(actions.slice(-3)).toEqual([
                 'user.sign_in',
-                'user.sign_in_failed',
+                'user.password_check_failed',
                 'user.password_change',
             ]);
             expect(user.id).toBeTruthy();
