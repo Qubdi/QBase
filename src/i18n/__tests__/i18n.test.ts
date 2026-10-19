@@ -54,3 +54,24 @@ describe('lazy translations', () => {
             .toBe(true);
     });
 });
+
+describe('document direction', () => {
+    const dir = () => document.documentElement.dir;
+
+    it('reads right to left in Arabic and left to right in the others', async () => {
+        await i18n.changeLanguage('ar');
+        expect(dir()).toBe('rtl');
+        expect(document.documentElement.lang).toBe('ar');
+        await i18n.changeLanguage('en');
+        expect(dir()).toBe('ltr');
+        expect(document.documentElement.lang).toBe('en');
+        await i18n.changeLanguage('ja');
+        expect(dir()).toBe('ltr');
+    });
+
+    it('writes a locale code with an underscore the way HTML expects it', async () => {
+        await i18n.changeLanguage('pt_BR');
+        expect(document.documentElement.lang).toBe('pt-BR');
+        await i18n.changeLanguage('en');
+    });
+});

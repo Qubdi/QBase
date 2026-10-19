@@ -43,9 +43,16 @@ async function ensureLocale(lng: string | undefined): Promise<boolean> {
     return false;
 }
 
+/** Tells the browser which way the page reads (Arabic is right to left) and in what language. */
+function setDocumentLanguage(lng: string) {
+    document.documentElement.lang = lng.replace('_', '-');
+    document.documentElement.dir = i18n.dir(lng);
+}
+
 // The language changes (at start, from the detector, and when the person picks
 // one): fetch its translations, then switch again so every screen redraws.
 i18n.on('languageChanged', (lng) => {
+    setDocumentLanguage(lng);
     void ensureLocale(lng)
         .then(async (added) => {
             if (added) await i18n.changeLanguage(lng);
