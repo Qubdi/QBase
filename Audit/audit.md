@@ -1,6 +1,6 @@
 # QubdiDB — Audit
 
-**rev** 6 · **date** 2026-10-20
+**rev** 7 · **date** 2026-10-20
 **method** static analysis · whole-tree read · eslint, tsc -b, `npm run build`, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's `qubdidb_test` database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and `server/` (0 vulnerabilities) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -9,8 +9,8 @@
 | Security & secrets | 1 | 0 | 1 | 22 | 0 |
 | Repository | 0 | 0 | 0 | 22 | 0 |
 | Server | 0 | 0 | 0 | 16 | 0 |
-| Client | 1 | 0 | 0 | 18 | 0 |
-| **Total** | 2 | 0 | 1 | 78 | 0 |
+| Client | 0 | 0 | 0 | 19 | 0 |
+| **Total** | 1 | 0 | 1 | 79 | 0 |
 
 ## Act first
 
@@ -35,7 +35,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-008 | Low | Lock release on `pagehide` waits behind the final-save promise | `src/components/qubdi/use-edit-lock.ts:59` | Send the keepalive release synchronously in the handler |
 
 ---
 
@@ -121,6 +120,7 @@
 | REPO-008 | Repository | README says forked but never names the upstream project |
 | CLI-007 | Client | Qubdi and admin UI strings hard-coded English; 0 files use `useTranslation` |
 | REPO-016 | Repository | No CODEOWNERS file |
+| CLI-008 | Client | Lock release on `pagehide` waits behind the final-save promise |
 
 ---
 
@@ -148,3 +148,4 @@
 | 4 | 2026-10-20 | 1 fixed |
 | 5 | 2026-10-20 | 1 fixed |
 | 6 | 2026-10-20 | 1 fixed |
+| 7 | 2026-10-20 | 1 fixed |

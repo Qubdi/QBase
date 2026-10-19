@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 6</b></div>
-  <h1>2 open across four lenses: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 7</b></div>
+  <h1>1 open across four lenses: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-20</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
@@ -36,8 +36,8 @@
         <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>1</td><td>22</td><td>0</td></tr>
         <tr><td>Repository</td><td>0</td><td>0</td><td>0</td><td>22</td><td>0</td></tr>
         <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>16</td><td>0</td></tr>
-        <tr><td>Client</td><td>1</td><td>0</td><td>0</td><td>18</td><td>0</td></tr>
-        <tr><td>Total</td><td>2</td><td>0</td><td>1</td><td>78</td><td>0</td></tr>
+        <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>19</td><td>0</td></tr>
+        <tr><td>Total</td><td>1</td><td>0</td><td>1</td><td>79</td><td>0</td></tr>
       </tbody>
     </table>
   </div>
@@ -62,8 +62,8 @@
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
-    <p>Top: Lock release on <code>pagehide</code> waits behind the final-save promise</p>
-    <p class="lbl">1 open &middot; 0 Crit &middot; 0 High &middot; 18 fixed &middot; 0 accepted</p>
+    <p>Nothing open</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 19 fixed &middot; 0 accepted</p>
   </a>
 </section>
 
@@ -79,6 +79,7 @@
         <tr><td>4</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
         <tr><td>5</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
         <tr><td>6</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
+        <tr><td>7</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
       </tbody>
     </table>
   </div>
