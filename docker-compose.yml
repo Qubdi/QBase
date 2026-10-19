@@ -25,6 +25,9 @@ services:
 
   server:
     container_name: qubdidb-server
+    # the server force-quits 10 s after SIGTERM; give it longer than Docker's default
+    # 10 s before SIGKILL so a clean shutdown is never cut off
+    stop_grace_period: 15s
     build:
       context: .
       dockerfile: server/Dockerfile
