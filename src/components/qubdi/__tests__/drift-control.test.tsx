@@ -181,3 +181,42 @@ describe('DriftControl for people who cannot edit', () => {
         }
     );
 });
+
+describe('DriftControl polling', () => {
+    const setHidden = (hidden: boolean) =>
+        Object.defineProperty(document, 'hidden', {
+            configurable: true,
+            get: () => hidden,
+        });
+
+    it('skips the minute poll while the tab is hidden and refreshes when it is shown again', async () => {
+        vi.useFakeTimers();
+        try {
+            getDrift.mockReset();
+            getDrift.mockResolvedValue({ badge: null });
+            render(tree());
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(0);
+            });
+            const afterOpen = getDrift.mock.calls.length;
+            setHidden(true);
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(180_000);
+            });
+            expect(getDrift.mock.calls.length).toBe(afterOpen);
+            setHidden(false);
+            await act(async () => {
+                document.dispatchEvent(new Event('visibilitychange'));
+                await vi.advanceTimersByTimeAsync(0);
+            });
+            expect(getDrift.mock.calls.length).toBe(afterOpen + 1);
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(60_000);
+            });
+            expect(getDrift.mock.calls.length).toBe(afterOpen + 2);
+        } finally {
+            setHidden(false);
+            vi.useRealTimers();
+        }
+    });
+});

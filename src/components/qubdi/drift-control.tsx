@@ -42,8 +42,19 @@ export const DriftControl: React.FC = () => {
     useEffect(() => {
         if (!user || !canManage) return;
         void refresh();
-        const timer = setInterval(() => void refresh(), 60_000);
-        return () => clearInterval(timer);
+        // a background tab does not need a fresh badge every minute; it gets
+        // one when the tab is shown again
+        const timer = setInterval(() => {
+            if (!document.hidden) void refresh();
+        }, 60_000);
+        const shown = () => {
+            if (!document.hidden) void refresh();
+        };
+        document.addEventListener('visibilitychange', shown);
+        return () => {
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', shown);
+        };
     }, [user, canManage, refresh]);
 
     // opening a diagram fetches from its database once; the timer above only
