@@ -31,6 +31,12 @@ export const resetSaveStatus = () => {
     emit();
 };
 
+/** True while an edit has not reached the server: waiting, on its way, or refused. */
+export const hasUnsavedChanges = (): boolean =>
+    state.status === 'pending' ||
+    state.status === 'saving' ||
+    state.status === 'error';
+
 // The running autosaver lets "Get latest" throw away what it has not sent, so
 // the flush on page leave cannot push those edits back to the server.
 let discard: (() => void) | null = null;

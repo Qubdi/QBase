@@ -17,6 +17,7 @@ import type { Diagram } from '@/lib/domain/diagram';
 import { createRevisionTracker } from '@/lib/qubdi/revision';
 import {
     registerFinalFlush,
+    hasUnsavedChanges,
     registerSaveDiscard,
     resetSaveStatus,
     setSaveStatus,
@@ -151,10 +152,20 @@ export const ServerAutosave: React.FC = () => {
             leavingRef.current = false;
             registerFinalFlush(flushOnLeave);
         };
+        // Closing the tab inside the autosave pause would lose the last edits if
+        // the final send on pagehide fails: ask first while something is unsent.
+        const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+            if (!hasUnsavedChanges()) return;
+            event.preventDefault();
+            // some browsers only ask when a return value is set
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', warnBeforeLeaving);
         window.addEventListener('pagehide', flushOnLeave);
         window.addEventListener('pageshow', resumed);
         return () => {
             checked = true;
+            window.removeEventListener('beforeunload', warnBeforeLeaving);
             window.removeEventListener('pagehide', flushOnLeave);
             window.removeEventListener('pageshow', resumed);
             // leaving the diagram: send what is still pending
