@@ -101,18 +101,18 @@ export const FieldHoverCard: React.FC<FieldHoverCardProps> = (props) => {
             <div className="mb-2 truncate text-[13px] font-semibold">
                 {field.name}
             </div>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11.5px]">
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[11.5px]">
                 {rows.map(([label, value]) => (
                     <React.Fragment key={`${label}:${value}`}>
                         <dt className="text-muted-foreground">{label}</dt>
-                        <dd className="break-words font-mono text-[11px]">
+                        <dd className="font-mono text-[11px] [overflow-wrap:anywhere]">
                             {value}
                         </dd>
                     </React.Fragment>
                 ))}
             </dl>
             {field.comments ? (
-                <p className="mt-2 whitespace-pre-wrap break-words border-t pt-2 text-[11.5px] text-muted-foreground">
+                <p className="mt-2 whitespace-pre-wrap [overflow-wrap:anywhere] border-t pt-2 text-[11.5px] text-muted-foreground">
                     {field.comments}
                 </p>
             ) : null}
