@@ -5,6 +5,7 @@ import {
     generateRecoveryCodes,
     generateSecret,
     hashRecoveryCode,
+    legacyHashRecoveryCode,
     hotp,
     normalizeRecoveryCode,
     otpauthUrl,
@@ -134,8 +135,16 @@ describe('recovery codes', () => {
 
     it('hashes the same whatever the case, spaces or dash', () => {
         expect(normalizeRecoveryCode(' abcde-fghjk ')).toBe('ABCDEFGHJK');
-        expect(hashRecoveryCode('abcde fghjk')).toBe(hashRecoveryCode('ABCDE-FGHJK'));
-        expect(hashRecoveryCode('ABCDE-FGHJK')).toMatch(/^[0-9a-f]{64}$/);
-        expect(hashRecoveryCode('ABCDE-FGHJK')).not.toBe(hashRecoveryCode('ABCDE-FGHJM'));
+        const key = 'a-test-key-of-at-least-16-chars';
+        expect(hashRecoveryCode('abcde fghjk', key)).toBe(hashRecoveryCode('ABCDE-FGHJK', key));
+        expect(hashRecoveryCode('ABCDE-FGHJK', key)).toMatch(/^[0-9a-f]{64}$/);
+        expect(hashRecoveryCode('ABCDE-FGHJK', key)).not.toBe(hashRecoveryCode('ABCDE-FGHJM', key));
+    });
+
+    it('is keyed: another key, or no key at all (the old plain sha256), gives another hash', () => {
+        const a = hashRecoveryCode('ABCDE-FGHJK', 'a-test-key-of-at-least-16-chars');
+        expect(hashRecoveryCode('ABCDE-FGHJK', 'another-key-of-at-least-16-chars')).not.toBe(a);
+        expect(legacyHashRecoveryCode('ABCDE-FGHJK')).not.toBe(a);
+        expect(legacyHashRecoveryCode('abcde fghjk')).toBe(legacyHashRecoveryCode('ABCDE-FGHJK'));
     });
 });

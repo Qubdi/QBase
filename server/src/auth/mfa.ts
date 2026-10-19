@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { and, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import {
@@ -8,7 +8,12 @@ import {
     users,
 } from '../db/schema.js';
 import { CryptoBox } from '../introspect/crypto-box.js';
-import { generateRecoveryCodes, hashRecoveryCode, verifyTotp } from './totp.js';
+import {
+    generateRecoveryCodes,
+    hashRecoveryCode,
+    legacyHashRecoveryCode,
+    verifyTotp,
+} from './totp.js';
 
 // Two-factor sign-in with an authenticator app: the database side. The codes
 // themselves are in totp.ts; the HTTP side is in mfa-routes.ts.
@@ -86,13 +91,18 @@ export function createMfa(
         return plain.slice(userId.length + 1);
     };
 
+    const keyed = (code: string) => {
+        if (!config.secretsKey) throw new Error('No key to hash recovery codes with');
+        return hashRecoveryCode(code, config.secretsKey);
+    };
+
     const replaceCodes = async (userId: string) => {
         const codes = generateRecoveryCodes();
         await db.transaction(async (tx) => {
             await tx.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, userId));
             await tx
                 .insert(mfaRecoveryCodes)
-                .values(codes.map((c) => ({ userId, codeHash: hashRecoveryCode(c) })));
+                .values(codes.map((c) => ({ userId, codeHash: keyed(c) })));
         });
         return codes;
     };
@@ -148,7 +158,11 @@ export function createMfa(
                 .where(
                     and(
                         eq(mfaRecoveryCodes.userId, userId),
-                        eq(mfaRecoveryCodes.codeHash, hashRecoveryCode(code)),
+                        // codes made before the keyed hash are stored as plain sha256
+                        inArray(mfaRecoveryCodes.codeHash, [
+                            keyed(code),
+                            legacyHashRecoveryCode(code),
+                        ]),
                         isNull(mfaRecoveryCodes.usedAt)
                     )
                 )
