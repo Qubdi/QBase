@@ -25,5 +25,5 @@ USER node
 EXPOSE 3001
 # the server answers /health once it is listening; a hung process shows as unhealthy
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+    CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/health').then(r=>{process.exitCode=r.ok?0:1},()=>{process.exitCode=1})"
 CMD ["node", "dist/server/src/server.js"]
