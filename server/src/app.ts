@@ -135,14 +135,15 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     // The session cookie is SameSite=Lax; this is the second line against a page
     // on another site making the browser send a changing request: one that names
     // its Origin must name this API's own editor (CORS_ORIGIN) or, with none set,
-    // this host. Requests with no Origin (scripts, curl) are not browsers' doing.
+    // this host (as a trusted proxy reports it). Requests with no Origin (scripts,
+    // curl) are not a browser's doing.
     app.addHook('onRequest', async (req, reply) => {
         if (!MUTATING_METHODS.has(req.method)) return;
         const origin = req.headers.origin;
         if (origin === undefined) return;
         const allowed = config.corsOrigin
             ? origin === config.corsOrigin
-            : hostOf(origin) === req.headers.host;
+            : hostOf(origin) === req.host;
         if (!allowed) return reply.code(403).send({ error: 'bad_origin' });
     });
 
