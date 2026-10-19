@@ -8,23 +8,23 @@ QubdiDB is an open-source project aimed at providing an open-source database dia
 
 ## Agreement:
 
-**Contributor Grant of License:**
+**1. Contributor Grant of License:**
 
 By submitting code, documentation, or any other materials (collectively, "Contributions") to the QubdiDB project, the Contributor grants QubdiDB a perpetual, worldwide, non-exclusive, royalty-free, sublicensable license to use, modify, distribute, and otherwise exploit the Contributions, including any intellectual property rights therein, for the purposes of the QubdiDB project.
 
-**Representation of Ownership and Right to Contribute:**
+**2. Representation of Ownership and Right to Contribute:**
 
 The Contributor represents that they have the legal right to grant the license stated in Section 1, and that the Contributions do not infringe upon the intellectual property rights of any third party. The Contributor also represents that they have the authority to submit the Contributions on their own behalf or, if applicable, on behalf of their employer or any other entity.
 
-**Patent Grant:**
+**3. Patent Grant:**
 
 If the Contributions include any method, process, or apparatus that is covered by a patent, the Contributor agrees to grant QubdiDB a non-exclusive, worldwide, royalty-free license under any patent claims necessary to use, modify, distribute, and otherwise exploit the Contributions for the purposes of the QubdiDB project.
 
-**No Implied Warranties or Support:**
+**4. No Implied Warranties or Support:**
 
 The Contributor acknowledges that the Contributions are provided "as is," without any warranties or support of any kind. QubdiDB shall have no obligation to provide maintenance, updates, bug fixes, or support for the Contributions.
 
-**Retention of Contributor Rights:**
+**5. Retention of Contributor Rights:**
 
 The Contributor retains all right, title, and interest in and to their Contributions. This CLA does not restrict the Contributor from using their own Contributions for any other purpose.
 
