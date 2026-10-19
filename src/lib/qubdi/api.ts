@@ -400,6 +400,15 @@ type FetchLike = typeof fetch;
 
 // Called when a signed-in request is refused as signed out: the session ended,
 // for instance because the account signed in somewhere else.
+/** The calls a person makes before they have a session, where 401 is an ordinary answer. */
+const SIGNED_OUT_PATHS: ReadonlySet<string> = new Set([
+    '/auth/setup-status',
+    '/auth/register',
+    '/auth/login',
+    '/auth/login/mfa',
+    '/auth/me',
+]);
+
 let sessionEndedHandler: (() => void) | null = null;
 export const setSessionEndedHandler = (fn: (() => void) | null) => {
     sessionEndedHandler = fn;
@@ -449,8 +458,11 @@ export function createApi(
         });
         if (res.status === 204) return undefined as T;
         const data = await res.json().catch(() => ({}));
-        // /auth/* answers 401 for ordinary reasons (no session yet, wrong password)
-        if (res.status === 401 && !path.startsWith('/auth/')) {
+        // Only the calls made while signed out answer 401 for ordinary reasons
+        // (no session yet, wrong password, a bad second-step code). Any other
+        // route, /auth/mfa and /auth/change-password included, answering 401
+        // means the session is gone.
+        if (res.status === 401 && !SIGNED_OUT_PATHS.has(path)) {
             sessionEndedHandler?.();
         }
         if (!res.ok) {

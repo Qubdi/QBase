@@ -415,6 +415,27 @@ describe('qubdi api client', () => {
             expect(ended).not.toHaveBeenCalled();
         });
 
+        it('is reported when the account calls come back signed out', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await apiAnswering(401)
+                .mfaStatus()
+                .catch(() => undefined);
+            await apiAnswering(401)
+                .changePassword('old', 'new')
+                .catch(() => undefined);
+            expect(ended).toHaveBeenCalledTimes(2);
+        });
+
+        it('is not reported when the second sign-in step is refused', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await apiAnswering(401)
+                .loginMfa('ticket', { code: '123456' })
+                .catch(() => undefined);
+            expect(ended).not.toHaveBeenCalled();
+        });
+
         it('is not reported for other failures', async () => {
             const ended = vi.fn();
             setSessionEndedHandler(ended);
