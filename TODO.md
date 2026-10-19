@@ -10,7 +10,7 @@ on a few major versions. None of this is a security fix; it keeps later upgrades
 harder. One PR per step, with `npx vitest run` and `npm run build` (includes lint) green before it is ticked.
 Let Dependabot's minor and patch PRs merge as they come; take majors here, on purpose.
 
-1. [ ] **zod 3.25 → 4 on the client.** Small, and puts the client on the same major as the server
+1. [x] **zod 3.25 → 4 on the client.** Small, and puts the client on the same major as the server
    (already zod 4). Watch for changed error formatting (`.format()`/`.flatten()`, `message` →
    `error`) and `.default()`/`.optional()` behaviour in form and import schemas.
 2. [ ] **React 18.3 → 19, in one PR together with the libraries that follow it:**
