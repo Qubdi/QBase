@@ -184,8 +184,12 @@ export const authRoutes =
 
         app.post('/login', limit, async (req, reply) => {
             const body = signIn.parse(req.body);
-            // unknown emails are counted too, so the lockout reveals nothing
-            const key = `login:${body.email}`;
+            // Unknown emails are counted too, so the lockout reveals nothing. The
+            // address is part of the key: failures from one address lock out that
+            // address for that account, so a stranger cannot keep someone else
+            // out by guessing at their account on purpose. (Guesses spread over
+            // many addresses are held back by the per-address rate limit.)
+            const key = `login:${body.email}:${req.ip}`;
             if (locked(reply, key)) return;
             const [user] = await db
                 .select()
