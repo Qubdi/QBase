@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadConfig, parseCookieSecure, parseTrustProxy } from '../src/config.js';
+import { ConfigError, loadConfig, parseCookieSecure, parseTrustProxy } from '../src/config.js';
 
 describe('parseTrustProxy', () => {
     it('trusts nothing by default', () => {
@@ -57,5 +57,38 @@ describe('two-factor settings', () => {
         expect(
             loadConfig({ CONNECTION_KEY: 'c'.repeat(20), SECRETS_KEY: 's'.repeat(20) }).secretsKey
         ).toBe('s'.repeat(20));
+    });
+});
+
+describe('boot-time validation', () => {
+    it('refuses a numeric setting that is not a whole number in range', () => {
+        for (const env of [
+            { AUTH_MAX_FAILURES: 'ten' },
+            { AUTH_MAX_FAILURES: '0' },
+            { AUTH_LOCKOUT_MINUTES: '1.5' },
+            { PORT: '70000' },
+            { DB_POOL_MAX: '-3' },
+            { SESSION_DAYS: 'NaN' },
+            { PASSWORD_MIN_LENGTH: 'abc' },
+        ]) {
+            expect(() => loadConfig(env), JSON.stringify(env)).toThrow(ConfigError);
+        }
+    });
+
+    it('names every bad setting at once', () => {
+        expect(() => loadConfig({ PORT: 'x', SESSION_DAYS: 'y' })).toThrow(/PORT[\s\S]*SESSION_DAYS/);
+    });
+
+    it('treats an empty value as unset and keeps valid numbers', () => {
+        const c = loadConfig({ AUTH_MAX_FAILURES: '', PORT: '8080', SNAPSHOT_KEEP: '0' });
+        expect(c.authMaxFailures).toBe(10);
+        expect(c.port).toBe(8080);
+        expect(c.snapshotKeep).toBe(0);
+    });
+
+    it('refuses an encryption key under 16 characters', () => {
+        expect(() => loadConfig({ SECRETS_KEY: 'short' })).toThrow(/SECRETS_KEY must be at least 16/);
+        expect(() => loadConfig({ CONNECTION_KEY: 'short' })).toThrow(/CONNECTION_KEY must be at least 16/);
+        expect(() => loadConfig({ SECRETS_KEY: 'k'.repeat(16) })).not.toThrow();
     });
 });

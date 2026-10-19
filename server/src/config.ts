@@ -99,43 +99,81 @@ export function parseTrustProxy(
         .filter(Boolean);
 }
 
+/** Thrown by `loadConfig` when the environment holds values the server cannot run on. */
+export class ConfigError extends Error {
+    constructor(problems: string[]) {
+        super(`Invalid configuration:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
+        this.name = 'ConfigError';
+    }
+}
+
+/** Shortest encryption key `CryptoBox` accepts. */
+const MIN_KEY_LENGTH = 16;
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-    return {
+    const problems: string[] = [];
+    // An unset or empty variable takes the default; anything else must be a
+    // whole number in range, so a typo cannot turn a limit into NaN
+    const int = (key: string, fallback: number, min = 0, max = Number.MAX_SAFE_INTEGER) => {
+        const raw = env[key]?.trim();
+        if (!raw) return fallback;
+        const n = Number(raw);
+        if (!Number.isInteger(n) || n < min || n > max) {
+            problems.push(`${key} must be a whole number from ${min} to ${max} (got "${raw}")`);
+            return fallback;
+        }
+        return n;
+    };
+    const key = (name: string) => {
+        const value = env[name] || null;
+        if (value !== null && value.length < MIN_KEY_LENGTH) {
+            problems.push(`${name} must be at least ${MIN_KEY_LENGTH} characters`);
+        }
+        return value;
+    };
+
+    const connectionKey = key('CONNECTION_KEY');
+    const secretsKey = key('SECRETS_KEY') ?? connectionKey;
+    const config: Config = {
         databaseUrl:
             env.DATABASE_URL ??
             'postgres://qubdidb:qubdidb@localhost:5433/qubdidb',
         host: env.HOST ?? '0.0.0.0',
-        port: Number(env.PORT ?? 3001),
+        port: int('PORT', 3001, 1, 65535),
         corsOrigin: env.CORS_ORIGIN ?? null,
-        sessionDays: Number(env.SESSION_DAYS ?? 30),
-        lintRateLimit: Number(env.LINT_RATE_LIMIT ?? 30),
-        outboundRateLimit: Number(env.OUTBOUND_RATE_LIMIT ?? 20),
-        snapshotKeep: Number(env.SNAPSHOT_KEEP ?? 200),
-        driftReportKeep: Number(env.DRIFT_REPORT_KEEP ?? 50),
-        bodyLimit: Number(env.BODY_LIMIT_KB ?? 1024) * 1024,
-        diagramBodyLimit: Number(env.DIAGRAM_BODY_LIMIT_MB ?? 50) * 1024 * 1024,
-        auditRetentionDays: Number(env.AUDIT_RETENTION_DAYS ?? 365),
-        deadLinkKeepDays: Number(env.DEAD_LINK_KEEP_DAYS ?? 30),
+        sessionDays: int('SESSION_DAYS', 30, 1),
+        lintRateLimit: int('LINT_RATE_LIMIT', 30, 1),
+        outboundRateLimit: int('OUTBOUND_RATE_LIMIT', 20, 1),
+        snapshotKeep: int('SNAPSHOT_KEEP', 200),
+        driftReportKeep: int('DRIFT_REPORT_KEEP', 50),
+        bodyLimit: int('BODY_LIMIT_KB', 1024, 1) * 1024,
+        diagramBodyLimit: int('DIAGRAM_BODY_LIMIT_MB', 50, 1) * 1024 * 1024,
+        auditRetentionDays: int('AUDIT_RETENTION_DAYS', 365),
+        deadLinkKeepDays: int('DEAD_LINK_KEEP_DAYS', 30),
         cookieSecure: parseCookieSecure(env.COOKIE_SECURE),
-        authRateLimit: Number(env.AUTH_RATE_LIMIT ?? 20),
-        authMaxFailures: Number(env.AUTH_MAX_FAILURES ?? 10),
-        authLockoutMinutes: Number(env.AUTH_LOCKOUT_MINUTES ?? 15),
+        authRateLimit: int('AUTH_RATE_LIMIT', 20, 1),
+        authMaxFailures: int('AUTH_MAX_FAILURES', 10, 1),
+        authLockoutMinutes: int('AUTH_LOCKOUT_MINUTES', 15, 1),
         passwordMinLength: normalizeMinLength(
-            env.PASSWORD_MIN_LENGTH ? Number(env.PASSWORD_MIN_LENGTH) : undefined
+            env.PASSWORD_MIN_LENGTH?.trim()
+                ? int('PASSWORD_MIN_LENGTH', 0, 1, 1024)
+                : undefined
         ),
-        sseMaxPerLink: Number(env.SSE_MAX_PER_LINK ?? 100),
+        sseMaxPerLink: int('SSE_MAX_PER_LINK', 100, 1),
         trustProxy: parseTrustProxy(env.TRUST_PROXY),
         logLevel: env.LOG_LEVEL ?? 'info',
-        dbPoolMax: Number(env.DB_POOL_MAX ?? 10),
-        shareRateLimit: Number(env.SHARE_RATE_LIMIT ?? 60),
+        dbPoolMax: int('DB_POOL_MAX', 10, 1),
+        shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
         introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')
             .split(',')
             .map((h) => h.trim())
             .filter(Boolean),
-        connectionKey: env.CONNECTION_KEY ?? null,
-        secretsKey: env.SECRETS_KEY || env.CONNECTION_KEY || null,
+        connectionKey,
+        secretsKey,
         mfaEnabled: env.MFA_ENABLED?.trim().toLowerCase() !== 'false',
         mfaWindowSteps: parseWindowSteps(env.MFA_WINDOW_STEPS),
-        driftCacheSeconds: Number(env.DRIFT_CACHE_SECONDS ?? 300),
+        driftCacheSeconds: int('DRIFT_CACHE_SECONDS', 300),
     };
+    if (problems.length > 0) throw new ConfigError(problems);
+    return config;
 }
