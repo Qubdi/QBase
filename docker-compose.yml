@@ -4,7 +4,9 @@ name: qubdidb
 services:
   db:
     container_name: qubdidb-postgres
-    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    # built from the pinned image in db/postgres/Dockerfile, so it carries a tag
+    build: ./db/postgres
+    image: qubdidb-postgres:18-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-qubdidb}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}

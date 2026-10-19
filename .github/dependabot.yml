@@ -44,7 +44,17 @@ updates:
       - dependency-name: node
         update-types: ["version-update:semver-major"]
 
-  # the compose file's images (Postgres, SQL Server) are pinned by digest too
+  # the bundled database image, pinned by digest; its major version moves on
+  # purpose, with the data volume (see the README)
+  - package-ecosystem: docker
+    directory: /db/postgres
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+
+  # the compose files' other images (SQL Server) are pinned by digest too
   - package-ecosystem: docker-compose
     directory: /
     schedule:
