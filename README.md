@@ -46,7 +46,7 @@ npm start                      # compiles to dist/, then runs it: http://localho
 
 # 3. editor (from the repository root)
 npm install
-cp .env.example .env           # VITE_QUBDI_BACKEND_URL=http://localhost:3001
+# the .env from step 1 already has VITE_QUBDI_BACKEND_URL=http://localhost:3001
 npm run dev
 ```
 
