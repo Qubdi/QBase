@@ -2,7 +2,6 @@ import { cn } from '@/lib/utils';
 import React, { lazy, Suspense, useCallback, useEffect } from 'react';
 import { Spinner } from '../spinner/spinner';
 import { useTheme } from '@/hooks/use-theme';
-import { useMonaco } from '@monaco-editor/react';
 import { useToast } from '@/components/toast/use-toast';
 import { Button } from '../button/button';
 import type { LucideIcon } from 'lucide-react';
@@ -11,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip/tooltip';
 import { useTranslation } from 'react-i18next';
 import { DarkTheme } from './themes/dark';
 import { LightTheme } from './themes/light';
-import './config.ts';
+import { useBundledMonaco } from './use-bundled-monaco';
 
 export const Editor = lazy(() =>
     import('./code-editor').then((module) => ({
@@ -63,7 +62,7 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = React.memo(
         allowCopy = true,
     }) => {
         const { t } = useTranslation();
-        const monaco = useMonaco();
+        const monaco = useBundledMonaco();
         const { effectiveTheme } = useTheme();
         const { toast } = useToast();
         const [isCopied, setIsCopied] = React.useState(false);
