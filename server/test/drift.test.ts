@@ -616,19 +616,19 @@ describe('drift detection', () => {
 
         it('reads again after the saved connection is edited', async () => {
             await cachedCheck();
-            // no password: the saved one is kept
+            // no password: the saved one is kept (so the target must stay the same)
             const { dialect, host, user, database } = conn();
-            const edit = (db: string) =>
+            const edit = (name: string) =>
                 ctx.app.inject({
                     method: 'PUT',
                     url: `/introspect/connections/${connectionId}`,
                     headers: as(owner),
-                    payload: { name: 'prod', dialect, host, user, database: db },
+                    payload: { name, dialect, host, user, database },
                 });
-            expect((await edit('shop2')).statusCode).toBe(200);
+            expect((await edit('prod renamed')).statusCode).toBe(200);
             await cachedCheck();
             expect(factoryCalls).toBe(2);
-            expect((await edit(database)).statusCode).toBe(200);
+            expect((await edit('prod')).statusCode).toBe(200);
         });
 
         it('tries again after a failure instead of reusing it', async () => {

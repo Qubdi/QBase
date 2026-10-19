@@ -59,6 +59,17 @@ export function redactShareToken(url: string): string {
     return url.replace(/^\/s\/[^/?#]+/, '/s/[redacted]');
 }
 
+const MUTATING_METHODS: ReadonlySet<string> = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+/** The host (with port) an Origin header names; null for the opaque `null` origin or junk. */
+function hostOf(origin: string): string | null {
+    try {
+        return new URL(origin).host;
+    } catch {
+        return null;
+    }
+}
+
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const app = Fastify({
         // closing the server also ends open SSE streams instead of waiting on them
@@ -119,6 +130,20 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
                 return reply.code(204).send();
             }
         }
+    });
+
+    // The session cookie is SameSite=Lax; this is the second line against a page
+    // on another site making the browser send a changing request: one that names
+    // its Origin must name this API's own editor (CORS_ORIGIN) or, with none set,
+    // this host. Requests with no Origin (scripts, curl) are not browsers' doing.
+    app.addHook('onRequest', async (req, reply) => {
+        if (!MUTATING_METHODS.has(req.method)) return;
+        const origin = req.headers.origin;
+        if (origin === undefined) return;
+        const allowed = config.corsOrigin
+            ? origin === config.corsOrigin
+            : hostOf(origin) === req.headers.host;
+        if (!allowed) return reply.code(403).send({ error: 'bad_origin' });
     });
 
     app.addHook('preHandler', async (req) => {

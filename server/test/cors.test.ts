@@ -58,3 +58,43 @@ describe('CORS', () => {
         expect(preflight.statusCode).not.toBe(204);
     });
 });
+
+describe('Origin check on changing requests', () => {
+    const open: TestCtx[] = [];
+    const appWith = async (corsOrigin: string | null) => {
+        const ctx = await createTestApp({ corsOrigin });
+        open.push(ctx);
+        return ctx.app;
+    };
+    afterAll(async () => {
+        for (const ctx of open) await ctx.close();
+    });
+    const login = (app: Awaited<ReturnType<typeof appWith>>, headers: Record<string, string>, method = 'POST') =>
+        app.inject({ method: method as 'POST', url: '/auth/login', headers, payload: { email: 'a@example.com', password: 'nope-nope-nope' } });
+
+    it('refuses a changing request from another site and lets the editor and scripts through', async () => {
+        const app = await appWith(ORIGIN);
+        for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+            const res = await app.inject({ method: method as 'POST', url: '/auth/login', headers: { origin: 'https://evil.example.com' } });
+            expect(res.statusCode, method).toBe(403);
+            expect(res.json().error).toBe('bad_origin');
+        }
+        expect((await login(app, { origin: 'null' })).statusCode).toBe(403);
+        // the editor, and a client that sends no Origin at all, reach the route (bad credentials: 401)
+        expect((await login(app, { origin: ORIGIN })).statusCode).toBe(401);
+        expect((await login(app, {})).statusCode).toBe(401);
+    });
+
+    it('does not look at reads, even from another site', async () => {
+        const app = await appWith(ORIGIN);
+        const res = await app.inject({ url: '/health', headers: { origin: 'https://evil.example.com' } });
+        expect(res.statusCode).toBe(200);
+    });
+
+    it('with no CORS origin set, only the same host may change things', async () => {
+        const app = await appWith(null);
+        expect((await login(app, { host: 'api.example.com', origin: 'https://evil.example.com' })).statusCode).toBe(403);
+        expect((await login(app, { host: 'api.example.com', origin: 'https://api.example.com' })).statusCode).toBe(401);
+        expect((await login(app, { host: 'api.example.com' })).statusCode).toBe(401);
+    });
+});
