@@ -5,9 +5,9 @@ on:
     branches:
       - main
 
+# release-please acts with the OSS_RELEASE token below, not GITHUB_TOKEN
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   release:
