@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 5</b></div>
-  <h1>1 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 6</b></div>
+  <h1>0 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-20</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
@@ -29,12 +29,11 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">1 open &middot; 21 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 22 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">REPO-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No CODEOWNERS file</td><td><code>.github/</code></td><td class="wrap-cell">Add <code>.github/CODEOWNERS</code> covering workflows and Dockerfiles</td></tr>
       </tbody>
     </table>
   </div>
@@ -42,7 +41,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (21)</summary>
+  <details><summary>Fixed (22)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -68,6 +67,7 @@
         <tr><td class="svc-name">REPO-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">nginx not <code>exec</code>'d; shell stays PID 1, SIGTERM not forwarded</td></tr>
         <tr><td class="svc-name">REPO-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Release workflow grants <code>GITHUB_TOKEN</code> write yet acts with <code>OSS_RELEASE</code> PAT</td></tr>
         <tr><td class="svc-name">REPO-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README says forked but never names the upstream project</td></tr>
+        <tr><td class="svc-name">REPO-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No CODEOWNERS file</td></tr>
       </tbody>
     </table>
   </div>
