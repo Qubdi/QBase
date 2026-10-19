@@ -261,6 +261,12 @@ describe('CryptoBox', () => {
         expect(() => box.decrypt(flipped)).toThrow();
     });
 
+    it('refuses a shortened authentication tag', () => {
+        const parts = box.encrypt('secret-password').split(':');
+        parts[2] = Buffer.from(parts[2], 'base64').subarray(0, 4).toString('base64');
+        expect(() => box.decrypt(parts.join(':'))).toThrow('Unsupported encrypted value');
+    });
+
     it('fails with the wrong key', () => {
         const other = new CryptoBox('another-long-secret-key!');
         expect(() => other.decrypt(box.encrypt('secret-password'))).toThrow();
