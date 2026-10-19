@@ -342,6 +342,40 @@ describe('share links', () => {
             expect((await open(re.json().token)).statusCode).toBe(200);
         });
 
+        it('refuses to regenerate a link that is revoked while the request is running', async () => {
+            const made = (await createLink(owner)).json();
+            let release!: () => void;
+            const held = new Promise<void>((resolve) => (release = resolve));
+            let locked!: () => void;
+            const lockedFirst = new Promise<void>((resolve) => (locked = resolve));
+            // an open transaction revokes the link, uncommitted: the route still
+            // reads it as live, and its update waits on the row lock
+            const revoking = ctx.db.transaction(async (tx) => {
+                await tx
+                    .update(shareLinks)
+                    .set({ revokedAt: new Date() })
+                    .where(eq(shareLinks.id, made.id));
+                locked();
+                await held;
+            });
+            await lockedFirst;
+            const regenerating = ctx.app.inject({
+                method: 'POST',
+                url: `/diagrams/${id}/share-links/${made.id}/regenerate`,
+                headers: as(owner),
+            });
+            await new Promise((r) => setTimeout(r, 300));
+            release();
+            await revoking;
+            const res = await regenerating;
+            expect(res.statusCode).toBe(409);
+            expect(res.json().error).toBe('revoked');
+            // the revoked link's token was not replaced
+            const [row] = await ctx.db.select().from(shareLinks).where(eq(shareLinks.id, made.id));
+            expect(row.revokedAt).not.toBeNull();
+            expect((await open(made.token)).statusCode).toBe(404);
+        });
+
         it('refuses to regenerate a revoked link', async () => {
             const made = (await createLink(owner)).json();
             await ctx.app.inject({

@@ -227,8 +227,10 @@ export const shareManagementRoutes =
             const [updated] = await db
                 .update(shareLinks)
                 .set({ tokenHash: hashToken(token), tokenEnc: sealed(token) })
-                .where(eq(shareLinks.id, linkId))
+                // a revoke that landed after the check above must not be undone
+                .where(and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt)))
                 .returning();
+            if (!updated) return reply.code(409).send({ error: 'revoked' });
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.regenerate',
