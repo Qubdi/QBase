@@ -110,7 +110,7 @@
         "globals": "^17.13.0",
         "happy-dom": "^20.0.10",
         "husky": "^9.1.5",
-        "postcss": "^8.4.40",
+        "postcss": "^8.5.31",
         "prettier": "^3.9.10",
         "rollup-plugin-visualizer": "^6.0.5",
         "tailwindcss": "^4.3.3",
