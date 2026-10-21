@@ -32,7 +32,7 @@ import { hashPassword } from '../auth/password.js';
 import { createMfa } from '../auth/mfa.js';
 import { weakPassword } from '../auth/password-rules.js';
 import type { Config } from '../config.js';
-import { isUniqueViolation } from '../lib/pg-errors.js';
+import { isForeignKeyViolation, isUniqueViolation } from '../lib/pg-errors.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
 import { emitLinkChanged } from '../events.js';
@@ -833,7 +833,15 @@ export const adminRoutes =
             if (inside > 0) {
                 return reply.code(409).send({ error: 'project_not_empty' });
             }
-            await db.delete(projects).where(eq(projects.id, id));
+            try {
+                await db.delete(projects).where(eq(projects.id, id));
+            } catch (err) {
+                // a diagram was created after the check above; the foreign key decides
+                if (isForeignKeyViolation(err)) {
+                    return reply.code(409).send({ error: 'project_not_empty' });
+                }
+                throw err;
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.delete',

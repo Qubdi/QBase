@@ -52,15 +52,27 @@ export function useEditLock(remoteId: string | undefined): LockState {
             }
         };
 
+        const sendRelease = () =>
+            api
+                .releaseLock(remoteId, editorId, { keepalive: true })
+                .catch(() => undefined);
+
         const release = () => {
             if (!held) return;
             held = false;
             // after the final save, which would otherwise take the lock back
-            void settleFinalSave().then(() =>
-                api
-                    .releaseLock(remoteId, editorId, { keepalive: true })
-                    .catch(() => undefined)
-            );
+            void settleFinalSave().then(sendRelease);
+        };
+
+        // The tab is closing: nothing runs after this handler, so a release that
+        // waited for the final save to settle might never be sent. The autosaver
+        // listens for the same event, and was registered first (it is deeper in
+        // the tree), so its final save is already on the wire; send ours right
+        // behind it, in this same turn.
+        const releaseNow = () => {
+            if (!held) return;
+            held = false;
+            void sendRelease();
         };
 
         // a save was refused with 423: the lock is someone else's now
@@ -78,12 +90,12 @@ export function useEditLock(remoteId: string | undefined): LockState {
             }
         });
         // the tab closing does not unmount anything
-        window.addEventListener('pagehide', release);
+        window.addEventListener('pagehide', releaseNow);
         return () => {
             cancelled = true;
             stopListening();
             clearInterval(timer);
-            window.removeEventListener('pagehide', release);
+            window.removeEventListener('pagehide', releaseNow);
             release();
         };
     }, [remoteId]);

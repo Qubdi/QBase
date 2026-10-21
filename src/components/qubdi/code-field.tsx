@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/input/input';
 
 export interface CodeFieldProps {
@@ -26,25 +27,34 @@ export const CodeField: React.FC<CodeFieldProps> = ({
     placeholder,
     autoFocus,
     label,
-}) => (
-    <Input
-        type="text"
-        name={recovery ? 'recovery-code' : 'one-time-code'}
-        aria-label={
-            label ?? (recovery ? 'Recovery code' : 'Authenticator code')
-        }
-        placeholder={
-            placeholder ?? (recovery ? 'Recovery code' : '6-digit code')
-        }
-        autoComplete={recovery ? 'off' : 'one-time-code'}
-        inputMode={recovery || either ? 'text' : 'numeric'}
-        pattern={recovery || either ? undefined : '[0-9 ]*'}
-        maxLength={recovery || either ? 20 : 7}
-        autoCapitalize={recovery ? 'characters' : 'off'}
-        spellCheck={false}
-        autoFocus={autoFocus}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required
-    />
-);
+}) => {
+    const { t } = useTranslation();
+    return (
+        <Input
+            type="text"
+            name={recovery ? 'recovery-code' : 'one-time-code'}
+            aria-label={
+                label ??
+                (recovery
+                    ? t('qubdi.account.codeField.recoveryLabel')
+                    : t('qubdi.account.codeField.authenticatorLabel'))
+            }
+            placeholder={
+                placeholder ??
+                (recovery
+                    ? t('qubdi.account.codeField.recoveryPlaceholder')
+                    : t('qubdi.account.codeField.digitsPlaceholder'))
+            }
+            autoComplete={recovery ? 'off' : 'one-time-code'}
+            inputMode={recovery || either ? 'text' : 'numeric'}
+            pattern={recovery || either ? undefined : '[0-9 ]*'}
+            maxLength={recovery || either ? 20 : 7}
+            autoCapitalize={recovery ? 'characters' : 'off'}
+            spellCheck={false}
+            autoFocus={autoFocus}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            required
+        />
+    );
+};

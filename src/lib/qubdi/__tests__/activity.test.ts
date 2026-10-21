@@ -116,9 +116,14 @@ describe('describeActivity', () => {
 
         it.each([
             ['user.sign_in', 'anna@corp.io signed in'],
+            ['user.logout', 'anna@corp.io signed out'],
             [
                 'user.sign_in_failed',
                 'anna@corp.io had a failed sign-in or password check',
+            ],
+            [
+                'user.password_check_failed',
+                'anna@corp.io typed a wrong current password',
             ],
             ['user.password_change', 'anna@corp.io changed their password'],
             ['mfa.enable', 'anna@corp.io turned on two-factor sign-in'],
@@ -334,6 +339,18 @@ describe('describeActivity', () => {
             ],
         ])('%s', (action, expected) => {
             expect(sentence({ action })).toBe(expected);
+        });
+
+        it('introspect.run names the host it read', () => {
+            expect(
+                sentence({
+                    action: 'introspect.run',
+                    meta: { dialect: 'postgresql', host: 'db.corp.io' },
+                })
+            ).toBe('anna@corp.io read the database at db.corp.io');
+            expect(sentence({ action: 'introspect.run' })).toBe(
+                'anna@corp.io read a database'
+            );
         });
 
         it('audit.export says how many rows the file held', () => {

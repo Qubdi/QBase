@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Dialog,
     DialogContent,
@@ -25,6 +26,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
     open,
     onOpenChange,
 }) => {
+    const { t } = useTranslation();
     const { login, loginMfa, register } = useQubdi();
     // self-registration only exists on a brand-new server, to create its admin
     const [needsSetup, setNeedsSetup] = useState(false);
@@ -115,11 +117,15 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
             <Dialog open={open} onOpenChange={close}>
                 <DialogContent className="max-w-sm" showClose>
                     <DialogHeader>
-                        <DialogTitle>Two-factor authentication</DialogTitle>
+                        <DialogTitle>
+                            {t('qubdi.account.authDialog.twoFactorTitle')}
+                        </DialogTitle>
                         <DialogDescription>
                             {recovery
-                                ? 'Enter one of your recovery codes. Each one works only once.'
-                                : 'Enter the 6-digit code your authenticator app shows for QubdiDB.'}
+                                ? t(
+                                      'qubdi.account.authDialog.recoveryDescription'
+                                  )
+                                : t('qubdi.account.authDialog.codeDescription')}
                         </DialogDescription>
                     </DialogHeader>
                     <form
@@ -145,7 +151,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                                 (recovery ? !code.trim() : !isCode(code))
                             }
                         >
-                            Verify
+                            {t('qubdi.account.authDialog.verify')}
                         </Button>
                         <Button
                             type="button"
@@ -158,8 +164,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                             }}
                         >
                             {recovery
-                                ? 'Use the authenticator app instead'
-                                : 'Use a recovery code instead'}
+                                ? t('qubdi.account.authDialog.useAuthenticator')
+                                : t('qubdi.account.authDialog.useRecovery')}
                         </Button>
                         <Button
                             type="button"
@@ -170,7 +176,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                                 setError(null);
                             }}
                         >
-                            Back
+                            {t('qubdi.account.authDialog.back')}
                         </Button>
                     </form>
                 </DialogContent>
@@ -183,12 +189,14 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
             <DialogContent className="max-w-sm" showClose>
                 <DialogHeader>
                     <DialogTitle>
-                        {mode === 'login' ? 'Sign in' : 'Create admin account'}
+                        {mode === 'login'
+                            ? t('qubdi.account.authDialog.signIn')
+                            : t('qubdi.account.authDialog.createAdmin')}
                     </DialogTitle>
                     <DialogDescription>
                         {mode === 'login'
-                            ? 'Sign in to sync diagrams to your QubdiDB server. Accounts are created by an admin.'
-                            : 'This server has no users yet. The first account becomes its admin and can create everyone else.'}
+                            ? t('qubdi.account.authDialog.signInDescription')
+                            : t('qubdi.account.authDialog.setupDescription')}
                     </DialogDescription>
                 </DialogHeader>
                 <form
@@ -198,7 +206,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                 >
                     <Input
                         type="email"
-                        placeholder="Email"
+                        placeholder={t('qubdi.account.authDialog.email')}
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -207,7 +215,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                     {mode === 'login' ? (
                         <Input
                             type="password"
-                            placeholder="Password"
+                            placeholder={t('qubdi.account.authDialog.password')}
                             autoComplete="current-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -227,7 +235,9 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                         </p>
                     ) : null}
                     <Button type="submit" disabled={busy || weak}>
-                        {mode === 'login' ? 'Sign in' : 'Create admin account'}
+                        {mode === 'login'
+                            ? t('qubdi.account.authDialog.signIn')
+                            : t('qubdi.account.authDialog.createAdmin')}
                     </Button>
                 </form>
             </DialogContent>

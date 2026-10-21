@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const hr: LanguageTranslation = {
     translation: {
@@ -545,10 +545,4 @@ export const hr: LanguageTranslation = {
         on: 'Uključeno',
         off: 'Isključeno',
     },
-};
-
-export const hrMetadata: LanguageMetadata = {
-    name: 'Croatian',
-    nativeName: 'Hrvatski',
-    code: 'hr',
 };

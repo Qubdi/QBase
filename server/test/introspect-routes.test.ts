@@ -125,6 +125,24 @@ describe('introspect HTTP layer (fake driver)', () => {
         expect((await post(alice, '/introspect/catalog', { connection: conn() })).statusCode).toBe(200);
     });
 
+    it('audits each read of a database with its kind and host, and nothing secret', async () => {
+        const ids = new Set((await ctx.db.select().from(auditLog)).map((r) => r.id));
+        const secretConn = conn({ user: 'very-secret-account', database: 'very-secret-db' });
+        expect((await post(bob, '/introspect/catalog', { connection: secretConn })).statusCode).toBe(200);
+        expect((await post(bob, '/introspect', { connection: secretConn })).statusCode).toBe(200);
+        // a refused request opens nothing and is not an introspection
+        expect((await post(bob, '/introspect', { connection: { ...secretConn, host: 'evil.example.com' } })).statusCode).toBe(400);
+        const rows = (await ctx.db.select().from(auditLog)).filter(
+            (r) => !ids.has(r.id) && r.action === 'introspect.run'
+        );
+        expect(rows.map((r) => r.userId)).toEqual([bob.id, bob.id, bob.id]);
+        expect(rows[0].meta).toEqual({ dialect: 'postgresql', host: conn().host });
+        const text = JSON.stringify(rows);
+        for (const secret of ['very-secret-account', 'very-secret-db', 'p@ss-w0rd-SECRET']) {
+            expect(text).not.toContain(secret);
+        }
+    });
+
     it('returns the catalog and closes the connection afterwards', async () => {
         const before = calls.length;
         const res = await post(alice, '/introspect/catalog', { connection: conn() });
@@ -532,15 +550,10 @@ describe('introspect HTTP layer (fake driver)', () => {
                 const res = await edit(
                     bob,
                     editId,
-                    withoutPassword({ name: 'renamed', database: 'shop2', user: 'reader2', ssl: false })
+                    withoutPassword({ name: 'renamed' })
                 );
                 expect(res.statusCode).toBe(200);
-                expect(res.json()).toMatchObject({
-                    id: editId,
-                    name: 'renamed',
-                    database: 'shop2',
-                    user: 'reader2',
-                });
+                expect(res.json()).toMatchObject({ id: editId, name: 'renamed' });
                 expect(res.body).not.toContain('p@ss-w0rd-SECRET');
                 expect(await storedPassword(editId)).toBe('p@ss-w0rd-SECRET');
             });
@@ -551,6 +564,10 @@ describe('introspect HTTP layer (fake driver)', () => {
                     { host: '93.184.216.35' },
                     { port: 5433 },
                     { dialect: 'sqlserver' },
+                    { database: 'another_database' },
+                    { user: 'another_user' },
+                    { ssl: true },
+                    { trustServerCertificate: true },
                 ]) {
                     const res = await edit(bob, editId, withoutPassword({ name: 'renamed', ...move }));
                     expect(res.statusCode, JSON.stringify(move)).toBe(400);

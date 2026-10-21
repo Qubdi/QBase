@@ -10,6 +10,9 @@ To submit a pull request:
 
 1. Fork the repository, create a branch from `main`, and focus on a single change.
 2. Write clear, concise commit messages and ensure your code follows the project's guidelines.
+   Releases are generated from them, so use [Conventional Commits](https://www.conventionalcommits.org/):
+   `fix(server): reject empty names`, `feat(client): add a share dialog`, `docs: fix a typo`. The pull
+   request title follows the same form (a check enforces it), since it becomes the commit when the PR is squashed.
 3. Open a pull request and clearly state what issue it addresses.
 4. If needed, provide a brief explanation of your solution.
 5. Submit your pull request for review.
@@ -28,6 +31,26 @@ To get started:
 2. Create a branch from `main`.
 3. If you’re new to GitHub pull requests, check out [this video series](https://egghead.io/courses/how-to-contribute-to-an-open-source-project-on-github).
 
+### Contributor License Agreement
+
+Before a first pull request can be merged you sign the [CLA](CLA.md). A bot comments on the pull
+request with how; it takes one reply.
+
+### Setting up
+
+You need Node 24 (see `.nvmrc`) and Docker. The steps in the [README](README.md#run-it) start the
+database, the server and the editor.
+
+### Running the tests
+
+```bash
+npm run lint && npx vitest run       # editor: lint and tests
+npm run build                        # editor: lint, type check and bundle
+cd server && npm run lint && npx vitest run   # server (needs the Postgres from `docker compose up -d db`)
+```
+
+The server tests create their own `qubdidb_test` database next to the one the app uses.
+
 ### License
 
 By contributing, you agree that your work will be licensed under QubdiDB's [license](https://github.com/qubdi/qubdidb/blob/main/LICENSE).
@@ -35,7 +58,7 @@ By contributing, you agree that your work will be licensed under QubdiDB's [lice
 ## Questions?
 
 Feel free to ask in `#contributing` on [Discord](https://discord.gg/QeFwyWSKwC) if you have questions about our process, how to proceed, etc.
-or [Email](the project maintainers)
+or [email the project maintainers](mailto:support@qubdi.dev).
 
 ---
 

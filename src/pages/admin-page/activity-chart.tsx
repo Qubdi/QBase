@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import {
     busiestDay,
     compactNumber,
     dayLabel,
     heightPercent,
-    plural,
     scaleFor,
     type ActivityDay,
 } from '@/lib/qubdi/overview';
@@ -31,6 +31,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
     days,
     today,
 }) => {
+    const { t } = useTranslation();
     const [view, setView] = useState<'chart' | 'table'>('chart');
     const [active, setActive] = useState<number | null>(null);
     const scale = useMemo(() => scaleFor(days.map((d) => d.events)), [days]);
@@ -41,6 +42,11 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
     const busiest = busiestDay(days);
     const total = days.reduce((sum, d) => sum + d.events, 0);
     const last = days.length - 1;
+    const events = (n: number) =>
+        t('qubdi.adminProjects.chart.events', {
+            count: n,
+            formatted: compactNumber(n),
+        });
 
     return (
         <section
@@ -53,13 +59,17 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                         id="activity-chart-title"
                         className="font-primary text-base font-semibold"
                     >
-                        Activity, last 7 days
+                        {t('qubdi.adminProjects.chart.title')}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                        Events per day. Saves are not counted.
+                        {t('qubdi.adminProjects.chart.subtitle')}
                     </p>
                 </div>
-                <div role="group" aria-label="View" className="flex gap-1">
+                <div
+                    role="group"
+                    aria-label={t('qubdi.adminProjects.chart.view')}
+                    className="flex gap-1"
+                >
                     {(['chart', 'table'] as const).map((v) => (
                         <Button
                             key={v}
@@ -69,7 +79,9 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                             aria-pressed={view === v}
                             onClick={() => setView(v)}
                         >
-                            {v === 'chart' ? 'Chart' : 'Table'}
+                            {v === 'chart'
+                                ? t('qubdi.adminProjects.chart.chart')
+                                : t('qubdi.adminProjects.chart.table')}
                         </Button>
                     ))}
                 </div>
@@ -110,7 +122,13 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                                         {/* the whole day's band is the target, not just the painted column */}
                                         <button
                                             type="button"
-                                            aria-label={`${labels[i].full}: ${plural(d.events, 'event')}`}
+                                            aria-label={t(
+                                                'qubdi.adminProjects.chart.dayEvents',
+                                                {
+                                                    day: labels[i].full,
+                                                    events: events(d.events),
+                                                }
+                                            )}
                                             className="group relative flex size-full items-end justify-center rounded-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                                             onMouseEnter={() => setActive(i)}
                                             onMouseLeave={() => setActive(null)}
@@ -154,7 +172,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                                                 }}
                                             >
                                                 <div className="text-sm font-semibold text-popover-foreground">
-                                                    {plural(d.events, 'event')}
+                                                    {events(d.events)}
                                                 </div>
                                                 <div className="text-muted-foreground">
                                                     {labels[i].full}
@@ -179,7 +197,11 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                                     l.isToday && 'font-semibold text-foreground'
                                 )}
                             >
-                                <span>{l.isToday ? 'Today' : l.weekday}</span>
+                                <span>
+                                    {l.isToday
+                                        ? t('qubdi.adminProjects.chart.today')
+                                        : l.weekday}
+                                </span>
                                 <span>{l.date}</span>
                             </li>
                         ))}
@@ -187,12 +209,16 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                 </div>
             ) : (
                 <table className="w-full text-sm">
-                    <caption className="sr-only">Events per day</caption>
+                    <caption className="sr-only">
+                        {t('qubdi.adminProjects.chart.caption')}
+                    </caption>
                     <thead>
                         <tr className="border-b text-left text-xs text-muted-foreground">
-                            <th className="py-1.5 pr-2 font-medium">Day</th>
+                            <th className="py-1.5 pr-2 font-medium">
+                                {t('qubdi.adminProjects.chart.colDay')}
+                            </th>
                             <th className="py-1.5 text-right font-medium">
-                                Events
+                                {t('qubdi.adminProjects.chart.colEvents')}
                             </th>
                         </tr>
                     </thead>
@@ -206,7 +232,9 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                                     {labels[i].full}
                                     {labels[i].isToday ? (
                                         <span className="ml-2 text-xs text-muted-foreground">
-                                            today
+                                            {t(
+                                                'qubdi.adminProjects.chart.todayTag'
+                                            )}
                                         </span>
                                     ) : null}
                                 </td>
@@ -221,12 +249,16 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
 
             <p className="text-sm text-muted-foreground">
                 {total === 0
-                    ? 'Nothing has happened in the last 7 days.'
-                    : `${plural(total, 'event')} in 7 days${
-                          busiest
-                              ? `, busiest on ${labels[days.indexOf(busiest)].full} (${compactNumber(busiest.events)}).`
-                              : '.'
-                      }`}
+                    ? t('qubdi.adminProjects.chart.summaryNone')
+                    : busiest
+                      ? t('qubdi.adminProjects.chart.summaryBusiest', {
+                            events: events(total),
+                            day: labels[days.indexOf(busiest)].full,
+                            busiest: compactNumber(busiest.events),
+                        })
+                      : t('qubdi.adminProjects.chart.summary', {
+                            events: events(total),
+                        })}
             </p>
         </section>
     );

@@ -3,6 +3,9 @@ name: CI
 on:
   pull_request:
     branches: [main]
+  # a direct push to main is checked too
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -43,7 +46,7 @@ jobs:
     services:
       # the server tests expect this database on localhost:5433
       postgres:
-        image: postgres:18-alpine
+        image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
         env:
           POSTGRES_USER: qubdidb
           POSTGRES_PASSWORD: qubdidb
@@ -107,7 +110,7 @@ jobs:
       - name: Scan for committed secrets
         run: >-
           docker run --rm -v "${{ github.workspace }}:/repo"
-          zricethezav/gitleaks:v8.30.1
+          zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
           git /repo --redact --no-banner
 
   docker:

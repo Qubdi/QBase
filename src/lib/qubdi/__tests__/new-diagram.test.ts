@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { diagramSchema } from '@/lib/domain/diagram';
 import { DatabaseType } from '@/lib/domain/database-type';
-import { DEFAULT_DIAGRAM_NAME, emptyDiagram } from '../new-diagram';
+import { defaultDiagramName, emptyDiagram } from '../new-diagram';
 
 describe('emptyDiagram', () => {
     const now = new Date('2025-05-01T10:00:00.000Z');
@@ -39,7 +39,7 @@ describe('emptyDiagram', () => {
                 name: '   ',
                 databaseType: DatabaseType.MYSQL,
             }).name
-        ).toBe(DEFAULT_DIAGRAM_NAME);
+        ).toBe(defaultDiagramName());
     });
 
     it('gives every diagram its own collections', () => {

@@ -1,6 +1,22 @@
+# A share link's token is its credential and sits in the URL (/s/<token>), and in
+# the Referer of whatever that page then loads. Neither may reach the access log.
+map $request $log_request {
+    ~^(?<m>\S+)\s+/s/[^/?\s]+(?<rest>\S*)\s+(?<proto>\S+)$  "$m /s/[redacted]$rest $proto";
+    default                                                $request;
+}
+map $http_referer $log_referer {
+    ~^(?<origin>https?://[^/]+)/s/[^/?]+(?<tail>.*)$  "$origin/s/[redacted]$tail";
+    default                                           $http_referer;
+}
+log_format qubdidb '$remote_addr - $remote_user [$time_local] "$log_request" '
+                   '$status $body_bytes_sent "$log_referer" "$http_user_agent"';
+
 server {
     listen       80;
     listen  [::]:80;
+
+    server_tokens off;
+    access_log /var/log/nginx/access.log qubdidb;
 
     # Security headers. No location below uses add_header, so these apply to
     # every response (an add_header inside a location would drop them).

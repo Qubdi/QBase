@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const ja: LanguageTranslation = {
     translation: {
@@ -555,10 +555,4 @@ export const ja: LanguageTranslation = {
         on: 'オン',
         off: 'オフ',
     },
-};
-
-export const jaMetadata: LanguageMetadata = {
-    name: 'Japanese',
-    nativeName: '日本語',
-    code: 'ja',
 };

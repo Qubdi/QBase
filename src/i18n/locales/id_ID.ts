@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const id_ID: LanguageTranslation = {
     translation: {
@@ -550,10 +550,4 @@ export const id_ID: LanguageTranslation = {
         on: 'Aktif',
         off: 'Nonaktif',
     },
-};
-
-export const id_IDMetadata: LanguageMetadata = {
-    name: 'Indonesian',
-    nativeName: 'Indonesia',
-    code: 'id_ID',
 };

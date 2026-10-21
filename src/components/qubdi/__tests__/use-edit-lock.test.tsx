@@ -138,16 +138,16 @@ describe('useEditLock', () => {
             expect(release).toHaveBeenCalledTimes(1);
         });
 
-        it('lets go only after the final save has settled', async () => {
+        it('lets go only after the final save has settled when the editor closes inside the page', async () => {
             acquire.mockResolvedValue(held);
             let finish!: () => void;
             const flush = vi.fn(
                 () => new Promise<void>((resolve) => (finish = resolve))
             );
             registerFinalFlush(flush);
-            renderHook(() => useEditLock('r1'));
+            const { unmount } = renderHook(() => useEditLock('r1'));
             await tick();
-            window.dispatchEvent(new Event('pagehide'));
+            unmount();
             await tick();
             expect(flush).toHaveBeenCalledTimes(1);
             expect(release).not.toHaveBeenCalled();
@@ -155,6 +155,38 @@ describe('useEditLock', () => {
             await tick();
             expect(release).toHaveBeenCalledTimes(1);
             registerFinalFlush(null);
+        });
+
+        it('sends the release in the same turn when the tab closes, without waiting for the save', async () => {
+            acquire.mockResolvedValue(held);
+            // a final save that never settles must not hold the release back
+            const flush = vi.fn(() => new Promise<void>(() => undefined));
+            registerFinalFlush(flush);
+            renderHook(() => useEditLock('r1'));
+            await tick();
+            window.dispatchEvent(new Event('pagehide'));
+            // no awaiting at all: nothing runs after pagehide
+            expect(release).toHaveBeenCalledTimes(1);
+            expect(release).toHaveBeenCalledWith('r1', 'tab-1', {
+                keepalive: true,
+            });
+            registerFinalFlush(null);
+        });
+
+        it('sends the release behind the final save, in the order the page leaves', async () => {
+            acquire.mockResolvedValue(held);
+            const order: string[] = [];
+            release.mockImplementation(async () => {
+                order.push('release');
+            });
+            // the autosaver's own pagehide listener (registered first)
+            window.addEventListener('pagehide', () => order.push('save'), {
+                once: true,
+            });
+            renderHook(() => useEditLock('r1'));
+            await tick();
+            window.dispatchEvent(new Event('pagehide'));
+            expect(order).toEqual(['save', 'release']);
         });
     });
 

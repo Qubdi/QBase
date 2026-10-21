@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog, shareLinks } from '../src/db/schema.js';
-import { MAX_LISTED_LINKS } from '../src/share/routes.js';
+import { MAX_ACTIVE_LINKS, MAX_LISTED_LINKS } from '../src/share/routes.js';
 import {
     as,
     createDiagram,
@@ -106,6 +106,26 @@ describe('share links', () => {
                 headers: as(owner),
             });
             expect(list.json()).toHaveLength(MAX_LISTED_LINKS);
+        });
+
+        it('stops at the cap of open links per diagram, and revoking makes room', async () => {
+            const busy = await createDiagram(ctx.app, owner, 'Busy');
+            await ctx.db.insert(shareLinks).values(
+                Array.from({ length: MAX_ACTIVE_LINKS }, (_, n) => ({
+                    diagramId: busy,
+                    tokenHash: `busy-${n}`,
+                }))
+            );
+            const refused = await createLink(owner, {}, busy);
+            expect(refused.statusCode).toBe(409);
+            expect(refused.json().error).toBe('too_many_links');
+            // links nobody can open do not count against the cap
+            await ctx.db
+                .update(shareLinks)
+                .set({ revokedAt: new Date() })
+                .where(eq(shareLinks.tokenHash, 'busy-0'));
+            expect((await createLink(owner, {}, busy)).statusCode).toBe(201);
+            expect((await createLink(owner, {}, busy)).statusCode).toBe(409);
         });
 
         it('hides the list from viewers and strangers', async () => {
@@ -329,6 +349,17 @@ describe('share links', () => {
             expect(named.statusCode).toBe(200);
         });
 
+        it('tells caches not to keep what a link shows, found or not', async () => {
+            await publish();
+            const made = (await createLink(owner)).json();
+            const ok = await open(made.token);
+            expect(ok.statusCode).toBe(200);
+            expect(ok.headers['cache-control']).toBe('no-store');
+            const missing = await open('x'.repeat(43));
+            expect(missing.statusCode).toBe(404);
+            expect(missing.headers['cache-control']).toBe('no-store');
+        });
+
         it('invalidates the old token on regenerate', async () => {
             const made = (await createLink(owner)).json();
             const re = await ctx.app.inject({
@@ -340,6 +371,40 @@ describe('share links', () => {
             expect(re.json().token).not.toBe(made.token);
             expect((await open(made.token)).statusCode).toBe(404);
             expect((await open(re.json().token)).statusCode).toBe(200);
+        });
+
+        it('refuses to regenerate a link that is revoked while the request is running', async () => {
+            const made = (await createLink(owner)).json();
+            let release!: () => void;
+            const held = new Promise<void>((resolve) => (release = resolve));
+            let locked!: () => void;
+            const lockedFirst = new Promise<void>((resolve) => (locked = resolve));
+            // an open transaction revokes the link, uncommitted: the route still
+            // reads it as live, and its update waits on the row lock
+            const revoking = ctx.db.transaction(async (tx) => {
+                await tx
+                    .update(shareLinks)
+                    .set({ revokedAt: new Date() })
+                    .where(eq(shareLinks.id, made.id));
+                locked();
+                await held;
+            });
+            await lockedFirst;
+            const regenerating = ctx.app.inject({
+                method: 'POST',
+                url: `/diagrams/${id}/share-links/${made.id}/regenerate`,
+                headers: as(owner),
+            });
+            await new Promise((r) => setTimeout(r, 300));
+            release();
+            await revoking;
+            const res = await regenerating;
+            expect(res.statusCode).toBe(409);
+            expect(res.json().error).toBe('revoked');
+            // the revoked link's token was not replaced
+            const [row] = await ctx.db.select().from(shareLinks).where(eq(shareLinks.id, made.id));
+            expect(row.revokedAt).not.toBeNull();
+            expect((await open(made.token)).statusCode).toBe(404);
         });
 
         it('refuses to regenerate a revoked link', async () => {

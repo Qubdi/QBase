@@ -1,3 +1,4 @@
+import { API_SECURITY_HEADERS } from './lib/security-headers.js';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -50,6 +51,25 @@ export const OPEN_TO_TEMPORARY_PASSWORD: ReadonlySet<string> = new Set([
     '/auth/setup-status',
 ]);
 
+/**
+ * A share link's token is the credential for it, and it sits in the URL
+ * (`/s/<token>`, `/s/<token>/events`): the request log must not keep it.
+ */
+export function redactShareToken(url: string): string {
+    return url.replace(/^\/s\/[^/?#]+/, '/s/[redacted]');
+}
+
+const MUTATING_METHODS: ReadonlySet<string> = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+/** The host (with port) an Origin header names; null for the opaque `null` origin or junk. */
+function hostOf(origin: string): string | null {
+    try {
+        return new URL(origin).host;
+    } catch {
+        return null;
+    }
+}
+
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const app = Fastify({
         // closing the server also ends open SSE streams instead of waiting on them
@@ -60,7 +80,24 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
                 ? trustHops(config.trustProxy)
                 : config.trustProxy,
         logger:
-            config.logLevel === 'silent' ? false : { level: config.logLevel },
+            config.logLevel === 'silent'
+                ? false
+                : {
+                      level: config.logLevel,
+                      serializers: {
+                          // Fastify's usual request fields, with the token hidden
+                          req(req) {
+                              return {
+                                  method: req.method,
+                                  url: redactShareToken(req.url ?? ''),
+                                  version: req.headers['accept-version'] as string | undefined,
+                                  host: req.host,
+                                  remoteAddress: req.ip,
+                                  remotePort: req.socket?.remotePort,
+                              };
+                          },
+                      },
+                  },
         // small by default; the routes that carry a whole diagram raise it
         bodyLimit: config.bodyLimit,
         routerOptions: { maxParamLength: 1000 },
@@ -70,16 +107,8 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.register(rateLimit, { global: false });
     app.decorateRequest('user', null);
 
-    // The API returns JSON, never a page: forbid framing and sniffing, and
-    // let a browser that does render a response run nothing from it.
     app.addHook('onSend', async (_req, reply) => {
-        reply.header('x-content-type-options', 'nosniff');
-        reply.header('x-frame-options', 'DENY');
-        reply.header('referrer-policy', 'no-referrer');
-        reply.header(
-            'content-security-policy',
-            "default-src 'none'; frame-ancestors 'none'"
-        );
+        reply.headers(API_SECURITY_HEADERS);
     });
 
     app.addHook('onRequest', async (req, reply) => {
@@ -103,8 +132,27 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         }
     });
 
+    // The session cookie is SameSite=Lax; this is the second line against a page
+    // on another site making the browser send a changing request: one that names
+    // its Origin must name this API's own editor (CORS_ORIGIN) or, with none set,
+    // this host (as a trusted proxy reports it). Requests with no Origin (scripts,
+    // curl) are not a browser's doing.
+    app.addHook('onRequest', async (req, reply) => {
+        if (!MUTATING_METHODS.has(req.method)) return;
+        const origin = req.headers.origin;
+        if (origin === undefined) return;
+        const allowed = config.corsOrigin
+            ? origin === config.corsOrigin
+            : hostOf(origin) === req.host;
+        if (!allowed) return reply.code(403).send({ error: 'bad_origin' });
+    });
+
     app.addHook('preHandler', async (req) => {
-        req.user = await getSessionUser(db, req.cookies[SESSION_COOKIE]);
+        req.user = await getSessionUser(
+            db,
+            req.cookies[SESSION_COOKIE],
+            config.sessionIdleDays * 86_400
+        );
     });
 
     // someone on a temporary password may only change it, ask who they are, or

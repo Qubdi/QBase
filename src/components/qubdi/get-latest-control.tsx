@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CloudDownload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -33,6 +34,7 @@ export const GetLatestDialog: React.FC<GetLatestDialogProps> = ({
     open,
     onOpenChange,
 }) => {
+    const { t } = useTranslation();
     const workspace = useWorkspace();
     const { currentDiagram } = useDiagram();
     const { deleteDiagram } = useStorage();
@@ -56,7 +58,7 @@ export const GetLatestDialog: React.FC<GetLatestDialogProps> = ({
             });
         } catch (e) {
             toast({
-                title: 'Could not get the latest version',
+                title: t('qubdi.database.getLatest.failedTitle'),
                 description: errorMessage(e),
                 variant: 'destructive',
             });
@@ -72,14 +74,18 @@ export const GetLatestDialog: React.FC<GetLatestDialogProps> = ({
         >
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Get the latest version?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                        {t('qubdi.database.getLatest.title')}
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                        {`"${currentDiagram.name}" is replaced by the version saved in the project. Changes to it that were not saved to the project are lost.`}
+                        {t('qubdi.database.getLatest.description', {
+                            name: currentDiagram.name,
+                        })}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel disabled={busy}>
-                        Cancel
+                        {t('qubdi.database.getLatest.cancel')}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         disabled={busy}
@@ -89,7 +95,7 @@ export const GetLatestDialog: React.FC<GetLatestDialogProps> = ({
                             void getLatest();
                         }}
                     >
-                        Get latest
+                        {t('qubdi.database.getLatest.confirm')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -99,6 +105,7 @@ export const GetLatestDialog: React.FC<GetLatestDialogProps> = ({
 
 /** Navbar icon for getting the project's latest version of the open diagram. */
 export const GetLatestControl: React.FC = () => {
+    const { t } = useTranslation();
     const { enabled, user } = useQubdi();
     const workspace = useWorkspace();
     const [open, setOpen] = useState(false);
@@ -118,8 +125,8 @@ export const GetLatestControl: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 className="size-8"
-                aria-label="Get latest from server"
-                title="Get latest from server"
+                aria-label={t('qubdi.database.getLatest.aria')}
+                title={t('qubdi.database.getLatest.aria')}
                 onClick={() => setOpen(true)}
             >
                 <CloudDownload />

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Dialog,
     DialogContent,
@@ -22,7 +23,7 @@ import {
 } from '@/lib/qubdi/api';
 import {
     SEVERITY_CLASS,
-    SEVERITY_LABEL,
+    severityLabel,
     splitByCategory,
 } from '@/lib/qubdi/drift-ui';
 import { getSyncState } from '@/lib/qubdi/sync-state';
@@ -40,35 +41,41 @@ export const OPEN_RESYNC_EVENT = 'qubdi:open-resync';
 const ChangeList: React.FC<{ title: string; items: DriftItem[] }> = ({
     title,
     items,
-}) => (
-    <section className="rounded-md border p-2" aria-label={title}>
-        <h3 className="mb-1 text-sm font-medium">
-            {title} ({items.length})
-        </h3>
-        {items.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Nothing.</p>
-        ) : (
-            <ul className="flex flex-col gap-1 text-sm">
-                {items.map((i) => (
-                    <li key={i.id} className="flex items-start gap-2">
-                        <span
-                            className={`mt-0.5 shrink-0 rounded px-1 text-[10px] font-semibold uppercase ${SEVERITY_CLASS[i.severity]}`}
-                        >
-                            {SEVERITY_LABEL[i.severity]}
-                        </span>
-                        <span>{i.summary}</span>
-                    </li>
-                ))}
-            </ul>
-        )}
-    </section>
-);
+}) => {
+    const { t } = useTranslation();
+    return (
+        <section className="rounded-md border p-2" aria-label={title}>
+            <h3 className="mb-1 text-sm font-medium">
+                {title} ({items.length})
+            </h3>
+            {items.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                    {t('qubdi.database.drift.nothing')}
+                </p>
+            ) : (
+                <ul className="flex flex-col gap-1 text-sm">
+                    {items.map((i) => (
+                        <li key={i.id} className="flex items-start gap-2">
+                            <span
+                                className={`mt-0.5 shrink-0 rounded px-1 text-[10px] font-semibold uppercase ${SEVERITY_CLASS[i.severity]}`}
+                            >
+                                {severityLabel(i.severity)}
+                            </span>
+                            <span>{i.summary}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+};
 
 export const DriftDialog: React.FC<DriftDialogProps> = ({
     open,
     onOpenChange,
     onBadgeChange,
 }) => {
+    const { t } = useTranslation();
     const { currentDiagram } = useDiagram();
     const { syncDiagram, remoteIdFor } = useQubdi();
     const workspace = useWorkspace();
@@ -126,9 +133,11 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         );
     }, [projectId]);
 
+    // loads when the dialog opens, not whenever one of what `load` reads changes
+    const loadRef = useRef(load);
+    loadRef.current = load;
     useEffect(() => {
-        if (open) void load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (open) void loadRef.current();
     }, [open]);
 
     const run = async (fn: (remoteId: string) => Promise<void>) => {
@@ -178,17 +187,15 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl" showClose>
                 <DialogHeader>
-                    <DialogTitle>Database drift</DialogTitle>
+                    <DialogTitle>{t('qubdi.database.drift.title')}</DialogTitle>
                     <DialogDescription>
-                        Compares this diagram with the live database and tells
-                        you where they no longer match.
+                        {t('qubdi.database.drift.description')}
                     </DialogDescription>
                 </DialogHeader>
 
                 {!remoteId ? (
                     <p className="text-sm text-muted-foreground">
-                        This diagram is not on the server yet. It is uploaded
-                        automatically when you save the settings.
+                        {t('qubdi.database.drift.notOnServer')}
                     </p>
                 ) : null}
 
@@ -201,9 +208,13 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                 >
                     <div className="flex flex-wrap items-center gap-2">
                         <OptionSelect
-                            aria-label="Saved connection"
+                            aria-label={t(
+                                'qubdi.database.drift.savedConnection'
+                            )}
                             className="w-56"
-                            placeholder="Choose a saved connection"
+                            placeholder={t(
+                                'qubdi.database.drift.chooseConnection'
+                            )}
                             value={connectionId}
                             onValueChange={setConnectionId}
                             options={connections.map((c) => ({
@@ -219,21 +230,23 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                                 onClick={() => setConnectionsOpen(true)}
                             >
                                 {connections.length === 0
-                                    ? 'Add a connection'
-                                    : 'Manage connections'}
+                                    ? t('qubdi.database.drift.addConnection')
+                                    : t(
+                                          'qubdi.database.drift.manageConnections'
+                                      )}
                             </Button>
                         ) : null}
                     </div>
                     {connections.length === 0 && projectId ? (
                         <p className="text-muted-foreground">
-                            There is no saved connection in this project yet.
-                            Add the database this diagram describes to compare
-                            it with.
+                            {t('qubdi.database.drift.noConnections')}
                         </p>
                     ) : null}
                     <Input
-                        aria-label="Webhook URL"
-                        placeholder="Webhook URL (optional): receives a JSON POST when drift is found"
+                        aria-label={t('qubdi.database.drift.webhookLabel')}
+                        placeholder={t(
+                            'qubdi.database.drift.webhookPlaceholder'
+                        )}
                         value={webhook}
                         onChange={(e) => setWebhook(e.target.value)}
                     />
@@ -243,7 +256,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                             size="sm"
                             disabled={busy || !connectionId}
                         >
-                            {busy ? 'Working…' : 'Check now'}
+                            {busy
+                                ? t('qubdi.database.drift.working')
+                                : t('qubdi.database.drift.checkNow')}
                         </Button>
                     </div>
                 </form>
@@ -260,17 +275,25 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                         data-testid="drift-report"
                     >
                         <p className="text-sm">
-                            Last check {new Date(report.runAt).toLocaleString()}
-                            :{' '}
+                            {t('qubdi.database.drift.lastCheck', {
+                                date: new Date(report.runAt).toLocaleString(),
+                            })}{' '}
                             <strong data-testid="drift-status">
                                 {report.status === 'clean'
-                                    ? 'no drift'
+                                    ? t('qubdi.database.drift.statusClean')
                                     : report.status === 'error'
-                                      ? 'check failed'
-                                      : `${report.changes.length} difference(s)`}
+                                      ? t('qubdi.database.drift.statusError')
+                                      : t(
+                                            'qubdi.database.drift.statusDrifted',
+                                            {
+                                                n: report.changes.length,
+                                            }
+                                        )}
                             </strong>
                             {report.webhook
-                                ? ` · webhook ${report.webhook}`
+                                ? t('qubdi.database.drift.webhookSuffix', {
+                                      url: report.webhook,
+                                  })
                                 : ''}
                         </p>
                         {report.status === 'error' ? (
@@ -282,22 +305,31 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                             <>
                                 <div className="grid gap-2 md:grid-cols-2">
                                     <ChangeList
-                                        title="Only in the database"
+                                        title={t(
+                                            'qubdi.database.drift.onlyInDatabase'
+                                        )}
                                         items={split.onlyInDatabase}
                                     />
                                     <ChangeList
-                                        title="Only in the diagram"
+                                        title={t(
+                                            'qubdi.database.drift.onlyInDiagram'
+                                        )}
                                         items={split.onlyInDiagram}
                                     />
                                 </div>
                                 <ChangeList
-                                    title="Definitions differ"
+                                    title={t('qubdi.database.drift.differs')}
                                     items={split.differs}
                                 />
                                 {report.renameHints.length > 0 ? (
                                     <ul className="text-xs text-muted-foreground">
                                         {report.renameHints.map((h) => (
-                                            <li key={h}>Hint: {h}</li>
+                                            <li key={h}>
+                                                {t(
+                                                    'qubdi.database.drift.hint',
+                                                    { hint: h }
+                                                )}
+                                            </li>
                                         ))}
                                     </ul>
                                 ) : null}
@@ -312,7 +344,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                                         title={
                                             syncState
                                                 ? undefined
-                                                : 'This diagram was not imported from a database in this browser'
+                                                : t(
+                                                      'qubdi.database.drift.notImported'
+                                                  )
                                         }
                                         onClick={() => {
                                             onOpenChange(false);
@@ -323,7 +357,7 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                                             );
                                         }}
                                     >
-                                        Update diagram from database
+                                        {t('qubdi.database.drift.update')}
                                     </Button>
                                 ) : null}
                                 <Button
@@ -333,16 +367,15 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                                     onClick={() => void dismiss()}
                                 >
                                     {report.dismissedAt
-                                        ? 'Dismissed'
-                                        : 'Dismiss'}
+                                        ? t('qubdi.database.drift.dismissed')
+                                        : t('qubdi.database.drift.dismiss')}
                                 </Button>
                             </div>
                         ) : null}
                     </div>
                 ) : remoteId ? (
                     <p className="text-sm text-muted-foreground">
-                        No check has run yet. Choose a connection and press
-                        Check now.
+                        {t('qubdi.database.drift.noCheckYet')}
                     </p>
                 ) : null}
             </DialogContent>
@@ -352,7 +385,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                     onOpenChange={setConnectionsOpen}
                     project={{
                         id: projectId,
-                        name: workspace?.project.name ?? 'this project',
+                        name:
+                            workspace?.project.name ??
+                            t('qubdi.database.drift.thisProject'),
                     }}
                     onChanged={() => void reloadConnections()}
                 />

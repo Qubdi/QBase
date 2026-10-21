@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Dialog,
     DialogContent,
@@ -35,6 +36,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     forced = false,
     onChanged,
 }) => {
+    const { t } = useTranslation();
     const [current, setCurrent] = useState('');
     const [next, setNext] = useState('');
     // with two-factor on, a code (or a recovery code) goes with the change
@@ -85,19 +87,23 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                 <DialogHeader>
                     <DialogTitle>
                         {forced
-                            ? 'Choose your own password'
-                            : 'Change password'}
+                            ? t('qubdi.account.changePassword.forcedTitle')
+                            : t('qubdi.account.changePassword.title')}
                     </DialogTitle>
                     <DialogDescription>
                         {forced
-                            ? 'An admin set a temporary password for your account. Enter it as the current password, then choose one only you know.'
-                            : 'Enter your current password and choose a new one.'}
+                            ? t(
+                                  'qubdi.account.changePassword.forcedDescription'
+                              )
+                            : t('qubdi.account.changePassword.description')}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="flex flex-col gap-3">
                     <Input
                         type="password"
-                        placeholder="Current password"
+                        placeholder={t(
+                            'qubdi.account.changePassword.currentPassword'
+                        )}
                         autoComplete="current-password"
                         value={current}
                         onChange={(e) => setCurrent(e.target.value)}
@@ -108,15 +114,19 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                         onChange={setNext}
                         minLength={minLength}
                         email={user?.email}
-                        placeholder="New password"
+                        placeholder={t(
+                            'qubdi.account.changePassword.newPassword'
+                        )}
                     />
                     {user?.mfaEnabled ? (
                         <CodeField
                             value={factor}
                             onChange={setFactor}
                             either
-                            placeholder="Authenticator or recovery code"
-                            label="Authenticator or recovery code"
+                            placeholder={t(
+                                'qubdi.account.changePassword.factor'
+                            )}
+                            label={t('qubdi.account.changePassword.factor')}
                         />
                     ) : null}
                     {error ? (
@@ -126,11 +136,11 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                     ) : null}
                     {done ? (
                         <p className="text-sm text-green-600">
-                            Password changed. Other devices were signed out.
+                            {t('qubdi.account.changePassword.done')}
                         </p>
                     ) : null}
                     <Button type="submit" disabled={weak}>
-                        Change password
+                        {t('qubdi.account.changePassword.submit')}
                     </Button>
                     {forced ? (
                         <Button
@@ -138,7 +148,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                             variant="ghost"
                             onClick={() => void logout()}
                         >
-                            Sign out
+                            {t('qubdi.account.changePassword.signOut')}
                         </Button>
                     ) : null}
                 </form>

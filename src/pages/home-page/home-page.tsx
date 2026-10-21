@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { Trans, useTranslation } from 'react-i18next';
 import { FolderKanban } from 'lucide-react';
 import { Badge } from '@/components/badge/badge';
 import { AdminLandingRedirect } from '@/components/qubdi/admin-landing-redirect';
@@ -19,10 +20,14 @@ import { projectHomePath } from '@/lib/qubdi/project-path';
 // three rows of three cards: the page stays one height however many projects
 const PAGE_SIZE = 9;
 
-const roleLabel = (role: MyProject['role']) =>
-    role === 'owner' ? 'Admin' : role === 'editor' ? 'Editor' : 'Viewer';
-
 export const ProjectList: React.FC = () => {
+    const { t } = useTranslation();
+    const roleLabel = (role: MyProject['role']) =>
+        role === 'owner'
+            ? t('qubdi.account.home.roleOwner')
+            : role === 'editor'
+              ? t('qubdi.account.home.roleEditor')
+              : t('qubdi.account.home.roleViewer');
     const { user } = useQubdi();
     // the server only returns the projects this user is assigned to (admins: all)
     const list = usePagedList(
@@ -32,10 +37,11 @@ export const ProjectList: React.FC = () => {
 
     return (
         <main className="mx-auto w-full max-w-5xl px-4 py-8">
-            <h1 className="font-primary text-2xl font-bold">Projects</h1>
+            <h1 className="font-primary text-2xl font-bold">
+                {t('qubdi.account.home.title')}
+            </h1>
             <p className="mb-6 text-sm text-muted-foreground">
-                Each project is its own workspace. Open one to work on its
-                database diagrams.
+                {t('qubdi.account.home.description')}
             </p>
             {list.error ? (
                 <p role="alert" className="mb-4 text-sm text-destructive">
@@ -48,34 +54,37 @@ export const ProjectList: React.FC = () => {
                     className="mb-4 max-w-sm"
                     value={list.query}
                     onChange={list.setQuery}
-                    placeholder="Search projects…"
-                    label="Search projects"
+                    placeholder={t('qubdi.account.home.searchPlaceholder')}
+                    label={t('qubdi.account.home.searchLabel')}
                 />
             ) : null}
             {list.initialLoading ? (
                 <Spinner size="large" className="mx-auto mt-12 text-primary" />
             ) : list.total === 0 && list.query ? (
                 <p className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-                    No projects match &ldquo;{list.query}&rdquo;.
+                    {t('qubdi.account.home.noMatch', { query: list.query })}
                 </p>
             ) : list.total === 0 ? (
                 <div className="rounded-xl border border-dashed p-10 text-center">
                     <FolderKanban className="mx-auto mb-3 size-8 text-muted-foreground" />
-                    <p className="font-medium">No projects yet</p>
+                    <p className="font-medium">
+                        {t('qubdi.account.home.empty')}
+                    </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                         {user?.isAdmin ? (
-                            <>
-                                Create the first project in the{' '}
-                                <Link
-                                    to="/admin"
-                                    className="text-primary underline"
-                                >
-                                    admin panel
-                                </Link>
-                                .
-                            </>
+                            <Trans
+                                i18nKey="qubdi.account.home.adminCreate"
+                                components={{
+                                    anchor: (
+                                        <Link
+                                            to="/admin"
+                                            className="text-primary underline"
+                                        />
+                                    ),
+                                }}
+                            />
                         ) : (
-                            'You are not assigned to any project yet. Ask an admin to add you to one.'
+                            t('qubdi.account.home.notAssigned')
                         )}
                     </p>
                 </div>
@@ -83,7 +92,7 @@ export const ProjectList: React.FC = () => {
                 <div className="flex flex-col gap-3">
                     <ul
                         className="grid min-h-96 auto-rows-min gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                        aria-label="Projects"
+                        aria-label={t('qubdi.account.home.list')}
                     >
                         {list.items.map((p) => (
                             <li key={p.id}>
@@ -105,8 +114,9 @@ export const ProjectList: React.FC = () => {
                                         </p>
                                     ) : null}
                                     <p className="mt-auto pt-2 text-xs text-muted-foreground">
-                                        {p.diagramCount} diagram
-                                        {p.diagramCount === 1 ? '' : 's'}
+                                        {t('qubdi.account.home.diagrams', {
+                                            count: p.diagramCount,
+                                        })}
                                     </p>
                                 </Link>
                             </li>
@@ -119,7 +129,7 @@ export const ProjectList: React.FC = () => {
                         total={list.total}
                         onPageChange={list.setPage}
                         disabled={list.loading}
-                        noun="projects"
+                        noun={t('qubdi.account.home.noun')}
                     />
                 </div>
             )}
@@ -127,19 +137,22 @@ export const ProjectList: React.FC = () => {
     );
 };
 
-export const HomePage: React.FC = () => (
-    <LocalConfigProvider>
-        <StorageProvider>
-            <ThemeProvider>
-                <Helmet>
-                    <title>QubdiDB - Projects</title>
-                </Helmet>
-                {/* admins start on the admin panel, once per session */}
-                <AdminLandingRedirect />
-                <AppShell>
-                    <ProjectList />
-                </AppShell>
-            </ThemeProvider>
-        </StorageProvider>
-    </LocalConfigProvider>
-);
+export const HomePage: React.FC = () => {
+    const { t } = useTranslation();
+    return (
+        <LocalConfigProvider>
+            <StorageProvider>
+                <ThemeProvider>
+                    <Helmet>
+                        <title>{t('qubdi.account.home.pageTitle')}</title>
+                    </Helmet>
+                    {/* admins start on the admin panel, once per session */}
+                    <AdminLandingRedirect />
+                    <AppShell>
+                        <ProjectList />
+                    </AppShell>
+                </ThemeProvider>
+            </StorageProvider>
+        </LocalConfigProvider>
+    );
+};

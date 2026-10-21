@@ -1,7 +1,10 @@
+import { i18n } from '@/i18n/i18n';
 import type { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 
-export const DEFAULT_DIAGRAM_NAME = 'Untitled diagram';
+/** The name a blank diagram gets, in the current language. */
+export const defaultDiagramName = (): string =>
+    i18n.t('qubdi.workspace.newDiagram.defaultName');
 
 /** A blank diagram, ready to be created inside a project. */
 export function emptyDiagram(options: {
@@ -13,7 +16,7 @@ export function emptyDiagram(options: {
     const now = options.now ?? new Date();
     return {
         id: options.id,
-        name: options.name.trim() || DEFAULT_DIAGRAM_NAME,
+        name: options.name.trim() || defaultDiagramName(),
         databaseType: options.databaseType,
         tables: [],
         relationships: [],

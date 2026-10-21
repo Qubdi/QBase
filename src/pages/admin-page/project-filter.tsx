@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronsUpDown, X } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import {
@@ -20,6 +21,7 @@ export interface ChosenProject {
 const ProjectChoices: React.FC<{
     onChoose: (project: ChosenProject) => void;
 }> = ({ onChoose }) => {
+    const { t } = useTranslation();
     const list = usePagedList(
         ({ page, limit, q }) => api.adminListProjects({ page, limit, q }),
         { limit: 20 }
@@ -31,22 +33,26 @@ const ProjectChoices: React.FC<{
             <SearchInput
                 value={list.query}
                 onChange={list.setQuery}
-                placeholder="Search projects…"
-                label="Search projects"
+                placeholder={t(
+                    'qubdi.adminUsers.projectFilter.searchPlaceholder'
+                )}
+                label={t('qubdi.adminUsers.projectFilter.searchLabel')}
             />
             <ul
-                aria-label="Matching projects"
+                aria-label={t(
+                    'qubdi.adminUsers.projectFilter.matchingProjects'
+                )}
                 className="max-h-48 min-h-10 overflow-y-auto rounded-md border"
             >
                 {list.initialLoading ? (
                     <li className="px-3 py-2 text-sm text-muted-foreground">
-                        Loading…
+                        {t('qubdi.adminUsers.projectFilter.loading')}
                     </li>
                 ) : list.items.length === 0 ? (
                     <li className="px-3 py-2 text-sm text-muted-foreground">
                         {list.query
-                            ? 'No project matches.'
-                            : 'There are no projects.'}
+                            ? t('qubdi.adminUsers.projectFilter.noMatch')
+                            : t('qubdi.adminUsers.projectFilter.noProjects')}
                     </li>
                 ) : (
                     list.items.map((p) => (
@@ -67,7 +73,7 @@ const ProjectChoices: React.FC<{
             </ul>
             {more ? (
                 <p className="px-1 text-xs text-muted-foreground">
-                    Type more to narrow the search.
+                    {t('qubdi.adminUsers.projectFilter.narrow')}
                 </p>
             ) : null}
         </div>
@@ -87,6 +93,7 @@ export const ProjectFilter: React.FC<ProjectFilterProps> = ({
     value,
     onChange,
 }) => {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
 
     return (
@@ -96,7 +103,7 @@ export const ProjectFilter: React.FC<ProjectFilterProps> = ({
                     <Button
                         type="button"
                         variant="outline"
-                        aria-label="Choose a project"
+                        aria-label={t('qubdi.adminUsers.projectFilter.choose')}
                         className="min-w-0 flex-1 justify-between font-normal"
                     >
                         <span
@@ -105,7 +112,8 @@ export const ProjectFilter: React.FC<ProjectFilterProps> = ({
                                 !value && 'text-muted-foreground'
                             )}
                         >
-                            {value?.name ?? 'All projects'}
+                            {value?.name ??
+                                t('qubdi.adminUsers.projectFilter.all')}
                         </span>
                         <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
                     </Button>
@@ -124,7 +132,7 @@ export const ProjectFilter: React.FC<ProjectFilterProps> = ({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label="Show every project"
+                    aria-label={t('qubdi.adminUsers.projectFilter.showEvery')}
                     onClick={() => onChange(null)}
                 >
                     <X className="size-4" />

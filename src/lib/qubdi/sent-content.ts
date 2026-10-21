@@ -84,3 +84,51 @@ export const isLastSentContent = (
     localId: string,
     content: Record<string, unknown> | null
 ): boolean => !!content && sentOf(localId).includes(fingerprint(content));
+
+// ---- the last content known to match the server ----
+//
+// Unlike the sends above (kept per tab, and only until a reply arrives), this
+// is kept per browser: it is what tells a later visit that the copy in this
+// browser has no unsent edits, so it is safe to replace with a newer server
+// version.
+const SYNCED_KEY = 'qubdidb.synced-content';
+
+const syncedMemory: Record<string, string> = {};
+
+const readSynced = (): Record<string, string> => {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(SYNCED_KEY) ?? '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+        return {};
+    }
+};
+
+/** The copy in this browser now equals `content`, which the server has. */
+export const markSyncedContent = (
+    localId: string,
+    content: Record<string, unknown>
+) => {
+    const print = fingerprint(content);
+    syncedMemory[localId] = print;
+    try {
+        localStorage.setItem(
+            SYNCED_KEY,
+            JSON.stringify({ ...readSynced(), [localId]: print })
+        );
+    } catch {
+        // storage unavailable: the in-memory copy is used
+    }
+};
+
+/**
+ * Whether `content` is what the copy last matched on the server. `null` when
+ * that was never recorded (a copy from before it was), which is not a yes.
+ */
+export const matchesSyncedContent = (
+    localId: string,
+    content: Record<string, unknown>
+): boolean | null => {
+    const print = syncedMemory[localId] ?? readSynced()[localId];
+    return print === undefined ? null : print === fingerprint(content);
+};

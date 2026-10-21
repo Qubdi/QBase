@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Dialog,
     DialogContent,
@@ -27,12 +28,6 @@ export interface LintSettingsDialogProps {
     onSave: (config: LintConfig) => void;
 }
 
-const SEVERITY_OPTIONS = [
-    { value: 'error', label: 'Error' },
-    { value: 'warning', label: 'Warning' },
-    { value: 'info', label: 'Info' },
-];
-
 type NameStyle = 'auto' | 'snake_case' | 'camelCase';
 type TableNames = 'consistent' | 'plural' | 'singular' | 'any';
 
@@ -42,6 +37,13 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
     config,
     onSave,
 }) => {
+    const { t } = useTranslation();
+    const severityOptions = (['error', 'warning', 'info'] as const).map(
+        (value) => ({
+            value,
+            label: t('qubdi.database.lintSettings.severity.' + value),
+        })
+    );
     const [draft, setDraft] = useState<LintConfig>(config);
     const contentRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -78,23 +80,29 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                 }}
             >
                 <DialogHeader className="space-y-1 px-6 pr-12 pt-6">
-                    <DialogTitle>Lint settings</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.database.lintSettings.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        Choose which rules run for this diagram and how serious
-                        each one is.
+                        {t('qubdi.database.lintSettings.description')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col gap-5 px-6">
                     <section className="flex flex-col gap-2">
                         <div className="flex items-baseline justify-between">
-                            <h3 className="text-sm font-medium">Rules</h3>
+                            <h3 className="text-sm font-medium">
+                                {t('qubdi.database.lintSettings.rules')}
+                            </h3>
                             <span className="text-xs text-muted-foreground">
-                                {enabledCount} of {RULES.length} on
+                                {t('qubdi.database.lintSettings.enabledCount', {
+                                    enabled: enabledCount,
+                                    total: RULES.length,
+                                })}
                             </span>
                         </div>
                         <ul
                             className="max-h-[min(24rem,45vh)] divide-y overflow-y-auto rounded-lg border"
-                            aria-label="Rules"
+                            aria-label={t('qubdi.database.lintSettings.rules')}
                         >
                             {RULES.map((r) => {
                                 const s = rule(r.id);
@@ -105,7 +113,12 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                     >
                                         <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
                                             <Checkbox
-                                                aria-label={`Enable ${r.title}`}
+                                                aria-label={t(
+                                                    'qubdi.database.lintSettings.enableRule',
+                                                    {
+                                                        title: r.title,
+                                                    }
+                                                )}
                                                 checked={s.enabled}
                                                 onCheckedChange={(checked) =>
                                                     setRule(r.id, {
@@ -135,14 +148,19 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                                 'w-28 shrink-0',
                                                 !s.enabled && 'opacity-60'
                                             )}
-                                            aria-label={`Severity for ${r.title}`}
+                                            aria-label={t(
+                                                'qubdi.database.lintSettings.severityFor',
+                                                {
+                                                    title: r.title,
+                                                }
+                                            )}
                                             value={s.severity}
                                             onValueChange={(v) =>
                                                 setRule(r.id, {
                                                     severity: v as LintSeverity,
                                                 })
                                             }
-                                            options={SEVERITY_OPTIONS}
+                                            options={severityOptions}
                                         />
                                     </li>
                                 );
@@ -150,15 +168,19 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                         </ul>
                     </section>
                     <section className="flex flex-col gap-2">
-                        <h3 className="text-sm font-medium">Naming</h3>
+                        <h3 className="text-sm font-medium">
+                            {t('qubdi.database.lintSettings.naming')}
+                        </h3>
                         <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="lint-name-style">
-                                    Name style
+                                    {t('qubdi.database.lintSettings.nameStyle')}
                                 </Label>
                                 <OptionSelect
                                     id="lint-name-style"
-                                    aria-label="Name style"
+                                    aria-label={t(
+                                        'qubdi.database.lintSettings.nameStyle'
+                                    )}
                                     value={draft.naming?.style ?? 'auto'}
                                     onValueChange={(v) =>
                                         setDraft((d) => ({
@@ -172,7 +194,9 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                     options={[
                                         {
                                             value: 'auto',
-                                            label: 'Detect from the diagram',
+                                            label: t(
+                                                'qubdi.database.lintSettings.styleAuto'
+                                            ),
                                         },
                                         {
                                             value: 'snake_case',
@@ -187,11 +211,15 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="lint-table-names">
-                                    Table names
+                                    {t(
+                                        'qubdi.database.lintSettings.tableNames'
+                                    )}
                                 </Label>
                                 <OptionSelect
                                     id="lint-table-names"
-                                    aria-label="Table names"
+                                    aria-label={t(
+                                        'qubdi.database.lintSettings.tableNames'
+                                    )}
                                     value={draft.naming?.tables ?? 'consistent'}
                                     onValueChange={(v) =>
                                         setDraft((d) => ({
@@ -205,16 +233,27 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                     options={[
                                         {
                                             value: 'consistent',
-                                            label: 'Consistent',
+                                            label: t(
+                                                'qubdi.database.lintSettings.tablesConsistent'
+                                            ),
                                         },
-                                        { value: 'plural', label: 'Plural' },
+                                        {
+                                            value: 'plural',
+                                            label: t(
+                                                'qubdi.database.lintSettings.tablesPlural'
+                                            ),
+                                        },
                                         {
                                             value: 'singular',
-                                            label: 'Singular',
+                                            label: t(
+                                                'qubdi.database.lintSettings.tablesSingular'
+                                            ),
                                         },
                                         {
                                             value: 'any',
-                                            label: 'Do not check',
+                                            label: t(
+                                                'qubdi.database.lintSettings.tablesAny'
+                                            ),
                                         },
                                     ]}
                                 />
@@ -228,14 +267,14 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                         className="text-muted-foreground"
                         onClick={() => setDraft({})}
                     >
-                        Reset to defaults
+                        {t('qubdi.database.lintSettings.reset')}
                     </Button>
                     <div className="flex flex-col-reverse gap-2 sm:flex-row">
                         <Button
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Cancel
+                            {t('qubdi.database.lintSettings.cancel')}
                         </Button>
                         <Button
                             onClick={() => {
@@ -243,7 +282,7 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                 onOpenChange(false);
                             }}
                         >
-                            Save
+                            {t('qubdi.database.lintSettings.save')}
                         </Button>
                     </div>
                 </DialogFooter>

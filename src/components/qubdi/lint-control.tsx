@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ListChecks, Settings2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { useToast } from '@/components/toast/use-toast';
 import { useDiagram } from '@/hooks/use-diagram';
@@ -31,16 +32,12 @@ const SEVERITY_CLASS: Record<LintSeverity, string> = {
         'bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100',
     info: 'bg-sky-100 text-sky-900 dark:bg-sky-900 dark:text-sky-100',
 };
-const SEVERITY_TITLE: Record<LintSeverity, string> = {
-    error: 'Errors',
-    warning: 'Warnings',
-    info: 'Info',
-};
 // the side panel animates its width for 200ms (editor-desktop-layout.tsx)
 const SIDE_PANEL_SETTLE_MS = 220;
 
 /** Schema lint: a count badge in the toolbar and a panel of findings. Works offline. */
 export const LintControl: React.FC = () => {
+    const { t } = useTranslation();
     const diagram = useDiagram();
     const { currentDiagram, databaseType } = diagram;
     const { remoteIdFor, user } = useQubdi();
@@ -93,8 +90,8 @@ export const LintControl: React.FC = () => {
         const ops = planFix(finding.fix, diagram.tables, databaseType);
         if (!ops) {
             toast({
-                title: 'This fix no longer applies',
-                description: 'The diagram changed since the check ran.',
+                title: t('qubdi.database.lint.fixStaleTitle'),
+                description: t('qubdi.database.lint.fixStaleBody'),
                 variant: 'destructive',
             });
             return;
@@ -110,7 +107,7 @@ export const LintControl: React.FC = () => {
             if (op.kind === 'updateTable')
                 await diagram.updateTable(op.tableId, op.patch);
         }
-        toast({ title: 'Fix applied' });
+        toast({ title: t('qubdi.database.lint.fixApplied') });
     };
 
     const tableIdOf = (f: Finding): string | undefined =>
@@ -134,7 +131,7 @@ export const LintControl: React.FC = () => {
                 onClick={() => setOpen((v) => !v)}
             >
                 <ListChecks className="size-4" />
-                Lint
+                {t('qubdi.database.lint.button')}
                 {summary.total > 0 ? (
                     <span
                         data-testid="lint-badge"
@@ -157,21 +154,25 @@ export const LintControl: React.FC = () => {
             {open
                 ? createPortal(
                       <aside
-                          aria-label="Lint"
+                          aria-label={t('qubdi.database.lint.panel')}
                           data-testid="lint-panel"
                           className="fixed bottom-3 right-3 top-14 z-50 flex w-96 max-w-[calc(100vw-1.5rem)] flex-col gap-3 overflow-y-auto rounded-md border bg-background p-3 text-sm shadow-lg"
                       >
                           <div className="flex items-center justify-between">
                               <h2 className="font-semibold">
-                                  Schema lint ({summary.error} errors,{' '}
-                                  {summary.warning} warnings, {summary.info}{' '}
-                                  info)
+                                  {t('qubdi.database.lint.heading', {
+                                      errors: summary.error,
+                                      warnings: summary.warning,
+                                      info: summary.info,
+                                  })}
                               </h2>
                               <div className="flex gap-1">
                                   <Button
                                       variant="ghost"
                                       size="icon"
-                                      aria-label="Lint settings"
+                                      aria-label={t(
+                                          'qubdi.database.lint.settings'
+                                      )}
                                       onClick={() => setSettingsOpen(true)}
                                   >
                                       <Settings2 className="size-4" />
@@ -179,7 +180,9 @@ export const LintControl: React.FC = () => {
                                   <Button
                                       variant="ghost"
                                       size="icon"
-                                      aria-label="Close lint"
+                                      aria-label={t(
+                                          'qubdi.database.lint.close'
+                                      )}
                                       onClick={() => setOpen(false)}
                                   >
                                       <X className="size-4" />
@@ -191,7 +194,7 @@ export const LintControl: React.FC = () => {
                                   className="text-muted-foreground"
                                   data-testid="lint-clean"
                               >
-                                  No problems found.
+                                  {t('qubdi.database.lint.clean')}
                               </p>
                           ) : null}
                           {SEVERITY_ORDER.map((sev) => {
@@ -202,22 +205,31 @@ export const LintControl: React.FC = () => {
                               return (
                                   <section
                                       key={sev}
-                                      aria-label={SEVERITY_TITLE[sev]}
+                                      aria-label={t(
+                                          'qubdi.database.lint.severityTitle.' +
+                                              sev
+                                      )}
                                   >
                                       <h3 className="mb-1 font-medium">
-                                          {SEVERITY_TITLE[sev]} ({group.length})
+                                          {t(
+                                              'qubdi.database.lint.severityTitle.' +
+                                                  sev
+                                          )}{' '}
+                                          ({group.length})
                                       </h3>
                                       <ul className="flex flex-col gap-1">
                                           {group.map((f) => (
                                               <li
                                                   key={f.id}
                                                   data-testid="lint-finding"
-                                                  className="flex items-start gap-2 rounded-md border p-2"
+                                                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border p-2"
                                               >
                                                   <button
                                                       type="button"
-                                                      className="flex-1 text-left"
-                                                      title="Show on the canvas"
+                                                      className="col-start-1 min-w-0 text-left [overflow-wrap:anywhere]"
+                                                      title={t(
+                                                          'qubdi.database.lint.showOnCanvas'
+                                                      )}
                                                       onClick={() => {
                                                           const id =
                                                               tableIdOf(f);
@@ -235,11 +247,14 @@ export const LintControl: React.FC = () => {
                                                       <Button
                                                           size="sm"
                                                           variant="outline"
+                                                          className="col-start-2 justify-self-end"
                                                           onClick={() =>
                                                               void applyFix(f)
                                                           }
                                                       >
-                                                          Fix
+                                                          {t(
+                                                              'qubdi.database.lint.fix'
+                                                          )}
                                                       </Button>
                                                   ) : null}
                                               </li>

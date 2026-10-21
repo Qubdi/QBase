@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import QRCode from 'qrcode';
 import { Copy, Download } from 'lucide-react';
 import {
@@ -39,9 +40,6 @@ type View =
     | { kind: 'renew'; status: MfaStatus }
     | { kind: 'disable'; status: MfaStatus };
 
-const AUTHENTICATOR_APPS =
-    'Google Authenticator, Microsoft Authenticator, Authy, 1Password or any other authenticator app';
-
 /**
  * Setting up, looking at and turning off two-factor sign-in with an
  * authenticator app. The QR code is drawn here, in the browser, from the
@@ -51,6 +49,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
     open,
     onOpenChange,
 }) => {
+    const { t } = useTranslation();
     const { refreshUser } = useQubdi();
     const [view, setView] = useState<View>({ kind: 'loading' });
     const [error, setError] = useState<string | null>(null);
@@ -161,14 +160,14 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
     };
 
     const codesText = (codes: string[]) =>
-        `QubdiDB recovery codes\nEach code works once. Keep them somewhere safe.\n\n${codes.join('\n')}\n`;
+        `${t('qubdi.account.twoFactor.fileHeader')}\n${t('qubdi.account.twoFactor.fileNote')}\n\n${codes.join('\n')}\n`;
 
     const copyCodes = async (codes: string[]) => {
         try {
             await navigator.clipboard.writeText(codes.join('\n'));
             setCopied(true);
         } catch {
-            setError('Copy failed. Select the codes and copy them by hand.');
+            setError(t('qubdi.account.twoFactor.copyFailed'));
         }
     };
 
@@ -179,8 +178,8 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
 
     const titleFor = (v: View) =>
         v.kind === 'codes'
-            ? 'Save your recovery codes'
-            : 'Two-factor authentication';
+            ? t('qubdi.account.twoFactor.codesTitle')
+            : t('qubdi.account.twoFactor.title');
 
     return (
         <Dialog
@@ -204,35 +203,36 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                     <DialogTitle>{titleFor(view)}</DialogTitle>
                     <DialogDescription>
                         {view.kind === 'codes'
-                            ? 'Each code works once, if you lose your phone. They are shown only now.'
-                            : 'Ask for a code from an app on your phone, as well as the password, when you sign in.'}
+                            ? t('qubdi.account.twoFactor.codesDescription')
+                            : t('qubdi.account.twoFactor.description')}
                     </DialogDescription>
                 </DialogHeader>
 
                 {view.kind === 'loading' ? (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
+                    <p className="text-sm text-muted-foreground">
+                        {t('qubdi.account.twoFactor.loading')}
+                    </p>
                 ) : null}
 
                 {view.kind === 'unavailable' ? (
                     <p className="text-sm text-muted-foreground">
-                        Two-factor sign-in is not available on this server.
-                        Whoever runs it can switch it on by setting an
-                        encryption key (SECRETS_KEY).
+                        {t('qubdi.account.twoFactor.unavailable')}
                     </p>
                 ) : null}
 
                 {view.kind === 'off' ? (
                     <div className="flex flex-col gap-3">
                         <p className="text-sm">
-                            It is <strong>off</strong>. Turn it on and a stolen
-                            password alone will not get anyone into your
-                            account.
+                            <Trans
+                                i18nKey="qubdi.account.twoFactor.offText"
+                                components={{ strong: <strong /> }}
+                            />
                         </p>
                         <Button
                             onClick={() => void startSetup()}
                             disabled={busy}
                         >
-                            Set up
+                            {t('qubdi.account.twoFactor.setUp')}
                         </Button>
                     </div>
                 ) : null}
@@ -244,18 +244,24 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                         data-testid="mfa-setup"
                     >
                         <ol className="flex list-decimal flex-col gap-3 pl-5 text-sm">
-                            <li>Install {AUTHENTICATOR_APPS} on your phone.</li>
                             <li>
-                                Scan this code with the app, or choose
-                                &ldquo;enter a key&rdquo; and type the key
-                                below.
+                                {t('qubdi.account.twoFactor.stepInstall', {
+                                    apps: t(
+                                        'qubdi.account.twoFactor.authenticatorApps'
+                                    ),
+                                })}
+                            </li>
+                            <li>
+                                {t('qubdi.account.twoFactor.stepScan')}
                                 <div className="mt-2 flex flex-col items-center gap-2">
                                     {qr ? (
                                         <img
                                             src={qr}
                                             width={192}
                                             height={192}
-                                            alt="QR code for your authenticator app"
+                                            alt={t(
+                                                'qubdi.account.twoFactor.qrAlt'
+                                            )}
                                             className="rounded bg-white"
                                         />
                                     ) : (
@@ -270,7 +276,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 </div>
                             </li>
                             <li>
-                                Type the 6-digit code the app shows now.
+                                {t('qubdi.account.twoFactor.stepType')}
                                 <div className="mt-2">
                                     <CodeField
                                         value={code}
@@ -281,7 +287,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                             </li>
                         </ol>
                         <Button type="submit" disabled={busy || !isCode(code)}>
-                            Turn on
+                            {t('qubdi.account.twoFactor.turnOn')}
                         </Button>
                         <Button
                             type="button"
@@ -292,7 +298,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 setView({ kind: 'off' });
                             }}
                         >
-                            Cancel
+                            {t('qubdi.account.twoFactor.cancel')}
                         </Button>
                     </form>
                 ) : null}
@@ -300,7 +306,9 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                 {view.kind === 'codes' ? (
                     <div className="flex flex-col gap-3">
                         <ul
-                            aria-label="Recovery codes"
+                            aria-label={t(
+                                'qubdi.account.twoFactor.recoveryCodes'
+                            )}
                             className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border bg-muted/40 p-3 font-mono text-sm"
                         >
                             {view.codes.map((c) => (
@@ -318,7 +326,9 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 onClick={() => void copyCodes(view.codes)}
                             >
                                 <Copy className="size-4" />
-                                {copied ? 'Copied' : 'Copy'}
+                                {copied
+                                    ? t('qubdi.account.twoFactor.copied')
+                                    : t('qubdi.account.twoFactor.copy')}
                             </Button>
                             <Button
                                 type="button"
@@ -335,16 +345,18 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 }
                             >
                                 <Download className="size-4" />
-                                Download
+                                {t('qubdi.account.twoFactor.download')}
                             </Button>
                         </div>
                         <label className="flex items-center gap-2 text-sm">
                             <Checkbox
                                 checked={saved}
                                 onCheckedChange={(c) => setSaved(c === true)}
-                                aria-label="I have saved these codes"
+                                aria-label={t(
+                                    'qubdi.account.twoFactor.savedLabel'
+                                )}
                             />
-                            I have saved these codes somewhere safe
+                            {t('qubdi.account.twoFactor.savedText')}
                         </label>
                         <Button
                             disabled={!saved}
@@ -353,7 +365,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 void load();
                             }}
                         >
-                            Done
+                            {t('qubdi.account.twoFactor.done')}
                         </Button>
                     </div>
                 ) : null}
@@ -361,16 +373,26 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                 {view.kind === 'on' ? (
                     <div className="flex flex-col gap-3">
                         <p className="text-sm">
-                            It is <strong>on</strong>
-                            {view.status.enabledAt
-                                ? ` since ${exactTime(view.status.enabledAt)}`
-                                : ''}
-                            . You have {view.status.recoveryCodesLeft} unused
-                            recovery{' '}
-                            {view.status.recoveryCodesLeft === 1
-                                ? 'code'
-                                : 'codes'}
-                            .
+                            <Trans
+                                i18nKey="qubdi.account.twoFactor.onText"
+                                components={{ strong: <strong /> }}
+                                values={{
+                                    since: view.status.enabledAt
+                                        ? t('qubdi.account.twoFactor.since', {
+                                              time: exactTime(
+                                                  view.status.enabledAt
+                                              ),
+                                          })
+                                        : '',
+                                    left: t(
+                                        'qubdi.account.twoFactor.codesLeft',
+                                        {
+                                            count: view.status
+                                                .recoveryCodesLeft,
+                                        }
+                                    ),
+                                }}
+                            />
                         </p>
                         <Button
                             variant="outline"
@@ -379,7 +401,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 setView({ kind: 'renew', status: view.status });
                             }}
                         >
-                            Make new recovery codes
+                            {t('qubdi.account.twoFactor.renewCodes')}
                         </Button>
                         <Button
                             variant="outline"
@@ -391,7 +413,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 });
                             }}
                         >
-                            Turn off
+                            {t('qubdi.account.twoFactor.turnOff')}
                         </Button>
                     </div>
                 ) : null}
@@ -404,13 +426,13 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                     >
                         <p className="text-sm">
                             {view.kind === 'renew'
-                                ? 'The old recovery codes stop working. Confirm with your password and a code from the app.'
-                                : 'Confirm with your password and a code from the app (or a recovery code).'}
+                                ? t('qubdi.account.twoFactor.renewHelp')
+                                : t('qubdi.account.twoFactor.disableHelp')}
                         </p>
                         <Input
                             type="password"
-                            placeholder="Password"
-                            aria-label="Password"
+                            placeholder={t('qubdi.account.twoFactor.password')}
+                            aria-label={t('qubdi.account.twoFactor.password')}
                             autoComplete="current-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -423,8 +445,10 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 value={code}
                                 onChange={setCode}
                                 either
-                                label="Authenticator or recovery code"
-                                placeholder="Authenticator or recovery code"
+                                label={t('qubdi.account.twoFactor.factor')}
+                                placeholder={t(
+                                    'qubdi.account.twoFactor.factor'
+                                )}
                             />
                         )}
                         <Button
@@ -437,8 +461,8 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                             }
                         >
                             {view.kind === 'renew'
-                                ? 'Make new recovery codes'
-                                : 'Turn off two-factor'}
+                                ? t('qubdi.account.twoFactor.renewCodes')
+                                : t('qubdi.account.twoFactor.turnOffTwoFactor')}
                         </Button>
                         <Button
                             type="button"
@@ -446,7 +470,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                             size="sm"
                             onClick={() => back(view.status)}
                         >
-                            Cancel
+                            {t('qubdi.account.twoFactor.cancel')}
                         </Button>
                     </form>
                 ) : null}

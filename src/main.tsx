@@ -16,10 +16,14 @@ import '@fontsource/manrope/800.css';
 import './index.css';
 import './globals.css';
 import { App } from './app';
-import './i18n/i18n';
+import { i18nReady } from './i18n/i18n';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>
+// the first screen waits (a moment) for the person's language, so it never
+// flashes in English first; a language that fails to load falls back to English
+void i18nReady.then(() =>
+    ReactDOM.createRoot(document.getElementById('root')!).render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>
+    )
 );

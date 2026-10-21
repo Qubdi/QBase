@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
@@ -13,7 +13,10 @@ import {
     presentDiagram,
     publishSnapshot,
 } from './service.js';
+import { diagramHash } from '../lib/hash.js';
 
+/** `limit` stand-in when the list is not paged (Postgres' largest integer). */
+const NO_LIMIT = 2_147_483_647;
 const idParam = z.object({ id: z.string().uuid() });
 const listQuery = z.object({
     limit: z.coerce.number().int().min(1).max(500).optional(),
@@ -97,8 +100,15 @@ export const diagramRoutes =
             }
         });
 
-        app.get('/', async (req) => {
-            const me = req.user!;
+        /**
+         * What the list shows for the diagrams the caller may see, newest first;
+         * one diagram when `id` is given. The database orders and cuts the
+         * list, so a page never reads the rest.
+         */
+        const listFor = async (
+            me: NonNullable<FastifyRequest['user']>,
+            opts: { id?: string; limit?: number; offset: number }
+        ) => {
             const select = {
                 id: diagrams.id,
                 title: diagrams.title,
@@ -108,6 +118,8 @@ export const diagramRoutes =
                 projectId: diagrams.projectId,
                 ...statsColumns,
             };
+            const order = [desc(diagrams.updatedAt), diagrams.id];
+            const only = opts.id ? eq(diagrams.id, opts.id) : undefined;
             // admins see every project's diagrams; others only their projects'
             const rows = me.isAdmin
                 ? (
@@ -115,6 +127,10 @@ export const diagramRoutes =
                           .select(select)
                           .from(diagrams)
                           .leftJoin(users, eq(users.id, diagrams.ownerId))
+                          .where(only)
+                          .orderBy(...order)
+                          .limit(opts.limit ?? NO_LIMIT)
+                          .offset(opts.offset)
                   ).map((d) => ({
                       ...d,
                       role: 'owner' as const,
@@ -127,14 +143,16 @@ export const diagramRoutes =
                           eq(diagrams.projectId, projectMembers.projectId)
                       )
                       .leftJoin(users, eq(users.id, diagrams.ownerId))
-                      .where(eq(projectMembers.userId, me.id));
-            rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+                      .where(and(eq(projectMembers.userId, me.id), only))
+                      .orderBy(...order)
+                      .limit(opts.limit ?? NO_LIMIT)
+                      .offset(opts.offset);
             // viewers must not learn about unpublished renames
             const latest = await latestSnapshotListing(
                 db,
                 rows.filter((r) => !canWrite(r.role)).map((r) => r.id)
             );
-            const all = rows.map((r) => {
+            return rows.map((r) => {
                 if (canWrite(r.role)) return r;
                 const last = latest.get(r.id);
                 return {
@@ -154,11 +172,21 @@ export const diagramRoutes =
                         : diagramStats(undefined)),
                 };
             });
+        };
+
+        app.get('/', async (req) => {
             // paging is optional: without `limit` the whole list comes back
             const { limit, offset } = listQuery.parse(req.query);
-            return limit === undefined
-                ? all.slice(offset)
-                : all.slice(offset, offset + limit);
+            return listFor(req.user!, { limit, offset });
+        });
+
+        // One row of the list, without the content: how the editor learns its
+        // role in a diagram without reading every diagram the user can see.
+        app.get('/:id/summary', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const [row] = await listFor(req.user!, { id, offset: 0 });
+            if (!row) return reply.code(404).send({ error: 'not_found' });
+            return row;
         });
 
         app.post('/', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {
@@ -183,6 +211,7 @@ export const diagramRoutes =
                     projectId: body.projectId,
                     title: body.title,
                     content: body.content,
+                    contentHash: diagramHash(body.title, body.content),
                 })
                 .returning();
             await audit(db, {
@@ -240,9 +269,33 @@ export const diagramRoutes =
             // the compare and the write are one statement, so two saves based
             // on the same copy cannot both win. Times are compared to the
             // millisecond: that is all JSON carries.
+            // The hash of what is saved, worked out here once so no read has to.
+            // A rename alone leaves it empty: the content is not in hand, and
+            // the next read fills it in.
+            let contentHash: string | null | undefined;
+            if (changes.content !== undefined) {
+                const title =
+                    changes.title ??
+                    (
+                        await db
+                            .select({ title: diagrams.title })
+                            .from(diagrams)
+                            .where(eq(diagrams.id, id))
+                    )[0]?.title;
+                contentHash =
+                    title === undefined
+                        ? null
+                        : diagramHash(title, changes.content);
+            } else if (changes.title !== undefined) {
+                contentHash = null;
+            }
             const [d] = await db
                 .update(diagrams)
-                .set({ ...changes, updatedAt: new Date() })
+                .set({
+                    ...changes,
+                    ...(contentHash !== undefined ? { contentHash } : {}),
+                    updatedAt: new Date(),
+                })
                 .where(
                     and(
                         eq(diagrams.id, id),

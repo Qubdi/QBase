@@ -11,7 +11,7 @@ import { sql } from 'drizzle-orm';
 import { audit } from '../audit/audit.js';
 import { createMfa } from '../auth/mfa.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
-import { loadConfig } from '../config.js';
+import { loadConfig, type Config } from '../config.js';
 import { createDb, type Db } from '../db/client.js';
 import { users } from '../db/schema.js';
 
@@ -21,7 +21,12 @@ export type ResetOutcome = 'reset' | 'not_enabled' | 'no_such_user';
 
 export async function resetMfaByEmail(
     db: Db,
-    email: string
+    email: string,
+    // clearing a secret needs no key, so tests and callers may leave this out
+    config: Pick<Config, 'secretsKey' | 'mfaWindowSteps'> = {
+        secretsKey: null,
+        mfaWindowSteps: 1,
+    }
 ): Promise<ResetOutcome> {
     const [user] = await db
         .select({ id: users.id, enabledAt: users.mfaEnabledAt })
@@ -29,7 +34,7 @@ export async function resetMfaByEmail(
         .where(sql`lower(${users.email}) = ${email.trim().toLowerCase()}`);
     if (!user) return 'no_such_user';
     if (user.enabledAt === null) return 'not_enabled';
-    await createMfa(db, loadConfig()).clear(user.id);
+    await createMfa(db, config).clear(user.id);
     await destroyOtherSessions(db, user.id, undefined);
     // nobody is signed in to act, so the row names the account itself
     await audit(db, {
@@ -46,9 +51,10 @@ export async function main(argv: string[]): Promise<number> {
         process.stderr.write(USAGE);
         return 2;
     }
-    const { db, pool } = createDb(loadConfig().databaseUrl);
+    const config = loadConfig();
+    const { db, pool } = createDb(config.databaseUrl);
     try {
-        const outcome = await resetMfaByEmail(db, email);
+        const outcome = await resetMfaByEmail(db, email, config);
         if (outcome === 'no_such_user') {
             process.stderr.write(`No account with the email ${email}\n`);
             return 1;

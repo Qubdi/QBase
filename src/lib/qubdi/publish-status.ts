@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n/i18n';
+
 export interface PublishStatus {
     synced: boolean;
     publishedVersion: number | null;
@@ -6,11 +8,16 @@ export interface PublishStatus {
 
 /** The full sentence: the Publish button's tooltip and the dialog text. */
 export const publishStatusText = (s: PublishStatus): string => {
-    if (!s.synced) return 'Not synced to server';
-    if (s.publishedVersion === null) return 'Not published';
-    return s.unpublishedChanges
-        ? `Published v${s.publishedVersion}, unpublished changes`
-        : `Published v${s.publishedVersion}`;
+    if (!s.synced) return i18n.t('qubdi.workspace.publishStatus.notSynced');
+    if (s.publishedVersion === null) {
+        return i18n.t('qubdi.workspace.publishStatus.notPublished');
+    }
+    return i18n.t(
+        s.unpublishedChanges
+            ? 'qubdi.workspace.publishStatus.publishedChanges'
+            : 'qubdi.workspace.publishStatus.published',
+        { version: s.publishedVersion }
+    );
 };
 
 export type PublishTone = 'neutral' | 'warning' | 'success';

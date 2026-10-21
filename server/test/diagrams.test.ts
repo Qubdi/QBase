@@ -273,6 +273,59 @@ describe('diagrams and permissions', () => {
         ]);
         expect(rows.every((r) => r.userId === owner.id)).toBe(true);
     });
+
+    it('summarises one diagram without its content, exactly as the list shows it', async () => {
+        const id = await createDiagram(ctx.app, owner, 'Summarised');
+        for (const who of [owner, editor, viewer]) {
+            const list = (await ctx.app.inject({ url: '/diagrams', headers: as(who) })).json() as Array<{ id: string }>;
+            const res = await ctx.app.inject({ url: `/diagrams/${id}/summary`, headers: as(who) });
+            const row = list.find((d) => d.id === id);
+            expect(res.statusCode, who.email).toBe(200);
+            expect(res.json()).toEqual(row);
+            expect(res.json()).not.toHaveProperty('content');
+        }
+    });
+
+    it('keeps an unpublished rename from a viewer in the summary too', async () => {
+        const id = await createDiagram(ctx.app, owner, 'Before the rename');
+        await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/publish`, headers: as(owner), payload: {} });
+        await ctx.app.inject({
+            method: 'PUT',
+            url: `/diagrams/${id}`,
+            headers: as(owner),
+            payload: await withBase(ctx.app, owner, id, { title: 'After the rename' }),
+        });
+        const asEditor = (await ctx.app.inject({ url: `/diagrams/${id}/summary`, headers: as(editor) })).json();
+        const asViewer = (await ctx.app.inject({ url: `/diagrams/${id}/summary`, headers: as(viewer) })).json();
+        expect(asEditor.title).toBe('After the rename');
+        expect(asViewer.title).toBe('Before the rename');
+    });
+
+    it('answers 404 to a summary for a stranger, a missing diagram and a bad id', async () => {
+        const id = await createDiagram(ctx.app, owner, 'Private');
+        const get = (url: string, who?: TestUser) => ctx.app.inject({ url, headers: who ? as(who) : undefined });
+        expect((await get(`/diagrams/${id}/summary`, stranger)).statusCode).toBe(404);
+        expect((await get(`/diagrams/00000000-0000-4000-8000-000000000000/summary`, owner)).statusCode).toBe(404);
+        expect((await get(`/diagrams/not-a-uuid/summary`, owner)).statusCode).toBe(400);
+        expect((await get(`/diagrams/${id}/summary`)).statusCode).toBe(401);
+    });
+
+    it('lists newest first and pages in the database, for admins and members alike', async () => {
+        await createDiagram(ctx.app, owner);
+        await createDiagram(ctx.app, owner);
+        for (const who of [owner, editor]) {
+            const list = async (qs = '') =>
+                (await ctx.app.inject({ url: `/diagrams${qs}`, headers: as(who) })).json() as Array<{ id: string; updatedAt: string }>;
+            const all = await list();
+            expect(all.length).toBeGreaterThanOrEqual(3);
+            const times = all.map((d) => Date.parse(d.updatedAt));
+            expect(times).toEqual([...times].sort((x, y) => y - x));
+            expect((await list('?limit=2')).map((d) => d.id)).toEqual(all.slice(0, 2).map((d) => d.id));
+            expect((await list('?limit=2&offset=1')).map((d) => d.id)).toEqual(all.slice(1, 3).map((d) => d.id));
+            expect((await list(`?offset=${all.length}`))).toEqual([]);
+            expect((await list('?offset=1')).map((d) => d.id)).toEqual(all.slice(1).map((d) => d.id));
+        }
+    });
 });
 
 describe('request body limits', () => {

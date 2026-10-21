@@ -1,5 +1,5 @@
 import { buildApp } from './app.js';
-import { loadConfig } from './config.js';
+import { ConfigError, loadConfig } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
 import { startMaintenance } from './maintenance.js';
 import { createShutdown } from './shutdown.js';
@@ -11,7 +11,14 @@ try {
     // no .env file: use the environment as is
 }
 
-const config = loadConfig();
+let config: ReturnType<typeof loadConfig>;
+try {
+    config = loadConfig();
+} catch (err) {
+    if (!(err instanceof ConfigError)) throw err;
+    console.error(err.message);
+    process.exit(1);
+}
 const { db, pool } = createDb(config.databaseUrl, { max: config.dbPoolMax });
 await runMigrations(db);
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { KeyRound, Table2, View } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
     FIELD_TYPE_KIND_CLASS,
     fieldTypeKind,
@@ -18,9 +19,13 @@ export interface ViewerTableNodeData extends Record<string, unknown> {
 const hiddenHandle = { opacity: 0, pointerEvents: 'none' as const };
 
 export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
+    const { t } = useTranslation();
     const { table, dimmed, selected, matched } =
         data as unknown as ViewerTableNodeData;
-    const subtitle = [table.schema, table.isView ? 'view' : null]
+    const subtitle = [
+        table.schema,
+        table.isView ? t('qubdi.workspace.viewerNode.view') : null,
+    ]
         .filter(Boolean)
         .join(' · ');
     return (
@@ -95,7 +100,9 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                 </div>
                 <span
                     className="shrink-0 rounded-full bg-background/70 px-1.5 text-[11px] font-semibold leading-4 tabular-nums text-muted-foreground"
-                    title={`${table.fields.length} fields`}
+                    title={t('qubdi.workspace.viewerNode.fieldCount', {
+                        count: table.fields.length,
+                    })}
                 >
                     {table.fields.length}
                 </span>
@@ -126,9 +133,13 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                             {f.unique && !f.primaryKey ? (
                                 <span
                                     className="shrink-0 rounded-xs border px-1 text-[9px] font-semibold leading-3 text-muted-foreground"
-                                    title="Unique"
+                                    title={t(
+                                        'qubdi.workspace.viewerNode.unique'
+                                    )}
                                 >
-                                    UQ
+                                    {t(
+                                        'qubdi.workspace.viewerNode.uniqueShort'
+                                    )}
                                 </span>
                             ) : null}
                             <span
@@ -142,7 +153,9 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                             {f.nullable ? null : (
                                 <span
                                     className="size-1 shrink-0 rounded-full bg-muted-foreground"
-                                    title="Not null"
+                                    title={t(
+                                        'qubdi.workspace.viewerNode.notNull'
+                                    )}
                                 />
                             )}
                         </span>
@@ -150,7 +163,7 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                 ))}
                 {table.fields.length === 0 ? (
                     <li className="h-8 border-t px-3 text-xs leading-8 text-muted-foreground">
-                        No fields
+                        {t('qubdi.workspace.viewerNode.noFields')}
                     </li>
                 ) : null}
             </ul>

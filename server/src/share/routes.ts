@@ -1,19 +1,25 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
+import { SESSION_COOKIE, getSessionUser } from '../auth/sessions.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { CryptoBox } from '../introspect/crypto-box.js';
+import { API_SECURITY_HEADERS } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { latestSnapshot } from '../diagrams/service.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
+import { activeLinkSql } from './active.js';
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
 import { generateToken, hashToken } from './tokens.js';
 
 /** Most links the editor's list returns for one diagram, newest first. */
 export const MAX_LISTED_LINKS = 200;
+
+/** Most links one diagram may have open at once; revoke one to make another. */
+export const MAX_ACTIVE_LINKS = 100;
 
 const diagramParam = z.object({ id: z.string().uuid() });
 const linkParam = z.object({
@@ -128,6 +134,13 @@ export const shareManagementRoutes =
             const { id } = diagramParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const body = createBody.parse(req.body ?? {});
+            const [{ open }] = await db
+                .select({ open: count() })
+                .from(shareLinks)
+                .where(and(eq(shareLinks.diagramId, id), activeLinkSql()));
+            if (open >= MAX_ACTIVE_LINKS) {
+                return reply.code(409).send({ error: 'too_many_links' });
+            }
             const token = generateToken();
             const [link] = await db
                 .insert(shareLinks)
@@ -227,8 +240,10 @@ export const shareManagementRoutes =
             const [updated] = await db
                 .update(shareLinks)
                 .set({ tokenHash: hashToken(token), tokenEnc: sealed(token) })
-                .where(eq(shareLinks.id, linkId))
+                // a revoke that landed after the check above must not be undone
+                .where(and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt)))
                 .returning();
+            if (!updated) return reply.code(409).send({ error: 'revoked' });
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.regenerate',
@@ -255,8 +270,16 @@ export const publicShareRoutes =
         };
         const tokenParam = z.object({ token: z.string() });
 
+        // what a link shows is for whoever holds it now: never for a shared
+        // cache or the browser's history (the event stream sets its own)
+        app.addHook('onSend', async (_req, reply) => {
+            reply.header('cache-control', 'no-store');
+        });
+
         // open live viewers per link, so one link cannot hold unlimited sockets
         const viewers = new Map<string, number>();
+        // ...and per client address over all links, so one address cannot take every slot
+        const viewersByIp = new Map<string, number>();
         // One publish wakes every viewer of a link. They share one re-check
         // of the link instead of running a query each.
         const RECHECK_TTL_MS = 2_000;
@@ -319,10 +342,13 @@ export const publicShareRoutes =
             const { id: linkId, diagramId, tokenHash: openedWith } = check.link;
 
             const open = viewers.get(linkId) ?? 0;
-            if (open >= config.sseMaxPerLink) {
+            const ip = req.ip;
+            const openFromIp = viewersByIp.get(ip) ?? 0;
+            if (open >= config.sseMaxPerLink || openFromIp >= config.sseMaxPerIp) {
                 return reply.code(429).send({ error: 'too_many_viewers' });
             }
             viewers.set(linkId, open + 1);
+            viewersByIp.set(ip, openFromIp + 1);
 
             reply.hijack();
             const raw = reply.raw;
@@ -330,7 +356,7 @@ export const publicShareRoutes =
                 'content-type': 'text/event-stream',
                 'cache-control': 'no-cache, no-transform',
                 // the stream bypasses the app's onSend hook
-                'x-content-type-options': 'nosniff',
+                ...API_SECURITY_HEADERS,
                 connection: 'keep-alive',
                 ...(config.corsOrigin
                     ? {
@@ -349,6 +375,9 @@ export const publicShareRoutes =
                 const left = (viewers.get(linkId) ?? 1) - 1;
                 if (left > 0) viewers.set(linkId, left);
                 else viewers.delete(linkId);
+                const fromIp = (viewersByIp.get(ip) ?? 1) - 1;
+                if (fromIp > 0) viewersByIp.set(ip, fromIp);
+                else viewersByIp.delete(ip);
                 cleanup.forEach((fn) => fn());
                 raw.end();
             };
@@ -393,9 +422,27 @@ export const publicShareRoutes =
                 })
             );
 
-            const heartbeat = setInterval(() => {
+            // A link that needs a sign-in also needs the viewer to stay signed in:
+            // each ping first checks the session is still alive (an ended session
+            // or a disabled account would otherwise keep reading until the next
+            // publish). The check is skipped for links open to anyone.
+            const heartbeat = setInterval(async () => {
+                if (closed) return;
+                if (check.link.access === 'signed_in' && req.user) {
+                    try {
+                        const still = await getSessionUser(
+                            db,
+                            req.cookies[SESSION_COOKIE],
+                            config.sessionIdleDays * 86_400
+                        );
+                        if (!still || still.id !== req.user.id) return close();
+                    } catch (err) {
+                        req.log.error({ err }, 'share events: session check failed');
+                        return close();
+                    }
+                }
                 if (!closed) raw.write(': ping\n\n');
-            }, 25_000);
+            }, config.sseHeartbeatSeconds * 1000);
             cleanup.push(() => clearInterval(heartbeat));
 
             if (check.link.expiresAt) {

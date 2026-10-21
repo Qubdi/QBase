@@ -158,6 +158,16 @@ export function generateRecoveryCodes(count = RECOVERY_CODE_COUNT): string[] {
 export const normalizeRecoveryCode = (code: string) =>
     code.replace(/[\s-]/g, '').toUpperCase();
 
-/** What is stored. sha256 is enough for a long random value (no slow hash needed). */
-export const hashRecoveryCode = (code: string) =>
+/**
+ * What is stored: an HMAC keyed by the server's secret, so a copy of the table
+ * alone cannot be used to test guesses offline. A slow hash is not needed for a
+ * long random value.
+ */
+export const hashRecoveryCode = (code: string, key: string) =>
+    createHmac('sha256', key)
+        .update(`recovery-code:${normalizeRecoveryCode(code)}`)
+        .digest('hex');
+
+/** How codes made before the keyed hash were stored; still accepted, never written. */
+export const legacyHashRecoveryCode = (code: string) =>
     createHash('sha256').update(normalizeRecoveryCode(code)).digest('hex');

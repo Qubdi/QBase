@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DatabaseType } from '@/lib/domain/database-type';
+import type { Diagram } from '@/lib/domain/diagram';
+import { diagramToServerContent } from '../content';
+import {
+    clearBaseUpdatedAt,
+    getBaseUpdatedAt,
+    setBaseUpdatedAt,
+} from '../remote-version';
+import { markSyncedContent } from '../sent-content';
 import {
     ensureLocalCopy,
     InvalidServerDiagramError,
@@ -151,5 +159,128 @@ describe('ensureLocalCopy', () => {
             })
         ).rejects.toThrow('disk full');
         expect(getRemoteId('fresh-local-id')).toBeUndefined();
+    });
+});
+
+describe('ensureLocalCopy: reopening a copy that is behind the server', () => {
+    const BASE = '2025-03-02T10:00:00.000Z';
+    let id = 'mine-0';
+    let n = 0;
+    const NEWER = '2025-03-05T09:00:00.000Z';
+    const serverContent = {
+        id: 'author-local-id',
+        name: 'Shop',
+        databaseType: DatabaseType.POSTGRESQL,
+        tables: [],
+        relationships: [],
+        createdAt: '2025-03-01T10:00:00.000Z',
+        updatedAt: NEWER,
+    };
+    const localCopy = (over: Partial<Diagram> = {}): Diagram =>
+        ({
+            id,
+            name: 'Shop',
+            databaseType: DatabaseType.POSTGRESQL,
+            tables: [],
+            relationships: [],
+            createdAt: new Date('2025-03-01T10:00:00.000Z'),
+            updatedAt: new Date(BASE),
+            ...over,
+        }) as Diagram;
+
+    const run = async (opts: {
+        readOnly: boolean;
+        serverUpdatedAt?: string;
+        local?: Diagram | undefined;
+    }) => {
+        const calls: string[] = [];
+        const added: Diagram[] = [];
+        const result = await ensureLocalCopy({
+            remoteId: 'remote-1',
+            projectId: 'p1',
+            localIds: new Set([id]),
+            fetchRemote: async () => {
+                calls.push('fetch');
+                return {
+                    title: 'Shop (server)',
+                    content: serverContent as Record<string, unknown>,
+                    updatedAt: NEWER,
+                };
+            },
+            addDiagram: async (d) => {
+                calls.push('add');
+                added.push(d);
+            },
+            newId: () => 'unused',
+            refresh: {
+                serverUpdatedAt: opts.serverUpdatedAt ?? NEWER,
+                readOnly: opts.readOnly,
+                getLocal: async () =>
+                    'local' in opts ? opts.local : localCopy(),
+                deleteLocal: async () => {
+                    calls.push('delete');
+                },
+            },
+        });
+        return { result, calls, added };
+    };
+
+    beforeEach(() => {
+        id = `mine-${++n}`;
+        localStorage.clear();
+        sessionStorage.clear();
+        setRemoteId(id, 'remote-1');
+        setBaseUpdatedAt(id, BASE);
+    });
+
+    it("replaces a viewer's copy once the server has a newer version", async () => {
+        const { result, calls, added } = await run({ readOnly: true });
+        expect(result).toEqual({
+            localId: id,
+            created: false,
+            refreshed: true,
+        });
+        expect(calls).toEqual(['fetch', 'delete', 'add']);
+        expect(added[0].id).toBe(id);
+        expect(added[0].name).toBe('Shop (server)');
+        expect(getBaseUpdatedAt(id)).toBe(NEWER);
+    });
+
+    it('leaves a copy alone when the server has nothing newer', async () => {
+        const { result, calls } = await run({
+            readOnly: true,
+            serverUpdatedAt: BASE,
+        });
+        expect(result).toEqual({ localId: id, created: false });
+        expect(calls).toEqual([]);
+    });
+
+    it('replaces an editor copy that still equals what it last shared with the server', async () => {
+        markSyncedContent(id, diagramToServerContent(localCopy()));
+        const { result, calls } = await run({ readOnly: false });
+        expect(result.refreshed).toBe(true);
+        expect(calls).toEqual(['fetch', 'delete', 'add']);
+    });
+
+    it('never replaces an editor copy that has edits the server lacks', async () => {
+        markSyncedContent(id, diagramToServerContent(localCopy()));
+        const edited = localCopy({ name: 'Shop, edited offline' });
+        const { result, calls } = await run({ readOnly: false, local: edited });
+        expect(result).toEqual({ localId: id, created: false });
+        expect(calls).toEqual([]);
+        expect(getBaseUpdatedAt(id)).toBe(BASE);
+    });
+
+    it('does not guess for an editor copy made before this was recorded', async () => {
+        const { result, calls } = await run({ readOnly: false });
+        expect(result).toEqual({ localId: id, created: false });
+        expect(calls).toEqual([]);
+    });
+
+    it('does not touch a copy that has no recorded base version', async () => {
+        clearBaseUpdatedAt(id);
+        const { result, calls } = await run({ readOnly: true });
+        expect(result).toEqual({ localId: id, created: false });
+        expect(calls).toEqual([]);
     });
 });

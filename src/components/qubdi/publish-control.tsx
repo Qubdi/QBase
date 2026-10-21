@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Rocket } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import {
     Dialog,
@@ -12,7 +13,9 @@ import { Input } from '@/components/input/input';
 import { useToast } from '@/components/toast/use-toast';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
+import { useDiagramAccess } from './diagram-access-context';
 import { api, errorMessage } from '@/lib/qubdi/api';
+import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import {
     publishStatusBadge,
     publishStatusText,
@@ -35,8 +38,10 @@ const DOT_CLASS: Record<PublishTone, string> = {
 };
 
 export const PublishControl: React.FC = () => {
+    const { t } = useTranslation();
     const { enabled, user, syncDiagram, remoteIdFor } = useQubdi();
     const { currentDiagram } = useDiagram();
+    const { access } = useDiagramAccess();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [note, setNote] = useState('');
@@ -72,27 +77,38 @@ export const PublishControl: React.FC = () => {
         }
     }, [remoteId]);
 
-    useEffect(() => {
-        if (user) void refresh();
-    }, [user, refresh, currentDiagram.id]);
+    const canPublish = access.status === 'editor';
 
-    if (!enabled || !user) return null;
+    useEffect(() => {
+        if (user && canPublish) void refresh();
+    }, [user, canPublish, refresh, currentDiagram.id]);
+
+    // only the editor who holds the diagram publishes: a viewer, or an editor
+    // whose lock went to someone else, has nothing to publish from here
+    if (!enabled || !user || !canPublish) return null;
 
     const badge = publishStatusBadge(status);
 
     const publish = async () => {
         setBusy(true);
         try {
+            // the autosaver may be holding or sending edits: let it finish, so
+            // this save and its own never go out with the same base version
+            await flushPendingSave();
             const id = await syncDiagram(currentDiagram);
             if (autoPublish) await api.updateDiagram(id, { autoPublish });
             const res = await api.publish(id, note.trim() || undefined);
             setNote('');
             setOpen(false);
-            toast({ title: `Published v${res.version}` });
+            toast({
+                title: t('qubdi.workspace.publish.published', {
+                    version: res.version,
+                }),
+            });
             await refresh();
         } catch (e) {
             toast({
-                title: 'Publish failed',
+                title: t('qubdi.workspace.publish.failed'),
                 description: errorMessage(e),
                 variant: 'destructive',
             });
@@ -109,7 +125,7 @@ export const PublishControl: React.FC = () => {
         } catch (e) {
             setAutoPublish(!value);
             toast({
-                title: 'Could not change the setting',
+                title: t('qubdi.workspace.publish.settingFailed'),
                 description: errorMessage(e),
                 variant: 'destructive',
             });
@@ -123,14 +139,16 @@ export const PublishControl: React.FC = () => {
                 size="sm"
                 className="gap-1"
                 title={publishStatusText(status)}
-                aria-label={`Publish. ${publishStatusText(status)}`}
+                aria-label={t('qubdi.workspace.publish.buttonAria', {
+                    status: publishStatusText(status),
+                })}
                 onClick={() => {
                     void refresh();
                     setOpen(true);
                 }}
             >
                 <Rocket className="size-4" />
-                Publish
+                {t('qubdi.workspace.publish.button')}
                 {badge.label ? (
                     <span
                         data-testid="publish-status"
@@ -148,10 +166,13 @@ export const PublishControl: React.FC = () => {
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="max-w-sm" showClose>
                     <DialogHeader>
-                        <DialogTitle>Publish diagram</DialogTitle>
+                        <DialogTitle>
+                            {t('qubdi.workspace.publish.title')}
+                        </DialogTitle>
                         <DialogDescription>
-                            {publishStatusText(status)}. Viewers only see
-                            published versions.
+                            {t('qubdi.workspace.publish.description', {
+                                status: publishStatusText(status),
+                            })}
                         </DialogDescription>
                     </DialogHeader>
                     <form
@@ -162,7 +183,7 @@ export const PublishControl: React.FC = () => {
                         }}
                     >
                         <Input
-                            placeholder="Note (optional)"
+                            placeholder={t('qubdi.workspace.publish.note')}
                             maxLength={500}
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
@@ -175,10 +196,10 @@ export const PublishControl: React.FC = () => {
                                     void toggleAuto(e.target.checked)
                                 }
                             />
-                            Auto-publish on every save
+                            {t('qubdi.workspace.publish.autoPublish')}
                         </label>
                         <Button type="submit" disabled={busy}>
-                            Publish
+                            {t('qubdi.workspace.publish.button')}
                         </Button>
                     </form>
                 </DialogContent>

@@ -69,7 +69,9 @@ Build:
 Acceptance: a revoked or expired link returns 404; the viewer page has no way to modify data; published changes reach open viewers within a few seconds when live is on.
 ```
 
-## Task 4. Comments on shared views (editor-written)
+## Task 4. Comments on shared views (editor-written) — REMOVED
+
+> This feature was built and then removed (migration `0018_drop_comments`). The text below is kept as history; do not build from it.
 
 ```
 Goal: the editor can attach comments to tables and fields; viewers of a share link can read them but cannot add any.

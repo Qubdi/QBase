@@ -6,6 +6,7 @@ import {
     KEEPALIVE_BODY_LIMIT,
     setSessionEndedHandler,
     type RemoteUser,
+    REQUEST_TIMEOUT_MS,
 } from '../api';
 
 const jsonResponse = (status: number, body: unknown) =>
@@ -415,6 +416,36 @@ describe('qubdi api client', () => {
             expect(ended).not.toHaveBeenCalled();
         });
 
+        it('is reported when the account calls come back signed out', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await apiAnswering(401)
+                .mfaStatus()
+                .catch(() => undefined);
+            await apiAnswering(401)
+                .changePassword('old', 'new')
+                .catch(() => undefined);
+            expect(ended).toHaveBeenCalledTimes(2);
+        });
+
+        it('is not reported when the second sign-in step is refused', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await apiAnswering(401)
+                .loginMfa('ticket', { code: '123456' })
+                .catch(() => undefined);
+            expect(ended).not.toHaveBeenCalled();
+        });
+
+        it('is reported when the activity export comes back signed out', async () => {
+            const ended = vi.fn();
+            setSessionEndedHandler(ended);
+            await expect(
+                apiAnswering(401).adminExportActivity()
+            ).rejects.toMatchObject({ status: 401 });
+            expect(ended).toHaveBeenCalledTimes(1);
+        });
+
         it('is not reported for other failures', async () => {
             const ended = vi.fn();
             setSessionEndedHandler(ended);
@@ -502,6 +533,66 @@ describe('qubdi api client', () => {
                 status: 404,
                 code: 'not_found',
             });
+        });
+    });
+});
+
+describe('getPublicShare', () => {
+    it('gives up on a request that never answers instead of waiting forever', async () => {
+        const controller = new AbortController();
+        const timeout = vi
+            .spyOn(AbortSignal, 'timeout')
+            .mockReturnValue(controller.signal);
+        try {
+            const api = createApi(
+                'http://srv',
+                ((_url: string, init?: RequestInit) =>
+                    new Promise<Response>((_resolve, reject) => {
+                        init?.signal?.addEventListener('abort', () =>
+                            reject(init.signal?.reason)
+                        );
+                    })) as typeof fetch
+            );
+            const pending = api.getPublicShare('tok');
+            // the request was given the standard time limit...
+            expect(timeout).toHaveBeenCalledWith(REQUEST_TIMEOUT_MS);
+            // ...and when it runs out the page gets an answer, not a hang
+            controller.abort(new DOMException('timed out', 'TimeoutError'));
+            await expect(pending).resolves.toEqual({ status: 'error' });
+        } finally {
+            timeout.mockRestore();
+        }
+    });
+});
+
+describe('getDiagramSummary', () => {
+    it('reads one row from the summary route, not the whole list', async () => {
+        const row = {
+            id: 'r1',
+            title: 'Shop',
+            role: 'editor',
+            projectId: 'p1',
+        };
+        const fetchMock = vi.fn(async () => jsonResponse(200, row));
+        const api = createApi(
+            'http://srv',
+            fetchMock as unknown as typeof fetch
+        );
+        await expect(api.getDiagramSummary('r1')).resolves.toEqual(row);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchMock.mock.calls[0] as unknown as [
+            string,
+            RequestInit,
+        ];
+        expect(url).toBe('http://srv/diagrams/r1/summary');
+        expect(init.method).toBe('GET');
+    });
+
+    it('turns a 404 into an ApiError the gate can read as a missing diagram', async () => {
+        const api = createApi('http://srv', (async () =>
+            jsonResponse(404, { error: 'not_found' })) as typeof fetch);
+        await expect(api.getDiagramSummary('gone')).rejects.toMatchObject({
+            status: 404,
         });
     });
 });

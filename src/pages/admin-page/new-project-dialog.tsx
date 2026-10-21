@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import {
@@ -23,6 +24,7 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
     onOpenChange,
     onCreate,
 }) => {
+    const { t } = useTranslation();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -55,20 +57,21 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
         <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
             <DialogContent className="max-w-md" showClose>
                 <DialogHeader>
-                    <DialogTitle>New project</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.adminProjects.newProject.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        A project holds diagrams and decides who can see them.
-                        You choose the people right after.
+                        {t('qubdi.adminProjects.newProject.description')}
                     </DialogDescription>
                 </DialogHeader>
                 <form
                     className="flex flex-col gap-3"
-                    aria-label="Create project"
+                    aria-label={t('qubdi.adminProjects.newProject.formLabel')}
                     onSubmit={(e) => void submit(e)}
                 >
                     <Input
-                        aria-label="Project name"
-                        placeholder="Project name"
+                        aria-label={t('qubdi.adminProjects.newProject.name')}
+                        placeholder={t('qubdi.adminProjects.newProject.name')}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         maxLength={100}
@@ -76,8 +79,12 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                         autoFocus
                     />
                     <Input
-                        aria-label="Description (optional)"
-                        placeholder="Description (optional)"
+                        aria-label={t(
+                            'qubdi.adminProjects.newProject.optionalDescription'
+                        )}
+                        placeholder={t(
+                            'qubdi.adminProjects.newProject.optionalDescription'
+                        )}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         maxLength={500}
@@ -94,10 +101,10 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                             disabled={busy}
                             onClick={() => onOpenChange(false)}
                         >
-                            Cancel
+                            {t('qubdi.adminProjects.newProject.cancel')}
                         </Button>
                         <Button type="submit" disabled={busy || !name.trim()}>
-                            Create project
+                            {t('qubdi.adminProjects.newProject.create')}
                         </Button>
                     </div>
                 </form>

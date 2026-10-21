@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     Background,
     Controls,
@@ -40,6 +41,7 @@ const nodeTypes = { viewerTable: ViewerTableNode };
  * and uses none of the editor's providers.
  */
 export const ShareViewerPage: React.FC = () => {
+    const { t: tr } = useTranslation();
     const { token = '' } = useParams<{ token: string }>();
     const { user } = useQubdi();
     const [state, setState] = useState<LoadState>({ kind: 'loading' });
@@ -52,7 +54,13 @@ export const ShareViewerPage: React.FC = () => {
         if (res.status === 'ok') {
             setState({ kind: 'ok', share: res.share });
         } else {
-            setState({ kind: res.status });
+            // a reload that failed (a dropped connection, a timeout) must not
+            // blank a diagram that is already on screen
+            setState((prev) =>
+                res.status === 'error' && prev.kind === 'ok'
+                    ? prev
+                    : { kind: res.status }
+            );
         }
     }, [token]);
 
@@ -143,17 +151,18 @@ export const ShareViewerPage: React.FC = () => {
     if (state.kind === 'loading') {
         return (
             <Centered>
-                <p>Loading…</p>
+                <p>{tr('qubdi.workspace.viewerPage.loading')}</p>
             </Centered>
         );
     }
     if (state.kind === 'not_published') {
         return (
             <Centered>
-                <h1 className="text-xl font-semibold">Not published yet</h1>
+                <h1 className="text-xl font-semibold">
+                    {tr('qubdi.workspace.viewerPage.notPublishedTitle')}
+                </h1>
                 <p className="text-muted-foreground">
-                    The link works, but its owner has not published this diagram
-                    yet. Try again later.
+                    {tr('qubdi.workspace.viewerPage.notPublishedDetail')}
                 </p>
             </Centered>
         );
@@ -161,9 +170,11 @@ export const ShareViewerPage: React.FC = () => {
     if (state.kind === 'not_found') {
         return (
             <Centered>
-                <h1 className="text-xl font-semibold">Link not available</h1>
+                <h1 className="text-xl font-semibold">
+                    {tr('qubdi.workspace.viewerPage.notFoundTitle')}
+                </h1>
                 <p className="text-muted-foreground">
-                    This link does not exist, has expired, or was revoked.
+                    {tr('qubdi.workspace.viewerPage.notFoundDetail')}
                 </p>
             </Centered>
         );
@@ -171,11 +182,15 @@ export const ShareViewerPage: React.FC = () => {
     if (state.kind === 'login_required') {
         return (
             <Centered>
-                <h1 className="text-xl font-semibold">Sign in to view</h1>
+                <h1 className="text-xl font-semibold">
+                    {tr('qubdi.workspace.viewerPage.loginTitle')}
+                </h1>
                 <p className="text-muted-foreground">
-                    The owner restricted this diagram to signed-in users.
+                    {tr('qubdi.workspace.viewerPage.loginDetail')}
                 </p>
-                <Button onClick={() => setAuthOpen(true)}>Sign in</Button>
+                <Button onClick={() => setAuthOpen(true)}>
+                    {tr('qubdi.workspace.viewerPage.signIn')}
+                </Button>
                 <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
             </Centered>
         );
@@ -183,8 +198,10 @@ export const ShareViewerPage: React.FC = () => {
     if (state.kind === 'error') {
         return (
             <Centered>
-                <p>Could not load this diagram.</p>
-                <Button onClick={() => void load()}>Retry</Button>
+                <p>{tr('qubdi.workspace.viewerPage.error')}</p>
+                <Button onClick={() => void load()}>
+                    {tr('qubdi.workspace.viewerPage.retry')}
+                </Button>
             </Centered>
         );
     }
@@ -201,15 +218,21 @@ export const ShareViewerPage: React.FC = () => {
                     {share.title}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                    v{share.version}
-                    {share.live ? ' · live' : ''} · read-only
+                    {tr(
+                        share.live
+                            ? 'qubdi.workspace.viewerPage.statusLive'
+                            : 'qubdi.workspace.viewerPage.status',
+                        { version: share.version }
+                    )}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
                     <div className="w-64">
                         <Input
                             type="search"
-                            placeholder="Search tables and fields"
-                            aria-label="Search tables and fields"
+                            placeholder={tr(
+                                'qubdi.workspace.viewerPage.search'
+                            )}
+                            aria-label={tr('qubdi.workspace.viewerPage.search')}
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                         />

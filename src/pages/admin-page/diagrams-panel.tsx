@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/badge/badge';
 import { Button } from '@/components/button/button';
 import { ListPager } from '@/components/qubdi/list-pager';
@@ -27,6 +28,7 @@ const Dash: React.FC<{ label: string }> = ({ label }) => (
 
 /** Every diagram, with where it lives, who owns it and who is sharing it. */
 export const DiagramsPanel: React.FC = () => {
+    const { t } = useTranslation();
     const [project, setProject] = useState<ChosenProject | null>(null);
     const [linksFor, setLinksFor] = useState<AdminDiagram | null>(null);
 
@@ -55,8 +57,10 @@ export const DiagramsPanel: React.FC = () => {
                         className="flex-1"
                         value={list.query}
                         onChange={list.setQuery}
-                        placeholder="Search diagrams by title…"
-                        label="Search diagrams"
+                        placeholder={t(
+                            'qubdi.adminProjects.diagrams.searchPlaceholder'
+                        )}
+                        label={t('qubdi.adminProjects.diagrams.searchLabel')}
                     />
                     <div className="sm:w-60">
                         <ProjectFilter value={project} onChange={setProject} />
@@ -67,14 +71,38 @@ export const DiagramsPanel: React.FC = () => {
                     <Table>
                         <TableHeader className="sticky top-0 z-10 bg-card">
                             <TableRow>
-                                <TableHead>Diagram</TableHead>
-                                <TableHead>Project</TableHead>
-                                <TableHead>Owner</TableHead>
-                                <TableHead>Updated</TableHead>
-                                <TableHead>Published</TableHead>
-                                <TableHead>Editing</TableHead>
+                                <TableHead>
+                                    {t(
+                                        'qubdi.adminProjects.diagrams.colDiagram'
+                                    )}
+                                </TableHead>
+                                <TableHead>
+                                    {t(
+                                        'qubdi.adminProjects.diagrams.colProject'
+                                    )}
+                                </TableHead>
+                                <TableHead>
+                                    {t('qubdi.adminProjects.diagrams.colOwner')}
+                                </TableHead>
+                                <TableHead>
+                                    {t(
+                                        'qubdi.adminProjects.diagrams.colUpdated'
+                                    )}
+                                </TableHead>
+                                <TableHead>
+                                    {t(
+                                        'qubdi.adminProjects.diagrams.colPublished'
+                                    )}
+                                </TableHead>
+                                <TableHead>
+                                    {t(
+                                        'qubdi.adminProjects.diagrams.colEditing'
+                                    )}
+                                </TableHead>
                                 <TableHead className="text-right">
-                                    Share links
+                                    {t(
+                                        'qubdi.adminProjects.diagrams.colShareLinks'
+                                    )}
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -85,7 +113,9 @@ export const DiagramsPanel: React.FC = () => {
                                         colSpan={7}
                                         className="text-muted-foreground"
                                     >
-                                        Loading…
+                                        {t(
+                                            'qubdi.adminProjects.diagrams.loading'
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ) : list.items.length === 0 ? (
@@ -95,10 +125,30 @@ export const DiagramsPanel: React.FC = () => {
                                         className="text-muted-foreground"
                                     >
                                         {list.query
-                                            ? `No diagram's title matches "${list.query}"${project ? ` in ${project.name}` : ''}.`
+                                            ? project
+                                                ? t(
+                                                      'qubdi.adminProjects.diagrams.noMatchInProject',
+                                                      {
+                                                          query: list.query,
+                                                          project: project.name,
+                                                      }
+                                                  )
+                                                : t(
+                                                      'qubdi.adminProjects.diagrams.noMatch',
+                                                      {
+                                                          query: list.query,
+                                                      }
+                                                  )
                                             : project
-                                              ? `${project.name} has no diagrams.`
-                                              : 'There are no diagrams yet.'}
+                                              ? t(
+                                                    'qubdi.adminProjects.diagrams.projectEmpty',
+                                                    {
+                                                        project: project.name,
+                                                    }
+                                                )
+                                              : t(
+                                                    'qubdi.adminProjects.diagrams.none'
+                                                )}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -112,7 +162,9 @@ export const DiagramsPanel: React.FC = () => {
                                                         d.id
                                                     )}
                                                     className="block truncate underline-offset-2 hover:underline"
-                                                    title="Open in the editor"
+                                                    title={t(
+                                                        'qubdi.adminProjects.diagrams.openInEditor'
+                                                    )}
                                                 >
                                                     {d.title}
                                                 </Link>
@@ -124,12 +176,20 @@ export const DiagramsPanel: React.FC = () => {
                                         </TableCell>
                                         <TableCell className="max-w-40 truncate">
                                             {d.projectName ?? (
-                                                <Dash label="Unknown" />
+                                                <Dash
+                                                    label={t(
+                                                        'qubdi.adminProjects.diagrams.unknown'
+                                                    )}
+                                                />
                                             )}
                                         </TableCell>
                                         <TableCell className="max-w-48 truncate">
                                             {d.ownerEmail ?? (
-                                                <Dash label="Deleted user" />
+                                                <Dash
+                                                    label={t(
+                                                        'qubdi.adminProjects.diagrams.deletedUser'
+                                                    )}
+                                                />
                                             )}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap">
@@ -146,16 +206,28 @@ export const DiagramsPanel: React.FC = () => {
                                                     v{d.publishedVersion}
                                                 </Badge>
                                             ) : (
-                                                <Dash label="Never" />
+                                                <Dash
+                                                    label={t(
+                                                        'qubdi.adminProjects.diagrams.never'
+                                                    )}
+                                                />
                                             )}
                                         </TableCell>
                                         <TableCell className="max-w-48 truncate">
                                             {d.editingBy ? (
                                                 (d.editingBy.email ?? (
-                                                    <Dash label="Someone" />
+                                                    <Dash
+                                                        label={t(
+                                                            'qubdi.adminProjects.diagrams.someone'
+                                                        )}
+                                                    />
                                                 ))
                                             ) : (
-                                                <Dash label="No one" />
+                                                <Dash
+                                                    label={t(
+                                                        'qubdi.adminProjects.diagrams.noOne'
+                                                    )}
+                                                />
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -164,15 +236,30 @@ export const DiagramsPanel: React.FC = () => {
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
-                                                    aria-label={`Share links of ${d.title}: ${d.activeLinks} active`}
+                                                    aria-label={t(
+                                                        'qubdi.adminProjects.diagrams.linksLabel',
+                                                        {
+                                                            title: d.title,
+                                                            count: d.activeLinks,
+                                                        }
+                                                    )}
                                                     onClick={() =>
                                                         setLinksFor(d)
                                                     }
                                                 >
-                                                    {d.activeLinks} active
+                                                    {t(
+                                                        'qubdi.adminProjects.diagrams.linksActive',
+                                                        {
+                                                            count: d.activeLinks,
+                                                        }
+                                                    )}
                                                 </Button>
                                             ) : (
-                                                <Dash label="None" />
+                                                <Dash
+                                                    label={t(
+                                                        'qubdi.adminProjects.diagrams.linksNone'
+                                                    )}
+                                                />
                                             )}
                                         </TableCell>
                                     </TableRow>
@@ -189,7 +276,7 @@ export const DiagramsPanel: React.FC = () => {
                     total={list.total}
                     onPageChange={list.setPage}
                     disabled={list.loading}
-                    noun="diagrams"
+                    noun={t('qubdi.adminProjects.diagrams.pagerNoun')}
                 />
             </div>
 

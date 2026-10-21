@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { KeyRound, Monitor, Plus, Smartphone, Trash2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { Badge } from '@/components/badge/badge';
@@ -48,35 +49,38 @@ import { UserSessionsDialog } from './user-sessions-dialog';
 
 const PAGE_SIZE = 10;
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-const BULK_DONE: Record<BulkUserAction, string> = {
-    enable: 'Enabled',
-    disable: 'Disabled',
-    delete: 'Deleted',
-};
+type TFn = ReturnType<typeof useTranslation>['t'];
 
 /** What to tell the admin after a bulk action: how many it did, and how many it left. */
-const bulkToast = (action: BulkUserAction, result: BulkUsersResult) =>
-    result.changed === 0
-        ? {
-              title: 'Nothing to change',
-              description:
-                  'They were already in that state, or no longer exist.',
-          }
-        : {
-              title: `${BULK_DONE[action]} ${plural(result.changed, 'user')}`,
-              description:
-                  result.unchanged > 0
-                      ? `${plural(result.unchanged, 'account')} left as they were.`
-                      : undefined,
-          };
+const bulkToast = (t: TFn, action: BulkUserAction, result: BulkUsersResult) => {
+    if (result.changed === 0) {
+        return {
+            title: t('qubdi.adminUsers.users.nothingToChange'),
+            description: t('qubdi.adminUsers.users.nothingToChangeDescription'),
+        };
+    }
+    const done = {
+        enable: 'bulkEnabled',
+        disable: 'bulkDisabled',
+        delete: 'bulkDeleted',
+    }[action];
+    return {
+        title: t(`qubdi.adminUsers.users.${done}`, { count: result.changed }),
+        description:
+            result.unchanged > 0
+                ? t('qubdi.adminUsers.users.leftAsTheyWere', {
+                      count: result.unchanged,
+                  })
+                : undefined,
+    };
+};
 
 export interface UsersPanelProps {
     currentUserId: string;
 }
 
 export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
+    const { t } = useTranslation();
     const { toast } = useToast();
     const [error, setError] = useState<string | null>(null);
     const [creating, setCreating] = useState(false);
@@ -167,7 +171,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
         void run(async () => {
             const result = await api.adminBulkUsers(action, ids);
             setSelected(new Set());
-            toast(bulkToast(action, result));
+            toast(bulkToast(t, action, result));
         });
     };
 
@@ -179,8 +183,10 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
         await api.adminCreateUser(user);
         list.reload();
         toast({
-            title: 'User created',
-            description: `${user.email} can sign in now. Assign them to projects next.`,
+            title: t('qubdi.adminUsers.users.createdTitle'),
+            description: t('qubdi.adminUsers.users.createdDescription', {
+                email: user.email,
+            }),
         });
     };
 
@@ -204,8 +210,10 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                         className="flex-1"
                         value={list.query}
                         onChange={list.setQuery}
-                        placeholder="Search users by email…"
-                        label="Search users"
+                        placeholder={t(
+                            'qubdi.adminUsers.users.searchPlaceholder'
+                        )}
+                        label={t('qubdi.adminUsers.users.searchLabel')}
                     />
                     <Button
                         type="button"
@@ -214,11 +222,11 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                         onClick={() => setCreating(true)}
                     >
                         <Plus className="mr-1.5 size-4" aria-hidden />
-                        New user
+                        {t('qubdi.adminUsers.users.newUser')}
                     </Button>
                     <div
                         role="group"
-                        aria-label="Filter by status"
+                        aria-label={t('qubdi.adminUsers.users.filterByStatus')}
                         className="flex shrink-0 gap-1"
                     >
                         {(['all', 'active', 'disabled'] as const).map((s) => (
@@ -233,10 +241,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                 onClick={() => setStatusFilter(s)}
                             >
                                 {s === 'all'
-                                    ? 'All'
+                                    ? t('qubdi.adminUsers.users.filterAll')
                                     : s === 'active'
-                                      ? 'Active'
-                                      : 'Disabled'}
+                                      ? t('qubdi.adminUsers.users.filterActive')
+                                      : t(
+                                            'qubdi.adminUsers.users.filterDisabled'
+                                        )}
                             </Button>
                         ))}
                     </div>
@@ -244,41 +254,51 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                 {chosen.length > 0 ? (
                     <div
                         role="toolbar"
-                        aria-label="Actions for the selected users"
+                        aria-label={t('qubdi.adminUsers.users.bulkToolbar')}
                         className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-accent px-3 py-2 text-sm text-accent-foreground"
                     >
-                        <span aria-live="polite">{chosen.length} selected</span>
+                        <span aria-live="polite">
+                            {t('qubdi.adminUsers.users.selected', {
+                                count: chosen.length,
+                            })}
+                        </span>
                         <div className="flex flex-wrap gap-1">
                             <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                aria-label="Enable selected users"
+                                aria-label={t(
+                                    'qubdi.adminUsers.users.enableSelected'
+                                )}
                                 disabled={busy}
                                 onClick={() => bulk('enable')}
                             >
-                                Enable
+                                {t('qubdi.adminUsers.users.enable')}
                             </Button>
                             <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                aria-label="Disable selected users"
+                                aria-label={t(
+                                    'qubdi.adminUsers.users.disableSelected'
+                                )}
                                 disabled={busy}
                                 onClick={() => setConfirmBulk('disable')}
                             >
-                                Disable
+                                {t('qubdi.adminUsers.users.disable')}
                             </Button>
                             <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                aria-label="Delete selected users"
+                                aria-label={t(
+                                    'qubdi.adminUsers.users.deleteSelected'
+                                )}
                                 className="text-destructive hover:text-destructive"
                                 disabled={busy}
                                 onClick={() => setConfirmBulk('delete')}
                             >
-                                Delete
+                                {t('qubdi.adminUsers.users.delete')}
                             </Button>
                             <Button
                                 type="button"
@@ -286,7 +306,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                 variant="ghost"
                                 onClick={() => setSelected(new Set())}
                             >
-                                Clear selection
+                                {t('qubdi.adminUsers.users.clearSelection')}
                             </Button>
                         </div>
                     </div>
@@ -299,7 +319,9 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                     <input
                                         ref={selectAll}
                                         type="checkbox"
-                                        aria-label="Select all users on this page"
+                                        aria-label={t(
+                                            'qubdi.adminUsers.users.selectAll'
+                                        )}
                                         checked={allChosen}
                                         disabled={
                                             busy || selectable.length === 0
@@ -317,15 +339,23 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                         }
                                     />
                                 </TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Role</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Last sign-in</TableHead>
-                                <TableHead className="text-right">
-                                    Projects
+                                <TableHead>
+                                    {t('qubdi.adminUsers.users.colEmail')}
+                                </TableHead>
+                                <TableHead>
+                                    {t('qubdi.adminUsers.users.colRole')}
+                                </TableHead>
+                                <TableHead>
+                                    {t('qubdi.adminUsers.users.colStatus')}
+                                </TableHead>
+                                <TableHead>
+                                    {t('qubdi.adminUsers.users.colLastSignIn')}
                                 </TableHead>
                                 <TableHead className="text-right">
-                                    Actions
+                                    {t('qubdi.adminUsers.users.colProjects')}
+                                </TableHead>
+                                <TableHead className="text-right">
+                                    {t('qubdi.adminUsers.users.colActions')}
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -336,7 +366,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                         colSpan={7}
                                         className="text-muted-foreground"
                                     >
-                                        Loading…
+                                        {t('qubdi.adminUsers.users.loading')}
                                     </TableCell>
                                 </TableRow>
                             ) : list.items.length === 0 ? (
@@ -346,10 +376,21 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                         className="text-muted-foreground"
                                     >
                                         {list.query
-                                            ? `No users match "${list.query}".`
-                                            : statusFilter !== 'all'
-                                              ? `No ${statusFilter} users.`
-                                              : 'No users yet.'}
+                                            ? t(
+                                                  'qubdi.adminUsers.users.noMatch',
+                                                  { query: list.query }
+                                              )
+                                            : statusFilter === 'active'
+                                              ? t(
+                                                    'qubdi.adminUsers.users.noActive'
+                                                )
+                                              : statusFilter === 'disabled'
+                                                ? t(
+                                                      'qubdi.adminUsers.users.noDisabled'
+                                                  )
+                                                : t(
+                                                      'qubdi.adminUsers.users.noUsers'
+                                                  )}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -367,10 +408,15 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                             <TableCell>
                                                 <input
                                                     type="checkbox"
-                                                    aria-label={`Select ${u.email}`}
+                                                    aria-label={t(
+                                                        'qubdi.adminUsers.users.selectUser',
+                                                        { email: u.email }
+                                                    )}
                                                     title={
                                                         self
-                                                            ? 'You cannot select yourself'
+                                                            ? t(
+                                                                  'qubdi.adminUsers.users.cannotSelectSelf'
+                                                              )
                                                             : undefined
                                                     }
                                                     checked={selected.has(u.id)}
@@ -387,7 +433,9 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                 {u.email}
                                                 {self ? (
                                                     <span className="ml-2 text-xs text-muted-foreground">
-                                                        (you)
+                                                        {t(
+                                                            'qubdi.adminUsers.users.you'
+                                                        )}
                                                     </span>
                                                 ) : null}
                                             </TableCell>
@@ -400,8 +448,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                     }
                                                 >
                                                     {u.isAdmin
-                                                        ? 'Admin'
-                                                        : 'Member'}
+                                                        ? t(
+                                                              'qubdi.adminUsers.users.admin'
+                                                          )
+                                                        : t(
+                                                              'qubdi.adminUsers.users.member'
+                                                          )}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
@@ -414,15 +466,23 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         }
                                                     >
                                                         {u.isActive
-                                                            ? 'Active'
-                                                            : 'Disabled'}
+                                                            ? t(
+                                                                  'qubdi.adminUsers.users.active'
+                                                              )
+                                                            : t(
+                                                                  'qubdi.adminUsers.users.disabled'
+                                                              )}
                                                     </Badge>
                                                     {u.mfaEnabled ? (
                                                         <Badge
                                                             variant="secondary"
-                                                            title="Signs in with an authenticator app as well as the password"
+                                                            title={t(
+                                                                'qubdi.adminUsers.users.twoFactorHint'
+                                                            )}
                                                         >
-                                                            2FA
+                                                            {t(
+                                                                'qubdi.adminUsers.users.twoFactorBadge'
+                                                            )}
                                                         </Badge>
                                                     ) : null}
                                                 </div>
@@ -439,7 +499,9 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                     </time>
                                                 ) : (
                                                     <span className="text-muted-foreground">
-                                                        Never
+                                                        {t(
+                                                            'qubdi.adminUsers.users.never'
+                                                        )}
                                                     </span>
                                                 )}
                                                 {u.lastActiveAt ? (
@@ -448,7 +510,9 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                             aria-hidden
                                                             className="size-1.5 rounded-full bg-current"
                                                         />
-                                                        Signed in
+                                                        {t(
+                                                            'qubdi.adminUsers.users.signedInNow'
+                                                        )}
                                                     </span>
                                                 ) : null}
                                             </TableCell>
@@ -473,8 +537,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                                     ),
                                                                 {
                                                                     title: u.isAdmin
-                                                                        ? 'Admin removed'
-                                                                        : 'Made admin',
+                                                                        ? t(
+                                                                              'qubdi.adminUsers.users.adminRemoved'
+                                                                          )
+                                                                        : t(
+                                                                              'qubdi.adminUsers.users.madeAdmin'
+                                                                          ),
                                                                     description:
                                                                         u.email,
                                                                 }
@@ -482,8 +550,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         }
                                                     >
                                                         {u.isAdmin
-                                                            ? 'Remove admin'
-                                                            : 'Make admin'}
+                                                            ? t(
+                                                                  'qubdi.adminUsers.users.removeAdmin'
+                                                              )
+                                                            : t(
+                                                                  'qubdi.adminUsers.users.makeAdmin'
+                                                              )}
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
@@ -501,8 +573,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                                     ),
                                                                 {
                                                                     title: u.isActive
-                                                                        ? 'User disabled'
-                                                                        : 'User enabled',
+                                                                        ? t(
+                                                                              'qubdi.adminUsers.users.userDisabled'
+                                                                          )
+                                                                        : t(
+                                                                              'qubdi.adminUsers.users.userEnabled'
+                                                                          ),
                                                                     description:
                                                                         u.email,
                                                                 }
@@ -510,16 +586,25 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         }
                                                     >
                                                         {u.isActive
-                                                            ? 'Disable'
-                                                            : 'Enable'}
+                                                            ? t(
+                                                                  'qubdi.adminUsers.users.disable'
+                                                              )
+                                                            : t(
+                                                                  'qubdi.adminUsers.users.enable'
+                                                              )}
                                                     </Button>
                                                     {/* the rarer actions are icons, so the row fits; each has a name for a screen reader and a tooltip */}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         className="size-8"
-                                                        aria-label={`Reset password of ${u.email}`}
-                                                        title="Reset password"
+                                                        aria-label={t(
+                                                            'qubdi.adminUsers.users.resetPasswordOf',
+                                                            { email: u.email }
+                                                        )}
+                                                        title={t(
+                                                            'qubdi.adminUsers.users.resetPassword'
+                                                        )}
                                                         onClick={() => {
                                                             setNewPassword('');
                                                             setResetFor(u);
@@ -532,8 +617,15 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                             variant="ghost"
                                                             size="icon"
                                                             className="size-8"
-                                                            aria-label={`Reset two-factor of ${u.email}`}
-                                                            title="Reset two-factor (lost phone)"
+                                                            aria-label={t(
+                                                                'qubdi.adminUsers.users.resetTwoFactorOf',
+                                                                {
+                                                                    email: u.email,
+                                                                }
+                                                            )}
+                                                            title={t(
+                                                                'qubdi.adminUsers.users.resetTwoFactorHint'
+                                                            )}
                                                             disabled={busy}
                                                             onClick={() =>
                                                                 setMfaResetFor(
@@ -548,12 +640,19 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="size-8"
-                                                        aria-label={`Sessions of ${u.email}`}
+                                                        aria-label={t(
+                                                            'qubdi.adminUsers.users.sessionsOf',
+                                                            { email: u.email }
+                                                        )}
                                                         disabled={self}
                                                         title={
                                                             self
-                                                                ? 'Use Sign out in the account menu'
-                                                                : 'Sessions'
+                                                                ? t(
+                                                                      'qubdi.adminUsers.users.useSignOut'
+                                                                  )
+                                                                : t(
+                                                                      'qubdi.adminUsers.users.sessions'
+                                                                  )
                                                         }
                                                         onClick={() =>
                                                             setSessionsFor(u)
@@ -565,11 +664,18 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="size-8 text-destructive hover:text-destructive"
-                                                        aria-label={`Delete ${u.email}`}
+                                                        aria-label={t(
+                                                            'qubdi.adminUsers.users.deleteOf',
+                                                            { email: u.email }
+                                                        )}
                                                         title={
                                                             self
-                                                                ? 'You cannot delete yourself'
-                                                                : 'Delete user'
+                                                                ? t(
+                                                                      'qubdi.adminUsers.users.cannotDeleteSelf'
+                                                                  )
+                                                                : t(
+                                                                      'qubdi.adminUsers.users.deleteUserHint'
+                                                                  )
                                                         }
                                                         disabled={busy || self}
                                                         onClick={() =>
@@ -594,7 +700,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                     total={list.total}
                     onPageChange={list.setPage}
                     disabled={list.loading}
-                    noun="users"
+                    noun={t('qubdi.adminUsers.users.pagerNoun')}
                 />
             </div>
 
@@ -604,10 +710,13 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
             >
                 <DialogContent className="max-w-sm" showClose>
                     <DialogHeader>
-                        <DialogTitle>Reset password</DialogTitle>
+                        <DialogTitle>
+                            {t('qubdi.adminUsers.users.resetPassword')}
+                        </DialogTitle>
                         <DialogDescription>
-                            Set a new password for {resetFor?.email}. They will
-                            be signed out everywhere.
+                            {t('qubdi.adminUsers.users.resetDescription', {
+                                email: resetFor?.email ?? '',
+                            })}
                         </DialogDescription>
                     </DialogHeader>
                     <form
@@ -622,14 +731,23 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                 });
                                 setResetFor(null);
                                 toast({
-                                    title: 'Password changed',
-                                    description: `${target.email} was signed out everywhere.`,
+                                    title: t(
+                                        'qubdi.adminUsers.users.passwordChanged'
+                                    ),
+                                    description: t(
+                                        'qubdi.adminUsers.users.signedOutEverywhere',
+                                        {
+                                            email: target.email,
+                                        }
+                                    ),
                                 });
                             });
                         }}
                     >
                         <PasswordField
-                            placeholder="New password"
+                            placeholder={t(
+                                'qubdi.adminUsers.users.newPassword'
+                            )}
                             value={newPassword}
                             onChange={setNewPassword}
                             minLength={minLength}
@@ -637,7 +755,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             autoFocus
                         />
                         <Button type="submit" disabled={busy || resetWeak}>
-                            Set password
+                            {t('qubdi.adminUsers.users.setPassword')}
                         </Button>
                     </form>
                 </DialogContent>
@@ -649,15 +767,19 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            {t('qubdi.adminUsers.users.deleteTitle')}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            {deleteFor?.email} will lose access immediately.
-                            Diagrams they created stay with their projects and
-                            become yours.
+                            {t('qubdi.adminUsers.users.deleteDescription', {
+                                email: deleteFor?.email ?? '',
+                            })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                            {t('qubdi.adminUsers.users.cancel')}
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
                                 const target = deleteFor;
@@ -665,14 +787,16 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                     void run(
                                         () => api.adminDeleteUser(target.id),
                                         {
-                                            title: 'User deleted',
+                                            title: t(
+                                                'qubdi.adminUsers.users.userDeleted'
+                                            ),
                                             description: target.email,
                                         }
                                     );
                                 }
                             }}
                         >
-                            Delete user
+                            {t('qubdi.adminUsers.users.deleteUserHint')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -685,18 +809,18 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            Reset two-factor sign-in?
+                            {t('qubdi.adminUsers.users.resetMfaTitle')}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            {mfaResetFor?.email} will be signed out everywhere
-                            and can then sign in with the password alone. Use
-                            this when they have lost their phone and their
-                            recovery codes. They can set it up again in the
-                            account menu.
+                            {t('qubdi.adminUsers.users.resetMfaDescription', {
+                                email: mfaResetFor?.email ?? '',
+                            })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                            {t('qubdi.adminUsers.users.cancel')}
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
                                 const target = mfaResetFor;
@@ -704,14 +828,21 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                     void run(
                                         () => api.adminResetMfa(target.id),
                                         {
-                                            title: 'Two-factor reset',
-                                            description: `${target.email} was signed out everywhere.`,
+                                            title: t(
+                                                'qubdi.adminUsers.users.mfaResetDone'
+                                            ),
+                                            description: t(
+                                                'qubdi.adminUsers.users.signedOutEverywhere',
+                                                {
+                                                    email: target.email,
+                                                }
+                                            ),
                                         }
                                     );
                                 }
                             }}
                         >
-                            Reset two-factor
+                            {t('qubdi.adminUsers.users.resetMfaAction')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -724,25 +855,43 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {confirmBulk === 'delete' ? 'Delete' : 'Disable'}{' '}
-                            {plural(chosen.length, 'user')}?
+                            {confirmBulk === 'delete'
+                                ? t('qubdi.adminUsers.users.bulkDeleteTitle', {
+                                      count: chosen.length,
+                                  })
+                                : t('qubdi.adminUsers.users.bulkDisableTitle', {
+                                      count: chosen.length,
+                                  })}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {confirmBulk === 'delete'
-                                ? 'They lose access immediately and the accounts cannot be brought back. Diagrams they created stay with their projects and become yours.'
-                                : 'They are signed out at once and cannot sign in until you enable them again. Their diagrams and project access stay as they are.'}
+                                ? t(
+                                      'qubdi.adminUsers.users.bulkDeleteDescription'
+                                  )
+                                : t(
+                                      'qubdi.adminUsers.users.bulkDisableDescription'
+                                  )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                            {t('qubdi.adminUsers.users.cancel')}
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
                                 if (confirmBulk) bulk(confirmBulk);
                             }}
                         >
                             {confirmBulk === 'delete'
-                                ? `Delete ${plural(chosen.length, 'user')}`
-                                : `Disable ${plural(chosen.length, 'user')}`}
+                                ? t('qubdi.adminUsers.users.bulkDeleteAction', {
+                                      count: chosen.length,
+                                  })
+                                : t(
+                                      'qubdi.adminUsers.users.bulkDisableAction',
+                                      {
+                                          count: chosen.length,
+                                      }
+                                  )}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

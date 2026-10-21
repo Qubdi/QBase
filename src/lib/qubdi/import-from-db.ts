@@ -3,6 +3,7 @@ import {
     DatabaseMetadataSchema,
     type DatabaseMetadata,
 } from '@/lib/data/import-metadata/metadata-types/database-metadata';
+import { i18n } from '@/i18n/i18n';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 
@@ -73,9 +74,7 @@ export async function metadataToDiagram(
 ): Promise<Diagram> {
     const parsed = DatabaseMetadataSchema.safeParse(metadata);
     if (!parsed.success) {
-        throw new Error(
-            'The server returned metadata in an unexpected format.'
-        );
+        throw new Error(i18n.t('qubdi.database.importFromDb.badMetadata'));
     }
     const diagram = await loadFromDatabaseMetadata({
         databaseType: dialectToDatabaseType(dialect),

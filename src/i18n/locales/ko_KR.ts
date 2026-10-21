@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const ko_KR: LanguageTranslation = {
     translation: {
@@ -547,10 +547,4 @@ export const ko_KR: LanguageTranslation = {
         on: '켜기',
         off: '끄기',
     },
-};
-
-export const ko_KRMetadata: LanguageMetadata = {
-    name: 'Korean',
-    nativeName: '한국어',
-    code: 'ko_KR',
 };

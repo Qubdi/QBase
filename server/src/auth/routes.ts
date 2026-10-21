@@ -43,7 +43,8 @@ const newAccount = z.object({
 });
 
 const changePassword = z.object({
-    currentPassword: z.string(),
+    // as long as any password the server accepts: a hash of megabytes is a cheap attack
+    currentPassword: z.string().max(200),
     newPassword: z.string().max(200),
     // with two-factor on, changing the password needs a code (or a recovery code)
     code: z.string().max(20).optional(),
@@ -126,6 +127,15 @@ export const authRoutes =
             const body = newAccount.parse(req.body);
             const weak = weakPassword(config, body.password, body.email);
             if (weak) return reply.code(400).send(weak);
+            // Once sign-up is closed, say so before the (slow) hash: otherwise anyone
+            // can make the server spend a hash per request. The count inside the
+            // transaction below is the one that decides; this only saves work.
+            const [{ value: already }] = await db
+                .select({ value: count() })
+                .from(users);
+            if (already > 0) {
+                return reply.code(403).send({ error: 'signup_disabled' });
+            }
             const passwordHash = await hashPassword(body.password);
             // Counting and inserting happen under one lock: two first-run
             // sign-ups arriving together would both see an empty table and
@@ -174,8 +184,12 @@ export const authRoutes =
 
         app.post('/login', limit, async (req, reply) => {
             const body = signIn.parse(req.body);
-            // unknown emails are counted too, so the lockout reveals nothing
-            const key = `login:${body.email}`;
+            // Unknown emails are counted too, so the lockout reveals nothing. The
+            // address is part of the key: failures from one address lock out that
+            // address for that account, so a stranger cannot keep someone else
+            // out by guessing at their account on purpose. (Guesses spread over
+            // many addresses are held back by the per-address rate limit.)
+            const key = `login:${body.email}:${req.ip}`;
             if (locked(reply, key)) return;
             const [user] = await db
                 .select()
@@ -224,6 +238,10 @@ export const authRoutes =
         });
 
         app.post('/logout', async (req, reply) => {
+            // a call with no live session signs nobody out, so it leaves no row
+            if (req.user) {
+                await audit(db, { userId: req.user.id, action: 'user.logout' });
+            }
             await destroySession(db, req.cookies[SESSION_COOKIE]);
             reply.clearCookie(SESSION_COOKIE, {
                 path: '/',
@@ -258,9 +276,10 @@ export const authRoutes =
                 !(await verifyPassword(user.passwordHash, body.currentPassword))
             ) {
                 failures.recordFailure(key);
+                // a signed-in person mistyping their password is not a sign-in attempt
                 await audit(db, {
                     userId: user.id,
-                    action: 'user.sign_in_failed',
+                    action: 'user.password_check_failed',
                 });
                 return reply.code(403).send({ error: 'wrong_password' });
             }

@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/button/button';
 import { Logo } from '@/components/logo/logo';
@@ -56,20 +63,25 @@ const SignInRequired: React.FC = () => (
 const Problem: React.FC<{ title: string; detail: string }> = ({
     title,
     detail,
-}) => (
-    <Centered>
-        <Logo className="h-auto" />
-        <div>
-            <p className="font-medium">{title}</p>
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                {detail}
-            </p>
-        </div>
-        <Button asChild variant="outline">
-            <Link to="/">Back to projects</Link>
-        </Button>
-    </Centered>
-);
+}) => {
+    const { t } = useTranslation();
+    return (
+        <Centered>
+            <Logo className="h-auto" />
+            <div>
+                <p className="font-medium">{title}</p>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                    {detail}
+                </p>
+            </div>
+            <Button asChild variant="outline">
+                <Link to="/">
+                    {t('qubdi.workspace.diagramAccess.backToProjects')}
+                </Link>
+            </Button>
+        </Centered>
+    );
+};
 
 // --- project workspace: /<project>/diagrams[/<server diagram id>] ---------
 
@@ -90,7 +102,11 @@ function useWorkspaceResolution(
     remoteDiagramId: string | undefined
 ): Resolution {
     const { user } = useQubdi();
-    const { listDiagrams, addDiagram } = useStorage();
+    const storage = useStorage();
+    // the effect below reads the storage calls when it runs, but must not
+    // start over (and show "loading") whenever the storage context changes
+    const storageRef = useRef(storage);
+    storageRef.current = storage;
     const [state, setState] = useState<Resolution>({ kind: 'loading' });
 
     useEffect(() => {
@@ -122,12 +138,14 @@ function useWorkspaceResolution(
                 });
             }
 
-            const diagrams = await api.listDiagrams();
-            const found = diagrams.find(
-                (d) => d.id === remoteDiagramId && d.projectId === project.id
-            );
-            if (!found) return done({ kind: 'diagram_missing' });
+            // this diagram's own row, not the list of every diagram the user can see
+            const found = await api.getDiagramSummary(remoteDiagramId);
+            if (found.projectId !== project.id) {
+                return done({ kind: 'diagram_missing' });
+            }
 
+            const { listDiagrams, addDiagram, getDiagram, deleteDiagram } =
+                storageRef.current;
             const local = await listDiagrams();
             const { localId } = await ensureLocalCopy({
                 remoteId: remoteDiagramId,
@@ -136,6 +154,14 @@ function useWorkspaceResolution(
                 fetchRemote: (id) => api.getDiagram(id),
                 addDiagram: (diagram) => addDiagram({ diagram }),
                 newId: generateId,
+                // a copy that is behind the server and has nothing unsent is
+                // brought up to date, so a reopen never shows a stale diagram
+                refresh: {
+                    serverUpdatedAt: found.updatedAt,
+                    readOnly: found.role === 'viewer',
+                    getLocal: (id) => getDiagram(id),
+                    deleteLocal: (id) => deleteDiagram(id),
+                },
             });
             done({
                 kind: 'ready',
@@ -144,7 +170,7 @@ function useWorkspaceResolution(
                     localDiagramId: localId,
                     remoteDiagramId,
                 },
-                access: resolveAccess(remoteDiagramId, diagrams),
+                access: resolveAccess(remoteDiagramId, [found]),
             });
         })().catch((e: unknown) => {
             if (e instanceof ApiError && e.status === 404) {
@@ -162,14 +188,13 @@ function useWorkspaceResolution(
         return () => {
             cancelled = true;
         };
-        // listDiagrams/addDiagram are stable storage calls
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, slug, remoteDiagramId]);
 
     return state;
 }
 
 const WorkspaceGate: React.FC<React.PropsWithChildren> = ({ children }) => {
+    const { t } = useTranslation();
     const { projectSlug, remoteDiagramId } = useParams<{
         projectSlug: string;
         remoteDiagramId: string;
@@ -197,21 +222,25 @@ const WorkspaceGate: React.FC<React.PropsWithChildren> = ({ children }) => {
         case 'project_missing':
             return (
                 <Problem
-                    title="Project not found"
-                    detail="It does not exist, or you have not been added to it."
+                    title={t('qubdi.workspace.diagramAccess.projectNotFound')}
+                    detail={t(
+                        'qubdi.workspace.diagramAccess.projectNotFoundDetail'
+                    )}
                 />
             );
         case 'diagram_missing':
             return (
                 <Problem
-                    title="Diagram not found"
-                    detail="It is not in this project, or you do not have access to it."
+                    title={t('qubdi.workspace.diagramAccess.diagramNotFound')}
+                    detail={t(
+                        'qubdi.workspace.diagramAccess.diagramNotFoundDetail'
+                    )}
                 />
             );
         case 'failed':
             return (
                 <Problem
-                    title="Could not open this diagram"
+                    title={t('qubdi.workspace.diagramAccess.openFailed')}
                     detail={resolution.message}
                 />
             );

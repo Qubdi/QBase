@@ -31,6 +31,24 @@ export const resetSaveStatus = () => {
     emit();
 };
 
+// Lets another part of the editor (Publish) send whatever the autosaver holds
+// and wait for it, so there is never a second, competing save of the same base.
+let flushNow: (() => Promise<void>) | null = null;
+
+export const registerFlushNow = (fn: (() => Promise<void>) | null) => {
+    flushNow = fn;
+};
+
+/** Sends any unsent edit through the autosaver and waits; never rejects. */
+export const flushPendingSave = (): Promise<void> =>
+    (flushNow?.() ?? Promise.resolve()).catch(() => undefined);
+
+/** True while an edit has not reached the server: waiting, on its way, or refused. */
+export const hasUnsavedChanges = (): boolean =>
+    state.status === 'pending' ||
+    state.status === 'saving' ||
+    state.status === 'error';
+
 // The running autosaver lets "Get latest" throw away what it has not sent, so
 // the flush on page leave cannot push those edits back to the server.
 let discard: (() => void) | null = null;

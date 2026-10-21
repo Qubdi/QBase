@@ -1,6 +1,8 @@
 // Turns a published diagram (untrusted JSON from the server) into what the
 // read-only viewer draws. Pure and defensive: malformed input never throws.
 
+import { i18n } from '@/i18n/i18n';
+
 export interface ViewerField {
     id: string;
     name: string;
@@ -66,7 +68,7 @@ export function buildViewerGraph(content: unknown): ViewerGraph {
         }
         tables.push({
             id: raw.id,
-            name: str(raw.name, 'unnamed'),
+            name: str(raw.name, i18n.t('qubdi.workspace.viewer.unnamedTable')),
             schema: typeof raw.schema === 'string' ? raw.schema : null,
             // tables without coordinates get a readable grid position
             x: num(raw.x, (index % GRID_COLUMNS) * GRID_STEP_X),

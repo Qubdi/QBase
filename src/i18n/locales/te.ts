@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const te: LanguageTranslation = {
     translation: {
@@ -558,10 +558,4 @@ export const te: LanguageTranslation = {
         on: 'ఆన్',
         off: 'ఆఫ్',
     },
-};
-
-export const teMetadata: LanguageMetadata = {
-    name: 'Telugu',
-    nativeName: 'తెలుగు',
-    code: 'te',
 };

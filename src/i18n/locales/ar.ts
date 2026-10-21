@@ -1,4 +1,4 @@
-import type { LanguageMetadata, LanguageTranslation } from '../types';
+import type { LanguageTranslation } from '../types';
 
 export const ar: LanguageTranslation = {
     translation: {
@@ -542,10 +542,4 @@ export const ar: LanguageTranslation = {
         on: 'تشغيل',
         off: 'إيقاف',
     },
-};
-
-export const arMetadata: LanguageMetadata = {
-    name: 'Arabic',
-    nativeName: 'العربية',
-    code: 'ar',
 };

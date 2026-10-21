@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, CloudCheck, CloudUpload, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -17,6 +18,8 @@ import type { Diagram } from '@/lib/domain/diagram';
 import { createRevisionTracker } from '@/lib/qubdi/revision';
 import {
     registerFinalFlush,
+    hasUnsavedChanges,
+    registerFlushNow,
     registerSaveDiscard,
     resetSaveStatus,
     setSaveStatus,
@@ -75,6 +78,9 @@ export const ServerAutosave: React.FC = () => {
                     current.status === 'editor'
                 ) {
                     reportLockLost(current.remoteId);
+                    // this editor can no longer save: drop what is unsent, so
+                    // leaving does not send one more request bound to fail
+                    saver.discard();
                     return;
                 }
                 const conflict =
@@ -139,6 +145,7 @@ export const ServerAutosave: React.FC = () => {
                 .catch(() => undefined);
         }
         registerSaveDiscard(() => saver.discard());
+        registerFlushNow(() => saver.flush());
         const flushOnLeave = () => {
             leavingRef.current = true;
             const sent = saver.flush();
@@ -151,10 +158,20 @@ export const ServerAutosave: React.FC = () => {
             leavingRef.current = false;
             registerFinalFlush(flushOnLeave);
         };
+        // Closing the tab inside the autosave pause would lose the last edits if
+        // the final send on pagehide fails: ask first while something is unsent.
+        const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+            if (!hasUnsavedChanges()) return;
+            event.preventDefault();
+            // some browsers only ask when a return value is set
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', warnBeforeLeaving);
         window.addEventListener('pagehide', flushOnLeave);
         window.addEventListener('pageshow', resumed);
         return () => {
             checked = true;
+            window.removeEventListener('beforeunload', warnBeforeLeaving);
             window.removeEventListener('pagehide', flushOnLeave);
             window.removeEventListener('pageshow', resumed);
             // leaving the diagram: send what is still pending
@@ -164,6 +181,7 @@ export const ServerAutosave: React.FC = () => {
             saverRef.current = null;
             registerFinalFlush(null);
             registerSaveDiscard(null);
+            registerFlushNow(null);
             resetSaveStatus();
         };
     }, [canSave, diagramId]);
@@ -229,6 +247,7 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
     fallback = null,
 }) => {
+    const { t } = useTranslation();
     const { enabled } = useQubdi();
     const { access } = useDiagramAccess();
     const { status, retry, overwrite } = useSaveStatus();
@@ -245,14 +264,14 @@ export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
                 role="alert"
             >
                 <AlertTriangle className="size-3.5" />
-                Someone else saved a newer version
+                {t('qubdi.workspace.autosave.conflict')}
                 <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 px-2 text-xs"
                     onClick={overwrite}
                 >
-                    Overwrite with mine
+                    {t('qubdi.workspace.autosave.overwrite')}
                 </Button>
             </span>
         );
@@ -261,7 +280,11 @@ export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
     if (status === 'error') {
         return (
             <StatusIcon
-                label={retry ? 'Not saved. Click to try again' : 'Not saved'}
+                label={
+                    retry
+                        ? t('qubdi.workspace.autosave.notSavedRetry')
+                        : t('qubdi.workspace.autosave.notSaved')
+                }
                 onClick={retry}
                 className="text-destructive hover:text-destructive"
             >
@@ -275,8 +298,8 @@ export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
             <StatusIcon
                 label={
                     retry
-                        ? 'Unsaved changes. Click to save now'
-                        : 'Unsaved changes'
+                        ? t('qubdi.workspace.autosave.unsavedRetry')
+                        : t('qubdi.workspace.autosave.unsaved')
                 }
                 onClick={retry}
             >
@@ -288,14 +311,14 @@ export const ServerSaveStatus: React.FC<{ fallback?: React.ReactNode }> = ({
 
     if (status === 'saving') {
         return (
-            <StatusIcon label="Saving…">
+            <StatusIcon label={t('qubdi.workspace.autosave.saving')}>
                 <Loader2 className="animate-spin" />
             </StatusIcon>
         );
     }
 
     return (
-        <StatusIcon label="Saved to project">
+        <StatusIcon label={t('qubdi.workspace.autosave.saved')}>
             <CloudCheck className="text-primary" />
         </StatusIcon>
     );

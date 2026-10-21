@@ -1,12 +1,14 @@
+import { i18n } from '@/i18n/i18n';
 import type { DriftBadge, DriftItem, DriftSeverity } from './api';
 
 /** Text for the navbar badge, or null when there is nothing to show. */
 export function badgeLabel(badge: DriftBadge | null): string | null {
     if (!badge) return null;
-    if (badge.status === 'error') return 'Check failed';
+    if (badge.status === 'error')
+        return i18n.t('qubdi.database.drift.badgeFailed');
     const total =
         badge.counts.breaking + badge.counts.warning + badge.counts.info;
-    return `Drift: ${total}`;
+    return i18n.t('qubdi.database.drift.badge', { total });
 }
 
 export function badgeSeverity(
@@ -34,11 +36,8 @@ export function splitByCategory(items: DriftItem[]): SplitChanges {
     };
 }
 
-export const SEVERITY_LABEL: Record<DriftSeverity, string> = {
-    breaking: 'Breaking',
-    warning: 'Warning',
-    info: 'Info',
-};
+export const severityLabel = (severity: DriftSeverity): string =>
+    i18n.t(`qubdi.database.drift.severity.${severity}`);
 
 export const SEVERITY_CLASS: Record<DriftSeverity | 'error', string> = {
     breaking: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',

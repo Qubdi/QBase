@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -10,12 +11,17 @@ import {
     badgeSeverity,
     SEVERITY_CLASS,
 } from '@/lib/qubdi/drift-ui';
+import { useDiagramAccess } from './diagram-access-context';
 import { DriftDialog } from './drift-dialog';
 
 /** Toolbar entry for drift detection: shows a badge when the database has drifted. */
 export const DriftControl: React.FC = () => {
+    const { t } = useTranslation();
     const { enabled, user, remoteIdFor } = useQubdi();
     const { currentDiagram } = useDiagram();
+    const { access } = useDiagramAccess();
+    // only the editor who holds the diagram manages its drift from here
+    const canManage = access.status === 'editor';
     const [open, setOpen] = useState(false);
     const [badge, setBadge] = useState<DriftBadge | null>(null);
     const remoteId = remoteIdFor(currentDiagram.id);
@@ -36,16 +42,33 @@ export const DriftControl: React.FC = () => {
     }, [remoteId]);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || !canManage) return;
         void refresh();
-        const timer = setInterval(() => void refresh(), 60_000);
-        return () => clearInterval(timer);
-    }, [user, refresh]);
+        // a background tab does not need a fresh badge every minute; it gets
+        // one when the tab is shown again
+        const timer = setInterval(() => {
+            if (!document.hidden) void refresh();
+        }, 60_000);
+        const shown = () => {
+            if (!document.hidden) void refresh();
+        };
+        document.addEventListener('visibilitychange', shown);
+        return () => {
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', shown);
+        };
+    }, [user, canManage, refresh]);
 
     // opening a diagram fetches from its database once; the timer above only
     // re-reads the stored result
     useEffect(() => {
-        if (!user || !remoteId || checkedOnOpen.current === remoteId) return;
+        if (
+            !user ||
+            !canManage ||
+            !remoteId ||
+            checkedOnOpen.current === remoteId
+        )
+            return;
         checkedOnOpen.current = remoteId;
         void checkDriftOnOpen(remoteId).then((next) => {
             // the person may have moved to another diagram while it ran
@@ -53,9 +76,10 @@ export const DriftControl: React.FC = () => {
                 setBadge(next);
             }
         });
-    }, [user, remoteId]);
+    }, [user, canManage, remoteId]);
 
-    if (!enabled || !user) return null;
+    // a viewer, or an editor whose lock went to someone else, does not manage drift here
+    if (!enabled || !user || !canManage) return null;
 
     const label = badgeLabel(badge);
     const severity = badgeSeverity(badge);
@@ -69,7 +93,7 @@ export const DriftControl: React.FC = () => {
                 onClick={() => setOpen(true)}
             >
                 <Activity className="size-4" />
-                Drift
+                {t('qubdi.database.drift.control')}
                 {label && severity ? (
                     <span
                         data-testid="drift-badge"

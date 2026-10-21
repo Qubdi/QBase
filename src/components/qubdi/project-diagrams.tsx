@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MoreVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -50,8 +51,8 @@ export interface ProjectDiagramsProps {
     onChanged?: () => void;
 }
 
-const roleLabel = (role: RemoteDiagramSummary['role']) =>
-    role === 'owner' ? 'Admin' : role === 'editor' ? 'Editor' : 'Viewer';
+const roleKey = (role: RemoteDiagramSummary['role']) =>
+    role === 'owner' ? 'owner' : role === 'editor' ? 'editor' : 'viewer';
 
 type Confirm =
     | { kind: 'latest'; diagram: RemoteDiagramSummary }
@@ -66,6 +67,7 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
     onOpen,
     onChanged,
 }) => {
+    const { t } = useTranslation();
     const { deleteDiagram, listDiagrams } = useStorage();
     const [localIds, setLocalIds] = useState<Set<string>>(new Set());
     const [error, setError] = useState<string | null>(null);
@@ -161,7 +163,7 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
     if (diagrams.length === 0) {
         return (
             <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-                No diagrams in this project yet.
+                {t('qubdi.workspace.projectDiagrams.empty')}
             </p>
         );
     }
@@ -173,19 +175,25 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                     {error}
                 </p>
             ) : null}
-            <Table aria-label="Diagrams">
+            <Table aria-label={t('qubdi.workspace.projectDiagrams.table')}>
                 <TableHeader className="sticky top-0 z-10 bg-background">
                     <TableRow>
                         <TableHead className="w-12" />
-                        <TableHead>Name</TableHead>
+                        <TableHead>
+                            {t('qubdi.workspace.projectDiagrams.name')}
+                        </TableHead>
                         <TableHead className="hidden md:table-cell">
-                            Created by
+                            {t('qubdi.workspace.projectDiagrams.createdBy')}
                         </TableHead>
                         <TableHead className="hidden sm:table-cell">
-                            Created
+                            {t('qubdi.workspace.projectDiagrams.created')}
                         </TableHead>
-                        <TableHead>Last modified</TableHead>
-                        <TableHead className="text-center">Tables</TableHead>
+                        <TableHead>
+                            {t('qubdi.workspace.projectDiagrams.lastModified')}
+                        </TableHead>
+                        <TableHead className="text-center">
+                            {t('qubdi.workspace.projectDiagrams.tables')}
+                        </TableHead>
                         <TableHead className="w-10" />
                     </TableRow>
                 </TableHeader>
@@ -222,12 +230,16 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                                         {d.title}
                                     </span>
                                     <Badge variant="secondary">
-                                        {roleLabel(d.role)}
+                                        {t(
+                                            `qubdi.workspace.projectDiagrams.role.${roleKey(d.role)}`
+                                        )}
                                     </Badge>
                                 </div>
                                 {localCopy(d.id) ? (
                                     <p className="text-xs text-muted-foreground">
-                                        Saved in this browser
+                                        {t(
+                                            'qubdi.workspace.projectDiagrams.savedHere'
+                                        )}
                                     </p>
                                 ) : null}
                             </TableCell>
@@ -240,7 +252,19 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                             <TableCell>{formatWhen(d.updatedAt)}</TableCell>
                             <TableCell
                                 className="text-center"
-                                title={`${countLabel(d.tableCount, 'table')}, ${countLabel(d.relationshipCount, 'relationship')}`}
+                                title={t(
+                                    'qubdi.workspace.projectDiagrams.counts',
+                                    {
+                                        tables: countLabel(
+                                            d.tableCount,
+                                            'table'
+                                        ),
+                                        relationships: countLabel(
+                                            d.relationshipCount,
+                                            'relationship'
+                                        ),
+                                    }
+                                )}
                             >
                                 {d.tableCount ?? 0}
                             </TableCell>
@@ -251,7 +275,10 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                                             variant="ghost"
                                             size="icon"
                                             className="size-8"
-                                            aria-label={`Actions for ${d.title}`}
+                                            aria-label={t(
+                                                'qubdi.workspace.projectDiagrams.actionsFor',
+                                                { title: d.title }
+                                            )}
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <MoreVertical />
@@ -261,7 +288,9 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                                         <DropdownMenuItem
                                             onClick={() => onOpen(d)}
                                         >
-                                            Open
+                                            {t(
+                                                'qubdi.workspace.projectDiagrams.open'
+                                            )}
                                         </DropdownMenuItem>
                                         {localCopy(d.id) ? (
                                             <DropdownMenuItem
@@ -272,7 +301,9 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                                                     })
                                                 }
                                             >
-                                                Get latest from server
+                                                {t(
+                                                    'qubdi.workspace.projectDiagrams.getLatestFromServer'
+                                                )}
                                             </DropdownMenuItem>
                                         ) : null}
                                         {d.role === 'owner' ? (
@@ -287,7 +318,9 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                                                         })
                                                     }
                                                 >
-                                                    Delete for everyone
+                                                    {t(
+                                                        'qubdi.workspace.projectDiagrams.deleteForEveryone'
+                                                    )}
                                                 </DropdownMenuItem>
                                             </>
                                         ) : null}
@@ -307,18 +340,28 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                     <AlertDialogHeader>
                         <AlertDialogTitle>
                             {confirm?.kind === 'delete'
-                                ? 'Delete this diagram?'
-                                : 'Discard your local copy?'}
+                                ? t(
+                                      'qubdi.workspace.projectDiagrams.deleteTitle'
+                                  )
+                                : t(
+                                      'qubdi.workspace.projectDiagrams.discardTitle'
+                                  )}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {confirm?.kind === 'delete'
-                                ? `"${confirm.diagram.title}" will be deleted for everyone in the project. This cannot be undone.`
-                                : `Changes to "${confirm?.diagram.title}" that were not saved to the project are lost, and the latest version is downloaded.`}
+                                ? t(
+                                      'qubdi.workspace.projectDiagrams.deleteDescription',
+                                      { title: confirm.diagram.title }
+                                  )
+                                : t(
+                                      'qubdi.workspace.projectDiagrams.discardDescription',
+                                      { title: confirm?.diagram.title }
+                                  )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={busy}>
-                            Cancel
+                            {t('qubdi.workspace.projectDiagrams.cancel')}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             disabled={busy}
@@ -334,8 +377,12 @@ export const ProjectDiagrams: React.FC<ProjectDiagramsProps> = ({
                             }}
                         >
                             {confirm?.kind === 'delete'
-                                ? 'Delete for everyone'
-                                : 'Get latest'}
+                                ? t(
+                                      'qubdi.workspace.projectDiagrams.deleteForEveryone'
+                                  )
+                                : t(
+                                      'qubdi.workspace.projectDiagrams.getLatest'
+                                  )}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

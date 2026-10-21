@@ -242,6 +242,29 @@ describe('auth throttling', () => {
         }
     });
 
+    it('locks out the address that failed, not the account for everyone', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 3 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            const from = (remoteAddress: string, password: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/login',
+                    payload: { email: 'a@example.com', password },
+                    remoteAddress,
+                });
+            for (let i = 0; i < 3; i++) {
+                expect((await from('203.0.113.7', 'wrong-password')).statusCode).toBe(401);
+            }
+            // the guesser is locked out, even with the right password...
+            expect((await from('203.0.113.7', 'Password-123!')).statusCode).toBe(429);
+            // ...but the owner, from their own address, is not
+            expect((await from('198.51.100.9', 'Password-123!')).statusCode).toBe(200);
+        } finally {
+            await ctx.close();
+        }
+    });
+
     it('counts unknown emails too, so the lockout does not reveal accounts', async () => {
         const ctx = await createTestApp({ authMaxFailures: 2 });
         try {
@@ -460,7 +483,7 @@ describe('auth audit trail', () => {
             const actions = await actionsOf(ctx);
             expect(actions.slice(-3)).toEqual([
                 'user.sign_in',
-                'user.sign_in_failed',
+                'user.password_check_failed',
                 'user.password_change',
             ]);
             expect(user.id).toBeTruthy();

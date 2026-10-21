@@ -1,9 +1,11 @@
 import React from 'react';
 import { Check, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/input/input';
 import { cn } from '@/lib/utils';
 import {
     checkPassword,
+    normalizeMinLength,
     passwordRules,
     type PasswordRuleId,
 } from '../../../shared/password';
@@ -29,9 +31,11 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
     onChange,
     minLength,
     email,
-    placeholder = 'Password',
+    placeholder,
     autoFocus,
 }) => {
+    const { t } = useTranslation();
+    const label = placeholder ?? t('qubdi.account.passwordField.placeholder');
     const rules = passwordRules({ minLength, email });
     const broken = new Set<PasswordRuleId>(
         checkPassword(value, { minLength, email })
@@ -42,8 +46,8 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
         <div className="flex flex-col gap-2">
             <Input
                 type="password"
-                placeholder={placeholder}
-                aria-label={placeholder}
+                placeholder={label}
+                aria-label={label}
                 aria-describedby={listId}
                 autoComplete="new-password"
                 value={value}
@@ -53,7 +57,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
             />
             <ul
                 id={listId}
-                aria-label="Password rules"
+                aria-label={t('qubdi.account.passwordField.rules')}
                 className="flex flex-col gap-0.5 text-xs"
             >
                 {rules.map((rule) => {
@@ -76,9 +80,14 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
                             ) : (
                                 <X className="size-3.5 shrink-0" aria-hidden />
                             )}
-                            {rule.label}
+                            {t(`qubdi.account.passwordField.rule.${rule.id}`, {
+                                length: normalizeMinLength(minLength),
+                                defaultValue: rule.label,
+                            })}
                             <span className="sr-only">
-                                {met ? ' (met)' : ' (not met)'}
+                                {met
+                                    ? t('qubdi.account.passwordField.met')
+                                    : t('qubdi.account.passwordField.notMet')}
                             </span>
                         </li>
                     );

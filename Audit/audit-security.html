@@ -8,18 +8,17 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 1</b></div>
-  <h1>23 open: 0 Crit, 2 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 7</b></div>
+  <h1>1 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-19</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, vitest run (211 files, 2140 tests, all pass) in a node:24 container · server eslint and tsc clean · npm audit root and <code>server/</code> (0 vulnerabilities) · server tests skipped: only the live dev Postgres was up · no secret read</span>
+    <span><b>audit date</b> 2026-10-20</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
     <span class="pill crit">Act first</span>
     <span><ul class="body">
-      <li><code>SEC-001</code> — live <code>POSTGRES_PASSWORD</code> and <code>CONNECTION_KEY</code> pushed in <code>.env.example</code>; rotate both.</li>
-      <li><code>SEC-002</code> — next user on a browser inherits the previous user's local diagrams.</li>
+      <li><code>SEC-001</code> — the old <code>POSTGRES_PASSWORD</code> and <code>CONNECTION_KEY</code> are in git history and <code>.env</code>; rotate both.</li>
     </ul></span>
   </div>
   <div class="split-nav">
@@ -36,34 +35,12 @@
 
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">23 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 22 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell"><code>.env.example</code> commits live 48-char <code>POSTGRES_PASSWORD</code> and <code>CONNECTION_KEY</code>, matching local <code>.env</code></td><td><code>.env.example:11</code>, <code>.env.example:24</code></td><td class="wrap-cell">Rotate both; blank example values; require <code>CONNECTION_KEY</code> via <code>:?</code></td></tr>
-        <tr><td class="svc-name">SEC-002</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Session end or user switch keeps previous user's IndexedDB copies and id maps</td><td><code>src/context/qubdi-context/qubdi-provider.tsx:57</code></td><td class="wrap-cell">Store owner user id; clear local data on user change</td></tr>
-        <tr><td class="svc-name">SEC-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Share-link tokens in <code>/s/&lt;token&gt;</code> URLs written to Fastify request log</td><td><code>server/src/app.ts:62</code></td><td class="wrap-cell">Add req serializer masking <code>/s/:token</code></td></tr>
-        <tr><td class="svc-name">SEC-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Share-viewer <code>/s/&lt;token&gt;</code> paths written to nginx access log</td><td><code>default.conf.template:15</code></td><td class="wrap-cell">Mask token in <code>log_format</code> or disable <code>access_log</code> there</td></tr>
-        <tr><td class="svc-name">SEC-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Connection edit keeps stored password when user, database or ssl change</td><td><code>server/src/introspect/routes.ts:374</code></td><td class="wrap-cell">Add user, database, ssl, <code>trustServerCertificate</code> to <code>movesTarget</code></td></tr>
-        <tr><td class="svc-name">SEC-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No Origin check on mutating requests; CSRF defence is SameSite=Lax alone</td><td><code>server/src/app.ts:85</code></td><td class="wrap-cell">Reject mutating requests whose Origin differs from <code>CORS_ORIGIN</code></td></tr>
-        <tr><td class="svc-name">SEC-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Introspection with typed-in credentials writes no audit row</td><td><code>server/src/introspect/routes.ts:227</code></td><td class="wrap-cell">Audit <code>introspect.run</code> with dialect and host</td></tr>
-        <tr><td class="svc-name">SEC-008</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lockout keyed on email alone; anyone can keep any account locked</td><td><code>server/src/auth/routes.ts:178</code></td><td class="wrap-cell">Key failures on email plus IP</td></tr>
-        <tr><td class="svc-name">SEC-009</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>currentPassword</code> has no max length; argon2 hashes up to 1 MB</td><td><code>server/src/auth/routes.ts:46</code></td><td class="wrap-cell">Add <code>.max(200)</code> to <code>currentPassword</code></td></tr>
-        <tr><td class="svc-name">SEC-010</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Wrong current password on change-password logged as <code>user.sign_in_failed</code></td><td><code>server/src/auth/routes.ts:263</code></td><td class="wrap-cell">Log a distinct <code>user.password_check_failed</code> action</td></tr>
-        <tr><td class="svc-name">SEC-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Self sign-out writes no audit row</td><td><code>server/src/auth/routes.ts:226</code></td><td class="wrap-cell">Audit <code>user.sign_out</code> on logout</td></tr>
-        <tr><td class="svc-name">SEC-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Sessions have no idle timeout, only absolute 30-day expiry</td><td><code>server/src/auth/sessions.ts:86</code></td><td class="wrap-cell">Reject sessions whose <code>lastSeenAt</code> exceeds an idle limit</td></tr>
-        <tr><td class="svc-name">SEC-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">GCM decipher does not enforce 16-byte auth tag length</td><td><code>server/src/introspect/crypto-box.ts:43</code></td><td class="wrap-cell">Pass <code>authTagLength: 16</code>; reject other tag sizes</td></tr>
-        <tr><td class="svc-name">SEC-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Public share JSON sent without <code>Cache-Control: no-store</code></td><td><code>server/src/share/routes.ts:299</code></td><td class="wrap-cell">Set <code>cache-control: no-store</code> on <code>/s/*</code></td></tr>
-        <tr><td class="svc-name">SEC-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SSE viewer cap is per link only; one IP can take all slots</td><td><code>server/src/share/routes.ts:322</code></td><td class="wrap-cell">Add per-IP concurrent stream cap</td></tr>
-        <tr><td class="svc-name">SEC-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SSE stream response skips CSP and frame security headers</td><td><code>server/src/share/routes.ts:329</code></td><td class="wrap-cell">Add security headers to the SSE <code>writeHead</code></td></tr>
-        <tr><td class="svc-name">SEC-017</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Disabled user's <code>signed_in</code> SSE stream stays open until next event</td><td><code>server/src/share/access.ts:25</code></td><td class="wrap-cell">Re-check the session on each heartbeat</td></tr>
-        <tr><td class="svc-name">SEC-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Net guard treats <code>::ffff:0:0/96</code> and <code>64:ff9b:1::/48</code> as public</td><td><code>server/src/introspect/net-guard.ts:86</code></td><td class="wrap-cell">Classify the embedded IPv4 for both prefixes</td></tr>
-        <tr><td class="svc-name">SEC-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Recovery codes stored as unsalted sha256</td><td><code>server/src/auth/totp.ts:162</code></td><td class="wrap-cell">Hash recovery codes with HMAC keyed by <code>SECRETS_KEY</code></td></tr>
-        <tr><td class="svc-name">SEC-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Server defaults <code>HOST</code> to <code>0.0.0.0</code> outside Docker</td><td><code>server/src/config.ts:107</code></td><td class="wrap-cell">Default <code>HOST</code> to <code>127.0.0.1</code>; set <code>0.0.0.0</code> in Dockerfile</td></tr>
-        <tr><td class="svc-name">SEC-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Default core-DB credential hard-coded as <code>DATABASE_URL</code> fallback</td><td><code>server/src/config.ts:106</code></td><td class="wrap-cell">Remove the fallback; require <code>DATABASE_URL</code></td></tr>
-        <tr><td class="svc-name">SEC-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Compose gives <code>MSSQL_SA_PASSWORD</code> a hard-coded default</td><td><code>docker-compose.yml:90</code></td><td class="wrap-cell">Require it with <code>:?</code></td></tr>
-        <tr><td class="svc-name">SEC-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">nginx <code>server_tokens</code> left on; version disclosed</td><td><code>default.conf.template:1</code></td><td class="wrap-cell">Add <code>server_tokens off;</code></td></tr>
+        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code> and <code>CONNECTION_KEY</code> values remain in git history and local <code>.env</code></td><td><code>.env.example</code> history</td><td class="wrap-cell">Rotate both; the example file is blank now</td></tr>
       </tbody>
     </table>
   </div>
@@ -71,11 +48,33 @@
 
 <section id="closed" class="sec-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (0)</summary>
+  <details><summary>Fixed (22)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SEC-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Session end or user switch keeps previous user's IndexedDB copies and id maps</td></tr>
+        <tr><td class="svc-name">SEC-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-link tokens in <code>/s/&lt;token&gt;</code> URLs written to Fastify request log</td></tr>
+        <tr><td class="svc-name">SEC-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-viewer <code>/s/&lt;token&gt;</code> paths written to nginx access log</td></tr>
+        <tr><td class="svc-name">SEC-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Connection edit keeps stored password when user, database or ssl change</td></tr>
+        <tr><td class="svc-name">SEC-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No Origin check on mutating requests; CSRF defence is SameSite=Lax alone</td></tr>
+        <tr><td class="svc-name">SEC-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Introspection with typed-in credentials writes no audit row</td></tr>
+        <tr><td class="svc-name">SEC-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lockout keyed on email alone; anyone can keep any account locked</td></tr>
+        <tr><td class="svc-name">SEC-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>currentPassword</code> has no max length; argon2 hashes up to 1 MB</td></tr>
+        <tr><td class="svc-name">SEC-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Wrong current password on change-password logged as <code>user.sign_in_failed</code></td></tr>
+        <tr><td class="svc-name">SEC-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Self sign-out writes no audit row</td></tr>
+        <tr><td class="svc-name">SEC-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Sessions have no idle timeout, only absolute 30-day expiry</td></tr>
+        <tr><td class="svc-name">SEC-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">GCM decipher does not enforce 16-byte auth tag length</td></tr>
+        <tr><td class="svc-name">SEC-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Public share JSON sent without <code>Cache-Control: no-store</code></td></tr>
+        <tr><td class="svc-name">SEC-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SSE viewer cap is per link only; one IP can take all slots</td></tr>
+        <tr><td class="svc-name">SEC-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SSE stream response skips CSP and frame security headers</td></tr>
+        <tr><td class="svc-name">SEC-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Disabled user's <code>signed_in</code> SSE stream stays open until next event</td></tr>
+        <tr><td class="svc-name">SEC-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Net guard treats <code>::ffff:0:0/96</code> and <code>64:ff9b:1::/48</code> as public</td></tr>
+        <tr><td class="svc-name">SEC-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Recovery codes stored as unsalted sha256</td></tr>
+        <tr><td class="svc-name">SEC-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server defaults <code>HOST</code> to <code>0.0.0.0</code> outside Docker</td></tr>
+        <tr><td class="svc-name">SEC-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Default core-DB credential hard-coded as <code>DATABASE_URL</code> fallback</td></tr>
+        <tr><td class="svc-name">SEC-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Compose gives <code>MSSQL_SA_PASSWORD</code> a hard-coded default</td></tr>
+        <tr><td class="svc-name">SEC-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">nginx <code>server_tokens</code> left on; version disclosed</td></tr>
       </tbody>
     </table>
   </div>

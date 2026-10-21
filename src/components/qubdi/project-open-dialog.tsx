@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import {
@@ -39,6 +40,7 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
     onClose,
     onCreate,
 }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [diagrams, setDiagrams] = useState<RemoteDiagramSummary[] | null>(
         null
@@ -99,15 +101,18 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
                 <DialogHeader>
                     <DialogTitle>{project.name}</DialogTitle>
                     <DialogDescription>
-                        Open a diagram from this project
-                        {canEdit ? ', or create a new one.' : '.'}
+                        {canEdit
+                            ? t('qubdi.workspace.projectOpen.descriptionEdit')
+                            : t('qubdi.workspace.projectOpen.descriptionView')}
                     </DialogDescription>
                 </DialogHeader>
                 <SearchInput
                     value={query}
                     onChange={setQuery}
-                    placeholder="Search diagrams…"
-                    label="Search diagrams"
+                    placeholder={t(
+                        'qubdi.workspace.projectOpen.searchPlaceholder'
+                    )}
+                    label={t('qubdi.workspace.projectOpen.searchLabel')}
                 />
                 {error ? (
                     <p role="alert" className="text-sm text-destructive">
@@ -119,7 +124,9 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
                         <Spinner className="mx-auto mt-8 text-primary" />
                     ) : shown.length === 0 && q ? (
                         <p className="p-6 text-center text-sm text-muted-foreground">
-                            No diagrams match &ldquo;{query.trim()}&rdquo;.
+                            {t('qubdi.workspace.projectOpen.noMatch', {
+                                query: query.trim(),
+                            })}
                         </p>
                     ) : (
                         <ProjectDiagrams
@@ -139,7 +146,7 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
                             variant="secondary"
                             onClick={onClose}
                         >
-                            Cancel
+                            {t('qubdi.workspace.projectOpen.cancel')}
                         </Button>
                     ) : (
                         <div />
@@ -153,7 +160,7 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
                                 onClick={onCreate}
                             >
                                 <Plus className="size-4" />
-                                New diagram
+                                {t('qubdi.workspace.projectOpen.newDiagram')}
                             </Button>
                         ) : null}
                         <Button
@@ -161,7 +168,7 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
                             disabled={!selected}
                             onClick={() => selected && openDiagram(selected)}
                         >
-                            Open diagram
+                            {t('qubdi.workspace.projectOpen.openDiagram')}
                         </Button>
                     </div>
                 </DialogFooter>

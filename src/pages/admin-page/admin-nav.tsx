@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     Activity,
@@ -29,6 +30,7 @@ const ICONS: Record<AdminSectionId, LucideIcon> = {
  * brings the current section into view so it is never the hidden one.
  */
 export const AdminNav: React.FC = () => {
+    const { t } = useTranslation();
     const list = useRef<HTMLUListElement>(null);
     const { pathname } = useLocation();
 
@@ -41,7 +43,7 @@ export const AdminNav: React.FC = () => {
 
     return (
         <nav
-            aria-label="Admin sections"
+            aria-label={t('qubdi.adminUsers.nav.ariaLabel')}
             className="border-b pb-3 md:w-52 md:shrink-0 md:border-b-0 md:pb-0"
         >
             <ul

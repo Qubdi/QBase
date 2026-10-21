@@ -28,43 +28,196 @@ There are no external services: no analytics, no GitHub integration, no social l
 
 ## Run it
 
+QubdiDB is two parts: the **server**, which keeps accounts, projects and diagrams in its own PostgreSQL database, and the **editor**, the web app. Pick one way to run them:
+
+| | Where it runs | Which PostgreSQL |
+| --- | --- | --- |
+| [**A**](#option-a-everything-in-docker-with-the-bundled-postgresql) | Docker | the one bundled with QubdiDB (simplest) |
+| [**B**](#option-b-docker-with-your-own-existing-postgresql) | Docker | one you already run |
+| [**C**](#option-c-from-source-for-development) | your machine, from source | either |
+
+You need Git for all of them, [Docker](https://docs.docker.com/get-docker/) with Compose v2 for A and B (`docker compose version` should work), and Node 24 for C (the version in `.nvmrc`). Commands are for a Bash shell; in Windows PowerShell `cp` works the same, and Git Bash has `openssl`.
+
+A secret in these steps means a long random string. Make one with `openssl rand -hex 24`, or with Node: `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`.
+
+### Option A: everything in Docker, with the bundled PostgreSQL
+
+1. **Get the code.**
+
+   ```bash
+   git clone https://github.com/Qubdi/QubdiDB.git
+   cd QubdiDB
+   ```
+
+2. **Create your settings file.**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Fill in two values in `.env`.** Docker Compose refuses to start without them.
+
+   ```bash
+   POSTGRES_PASSWORD=<a secret>     # the password of the bundled database
+   CONNECTION_KEY=<a secret>        # at least 16 characters; encrypts saved database passwords
+   ```
+
+   `SECRETS_KEY` is optional: it encrypts authenticator-app secrets for two-factor sign-in (see below). Keep these values; losing `CONNECTION_KEY` makes saved connections unreadable.
+
+4. **Start it.** The first run builds the images and takes a few minutes.
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+5. **Check that it is up.** `db` should be `healthy`, and `server` and `ui` `running` (the server's health says `starting` for its first half minute).
+
+   ```bash
+   docker compose ps
+   curl http://localhost:3001/health      # {"ok":true}
+   ```
+
+   In PowerShell `curl` is a different command: open <http://localhost:3001/health> in a browser instead.
+
+6. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
+
+Day to day:
+
 ```bash
-# 1. database (and optionally the backend) with Docker. Compose needs a
-#    POSTGRES_PASSWORD in .env (copy .env.example and fill it in); services
-#    listen on 127.0.0.1 unless you set a *_BIND_IP
-cp .env.example .env
-docker compose up -d db
-
-# 2. backend
-cd server
-npm install
-CONNECTION_KEY="a-long-random-secret" \
-INTROSPECT_ALLOW_HOSTS="" \
-npm start                      # compiles to dist/, then runs it: http://localhost:3001
-                               # (npm run dev restarts on file changes instead)
-
-# 3. editor (from the repository root)
-npm install
-cp .env.example .env           # VITE_QUBDI_BACKEND_URL=http://localhost:3001
-npm run dev
+docker compose logs -f server     # follow the server's log
+docker compose down               # stop; your data stays in the postgres-data volume
+docker compose up -d --build      # start again, or after `git pull` to update
+docker compose down -v            # stop AND delete all data
 ```
 
-Without `VITE_QUBDI_BACKEND_URL` the editor runs in local-only mode and shows no account UI.
-Schema lint works either way.
+Services listen on `127.0.0.1` only. To reach them from other machines, set the `*_BIND_IP` values in `.env`, and put your public addresses in `CORS_ORIGIN` (the editor's address) and `QUBDI_BACKEND_URL` (the server's address). See [Configuration](#configuration).
+
+### Option B: Docker, with your own existing PostgreSQL
+
+QubdiDB then does not start a database of its own. You need PostgreSQL 16 or newer.
+
+1. **Create an empty database and a role that owns it**, on your PostgreSQL:
+
+   ```sql
+   CREATE ROLE qubdidb LOGIN PASSWORD 'choose-a-password';
+   CREATE DATABASE qubdidb OWNER qubdidb;
+   ```
+
+   That is all it needs. The server creates its own tables when it starts (in `public`, plus a `drizzle` schema that records which migrations ran), so the role does not have to be a superuser and no extension is required.
+
+2. **Make sure the server container can reach it.** Inside a container `localhost` is the container itself, so name the database by an address the container can use:
+
+   - on the same computer as Docker Desktop (Windows, macOS): `host.docker.internal`;
+   - on the same Linux computer: the host's address on the Docker network (often `172.17.0.1`), and let PostgreSQL listen on it (`listen_addresses`) and accept it (`pg_hba.conf`);
+   - on another machine: its name or IP, with the port open to this machine.
+
+3. **Get the code and create your settings file.**
+
+   ```bash
+   git clone https://github.com/Qubdi/QubdiDB.git
+   cd QubdiDB
+   cp .env.example .env
+   ```
+
+4. **Point `.env` at your database.**
+
+   ```bash
+   POSTGRES_HOST=host.docker.internal    # or the name or IP from step 2
+   POSTGRES_PORT=5432
+   POSTGRES_USER=qubdidb
+   POSTGRES_PASSWORD=choose-a-password
+   POSTGRES_DB=qubdidb
+   CONNECTION_KEY=<a secret>             # at least 16 characters
+   ```
+
+   Use a password of plain letters and digits: Compose pastes it into the connection address as it is, so `@ : / ? # %` would break it.
+
+5. **Start only the server and the editor.** `--no-deps` is what keeps the bundled database from starting.
+
+   ```bash
+   docker compose up -d --build --no-deps server ui
+   ```
+
+6. **Check it.**
+
+   ```bash
+   docker compose logs server        # contains: QubdiDB server listening on :3001
+   curl http://localhost:3001/health # {"ok":true}
+   ```
+
+   If the server stops at start, the reason is in that log:
+
+   | The log says | Usually |
+   | --- | --- |
+   | `password authentication failed` | wrong `POSTGRES_USER` or `POSTGRES_PASSWORD` |
+   | `ECONNREFUSED`, or a timeout | the host or port cannot be reached from the container (step 2, a firewall, `pg_hba.conf`) |
+   | `database "qubdidb" does not exist` | step 1 was skipped, or `POSTGRES_DB` is spelled differently |
+   | `permission denied` | the role does not own the database (`ALTER DATABASE qubdidb OWNER TO qubdidb;`) |
+
+7. **Open the editor** at <http://localhost:8080> and create the first account, as in Option A.
+
+The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the connection address from the five values above. If your database requires SSL, use Option C with `?sslmode=require` on `DATABASE_URL`.
+
+### Option C: from source, for development
+
+1. **Check Node:** `node -v` should say 24 (`nvm use` reads `.nvmrc`).
+
+2. **Get a database.** Either start the bundled one:
+
+   ```bash
+   git clone https://github.com/Qubdi/QubdiDB.git
+   cd QubdiDB
+   cp .env.example .env              # set POSTGRES_PASSWORD and CONNECTION_KEY in it (Compose needs both)
+   docker compose up -d db           # PostgreSQL on localhost:5433
+   ```
+
+   or use your own, created as in step 1 of Option B.
+
+3. **Start the server.**
+
+   ```bash
+   cd server
+   npm install
+   cp .env.example .env
+   ```
+
+   Edit `server/.env`:
+
+   - `DATABASE_URL`: for the bundled database `postgres://qubdidb:<POSTGRES_PASSWORD>@localhost:5433/qubdidb`; for yours, its own address. Write special characters in the password as `%`-escapes, and add `?sslmode=require` if it needs SSL.
+   - `CONNECTION_KEY`: a secret of at least 16 characters (needed to save database connections).
+   - leave `CORS_ORIGIN=http://localhost:5173`: that is where the editor runs in the next step.
+
+   ```bash
+   npm run dev                       # restarts on changes; `npm start` builds and runs once
+   curl http://localhost:3001/health # {"ok":true}
+   ```
+
+   The server reads `server/.env` itself; a variable set in your shell wins over the file.
+
+4. **Start the editor**, from the repository root in a second terminal:
+
+   ```bash
+   npm install
+   npm run dev                       # http://localhost:5173
+   ```
+
+   `.env` from step 2 already has `VITE_QUBDI_BACKEND_URL=http://localhost:3001`. Without that setting the editor runs in local-only mode and shows no account screens (schema lint works either way).
+
+5. **Open <http://localhost:5173>** and create the first account: it becomes the administrator.
 
 ### Configuration
 
 All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 
-- Repository root `.env` (copy `.env.example`): read by `docker compose` and by the editor build. It holds the core database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`), where it runs (`POSTGRES_HOST`, `POSTGRES_PORT`; point them at another machine to use an existing Postgres), the secrets, and the bind address and port of each service (`*_BIND_IP`, `*_PUBLISH_PORT` / `*_PORT`), and the editor's `QUBDI_BACKEND_URL` (read in the browser at run time, so changing it needs no rebuild; `VITE_QUBDI_BACKEND_URL` is the same setting for `npm run dev`) and `VITE_HOST_URL` (public URL for canonical links; unset = none).
+- Repository root `.env` (copy `.env.example`): read by `docker compose` and by the editor build. It holds the core database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`), where it runs (`POSTGRES_HOST`, `POSTGRES_PORT`; point them at another machine to use an existing Postgres, see Option B), the secrets, and the bind address and port of each service (`*_BIND_IP`, `*_PUBLISH_PORT` / `*_PORT`), and the editor's `QUBDI_BACKEND_URL` (read in the browser at run time, so changing it needs no rebuild; `VITE_QUBDI_BACKEND_URL` is the same setting for `npm run dev`) and `VITE_HOST_URL` (public URL for canonical links; unset = none).
 - `server/.env` (copy `server/.env.example`): read by the backend when run outside Docker.
 
 ### Backend settings
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `DATABASE_URL` | `postgres://qubdidb:qubdidb@localhost:5433/qubdidb` | Where QubdiDB stores its own data |
-| `HOST` | `0.0.0.0` | Interface the server listens on |
+| `DATABASE_URL` | none, required | Where QubdiDB stores its own data |
+| `HOST` | `127.0.0.1` (`0.0.0.0` in the Docker image) | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
 | `CONNECTION_KEY` | unset | Encrypts saved database passwords and the tokens of active share links (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it; without it a share link's URL is shown only once, when it is created or regenerated |
@@ -133,10 +286,12 @@ cd server && npx vitest run    # backend (needs the database up with POSTGRES_PA
                                # the tests connect as qubdidb/qubdidb on port 5433)
 ```
 
-The SQL Server tests need the optional container and skip cleanly without it:
+The SQL Server tests need the optional container and skip cleanly without it. Choose a
+password of your own and give it to both the container and the tests:
 
 ```bash
-docker compose --profile mssql up -d mssql
+export MSSQL_SA_PASSWORD='<a strong password>'
+docker compose -f docker-compose.mssql.yml up -d
 ```
 
 ## Schema lint in CI
@@ -163,4 +318,4 @@ The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
   or put a limiter in front of it. Edit locks, sessions and everything else are in Postgres and
   are safe to share.
 
-QubdiDB is licensed under the AGPL-3.0, like the project it is forked from.
+QubdiDB is licensed under the AGPL-3.0.

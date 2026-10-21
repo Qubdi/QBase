@@ -182,6 +182,15 @@ export const introspectRoutes =
             };
         };
 
+        // typed-in credentials leave no other trace: record that someone read a
+        // database, and which one (never the user, database or password)
+        const auditRun = (userId: string, params: ConnectionParams) =>
+            audit(db, {
+                userId,
+                action: 'introspect.run',
+                meta: { dialect: params.dialect, host: params.host },
+            });
+
         /** Connects (after the SSRF check), runs `fn`, always closes. */
         const withIntrospector = async <T>(
             params: ConnectionParams,
@@ -228,6 +237,7 @@ export const introspectRoutes =
             const body = requestConnection.parse(req.body);
             const params = await resolveParams(body, req.user!.id, reply);
             if (!params) return;
+            await auditRun(req.user!.id, params);
             const schemas = await withIntrospector(params, reply, (i) =>
                 i.catalog()
             );
@@ -243,6 +253,7 @@ export const introspectRoutes =
             const body = introspectBody.parse(req.body);
             const params = await resolveParams(body, req.user!.id, reply);
             if (!params) return;
+            await auditRun(req.user!.id, params);
             const metadata = await withIntrospector(params, reply, (i) =>
                 i.introspect({ schemas: body.schemas ?? [] })
             );
@@ -369,13 +380,19 @@ export const introspectRoutes =
                 return;
             }
             // Pointing the connection somewhere else would send the stored
-            // password to a host the editor chose, and show it to them. So a
-            // new host, port or dialect needs the password typed again.
+            // password to a host the editor chose, and show it to them. The same
+            // goes for another account or database on that host, and for turning
+            // off the checks on the connection. So any of these needs the
+            // password typed again.
             const movesTarget =
                 body.dialect !== conn.dialect ||
                 body.host.trim().toLowerCase() !==
                     conn.host.trim().toLowerCase() ||
-                (body.port ?? DEFAULT_PORTS[body.dialect]) !== conn.port;
+                (body.port ?? DEFAULT_PORTS[body.dialect]) !== conn.port ||
+                body.user !== conn.username ||
+                body.database !== conn.database ||
+                body.ssl !== conn.ssl ||
+                body.trustServerCertificate !== conn.trustServerCertificate;
             if (movesTarget && body.password === undefined) {
                 return reply.code(400).send({ error: 'password_required' });
             }

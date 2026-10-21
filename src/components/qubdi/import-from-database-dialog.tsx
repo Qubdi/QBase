@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     Dialog,
     DialogContent,
@@ -58,6 +59,7 @@ const emptyForm = {
 export const ImportFromDatabaseDialog: React.FC<
     ImportFromDatabaseDialogProps
 > = ({ open, onOpenChange, projectId, projectSlug }) => {
+    const { t } = useTranslation();
     const { addDiagram } = useStorage();
     const { syncDiagram } = useQubdi();
     const navigate = useNavigate();
@@ -205,13 +207,16 @@ export const ImportFromDatabaseDialog: React.FC<
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-lg" showClose>
                 <DialogHeader>
-                    <DialogTitle>Import from database</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.database.importFromDb.title')}
+                    </DialogTitle>
                     <DialogDescription>
                         {step === 'connect' &&
-                            'Connect read-only to read the schema. Credentials are used for this request only unless you save the connection.'}
+                            t('qubdi.database.importFromDb.descriptionConnect')}
                         {step === 'select' &&
-                            'Choose the schemas and tables to import.'}
-                        {step === 'preview' && 'Review what will be created.'}
+                            t('qubdi.database.importFromDb.descriptionSelect')}
+                        {step === 'preview' &&
+                            t('qubdi.database.importFromDb.descriptionPreview')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -223,7 +228,9 @@ export const ImportFromDatabaseDialog: React.FC<
                     >
                         {saved.length > 0 ? (
                             <OptionSelect
-                                aria-label="Saved connection"
+                                aria-label={t(
+                                    'qubdi.database.importFromDb.savedConnection'
+                                )}
                                 value={savedId}
                                 onValueChange={(id) => {
                                     setSavedId(id);
@@ -243,7 +250,12 @@ export const ImportFromDatabaseDialog: React.FC<
                                     }
                                 }}
                                 options={[
-                                    { value: '', label: 'New connection' },
+                                    {
+                                        value: '',
+                                        label: t(
+                                            'qubdi.database.importFromDb.newConnection'
+                                        ),
+                                    },
                                     ...saved.map((s) => ({
                                         value: s.id,
                                         label: s.name,
@@ -253,7 +265,9 @@ export const ImportFromDatabaseDialog: React.FC<
                         ) : null}
                         <div className="flex gap-2">
                             <OptionSelect
-                                aria-label="Database type"
+                                aria-label={t(
+                                    'qubdi.database.importFromDb.dialectLabel'
+                                )}
                                 className="w-40 shrink-0"
                                 value={form.dialect}
                                 disabled={!!savedId}
@@ -274,8 +288,12 @@ export const ImportFromDatabaseDialog: React.FC<
                                 ]}
                             />
                             <Input
-                                placeholder="Host"
-                                aria-label="Host"
+                                placeholder={t(
+                                    'qubdi.database.importFromDb.host'
+                                )}
+                                aria-label={t(
+                                    'qubdi.database.importFromDb.host'
+                                )}
                                 value={form.host}
                                 disabled={!!savedId}
                                 onChange={(e) => set('host', e.target.value)}
@@ -283,8 +301,12 @@ export const ImportFromDatabaseDialog: React.FC<
                             />
                             <Input
                                 className="w-24"
-                                placeholder="Port"
-                                aria-label="Port"
+                                placeholder={t(
+                                    'qubdi.database.importFromDb.port'
+                                )}
+                                aria-label={t(
+                                    'qubdi.database.importFromDb.port'
+                                )}
                                 inputMode="numeric"
                                 value={form.port}
                                 disabled={!!savedId}
@@ -292,16 +314,20 @@ export const ImportFromDatabaseDialog: React.FC<
                             />
                         </div>
                         <Input
-                            placeholder="Database"
-                            aria-label="Database"
+                            placeholder={t(
+                                'qubdi.database.importFromDb.database'
+                            )}
+                            aria-label={t(
+                                'qubdi.database.importFromDb.database'
+                            )}
                             value={form.database}
                             disabled={!!savedId}
                             onChange={(e) => set('database', e.target.value)}
                             required
                         />
                         <Input
-                            placeholder="User"
-                            aria-label="User"
+                            placeholder={t('qubdi.database.importFromDb.user')}
+                            aria-label={t('qubdi.database.importFromDb.user')}
                             autoComplete="off"
                             value={form.user}
                             disabled={!!savedId}
@@ -312,10 +338,14 @@ export const ImportFromDatabaseDialog: React.FC<
                             type="password"
                             placeholder={
                                 savedId
-                                    ? 'Password (leave empty to use the saved one)'
-                                    : 'Password'
+                                    ? t(
+                                          'qubdi.database.importFromDb.passwordSaved'
+                                      )
+                                    : t('qubdi.database.importFromDb.password')
                             }
-                            aria-label="Password"
+                            aria-label={t(
+                                'qubdi.database.importFromDb.password'
+                            )}
                             autoComplete="new-password"
                             value={form.password}
                             onChange={(e) => set('password', e.target.value)}
@@ -331,7 +361,7 @@ export const ImportFromDatabaseDialog: React.FC<
                                         set('ssl', e.target.checked)
                                     }
                                 />
-                                Use SSL / TLS
+                                {t('qubdi.database.importFromDb.ssl')}
                             </label>
                             <label className="flex items-center gap-2">
                                 <input
@@ -345,13 +375,19 @@ export const ImportFromDatabaseDialog: React.FC<
                                         )
                                     }
                                 />
-                                Trust server certificate
+                                {t(
+                                    'qubdi.database.importFromDb.trustCertificate'
+                                )}
                             </label>
                         </div>
                         {!savedId ? (
                             <Input
-                                placeholder="Save this connection as… (optional)"
-                                aria-label="Save connection as"
+                                placeholder={t(
+                                    'qubdi.database.importFromDb.saveAsPlaceholder'
+                                )}
+                                aria-label={t(
+                                    'qubdi.database.importFromDb.saveAsLabel'
+                                )}
                                 value={form.saveAs}
                                 onChange={(e) => set('saveAs', e.target.value)}
                             />
@@ -362,7 +398,9 @@ export const ImportFromDatabaseDialog: React.FC<
                             </p>
                         ) : null}
                         <Button type="submit" disabled={busy}>
-                            {busy ? 'Connecting…' : 'Connect'}
+                            {busy
+                                ? t('qubdi.database.importFromDb.connecting')
+                                : t('qubdi.database.importFromDb.connect')}
                         </Button>
                     </form>
                 ) : null}
@@ -372,7 +410,7 @@ export const ImportFromDatabaseDialog: React.FC<
                         <div className="flex max-h-72 flex-col gap-3 overflow-y-auto">
                             {catalog.schemas.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">
-                                    No tables found in this database.
+                                    {t('qubdi.database.importFromDb.noTables')}
                                 </p>
                             ) : null}
                             {catalog.schemas.map((s) => {
@@ -393,7 +431,12 @@ export const ImportFromDatabaseDialog: React.FC<
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
-                                                    aria-label={`Schema ${s.schema}`}
+                                                    aria-label={t(
+                                                        'qubdi.database.importFromDb.schemaAria',
+                                                        {
+                                                            schema: s.schema,
+                                                        }
+                                                    )}
                                                     checked={keys.every((k) =>
                                                         selected.has(k)
                                                     )}
@@ -429,7 +472,9 @@ export const ImportFromDatabaseDialog: React.FC<
                                                                         1
                                                                 )
                                                             )
-                                                                ? ' (view)'
+                                                                ? t(
+                                                                      'qubdi.database.importFromDb.viewSuffix'
+                                                                  )
                                                                 : ''}
                                                         </span>
                                                     </label>
@@ -445,13 +490,13 @@ export const ImportFromDatabaseDialog: React.FC<
                                 variant="ghost"
                                 onClick={() => setStep('connect')}
                             >
-                                Back
+                                {t('qubdi.database.importFromDb.back')}
                             </Button>
                             <Button
                                 disabled={summary.tables + summary.views === 0}
                                 onClick={() => setStep('preview')}
                             >
-                                Next
+                                {t('qubdi.database.importFromDb.next')}
                             </Button>
                         </div>
                     </div>
@@ -460,20 +505,37 @@ export const ImportFromDatabaseDialog: React.FC<
                 {step === 'preview' && catalog ? (
                     <div className="flex flex-col gap-3">
                         <Input
-                            aria-label="Diagram name"
+                            aria-label={t(
+                                'qubdi.database.importFromDb.diagramName'
+                            )}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                         />
                         <p className="text-sm" data-testid="db-import-summary">
-                            {summary.tables} table
-                            {summary.tables === 1 ? '' : 's'}
-                            {summary.views > 0
-                                ? ` and ${summary.views} view${summary.views === 1 ? '' : 's'}`
-                                : ''}{' '}
-                            from {summary.schemas.length} schema
-                            {summary.schemas.length === 1 ? '' : 's'} (
-                            {summary.schemas.join(', ')}). Relationships between
-                            the selected tables are imported too.
+                            {t('qubdi.database.importFromDb.summary', {
+                                tables: t(
+                                    'qubdi.database.importFromDb.tables',
+                                    {
+                                        count: summary.tables,
+                                    }
+                                ),
+                                views:
+                                    summary.views > 0
+                                        ? t(
+                                              'qubdi.database.importFromDb.views',
+                                              {
+                                                  count: summary.views,
+                                              }
+                                          )
+                                        : '',
+                                schemas: t(
+                                    'qubdi.database.importFromDb.schemas',
+                                    {
+                                        count: summary.schemas.length,
+                                    }
+                                ),
+                                list: summary.schemas.join(', '),
+                            })}
                         </p>
                         {error ? (
                             <p role="alert" className="text-sm text-red-500">
@@ -485,13 +547,15 @@ export const ImportFromDatabaseDialog: React.FC<
                                 variant="ghost"
                                 onClick={() => setStep('select')}
                             >
-                                Back
+                                {t('qubdi.database.importFromDb.back')}
                             </Button>
                             <Button
                                 disabled={busy}
                                 onClick={() => void create()}
                             >
-                                {busy ? 'Creating…' : 'Create diagram'}
+                                {busy
+                                    ? t('qubdi.database.importFromDb.creating')
+                                    : t('qubdi.database.importFromDb.create')}
                             </Button>
                         </div>
                     </div>

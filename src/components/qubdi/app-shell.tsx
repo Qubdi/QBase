@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { KeyRound, LogOut, ShieldCheck, UserRound } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import {
@@ -23,6 +24,7 @@ import { SignInPrompt } from './sign-in-prompt';
  * They need a signed-in user, so it handles loading and the sign-in prompt.
  */
 export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
+    const { t } = useTranslation();
     const { enabled, user, logout } = useQubdi();
     const navigate = useNavigate();
     const [passwordOpen, setPasswordOpen] = useState(false);
@@ -43,7 +45,7 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
                                 onClick={() => navigate('/admin')}
                             >
                                 <ShieldCheck className="size-4" />
-                                Admin
+                                {t('qubdi.account.accountMenu.admin')}
                             </Button>
                         ) : null}
                         <DropdownMenu>
@@ -62,18 +64,24 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>
                                     {user.email}
-                                    {user.isAdmin ? ' (admin)' : ''}
+                                    {user.isAdmin
+                                        ? t(
+                                              'qubdi.account.accountMenu.adminSuffix'
+                                          )
+                                        : ''}
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     onClick={() => setPasswordOpen(true)}
                                 >
                                     <KeyRound className="mr-2 size-4" />
-                                    Change password
+                                    {t(
+                                        'qubdi.account.accountMenu.changePassword'
+                                    )}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => void logout()}>
                                     <LogOut className="mr-2 size-4" />
-                                    Sign out
+                                    {t('qubdi.account.accountMenu.signOut')}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -83,8 +91,7 @@ export const AppShell: React.FC<React.PropsWithChildren> = ({ children }) => {
 
             {!enabled ? (
                 <p className="m-auto max-w-sm px-4 text-center text-muted-foreground">
-                    Projects need a QubdiDB server. Set VITE_QUBDI_BACKEND_URL
-                    and sign in to use them.
+                    {t('qubdi.account.appShell.needsServer')}
                 </p>
             ) : user === undefined ? (
                 <Spinner size="large" className="m-auto text-primary" />

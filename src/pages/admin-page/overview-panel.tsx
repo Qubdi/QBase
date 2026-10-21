@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import {
@@ -8,7 +9,7 @@ import {
     type ActivityItem,
     type AdminStats,
 } from '@/lib/qubdi/api';
-import { compactNumber, plural, viewerTimeZone } from '@/lib/qubdi/overview';
+import { compactNumber, viewerTimeZone } from '@/lib/qubdi/overview';
 import { cn } from '@/lib/utils';
 import { ActivityChart } from './activity-chart';
 import { ActivitySentence } from './activity-sentence';
@@ -32,6 +33,7 @@ const dayOf = (iso: string) =>
 
 /** Totals, a week of activity and the latest events: where an admin starts. */
 export const OverviewPanel: React.FC = () => {
+    const { t } = useTranslation();
     const timeZone = useMemo(viewerTimeZone, []);
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [recent, setRecent] = useState<ActivityItem[] | null>(null);
@@ -80,7 +82,9 @@ export const OverviewPanel: React.FC = () => {
             <div className="flex items-center justify-between gap-2">
                 <p className="text-sm text-muted-foreground" aria-live="polite">
                     {updatedAt
-                        ? `Updated ${timeOf(updatedAt.toISOString())}`
+                        ? t('qubdi.adminProjects.overview.updated', {
+                              time: timeOf(updatedAt.toISOString()),
+                          })
                         : ''}
                 </p>
                 <Button
@@ -93,13 +97,15 @@ export const OverviewPanel: React.FC = () => {
                     <RefreshCw
                         className={cn('size-4', loading && 'animate-spin')}
                     />
-                    Refresh
+                    {t('qubdi.adminProjects.overview.refresh')}
                 </Button>
             </div>
 
             {statsError ? (
                 <p role="alert" className="text-sm text-destructive">
-                    The figures could not be loaded: {statsError}
+                    {t('qubdi.adminProjects.overview.figuresError', {
+                        error: statsError,
+                    })}
                 </p>
             ) : null}
 
@@ -107,7 +113,9 @@ export const OverviewPanel: React.FC = () => {
                 statsError ? null : (
                     <div
                         aria-busy
-                        aria-label="Loading the figures"
+                        aria-label={t(
+                            'qubdi.adminProjects.overview.loadingFigures'
+                        )}
                         className="grid grid-cols-2 gap-3 md:grid-cols-3"
                     >
                         {Array.from({ length: 6 }, (_, i) => (
@@ -128,40 +136,67 @@ export const OverviewPanel: React.FC = () => {
                 >
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                         <StatTile
-                            label="Users"
+                            label={t('qubdi.adminProjects.overview.tileUsers')}
                             value={stats.users.total}
                             details={[
-                                `${compactNumber(stats.users.active)} active`,
-                                plural(stats.users.admins, 'admin'),
-                                `${compactNumber(stats.users.signedIn)} signed in now`,
+                                t('qubdi.adminProjects.overview.usersActive', {
+                                    value: compactNumber(stats.users.active),
+                                }),
+                                t('qubdi.adminProjects.overview.admins', {
+                                    count: stats.users.admins,
+                                    formatted: compactNumber(
+                                        stats.users.admins
+                                    ),
+                                }),
+                                t(
+                                    'qubdi.adminProjects.overview.usersSignedIn',
+                                    {
+                                        value: compactNumber(
+                                            stats.users.signedIn
+                                        ),
+                                    }
+                                ),
                             ]}
                             to={adminPath('users')}
                         />
                         <StatTile
-                            label="Projects"
+                            label={t(
+                                'qubdi.adminProjects.overview.tileProjects'
+                            )}
                             value={stats.projects}
                             to={adminPath('projects')}
                         />
                         <StatTile
-                            label="Diagrams"
+                            label={t(
+                                'qubdi.adminProjects.overview.tileDiagrams'
+                            )}
                             value={stats.diagrams.total}
                             details={[
-                                `${compactNumber(stats.diagrams.published)} published`,
+                                t(
+                                    'qubdi.adminProjects.overview.diagramsPublished',
+                                    {
+                                        value: compactNumber(
+                                            stats.diagrams.published
+                                        ),
+                                    }
+                                ),
                             ]}
                             to={adminPath('diagrams')}
                         />
                         <StatTile
-                            label="Share links open"
+                            label={t('qubdi.adminProjects.overview.tileLinks')}
                             value={stats.activeLinks}
                             to={adminPath('diagrams')}
                         />
                         <StatTile
-                            label="Being edited now"
+                            label={t(
+                                'qubdi.adminProjects.overview.tileEditing'
+                            )}
                             value={stats.editingNow}
                             to={adminPath('diagrams')}
                         />
                         <StatTile
-                            label="Drift checks, last 24 hours"
+                            label={t('qubdi.adminProjects.overview.tileDrift')}
                             value={stats.driftChecks24h}
                             to={adminPath('activity')}
                         />
@@ -180,11 +215,11 @@ export const OverviewPanel: React.FC = () => {
                         id="recent-activity-title"
                         className="font-primary text-base font-semibold"
                     >
-                        Latest activity
+                        {t('qubdi.adminProjects.overview.latestTitle')}
                     </h2>
                     <Button asChild variant="ghost" size="sm">
                         <Link to={adminPath('activity')}>
-                            See all activity
+                            {t('qubdi.adminProjects.overview.seeAll')}
                             <ArrowRight className="size-4" />
                         </Link>
                     </Button>
@@ -192,13 +227,17 @@ export const OverviewPanel: React.FC = () => {
 
                 {recentError ? (
                     <p role="alert" className="text-sm text-destructive">
-                        The latest activity could not be loaded: {recentError}
+                        {t('qubdi.adminProjects.overview.latestError', {
+                            error: recentError,
+                        })}
                     </p>
                 ) : recent === null ? (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
+                    <p className="text-sm text-muted-foreground">
+                        {t('qubdi.adminProjects.overview.loading')}
+                    </p>
                 ) : recent.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                        Nothing has happened yet.
+                        {t('qubdi.adminProjects.overview.nothing')}
                     </p>
                 ) : (
                     <ul
@@ -218,7 +257,13 @@ export const OverviewPanel: React.FC = () => {
                                     title={new Date(item.at).toLocaleString()}
                                     className="shrink-0 text-xs text-muted-foreground"
                                 >
-                                    {dayOf(item.at)}, {timeOf(item.at)}
+                                    {t(
+                                        'qubdi.adminProjects.overview.dayAndTime',
+                                        {
+                                            day: dayOf(item.at),
+                                            time: timeOf(item.at),
+                                        }
+                                    )}
                                 </time>
                             </li>
                         ))}

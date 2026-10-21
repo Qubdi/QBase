@@ -2,6 +2,7 @@ import '@testing-library/jest-dom';
 import { expect, afterEach } from 'vitest';
 import { cleanup, configure } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { i18nReady } from '../i18n/i18n';
 
 expect.extend(matchers);
 
@@ -10,6 +11,9 @@ expect.extend(matchers);
 // the list under it) can take longer than that on a busy machine. Waiting
 // longer costs nothing when the thing is there; it only matters when it is not.
 configure({ asyncUtilTimeout: 5000 });
+
+// the screens are tested against their English text, as people read it
+await i18nReady;
 
 afterEach(() => {
     cleanup();

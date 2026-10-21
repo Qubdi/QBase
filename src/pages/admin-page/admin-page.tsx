@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Logo } from '@/components/logo/logo';
@@ -15,32 +16,42 @@ import { sectionForPath } from './admin-sections';
 const Shell: React.FC<React.PropsWithChildren<{ title?: string }>> = ({
     title,
     children,
-}) => (
-    <section className="flex min-h-screen w-full flex-col bg-background">
-        <Helmet>
-            <title>
-                {title ? `QubdiDB - Admin - ${title}` : 'QubdiDB - Admin'}
-            </title>
-        </Helmet>
-        <nav className="flex h-12 items-center justify-between bg-background/80 px-4 backdrop-blur">
-            <Link to="/" className="flex h-full items-center">
-                <Logo />
-            </Link>
-            <Button asChild variant="outline" size="sm">
-                <Link to="/">Back to editor</Link>
-            </Button>
-        </nav>
-        {children}
-        <PageFooter />
-        <Toaster />
-    </section>
-);
+}) => {
+    const { t } = useTranslation();
+    return (
+        <section className="flex min-h-screen w-full flex-col bg-background">
+            <Helmet>
+                <title>
+                    {title
+                        ? t('qubdi.adminUsers.shell.titleWithSection', {
+                              section: title,
+                          })
+                        : t('qubdi.adminUsers.shell.title')}
+                </title>
+            </Helmet>
+            <nav className="flex h-12 items-center justify-between bg-background/80 px-4 backdrop-blur">
+                <Link to="/" className="flex h-full items-center">
+                    <Logo />
+                </Link>
+                <Button asChild variant="outline" size="sm">
+                    <Link to="/">
+                        {t('qubdi.adminUsers.shell.backToEditor')}
+                    </Link>
+                </Button>
+            </nav>
+            {children}
+            <PageFooter />
+            <Toaster />
+        </section>
+    );
+};
 
 /**
  * The admin panel's frame: the sections on the left (a row on small screens),
  * the section's title, and the section itself in the outlet.
  */
 export const AdminLayout: React.FC = () => {
+    const { t } = useTranslation();
     const { enabled, user } = useQubdi();
     const { pathname } = useLocation();
     const section = sectionForPath(pathname);
@@ -62,7 +73,7 @@ export const AdminLayout: React.FC = () => {
                         404
                     </h1>
                     <p className="mt-3 text-muted-foreground">
-                        Sorry, we can&apos;t find that page.
+                        {t('qubdi.adminUsers.shell.notFound')}
                     </p>
                 </div>
             </Shell>

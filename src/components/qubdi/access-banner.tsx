@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/button/button';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { useDiagram } from '@/hooks/use-diagram';
@@ -11,10 +12,12 @@ import { GetLatestDialog } from './get-latest-control';
 
 /** Explains why the open diagram is read-only and, if it can, how to fix it. */
 export const AccessBanner: React.FC = () => {
+    const { t } = useTranslation();
     const { access, refresh } = useDiagramAccess();
     const { syncDiagram, user } = useQubdi();
     const { currentDiagram } = useDiagram();
     const [projects, setProjects] = useState<MyProject[]>([]);
+    const [projectName, setProjectName] = useState<string | undefined>();
     const [choice, setChoice] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -26,21 +29,33 @@ export const AccessBanner: React.FC = () => {
             ? access.projectId
             : undefined;
 
+    // the projects to choose from when moving a diagram into one
     useEffect(() => {
-        if (!unbound && !projectId) return;
+        if (!unbound) return;
         api.listProjects({ limit: 100 })
             .then((page) => setProjects(page.items))
             .catch(() => setProjects([]));
-    }, [unbound, projectId]);
+    }, [unbound]);
+
+    // the diagram's own project, by id: it may be beyond the first page of projects
+    useEffect(() => {
+        if (!projectId) {
+            setProjectName(undefined);
+            return;
+        }
+        let cancelled = false;
+        api.getProject(projectId)
+            .then((project) => !cancelled && setProjectName(project.name))
+            .catch(() => !cancelled && setProjectName(undefined));
+        return () => {
+            cancelled = true;
+        };
+    }, [projectId]);
 
     if (!isLocked(access)) return null;
 
     const writable = projects.filter((p) => p.role !== 'viewer');
-    const reason = lockedReason(
-        access,
-        projects.find((p) => p.id === projectId)?.name,
-        user?.email
-    );
+    const reason = lockedReason(access, projectName, user?.email);
 
     if (!reason) return null;
 
@@ -68,7 +83,7 @@ export const AccessBanner: React.FC = () => {
             {access.status === 'taken' ? (
                 <>
                     <Button size="sm" onClick={() => setLatestOpen(true)}>
-                        Get latest and edit
+                        {t('qubdi.workspace.accessBanner.getLatest')}
                     </Button>
                     <GetLatestDialog
                         open={latestOpen}
@@ -81,8 +96,10 @@ export const AccessBanner: React.FC = () => {
                     <OptionSelect
                         size="sm"
                         className="w-56"
-                        aria-label="Project to move this diagram into"
-                        placeholder="Choose a project…"
+                        aria-label={t('qubdi.workspace.accessBanner.moveAria')}
+                        placeholder={t(
+                            'qubdi.workspace.accessBanner.choosePlaceholder'
+                        )}
                         value={choice}
                         onValueChange={setChoice}
                         options={writable.map((p) => ({
@@ -95,13 +112,13 @@ export const AccessBanner: React.FC = () => {
                         disabled={!choice || busy}
                         onClick={() => void move()}
                     >
-                        Move into project
+                        {t('qubdi.workspace.accessBanner.move')}
                     </Button>
                 </span>
             ) : null}
             {unbound && writable.length === 0 && projects.length === 0 ? (
                 <span className="text-muted-foreground">
-                    Ask an admin to add you to a project.
+                    {t('qubdi.workspace.accessBanner.askAdmin')}
                 </span>
             ) : null}
             {error ? (

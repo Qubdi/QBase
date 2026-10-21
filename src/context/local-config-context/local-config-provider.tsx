@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import type { ScrollAction } from './local-config-context';
 import { LocalConfigContext } from './local-config-context';
 import type { Theme } from '../theme-context/theme-context';
+import { readStored, writeStored } from './stored';
 
 const themeKey = 'theme';
 const scrollActionKey = 'scroll_action';
@@ -15,60 +16,57 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
     const [theme, setTheme] = React.useState<Theme>(
-        (localStorage.getItem(themeKey) as Theme) || 'system'
+        (readStored(themeKey) as Theme) || 'system'
     );
 
     const [scrollAction, setScrollAction] = React.useState<ScrollAction>(
-        (localStorage.getItem(scrollActionKey) as ScrollAction) || 'pan'
+        (readStored(scrollActionKey) as ScrollAction) || 'pan'
     );
 
     const [showDBViews, setShowDBViews] = React.useState<boolean>(
-        (localStorage.getItem(showDBViewsKey) || 'false') === 'true'
+        (readStored(showDBViewsKey) || 'false') === 'true'
     );
 
     const [showCardinality, setShowCardinality] = React.useState<boolean>(
-        (localStorage.getItem(showCardinalityKey) || 'true') === 'true'
+        (readStored(showCardinalityKey) || 'true') === 'true'
     );
 
     const [showFieldAttributes, setShowFieldAttributes] =
         React.useState<boolean>(
-            (localStorage.getItem(showFieldAttributesKey) || 'true') === 'true'
+            (readStored(showFieldAttributesKey) || 'true') === 'true'
         );
 
     const [compactTables, setCompactTables] = React.useState<boolean>(
-        (localStorage.getItem(compactTablesKey) || 'false') === 'true'
+        (readStored(compactTablesKey) || 'false') === 'true'
     );
 
     const [showMiniMapOnCanvas, setShowMiniMapOnCanvas] =
         React.useState<boolean>(
-            (localStorage.getItem(showMiniMapOnCanvasKey) || 'true') === 'true'
+            (readStored(showMiniMapOnCanvasKey) || 'true') === 'true'
         );
 
     useEffect(() => {
-        localStorage.setItem(compactTablesKey, compactTables.toString());
+        writeStored(compactTablesKey, compactTables.toString());
     }, [compactTables]);
 
     useEffect(() => {
-        localStorage.setItem(themeKey, theme);
+        writeStored(themeKey, theme);
     }, [theme]);
 
     useEffect(() => {
-        localStorage.setItem(scrollActionKey, scrollAction);
+        writeStored(scrollActionKey, scrollAction);
     }, [scrollAction]);
 
     useEffect(() => {
-        localStorage.setItem(showDBViewsKey, showDBViews.toString());
+        writeStored(showDBViewsKey, showDBViews.toString());
     }, [showDBViews]);
 
     useEffect(() => {
-        localStorage.setItem(showCardinalityKey, showCardinality.toString());
+        writeStored(showCardinalityKey, showCardinality.toString());
     }, [showCardinality]);
 
     useEffect(() => {
-        localStorage.setItem(
-            showMiniMapOnCanvasKey,
-            showMiniMapOnCanvas.toString()
-        );
+        writeStored(showMiniMapOnCanvasKey, showMiniMapOnCanvas.toString());
     }, [showMiniMapOnCanvas]);
 
     return (

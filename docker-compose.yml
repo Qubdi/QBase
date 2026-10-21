@@ -4,7 +4,9 @@ name: qubdidb
 services:
   db:
     container_name: qubdidb-postgres
-    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    # built from the pinned image in db/postgres/Dockerfile, so it carries a tag
+    build: ./db/postgres
+    image: qubdidb-postgres:18-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-qubdidb}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}
@@ -25,6 +27,9 @@ services:
 
   server:
     container_name: qubdidb-server
+    # the server force-quits 10 s after SIGTERM; give it longer than Docker's default
+    # 10 s before SIGKILL so a clean shutdown is never cut off
+    stop_grace_period: 15s
     build:
       context: .
       dockerfile: server/Dockerfile
@@ -33,7 +38,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-qubdidb}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-qubdidb}
-      CONNECTION_KEY: ${CONNECTION_KEY:-}
+      CONNECTION_KEY: ${CONNECTION_KEY:?Set CONNECTION_KEY in .env (copy .env.example)}
       SECRETS_KEY: ${SECRETS_KEY:-}
       MFA_ENABLED: ${MFA_ENABLED:-true}
       MFA_WINDOW_STEPS: ${MFA_WINDOW_STEPS:-1}
@@ -43,6 +48,7 @@ services:
       # the rest of the server's settings (see server/.env.example); the
       # defaults here are the server's own
       SESSION_DAYS: ${SESSION_DAYS:-30}
+      SESSION_IDLE_DAYS: ${SESSION_IDLE_DAYS:-14}
       COOKIE_SECURE: ${COOKIE_SECURE:-auto}
       AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-20}
       AUTH_MAX_FAILURES: ${AUTH_MAX_FAILURES:-10}
@@ -59,6 +65,8 @@ services:
       DEAD_LINK_KEEP_DAYS: ${DEAD_LINK_KEEP_DAYS:-30}
       AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-365}
       SSE_MAX_PER_LINK: ${SSE_MAX_PER_LINK:-100}
+      SSE_MAX_PER_IP: ${SSE_MAX_PER_IP:-20}
+      SSE_HEARTBEAT_SECONDS: ${SSE_HEARTBEAT_SECONDS:-25}
       TRUST_PROXY: ${TRUST_PROXY:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DB_POOL_MAX: ${DB_POOL_MAX:-10}
@@ -71,6 +79,7 @@ services:
       context: .
       args:
         VITE_HOST_URL: ${VITE_HOST_URL:-}
+        VITE_APP_URL: ${VITE_APP_URL:-}
     environment:
       # read by the browser at run time through /config.js
       QUBDI_BACKEND_URL: ${QUBDI_BACKEND_URL:-http://localhost:3001}
@@ -78,18 +87,6 @@ services:
       - server
     ports:
       - "${UI_BIND_IP:-127.0.0.1}:${UI_PORT:-8080}:80"
-
-  # Optional: only needed to run the SQL Server introspection tests.
-  #   docker compose --profile mssql up -d mssql
-  mssql:
-    container_name: qubdidb-mssql
-    profiles: ["mssql"]
-    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:cf8f0ab2ebe61feec2eed2629061a07d247f791c2a8ddda74a4ac9f06a291718
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Qubdi_Strong_Pass1}
-    ports:
-      - "${MSSQL_BIND_IP:-127.0.0.1}:${MSSQL_PORT:-14333}:1433"
 
 volumes:
   postgres-data:

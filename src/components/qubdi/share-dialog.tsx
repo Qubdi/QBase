@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
     Dialog,
     DialogContent,
@@ -28,10 +30,11 @@ export interface ShareDialogProps {
 const DATE_INPUT_CLASS =
     'h-8 rounded-md border border-input bg-background px-2 text-xs shadow-xs transition-colors hover:border-muted-foreground/40 focus-visible:border-ring focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/30';
 
-const ACCESS_OPTIONS = [
-    { value: 'anyone', label: 'Anyone with the link' },
-    { value: 'signed_in', label: 'Signed-in users' },
-    { value: 'off', label: 'Off' },
+// a function, so the labels follow the language at render time
+const accessOptions = (t: TFunction) => [
+    { value: 'anyone', label: t('qubdi.workspace.share.accessAnyone') },
+    { value: 'signed_in', label: t('qubdi.workspace.share.accessSignedIn') },
+    { value: 'off', label: t('qubdi.workspace.share.accessOff') },
 ];
 
 /** datetime-local value <-> ISO string */
@@ -44,6 +47,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     onOpenChange,
     ensureRemoteId,
 }) => {
+    const { t } = useTranslation();
     const [remoteId, setRemoteId] = useState<string | null>(null);
     const [links, setLinks] = useState<RemoteShareLink[] | null>(null);
     // raw tokens exist only right after create/regenerate
@@ -55,6 +59,10 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         setLinks(await api.listShareLinks(id));
     }, []);
 
+    // the parent makes a new function each render: only opening starts a load
+    const ensureRef = useRef(ensureRemoteId);
+    ensureRef.current = ensureRemoteId;
+
     useEffect(() => {
         if (!open) return;
         setError(null);
@@ -62,15 +70,14 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         setLinks(null);
         void (async () => {
             try {
-                const id = await ensureRemoteId();
+                const id = await ensureRef.current();
                 setRemoteId(id);
                 await reload(id);
             } catch (e) {
                 setError(errorMessage(e));
             }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open]);
+    }, [open, reload]);
 
     // "Copied" is a brief confirmation, not a state the button stays in
     useEffect(() => {
@@ -97,7 +104,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             await navigator.clipboard.writeText(url);
             setCopied(linkId);
         } catch {
-            setError('Copy failed. Select the link and copy it manually.');
+            setError(t('qubdi.workspace.share.copyFailed'));
         }
     };
 
@@ -105,10 +112,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-lg" showClose>
                 <DialogHeader>
-                    <DialogTitle>Share</DialogTitle>
+                    <DialogTitle>
+                        {t('qubdi.workspace.share.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        Read-only links show the latest published version.
-                        Publish to update what viewers see.
+                        {t('qubdi.workspace.share.description')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -144,7 +152,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                     <div className="flex gap-2">
                                         <input
                                             readOnly
-                                            aria-label="Share URL"
+                                            aria-label={t(
+                                                'qubdi.workspace.share.urlLabel'
+                                            )}
                                             className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2"
                                             value={url}
                                             onFocus={(e) =>
@@ -156,23 +166,28 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                             onClick={() => void copy(l.id, url)}
                                         >
                                             {copied === l.id
-                                                ? 'Copied'
-                                                : 'Copy link'}
+                                                ? t(
+                                                      'qubdi.workspace.share.copied'
+                                                  )
+                                                : t(
+                                                      'qubdi.workspace.share.copy'
+                                                  )}
                                         </Button>
                                     </div>
                                 ) : (
                                     <span className="text-muted-foreground">
-                                        This link&apos;s URL cannot be shown
-                                        again. Regenerate it to get a new one.
+                                        {t('qubdi.workspace.share.urlHidden')}
                                     </span>
                                 )}
                                 <div className="flex flex-wrap items-center gap-3">
                                     <label className="flex items-center gap-1">
-                                        Access
+                                        {t('qubdi.workspace.share.access')}
                                         <OptionSelect
                                             size="sm"
                                             className="w-44"
-                                            aria-label="Who can open this link"
+                                            aria-label={t(
+                                                'qubdi.workspace.share.accessAria'
+                                            )}
                                             value={l.access}
                                             onValueChange={(v) =>
                                                 void run((id) =>
@@ -185,11 +200,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                                     )
                                                 )
                                             }
-                                            options={ACCESS_OPTIONS}
+                                            options={accessOptions(t)}
                                         />
                                     </label>
                                     <label className="flex items-center gap-1">
-                                        Expires
+                                        {t('qubdi.workspace.share.expires')}
                                         <input
                                             type="datetime-local"
                                             className={DATE_INPUT_CLASS}
@@ -228,7 +243,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                                 )
                                             }
                                         />
-                                        Live updates
+                                        {t('qubdi.workspace.share.live')}
                                     </label>
                                 </div>
                                 <div className="flex gap-2">
@@ -252,7 +267,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                             })
                                         }
                                     >
-                                        Regenerate
+                                        {t('qubdi.workspace.share.regenerate')}
                                     </Button>
                                 </div>
                             </>
@@ -275,7 +290,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                         })
                     }
                 >
-                    Create link
+                    {t('qubdi.workspace.share.create')}
                 </Button>
             </DialogContent>
         </Dialog>

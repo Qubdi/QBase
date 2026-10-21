@@ -10,7 +10,9 @@ export const AUDIT_ACTIONS = [
     'user.enable',
     'user.sign_out',
     'user.sign_in',
+    'user.logout',
     'user.sign_in_failed',
+    'user.password_check_failed',
     'user.password_change',
     'mfa.enable',
     'mfa.disable',
@@ -38,6 +40,7 @@ export const AUDIT_ACTIONS = [
     'drift.check',
     'drift.dismiss',
     'lint.configure',
+    'introspect.run',
     'audit.export',
 ] as const;
 
@@ -54,7 +57,7 @@ export const AUDIT_GROUPS = {
     projects: ['project.', 'connection.'],
     diagrams: ['diagram.'],
     sharing: ['share.'],
-    checks: ['drift.', 'lint.'],
+    checks: ['drift.', 'lint.', 'introspect.'],
     // an admin took a copy of the log
     exports: ['audit.'],
 } as const satisfies Record<string, readonly string[]>;
@@ -90,6 +93,9 @@ export interface AuditMeta {
     madeAt?: string;
     /** the project's name or the diagram's title, for when it no longer exists */
     name?: string;
+    /** introspect.run: the kind of database and the host it was read from */
+    dialect?: 'postgresql' | 'sqlserver';
+    host?: string;
     /** audit.export: how many rows the file held */
     rows?: number;
     /** user.update: what the admin changed */
