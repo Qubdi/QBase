@@ -1465,8 +1465,8 @@ export function generateDBMLFromDiagram(diagram: Diagram): DBMLExportResult {
             }) ?? [],
     } as Diagram);
 
-    let standard = '';
-    let inline = '';
+    let standard: string;
+    let inline: string;
     let baseScript = ''; // Define baseScript outside try
 
     // Use finalDiagramForExport.customTypes which should be DBCustomType[]

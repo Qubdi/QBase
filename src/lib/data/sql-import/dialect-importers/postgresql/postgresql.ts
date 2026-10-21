@@ -1814,7 +1814,7 @@ export async function fromPostgres(
                                 reference.table &&
                                 sourceColumns.length > 0
                             ) {
-                                let targetTable = '';
+                                let targetTable: string;
                                 let targetSchema = 'public';
                                 let targetColumns: string[] = [];
 

@@ -1176,7 +1176,8 @@ export async function fromMySQL(sqlContent: string): Promise<SQLParserResult> {
         console.error('Error in MySQL dump parser:', error);
 
         throw new Error(
-            `Error parsing MySQL dump: ${(error as Error).message}`
+            `Error parsing MySQL dump: ${(error as Error).message}`,
+            { cause: error }
         );
     }
 }

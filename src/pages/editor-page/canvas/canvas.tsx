@@ -184,7 +184,7 @@ const tableToTableNode = (
     // Always use absolute position for now
     const position = { x: table.x, y: table.y };
 
-    let hidden = false;
+    let hidden: boolean;
 
     if (forceShow) {
         hidden = false;

@@ -9,7 +9,6 @@
         "noEmit": true,
         "types": ["node"],
         "resolveJsonModule": true,
-        "baseUrl": ".",
         "paths": { "@/*": ["../src/*"] }
     },
     "include": ["src", "test", "scripts", "drizzle.config.ts", "vitest.config.ts"]

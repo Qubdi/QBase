@@ -804,7 +804,8 @@ export async function fromPostgresDump(
     } catch (error: unknown) {
         console.error('Error in PostgreSQL dump parser:', error);
         throw new Error(
-            `Error parsing PostgreSQL dump: ${(error as Error).message}`
+            `Error parsing PostgreSQL dump: ${(error as Error).message}`,
+            { cause: error }
         );
     }
 }

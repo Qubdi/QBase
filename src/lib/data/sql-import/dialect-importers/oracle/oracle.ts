@@ -186,9 +186,9 @@ function parseAlterTableAddConstraint(statements: string[]): SQLForeignKey[] {
 
             // Handle both schema.table and just table formats
             let sourceSchema = '';
-            let sourceTable = '';
+            let sourceTable: string;
             let targetSchema = '';
-            let targetTable = '';
+            let targetTable: string;
 
             // If second group is empty, first group is the table name
             if (!sourceTableIfSchema) {
@@ -320,7 +320,7 @@ function parseCreateTableManually(
     if (!tableMatch) return;
 
     let schema = '';
-    let tableName = '';
+    let tableName: string;
 
     // If we have two captures, first is schema, second is table
     if (tableMatch[2]) {
@@ -777,7 +777,7 @@ export async function fromOracle(sqlContent: string): Promise<SQLParserResult> {
         };
     } catch (error) {
         console.error('Error parsing Oracle DDL:', error);
-        throw new Error(`Error parsing Oracle DDL: ${error}`);
+        throw new Error(`Error parsing Oracle DDL: ${error}`, { cause: error });
     }
 }
 

@@ -57,7 +57,7 @@ export const generateDBFieldSuffix = (
         typeId?: string;
     } = {}
 ): string => {
-    let suffix = '';
+    let suffix: string;
 
     if (databaseType && forceExtended && typeId) {
         suffix = generateExtendedSuffix(field, databaseType, typeId);

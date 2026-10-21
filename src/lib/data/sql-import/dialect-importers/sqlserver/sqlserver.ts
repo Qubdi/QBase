@@ -313,9 +313,9 @@ function parseAlterTableAddConstraint(statements: string[]): SQLForeignKey[] {
 
             // Handle both schema.table and just table formats
             let sourceSchema = 'dbo';
-            let sourceTable = '';
+            let sourceTable: string;
             let targetSchema = 'dbo';
-            let targetTable = '';
+            let targetTable: string;
 
             // If second group is empty, first group is the table name
             if (!sourceTableIfSchema) {
@@ -992,7 +992,9 @@ export async function fromSQLServer(
         };
     } catch (error) {
         console.error('Error parsing SQL Server DDL:', error);
-        throw new Error(`Error parsing SQL Server DDL: ${error}`);
+        throw new Error(`Error parsing SQL Server DDL: ${error}`, {
+            cause: error,
+        });
     }
 }
 

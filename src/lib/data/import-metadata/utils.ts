@@ -156,7 +156,7 @@ export const fixMetadataJson = (metadataJson: string): string => {
 };
 
 export const isStringMetadataJson = (metadataJsonString: string): boolean => {
-    let result = false;
+    let result: boolean;
     try {
         const parsedResult = JSON.parse(metadataJsonString);
 

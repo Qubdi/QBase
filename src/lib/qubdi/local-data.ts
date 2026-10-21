@@ -55,7 +55,7 @@ export async function claimLocalData(
     userId: string,
     deleteDatabase?: Parameters<typeof clearLocalUserData>[0]
 ): Promise<boolean> {
-    let owner: string | null = null;
+    let owner: string | null;
     try {
         owner = localStorage.getItem(LOCAL_OWNER_KEY);
     } catch {

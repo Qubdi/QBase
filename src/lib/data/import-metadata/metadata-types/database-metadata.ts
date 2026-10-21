@@ -56,6 +56,8 @@ export const loadDatabaseMetadata = (jsonString: string): DatabaseMetadata => {
         const parsedData: DatabaseMetadata = JSON.parse(jsonString);
         return parsedData;
     } catch (parseError) {
-        throw new Error(`Error parsing JSON data: ${parseError}`);
+        throw new Error(`Error parsing JSON data: ${parseError}`, {
+            cause: parseError,
+        });
     }
 };

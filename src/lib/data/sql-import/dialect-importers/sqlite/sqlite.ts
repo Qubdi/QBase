@@ -345,7 +345,7 @@ function parseCreateTableStatements(sqlContent: string): {
                     }
 
                     // Map to appropriate SQLite storage class
-                    let columnType = rawType;
+                    let columnType: string;
                     if (rawType === 'INTEGER' || rawType === 'INT') {
                         columnType = 'INTEGER';
                     } else if (
