@@ -17,7 +17,7 @@ RUN printf 'VITE_HOST_URL=%s\nVITE_APP_URL=%s\n' "${VITE_HOST_URL}" "${VITE_APP_
 
 RUN npm run build
 
-FROM nginx:stable-alpine@sha256:970364228b1e4f932abc22d321932816782cca8a20b85a77552a7cfe9acfb3b5 AS production
+FROM nginx:stable-alpine@sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951 AS production
 
 COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
 COPY ./default.conf.template /etc/nginx/conf.d/default.conf.template
