@@ -1,6 +1,6 @@
 # Build from the repo root: docker build -f server/Dockerfile .
 # The server imports ../shared (and the editor's metadata types), so those are copied too.
-FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS build
+FROM node:24-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS build
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm ci
@@ -12,7 +12,7 @@ RUN ln -s /app/server/node_modules /app/node_modules \
     && npm run build \
     && npm prune --omit=dev
 
-FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+FROM node:24-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 ENV NODE_ENV=production
 # the image is reached through the container network, so it listens on every interface
 ENV HOST=0.0.0.0
