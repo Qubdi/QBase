@@ -86,7 +86,7 @@ export const LintControl: React.FC = () => {
     };
 
     const applyFix = async (finding: Finding) => {
-        if (!finding.fix) return;
+        if (!finding.fix || diagram.readonly) return;
         const ops = planFix(finding.fix, diagram.tables, databaseType);
         if (!ops) {
             toast({
@@ -243,7 +243,8 @@ export const LintControl: React.FC = () => {
                                                       </span>
                                                       {f.message}
                                                   </button>
-                                                  {f.fix ? (
+                                                  {f.fix &&
+                                                  !diagram.readonly ? (
                                                       <Button
                                                           size="sm"
                                                           variant="outline"

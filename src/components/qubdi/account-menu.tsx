@@ -27,6 +27,8 @@ import { useMfaAvailable } from '@/hooks/use-mfa-available';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { getProjectId } from '@/lib/qubdi/remote-map';
 import { flushPendingSave } from '@/lib/qubdi/save-status-store';
+import { isLocked } from '@/lib/qubdi/access';
+import { useDiagramAccess } from './diagram-access-context';
 import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { ConnectionsDialog } from './connections-dialog';
@@ -51,13 +53,17 @@ export const AccountMenu: React.FC = () => {
     const mfaAvailable = useMfaAvailable(!!user);
     const [shareOpen, setShareOpen] = useState(false);
     const [resyncOpen, setResyncOpen] = useState(false);
+    // a viewer, or an editor who lost the lock, must not change the diagram
+    const { access } = useDiagramAccess();
+    const locked = isLocked(access);
 
     // the drift report page asks for a re-sync through this event
     useEffect(() => {
+        if (locked) return;
         const open = () => setResyncOpen(true);
         window.addEventListener(OPEN_RESYNC_EVENT, open);
         return () => window.removeEventListener(OPEN_RESYNC_EVENT, open);
-    }, []);
+    }, [locked]);
 
     if (!enabled || user === undefined) return null;
 
@@ -131,14 +137,22 @@ export const AccountMenu: React.FC = () => {
                             {t('qubdi.account.accountMenu.databaseConnections')}
                         </DropdownMenuItem>
                     ) : null}
-                    <DropdownMenuItem onClick={() => setResyncOpen(true)}>
-                        <RefreshCw className="mr-2 size-4" />
-                        {t('qubdi.account.accountMenu.resync')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShareOpen(true)}>
-                        <Share2 className="mr-2 size-4" />
-                        {t('qubdi.account.accountMenu.share')}
-                    </DropdownMenuItem>
+                    {locked ? null : (
+                        <>
+                            <DropdownMenuItem
+                                onClick={() => setResyncOpen(true)}
+                            >
+                                <RefreshCw className="mr-2 size-4" />
+                                {t('qubdi.account.accountMenu.resync')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => setShareOpen(true)}
+                            >
+                                <Share2 className="mr-2 size-4" />
+                                {t('qubdi.account.accountMenu.share')}
+                            </DropdownMenuItem>
+                        </>
+                    )}
                     <DropdownMenuItem onClick={() => setMembersOpen(true)}>
                         <Users className="mr-2 size-4" />
                         {t('qubdi.account.accountMenu.members')}
