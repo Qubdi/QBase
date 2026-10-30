@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     ConfigError,
@@ -144,5 +145,32 @@ describe('connection and listening defaults', () => {
     it('listens on loopback unless HOST says otherwise', () => {
         expect(loadConfig().host).toBe('127.0.0.1');
         expect(loadConfig({ HOST: '0.0.0.0' }).host).toBe('0.0.0.0');
+    });
+});
+
+describe('the example settings file', () => {
+    const example = readFileSync(
+        new URL('../.env.example', import.meta.url),
+        'utf8'
+    );
+    const settings = new Map(
+        example
+            .split('\n')
+            .filter((line) => /^[A-Z_]+=/.test(line))
+            .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)])
+    );
+
+    it('holds no usable database password, only a placeholder to replace', () => {
+        const url = settings.get('DATABASE_URL') ?? '';
+        expect(url).toContain(':<POSTGRES_PASSWORD>@');
+        expect(url).not.toMatch(/qubdidb:qubdidb@/);
+    });
+
+    it('leaves every key and password blank', () => {
+        for (const [name, value] of settings) {
+            if (/(KEY|SECRET|PASSWORD)$/.test(name)) {
+                expect(value, name).toBe('');
+            }
+        }
     });
 });
