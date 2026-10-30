@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -20,6 +20,10 @@ export const MAX_LISTED_LINKS = 200;
 
 /** Most links one diagram may have open at once; revoke one to make another. */
 export const MAX_ACTIVE_LINKS = 100;
+
+/** The lock creating a link takes, so creates for one diagram go one at a time. */
+export const linkCreateLockKey = (diagramId: string) =>
+    `share-links:${diagramId}`;
 
 const diagramParam = z.object({ id: z.string().uuid() });
 const linkParam = z.object({
@@ -134,26 +138,39 @@ export const shareManagementRoutes =
             const { id } = diagramParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const body = createBody.parse(req.body ?? {});
-            const [{ open }] = await db
-                .select({ open: count() })
-                .from(shareLinks)
-                .where(and(eq(shareLinks.diagramId, id), activeLinkSql()));
-            if (open >= MAX_ACTIVE_LINKS) {
+            const token = generateToken();
+            // the count and the insert are one step per diagram: creates that
+            // arrive together queue on this lock, so none passes the cap on a
+            // count another is about to change. The lock is not on the diagram
+            // row, so saves are never held up by it.
+            const link = await db.transaction(async (tx) => {
+                await tx.execute(
+                    sql`select pg_advisory_xact_lock(hashtextextended(${linkCreateLockKey(id)}, 0))`
+                );
+                const [{ open }] = await tx
+                    .select({ open: count() })
+                    .from(shareLinks)
+                    .where(and(eq(shareLinks.diagramId, id), activeLinkSql()));
+                if (open >= MAX_ACTIVE_LINKS) return null;
+                const [created] = await tx
+                    .insert(shareLinks)
+                    .values({
+                        diagramId: id,
+                        tokenHash: hashToken(token),
+                        tokenEnc: sealed(token),
+                        access: body.access,
+                        expiresAt: body.expiresAt
+                            ? new Date(body.expiresAt)
+                            : null,
+                        live: body.live,
+                        createdBy: req.user!.id,
+                    })
+                    .returning();
+                return created;
+            });
+            if (!link) {
                 return reply.code(409).send({ error: 'too_many_links' });
             }
-            const token = generateToken();
-            const [link] = await db
-                .insert(shareLinks)
-                .values({
-                    diagramId: id,
-                    tokenHash: hashToken(token),
-                    tokenEnc: sealed(token),
-                    access: body.access,
-                    expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
-                    live: body.live,
-                    createdBy: req.user!.id,
-                })
-                .returning();
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.create',
