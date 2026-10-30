@@ -1,16 +1,16 @@
 # QubdiDB — Audit
 
-**rev** 11 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 901 tests, 13 skipped for SQL Server, all pass) · no secret read
+**rev** 12 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 5 | 0 | 1 | 22 | 0 |
+| Security & secrets | 1 | 0 | 1 | 26 | 0 |
 | Repository | 0 | 0 | 0 | 43 | 1 |
 | Server | 0 | 0 | 0 | 28 | 0 |
 | Client | 1 | 0 | 0 | 38 | 0 |
-| **Total** | 6 | 0 | 1 | 131 | 1 |
+| **Total** | 2 | 0 | 1 | 135 | 1 |
 
 ## Act first
 
@@ -25,10 +25,6 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` values remain in git history | `.env.example` history | Rotate all three; the example file is blank now |
-| SEC-024 | Med | `TRUST_PROXY=true` trusts client `X-Forwarded-For`; per-IP limits, lockout and SSE cap bypassable | `server/src/config.ts:95` · `server/.env.example:88` | Refuse `true` at boot; require hop count or proxy list |
-| SEC-025 | Med | `/mfa/setup` and `/mfa/enable` need no password; stolen session can lock owner out | `server/src/auth/mfa-routes.ts:46` · `server/src/auth/mfa-routes.ts:170` | Require the current password on `/mfa/enable` |
-| SEC-026 | Low | Wrong password on 2FA disable or code renewal logged as `user.sign_in_failed` | `server/src/auth/mfa-routes.ts:242` | Log `user.password_check_failed` there |
-| SEC-027 | Low | Tracked server example `DATABASE_URL` carries a working default password | `server/.env.example:3` | Blank the password in the example `DATABASE_URL` |
 
 ### Client
 
@@ -173,6 +169,10 @@
 | REPO-042 | Repository | `eslint-plugin-css-modules` configured; no `*.module.css` files exist |
 | REPO-043 | Repository | `jsx-a11y` plugin registered with zero rules enabled |
 | REPO-044 | Repository | Vite 8 config still uses `rollupOptions.manualChunks` |
+| SEC-024 | Security & secrets | `TRUST_PROXY=true` trusts client `X-Forwarded-For`; per-IP limits, lockout and SSE cap bypassable |
+| SEC-025 | Security & secrets | `/mfa/setup` and `/mfa/enable` need no password; stolen session can lock owner out |
+| SEC-026 | Security & secrets | Wrong password on 2FA disable or code renewal logged as `user.sign_in_failed` |
+| SEC-027 | Security & secrets | Tracked server example `DATABASE_URL` carries a working default password |
 
 ---
 
@@ -206,3 +206,4 @@
 | 9 | 2026-10-30 | 19 fixed: CLI-020 to CLI-038 |
 | 10 | 2026-10-30 | 12 fixed: SRV-017 to SRV-028 |
 | 11 | 2026-10-30 | 22 fixed: REPO-007, REPO-023 to REPO-040, REPO-042 to REPO-044; REPO-041 accepted; 1 new: CLI-039 |
+| 12 | 2026-10-30 | 4 fixed: SEC-024 to SEC-027; SEC-001 left open |
