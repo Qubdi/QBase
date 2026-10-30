@@ -54,6 +54,8 @@ export interface Config {
     logLevel: string;
     /** most database connections the pool opens at once */
     dbPoolMax: number;
+    /** longest a database statement may run, in seconds; 0 means no limit */
+    dbStatementTimeoutSeconds: number;
     /** max requests per minute per IP on the public share routes */
     shareRateLimit: number;
     /** hostnames, IPs or IPv4 CIDRs that introspection may reach even if private */
@@ -192,6 +194,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         trustProxy: parseTrustProxy(env.TRUST_PROXY),
         logLevel,
         dbPoolMax: int('DB_POOL_MAX', 10, 1),
+        dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
         introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')
             .split(',')

@@ -8,6 +8,8 @@ export type Db = ReturnType<typeof createDb>['db'];
 export interface PoolOptions {
     /** most connections the pool opens at once */
     max?: number;
+    /** longest a statement may run before the database cancels it; 0 or unset: no limit */
+    statementTimeoutMs?: number;
 }
 
 export function createDb(databaseUrl: string, options: PoolOptions = {}) {
@@ -17,6 +19,10 @@ export function createDb(databaseUrl: string, options: PoolOptions = {}) {
         // fail a request instead of queueing forever when the database is down
         connectionTimeoutMillis: 5_000,
         idleTimeoutMillis: 30_000,
+        // a runaway query must not hold one of the few connections for good
+        ...(options.statementTimeoutMs
+            ? { statement_timeout: options.statementTimeoutMs }
+            : {}),
     });
     // an idle client that loses its connection emits 'error'; unhandled, it
     // would crash the process

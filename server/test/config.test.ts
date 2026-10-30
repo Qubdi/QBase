@@ -109,6 +109,13 @@ describe('boot-time validation', () => {
         );
     });
 
+    it('limits database statements to two minutes unless told otherwise', () => {
+        expect(loadConfig().dbStatementTimeoutSeconds).toBe(120);
+        expect(loadConfig({ DB_STATEMENT_TIMEOUT_SECONDS: '30' }).dbStatementTimeoutSeconds).toBe(30);
+        expect(loadConfig({ DB_STATEMENT_TIMEOUT_SECONDS: '0' }).dbStatementTimeoutSeconds).toBe(0);
+        expect(() => loadConfig({ DB_STATEMENT_TIMEOUT_SECONDS: '-1' })).toThrow(ConfigError);
+    });
+
     it('refuses an encryption key under 16 characters', () => {
         expect(() => loadConfig({ SECRETS_KEY: 'short' })).toThrow(/SECRETS_KEY must be at least 16/);
         expect(() => loadConfig({ CONNECTION_KEY: 'short' })).toThrow(/CONNECTION_KEY must be at least 16/);
