@@ -565,6 +565,23 @@ describe('getPublicShare', () => {
     });
 });
 
+describe('listDiagrams', () => {
+    it('asks for the diagrams of one project when given it', async () => {
+        const fetchMock = vi.fn(async () => jsonResponse(200, []));
+        const api = createApi(
+            'http://srv',
+            fetchMock as unknown as typeof fetch
+        );
+        await api.listDiagrams({ projectId: 'p1' });
+        await api.listDiagrams();
+        const urls = fetchMock.mock.calls.map((c) => (c as unknown[])[0]);
+        expect(urls).toEqual([
+            'http://srv/diagrams?projectId=p1',
+            'http://srv/diagrams',
+        ]);
+    });
+});
+
 describe('getDiagramSummary', () => {
     it('reads one row from the summary route, not the whole list', async () => {
         const row = {

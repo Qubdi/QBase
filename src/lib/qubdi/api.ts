@@ -532,7 +532,12 @@ export function createApi(
                 ...factor,
             }),
 
-        listDiagrams: () => request<RemoteDiagramSummary[]>('GET', '/diagrams'),
+        /** Every diagram the user may see; `projectId` keeps one project's. */
+        listDiagrams: (params?: { projectId?: string }) =>
+            request<RemoteDiagramSummary[]>(
+                'GET',
+                `/diagrams${listQuery({}, { projectId: params?.projectId })}`
+            ),
         /** One row of the list, without the content; 404 unless the user may see it. */
         getDiagramSummary: (id: string) =>
             request<RemoteDiagramSummary>(

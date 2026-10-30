@@ -285,7 +285,13 @@ function useLegacyAccess(localId: string | undefined): DiagramAccessValue {
         }
         let cancelled = false;
         setAccess({ status: 'loading' });
-        api.listDiagrams()
+        // this diagram's own row; a 404 means the user may not see it any more
+        api.getDiagramSummary(remoteId)
+            .then((found) => [found])
+            .catch((e: unknown) => {
+                if (e instanceof ApiError && e.status === 404) return [];
+                throw e;
+            })
             .then((list) => {
                 if (cancelled) return;
                 const next = resolveAccess(remoteId, list);
