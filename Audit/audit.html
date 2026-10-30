@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 10</b></div>
-  <h1>28 open across four lenses: 0 Crit, 2 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 11</b></div>
+  <h1>6 open across four lenses: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (232 files, 2660 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> · server vitest run against a throwaway Postgres (60 files, 901 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 901 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -34,10 +34,10 @@
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
         <tr><td>Security &amp; secrets</td><td>5</td><td>0</td><td>1</td><td>22</td><td>0</td></tr>
-        <tr><td>Repository</td><td>23</td><td>0</td><td>1</td><td>21</td><td>0</td></tr>
+        <tr><td>Repository</td><td>0</td><td>0</td><td>0</td><td>43</td><td>1</td></tr>
         <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>28</td><td>0</td></tr>
-        <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>38</td><td>0</td></tr>
-        <tr><td>Total</td><td>28</td><td>0</td><td>2</td><td>109</td><td>0</td></tr>
+        <tr><td>Client</td><td>1</td><td>0</td><td>0</td><td>38</td><td>0</td></tr>
+        <tr><td>Total</td><td>6</td><td>0</td><td>1</td><td>131</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -52,8 +52,8 @@
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
-    <p>Top: CI server audit fails: high <code>@azure/msal-node</code> advisory via <code>mssql</code>; moderate <code>fast-uri</code></p>
-    <p class="lbl">23 open &middot; 0 Crit &middot; 1 High &middot; 21 fixed &middot; 0 accepted</p>
+    <p>Nothing open</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 43 fixed &middot; 1 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
@@ -62,8 +62,8 @@
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
-    <p>Nothing open</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 38 fixed &middot; 0 accepted</p>
+    <p>Top: Three <code>jsx-a11y</code> rules are off: 51 hits in autofocus and mouse-target code</p>
+    <p class="lbl">1 open &middot; 0 Crit &middot; 0 High &middot; 38 fixed &middot; 0 accepted</p>
   </a>
 </section>
 
@@ -83,6 +83,7 @@
         <tr><td>8</td><td>2026-10-30</td><td class="wrap-cell">Deep pass: 57 new, 0 fixed, REPO-007 reopened; SEC-001 widened to <code>MSSQL_SA_PASSWORD</code></td></tr>
         <tr><td>9</td><td>2026-10-30</td><td class="wrap-cell">19 fixed: CLI-020 to CLI-038</td></tr>
         <tr><td>10</td><td>2026-10-30</td><td class="wrap-cell">12 fixed: SRV-017 to SRV-028</td></tr>
+        <tr><td>11</td><td>2026-10-30</td><td class="wrap-cell">22 fixed: REPO-007, REPO-023 to REPO-040, REPO-042 to REPO-044; REPO-041 accepted; 1 new: CLI-039</td></tr>
       </tbody>
     </table>
   </div>

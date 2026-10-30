@@ -1,20 +1,19 @@
 # QubdiDB — Audit
 
-**rev** 10 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (232 files, 2660 tests, all pass), `vite build` · npm audit root and `server/` · server vitest run against a throwaway Postgres (60 files, 901 tests, 13 skipped for SQL Server, all pass) · no secret read
+**rev** 11 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 901 tests, 13 skipped for SQL Server, all pass) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 1 | 22 | 0 |
-| Repository | 23 | 0 | 1 | 21 | 0 |
+| Repository | 0 | 0 | 0 | 43 | 1 |
 | Server | 0 | 0 | 0 | 28 | 0 |
-| Client | 0 | 0 | 0 | 38 | 0 |
-| **Total** | 28 | 0 | 2 | 109 | 0 |
+| Client | 1 | 0 | 0 | 38 | 0 |
+| **Total** | 6 | 0 | 1 | 131 | 1 |
 
 ## Act first
 
-- `REPO-023` — CI's server audit step fails on `main`; run `npm audit fix` in `server/`.
 - `SEC-001` — old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` are in git history; rotate all three.
 
 ---
@@ -31,34 +30,11 @@
 | SEC-026 | Low | Wrong password on 2FA disable or code renewal logged as `user.sign_in_failed` | `server/src/auth/mfa-routes.ts:242` | Log `user.password_check_failed` there |
 | SEC-027 | Low | Tracked server example `DATABASE_URL` carries a working default password | `server/.env.example:3` | Blank the password in the example `DATABASE_URL` |
 
-### Repository
+### Client
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-023 | High | CI server audit fails: high `@azure/msal-node` advisory via `mssql`; moderate `fast-uri` | `.github/workflows/ci.yaml:107` · `server/package-lock.json` | Run `npm audit fix` in `server/` |
-| REPO-007 | Med | Server `@types/node` is `^26` against the Node 24 runtime | `server/package.json:36` | Pin `^24`; ignore `@types/node` majors in Dependabot |
-| REPO-024 | Med | Root `happy-dom` has two high advisories, including host code execution | `package.json:111` | Bump `happy-dom` to `^21.0.4` |
-| REPO-025 | Med | Dependabot npm entries ignore no majors; TS 7, ESLint 10, `@types/node` 26 merged | `.github/dependabot.yml:3` · `TODO.md:11` | Add semver-major `ignore` to both npm entries |
-| REPO-028 | Med | README backup writes `qubdidb-backup.sql` into the repo root; not git-ignored | `README.md:267` · `.gitignore` | Dump outside the repo, or ignore `qubdidb-backup.sql` |
-| REPO-026 | Low | Root TypeScript 5.9 and server TypeScript 7 both compile `shared/` | `package.json:118` · `server/package.json:38` | Align the TypeScript major across root and server |
-| REPO-027 | Low | No release tag or `bootstrap-sha`; first release-please run scans all history | `release-please-config.json` · `.release-please-manifest.json:2` | Tag `v1.20.1` or set `bootstrap-sha` |
-| REPO-029 | Low | CI never builds `db/postgres/Dockerfile`; Dependabot digest bumps go unbuilt | `.github/workflows/ci.yaml:124` | Add a `db/postgres` build to the docker job |
-| REPO-030 | Low | Postgres image digest duplicated in three files | `db/postgres/Dockerfile:8` · `.github/workflows/ci.yaml:49` · `.github/workflows/publish.yaml:23` | Keep one digest source, or check they match |
-| REPO-031 | Low | Tag `verify` job skips CI's npm audit and gitleaks scan | `.github/workflows/publish.yaml:15` | Add audit and secret-scan steps to `verify` |
-| REPO-032 | Low | Published images carry no provenance, SBOM or signature | `.github/workflows/publish.yaml:99` | Set `provenance: mode=max` and `sbom: true` |
-| REPO-033 | Low | Publish `verify` caches root npm only; server install uncached | `.github/workflows/publish.yaml:43` | Add both lockfiles to `cache-dependency-path` |
-| REPO-034 | Low | CONTRIBUTING still links the removed Discord | `CONTRIBUTING.md:60` | Delete the Discord sentence |
-| REPO-035 | Low | CONTRIBUTING server test line omits `typecheck`, which CI runs | `CONTRIBUTING.md:49` | Add `npm run typecheck` to the server line |
-| REPO-036 | Low | README and build-tasks say React 18; package is React 19 | `README.md:13` · `QubdiDB-build-tasks.md:10` | Change "React 18" to "React 19" |
-| REPO-037 | Low | ESLint ignores nonexistent `.eslintrc.cjs` but not `coverage/` | `eslint.config.mjs:25` | Replace `**/.eslintrc.cjs` with `coverage/**` |
-| REPO-038 | Low | `components.json` `ui` alias points at missing `src/components/ui` | `components.json:16` | Point `ui` at the real components path |
-| REPO-039 | Low | Pre-commit hook fails when `server/node_modules` is absent | `.husky/pre-commit:3` | Skip server lint when server deps are missing |
-| REPO-040 | Low | Client image context ships `server/`, `Audit/`, `.github/` | `.dockerignore:17` · `Dockerfile:12` | Add per-Dockerfile ignore files excluding unused trees |
-| REPO-041 | Low | `eslint-plugin-react` and `jsx-a11y` lack ESLint 10 peers; forced by overrides | `package.json:122` | Drop overrides once plugins declare ESLint 10 |
-| REPO-042 | Low | `eslint-plugin-css-modules` configured; no `*.module.css` files exist | `eslint.config.mjs:36` | Remove `eslint-plugin-css-modules` |
-| REPO-043 | Low | `jsx-a11y` plugin registered with zero rules enabled | `eslint.config.mjs:44` | Extend the `jsx-a11y` recommended rules |
-| REPO-044 | Low | Vite 8 config still uses `rollupOptions.manualChunks` | `vite.config.ts:26` | Move to `build.rolldownOptions` code-splitting groups |
-
+| CLI-039 | Low | Three `jsx-a11y` rules are off: 51 hits in autofocus and mouse-target code | `eslint.config.mjs:86` · `TODO.md` | Enable each rule; fix or justify every hit |
 
 ---
 
@@ -175,6 +151,28 @@
 | SRV-026 | Server | Link list caps 200 newest; revoked churn hides older active links |
 | SRV-027 | Server | Drift check with missing settings or diagram answers 409 `already_running` |
 | SRV-028 | Server | One failing purge skips every later maintenance step |
+| REPO-023 | Repository | CI server audit fails: high `@azure/msal-node` advisory via `mssql`; moderate `fast-uri` |
+| REPO-007 | Repository | Server `@types/node` is `^26` against the Node 24 runtime |
+| REPO-024 | Repository | Root `happy-dom` has two high advisories, including host code execution |
+| REPO-025 | Repository | Dependabot npm entries ignore no majors; TS 7, ESLint 10, `@types/node` 26 merged |
+| REPO-028 | Repository | README backup writes `qubdidb-backup.sql` into the repo root; not git-ignored |
+| REPO-026 | Repository | Root TypeScript 5.9 and server TypeScript 7 both compile `shared/` |
+| REPO-027 | Repository | No release tag or `bootstrap-sha`; first release-please run scans all history |
+| REPO-029 | Repository | CI never builds `db/postgres/Dockerfile`; Dependabot digest bumps go unbuilt |
+| REPO-030 | Repository | Postgres image digest duplicated in three files |
+| REPO-031 | Repository | Tag `verify` job skips CI's npm audit and gitleaks scan |
+| REPO-032 | Repository | Published images carry no provenance, SBOM or signature |
+| REPO-033 | Repository | Publish `verify` caches root npm only; server install uncached |
+| REPO-034 | Repository | CONTRIBUTING still links the removed Discord |
+| REPO-035 | Repository | CONTRIBUTING server test line omits `typecheck`, which CI runs |
+| REPO-036 | Repository | README and build-tasks say React 18; package is React 19 |
+| REPO-037 | Repository | ESLint ignores nonexistent `.eslintrc.cjs` but not `coverage/` |
+| REPO-038 | Repository | `components.json` `ui` alias points at missing `src/components/ui` |
+| REPO-039 | Repository | Pre-commit hook fails when `server/node_modules` is absent |
+| REPO-040 | Repository | Client image context ships `server/`, `Audit/`, `.github/` |
+| REPO-042 | Repository | `eslint-plugin-css-modules` configured; no `*.module.css` files exist |
+| REPO-043 | Repository | `jsx-a11y` plugin registered with zero rules enabled |
+| REPO-044 | Repository | Vite 8 config still uses `rollupOptions.manualChunks` |
 
 ---
 
@@ -182,6 +180,7 @@
 
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
+| REPO-041 | Repository | `eslint-plugin-react` and `jsx-a11y` lack ESLint 10 peers; forced by overrides | Latest releases (react 7.37.5, jsx-a11y 6.10.2) still declare up to ESLint 9; the overrides stay until they do |
 
 ---
 
@@ -206,3 +205,4 @@
 | 8 | 2026-10-30 | Deep pass: 57 new, 0 fixed, REPO-007 reopened; SEC-001 widened to `MSSQL_SA_PASSWORD` |
 | 9 | 2026-10-30 | 19 fixed: CLI-020 to CLI-038 |
 | 10 | 2026-10-30 | 12 fixed: SRV-017 to SRV-028 |
+| 11 | 2026-10-30 | 22 fixed: REPO-007, REPO-023 to REPO-040, REPO-042 to REPO-044; REPO-041 accepted; 1 new: CLI-039 |
