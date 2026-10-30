@@ -1,0 +1,19 @@
+QubdiDB
+
+QubdiDB is a modified version of ChartDB, an open source database diagram
+editor (https://github.com/chartdb/chartdb). ChartDB is licensed under the GNU
+Affero General Public License, version 3, and QubdiDB is licensed under the
+same terms: see LICENSE.
+
+Copyright in the ChartDB code that QubdiDB contains remains with its authors
+and contributors; the history of the ChartDB repository lists them.
+
+Changes made in QubdiDB, from 14 October 2026:
+
+- A backend (Node, Fastify, PostgreSQL, in server/) with accounts, projects,
+  roles, an audit log, and optional two-factor sign-in.
+- Published snapshots, read-only share links with live updates, schema lint
+  and drift detection (shared/ and server/).
+- Direct import from PostgreSQL and SQL Server, saved connections, re-sync.
+- The editor works with the backend (src/lib/qubdi/, src/components/qubdi/).
+- A new name, logo and look; the ChartDB name, images and links are removed.

@@ -351,4 +351,6 @@ and 21 KB of WAL on a laptop. To go further:
   and keep copies off the machine. For point-in-time recovery use WAL archiving
   (`archive_mode`, `archive_command`) or a managed Postgres.
 
-QubdiDB is licensed under the AGPL-3.0.
+QubdiDB is licensed under the AGPL-3.0. It is a modified version of
+[ChartDB](https://github.com/chartdb/chartdb), also AGPL-3.0; [NOTICE](NOTICE) names it and
+lists what was changed.
