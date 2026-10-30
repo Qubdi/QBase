@@ -205,6 +205,19 @@ describe('resolveAllowedTarget', () => {
         ).rejects.toBeInstanceOf(ForbiddenTargetError);
     });
 
+    it('does not tell the caller which address a blocked name resolves to', async () => {
+        const err = await resolveAllowedTarget(
+            'evil.example.com',
+            [],
+            lookupOf({ 'evil.example.com': ['10.20.30.40'] })
+        ).catch((e: unknown) => e);
+        expect(err).toBeInstanceOf(ForbiddenTargetError);
+        const message = (err as Error).message;
+        expect(message).not.toContain('10.20.30.40');
+        expect(message).toContain('evil.example.com');
+        expect(message).toContain('private address');
+    });
+
     it('blocks when only one of several resolved addresses is private (DNS rebinding mix)', async () => {
         await expect(
             resolveAllowedTarget('mixed.example.com', [], lookupOf({ 'mixed.example.com': ['93.184.216.34', '127.0.0.1'] }))

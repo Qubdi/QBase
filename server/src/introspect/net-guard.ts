@@ -186,7 +186,9 @@ export async function resolveAllowedTarget(
         const allowed =
             allowHost || allow.some((entry) => matchesIpEntry(address, entry));
         if (!allowed) {
-            throw new ForbiddenTargetError(host, `${cls} address ${address}`);
+            // the class only: the address a typed name resolves to is not for the
+            // caller to learn, or any name would map the internal network
+            throw new ForbiddenTargetError(host, `${cls} address`);
         }
     }
     const first = addrs[0];
