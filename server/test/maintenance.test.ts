@@ -17,6 +17,7 @@ import {
     purgeExpiredMfaChallenges,
     purgeAuditLog,
     purgeExpiredSessions,
+    runMaintenance,
     startMaintenance,
 } from '../src/maintenance.js';
 import { createTestApp, registerUser, type TestCtx } from './helpers.js';
@@ -32,6 +33,65 @@ describe('maintenance', () => {
         userId = (await registerUser(ctx.app, 'a@example.com')).id;
     });
     afterAll(() => ctx.close());
+
+    it('carries on with the later steps when one of them fails, and says which', async () => {
+        await ctx.db.delete(mfaChallenges);
+        await ctx.db.insert(mfaChallenges).values({
+            id: 'stale',
+            userId,
+            expiresAt: daysAgo(1),
+        });
+        // the sessions step is the first one, and it fails
+        const flaky = new Proxy(ctx.db, {
+            get(target, prop, receiver) {
+                if (prop === 'delete') {
+                    return (table: unknown) => {
+                        if (table === sessions) throw new Error('disk full');
+                        return target.delete(table as typeof sessions);
+                    };
+                }
+                return Reflect.get(target, prop, receiver);
+            },
+        });
+        const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const result = await runMaintenance(
+                flaky,
+                {
+                    auditRetentionDays: 365,
+                    snapshotKeep: 200,
+                    driftReportKeep: 50,
+                    deadLinkKeepDays: 30,
+                },
+                now
+            );
+            expect(result.failed).toEqual(['sessions']);
+            expect(result.sessions).toBe(0);
+            // a step after the failed one still ran
+            expect(result.mfaChallenges).toBe(1);
+            expect(await ctx.db.select().from(mfaChallenges)).toHaveLength(0);
+            expect(log).toHaveBeenCalledWith(
+                expect.stringContaining('"sessions" failed'),
+                expect.any(Error)
+            );
+        } finally {
+            log.mockRestore();
+        }
+    });
+
+    it('reports no failures when every step works', async () => {
+        const result = await runMaintenance(
+            ctx.db,
+            {
+                auditRetentionDays: 365,
+                snapshotKeep: 200,
+                driftReportKeep: 50,
+                deadLinkKeepDays: 30,
+            },
+            now
+        );
+        expect(result.failed).toEqual([]);
+    });
 
     it('deletes expired second-step challenges and keeps live ones', async () => {
         await ctx.db.delete(mfaChallenges);
