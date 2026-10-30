@@ -137,13 +137,25 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                 lastSyncedAt: new Date().toISOString(),
             });
             // keep the server copy in step so drift checks compare the new state
+            let serverError: string | null = null;
             if (remoteIdFor(currentDiagram.id)) {
                 await flushPendingSave();
-                await syncDiagram(next).catch(() => undefined);
+                try {
+                    await syncDiagram(next);
+                } catch (e) {
+                    serverError = errorMessage(e);
+                }
             }
             toast({
                 title: t('qubdi.database.resync.applied', { n: selected.size }),
             });
+            if (serverError) {
+                toast({
+                    title: t('qubdi.database.resync.serverNotUpdated'),
+                    description: serverError,
+                    variant: 'destructive',
+                });
+            }
             onOpenChange(false);
         } catch (e) {
             setError(errorMessage(e));
