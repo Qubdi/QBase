@@ -1,3 +1,4 @@
+import { and, eq, gt } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { auditLog } from '../db/schema.js';
 
@@ -134,6 +135,38 @@ const toRow = (entry: AuditEntry) => ({
 
 export async function audit(db: Db, entry: AuditEntry) {
     await db.insert(auditLog).values(toRow(entry));
+}
+
+/**
+ * A save's `diagram.update` row, at most once every `everyMinutes` for one
+ * person and diagram: the editor saves every few seconds while someone types,
+ * and the log would otherwise grow by a row (and five index entries) for each.
+ * 0 logs every save.
+ */
+export async function auditDiagramSave(
+    db: Db,
+    entry: { userId: string; diagramId: string },
+    everyMinutes: number
+) {
+    if (everyMinutes > 0) {
+        const recent = await db
+            .select({ id: auditLog.id })
+            .from(auditLog)
+            .where(
+                and(
+                    eq(auditLog.diagramId, entry.diagramId),
+                    eq(auditLog.userId, entry.userId),
+                    eq(auditLog.action, 'diagram.update'),
+                    gt(
+                        auditLog.at,
+                        new Date(Date.now() - everyMinutes * 60_000)
+                    )
+                )
+            )
+            .limit(1);
+        if (recent.length > 0) return;
+    }
+    await audit(db, { ...entry, action: 'diagram.update' });
 }
 
 /** Several rows in one statement, for an action done to many things at once. */

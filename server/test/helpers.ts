@@ -37,6 +37,10 @@ export async function createTestApp(
             OUTBOUND_RATE_LIMIT: '100000',
             AUTH_RATE_LIMIT: '100000',
             AUTH_MAX_FAILURES: '100000',
+            // every save is recorded and every change published, so tests can
+            // count them; the throttles have tests of their own
+            AUDIT_SAVE_MINUTES: '0',
+            AUTO_PUBLISH_COALESCE_SECONDS: '0',
         }),
         databaseUrl: TEST_URL,
         ...overrides,
