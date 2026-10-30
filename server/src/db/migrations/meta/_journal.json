@@ -155,6 +155,13 @@
       "when": 1792441372604,
       "tag": "0021_diagram_content_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793374020255,
+      "tag": "0022_diagram_stats",
+      "breakpoints": true
     }
   ]
 }
