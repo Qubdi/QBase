@@ -214,6 +214,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
         }, [selectSidebarSection, openTableFromSidebar, table.id]);
 
         return (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops clicks reaching the canvas; not a control
             <div
                 ref={containerRef}
                 className={cn(
@@ -300,6 +301,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                                     }
                                 }}
                                 onBlur={handleToggleSchemaMode}
+                                // eslint-disable-next-line jsx-a11y/no-autofocus -- shown only after the user asks to change the schema
                                 autoFocus
                             />
                         )}

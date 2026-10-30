@@ -1,6 +1,6 @@
 import { and, isNotNull, lt, or, sql } from 'drizzle-orm';
 import type { Config } from './config.js';
-import type { Db } from './db/client.js';
+import { MAINTENANCE_LOCK, withAdvisoryLock, type Db } from './db/client.js';
 import { diagramLocks, mfaChallenges, shareLinks, sessions } from './db/schema.js';
 
 const DAY_MS = 86_400_000;
@@ -175,7 +175,14 @@ export function startMaintenance(
     let current: Promise<void> | null = null;
     const tick = () => {
         if (current) return;
-        current = runMaintenance(deps.db, deps.config)
+        // one replica at a time: the others skip this hour's run, since the
+        // pruning scans whole tables and one pass does it all
+        current = withAdvisoryLock(
+            deps.db,
+            MAINTENANCE_LOCK,
+            () => runMaintenance(deps.db, deps.config),
+            { wait: false }
+        )
             .then(() => undefined)
             .catch((err: unknown) => {
                 console.error('Maintenance failed:', err);

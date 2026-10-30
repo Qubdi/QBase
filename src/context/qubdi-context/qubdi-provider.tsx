@@ -30,6 +30,7 @@ import {
     rememberSentContent,
 } from '@/lib/qubdi/sent-content';
 import { resetAdminLanding } from '@/lib/qubdi/admin-landing';
+import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/lib/domain/diagram';
 
@@ -103,6 +104,9 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const logout = useCallback(async () => {
+        // send the last edits while the session still works: after sign-out
+        // they would get a 401, and the local copy holding them is deleted below
+        await flushPendingSave();
         await api.logout().catch(() => undefined);
         resetAdminLanding();
         setSessionEnded(false);

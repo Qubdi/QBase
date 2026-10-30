@@ -213,6 +213,7 @@ export const CreateRelationshipNode: React.FC<
     }
 
     return (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops clicks reaching the canvas; not a control
         <div
             className={cn(
                 'pointer-events-auto flex cursor-auto flex-col rounded-lg border border-slate-300 bg-white shadow-xl transition-all duration-150 ease-out dark:border-slate-600 dark:bg-slate-800',

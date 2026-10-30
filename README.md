@@ -225,6 +225,11 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `MFA_ENABLED` | `true` | `false` removes two-factor sign-in completely: no endpoints, no screens |
 | `MFA_WINDOW_STEPS` | `1` | 30-second steps a code is accepted either side of now (0 to 5) |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default |
+| `DB_POOL_MAX` | `10` | Most connections one server process opens to its database |
+| `DB_STATEMENT_TIMEOUT_SECONDS` | `120` | Seconds a statement may run before the database cancels it; `0` for no limit |
+| `SNAPSHOT_KEEP` | `200` | Newest snapshots kept per diagram |
+| `AUTO_PUBLISH_COALESCE_SECONDS` | `300` | While auto-publish is on, a save rewrites the person's latest auto snapshot when it is younger than this, instead of adding a copy; `0` adds one every save |
+| `AUDIT_SAVE_MINUTES` | `60` | A save is logged once per person and diagram in this many minutes; `0` logs every save |
 | `SHARE_RATE_LIMIT` | `60` | Public share requests per minute per IP |
 | `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`) |
 | `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
@@ -312,11 +317,40 @@ The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
   before it is sent, and PostgreSQL runs inside a read-only transaction. SQL Server has no
   read-only transaction, so use a login that only has read access.
 - Drift checks compare the server's copy of the diagram, so the editor syncs it first.
-- Run one server process. Rate limits, the per-link live-viewer cap, the shared lint and outbound
-  allowances and the guard against two drift checks of one diagram at once are kept in the memory
-  of each process. Behind several processes (or replicas) each one counts on its own, so the
-  effective limits multiply and two drift checks can overlap. Scale the database, not the server,
-  or put a limiter in front of it. Edit locks, sessions and everything else are in Postgres and
-  are safe to share.
+- Several server processes can share one database. Live share updates, the migrations at
+  start-up and the hourly clean-up are coordinated through Postgres. Rate limits, the
+  per-link live-viewer cap, the shared lint and outbound allowances and the guard against two
+  drift checks of one diagram at once are kept in the memory of each process, so with N
+  replicas each limit is N times as loose and two drift checks can overlap: keep the limiter at
+  the reverse proxy, or run one process (see "Scaling").
+- The first start after upgrading to a version with the diagram-list columns (migration
+  `0022`) rewrites the whole `diagrams` table under an exclusive lock: about 11 seconds for
+  320 MB of diagrams here, and reads and writes of diagrams wait meanwhile. Start the new
+  version in a quiet moment on a large installation.
 
-QubdiDB is licensed under the AGPL-3.0.
+## Scaling
+
+One server process and the bundled database take a team a long way: a save is about 5 ms
+and 21 KB of WAL on a laptop. To go further:
+
+- **Connections.** Each process opens up to `DB_POOL_MAX` connections plus one more for the
+  live-update listener. Postgres' `max_connections` must cover `replicas x (DB_POOL_MAX + 1)`
+  and keep 3 for superusers. The bundled `db` allows 200: about 17 replicas at the default
+  pool of 10. Raise `max_connections` (and the memory behind it) before adding more. A
+  connection pooler must run in *session* mode: the live-update listener and the advisory
+  locks belong to one connection, which transaction pooling would hand to someone else.
+- **Memory.** The bundled `db` is tuned for about 2 GB (`shared_buffers=256MB`,
+  `effective_cache_size=768MB`, `work_mem=8MB`, 256 MB `/dev/shm`). On a bigger machine raise
+  `shared_buffers` to a quarter of the RAM and `effective_cache_size` to three quarters.
+- **What grows.** Snapshots (`SNAPSHOT_KEEP` per diagram, full copies), drift reports
+  (`DRIFT_REPORT_KEEP`) and the audit log (`AUDIT_RETENTION_DAYS`, and at most one row per
+  person, diagram and `AUDIT_SAVE_MINUTES` for saves) are pruned every hour. Lower
+  the numbers if the database is large.
+- **Backups.** The dump above is a manual step. Run it from cron, for example
+  `docker compose exec -T db pg_dump -U qubdidb -Fc qubdidb > qubdidb-$(date +%F).dump`,
+  and keep copies off the machine. For point-in-time recovery use WAL archiving
+  (`archive_mode`, `archive_command`) or a managed Postgres.
+
+QubdiDB is licensed under the AGPL-3.0. It is a modified version of
+[ChartDB](https://github.com/chartdb/chartdb), also AGPL-3.0; [NOTICE](NOTICE) names it and
+lists what was changed.

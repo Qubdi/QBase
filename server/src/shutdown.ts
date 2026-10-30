@@ -1,5 +1,7 @@
 export interface ShutdownDeps {
     stopMaintenance: () => Promise<void>;
+    /** the connection that listens for other replicas' events */
+    stopEvents?: () => Promise<void>;
     closeApp: () => Promise<unknown>;
     closePool: () => Promise<unknown>;
     exit: (code: number) => void;
@@ -18,6 +20,7 @@ export interface ShutdownDeps {
 export function createShutdown(deps: ShutdownDeps) {
     const {
         stopMaintenance,
+        stopEvents,
         closeApp,
         closePool,
         exit,
@@ -34,6 +37,7 @@ export function createShutdown(deps: ShutdownDeps) {
         try {
             await stopMaintenance();
             await closeApp();
+            await stopEvents?.();
             await closePool();
             exit(0);
         } catch (err) {

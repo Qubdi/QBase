@@ -187,6 +187,7 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                                 saveContent();
                             }
                         }}
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- shown only after the user opens the note to edit it
                         autoFocus
                         placeholder="Type your note here..."
                     />

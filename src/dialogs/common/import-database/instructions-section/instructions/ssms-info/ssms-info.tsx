@@ -3,7 +3,6 @@ import {
     HoverCardContent,
     HoverCardTrigger,
 } from '@/components/hover-card/hover-card';
-import { Label } from '@/components/label/label';
 import { Info, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import SSMSInstructions from '@/assets/ssms-instructions.png';
@@ -49,19 +48,20 @@ export const SSMSInfo = React.forwardRef<
             }}
         >
             <HoverCardTrigger ref={ref} asChild>
-                <div
+                <button
+                    type="button"
                     className="flex flex-row items-center gap-1 text-teal-600"
                     onClick={() => {
                         setOpen?.(!open);
                     }}
                 >
                     <Info size={14} />
-                    <Label className="text-xs">
+                    <span className="text-xs font-medium leading-none">
                         {t(
                             'new_diagram_dialog.import_database.ssms_instructions.button_text'
                         )}
-                    </Label>
-                </div>
+                    </span>
+                </button>
             </HoverCardTrigger>
             <HoverCardContent className="w-80">
                 <div className="flex flex-col">

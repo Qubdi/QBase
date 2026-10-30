@@ -353,6 +353,69 @@ export class SqlServerIntrospector implements Introspector {
     }
 }
 
+/** What tedious asks its connector to dial. */
+interface DialOptions {
+    host: string;
+    port: number;
+    localAddress?: string;
+}
+
+/**
+ * A connector that dials the address the net guard already vetted, and
+ * nothing else. tedious follows a login answer that redirects the client to
+ * another host and port, and dials that host without asking the guard, which
+ * would let a hostile server point us at an internal address. Here a request
+ * for any other host or port fails instead.
+ */
+export function pinnedConnector(
+    target: Pick<ResolvedTarget, 'address'>,
+    port: number
+) {
+    return (
+        opts: DialOptions,
+        _lookup: unknown,
+        signal: AbortSignal
+    ): Promise<net.Socket> => {
+        if (opts.host !== target.address || opts.port !== port) {
+            return Promise.reject(
+                new Error(
+                    'The server asked to redirect the connection, which is not allowed.'
+                )
+            );
+        }
+        return new Promise((resolve, reject) => {
+            if (signal.aborted) return reject(signal.reason);
+            const socket = net.connect({
+                host: target.address,
+                port,
+                localAddress: opts.localAddress,
+            });
+            const done = () => {
+                signal.removeEventListener('abort', onAbort);
+                socket.removeListener('error', onError);
+                socket.removeListener('connect', onConnect);
+            };
+            const onConnect = () => {
+                done();
+                resolve(socket);
+            };
+            const onError = (err: Error) => {
+                done();
+                socket.destroy();
+                reject(err);
+            };
+            const onAbort = () => {
+                done();
+                socket.destroy();
+                reject(signal.reason);
+            };
+            socket.once('connect', onConnect);
+            socket.once('error', onError);
+            signal.addEventListener('abort', onAbort, { once: true });
+        });
+    };
+}
+
 export async function connectSqlServer(
     params: ConnectionParams,
     target: ResolvedTarget
@@ -374,6 +437,11 @@ export async function connectSqlServer(
             ...(net.isIP(params.host) ? {} : { serverName: params.host }),
             readOnlyIntent: true,
             appName: 'qubdidb-introspect',
+            // tedious calls it with (options, lookup, signal); its typings say none
+            connector: pinnedConnector(
+                target,
+                params.port
+            ) as unknown as () => Promise<net.Socket>,
         },
     });
     await pool.connect();

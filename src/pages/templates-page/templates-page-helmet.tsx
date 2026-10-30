@@ -103,7 +103,6 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
                     content="Discover a collection of real-world database schema diagrams, featuring example applications and popular open-source projects."
                 />
             )}
-            <meta property="og:image" content={`${HOST_URL}/qubdidb.png`} />
             <meta property="og:type" content="website" />
             <meta property="og:site_name" content="QubdiDB" />
 
@@ -131,10 +130,7 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
                 />
             )}
 
-            <meta name="twitter:image" content={`${HOST_URL}/qubdidb.png`} />
-            <meta name="twitter:card" content="summary_large_image" />
-            <meta name="twitter:site" content="@QubdiDB" />
-            <meta name="twitter:creator" content="@QubdiDB" />
+            <meta name="twitter:card" content="summary" />
         </Helmet>
     );
 };

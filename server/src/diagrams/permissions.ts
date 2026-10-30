@@ -27,9 +27,21 @@ export async function getRole(
     diagramId: string,
     userId: string
 ): Promise<Role | null> {
-    const projectId = await getDiagramProject(db, diagramId);
-    if (!projectId) return null;
-    return getProjectRole(db, projectId, userId);
+    // the diagram, the user and the membership in one round trip
+    const [row] = await db
+        .select({ isAdmin: users.isAdmin, role: projectMembers.role })
+        .from(diagrams)
+        .innerJoin(users, eq(users.id, userId))
+        .leftJoin(
+            projectMembers,
+            and(
+                eq(projectMembers.projectId, diagrams.projectId),
+                eq(projectMembers.userId, users.id)
+            )
+        )
+        .where(eq(diagrams.id, diagramId));
+    if (!row) return null;
+    return row.isAdmin ? 'owner' : (row.role ?? null);
 }
 
 /**
@@ -66,20 +78,17 @@ export async function getProjectRole(
     projectId: string,
     userId: string
 ): Promise<Role | null> {
-    const [user] = await db
-        .select({ isAdmin: users.isAdmin })
+    const [row] = await db
+        .select({ isAdmin: users.isAdmin, role: projectMembers.role })
         .from(users)
-        .where(eq(users.id, userId));
-    if (!user) return null;
-    if (user.isAdmin) return 'owner';
-    const rows = await db
-        .select({ role: projectMembers.role })
-        .from(projectMembers)
-        .where(
+        .leftJoin(
+            projectMembers,
             and(
                 eq(projectMembers.projectId, projectId),
-                eq(projectMembers.userId, userId)
+                eq(projectMembers.userId, users.id)
             )
-        );
-    return rows[0]?.role ?? null;
+        )
+        .where(eq(users.id, userId));
+    if (!row) return null;
+    return row.isAdmin ? 'owner' : (row.role ?? null);
 }

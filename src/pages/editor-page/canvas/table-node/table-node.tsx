@@ -459,6 +459,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                         }}
                     />
                 ) : null}
+                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- canvas mouse target; the side panel table list is the keyboard path */}
                 <div
                     className={tableClassName}
                     onClick={(e) => {
@@ -690,8 +691,10 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                     {(editTableMode && editModeInitialFieldCount !== null
                         ? editModeInitialFieldCount
                         : fields.length) > TABLE_MINIMIZED_FIELDS && (
-                        <div
-                            className="z-10 flex h-8 cursor-pointer items-center justify-center rounded-b-md border-t text-xs text-muted-foreground transition-colors duration-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        <button
+                            type="button"
+                            aria-expanded={expanded}
+                            className="z-10 flex h-8 w-full cursor-pointer items-center justify-center rounded-b-md border-t text-xs text-muted-foreground transition-colors duration-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                             onClick={toggleExpand}
                         >
                             {expanded ? (
@@ -705,7 +708,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                                     {t('show_more')}
                                 </>
                             )}
-                        </div>
+                        </button>
                     )}
                 </div>
             </TableNodeContextMenu>

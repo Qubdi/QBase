@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { audit } from '../audit/audit.js';
+import { audit, auditDiagramSave } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, snapshots, users } from '../db/schema.js';
@@ -9,14 +9,22 @@ import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import { diagramStats, statsColumns } from './summary.js';
 import {
+    AUTO_PUBLISH_NOTE,
     latestSnapshotListing,
     presentDiagram,
+    presentSaved,
     publishSnapshot,
 } from './service.js';
 import { diagramHash } from '../lib/hash.js';
 
 /** `limit` stand-in when the list is not paged (Postgres' largest integer). */
 const NO_LIMIT = 2_147_483_647;
+/**
+ * A list not narrowed to one project is cut to this many diagrams unless the
+ * caller asks for another page size: it would read, sort and send every
+ * diagram there is. One project's list is bounded by the project.
+ */
+const DEFAULT_LIST_LIMIT = 100;
 const idParam = z.object({ id: z.string().uuid() });
 const listQuery = z.object({
     limit: z.coerce.number().int().min(1).max(500).optional(),
@@ -94,7 +102,7 @@ const publishBody = z
     .default({});
 
 export const diagramRoutes =
-    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep'>): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds'>): FastifyPluginAsync =>
     async (app) => {
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -187,9 +195,14 @@ export const diagramRoutes =
         };
 
         app.get('/', async (req) => {
-            // paging is optional: without `limit` the whole list comes back
+            // paging is optional for one project's list: without `limit` all of
+            // it comes back. A list of everything is cut to a default page.
             const { limit, offset, projectId } = listQuery.parse(req.query);
-            return listFor(req.user!, { limit, offset, projectId });
+            return listFor(req.user!, {
+                limit: limit ?? (projectId ? undefined : DEFAULT_LIST_LIMIT),
+                offset,
+                projectId,
+            });
         });
 
         // One row of the list, without the content: how the editor learns its
@@ -316,7 +329,16 @@ export const diagramRoutes =
                             : undefined
                     )
                 )
-                .returning();
+                // not the content: the editor has it, and it is not read back
+                .returning({
+                    id: diagrams.id,
+                    ownerId: diagrams.ownerId,
+                    projectId: diagrams.projectId,
+                    title: diagrams.title,
+                    updatedAt: diagrams.updatedAt,
+                    autoPublish: diagrams.autoPublish,
+                    contentHash: diagrams.contentHash,
+                });
             if (!d) {
                 // the diagram exists (checked above), so the base was stale
                 const [current] = await db
@@ -330,18 +352,20 @@ export const diagramRoutes =
                     updatedAt: current?.updatedAt ?? null,
                 });
             }
-            await audit(db, {
-                userId: req.user!.id,
-                action: 'diagram.update',
-                diagramId: id,
-            });
+            await auditDiagramSave(
+                db,
+                { userId: req.user!.id, diagramId: id },
+                config.auditSaveMinutes
+            );
             if (d.autoPublish) {
                 const snap = await publishSnapshot(db, id, req.user!.id, {
-                    note: 'Auto-published on save',
+                    note: AUTO_PUBLISH_NOTE,
                     onlyIfChanged: true,
                     keep: config.snapshotKeep,
+                    coalesceSeconds: config.autoPublishCoalesceSeconds,
                 });
-                if (snap) {
+                // a rewrite of the last auto snapshot is the same version again
+                if (snap && !snap.coalesced) {
                     await audit(db, {
                         userId: req.user!.id,
                         action: 'diagram.publish',
@@ -350,13 +374,7 @@ export const diagramRoutes =
                     });
                 }
             }
-            // the editor has the content it just sent: do not send it back
-            const { content: _sent, ...saved } = await presentDiagram(
-                db,
-                d,
-                role
-            );
-            return saved;
+            return presentSaved(db, d, role);
         });
 
         // The editor asks for this when it opens the diagram and again every

@@ -1,16 +1,17 @@
 # QubdiDB — Audit
 
-**rev** 12 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read
+**rev** 18 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 1 | 0 | 1 | 26 | 0 |
-| Repository | 0 | 0 | 0 | 43 | 1 |
-| Server | 0 | 0 | 0 | 28 | 0 |
-| Client | 1 | 0 | 0 | 38 | 0 |
-| **Total** | 2 | 0 | 1 | 135 | 1 |
+| Security & secrets | 1 | 0 | 1 | 28 | 0 |
+| Repository | 0 | 0 | 0 | 47 | 1 |
+| Server | 0 | 0 | 0 | 29 | 0 |
+| Database | 0 | 0 | 0 | 14 | 3 |
+| Client | 0 | 0 | 0 | 42 | 0 |
+| **Total** | 1 | 0 | 1 | 160 | 4 |
 
 ## Act first
 
@@ -24,13 +25,7 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` values remain in git history | `.env.example` history | Rotate all three; the example file is blank now |
-
-### Client
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| CLI-039 | Low | Three `jsx-a11y` rules are off: 51 hits in autofocus and mouse-target code | `eslint.config.mjs:86` · `TODO.md` | Enable each rule; fix or justify every hit |
+| SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` values remain in git history | `.env.example` · `server/.env.example` history | Rotate all three; the example files are blank now |
 
 ---
 
@@ -173,6 +168,31 @@
 | SEC-025 | Security & secrets | `/mfa/setup` and `/mfa/enable` need no password; stolen session can lock owner out |
 | SEC-026 | Security & secrets | Wrong password on 2FA disable or code renewal logged as `user.sign_in_failed` |
 | SEC-027 | Security & secrets | Tracked server example `DATABASE_URL` carries a working default password |
+| CLI-039 | Client | Three `jsx-a11y` rules are off: 51 hits in autofocus and mouse-target code |
+| CLI-040 | Client | Sign-out ends the session before the autosave flush, then deletes the local copy |
+| CLI-041 | Client | Templates `og:image` points at missing `/qubdidb.png`; tags a nonexistent `@QubdiDB` |
+| CLI-042 | Client | `clearLocalUserData` reads storage globals outside its try; blocked storage aborts sign-out |
+| DB-001 | Database | Viewer list computes stats on every snapshot version, not only the latest |
+| DB-002 | Database | Share live events use an in-process EventEmitter; other replicas never receive them |
+| DB-003 | Database | Every replica runs boot migrations without an advisory lock; the loser crashes |
+| DB-005 | Database | Auto-publish stores a full snapshot per autosave; 200-copy cap hit in 35 minutes |
+| DB-006 | Database | Save `.returning()` sends full content back; Node parses then discards it |
+| DB-007 | Database | Publish copies content through Node while holding the diagram row lock |
+| DB-008 | Database | One `audit_log` row per autosave; 5 index writes each, kept 365 days |
+| DB-009 | Database | Unscoped `GET /diagrams` reads and sorts every diagram; only project lists were bounded |
+| DB-010 | Database | Pool of 10 per replica against stock `max_connections` 100; Postgres untuned |
+| DB-012 | Database | Each publish makes every live viewer re-read the full snapshot content |
+| DB-013 | Database | Maintenance runs in every replica, repeating full-table prune scans |
+| DB-015 | Database | Role check takes 3 round trips and re-reads `users.is_admin` |
+| DB-016 | Database | Drift check loads the full previous report to compare its signature |
+| DB-017 | Database | DB container keeps default 64 MB `/dev/shm`; backups are manual only |
+| SEC-028 | Security & secrets | SQL Server login reroute dials any host unchecked; net guard bypassed |
+| SEC-029 | Security & secrets | Blocked-target error returns the private IP a hostname resolves to |
+| REPO-045 | Repository | No upstream name, copyright or modification notice for the AGPL fork |
+| REPO-046 | Repository | Gitleaks comment cites compose profile `mssql`, which no longer exists |
+| REPO-047 | Repository | Bug template says the version is in the footer; UI shows none |
+| REPO-048 | Repository | PR checklist omits server `typecheck`, which CI runs |
+| SRV-029 | Server | Outbound limiter scans its whole map per request; junk cookies grow it unbounded |
 
 ---
 
@@ -181,6 +201,9 @@
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
 | REPO-041 | Repository | `eslint-plugin-react` and `jsx-a11y` lack ESLint 10 peers; forced by overrides | Latest releases (react 7.37.5, jsx-a11y 6.10.2) still declare up to ESLint 9; the overrides stay until they do |
+| DB-004 | Database | Migration 0022 rewrites all of `diagrams` under ACCESS EXCLUSIVE | Applied migration cannot change safely; one-off lock, about 11 s per 320 MB; README warns before upgrading |
+| DB-011 | Database | Rate limits, lockouts, SSE caps and drift guard live in process memory | Needs a shared store the stack lacks; README says limit at the proxy or run one process |
+| DB-014 | Database | Drift size check casts whole content jsonb to text | Exact logical size feeds the cap; 130 ms at 30 MB, once per manual check |
 
 ---
 
@@ -188,6 +211,37 @@
 
 | ID | Finding | Reason |
 |----|---------|--------|
+
+---
+
+## Database scale check
+
+### Measured
+
+| Item | Value |
+|------|-------|
+| Seed | users 10k · projects 500 · diagrams 20k (321 MB) · snapshots 50k (726 MB) · `audit_log` 5M (1.3 GB) |
+| Autosave (pgbench, 4 clients, before the audit throttle) | 5.4 ms avg · 738 tps · 21 KB WAL per save · 98.75% HOT |
+| Viewer list, 103 diagrams | 136 ms at 3 versions · 1,968 ms at 50 · 31 ms with LATERAL |
+| Admin unpaged list, 20k rows | seq scan + 2.6 MB on-disk sort · 20 ms |
+| Migration 0022, 321 MB | 10.8 s under ACCESS EXCLUSIVE |
+| Viewer list after fix, 100 diagrams × 50 versions | 48 ms, was 2,055 ms on the same data |
+| 43 MB diagram in Node | `JSON.parse` 122 ms · `JSON.stringify` 137 ms |
+| Stock Postgres | `max_connections` 100 · `shared_buffers` 128MB · `work_mem` 4MB |
+
+### Verified fine
+
+| Area | Result | Where |
+|------|--------|-------|
+| Session lookup | One PK join, 0.6 ms; `last_seen_at` written at most every 5 min | `server/src/auth/sessions.ts:74` |
+| HOT autosave | Holds: 1,975 of 2,000 diagram updates HOT | `server/src/db/schema.ts:254` |
+| Member diagram list | Index path, 120 rows in 2.6 ms | `server/src/diagrams/routes.ts:150` |
+| Audit log reads | Every filter and keyset cursor index-driven, under 1 ms | `server/src/audit/activity.ts:150` |
+| Admin stats and diagrams | One statement 24 ms; top-N page 4–6 ms | `server/src/admin/stats.ts:79` |
+| Transactions | Short; no pool client held across remote I/O or SSE | `server/src/drift/service.ts:263` |
+| Write races | Lock upsert, link advisory lock, compare-and-write save | `server/src/diagrams/lock.ts:25` |
+| Retention | Every growing table pruned | `server/src/maintenance.ts:141` |
+| Keys and FKs | `bigint` audit ids; FK indexes on large cascades | `server/src/db/schema.ts:312` |
 
 ---
 
@@ -207,3 +261,9 @@
 | 10 | 2026-10-30 | 12 fixed: SRV-017 to SRV-028 |
 | 11 | 2026-10-30 | 22 fixed: REPO-007, REPO-023 to REPO-040, REPO-042 to REPO-044; REPO-041 accepted; 1 new: CLI-039 |
 | 12 | 2026-10-30 | 4 fixed: SEC-024 to SEC-027; SEC-001 left open |
+| 13 | 2026-10-30 | Deep pass + new Database lens (`DB-` prefix): 27 new, 0 fixed, 0 regressed; SEC-001 widened to `server/.env.example` |
+| 14 | 2026-10-30 | 4 fixed: CLI-039 to CLI-042 |
+| 15 | 2026-10-30 | 14 fixed: DB-001 to DB-003, DB-005 to DB-010, DB-012, DB-013, DB-015 to DB-017; DB-004, DB-011, DB-014 accepted |
+| 16 | 2026-10-30 | 2 fixed: SEC-028, SEC-029; SEC-001 left open |
+| 17 | 2026-10-30 | 4 fixed: REPO-045 to REPO-048 |
+| 18 | 2026-10-30 | 1 fixed: SRV-029 |

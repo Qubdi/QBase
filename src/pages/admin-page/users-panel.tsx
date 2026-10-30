@@ -752,6 +752,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             onChange={setNewPassword}
                             minLength={minLength}
                             email={resetFor?.email}
+                            // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog opened on request; focus goes to its first field
                             autoFocus
                         />
                         <Button type="submit" disabled={busy || resetWeak}>

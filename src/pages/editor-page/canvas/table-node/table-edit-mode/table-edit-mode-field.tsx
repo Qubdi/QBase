@@ -77,6 +77,7 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
                             )}
                             value={fieldName}
                             onChange={(e) => handleNameChange(e.target.value)}
+                            // eslint-disable-next-line jsx-a11y/no-autofocus -- focuses the field the user just added
                             autoFocus={focused}
                         />
 

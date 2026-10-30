@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 12</b></div>
+  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 18</b></div>
   <h1>1 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
@@ -22,10 +22,11 @@
     </ul></span>
   </div>
   <div class="split-nav">
-    <b>Part of a 4-file audit split &mdash;</b>
+    <b>Part of a 5-file audit split &mdash;</b>
     <span class="here">Security &amp; secrets (this file)</span>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
     <a href="audit.html">Index</a>
   </div>
@@ -35,12 +36,12 @@
 
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">1 open &middot; 26 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 28 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</td><td><code>.env.example</code> history</td><td class="wrap-cell">Rotate all three; the example file is blank now</td></tr>
+        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</td><td><code>.env.example</code> · <code>server/.env.example</code> history</td><td class="wrap-cell">Rotate all three; the example files are blank now</td></tr>
       </tbody>
     </table>
   </div>
@@ -48,7 +49,7 @@
 
 <section id="closed" class="sec-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (26)</summary>
+  <details><summary>Fixed (28)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -79,6 +80,8 @@
         <tr><td class="svc-name">SEC-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>/mfa/setup</code> and <code>/mfa/enable</code> need no password; stolen session can lock owner out</td></tr>
         <tr><td class="svc-name">SEC-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Wrong password on 2FA disable or code renewal logged as <code>user.sign_in_failed</code></td></tr>
         <tr><td class="svc-name">SEC-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Tracked server example <code>DATABASE_URL</code> carries a working default password</td></tr>
+        <tr><td class="svc-name">SEC-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL Server login reroute dials any host unchecked; net guard bypassed</td></tr>
+        <tr><td class="svc-name">SEC-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Blocked-target error returns the private IP a hostname resolves to</td></tr>
       </tbody>
     </table>
   </div>
@@ -96,10 +99,11 @@
 
 </main>
   <div class="split-nav">
-    <b>Part of a 4-file audit split &mdash;</b>
+    <b>Part of a 5-file audit split &mdash;</b>
     <span class="here">Security &amp; secrets (this file)</span>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
     <a href="audit.html">Index</a>
   </div>

@@ -54,6 +54,10 @@ export interface Config {
     logLevel: string;
     /** most database connections the pool opens at once */
     dbPoolMax: number;
+    /** a save's audit row is written at most this often per person and diagram, in minutes; 0 logs every save */
+    auditSaveMinutes: number;
+    /** auto-publish rewrites the person's latest auto snapshot when it is younger than this many seconds; 0 always adds one */
+    autoPublishCoalesceSeconds: number;
     /** longest a database statement may run, in seconds; 0 means no limit */
     dbStatementTimeoutSeconds: number;
     /** max requests per minute per IP on the public share routes */
@@ -205,6 +209,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         trustProxy,
         logLevel,
         dbPoolMax: int('DB_POOL_MAX', 10, 1),
+        auditSaveMinutes: int('AUDIT_SAVE_MINUTES', 60),
+        autoPublishCoalesceSeconds: int('AUTO_PUBLISH_COALESCE_SECONDS', 300),
         dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
         introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')

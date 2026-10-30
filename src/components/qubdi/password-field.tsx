@@ -52,6 +52,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
                 autoComplete="new-password"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- passes the caller's choice through
                 autoFocus={autoFocus}
                 required
             />

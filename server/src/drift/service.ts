@@ -122,6 +122,21 @@ export async function latestReportSummary(db: Db, diagramId: string) {
     return r;
 }
 
+/** What a new check compares itself with: the last report's outcome, not its changes. */
+async function latestOutcome(db: Db, diagramId: string) {
+    const [r] = await db
+        .select({
+            status: driftReports.status,
+            signature: driftReports.signature,
+            dismissedAt: driftReports.dismissedAt,
+        })
+        .from(driftReports)
+        .where(eq(driftReports.diagramId, diagramId))
+        .orderBy(desc(driftReports.runAt))
+        .limit(1);
+    return r;
+}
+
 export async function latestReport(db: Db, diagramId: string) {
     const [r] = await db
         .select()
@@ -202,7 +217,7 @@ export async function runDriftCheck(
             .where(eq(driftSettings.diagramId, diagramId));
         if (!settings) return 'not_configured';
 
-        const previous = await latestReport(db, diagramId);
+        const previous = await latestOutcome(db, diagramId);
         let secrets: string[] = [];
         let outcome:
             | {

@@ -89,6 +89,7 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog opened on request; focus goes to its first field
                         autoFocus
                     />
                     <PasswordField

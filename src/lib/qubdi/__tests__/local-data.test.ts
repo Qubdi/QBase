@@ -41,6 +41,23 @@ describe('clearLocalUserData', () => {
         ).resolves.toBeUndefined();
         expect(localStorage.getItem('qubdidb.remote-map')).toBeNull();
     });
+
+    it('still deletes the database when reading the storages throws', async () => {
+        const blocked = () => {
+            throw new DOMException('blocked', 'SecurityError');
+        };
+        vi.spyOn(window, 'localStorage', 'get').mockImplementation(blocked);
+        vi.spyOn(window, 'sessionStorage', 'get').mockImplementation(blocked);
+        const deleteDatabase = vi.fn(async () => undefined);
+        try {
+            await expect(
+                clearLocalUserData(deleteDatabase)
+            ).resolves.toBeUndefined();
+        } finally {
+            vi.restoreAllMocks();
+        }
+        expect(deleteDatabase).toHaveBeenCalledExactlyOnceWith(LOCAL_DB_NAME);
+    });
 });
 
 describe('claimLocalData', () => {

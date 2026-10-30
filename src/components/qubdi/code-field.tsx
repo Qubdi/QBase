@@ -51,6 +51,7 @@ export const CodeField: React.FC<CodeFieldProps> = ({
             maxLength={recovery || either ? 20 : 7}
             autoCapitalize={recovery ? 'characters' : 'off'}
             spellCheck={false}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- passes the caller's choice through
             autoFocus={autoFocus}
             value={value}
             onChange={(e) => onChange(e.target.value)}
