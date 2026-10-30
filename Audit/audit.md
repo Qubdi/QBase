@@ -1,16 +1,16 @@
 # QubdiDB — Audit
 
-**rev** 9 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (232 files, 2660 tests, all pass), `vite build` · npm audit root and `server/` · server vitest run against a throwaway Postgres (57 files, 878 tests, 13 skipped for SQL Server, all pass) · no secret read
+**rev** 10 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (232 files, 2660 tests, all pass), `vite build` · npm audit root and `server/` · server vitest run against a throwaway Postgres (60 files, 901 tests, 13 skipped for SQL Server, all pass) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 1 | 22 | 0 |
 | Repository | 23 | 0 | 1 | 21 | 0 |
-| Server | 12 | 0 | 0 | 16 | 0 |
+| Server | 0 | 0 | 0 | 28 | 0 |
 | Client | 0 | 0 | 0 | 38 | 0 |
-| **Total** | 40 | 0 | 2 | 97 | 0 |
+| **Total** | 28 | 0 | 2 | 109 | 0 |
 
 ## Act first
 
@@ -58,23 +58,6 @@
 | REPO-042 | Low | `eslint-plugin-css-modules` configured; no `*.module.css` files exist | `eslint.config.mjs:36` | Remove `eslint-plugin-css-modules` |
 | REPO-043 | Low | `jsx-a11y` plugin registered with zero rules enabled | `eslint.config.mjs:44` | Extend the `jsx-a11y` recommended rules |
 | REPO-044 | Low | Vite 8 config still uses `rollupOptions.manualChunks` | `vite.config.ts:26` | Move to `build.rolldownOptions` code-splitting groups |
-
-### Server
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| SRV-017 | Med | Stored-diagram lint returns 500 when a table lacks `fields` | `server/src/lint/routes.ts:122` · `shared/schema-desc.ts:289` | Validate stored content before `lint()`, as `POST /lint` does |
-| SRV-018 | Med | Diagram list runs `jsonb_array_length` on every listed row's content | `server/src/diagrams/summary.ts:41` | Store table and relationship counts as columns on save |
-| SRV-019 | Med | Publish reads the full previous snapshot and re-hashes content | `server/src/diagrams/service.ts:127` | Select only version and hash; reuse `contentHash` |
-| SRV-020 | Low | Drift list and badge load full report rows, including `changes` | `server/src/drift/routes.ts:99` · `server/src/drift/routes.ts:210` | Select only summary columns |
-| SRV-021 | Low | Each drift check re-derives its key with blocking `scryptSync` | `server/src/drift/service.ts:197` | Reuse one `CryptoBox` per process |
-| SRV-022 | Low | Drift check reconciles a working copy of any size | `server/src/drift/service.ts:227` | Apply the lint `octet_length` cap first |
-| SRV-023 | Low | `LOG_LEVEL` unvalidated; a typo throws in pino, not `ConfigError` | `server/src/config.ts:175` | Validate `LOG_LEVEL` against pino levels |
-| SRV-024 | Low | Pool sets no `statement_timeout`; a slow query holds a connection | `server/src/db/client.ts:14` | Add `statement_timeout` to the Pool options |
-| SRV-025 | Low | Share-link create counts then inserts; parallel creates exceed `MAX_ACTIVE_LINKS` | `server/src/share/routes.ts:137` | Count and insert under a diagram row lock |
-| SRV-026 | Low | Link list caps 200 newest; revoked churn hides older active links | `server/src/share/routes.ts:128` | Order active links first in the capped list |
-| SRV-027 | Low | Drift check with missing settings or diagram answers 409 `already_running` | `server/src/drift/service.ts:165` · `server/src/drift/routes.ts:190` | Return a distinct reason and status |
-| SRV-028 | Low | One failing purge skips every later maintenance step | `server/src/maintenance.ts:142` | Wrap each purge in its own try/catch |
 
 
 ---
@@ -180,6 +163,18 @@
 | CLI-036 | Client | Import rethrows inside FileReader `onload`; unhandled rejection |
 | CLI-037 | Client | Unused `CommandDialog` lacks a DialogTitle |
 | CLI-038 | Client | `qrcode` imported eagerly by the 2FA dialog in the editor nav |
+| SRV-017 | Server | Stored-diagram lint returns 500 when a table lacks `fields` |
+| SRV-018 | Server | Diagram list runs `jsonb_array_length` on every listed row's content |
+| SRV-019 | Server | Publish reads the full previous snapshot and re-hashes content |
+| SRV-020 | Server | Drift list and badge load full report rows, including `changes` |
+| SRV-021 | Server | Each drift check re-derives its key with blocking `scryptSync` |
+| SRV-022 | Server | Drift check reconciles a working copy of any size |
+| SRV-023 | Server | `LOG_LEVEL` unvalidated; a typo throws in pino, not `ConfigError` |
+| SRV-024 | Server | Pool sets no `statement_timeout`; a slow query holds a connection |
+| SRV-025 | Server | Share-link create counts then inserts; parallel creates exceed `MAX_ACTIVE_LINKS` |
+| SRV-026 | Server | Link list caps 200 newest; revoked churn hides older active links |
+| SRV-027 | Server | Drift check with missing settings or diagram answers 409 `already_running` |
+| SRV-028 | Server | One failing purge skips every later maintenance step |
 
 ---
 
@@ -210,3 +205,4 @@
 | 7 | 2026-10-20 | 1 fixed |
 | 8 | 2026-10-30 | Deep pass: 57 new, 0 fixed, REPO-007 reopened; SEC-001 widened to `MSSQL_SA_PASSWORD` |
 | 9 | 2026-10-30 | 19 fixed: CLI-020 to CLI-038 |
+| 10 | 2026-10-30 | 12 fixed: SRV-017 to SRV-028 |

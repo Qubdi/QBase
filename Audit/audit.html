@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 9</b></div>
-  <h1>40 open across four lenses: 0 Crit, 2 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 10</b></div>
+  <h1>28 open across four lenses: 0 Crit, 2 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (232 files, 2660 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> · server vitest run against a throwaway Postgres (57 files, 878 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (232 files, 2660 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> · server vitest run against a throwaway Postgres (60 files, 901 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -35,9 +35,9 @@
       <tbody>
         <tr><td>Security &amp; secrets</td><td>5</td><td>0</td><td>1</td><td>22</td><td>0</td></tr>
         <tr><td>Repository</td><td>23</td><td>0</td><td>1</td><td>21</td><td>0</td></tr>
-        <tr><td>Server</td><td>12</td><td>0</td><td>0</td><td>16</td><td>0</td></tr>
+        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>28</td><td>0</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>38</td><td>0</td></tr>
-        <tr><td>Total</td><td>40</td><td>0</td><td>2</td><td>97</td><td>0</td></tr>
+        <tr><td>Total</td><td>28</td><td>0</td><td>2</td><td>109</td><td>0</td></tr>
       </tbody>
     </table>
   </div>
@@ -57,8 +57,8 @@
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
-    <p>Top: Stored-diagram lint returns 500 when a table lacks <code>fields</code></p>
-    <p class="lbl">12 open &middot; 0 Crit &middot; 0 High &middot; 16 fixed &middot; 0 accepted</p>
+    <p>Nothing open</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 28 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
@@ -82,6 +82,7 @@
         <tr><td>7</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
         <tr><td>8</td><td>2026-10-30</td><td class="wrap-cell">Deep pass: 57 new, 0 fixed, REPO-007 reopened; SEC-001 widened to <code>MSSQL_SA_PASSWORD</code></td></tr>
         <tr><td>9</td><td>2026-10-30</td><td class="wrap-cell">19 fixed: CLI-020 to CLI-038</td></tr>
+        <tr><td>10</td><td>2026-10-30</td><td class="wrap-cell">12 fixed: SRV-017 to SRV-028</td></tr>
       </tbody>
     </table>
   </div>
