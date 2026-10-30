@@ -1,22 +1,21 @@
 # QubdiDB — Audit
 
-**rev** 15 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (64 files, 937 tests: 922 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
+**rev** 16 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (65 files, 943 tests: 928 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 3 | 0 | 2 | 26 | 0 |
+| Security & secrets | 1 | 0 | 1 | 28 | 0 |
 | Repository | 4 | 0 | 0 | 43 | 1 |
 | Server | 1 | 0 | 0 | 28 | 0 |
 | Database | 0 | 0 | 0 | 14 | 3 |
 | Client | 0 | 0 | 0 | 42 | 0 |
-| **Total** | 8 | 0 | 2 | 153 | 4 |
+| **Total** | 6 | 0 | 1 | 155 | 4 |
 
 ## Act first
 
 - `SEC-001` — old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` are in git history; rotate all three.
-- `SEC-028` — a hostile SQL Server can reroute introspection to any internal host.
 
 ---
 
@@ -27,8 +26,6 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` values remain in git history | `.env.example` · `server/.env.example` history | Rotate all three; the example files are blank now |
-| SEC-028 | High | SQL Server login reroute dials any host unchecked; net guard bypassed | `server/src/introspect/sqlserver.ts:361` · tedious `connection.js:1301` | Pass a tedious `connector` that dials only the vetted address |
-| SEC-029 | Low | Blocked-target error returns the private IP a hostname resolves to | `server/src/introspect/net-guard.ts:189` · `server/src/introspect/routes.ts:218` | Drop the resolved address from the client-facing message |
 
 ### Repository
 
@@ -204,6 +201,8 @@
 | DB-015 | Database | Role check takes 3 round trips and re-reads `users.is_admin` |
 | DB-016 | Database | Drift check loads the full previous report to compare its signature |
 | DB-017 | Database | DB container keeps default 64 MB `/dev/shm`; backups are manual only |
+| SEC-028 | Security & secrets | SQL Server login reroute dials any host unchecked; net guard bypassed |
+| SEC-029 | Security & secrets | Blocked-target error returns the private IP a hostname resolves to |
 
 ---
 
@@ -275,3 +274,4 @@
 | 13 | 2026-10-30 | Deep pass + new Database lens (`DB-` prefix): 27 new, 0 fixed, 0 regressed; SEC-001 widened to `server/.env.example` |
 | 14 | 2026-10-30 | 4 fixed: CLI-039 to CLI-042 |
 | 15 | 2026-10-30 | 14 fixed: DB-001 to DB-003, DB-005 to DB-010, DB-012, DB-013, DB-015 to DB-017; DB-004, DB-011, DB-014 accepted |
+| 16 | 2026-10-30 | 2 fixed: SEC-028, SEC-029; SEC-001 left open |

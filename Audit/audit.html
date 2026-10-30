@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 15</b></div>
-  <h1>8 open across five lenses: 0 Crit, 2 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 16</b></div>
+  <h1>6 open across five lenses: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (64 files, 937 tests: 922 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (65 files, 943 tests: 928 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -34,12 +34,12 @@
     <table>
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
-        <tr><td>Security &amp; secrets</td><td>3</td><td>0</td><td>2</td><td>26</td><td>0</td></tr>
+        <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>1</td><td>28</td><td>0</td></tr>
         <tr><td>Repository</td><td>4</td><td>0</td><td>0</td><td>43</td><td>1</td></tr>
         <tr><td>Server</td><td>1</td><td>0</td><td>0</td><td>28</td><td>0</td></tr>
         <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>14</td><td>3</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>42</td><td>0</td></tr>
-        <tr><td>Total</td><td>8</td><td>0</td><td>2</td><td>153</td><td>4</td></tr>
+        <tr><td>Total</td><td>6</td><td>0</td><td>1</td><td>155</td><td>4</td></tr>
       </tbody>
     </table>
   </div>
@@ -50,7 +50,7 @@
   <a class="idx-card sec" href="audit-security.html">
     <h3>Security &amp; secrets</h3>
     <p>Top: Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</p>
-    <p class="lbl">3 open &middot; 0 Crit &middot; 2 High &middot; 26 fixed &middot; 0 accepted</p>
+    <p class="lbl">1 open &middot; 0 Crit &middot; 1 High &middot; 28 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
@@ -95,6 +95,7 @@
         <tr><td>13</td><td>2026-10-30</td><td class="wrap-cell">Deep pass + new Database lens (<code>DB-</code> prefix): 27 new, 0 fixed, 0 regressed; SEC-001 widened to <code>server/.env.example</code></td></tr>
         <tr><td>14</td><td>2026-10-30</td><td class="wrap-cell">4 fixed: CLI-039 to CLI-042</td></tr>
         <tr><td>15</td><td>2026-10-30</td><td class="wrap-cell">14 fixed: DB-001 to DB-003, DB-005 to DB-010, DB-012, DB-013, DB-015 to DB-017; DB-004, DB-011, DB-014 accepted</td></tr>
+        <tr><td>16</td><td>2026-10-30</td><td class="wrap-cell">2 fixed: SEC-028, SEC-029; SEC-001 left open</td></tr>
       </tbody>
     </table>
   </div>
