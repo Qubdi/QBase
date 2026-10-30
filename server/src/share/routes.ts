@@ -129,7 +129,13 @@ export const shareManagementRoutes =
                 .select()
                 .from(shareLinks)
                 .where(eq(shareLinks.diagramId, id))
-                .orderBy(desc(shareLinks.createdAt))
+                // links that can be opened come first, then the ones nobody
+                // revoked, so revoked ones never push a working link off the list
+                .orderBy(
+                    desc(sql`coalesce(${activeLinkSql()}, false)`),
+                    desc(sql`${shareLinks.revokedAt} is null`),
+                    desc(shareLinks.createdAt)
+                )
                 .limit(MAX_LISTED_LINKS);
             return rows.map((l) => ({ ...presentLink(l), token: unsealed(l) }));
         });

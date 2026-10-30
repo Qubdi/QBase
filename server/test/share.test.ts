@@ -114,6 +114,34 @@ describe('share links', () => {
             expect(list.json()).toHaveLength(MAX_LISTED_LINKS);
         });
 
+        it('keeps working links on the list when many revoked ones are newer', async () => {
+            const churned = await createDiagram(ctx.app, owner, 'Churned');
+            const old = new Date(Date.now() - 24 * 3600 * 1000);
+            await ctx.db.insert(shareLinks).values([
+                { diagramId: churned, tokenHash: 'churned-old-1', createdAt: old },
+                { diagramId: churned, tokenHash: 'churned-old-2', createdAt: old },
+                ...Array.from({ length: MAX_LISTED_LINKS + 5 }, (_, n) => ({
+                    diagramId: churned,
+                    tokenHash: `churned-revoked-${n}`,
+                    revokedAt: new Date(),
+                })),
+            ]);
+            const list = (
+                await ctx.app.inject({
+                    url: `/diagrams/${churned}/share-links`,
+                    headers: as(owner),
+                })
+            ).json();
+            expect(list).toHaveLength(MAX_LISTED_LINKS);
+            const working = list.filter(
+                (l: { revokedAt: string | null }) => l.revokedAt === null
+            );
+            expect(working).toHaveLength(2);
+            // and the working ones head the list
+            expect(list[0].revokedAt).toBeNull();
+            expect(list[1].revokedAt).toBeNull();
+        });
+
         it('makes creates for one diagram wait for each other, so the cap holds', async () => {
             const racing = await createDiagram(ctx.app, owner, 'Racing');
             await ctx.db.insert(shareLinks).values(
