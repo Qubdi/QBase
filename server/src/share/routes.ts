@@ -9,10 +9,10 @@ import { shareLinks } from '../db/schema.js';
 import { CryptoBox } from '../introspect/crypto-box.js';
 import { API_SECURITY_HEADERS } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
-import { latestSnapshot } from '../diagrams/service.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
 import { activeLinkSql } from './active.js';
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
+import { createSnapshotCache } from './snapshot-cache.js';
 import { generateToken, hashToken } from './tokens.js';
 
 /** Most links the editor's list returns for one diagram, newest first. */
@@ -299,6 +299,10 @@ export const publicShareRoutes =
             reply.header('cache-control', 'no-store');
         });
 
+        // a publish wakes every live viewer, and each reads the new version
+        const snapshots = createSnapshotCache(db);
+        app.addHook('onClose', async () => snapshots.close());
+
         // open live viewers per link, so one link cannot hold unlimited sockets
         const viewers = new Map<string, number>();
         // ...and per client address over all links, so one address cannot take every slot
@@ -339,7 +343,7 @@ export const publicShareRoutes =
                     ? reply.code(401).send({ error: 'login_required' })
                     : reply.code(404).send({ error: 'not_found' });
             }
-            const snap = await latestSnapshot(db, check.link.diagramId);
+            const snap = await snapshots.get(check.link.diagramId);
             // the link is fine; nothing has been published to show yet
             if (!snap) return reply.code(404).send({ error: 'not_published' });
             return {
