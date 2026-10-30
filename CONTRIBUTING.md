@@ -57,8 +57,7 @@ By contributing, you agree that your work will be licensed under QubdiDB's [lice
 
 ## Questions?
 
-Feel free to ask in `#contributing` on [Discord](https://discord.gg/QeFwyWSKwC) if you have questions about our process, how to proceed, etc.
-or [email the project maintainers](mailto:support@qubdi.dev).
+[Email the project maintainers](mailto:support@qubdi.dev) if you have questions about our process, how to proceed, etc.
 
 ---
 
