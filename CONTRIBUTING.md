@@ -46,7 +46,7 @@ database, the server and the editor.
 ```bash
 npm run lint && npx vitest run       # editor: lint and tests
 npm run build                        # editor: lint, type check and bundle
-cd server && npm run lint && npx vitest run   # server (needs the Postgres from `docker compose up -d db`)
+cd server && npm run lint && npm run typecheck && npx vitest run   # server (tests need the Postgres from `docker compose up -d db`)
 ```
 
 The server tests create their own `qubdidb_test` database next to the one the app uses.
