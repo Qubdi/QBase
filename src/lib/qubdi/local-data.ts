@@ -25,9 +25,10 @@ export async function clearLocalUserData(
     deleteDatabase: (name: string) => Promise<unknown> = (name) =>
         Dexie.delete(name)
 ): Promise<void> {
-    for (const storage of [localStorage, sessionStorage]) {
+    // with storage blocked, even reading the global throws
+    for (const getStorage of [() => localStorage, () => sessionStorage]) {
         try {
-            removePrefixed(storage);
+            removePrefixed(getStorage());
         } catch {
             // storage unavailable: nothing was kept there
         }
