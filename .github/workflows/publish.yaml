@@ -120,6 +120,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # attached to the image in the registry: how and from what it was
+          # built, and what is inside it
+          provenance: mode=max
+          sbom: true
 
   build-and-publish-server:
     needs: verify
@@ -164,3 +168,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # attached to the image in the registry: how and from what it was
+          # built, and what is inside it
+          provenance: mode=max
+          sbom: true
