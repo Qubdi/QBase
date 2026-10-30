@@ -8,18 +8,19 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 12</b></div>
-  <h1>1 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 14</b></div>
+  <h1>0 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (61 files, 920 tests: 905 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
-    <b>Part of a 4-file audit split &mdash;</b>
+    <b>Part of a 5-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
     <span class="here">Client (this file)</span>
     <a href="audit.html">Index</a>
   </div>
@@ -29,12 +30,11 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">1 open &middot; 38 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 42 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">CLI-039</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Three <code>jsx-a11y</code> rules are off: 51 hits in autofocus and mouse-target code</td><td><code>eslint.config.mjs:86</code> · <code>TODO.md</code></td><td class="wrap-cell">Enable each rule; fix or justify every hit</td></tr>
       </tbody>
     </table>
   </div>
@@ -42,7 +42,7 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (38)</summary>
+  <details><summary>Fixed (42)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -85,6 +85,10 @@
         <tr><td class="svc-name">CLI-036</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Import rethrows inside FileReader <code>onload</code>; unhandled rejection</td></tr>
         <tr><td class="svc-name">CLI-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused <code>CommandDialog</code> lacks a DialogTitle</td></tr>
         <tr><td class="svc-name">CLI-038</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>qrcode</code> imported eagerly by the 2FA dialog in the editor nav</td></tr>
+        <tr><td class="svc-name">CLI-039</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Three <code>jsx-a11y</code> rules are off: 51 hits in autofocus and mouse-target code</td></tr>
+        <tr><td class="svc-name">CLI-040</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Sign-out ends the session before the autosave flush, then deletes the local copy</td></tr>
+        <tr><td class="svc-name">CLI-041</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Templates <code>og:image</code> points at missing <code>/qubdidb.png</code>; tags a nonexistent <code>@QubdiDB</code></td></tr>
+        <tr><td class="svc-name">CLI-042</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>clearLocalUserData</code> reads storage globals outside its try; blocked storage aborts sign-out</td></tr>
       </tbody>
     </table>
   </div>
@@ -102,10 +106,11 @@
 
 </main>
   <div class="split-nav">
-    <b>Part of a 4-file audit split &mdash;</b>
+    <b>Part of a 5-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
     <span class="here">Client (this file)</span>
     <a href="audit.html">Index</a>
   </div>

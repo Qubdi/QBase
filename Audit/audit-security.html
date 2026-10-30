@@ -8,24 +8,26 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 12</b></div>
-  <h1>1 open: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 14</b></div>
+  <h1>3 open: 0 Crit, 2 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (61 files, 920 tests: 905 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
     <span class="pill crit">Act first</span>
     <span><ul class="body">
       <li><code>SEC-001</code> — old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> are in git history; rotate all three.</li>
+      <li><code>SEC-028</code> — a hostile SQL Server can reroute introspection to any internal host.</li>
     </ul></span>
   </div>
   <div class="split-nav">
-    <b>Part of a 4-file audit split &mdash;</b>
+    <b>Part of a 5-file audit split &mdash;</b>
     <span class="here">Security &amp; secrets (this file)</span>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
     <a href="audit.html">Index</a>
   </div>
@@ -35,12 +37,14 @@
 
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">1 open &middot; 26 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">3 open &middot; 26 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</td><td><code>.env.example</code> history</td><td class="wrap-cell">Rotate all three; the example file is blank now</td></tr>
+        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</td><td><code>.env.example</code> · <code>server/.env.example</code> history</td><td class="wrap-cell">Rotate all three; the example files are blank now</td></tr>
+        <tr><td class="svc-name">SEC-028</td><td><span class="pill crit">High</span></td><td class="wrap-cell">SQL Server login reroute dials any host unchecked; net guard bypassed</td><td><code>server/src/introspect/sqlserver.ts:361</code> · tedious <code>connection.js:1301</code></td><td class="wrap-cell">Pass a tedious <code>connector</code> that dials only the vetted address</td></tr>
+        <tr><td class="svc-name">SEC-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Blocked-target error returns the private IP a hostname resolves to</td><td><code>server/src/introspect/net-guard.ts:189</code> · <code>server/src/introspect/routes.ts:218</code></td><td class="wrap-cell">Drop the resolved address from the client-facing message</td></tr>
       </tbody>
     </table>
   </div>
@@ -96,10 +100,11 @@
 
 </main>
   <div class="split-nav">
-    <b>Part of a 4-file audit split &mdash;</b>
+    <b>Part of a 5-file audit split &mdash;</b>
     <span class="here">Security &amp; secrets (this file)</span>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
     <a href="audit.html">Index</a>
   </div>

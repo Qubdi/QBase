@@ -8,18 +8,19 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 12</b></div>
-  <h1>0 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 14</b></div>
+  <h1>4 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (61 files, 920 tests: 905 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
-    <b>Part of a 4-file audit split &mdash;</b>
+    <b>Part of a 5-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <span class="here">Repository &amp; governance (this file)</span>
     <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
     <a href="audit.html">Index</a>
   </div>
@@ -29,11 +30,15 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">0 open &middot; 43 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">4 open &middot; 43 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-045</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No upstream name, copyright or modification notice for the AGPL fork</td><td><code>README.md:322</code> · <code>LICENSE</code></td><td class="wrap-cell">Add a NOTICE naming upstream, its copyright and changes</td></tr>
+        <tr><td class="svc-name">REPO-046</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Gitleaks comment cites compose profile <code>mssql</code>, which no longer exists</td><td><code>.gitleaks.toml:2</code></td><td class="wrap-cell">Reword: value allowlisted for history only</td></tr>
+        <tr><td class="svc-name">REPO-047</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Bug template says the version is in the footer; UI shows none</td><td><code>.github/ISSUE_TEMPLATE/bug_report.md:18</code></td><td class="wrap-cell">Point to <code>package.json</code> only</td></tr>
+        <tr><td class="svc-name">REPO-048</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">PR checklist omits server <code>typecheck</code>, which CI runs</td><td><code>.github/pull_request_template.md:8</code></td><td class="wrap-cell">Add <code>npm --prefix server run typecheck</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -107,10 +112,11 @@
 
 </main>
   <div class="split-nav">
-    <b>Part of a 4-file audit split &mdash;</b>
+    <b>Part of a 5-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <span class="here">Repository &amp; governance (this file)</span>
     <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
     <a href="audit.html">Index</a>
   </div>
