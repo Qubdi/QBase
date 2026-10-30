@@ -19,6 +19,9 @@ import { useNavigate } from 'react-router-dom';
 import { diagramFromJSONInput } from '@/lib/export-import-utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/alert/alert';
 import { AlertCircle } from 'lucide-react';
+import { useQubdi } from '@/hooks/use-qubdi';
+import { useWorkspace } from '@/components/qubdi/workspace-context';
+import { projectDiagramPath } from '@/lib/qubdi/project-path';
 
 export interface ImportDiagramDialogProps extends BaseDialogProps {}
 
@@ -27,7 +30,9 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
 }) => {
     const { t } = useTranslation();
     const [file, setFile] = useState<File | null>(null);
-    const { addDiagram } = useStorage();
+    const { addDiagram, deleteDiagram } = useStorage();
+    const { syncDiagram } = useQubdi();
+    const workspace = useWorkspace();
     const navigate = useNavigate();
     const [error, setError] = useState(false);
 
@@ -60,10 +65,30 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
 
                 await addDiagram({ diagram });
 
+                // inside a project the diagram is created in it right away:
+                // nothing exists outside one, and a copy that is not in any
+                // project could only be read
+                let path = `/diagrams/${diagram.id}`;
+                if (workspace) {
+                    try {
+                        const remoteId = await syncDiagram(
+                            diagram,
+                            workspace.project.id
+                        );
+                        path = projectDiagramPath(
+                            workspace.project.slug,
+                            remoteId
+                        );
+                    } catch (e) {
+                        await deleteDiagram(diagram.id).catch(() => undefined);
+                        throw e;
+                    }
+                }
+
                 closeImportDiagramDialog();
                 closeCreateDiagramDialog();
 
-                navigate(`/diagrams/${diagram.id}`);
+                navigate(path);
             } catch {
                 setError(true);
             }
@@ -72,6 +97,9 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
     }, [
         file,
         addDiagram,
+        deleteDiagram,
+        syncDiagram,
+        workspace,
         navigate,
         closeImportDiagramDialog,
         closeCreateDiagramDialog,
