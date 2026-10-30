@@ -404,6 +404,7 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
             FIELD_TYPE_KIND_CLASS[fieldTypeKind(field.type.name)];
 
         return (
+            // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- hover preview only; the side panel shows the same field
             <div
                 ref={rowRef}
                 onMouseEnter={scheduleCard}

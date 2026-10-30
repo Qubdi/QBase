@@ -76,6 +76,7 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                         onChange={(e) => setName(e.target.value)}
                         maxLength={100}
                         required
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog opened on request; focus goes to its first field
                         autoFocus
                     />
                     <Input

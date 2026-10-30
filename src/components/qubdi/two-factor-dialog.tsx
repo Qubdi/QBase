@@ -287,6 +287,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                     <CodeField
                                         value={code}
                                         onChange={setCode}
+                                        // eslint-disable-next-line jsx-a11y/no-autofocus -- the step the user just reached; the code is what they type next
                                         autoFocus
                                     />
                                 </div>

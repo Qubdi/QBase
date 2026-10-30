@@ -137,6 +137,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                             value={code}
                             onChange={setCode}
                             recovery={recovery}
+                            // eslint-disable-next-line jsx-a11y/no-autofocus -- shown after the password step; the code is what the user types next
                             autoFocus
                         />
                         {error ? (

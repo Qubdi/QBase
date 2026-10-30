@@ -193,6 +193,7 @@ export const TableSchemaDialog: React.FC<TableSchemaDialogProps> = ({
                                         setNewSchemaName(e.target.value)
                                     }
                                     placeholder={`Enter schema name.${defaultSchemaName ? ` e.g. ${defaultSchemaName}.` : ''}`}
+                                    // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog opened on request; focus goes to its first field
                                     autoFocus
                                 />
                             </div>

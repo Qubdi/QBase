@@ -95,6 +95,7 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         maxLength={200}
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog opened on request; focus goes to its first field
                         autoFocus
                     />
                     <OptionSelect

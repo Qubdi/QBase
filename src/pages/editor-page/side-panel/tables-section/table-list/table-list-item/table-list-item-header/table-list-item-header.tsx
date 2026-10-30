@@ -266,6 +266,7 @@ export const TableListItemHeader: React.FC<TableListItemHeaderProps> = ({
                 {editMode ? (
                     <Input
                         ref={inputRef}
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- shown only after the user asks to rename; focus follows that action
                         autoFocus
                         type="text"
                         placeholder={table.name}

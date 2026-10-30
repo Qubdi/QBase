@@ -166,7 +166,9 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                         >
                             <span>{option.label}</span>
                             {!readonly ? (
-                                <span
+                                <button
+                                    type="button"
+                                    aria-label={t('clear')}
                                     onClick={(e) => {
                                         e.preventDefault();
                                         handleSelect(option.value);
@@ -174,11 +176,11 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                     className="flex items-center rounded-xs px-px text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground"
                                 >
                                     <Cross2Icon />
-                                </span>
+                                </button>
                             ) : null}
                         </span>
                     )),
-            [options, value, handleSelect, oneLine, keepOrder, readonly]
+            [options, value, handleSelect, oneLine, keepOrder, readonly, t]
         );
 
         const isAllSelected = React.useMemo(
@@ -360,7 +362,11 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                             value.length > 0 &&
                             multiple &&
                             showClear ? (
-                                <div
+                                <button
+                                    type="button"
+                                    aria-label={
+                                        clearText ? undefined : t('clear')
+                                    }
                                     onClick={(e) => {
                                         e.preventDefault();
                                         handleClear();
@@ -373,7 +379,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                     ) : (
                                         <Cross2Icon className="size-3.5" />
                                     )}
-                                </div>
+                                </button>
                             ) : (
                                 <div>
                                     <CaretSortIcon className="size-4" />
@@ -425,18 +431,21 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                 className="h-9"
                             />
                             {searchTerm && (
-                                <div
+                                <button
+                                    type="button"
+                                    aria-label={t('clear')}
                                     className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-muted-foreground hover:text-foreground"
                                     onClick={() => setSearchTerm('')}
                                 >
                                     <Cross2Icon className="size-4" />
-                                </div>
+                                </button>
                             )}
                             {!searchTerm &&
                                 multiple &&
                                 selectAll &&
                                 !isAllSelected && (
-                                    <div
+                                    <button
+                                        type="button"
                                         className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-xs text-muted-foreground hover:text-foreground"
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -444,13 +453,14 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                         }}
                                     >
                                         {t('select_all')}
-                                    </div>
+                                    </button>
                                 )}
                             {!searchTerm &&
                                 multiple &&
                                 deselectAll &&
                                 isAllSelected && (
-                                    <div
+                                    <button
+                                        type="button"
                                         className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-xs text-muted-foreground hover:text-foreground"
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -458,7 +468,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                         }}
                                     >
                                         {t('deselect_all')}
-                                    </div>
+                                    </button>
                                 )}
                         </div>
                         <CommandEmpty>

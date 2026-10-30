@@ -79,9 +79,14 @@ const IndexTypeOption: React.FC<IndexTypeOptionProps> = ({
     onSelect,
 }) => {
     const content = (
-        <div
+        <button
+            type="button"
+            aria-pressed={isSelected}
+            // not `disabled`: a disabled button gets no pointer events, and the
+            // tooltip saying why must still show
+            aria-disabled={option.disabled}
             className={cn(
-                'flex cursor-pointer items-center rounded-xs px-2 py-1.5 text-sm',
+                'flex w-full cursor-pointer items-center rounded-xs px-2 py-1.5 text-left text-sm',
                 option.disabled
                     ? 'cursor-not-allowed opacity-50'
                     : 'hover:bg-accent',
@@ -96,7 +101,7 @@ const IndexTypeOption: React.FC<IndexTypeOptionProps> = ({
                 )}
             />
             {option.label}
-        </div>
+        </button>
     );
 
     if (option.disabled && option.disabledTooltip) {

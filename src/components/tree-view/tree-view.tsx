@@ -125,7 +125,7 @@ export function TreeView<
     };
 
     return (
-        <div className={cn('w-full', className)}>
+        <div role="tree" className={cn('w-full', className)}>
             {data.map((node, index) => (
                 <TreeNode
                     key={node.id}
@@ -217,6 +217,8 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
         ? node.children
         : node.children || loadedChildren[node.id];
     const isSelected = selectedId === node.id;
+    const toggle = () =>
+        onToggle(node.id, node.type, node.context, node.children);
 
     const IconComponent =
         node.icon || (node.isFolder ? DefaultFolderIcon : DefaultIcon);
@@ -246,6 +248,10 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                 style={{ paddingLeft: `${level * 16 + 8}px` }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
+                role="treeitem"
+                tabIndex={0}
+                aria-selected={selectable ? isSelected : undefined}
+                aria-expanded={node.isFolder ? Boolean(isExpanded) : undefined}
                 onClick={(e) => {
                     e.stopPropagation();
                     if (selectable && !node.unselectable) {
@@ -263,12 +269,29 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                 onDoubleClick={(e) => {
                     e.stopPropagation();
                     if (node.isFolder) {
-                        onToggle(
-                            node.id,
-                            node.type,
-                            node.context,
-                            node.children
-                        );
+                        toggle();
+                    }
+                }}
+                // the keyboard way: Enter or Space acts like a click, the
+                // arrows open and close a folder like a double click
+                onKeyDown={(e) => {
+                    // keys pressed on the row's own buttons are theirs
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (selectable && !node.unselectable) {
+                            onSelect(node);
+                        }
+                        onNodeClick?.(node);
+                    } else if (
+                        node.isFolder &&
+                        ((e.key === 'ArrowRight' && !isExpanded) ||
+                            (e.key === 'ArrowLeft' && isExpanded))
+                    ) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggle();
                     }
                 }}
             >

@@ -136,6 +136,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
                 area={area}
                 onEditName={() => setEditMode(true)}
             >
+                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- canvas mouse target; the side panel area list is the keyboard path */}
                 <div
                     className={containerClassName}
                     style={{
@@ -199,6 +200,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
                                 <div className="flex w-full items-center">
                                     <Input
                                         ref={inputRef}
+                                        // eslint-disable-next-line jsx-a11y/no-autofocus -- shown only after the user asks to rename; focus follows that action
                                         autoFocus
                                         type="text"
                                         placeholder={area.name}

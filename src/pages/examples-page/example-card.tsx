@@ -32,7 +32,16 @@ export const ExampleCard: React.FC<ExampleCardProps> = ({
 
     return (
         <div
+            role="button"
+            tabIndex={0}
             onClick={utilizeExample}
+            onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    utilizeExample();
+                }
+            }}
             className="flex h-96 w-full cursor-pointer flex-col rounded-xl border-2 border-slate-500 bg-slate-50 shadow-xs transition duration-300 ease-in-out hover:scale-[102%] hover:border-teal-600 dark:border-slate-700 dark:bg-slate-950"
         >
             <div

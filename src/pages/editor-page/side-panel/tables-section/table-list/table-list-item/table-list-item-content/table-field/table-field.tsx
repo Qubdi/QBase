@@ -87,12 +87,16 @@ export const TableField: React.FC<TableFieldProps> = ({
                     />
 
                     {field.comments ? (
-                        <div
+                        <button
+                            type="button"
+                            aria-label={t(
+                                'side_panel.tables_section.table.comments'
+                            )}
                             className="absolute right-0 top-0 h-full w-[10px] cursor-pointer"
                             onClick={handleCommentIndicatorClick}
                         >
                             <div className="pointer-events-none absolute right-0 top-0 size-0 border-l-[10px] border-t-[10px] border-l-transparent border-t-teal-500" />
-                        </div>
+                        </button>
                     ) : null}
                 </span>
 
