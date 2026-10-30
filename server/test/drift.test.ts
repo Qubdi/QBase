@@ -2,6 +2,7 @@ import http from 'node:http';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
+import { latestReportSummary } from '../src/drift/service.js';
 import type {
     DatabaseMetadata,
     Introspector,
@@ -507,6 +508,23 @@ describe('drift detection', () => {
             const detail = (await ctx.app.inject({ url: `/diagrams/${diagramId}/drift/reports/${second.id}`, headers: as(owner) })).json();
             expect(detail.changes).toHaveLength(1);
             expect(detail.trigger).toBe('manual');
+        });
+
+        it('reads the badge and the list without the changes, which can be large', async () => {
+            addColumn('phone');
+            const report = (await check()).json();
+            expect(report.changes).toHaveLength(1);
+            const summary = await latestReportSummary(ctx.db, diagramId);
+            expect(summary.id).toBe(report.id);
+            expect(summary).not.toHaveProperty('changes');
+            expect(summary).not.toHaveProperty('renameHints');
+            // what the badge poll and the dismiss answer is unchanged by that
+            const badge = (await ctx.app.inject({ url: `/diagrams/${diagramId}/drift`, headers: as(owner) })).json();
+            expect(badge.badge).toMatchObject({ status: 'drifted', reportId: report.id });
+            expect(badge.latest).not.toHaveProperty('changes');
+            const dismissed = (await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/dismiss`, headers: as(owner) })).json();
+            expect(dismissed.badge).toBeNull();
+            expect(dismissed.latest.dismissedAt).not.toBeNull();
         });
 
         it('validates the limit and 404s for unknown or foreign reports', async () => {

@@ -48,6 +48,23 @@ export interface DriftDeps {
 }
 
 export type ReportRow = typeof driftReports.$inferSelect;
+
+/**
+ * A report without its changes and rename hints, which can be large: all a list,
+ * a badge or a dismiss needs.
+ */
+export const reportSummaryColumns = {
+    id: driftReports.id,
+    diagramId: driftReports.diagramId,
+    runAt: driftReports.runAt,
+    status: driftReports.status,
+    trigger: driftReports.trigger,
+    counts: driftReports.counts,
+    error: driftReports.error,
+    dismissedAt: driftReports.dismissedAt,
+    webhook: driftReports.webhook,
+};
+export type ReportSummaryRow = Pick<ReportRow, keyof typeof reportSummaryColumns>;
 export type SettingsRow = typeof driftSettings.$inferSelect;
 
 export interface SourceKeys {
@@ -59,7 +76,7 @@ export interface SourceKeys {
 const running = new Set<string>();
 
 /** Compact view of a report, used for lists and the diagram badge. */
-export function summarizeReport(r: ReportRow) {
+export function summarizeReport(r: ReportSummaryRow) {
     const counts = r.counts as SeverityCounts;
     return {
         id: r.id,
@@ -85,13 +102,24 @@ export const presentReport = (r: ReportRow) => ({
 });
 
 /** What the editor shows as a badge on the diagram. */
-export function badgeOf(latest: ReportRow | undefined) {
+export function badgeOf(latest: ReportSummaryRow | undefined) {
     if (!latest || latest.status === 'clean' || latest.dismissedAt) return null;
     return {
         status: latest.status,
         counts: latest.counts as SeverityCounts,
         reportId: latest.id,
     };
+}
+
+/** The latest report without its changes. */
+export async function latestReportSummary(db: Db, diagramId: string) {
+    const [r] = await db
+        .select(reportSummaryColumns)
+        .from(driftReports)
+        .where(eq(driftReports.diagramId, diagramId))
+        .orderBy(desc(driftReports.runAt))
+        .limit(1);
+    return r;
 }
 
 export async function latestReport(db: Db, diagramId: string) {
