@@ -26,6 +26,7 @@ import { useDiagram } from '@/hooks/use-diagram';
 import { useMfaAvailable } from '@/hooks/use-mfa-available';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { getProjectId } from '@/lib/qubdi/remote-map';
+import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import { AuthDialog } from './auth-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { ConnectionsDialog } from './connections-dialog';
@@ -183,7 +184,11 @@ export const AccountMenu: React.FC = () => {
             <ShareDialog
                 open={shareOpen}
                 onOpenChange={setShareOpen}
-                ensureRemoteId={() => syncDiagram(currentDiagram)}
+                ensureRemoteId={async () => {
+                    // let the autosaver finish so both saves never share one base version
+                    await flushPendingSave();
+                    return syncDiagram(currentDiagram);
+                }}
             />
             <ChangePasswordDialog
                 open={passwordOpen}

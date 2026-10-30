@@ -14,6 +14,7 @@ import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
 import { api, errorMessage } from '@/lib/qubdi/api';
+import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import {
     describeChange,
     describeRename,
@@ -137,6 +138,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
             });
             // keep the server copy in step so drift checks compare the new state
             if (remoteIdFor(currentDiagram.id)) {
+                await flushPendingSave();
                 await syncDiagram(next).catch(() => undefined);
             }
             toast({
