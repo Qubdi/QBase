@@ -11,6 +11,22 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-qubdidb}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}
       POSTGRES_DB: ${POSTGRES_DB:-qubdidb}
+    # Postgres' stock settings suit a laptop: 128 MB of shared buffers, 100
+    # connections and a 64 MB /dev/shm. Sized for a server with 2 GB or more for
+    # the database; lower them on a smaller one. See README, "Scaling".
+    shm_size: 256mb
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=64MB
     ports:
       - "${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_PUBLISH_PORT:-5433}:5432"
     volumes:
@@ -61,9 +77,11 @@ services:
       BODY_LIMIT_KB: ${BODY_LIMIT_KB:-1024}
       DIAGRAM_BODY_LIMIT_MB: ${DIAGRAM_BODY_LIMIT_MB:-50}
       SNAPSHOT_KEEP: ${SNAPSHOT_KEEP:-200}
+      AUTO_PUBLISH_COALESCE_SECONDS: ${AUTO_PUBLISH_COALESCE_SECONDS:-300}
       DRIFT_REPORT_KEEP: ${DRIFT_REPORT_KEEP:-50}
       DEAD_LINK_KEEP_DAYS: ${DEAD_LINK_KEEP_DAYS:-30}
       AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-365}
+      AUDIT_SAVE_MINUTES: ${AUDIT_SAVE_MINUTES:-60}
       SSE_MAX_PER_LINK: ${SSE_MAX_PER_LINK:-100}
       SSE_MAX_PER_IP: ${SSE_MAX_PER_IP:-20}
       SSE_HEARTBEAT_SECONDS: ${SSE_HEARTBEAT_SECONDS:-25}
