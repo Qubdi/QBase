@@ -179,24 +179,28 @@ class DriftError extends Error {}
  */
 export const DRIFT_DIAGRAM_LIMIT = 5 * 1024 * 1024;
 
+/** Why a check did not run: another is running, or what it needs is gone. */
+export type DriftSkip = 'running' | 'not_configured' | 'not_found';
+
 /**
  * Compares the diagram's working copy with the live database and stores a
  * report. A failure to read the database is an error report, never drift.
+ * Answers why, instead of a report, when the check could not start.
  */
 export async function runDriftCheck(
     deps: DriftDeps,
     diagramId: string,
     now: Date = new Date()
-): Promise<ReportRow | null> {
+): Promise<ReportRow | DriftSkip> {
     const { db } = deps;
-    if (running.has(diagramId)) return null;
+    if (running.has(diagramId)) return 'running';
     running.add(diagramId);
     try {
         const [settings] = await db
             .select()
             .from(driftSettings)
             .where(eq(driftSettings.diagramId, diagramId));
-        if (!settings) return null;
+        if (!settings) return 'not_configured';
 
         const previous = await latestReport(db, diagramId);
         let secrets: string[] = [];
@@ -218,7 +222,7 @@ export async function runDriftCheck(
                 })
                 .from(diagrams)
                 .where(eq(diagrams.id, diagramId));
-            if (!sized) return null;
+            if (!sized) return 'not_found';
             if (sized.size > DRIFT_DIAGRAM_LIMIT) {
                 throw new DriftError(
                     `The diagram is too large to compare (over ${DRIFT_DIAGRAM_LIMIT / (1024 * 1024)} MB).`
@@ -228,7 +232,7 @@ export async function runDriftCheck(
                 .select({ content: diagrams.content })
                 .from(diagrams)
                 .where(eq(diagrams.id, diagramId));
-            if (!diagram) return null;
+            if (!diagram) return 'not_found';
 
             if (!settings.connectionId) {
                 throw new DriftError('No database connection is set for this diagram.');

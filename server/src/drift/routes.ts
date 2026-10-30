@@ -188,8 +188,15 @@ export const driftRoutes =
                 : null;
             if (reused) return presentCheck(reused);
             const report = await runDriftCheck(deps, id);
-            if (!report) {
+            if (report === 'running') {
                 return reply.code(409).send({ error: 'already_running' });
+            }
+            // settings or the diagram went away while the request was waiting
+            if (report === 'not_configured') {
+                return reply.code(409).send({ error: 'not_configured' });
+            }
+            if (report === 'not_found') {
+                return reply.code(404).send({ error: 'not_found' });
             }
             await audit(db, {
                 userId: req.user!.id,

@@ -1,8 +1,9 @@
 import http from 'node:http';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { loadConfig } from '../src/config.js';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
-import { DRIFT_DIAGRAM_LIMIT, latestReportSummary } from '../src/drift/service.js';
+import { DRIFT_DIAGRAM_LIMIT, latestReportSummary, runDriftCheck } from '../src/drift/service.js';
 import type {
     DatabaseMetadata,
     Introspector,
@@ -421,6 +422,18 @@ describe('drift detection', () => {
             }
             // under the cap again, it compares as before
             expect((await check()).json().status).not.toBe('error');
+        });
+
+        it('says why a check could not start, instead of calling it a check already running', async () => {
+            const bare = (
+                await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })
+            ).json().id;
+            const deps = { db: ctx.db, config: loadConfig({ DATABASE_URL: 'postgres://u:p@localhost/db' }), factory };
+            // no drift settings: the route says so, and so does the service
+            expect((await check(owner, bare)).json().error).toBe('not_configured');
+            expect(await runDriftCheck(deps, bare)).toBe('not_configured');
+            // nothing with this id at all
+            expect(await runDriftCheck(deps, '00000000-0000-4000-8000-000000000000')).toBe('not_configured');
         });
 
         it('reports a blocked target as an error', async () => {
