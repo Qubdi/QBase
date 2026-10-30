@@ -95,6 +95,20 @@ describe('boot-time validation', () => {
         expect(c.snapshotKeep).toBe(0);
     });
 
+    it('reads the log level, ignoring case, and defaults to info', () => {
+        expect(loadConfig().logLevel).toBe('info');
+        expect(loadConfig({ LOG_LEVEL: '' }).logLevel).toBe('info');
+        expect(loadConfig({ LOG_LEVEL: ' Debug ' }).logLevel).toBe('debug');
+        expect(loadConfig({ LOG_LEVEL: 'silent' }).logLevel).toBe('silent');
+    });
+
+    it('refuses a log level the logger does not know, as a configuration error', () => {
+        expect(() => loadConfig({ LOG_LEVEL: 'verbose' })).toThrow(ConfigError);
+        expect(() => loadConfig({ LOG_LEVEL: 'verbose' })).toThrow(
+            /LOG_LEVEL must be one of fatal, error, warn, info, debug, trace, silent \(got "verbose"\)/
+        );
+    });
+
     it('refuses an encryption key under 16 characters', () => {
         expect(() => loadConfig({ SECRETS_KEY: 'short' })).toThrow(/SECRETS_KEY must be at least 16/);
         expect(() => loadConfig({ CONNECTION_KEY: 'short' })).toThrow(/CONNECTION_KEY must be at least 16/);

@@ -116,6 +116,17 @@ export class ConfigError extends Error {
 /** Shortest encryption key `CryptoBox` accepts. */
 const MIN_KEY_LENGTH = 16;
 
+/** The levels the logger knows; anything else makes it throw at start-up. */
+export const LOG_LEVELS = [
+    'fatal',
+    'error',
+    'warn',
+    'info',
+    'debug',
+    'trace',
+    'silent',
+] as const;
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     const problems: string[] = [];
     // An unset or empty variable takes the default; anything else must be a
@@ -137,6 +148,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         }
         return value;
     };
+
+    const logLevel = (env.LOG_LEVEL?.trim() || 'info').toLowerCase();
+    if (!(LOG_LEVELS as readonly string[]).includes(logLevel)) {
+        problems.push(
+            `LOG_LEVEL must be one of ${LOG_LEVELS.join(', ')} (got "${env.LOG_LEVEL?.trim()}")`
+        );
+    }
 
     // no built-in fallback: a default credential would be a known password
     const databaseUrl = env.DATABASE_URL?.trim() ?? '';
@@ -172,7 +190,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         sseMaxPerIp: int('SSE_MAX_PER_IP', 20, 1),
         sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1),
         trustProxy: parseTrustProxy(env.TRUST_PROXY),
-        logLevel: env.LOG_LEVEL ?? 'info',
+        logLevel,
         dbPoolMax: int('DB_POOL_MAX', 10, 1),
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
         introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')
