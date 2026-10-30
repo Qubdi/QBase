@@ -2,7 +2,7 @@ import http from 'node:http';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
-import { latestReportSummary } from '../src/drift/service.js';
+import { DRIFT_DIAGRAM_LIMIT, latestReportSummary } from '../src/drift/service.js';
 import type {
     DatabaseMetadata,
     Introspector,
@@ -402,6 +402,25 @@ describe('drift detection', () => {
             expect(body.counts).toEqual({ breaking: 0, warning: 0, info: 0 });
             expect(body.error).toMatch(/authentication failed/);
             expect(JSON.stringify(body)).not.toContain(PASSWORD);
+        });
+
+        it('reports a diagram over the size cap as an error, without reading the database', async () => {
+            const { diagrams } = await import('../src/db/schema.js');
+            const [row] = await ctx.db.select().from(diagrams).where(eq(diagrams.id, diagramId));
+            await ctx.db
+                .update(diagrams)
+                .set({ content: { ...(row.content as object), padding: 'x'.repeat(DRIFT_DIAGRAM_LIMIT + 1024) } })
+                .where(eq(diagrams.id, diagramId));
+            try {
+                const body = (await check()).json();
+                expect(body.status).toBe('error');
+                expect(body.error).toMatch(/too large/);
+                expect(factoryCalls).toBe(0);
+            } finally {
+                await ctx.db.update(diagrams).set({ content: row.content }).where(eq(diagrams.id, diagramId));
+            }
+            // under the cap again, it compares as before
+            expect((await check()).json().status).not.toBe('error');
         });
 
         it('reports a blocked target as an error', async () => {

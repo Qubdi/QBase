@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import {
@@ -174,6 +174,12 @@ export async function reusableReport(
 class DriftError extends Error {}
 
 /**
+ * Largest working copy a check compares, in bytes: the comparison runs on the
+ * event loop, so it has the cap the lint route has.
+ */
+export const DRIFT_DIAGRAM_LIMIT = 5 * 1024 * 1024;
+
+/**
  * Compares the diagram's working copy with the live database and stores a
  * report. A failure to read the database is an error report, never drift.
  */
@@ -203,8 +209,23 @@ export async function runDriftCheck(
             | { status: 'error'; message: string };
 
         try {
+            // the size first, so a diagram over the cap is never loaded
+            const [sized] = await db
+                .select({
+                    size: sql<number>`octet_length(${diagrams.content}::text)`.mapWith(
+                        Number
+                    ),
+                })
+                .from(diagrams)
+                .where(eq(diagrams.id, diagramId));
+            if (!sized) return null;
+            if (sized.size > DRIFT_DIAGRAM_LIMIT) {
+                throw new DriftError(
+                    `The diagram is too large to compare (over ${DRIFT_DIAGRAM_LIMIT / (1024 * 1024)} MB).`
+                );
+            }
             const [diagram] = await db
-                .select()
+                .select({ content: diagrams.content })
                 .from(diagrams)
                 .where(eq(diagrams.id, diagramId));
             if (!diagram) return null;
