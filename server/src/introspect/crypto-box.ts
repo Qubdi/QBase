@@ -58,3 +58,19 @@ export class CryptoBox {
         ]).toString('utf8');
     }
 }
+
+const boxes = new Map<string, CryptoBox>();
+
+/**
+ * The box for a secret, made once. Deriving its key is slow on purpose
+ * (scrypt, and it blocks the event loop), so code that opens one per request
+ * or per check asks here instead of calling `new CryptoBox`.
+ */
+export function cryptoBoxFor(secret: string): CryptoBox {
+    let box = boxes.get(secret);
+    if (!box) {
+        box = new CryptoBox(secret);
+        boxes.set(secret, box);
+    }
+    return box;
+}

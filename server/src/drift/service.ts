@@ -7,7 +7,7 @@ import {
     driftSettings,
     savedConnections,
 } from '../db/schema.js';
-import { CryptoBox } from '../introspect/crypto-box.js';
+import { cryptoBoxFor } from '../introspect/crypto-box.js';
 import { filterMetadata } from '../introspect/filter.js';
 import {
     ForbiddenTargetError,
@@ -222,7 +222,7 @@ export async function runDriftCheck(
             if (!deps.config.connectionKey) {
                 throw new DriftError('This server cannot read saved passwords (CONNECTION_KEY is not set).');
             }
-            const password = new CryptoBox(deps.config.connectionKey).decrypt(conn.passwordEnc);
+            const password = cryptoBoxFor(deps.config.connectionKey).decrypt(conn.passwordEnc);
             secrets = [password];
 
             const params: ConnectionParams = {
