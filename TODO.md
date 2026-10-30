@@ -37,3 +37,14 @@ line from the config.
 2. [ ] `react-hooks/refs`
 3. [ ] `react-hooks/preserve-manual-memoization`
 4. [ ] `react-hooks/use-memo`
+
+## Accessibility lint rules
+
+The rest of the `jsx-a11y` recommended rules are on. These three are off in
+`eslint.config.mjs`, with 51 hits between them. Turn each on, fix what it
+reports (or settle that a place is right as it is, with a comment), then remove
+its line from the config.
+
+1. [ ] `jsx-a11y/no-autofocus`: 18 places, mostly inline rename inputs and dialogs that take focus on purpose
+2. [ ] `jsx-a11y/click-events-have-key-events`: 17 places
+3. [ ] `jsx-a11y/no-static-element-interactions`: 16 places, mostly mouse targets on the canvas

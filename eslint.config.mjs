@@ -68,6 +68,25 @@ export default [
                 },
             ],
 
+            ...jsxA11Y.configs.recommended.rules,
+            // Radix's Checkbox renders the control inside the label
+            'jsx-a11y/label-has-associated-control': [
+                'error',
+                { controlComponents: ['Checkbox'], assert: 'either' },
+            ],
+            // a status icon takes focus so its title can be reached by keyboard
+            'jsx-a11y/no-noninteractive-tabindex': [
+                'error',
+                { roles: ['tabpanel', 'status', 'img'] },
+            ],
+            // These three have 51 hits between them (inline rename inputs that
+            // take focus on purpose, and mouse targets on the canvas that have
+            // keyboard routes elsewhere), so they stay off until each is
+            // looked at; see TODO.md.
+            'jsx-a11y/no-autofocus': 'off',
+            'jsx-a11y/click-events-have-key-events': 'off',
+            'jsx-a11y/no-static-element-interactions': 'off',
+
             // eslint-plugin-react-hooks 7 adds rules from the React Compiler.
             // The existing components were written before them (about 80
             // places reset state in an effect or read a ref while rendering),

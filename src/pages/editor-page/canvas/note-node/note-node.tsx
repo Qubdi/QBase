@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/heading-has-content, jsx-a11y/anchor-has-content -- the markdown renderer puts each element's text in through props */
 import React, { useCallback, useState, useRef } from 'react';
 import { NodeResizer, type NodeProps, type Node } from '@xyflow/react';
 import { Pencil, Trash2 } from 'lucide-react';

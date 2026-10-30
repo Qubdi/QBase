@@ -18,7 +18,13 @@ export const ZoomableImage = React.forwardRef<
     return (
         <Dialog>
             <DialogTrigger asChild ref={ref}>
-                {props.children ? props.children : <img {...props} />}
+                {props.children ? (
+                    props.children
+                ) : (
+                    // the alt text arrives through props
+                    // eslint-disable-next-line jsx-a11y/alt-text
+                    <img {...props} />
+                )}
             </DialogTrigger>
             <DialogContent className="max-w-4xl border-0 bg-transparent p-0">
                 <DialogTitle className="hidden" />
