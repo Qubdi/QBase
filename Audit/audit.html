@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 14</b></div>
-  <h1>25 open across five lenses: 0 Crit, 4 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 15</b></div>
+  <h1>8 open across five lenses: 0 Crit, 2 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (61 files, 920 tests: 905 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (64 files, 937 tests: 922 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -37,9 +37,9 @@
         <tr><td>Security &amp; secrets</td><td>3</td><td>0</td><td>2</td><td>26</td><td>0</td></tr>
         <tr><td>Repository</td><td>4</td><td>0</td><td>0</td><td>43</td><td>1</td></tr>
         <tr><td>Server</td><td>1</td><td>0</td><td>0</td><td>28</td><td>0</td></tr>
-        <tr><td>Database</td><td>17</td><td>0</td><td>2</td><td>0</td><td>0</td></tr>
+        <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>14</td><td>3</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>42</td><td>0</td></tr>
-        <tr><td>Total</td><td>25</td><td>0</td><td>4</td><td>139</td><td>1</td></tr>
+        <tr><td>Total</td><td>8</td><td>0</td><td>2</td><td>153</td><td>4</td></tr>
       </tbody>
     </table>
   </div>
@@ -64,8 +64,8 @@
   </a>
   <a class="idx-card dev" href="audit-database.html">
     <h3>Database &amp; scale</h3>
-    <p>Top: Viewer list computes stats on every snapshot version, not only the latest</p>
-    <p class="lbl">17 open &middot; 0 Crit &middot; 2 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p>Nothing open</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 14 fixed &middot; 3 accepted</p>
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
@@ -94,6 +94,7 @@
         <tr><td>12</td><td>2026-10-30</td><td class="wrap-cell">4 fixed: SEC-024 to SEC-027; SEC-001 left open</td></tr>
         <tr><td>13</td><td>2026-10-30</td><td class="wrap-cell">Deep pass + new Database lens (<code>DB-</code> prefix): 27 new, 0 fixed, 0 regressed; SEC-001 widened to <code>server/.env.example</code></td></tr>
         <tr><td>14</td><td>2026-10-30</td><td class="wrap-cell">4 fixed: CLI-039 to CLI-042</td></tr>
+        <tr><td>15</td><td>2026-10-30</td><td class="wrap-cell">14 fixed: DB-001 to DB-003, DB-005 to DB-010, DB-012, DB-013, DB-015 to DB-017; DB-004, DB-011, DB-014 accepted</td></tr>
       </tbody>
     </table>
   </div>

@@ -1,7 +1,7 @@
 # QubdiDB — Audit
 
-**rev** 14 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (61 files, 920 tests: 905 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
+**rev** 15 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (64 files, 937 tests: 922 pass, 13 skipped for SQL Server, 2 wrong-credential tests fail because the stock image trusts loopback) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
@@ -9,16 +9,14 @@
 | Security & secrets | 3 | 0 | 2 | 26 | 0 |
 | Repository | 4 | 0 | 0 | 43 | 1 |
 | Server | 1 | 0 | 0 | 28 | 0 |
-| Database | 17 | 0 | 2 | 0 | 0 |
+| Database | 0 | 0 | 0 | 14 | 3 |
 | Client | 0 | 0 | 0 | 42 | 0 |
-| **Total** | 25 | 0 | 4 | 139 | 1 |
+| **Total** | 8 | 0 | 2 | 153 | 4 |
 
 ## Act first
 
 - `SEC-001` — old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` are in git history; rotate all three.
 - `SEC-028` — a hostile SQL Server can reroute introspection to any internal host.
-- `DB-001` — viewer diagram list slows linearly with snapshot versions; 2 s at 50.
-- `DB-002` — live share updates break as soon as a second API replica runs.
 
 ---
 
@@ -46,28 +44,6 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SRV-029 | Med | Outbound limiter scans its whole map per request; junk cookies grow it unbounded | `server/src/lib/rate-key.ts:49` · `server/src/introspect/routes.ts:234` | Key after authentication; use a bounded store |
-
-### Database
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| DB-001 | High | Viewer list computes stats on every snapshot version, not only the latest | `server/src/diagrams/service.ts:47` · `server/src/diagrams/summary.ts:53` | Pick latest per diagram with LATERAL `limit 1` |
-| DB-002 | High | Share live events use an in-process EventEmitter; other replicas never receive them | `server/src/events.ts:4` · `README.md:319` | Carry publish and link events over Postgres LISTEN/NOTIFY |
-| DB-003 | Med | Every replica runs boot migrations without an advisory lock; the loser crashes | `server/src/server.ts:25` | Wrap `runMigrations` in `pg_advisory_lock` |
-| DB-004 | Med | Migration 0022 rewrites all of `diagrams` under ACCESS EXCLUSIVE | `server/src/db/migrations/0022_diagram_stats.sql:2` | Use plain columns with batched backfill before first release |
-| DB-005 | Med | Auto-publish stores a full snapshot per autosave; 200-copy cap hit in 35 minutes | `server/src/diagrams/routes.ts:338` · `server/src/config.ts:187` | Throttle auto snapshots to one per N minutes |
-| DB-006 | Med | Save `.returning()` sends full content back; Node parses then discards it | `server/src/diagrams/routes.ts:319` | Return only id, title, updatedAt, autoPublish |
-| DB-007 | Med | Publish copies content through Node while holding the diagram row lock | `server/src/diagrams/service.ts:125` | Use `insert into snapshots … select from diagrams` |
-| DB-008 | Med | One `audit_log` row per autosave; 5 index writes each, kept 365 days | `server/src/diagrams/routes.ts:335` | Record at most one `diagram.update` per diagram per hour |
-| DB-009 | Med | Editor fetches the diagram list unpaged; admins sort the whole table | `src/lib/qubdi/api.ts:541` · `server/src/diagrams/routes.ts:144` | Page the editor list; make `limit` required |
-| DB-010 | Med | Pool of 10 per replica against stock `max_connections` 100; Postgres untuned | `server/src/db/client.ts:18` · `docker-compose.yml:9` | Ship tuned `postgresql.conf`; document replica cap or PgBouncer |
-| DB-011 | Med | Rate limits, lockouts, SSE caps and drift guard live in process memory | `server/src/lib/rate-key.ts:46` · `server/src/drift/service.ts:76` | Move counters and guards to Postgres or Redis |
-| DB-012 | Med | Each publish makes every live viewer re-read the full snapshot content | `server/src/share/routes.ts:342` | Cache latest snapshot per diagram and version |
-| DB-013 | Low | Maintenance runs in every replica, repeating full-table prune scans | `server/src/server.ts:38` | Take `pg_try_advisory_lock` around each maintenance run |
-| DB-014 | Low | Drift size check casts whole content jsonb to text | `server/src/drift/service.ts:219` | Use `pg_column_size(content)` |
-| DB-015 | Low | Role check takes 3 round trips and re-reads `users.is_admin` | `server/src/diagrams/permissions.ts:70` | Resolve role in one join; use `req.user.isAdmin` |
-| DB-016 | Low | Drift check loads the full previous report to compare its signature | `server/src/drift/service.ts:149` | Select only status, signature and dismissedAt |
-| DB-017 | Low | DB container keeps default 64 MB `/dev/shm`; backups are manual only | `docker-compose.yml:9` · `README.md:268` | Set `shm_size`; document scheduled dumps or WAL archiving |
 
 ---
 
@@ -214,6 +190,20 @@
 | CLI-040 | Client | Sign-out ends the session before the autosave flush, then deletes the local copy |
 | CLI-041 | Client | Templates `og:image` points at missing `/qubdidb.png`; tags a nonexistent `@QubdiDB` |
 | CLI-042 | Client | `clearLocalUserData` reads storage globals outside its try; blocked storage aborts sign-out |
+| DB-001 | Database | Viewer list computes stats on every snapshot version, not only the latest |
+| DB-002 | Database | Share live events use an in-process EventEmitter; other replicas never receive them |
+| DB-003 | Database | Every replica runs boot migrations without an advisory lock; the loser crashes |
+| DB-005 | Database | Auto-publish stores a full snapshot per autosave; 200-copy cap hit in 35 minutes |
+| DB-006 | Database | Save `.returning()` sends full content back; Node parses then discards it |
+| DB-007 | Database | Publish copies content through Node while holding the diagram row lock |
+| DB-008 | Database | One `audit_log` row per autosave; 5 index writes each, kept 365 days |
+| DB-009 | Database | Unscoped `GET /diagrams` reads and sorts every diagram; only project lists were bounded |
+| DB-010 | Database | Pool of 10 per replica against stock `max_connections` 100; Postgres untuned |
+| DB-012 | Database | Each publish makes every live viewer re-read the full snapshot content |
+| DB-013 | Database | Maintenance runs in every replica, repeating full-table prune scans |
+| DB-015 | Database | Role check takes 3 round trips and re-reads `users.is_admin` |
+| DB-016 | Database | Drift check loads the full previous report to compare its signature |
+| DB-017 | Database | DB container keeps default 64 MB `/dev/shm`; backups are manual only |
 
 ---
 
@@ -222,6 +212,9 @@
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
 | REPO-041 | Repository | `eslint-plugin-react` and `jsx-a11y` lack ESLint 10 peers; forced by overrides | Latest releases (react 7.37.5, jsx-a11y 6.10.2) still declare up to ESLint 9; the overrides stay until they do |
+| DB-004 | Database | Migration 0022 rewrites all of `diagrams` under ACCESS EXCLUSIVE | Applied migration cannot change safely; one-off lock, about 11 s per 320 MB; README warns before upgrading |
+| DB-011 | Database | Rate limits, lockouts, SSE caps and drift guard live in process memory | Needs a shared store the stack lacks; README says limit at the proxy or run one process |
+| DB-014 | Database | Drift size check casts whole content jsonb to text | Exact logical size feeds the cap; 130 ms at 30 MB, once per manual check |
 
 ---
 
@@ -239,10 +232,11 @@
 | Item | Value |
 |------|-------|
 | Seed | users 10k · projects 500 · diagrams 20k (321 MB) · snapshots 50k (726 MB) · `audit_log` 5M (1.3 GB) |
-| Autosave (pgbench, 4 clients) | 5.4 ms avg · 738 tps · 21 KB WAL per save · 98.75% HOT |
+| Autosave (pgbench, 4 clients, before the audit throttle) | 5.4 ms avg · 738 tps · 21 KB WAL per save · 98.75% HOT |
 | Viewer list, 103 diagrams | 136 ms at 3 versions · 1,968 ms at 50 · 31 ms with LATERAL |
 | Admin unpaged list, 20k rows | seq scan + 2.6 MB on-disk sort · 20 ms |
 | Migration 0022, 321 MB | 10.8 s under ACCESS EXCLUSIVE |
+| Viewer list after fix, 100 diagrams × 50 versions | 48 ms, was 2,055 ms on the same data |
 | 43 MB diagram in Node | `JSON.parse` 122 ms · `JSON.stringify` 137 ms |
 | Stock Postgres | `max_connections` 100 · `shared_buffers` 128MB · `work_mem` 4MB |
 
@@ -280,3 +274,4 @@
 | 12 | 2026-10-30 | 4 fixed: SEC-024 to SEC-027; SEC-001 left open |
 | 13 | 2026-10-30 | Deep pass + new Database lens (`DB-` prefix): 27 new, 0 fixed, 0 regressed; SEC-001 widened to `server/.env.example` |
 | 14 | 2026-10-30 | 4 fixed: CLI-039 to CLI-042 |
+| 15 | 2026-10-30 | 14 fixed: DB-001 to DB-003, DB-005 to DB-010, DB-012, DB-013, DB-015 to DB-017; DB-004, DB-011, DB-014 accepted |
