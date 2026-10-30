@@ -13,7 +13,7 @@ jobs:
   # A tag can be pushed from any commit, so nothing is published until the
   # same checks CI runs on a pull request pass for the tagged commit.
   verify:
-    name: Lint, typecheck and test
+    name: Lint, typecheck, test, audit and secret scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,12 +35,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # the secret scan reads the whole history
+          fetch-depth: 0
 
       - name: Use Node.js 24.x
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.x
           cache: npm
+          # both packages install in this job
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
 
       - name: Install editor dependencies
         run: npm ci
@@ -62,6 +69,20 @@ jobs:
       - name: Test server
         run: npx vitest run
         working-directory: server
+
+      # Fails on high and critical advisories in what ships.
+      - name: Audit editor dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit server dependencies
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: server
+
+      - name: Scan for committed secrets
+        run: >-
+          docker run --rm -v "${{ github.workspace }}:/repo"
+          zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --redact --no-banner
 
   build-and-publish:
     needs: verify
@@ -103,6 +124,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # attached to the image in the registry: how and from what it was
+          # built, and what is inside it
+          provenance: mode=max
+          sbom: true
 
   build-and-publish-server:
     needs: verify
@@ -147,3 +172,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # attached to the image in the registry: how and from what it was
+          # built, and what is inside it
+          provenance: mode=max
+          sbom: true

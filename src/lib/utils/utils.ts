@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { customAlphabet } from 'nanoid';
 import { twMerge } from 'tailwind-merge';
+import { readStored, writeStored } from '@/context/local-config-context/stored';
 const randomId = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 25);
 
 const UUID_KEY = 'uuid';
@@ -14,13 +15,18 @@ export const emptyFn = (): any => undefined;
 
 export const generateId = () => randomId();
 
+// kept for the page's lifetime too, so a browser that refuses storage still
+// gets one prefix for all the ids of this visit
+let workspaceIdInMemory: string | undefined;
+
 export const getWorkspaceId = (): string => {
-    let workspaceId = localStorage.getItem(UUID_KEY);
+    let workspaceId = readStored(UUID_KEY) ?? workspaceIdInMemory;
 
     if (!workspaceId) {
         workspaceId = randomId(8);
-        localStorage.setItem(UUID_KEY, workspaceId);
+        writeStored(UUID_KEY, workspaceId);
     }
+    workspaceIdInMemory = workspaceId;
 
     return workspaceId;
 };

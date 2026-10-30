@@ -9,6 +9,7 @@ import { ApiError } from '@/lib/qubdi/api';
 import { reportLockLost } from '@/lib/qubdi/lock-lost';
 import {
     flushPendingSave,
+    hasUnsavedChanges,
     resetSaveStatus,
 } from '@/lib/qubdi/save-status-store';
 import type { Diagram } from '@/lib/domain/diagram';
@@ -96,6 +97,18 @@ describe('ServerAutosave', () => {
         await act(() => flushPendingSave());
         expect(sync).toHaveBeenCalledTimes(1);
         view.unmount();
+    });
+
+    it('leaves no error behind when the final flush on leaving fails', async () => {
+        const sync = vi.fn(async () => {
+            throw new Error('offline');
+        });
+        const view = await openAndEdit(sync);
+        // leaving the diagram flushes the held edit, and that send fails
+        await act(async () => view.unmount());
+        await settle();
+        expect(sync).toHaveBeenCalledTimes(1);
+        expect(hasUnsavedChanges()).toBe(false);
     });
 
     describe('when the lock goes to someone else', () => {

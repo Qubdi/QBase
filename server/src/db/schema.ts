@@ -214,6 +214,28 @@ export const diagrams = pgTable(
         // reading a diagram never has to hash its (large) content. Null for a
         // row not yet hashed; the next read fills it in.
         contentHash: text('content_hash'),
+        // What the diagram list shows about each diagram, kept by the database
+        // as the content is written, so listing never reads the content itself.
+        // The same numbers `diagramStats` computes for content in memory.
+        statDatabaseType: text('stat_database_type').generatedAlwaysAs(
+            sql`nullif(content->>'databaseType', '')`
+        ),
+        statDatabaseEdition: text('stat_database_edition').generatedAlwaysAs(
+            sql`nullif(content->>'databaseEdition', '')`
+        ),
+        statTableCount: integer('stat_table_count')
+            .notNull()
+            .generatedAlwaysAs(
+                sql`case when jsonb_typeof(content->'tables') = 'array' then jsonb_array_length(content->'tables') else 0 end`
+            ),
+        statRelationshipCount: integer('stat_relationship_count')
+            .notNull()
+            .generatedAlwaysAs(
+                sql`case when jsonb_typeof(content->'relationships') = 'array' then jsonb_array_length(content->'relationships') else 0 end`
+            ),
+        statCreatedAt: text('stat_created_at').generatedAlwaysAs(
+            sql`nullif(content->>'createdAt', '')`
+        ),
         autoPublish: boolean('auto_publish').notNull().default(false),
         // per-diagram lint rule settings (enabled rules, severities, naming style)
         lintConfig: jsonb('lint_config').notNull().default({}),

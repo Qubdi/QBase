@@ -42,3 +42,6 @@ docker-compose.yml
 
 # Ignore coverage output
 coverage
+
+# Database dumps made by the upgrade guide: they hold roles and password hashes
+qubdidb-backup*.sql

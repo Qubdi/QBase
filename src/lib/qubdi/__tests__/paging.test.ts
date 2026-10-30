@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { listQuery, pageCountOf, pageRange, pageToFallBackTo } from '../paging';
+import { describe, expect, it, vi } from 'vitest';
+import {
+    fetchAllPages,
+    listQuery,
+    pageCountOf,
+    pageRange,
+    pageToFallBackTo,
+    type Page,
+} from '../paging';
 
 describe('listQuery', () => {
     it('is empty when nothing is set', () => {
@@ -62,5 +69,49 @@ describe('pageToFallBackTo', () => {
         expect(pageToFallBackTo(2, 10, { items: [1], total: 11 })).toBeNull();
         expect(pageToFallBackTo(1, 10, { items: [], total: 5 })).toBeNull();
         expect(pageToFallBackTo(2, 10, { items: [], total: 0 })).toBeNull();
+    });
+});
+
+describe('fetchAllPages', () => {
+    const pageOf = (
+        items: number[],
+        total: number,
+        page: number
+    ): Page<number> => ({
+        items,
+        total,
+        page,
+        limit: 2,
+    });
+
+    it('reads page after page until the total is reached', async () => {
+        const data = [[1, 2], [3, 4], [5]];
+        const load = vi.fn(async (page: number) =>
+            pageOf(data[page - 1], 5, page)
+        );
+        expect(await fetchAllPages(load)).toEqual([1, 2, 3, 4, 5]);
+        expect(load.mock.calls.map((c) => c[0])).toEqual([1, 2, 3]);
+    });
+
+    it('stops after one request when everything fits on the first page', async () => {
+        const load = vi.fn(async (page: number) => pageOf([1, 2], 2, page));
+        expect(await fetchAllPages(load)).toEqual([1, 2]);
+        expect(load).toHaveBeenCalledTimes(1);
+    });
+
+    it('stops at an empty page, even if the total says there is more', async () => {
+        const load = vi.fn(async (page: number) =>
+            pageOf(page === 1 ? [1, 2] : [], 9, page)
+        );
+        expect(await fetchAllPages(load)).toEqual([1, 2]);
+        expect(load).toHaveBeenCalledTimes(2);
+    });
+
+    it('passes a failure on to the caller', async () => {
+        await expect(
+            fetchAllPages(async () => {
+                throw new Error('offline');
+            })
+        ).rejects.toThrow('offline');
     });
 });

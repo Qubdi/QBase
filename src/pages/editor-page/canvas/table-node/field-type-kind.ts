@@ -3,10 +3,10 @@ export type FieldTypeKind = 'text' | 'number' | 'time' | 'id' | 'bool' | 'json';
 const ID = /^(uuid|guid|uniqueidentifier|objectid)$/;
 const BOOL = /^(bool|boolean|bit)$/;
 const TIME =
-    /^(date|time|timetz|timestamp|timestamptz|datetime|datetime2|smalldatetime|interval|year)$/;
-const JSON_LIKE = /^(json|jsonb|xml|hstore)$/;
+    /^(date|time|timetz|timestamp|timestamptz|datetime|datetime2|datetime64|datetimeoffset|date32|smalldatetime|interval|year)$/;
+const JSON_LIKE = /^(json|jsonb|xml|xmltype|hstore)$/;
 const NUMBER =
-    /^(tinyint|smallint|mediumint|bigint|int\d*|integer|serial\d*|bigserial|smallserial|numeric|decimal|dec|float\d*|double|real|money|smallmoney|number)$/;
+    /^(tinyint|smallint|mediumint|bigint|int\d*|uint\d+|integer|serial\d*|bigserial|smallserial|numeric|decimal|dec|float\d*|double|real|binary_double|binary_float|money|smallmoney|number)$/;
 
 /** Groups a column type into a kind, so the table can tint its type chip. */
 export const fieldTypeKind = (typeName: string): FieldTypeKind => {

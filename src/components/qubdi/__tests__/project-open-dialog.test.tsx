@@ -84,19 +84,15 @@ const titles = () =>
 describe('ProjectOpenDialog', () => {
     beforeEach(() => {
         listDiagrams.mockReset();
-        listDiagrams.mockResolvedValue([
-            diagram(1),
-            diagram(3),
-            diagram(2),
-            diagram(9, { projectId: 'other-project', title: 'Elsewhere' }),
-        ]);
+        // the server keeps to the project and sorts newest first
+        listDiagrams.mockResolvedValue([diagram(3), diagram(2), diagram(1)]);
     });
 
-    it('lists this project’s diagrams, newest first, and nobody else’s', async () => {
+    it('asks the server for this project’s diagrams only, and lists them as sent', async () => {
         renderDialog();
         await screen.findByText('Diagram 3');
+        expect(listDiagrams).toHaveBeenCalledWith({ projectId: 'p1' });
         expect(titles()).toEqual(['Diagram 3', 'Diagram 2', 'Diagram 1']);
-        expect(screen.queryByText('Elsewhere')).toBeNull();
     });
 
     it('is a dialog of limited width, not the whole screen', async () => {

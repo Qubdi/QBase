@@ -1,7 +1,9 @@
 import http from 'node:http';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { loadConfig } from '../src/config.js';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
+import { DRIFT_DIAGRAM_LIMIT, latestReportSummary, runDriftCheck } from '../src/drift/service.js';
 import type {
     DatabaseMetadata,
     Introspector,
@@ -403,6 +405,37 @@ describe('drift detection', () => {
             expect(JSON.stringify(body)).not.toContain(PASSWORD);
         });
 
+        it('reports a diagram over the size cap as an error, without reading the database', async () => {
+            const { diagrams } = await import('../src/db/schema.js');
+            const [row] = await ctx.db.select().from(diagrams).where(eq(diagrams.id, diagramId));
+            await ctx.db
+                .update(diagrams)
+                .set({ content: { ...(row.content as object), padding: 'x'.repeat(DRIFT_DIAGRAM_LIMIT + 1024) } })
+                .where(eq(diagrams.id, diagramId));
+            try {
+                const body = (await check()).json();
+                expect(body.status).toBe('error');
+                expect(body.error).toMatch(/too large/);
+                expect(factoryCalls).toBe(0);
+            } finally {
+                await ctx.db.update(diagrams).set({ content: row.content }).where(eq(diagrams.id, diagramId));
+            }
+            // under the cap again, it compares as before
+            expect((await check()).json().status).not.toBe('error');
+        });
+
+        it('says why a check could not start, instead of calling it a check already running', async () => {
+            const bare = (
+                await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId: await projectFor(ctx.app) } })
+            ).json().id;
+            const deps = { db: ctx.db, config: loadConfig({ DATABASE_URL: 'postgres://u:p@localhost/db' }), factory };
+            // no drift settings: the route says so, and so does the service
+            expect((await check(owner, bare)).json().error).toBe('not_configured');
+            expect(await runDriftCheck(deps, bare)).toBe('not_configured');
+            // nothing with this id at all
+            expect(await runDriftCheck(deps, '00000000-0000-4000-8000-000000000000')).toBe('not_configured');
+        });
+
         it('reports a blocked target as an error', async () => {
             await ctx.db.update((await import('../src/db/schema.js')).savedConnections).set({ host: '10.0.0.5' });
             const body = (await check()).json();
@@ -507,6 +540,23 @@ describe('drift detection', () => {
             const detail = (await ctx.app.inject({ url: `/diagrams/${diagramId}/drift/reports/${second.id}`, headers: as(owner) })).json();
             expect(detail.changes).toHaveLength(1);
             expect(detail.trigger).toBe('manual');
+        });
+
+        it('reads the badge and the list without the changes, which can be large', async () => {
+            addColumn('phone');
+            const report = (await check()).json();
+            expect(report.changes).toHaveLength(1);
+            const summary = await latestReportSummary(ctx.db, diagramId);
+            expect(summary.id).toBe(report.id);
+            expect(summary).not.toHaveProperty('changes');
+            expect(summary).not.toHaveProperty('renameHints');
+            // what the badge poll and the dismiss answer is unchanged by that
+            const badge = (await ctx.app.inject({ url: `/diagrams/${diagramId}/drift`, headers: as(owner) })).json();
+            expect(badge.badge).toMatchObject({ status: 'drifted', reportId: report.id });
+            expect(badge.latest).not.toHaveProperty('changes');
+            const dismissed = (await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/dismiss`, headers: as(owner) })).json();
+            expect(dismissed.badge).toBeNull();
+            expect(dismissed.latest.dismissedAt).not.toBeNull();
         });
 
         it('validates the limit and 404s for unknown or foreign reports', async () => {

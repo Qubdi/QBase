@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     ConfigError,
@@ -28,6 +29,17 @@ describe('parseTrustProxy', () => {
 
     it('is part of the loaded config', () => {
         expect(loadConfig({ TRUST_PROXY: '1' }).trustProxy).toBe(1);
+        expect(loadConfig({ TRUST_PROXY: '10.0.0.1' }).trustProxy).toEqual([
+            '10.0.0.1',
+        ]);
+        expect(loadConfig({}).trustProxy).toBe(false);
+    });
+
+    it('refuses true, which would believe a header any visitor can send', () => {
+        expect(() => loadConfig({ TRUST_PROXY: 'true' })).toThrow(ConfigError);
+        expect(() => loadConfig({ TRUST_PROXY: ' true ' })).toThrow(
+            /TRUST_PROXY=true trusts an X-Forwarded-For header/
+        );
     });
 });
 
@@ -95,6 +107,27 @@ describe('boot-time validation', () => {
         expect(c.snapshotKeep).toBe(0);
     });
 
+    it('reads the log level, ignoring case, and defaults to info', () => {
+        expect(loadConfig().logLevel).toBe('info');
+        expect(loadConfig({ LOG_LEVEL: '' }).logLevel).toBe('info');
+        expect(loadConfig({ LOG_LEVEL: ' Debug ' }).logLevel).toBe('debug');
+        expect(loadConfig({ LOG_LEVEL: 'silent' }).logLevel).toBe('silent');
+    });
+
+    it('refuses a log level the logger does not know, as a configuration error', () => {
+        expect(() => loadConfig({ LOG_LEVEL: 'verbose' })).toThrow(ConfigError);
+        expect(() => loadConfig({ LOG_LEVEL: 'verbose' })).toThrow(
+            /LOG_LEVEL must be one of fatal, error, warn, info, debug, trace, silent \(got "verbose"\)/
+        );
+    });
+
+    it('limits database statements to two minutes unless told otherwise', () => {
+        expect(loadConfig().dbStatementTimeoutSeconds).toBe(120);
+        expect(loadConfig({ DB_STATEMENT_TIMEOUT_SECONDS: '30' }).dbStatementTimeoutSeconds).toBe(30);
+        expect(loadConfig({ DB_STATEMENT_TIMEOUT_SECONDS: '0' }).dbStatementTimeoutSeconds).toBe(0);
+        expect(() => loadConfig({ DB_STATEMENT_TIMEOUT_SECONDS: '-1' })).toThrow(ConfigError);
+    });
+
     it('refuses an encryption key under 16 characters', () => {
         expect(() => loadConfig({ SECRETS_KEY: 'short' })).toThrow(/SECRETS_KEY must be at least 16/);
         expect(() => loadConfig({ CONNECTION_KEY: 'short' })).toThrow(/CONNECTION_KEY must be at least 16/);
@@ -112,5 +145,32 @@ describe('connection and listening defaults', () => {
     it('listens on loopback unless HOST says otherwise', () => {
         expect(loadConfig().host).toBe('127.0.0.1');
         expect(loadConfig({ HOST: '0.0.0.0' }).host).toBe('0.0.0.0');
+    });
+});
+
+describe('the example settings file', () => {
+    const example = readFileSync(
+        new URL('../.env.example', import.meta.url),
+        'utf8'
+    );
+    const settings = new Map(
+        example
+            .split('\n')
+            .filter((line) => /^[A-Z_]+=/.test(line))
+            .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)])
+    );
+
+    it('holds no usable database password, only a placeholder to replace', () => {
+        const url = settings.get('DATABASE_URL') ?? '';
+        expect(url).toContain(':<POSTGRES_PASSWORD>@');
+        expect(url).not.toMatch(/qubdidb:qubdidb@/);
+    });
+
+    it('leaves every key and password blank', () => {
+        for (const [name, value] of settings) {
+            if (/(KEY|SECRET|PASSWORD)$/.test(name)) {
+                expect(value, name).toBe('');
+            }
+        }
     });
 });

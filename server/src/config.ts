@@ -54,6 +54,8 @@ export interface Config {
     logLevel: string;
     /** most database connections the pool opens at once */
     dbPoolMax: number;
+    /** longest a database statement may run, in seconds; 0 means no limit */
+    dbStatementTimeoutSeconds: number;
     /** max requests per minute per IP on the public share routes */
     shareRateLimit: number;
     /** hostnames, IPs or IPv4 CIDRs that introspection may reach even if private */
@@ -116,6 +118,17 @@ export class ConfigError extends Error {
 /** Shortest encryption key `CryptoBox` accepts. */
 const MIN_KEY_LENGTH = 16;
 
+/** The levels the logger knows; anything else makes it throw at start-up. */
+export const LOG_LEVELS = [
+    'fatal',
+    'error',
+    'warn',
+    'info',
+    'debug',
+    'trace',
+    'silent',
+] as const;
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     const problems: string[] = [];
     // An unset or empty variable takes the default; anything else must be a
@@ -137,6 +150,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         }
         return value;
     };
+
+    const logLevel = (env.LOG_LEVEL?.trim() || 'info').toLowerCase();
+    if (!(LOG_LEVELS as readonly string[]).includes(logLevel)) {
+        problems.push(
+            `LOG_LEVEL must be one of ${LOG_LEVELS.join(', ')} (got "${env.LOG_LEVEL?.trim()}")`
+        );
+    }
+
+    // `true` would believe the first X-Forwarded-For entry, which is whatever
+    // the visitor sent: a new value per request is a new rate-limit bucket and a
+    // new lockout key, so the limits would mean nothing
+    const trustProxy = parseTrustProxy(env.TRUST_PROXY);
+    if (trustProxy === true) {
+        problems.push(
+            'TRUST_PROXY=true trusts an X-Forwarded-For header that any visitor can send; ' +
+                'set the number of proxies in front of the server (1 for a single reverse proxy) or their addresses'
+        );
+    }
 
     // no built-in fallback: a default credential would be a known password
     const databaseUrl = env.DATABASE_URL?.trim() ?? '';
@@ -171,9 +202,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         sseMaxPerLink: int('SSE_MAX_PER_LINK', 100, 1),
         sseMaxPerIp: int('SSE_MAX_PER_IP', 20, 1),
         sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1),
-        trustProxy: parseTrustProxy(env.TRUST_PROXY),
-        logLevel: env.LOG_LEVEL ?? 'info',
+        trustProxy,
+        logLevel,
         dbPoolMax: int('DB_POOL_MAX', 10, 1),
+        dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
         introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')
             .split(',')

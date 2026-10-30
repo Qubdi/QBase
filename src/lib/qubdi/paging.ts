@@ -31,6 +31,20 @@ export function listQuery(
     return text ? `?${text}` : '';
 }
 
+/** Every item of a paged list: asks for page after page until the total is reached. */
+export async function fetchAllPages<T>(
+    load: (page: number) => Promise<Page<T>>
+): Promise<T[]> {
+    const all: T[] = [];
+    for (let page = 1; ; page++) {
+        const result = await load(page);
+        all.push(...result.items);
+        // an empty page ends it too, so a list that shrinks cannot loop forever
+        if (result.items.length === 0 || all.length >= result.total) break;
+    }
+    return all;
+}
+
 export const pageCountOf = (total: number, limit: number): number =>
     Math.max(1, Math.ceil(total / Math.max(1, limit)));
 

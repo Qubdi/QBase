@@ -34,7 +34,7 @@ describe('admin and command-line reset of two-factor sign-in', () => {
         const enable = await ctx.app.inject({
             method: 'POST',
             url: '/auth/mfa/enable',
-            payload: { code: totp(setup.json().secret) },
+            payload: { password: 'Password-123!', code: totp(setup.json().secret) },
             headers: as(user),
         });
         expect(enable.statusCode).toBe(200);

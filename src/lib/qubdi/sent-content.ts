@@ -121,6 +121,19 @@ export const markSyncedContent = (
     }
 };
 
+/** Forgets the match of a copy that is no longer bound to a server diagram. */
+export const clearSyncedContent = (localId: string) => {
+    delete syncedMemory[localId];
+    try {
+        const synced = readSynced();
+        if (!(localId in synced)) return;
+        delete synced[localId];
+        localStorage.setItem(SYNCED_KEY, JSON.stringify(synced));
+    } catch {
+        // storage unavailable: nothing was stored to forget
+    }
+};
+
 /**
  * Whether `content` is what the copy last matched on the server. `null` when
  * that was never recorded (a copy from before it was), which is not a yes.

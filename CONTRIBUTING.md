@@ -46,7 +46,7 @@ database, the server and the editor.
 ```bash
 npm run lint && npx vitest run       # editor: lint and tests
 npm run build                        # editor: lint, type check and bundle
-cd server && npm run lint && npx vitest run   # server (needs the Postgres from `docker compose up -d db`)
+cd server && npm run lint && npm run typecheck && npx vitest run   # server (tests need the Postgres from `docker compose up -d db`)
 ```
 
 The server tests create their own `qubdidb_test` database next to the one the app uses.
@@ -57,8 +57,7 @@ By contributing, you agree that your work will be licensed under QubdiDB's [lice
 
 ## Questions?
 
-Feel free to ask in `#contributing` on [Discord](https://discord.gg/QeFwyWSKwC) if you have questions about our process, how to proceed, etc.
-or [email the project maintainers](mailto:support@qubdi.dev).
+[Email the project maintainers](mailto:support@qubdi.dev) if you have questions about our process, how to proceed, etc.
 
 ---
 

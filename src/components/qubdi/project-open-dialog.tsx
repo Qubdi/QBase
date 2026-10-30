@@ -53,12 +53,8 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
     const load = useCallback(async () => {
         setError(null);
         try {
-            const all = await api.listDiagrams();
-            setDiagrams(
-                all
-                    .filter((d) => d.projectId === project.id)
-                    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-            );
+            // the server keeps to this project's diagrams, newest first
+            setDiagrams(await api.listDiagrams({ projectId: project.id }));
         } catch (e) {
             setError(errorMessage(e));
             setDiagrams([]);

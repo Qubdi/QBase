@@ -59,6 +59,9 @@ export const ServerAutosave: React.FC = () => {
 
     useEffect(() => {
         if (!canSave) return;
+        // set on cleanup: the final flush may still fail afterwards, and that
+        // must not leave an error behind for whichever diagram opens next
+        let disposed = false;
         const saver = createAutosaver<Revision>({
             delayMs: AUTOSAVE_DELAY_MS,
             // a revision number, so no change has to serialise the diagram
@@ -69,6 +72,7 @@ export const ServerAutosave: React.FC = () => {
                 });
             },
             onStatus: (status, error) => {
+                if (disposed) return;
                 const retry = () => void saver.flush();
                 const current = accessRef.current;
                 // the lock went to someone else: go read-only, do not retry
@@ -112,7 +116,10 @@ export const ServerAutosave: React.FC = () => {
                             setBaseUpdatedAt(diagramId, d.updatedAt);
                             return saver.flush();
                         })
-                        .catch(() => setSaveStatus(status, retry, overwrite));
+                        .catch(() => {
+                            if (!disposed)
+                                setSaveStatus(status, retry, overwrite);
+                        });
                     return;
                 }
                 setSaveStatus(status, retry, overwrite);
@@ -182,6 +189,7 @@ export const ServerAutosave: React.FC = () => {
             registerFinalFlush(null);
             registerSaveDiscard(null);
             registerFlushNow(null);
+            disposed = true;
             resetSaveStatus();
         };
     }, [canSave, diagramId]);

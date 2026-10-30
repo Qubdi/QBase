@@ -145,6 +145,16 @@ describe('lint API', () => {
             expect(published.statusCode).toBe(413);
         });
 
+        it('answers 422, not 500, when the stored diagram has a table without fields', async () => {
+            const broken = { ...clone(content), tables: [{ id: 't1', name: 'orders' }] };
+            const bad = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { title: 'Broken', content: broken, projectId: await projectFor(ctx.app) } })).json().id;
+            const working = await get(owner, `/diagrams/${bad}/lint`);
+            expect(working.statusCode).toBe(422);
+            expect(working.json().error).toBe('invalid_diagram');
+            await ctx.app.inject({ method: 'POST', url: `/diagrams/${bad}/publish`, headers: as(owner), payload: {} });
+            expect((await get(owner, `/diagrams/${bad}/lint?source=published`)).statusCode).toBe(422);
+        });
+
         it('lints the published copy, not later edits', async () => {
             const broken = clone(content) as { tables: Array<{ fields: Array<{ primaryKey: boolean }> }> };
             broken.tables[0].fields.forEach((f) => (f.primaryKey = false));

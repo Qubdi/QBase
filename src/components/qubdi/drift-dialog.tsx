@@ -12,6 +12,7 @@ import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/components/input/input';
 import { useDiagram } from '@/hooks/use-diagram';
 import { getProjectId } from '@/lib/qubdi/remote-map';
+import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import { useQubdi } from '@/hooks/use-qubdi';
 import {
     api,
@@ -144,7 +145,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         setBusy(true);
         setError(null);
         try {
-            // drift compares the server copy, so make sure it is current
+            // drift compares the server copy, so make sure it is current; the
+            // autosaver finishes first so both saves never share one base version
+            await flushPendingSave();
             const remoteId = await syncDiagram(currentDiagram);
             await fn(remoteId);
         } catch (e) {

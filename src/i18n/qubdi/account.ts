@@ -194,6 +194,7 @@ export const account = {
             'Scan this code with the app, or choose “enter a key” and type the key below.',
         qrAlt: 'QR code for your authenticator app',
         stepType: 'Type the 6-digit code the app shows now.',
+        stepPassword: 'Type your password to confirm it is you.',
         turnOn: 'Turn on',
         cancel: 'Cancel',
         recoveryCodes: 'Recovery codes',

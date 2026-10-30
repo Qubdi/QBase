@@ -53,6 +53,7 @@ import { useDiff } from '@/context/diff-context/use-diff';
 import { TableNodeStatus } from './table-node-status/table-node-status';
 import { TableEditMode } from './table-edit-mode/table-edit-mode';
 import { useCanvas } from '@/hooks/use-canvas';
+import { isUnrelatedToSelection } from './selection-fade';
 
 export const TABLE_RELATIONSHIP_SOURCE_HANDLE_ID_PREFIX = 'table_rel_source_';
 export const TABLE_RELATIONSHIP_TARGET_HANDLE_ID_PREFIX = 'table_rel_target_';
@@ -88,21 +89,9 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
     }) => {
         const { updateTable, relationships, readonly } = useDiagram();
         const edges = useStore((store) => store.edges) as EdgeType[];
-        // With a table selected, tables not linked to it fade back, so the
-        // connected ones stand out on a crowded canvas.
-        const isUnrelatedToSelection = useStore((store) => {
-            const selectedIds = new Set<string>();
-            for (const node of store.nodes) {
-                if (node.type === 'table' && node.selected)
-                    selectedIds.add(node.id);
-            }
-            if (selectedIds.size === 0 || selectedIds.has(id)) return false;
-            return !store.edges.some(
-                (edge) =>
-                    (edge.source === id && selectedIds.has(edge.target)) ||
-                    (edge.target === id && selectedIds.has(edge.source))
-            );
-        });
+        const unrelatedToSelection = useStore((store) =>
+            isUnrelatedToSelection(store.nodes, store.edges, id)
+        );
         const {
             openTableFromSidebar,
             selectSidebarSection,
@@ -359,7 +348,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
             [tempFloatingEdge, id, isRelationshipCreatingTarget, isHovering]
         );
 
-        const isFaded = isUnrelatedToSelection && !isHovering;
+        const isFaded = unrelatedToSelection && !isHovering;
 
         const tableClassName = useMemo(
             () =>

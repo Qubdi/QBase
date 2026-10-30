@@ -1,7 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog, shareLinks } from '../src/db/schema.js';
-import { MAX_ACTIVE_LINKS, MAX_LISTED_LINKS } from '../src/share/routes.js';
+import pg from 'pg';
+import {
+    MAX_ACTIVE_LINKS,
+    MAX_LISTED_LINKS,
+    linkCreateLockKey,
+} from '../src/share/routes.js';
 import {
     as,
     createDiagram,
@@ -12,6 +17,7 @@ import {
     withBase,
     type TestUser,
     grant,
+    TEST_URL,
 } from './helpers.js';
 
 describe('share links', () => {
@@ -106,6 +112,85 @@ describe('share links', () => {
                 headers: as(owner),
             });
             expect(list.json()).toHaveLength(MAX_LISTED_LINKS);
+        });
+
+        it('keeps working links on the list when many revoked ones are newer', async () => {
+            const churned = await createDiagram(ctx.app, owner, 'Churned');
+            const old = new Date(Date.now() - 24 * 3600 * 1000);
+            await ctx.db.insert(shareLinks).values([
+                { diagramId: churned, tokenHash: 'churned-old-1', createdAt: old },
+                { diagramId: churned, tokenHash: 'churned-old-2', createdAt: old },
+                ...Array.from({ length: MAX_LISTED_LINKS + 5 }, (_, n) => ({
+                    diagramId: churned,
+                    tokenHash: `churned-revoked-${n}`,
+                    revokedAt: new Date(),
+                })),
+            ]);
+            const list = (
+                await ctx.app.inject({
+                    url: `/diagrams/${churned}/share-links`,
+                    headers: as(owner),
+                })
+            ).json();
+            expect(list).toHaveLength(MAX_LISTED_LINKS);
+            const working = list.filter(
+                (l: { revokedAt: string | null }) => l.revokedAt === null
+            );
+            expect(working).toHaveLength(2);
+            // and the working ones head the list
+            expect(list[0].revokedAt).toBeNull();
+            expect(list[1].revokedAt).toBeNull();
+        });
+
+        it('makes creates for one diagram wait for each other, so the cap holds', async () => {
+            const racing = await createDiagram(ctx.app, owner, 'Racing');
+            await ctx.db.insert(shareLinks).values(
+                Array.from({ length: MAX_ACTIVE_LINKS - 1 }, (_, n) => ({
+                    diagramId: racing,
+                    tokenHash: `racing-${n}`,
+                }))
+            );
+            // another create is in the middle of its count and insert
+            const other = new pg.Client({ connectionString: TEST_URL });
+            await other.connect();
+            try {
+                await other.query(
+                    'select pg_advisory_lock(hashtextextended($1, 0))',
+                    [linkCreateLockKey(racing)]
+                );
+                let settled = false;
+                const waiting = createLink(owner, {}, racing).then((r) => {
+                    settled = true;
+                    return r;
+                });
+                await new Promise((resolve) => setTimeout(resolve, 300));
+                expect(settled).toBe(false);
+                // it carries on once the other is done, and counts what that left
+                await other.query(
+                    'select pg_advisory_unlock(hashtextextended($1, 0))',
+                    [linkCreateLockKey(racing)]
+                );
+                expect((await waiting).statusCode).toBe(201);
+            } finally {
+                await other.end();
+            }
+            expect((await createLink(owner, {}, racing)).statusCode).toBe(409);
+        });
+
+        it('lets only one of several simultaneous creates take the last place', async () => {
+            const racing = await createDiagram(ctx.app, owner, 'Racing together');
+            await ctx.db.insert(shareLinks).values(
+                Array.from({ length: MAX_ACTIVE_LINKS - 1 }, (_, n) => ({
+                    diagramId: racing,
+                    tokenHash: `together-${n}`,
+                }))
+            );
+            const results = await Promise.all(
+                Array.from({ length: 8 }, () => createLink(owner, {}, racing))
+            );
+            expect(results.map((r) => r.statusCode).sort()).toEqual([
+                201, 409, 409, 409, 409, 409, 409, 409,
+            ]);
         });
 
         it('stops at the cap of open links per diagram, and revoking makes room', async () => {

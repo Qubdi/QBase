@@ -124,13 +124,19 @@ export async function publishSnapshot(
             .where(eq(diagrams.id, diagramId))
             .for('update');
         if (!d) return null;
+        // only the version and hash of the last snapshot: its content, up to
+        // 50 MB, is not needed
         const [last] = await tx
-            .select()
+            .select({
+                version: snapshots.version,
+                contentHash: snapshots.contentHash,
+            })
             .from(snapshots)
             .where(eq(snapshots.diagramId, diagramId))
             .orderBy(desc(snapshots.version))
             .limit(1);
-        const hash = diagramHash(d.title, d.content);
+        // every save keeps the hash current; a rename alone leaves it empty
+        const hash = d.contentHash ?? diagramHash(d.title, d.content);
         if (opts.onlyIfChanged && last?.contentHash === hash) return null;
         const [created] = await tx
             .insert(snapshots)

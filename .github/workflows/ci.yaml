@@ -125,3 +125,12 @@ jobs:
 
       - name: Build server image
         run: docker build -f server/Dockerfile -t qubdidb-server:ci .
+
+      # Dependabot bumps the digest this image is pinned to: build it, so a
+      # bad one fails here and not on a deploy
+      - name: Build database image
+        run: docker build -t qubdidb-postgres:ci db/postgres
+
+      # the tests and the shipped database must be the same image
+      - name: Check the database image is pinned the same everywhere
+        run: .github/scripts/check-postgres-digest.sh

@@ -43,7 +43,10 @@ const needOneFactor = {
 const loginBody = z
     .object({ challenge: z.string().min(1).max(200), ...factor })
     .refine(hasFactor, needOneFactor);
-const enableBody = z.object({ code: z.string().max(20) });
+const enableBody = z.object({
+    password: z.string().max(200),
+    code: z.string().max(20),
+});
 const disableBody = z
     .object({ password: z.string().max(200), ...factor })
     .refine(hasFactor, needOneFactor);
@@ -174,8 +177,11 @@ export const mfaRoutes =
             if (req.user.mfaEnabled) {
                 return reply.code(409).send({ error: 'already_enabled' });
             }
+            // the password first, so a stolen session cannot switch it on and
+            // leave the owner asked for a code they do not have
+            const user = await checkPassword(req, reply, body.password);
+            if (!user) return;
             const key = `mfa:${req.user.id}`;
-            if (locked(reply, key)) return;
             if ((await mfa.secretOf(req.user.id)) === null) {
                 return reply.code(409).send({ error: 'setup_first' });
             }
@@ -224,6 +230,30 @@ export const mfaRoutes =
         });
 
         /**
+         * The signed-in user's password, counted against the account's
+         * lockout when wrong. Answers the request itself on failure and
+         * returns null; otherwise the user.
+         */
+        async function checkPassword(
+            req: FastifyRequest,
+            reply: FastifyReply,
+            password: string
+        ) {
+            const userId = req.user!.id;
+            const key = `mfa:${userId}`;
+            if (locked(reply, key)) return null;
+            const [user] = await db.select().from(users).where(eq(users.id, userId));
+            if (!(await verifyPassword(user.passwordHash, password))) {
+                failures.recordFailure(key);
+                // not a sign-in: the person is already signed in
+                await audit(db, { userId, action: 'user.password_check_failed' });
+                reply.code(403).send({ error: 'wrong_password' });
+                return null;
+            }
+            return user;
+        }
+
+        /**
          * The password and a second factor, both counted against the account's
          * lockout when wrong. Answers the request itself on failure and
          * returns null; otherwise the user.
@@ -235,14 +265,8 @@ export const mfaRoutes =
         ) {
             const userId = req.user!.id;
             const key = `mfa:${userId}`;
-            if (locked(reply, key)) return null;
-            const [user] = await db.select().from(users).where(eq(users.id, userId));
-            if (!(await verifyPassword(user.passwordHash, body.password))) {
-                failures.recordFailure(key);
-                await audit(db, { userId, action: 'user.sign_in_failed' });
-                reply.code(403).send({ error: 'wrong_password' });
-                return null;
-            }
+            const user = await checkPassword(req, reply, body.password);
+            if (!user) return null;
             const used = await checkFactor(userId, body);
             if (!used) {
                 failures.recordFailure(key);

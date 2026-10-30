@@ -138,15 +138,30 @@ export async function runMaintenance(
     config: MaintenanceConfig,
     now: Date = new Date()
 ) {
-    return {
-        sessions: await purgeExpiredSessions(db, now),
-        mfaChallenges: await purgeExpiredMfaChallenges(db, now),
-        locks: await purgeExpiredLocks(db, now),
-        links: await purgeDeadLinks(db, config.deadLinkKeepDays, now),
-        audit: await purgeAuditLog(db, config.auditRetentionDays, now),
-        snapshots: await pruneSnapshots(db, config.snapshotKeep),
-        driftReports: await pruneDriftReports(db, config.driftReportKeep),
+    const steps = {
+        sessions: () => purgeExpiredSessions(db, now),
+        mfaChallenges: () => purgeExpiredMfaChallenges(db, now),
+        locks: () => purgeExpiredLocks(db, now),
+        links: () => purgeDeadLinks(db, config.deadLinkKeepDays, now),
+        audit: () => purgeAuditLog(db, config.auditRetentionDays, now),
+        snapshots: () => pruneSnapshots(db, config.snapshotKeep),
+        driftReports: () => pruneDriftReports(db, config.driftReportKeep),
     };
+    // one step failing must not skip the ones after it until the next hour
+    const removed = {} as Record<keyof typeof steps, number>;
+    const failed: Array<keyof typeof steps> = [];
+    for (const [name, step] of Object.entries(steps) as Array<
+        [keyof typeof steps, () => Promise<number>]
+    >) {
+        try {
+            removed[name] = await step();
+        } catch (err) {
+            removed[name] = 0;
+            failed.push(name);
+            console.error(`Maintenance step "${name}" failed:`, err);
+        }
+    }
+    return { ...removed, failed };
 }
 
 /**

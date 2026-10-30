@@ -10,7 +10,7 @@ and schema lint.
 
 | Part | Where | Stack |
 | --- | --- | --- |
-| Editor | `src/` | React 18, TypeScript, Vite, Tailwind, `@xyflow/react`, Dexie |
+| Editor | `src/` | React 19, TypeScript, Vite, Tailwind, `@xyflow/react`, Dexie |
 | Backend (optional) | `server/` | Node 24, Fastify, Drizzle, PostgreSQL |
 | Shared logic | `shared/` | Pure TypeScript with no dependencies: `reconcile`, drift classification, `lint` |
 
@@ -254,7 +254,7 @@ After the password, a person can be asked for the 6-digit code their authenticat
 - **Optional, and it works offline.** It is off for everyone until a person turns it on (account menu, *Two-factor authentication*); anyone who never does keeps signing in with the password only. Codes are calculated on the phone from a shared secret and the clock, and checked the same way by the server, so neither side needs the internet. The QR code is drawn in the browser by a library bundled with the editor: no CDN, no external request.
 - **Turn it on for the server:** set `SECRETS_KEY` (or `CONNECTION_KEY`, which is used when `SECRETS_KEY` is unset), at least 16 characters, and keep it safe. With no key the entry is not shown and nothing is an error. `MFA_ENABLED=false` removes the feature completely. In local-only mode (no server) there are no accounts, so there is no two-factor either.
 - **The server's clock must be right.** A code is accepted within about 30 seconds either side of now (`MFA_WINDOW_STEPS`, default 1). On an offline or air-gapped machine keep the clock correct (NTP, or set it by hand); a clock that is minutes out rejects every code.
-- **How it works:** after a correct password the server answers `{ "mfaRequired": true, "challenge": "..." }` and sets no cookie; `POST /auth/login/mfa` with the ticket and a code (or a recovery code) then starts the session. A ticket lasts 5 minutes and dies after 5 wrong codes, wrong codes also count against the account's lockout (`AUTH_MAX_FAILURES`), and a code can be used only once. The secret is stored encrypted (AES-256-GCM) and never returned after set-up; the 10 recovery codes are stored as hashes and shown once. Turning it off, making new recovery codes and changing the password need the password and/or a code.
+- **How it works:** after a correct password the server answers `{ "mfaRequired": true, "challenge": "..." }` and sets no cookie; `POST /auth/login/mfa` with the ticket and a code (or a recovery code) then starts the session. A ticket lasts 5 minutes and dies after 5 wrong codes, wrong codes also count against the account's lockout (`AUTH_MAX_FAILURES`), and a code can be used only once. The secret is stored encrypted (AES-256-GCM) and never returned after set-up; the 10 recovery codes are stored as hashes and shown once. Turning it on needs the password, so a stolen session cannot lock the owner out with a second factor they do not have. Turning it off, making new recovery codes and changing the password need the password and/or a code.
 - **A lost phone:** use a recovery code (each works once). Otherwise an admin opens *Admin > Users* and chooses *Reset two-factor* for that person, who is signed out everywhere and can sign in with the password alone. If the only admin is locked out, run on the server `npm run mfa:reset -- person@example.com` (from `server/`), or in Docker `docker compose exec server node dist/server/src/cli/mfa-reset.js person@example.com`.
 - **Activity log:** `mfa.enable`, `mfa.disable`, `mfa.reset`, `mfa.recovery_used`, `mfa.recovery_renew` and `mfa.failed`.
 
@@ -263,7 +263,8 @@ After the password, a person can be asked for the 6-digit code their authenticat
 The bundled `db` container now runs PostgreSQL 18 on a new volume, `postgres-data` (`qubdidb_postgres-data` in `docker volume ls`). A PostgreSQL 16 data folder cannot be opened by 18, so your data moves by a dump and restore. Do it before you pull the new `docker-compose.yml`, or `git stash` it for the first step. Your old volume `qubdidb-data` is never modified, so you can go back until you delete it yourself.
 
 ```bash
-# 1. with the OLD setup still running: dump everything (database, users, passwords)
+# 1. with the OLD setup still running: dump everything (database, users, passwords).
+#    The file holds password hashes: keep it private, and delete it when you are done.
 docker compose exec -T db pg_dumpall -U qubdidb > qubdidb-backup.sql
 # 2. stop it, then switch to the new docker-compose.yml (git pull)
 docker compose down

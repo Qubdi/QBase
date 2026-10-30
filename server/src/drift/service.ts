@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import {
@@ -7,7 +7,7 @@ import {
     driftSettings,
     savedConnections,
 } from '../db/schema.js';
-import { CryptoBox } from '../introspect/crypto-box.js';
+import { cryptoBoxFor } from '../introspect/crypto-box.js';
 import { filterMetadata } from '../introspect/filter.js';
 import {
     ForbiddenTargetError,
@@ -48,6 +48,23 @@ export interface DriftDeps {
 }
 
 export type ReportRow = typeof driftReports.$inferSelect;
+
+/**
+ * A report without its changes and rename hints, which can be large: all a list,
+ * a badge or a dismiss needs.
+ */
+export const reportSummaryColumns = {
+    id: driftReports.id,
+    diagramId: driftReports.diagramId,
+    runAt: driftReports.runAt,
+    status: driftReports.status,
+    trigger: driftReports.trigger,
+    counts: driftReports.counts,
+    error: driftReports.error,
+    dismissedAt: driftReports.dismissedAt,
+    webhook: driftReports.webhook,
+};
+export type ReportSummaryRow = Pick<ReportRow, keyof typeof reportSummaryColumns>;
 export type SettingsRow = typeof driftSettings.$inferSelect;
 
 export interface SourceKeys {
@@ -59,7 +76,7 @@ export interface SourceKeys {
 const running = new Set<string>();
 
 /** Compact view of a report, used for lists and the diagram badge. */
-export function summarizeReport(r: ReportRow) {
+export function summarizeReport(r: ReportSummaryRow) {
     const counts = r.counts as SeverityCounts;
     return {
         id: r.id,
@@ -85,13 +102,24 @@ export const presentReport = (r: ReportRow) => ({
 });
 
 /** What the editor shows as a badge on the diagram. */
-export function badgeOf(latest: ReportRow | undefined) {
+export function badgeOf(latest: ReportSummaryRow | undefined) {
     if (!latest || latest.status === 'clean' || latest.dismissedAt) return null;
     return {
         status: latest.status,
         counts: latest.counts as SeverityCounts,
         reportId: latest.id,
     };
+}
+
+/** The latest report without its changes. */
+export async function latestReportSummary(db: Db, diagramId: string) {
+    const [r] = await db
+        .select(reportSummaryColumns)
+        .from(driftReports)
+        .where(eq(driftReports.diagramId, diagramId))
+        .orderBy(desc(driftReports.runAt))
+        .limit(1);
+    return r;
 }
 
 export async function latestReport(db: Db, diagramId: string) {
@@ -146,23 +174,33 @@ export async function reusableReport(
 class DriftError extends Error {}
 
 /**
+ * Largest working copy a check compares, in bytes: the comparison runs on the
+ * event loop, so it has the cap the lint route has.
+ */
+export const DRIFT_DIAGRAM_LIMIT = 5 * 1024 * 1024;
+
+/** Why a check did not run: another is running, or what it needs is gone. */
+export type DriftSkip = 'running' | 'not_configured' | 'not_found';
+
+/**
  * Compares the diagram's working copy with the live database and stores a
  * report. A failure to read the database is an error report, never drift.
+ * Answers why, instead of a report, when the check could not start.
  */
 export async function runDriftCheck(
     deps: DriftDeps,
     diagramId: string,
     now: Date = new Date()
-): Promise<ReportRow | null> {
+): Promise<ReportRow | DriftSkip> {
     const { db } = deps;
-    if (running.has(diagramId)) return null;
+    if (running.has(diagramId)) return 'running';
     running.add(diagramId);
     try {
         const [settings] = await db
             .select()
             .from(driftSettings)
             .where(eq(driftSettings.diagramId, diagramId));
-        if (!settings) return null;
+        if (!settings) return 'not_configured';
 
         const previous = await latestReport(db, diagramId);
         let secrets: string[] = [];
@@ -175,11 +213,26 @@ export async function runDriftCheck(
             | { status: 'error'; message: string };
 
         try {
-            const [diagram] = await db
-                .select()
+            // the size first, so a diagram over the cap is never loaded
+            const [sized] = await db
+                .select({
+                    size: sql<number>`octet_length(${diagrams.content}::text)`.mapWith(
+                        Number
+                    ),
+                })
                 .from(diagrams)
                 .where(eq(diagrams.id, diagramId));
-            if (!diagram) return null;
+            if (!sized) return 'not_found';
+            if (sized.size > DRIFT_DIAGRAM_LIMIT) {
+                throw new DriftError(
+                    `The diagram is too large to compare (over ${DRIFT_DIAGRAM_LIMIT / (1024 * 1024)} MB).`
+                );
+            }
+            const [diagram] = await db
+                .select({ content: diagrams.content })
+                .from(diagrams)
+                .where(eq(diagrams.id, diagramId));
+            if (!diagram) return 'not_found';
 
             if (!settings.connectionId) {
                 throw new DriftError('No database connection is set for this diagram.');
@@ -194,7 +247,7 @@ export async function runDriftCheck(
             if (!deps.config.connectionKey) {
                 throw new DriftError('This server cannot read saved passwords (CONNECTION_KEY is not set).');
             }
-            const password = new CryptoBox(deps.config.connectionKey).decrypt(conn.passwordEnc);
+            const password = cryptoBoxFor(deps.config.connectionKey).decrypt(conn.passwordEnc);
             secrets = [password];
 
             const params: ConnectionParams = {

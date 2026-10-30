@@ -18,6 +18,24 @@ export interface DiagramIconProps extends React.ComponentPropsWithoutRef<'div'> 
     imgClassName?: string;
 }
 
+/**
+ * What makes the icon a button when it has a click handler: it can be reached
+ * and used from the keyboard, and says so to a screen reader.
+ */
+const asButton = (onClick: DiagramIconProps['onClick']) =>
+    onClick
+        ? {
+              role: 'button' as const,
+              tabIndex: 0,
+              onClick,
+              onKeyDown: (e: React.KeyboardEvent<HTMLImageElement>) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  e.currentTarget.click();
+              },
+          }
+        : {};
+
 export const DiagramIcon = React.forwardRef<
     React.ElementRef<typeof TooltipTrigger>,
     DiagramIconProps
@@ -29,7 +47,7 @@ export const DiagramIcon = React.forwardRef<
                     src={databaseEditionToImageMap[databaseEdition]}
                     className={cn('max-h-5 max-w-5 rounded-full', imgClassName)}
                     alt="database"
-                    onClick={onClick}
+                    {...asButton(onClick)}
                 />
             </TooltipTrigger>
             <TooltipContent>
@@ -43,7 +61,7 @@ export const DiagramIcon = React.forwardRef<
                     src={databaseSecondaryLogoMap[databaseType]}
                     className={cn('max-h-5 max-w-5', imgClassName)}
                     alt="database"
-                    onClick={onClick}
+                    {...asButton(onClick)}
                 />
             </TooltipTrigger>
             <TooltipContent>

@@ -10,7 +10,8 @@ import {
 } from '../diagrams/permissions.js';
 import {
     badgeOf,
-    latestReport,
+    latestReportSummary,
+    reportSummaryColumns,
     presentReport,
     reusableReport,
     runDriftCheck,
@@ -96,7 +97,7 @@ export const driftRoutes =
                 .select()
                 .from(driftSettings)
                 .where(eq(driftSettings.diagramId, id));
-            const latest = await latestReport(db, id);
+            const latest = await latestReportSummary(db, id);
             return {
                 settings: settings ? presentSettings(settings) : null,
                 latest: latest ? summarizeReport(latest) : null,
@@ -187,8 +188,15 @@ export const driftRoutes =
                 : null;
             if (reused) return presentCheck(reused);
             const report = await runDriftCheck(deps, id);
-            if (!report) {
+            if (report === 'running') {
                 return reply.code(409).send({ error: 'already_running' });
+            }
+            // settings or the diagram went away while the request was waiting
+            if (report === 'not_configured') {
+                return reply.code(409).send({ error: 'not_configured' });
+            }
+            if (report === 'not_found') {
+                return reply.code(404).send({ error: 'not_found' });
             }
             await audit(db, {
                 userId: req.user!.id,
@@ -207,7 +215,7 @@ export const driftRoutes =
                 })
                 .parse(req.query);
             const rows = await db
-                .select()
+                .select(reportSummaryColumns)
                 .from(driftReports)
                 .where(eq(driftReports.diagramId, id))
                 .orderBy(desc(driftReports.runAt))
@@ -234,7 +242,7 @@ export const driftRoutes =
         app.post('/:id/drift/dismiss', async (req, reply) => {
             const { id } = diagramParam.parse(req.params);
             if (!(await requireWriter(id, req.user!.id, reply))) return;
-            const latest = await latestReport(db, id);
+            const latest = await latestReportSummary(db, id);
             if (latest && !latest.dismissedAt) {
                 await db
                     .update(driftReports)
@@ -246,7 +254,7 @@ export const driftRoutes =
                 action: 'drift.dismiss',
                 diagramId: id,
             });
-            const after = await latestReport(db, id);
+            const after = await latestReportSummary(db, id);
             return {
                 latest: after ? summarizeReport(after) : null,
                 badge: badgeOf(after),

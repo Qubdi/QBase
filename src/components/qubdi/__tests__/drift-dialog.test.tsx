@@ -12,6 +12,7 @@ import {
     type MyProject,
     type SavedConnection,
 } from '@/lib/qubdi/api';
+import { registerFlushNow } from '@/lib/qubdi/save-status-store';
 import { DriftDialog } from '../drift-dialog';
 import { WorkspaceContext, type Workspace } from '../workspace-context';
 
@@ -121,6 +122,8 @@ const settle = () =>
         await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
+const syncOrder: string[] = [];
+
 const show = async () => {
     const onBadgeChange = vi.fn();
     await act(async () => {
@@ -128,7 +131,10 @@ const show = async () => {
             <qubdiContext.Provider
                 value={
                     {
-                        syncDiagram: async () => 'r1',
+                        syncDiagram: async () => {
+                            syncOrder.push('sync');
+                            return 'r1';
+                        },
                         remoteIdFor: () => 'r1',
                     } as unknown as QubdiContext
                 }
@@ -158,6 +164,7 @@ describe('DriftDialog', () => {
         saveDrift.mockReset().mockResolvedValue({});
         checkDrift.mockReset().mockResolvedValue(report());
         localStorage.clear();
+        syncOrder.length = 0;
     });
 
     it('has no schedule: a check is something you ask for', async () => {
@@ -223,6 +230,31 @@ describe('DriftDialog', () => {
         expect(saved).not.toHaveProperty('schedule');
         expect(screen.getByTestId('drift-status')).toBeTruthy();
         expect(onBadgeChange).toHaveBeenCalled();
+    });
+
+    it('lets the autosaver send its edits before it syncs the diagram', async () => {
+        getDrift.mockResolvedValue(
+            overview({
+                settings: {
+                    connectionId: 'c1',
+                    schemas: [],
+                    tables: [],
+                    sourceKeys: { tables: {}, columns: {} },
+                    webhookUrl: null,
+                },
+            })
+        );
+        registerFlushNow(async () => void syncOrder.push('autosaver'));
+        try {
+            await show();
+            await act(async () => {
+                fireEvent.click(checkNow());
+            });
+            await settle();
+            expect(syncOrder).toEqual(['autosaver', 'sync']);
+        } finally {
+            registerFlushNow(null);
+        }
     });
 
     it('reports a clean database', async () => {

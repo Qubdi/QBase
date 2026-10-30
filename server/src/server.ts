@@ -19,8 +19,16 @@ try {
     console.error(err.message);
     process.exit(1);
 }
-const { db, pool } = createDb(config.databaseUrl, { max: config.dbPoolMax });
-await runMigrations(db);
+// migrations get their own connection with no statement limit: one that
+// rewrites a large table can take longer than any request should
+const migrating = createDb(config.databaseUrl, { max: 1 });
+await runMigrations(migrating.db);
+await migrating.pool.end();
+
+const { db, pool } = createDb(config.databaseUrl, {
+    max: config.dbPoolMax,
+    statementTimeoutMs: config.dbStatementTimeoutSeconds * 1000,
+});
 
 const app = buildApp({ config, db });
 await app.listen({ port: config.port, host: config.host });

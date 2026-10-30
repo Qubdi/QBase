@@ -244,12 +244,20 @@ describe('two-factor dialog', () => {
             'otpauth://totp/QubdiDB:anna?secret=ABC'
         );
 
-        // 3 a real code
+        // 3 a real code, and the password: neither alone is enough
         expect(button('Turn on').disabled).toBe(true);
         type('Authenticator code', '654 321');
+        expect(button('Turn on').disabled).toBe(true);
+        fireEvent.change(screen.getByPlaceholderText('Password'), {
+            target: { value: 'Password-123!' },
+        });
+        expect(button('Turn on').disabled).toBe(false);
         fireEvent.click(button('Turn on'));
         await waitFor(() =>
-            expect(mocks.mfaEnable).toHaveBeenCalledWith('654321')
+            expect(mocks.mfaEnable).toHaveBeenCalledWith(
+                'Password-123!',
+                '654321'
+            )
         );
         expect(mocks.refreshUser).toHaveBeenCalled();
 
@@ -284,6 +292,9 @@ describe('two-factor dialog', () => {
         fireEvent.click(await screen.findByRole('button', { name: 'Set up' }));
         await screen.findByTestId('mfa-setup');
         type('Authenticator code', '000000');
+        fireEvent.change(screen.getByPlaceholderText('Password'), {
+            target: { value: 'Password-123!' },
+        });
         fireEvent.click(button('Turn on'));
         expect((await screen.findByRole('alert')).textContent).toMatch(
             /not right/

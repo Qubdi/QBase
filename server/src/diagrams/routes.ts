@@ -21,6 +21,8 @@ const idParam = z.object({ id: z.string().uuid() });
 const listQuery = z.object({
     limit: z.coerce.number().int().min(1).max(500).optional(),
     offset: z.coerce.number().int().min(0).default(0),
+    /** only this project's diagrams */
+    projectId: z.string().uuid().optional(),
 });
 /** Names one open editor (a browser tab) for the diagram's edit lock. */
 const editorIdSchema = z.string().min(1).max(100);
@@ -107,7 +109,12 @@ export const diagramRoutes =
          */
         const listFor = async (
             me: NonNullable<FastifyRequest['user']>,
-            opts: { id?: string; limit?: number; offset: number }
+            opts: {
+                id?: string;
+                projectId?: string;
+                limit?: number;
+                offset: number;
+            }
         ) => {
             const select = {
                 id: diagrams.id,
@@ -119,7 +126,12 @@ export const diagramRoutes =
                 ...statsColumns,
             };
             const order = [desc(diagrams.updatedAt), diagrams.id];
-            const only = opts.id ? eq(diagrams.id, opts.id) : undefined;
+            const only = and(
+                opts.id ? eq(diagrams.id, opts.id) : undefined,
+                opts.projectId
+                    ? eq(diagrams.projectId, opts.projectId)
+                    : undefined
+            );
             // admins see every project's diagrams; others only their projects'
             const rows = me.isAdmin
                 ? (
@@ -176,8 +188,8 @@ export const diagramRoutes =
 
         app.get('/', async (req) => {
             // paging is optional: without `limit` the whole list comes back
-            const { limit, offset } = listQuery.parse(req.query);
-            return listFor(req.user!, { limit, offset });
+            const { limit, offset, projectId } = listQuery.parse(req.query);
+            return listFor(req.user!, { limit, offset, projectId });
         });
 
         // One row of the list, without the content: how the editor learns its

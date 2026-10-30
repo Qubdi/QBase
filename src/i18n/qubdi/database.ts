@@ -97,6 +97,7 @@ export const database = {
         applying: 'Applying…',
         apply: 'Apply {{n}} selected',
         applied: 'Applied {{n}} change(s)',
+        serverNotUpdated: 'Applied here, but the server copy is not updated',
     },
     drift: {
         badgeFailed: 'Check failed',

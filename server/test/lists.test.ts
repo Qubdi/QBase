@@ -274,4 +274,40 @@ describe('paged and searchable lists', () => {
             expect((await get('/projects/Alpha')).statusCode).toBe(401);
         });
     });
+
+    describe('GET /diagrams?projectId', () => {
+        const titlesOf = async (qs: string, who: TestUser) =>
+            (await get(`/diagrams${qs}`, who))
+                .json()
+                .map((d: { title: string }) => d.title)
+                .sort();
+
+        it('keeps to the diagrams of one project', async () => {
+            expect(await titlesOf(`?projectId=${projectIds['Alpha']}`, admin)).toEqual([
+                'One',
+                'Two',
+            ]);
+            expect(
+                await titlesOf(`?projectId=${projectIds['Beta Billing']}`, admin)
+            ).toEqual([]);
+        });
+
+        it('still shows a member only what the project lets them see', async () => {
+            expect(await titlesOf(`?projectId=${projectIds['Alpha']}`, member)).toEqual([
+                'One',
+                'Two',
+            ]);
+            // a project they do not belong to answers with nothing, not an error
+            expect(await titlesOf(`?projectId=${projectIds['Gamma']}`, member)).toEqual(
+                []
+            );
+            expect(await titlesOf(`?projectId=${projectIds['Alpha']}`, stranger)).toEqual(
+                []
+            );
+        });
+
+        it('rejects an id that is not a uuid', async () => {
+            expect((await get('/diagrams?projectId=nope', admin)).statusCode).toBe(400);
+        });
+    });
 });

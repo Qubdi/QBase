@@ -8,6 +8,11 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # majors are taken on purpose, one step at a time (see TODO.md), not by
+      # a bot's pull request
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /server
@@ -17,6 +22,11 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # majors are taken on purpose, one step at a time (see TODO.md), not by
+      # a bot's pull request
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # keeps the pinned commit SHAs in the workflows current
   - package-ecosystem: github-actions

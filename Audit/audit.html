@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 7</b></div>
-  <h1>1 open across four lenses: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 12</b></div>
+  <h1>2 open across four lenses: 0 Crit, 1 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-20</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
+    <span><b>audit date</b> 2026-10-30</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -33,11 +33,11 @@
     <table>
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
-        <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>1</td><td>22</td><td>0</td></tr>
-        <tr><td>Repository</td><td>0</td><td>0</td><td>0</td><td>22</td><td>0</td></tr>
-        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>16</td><td>0</td></tr>
-        <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>19</td><td>0</td></tr>
-        <tr><td>Total</td><td>1</td><td>0</td><td>1</td><td>79</td><td>0</td></tr>
+        <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>1</td><td>26</td><td>0</td></tr>
+        <tr><td>Repository</td><td>0</td><td>0</td><td>0</td><td>43</td><td>1</td></tr>
+        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>28</td><td>0</td></tr>
+        <tr><td>Client</td><td>1</td><td>0</td><td>0</td><td>38</td><td>0</td></tr>
+        <tr><td>Total</td><td>2</td><td>0</td><td>1</td><td>135</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -47,23 +47,23 @@
   <div class="section-head"><span class="snum">02</span><h2>Lenses</h2></div>
   <a class="idx-card sec" href="audit-security.html">
     <h3>Security &amp; secrets</h3>
-    <p>Top: Old <code>POSTGRES_PASSWORD</code> and <code>CONNECTION_KEY</code> values remain in git history and local <code>.env</code></p>
-    <p class="lbl">1 open &middot; 0 Crit &middot; 1 High &middot; 22 fixed &middot; 0 accepted</p>
+    <p>Top: Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</p>
+    <p class="lbl">1 open &middot; 0 Crit &middot; 1 High &middot; 26 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
     <p>Nothing open</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 22 fixed &middot; 0 accepted</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 43 fixed &middot; 1 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
     <p>Nothing open</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 16 fixed &middot; 0 accepted</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 28 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
-    <p>Nothing open</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 19 fixed &middot; 0 accepted</p>
+    <p>Top: Three <code>jsx-a11y</code> rules are off: 51 hits in autofocus and mouse-target code</p>
+    <p class="lbl">1 open &middot; 0 Crit &middot; 0 High &middot; 38 fixed &middot; 0 accepted</p>
   </a>
 </section>
 
@@ -80,6 +80,11 @@
         <tr><td>5</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
         <tr><td>6</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
         <tr><td>7</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
+        <tr><td>8</td><td>2026-10-30</td><td class="wrap-cell">Deep pass: 57 new, 0 fixed, REPO-007 reopened; SEC-001 widened to <code>MSSQL_SA_PASSWORD</code></td></tr>
+        <tr><td>9</td><td>2026-10-30</td><td class="wrap-cell">19 fixed: CLI-020 to CLI-038</td></tr>
+        <tr><td>10</td><td>2026-10-30</td><td class="wrap-cell">12 fixed: SRV-017 to SRV-028</td></tr>
+        <tr><td>11</td><td>2026-10-30</td><td class="wrap-cell">22 fixed: REPO-007, REPO-023 to REPO-040, REPO-042 to REPO-044; REPO-041 accepted; 1 new: CLI-039</td></tr>
+        <tr><td>12</td><td>2026-10-30</td><td class="wrap-cell">4 fixed: SEC-024 to SEC-027; SEC-001 left open</td></tr>
       </tbody>
     </table>
   </div>

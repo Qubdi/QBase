@@ -247,9 +247,9 @@ export const CreateRelationshipNode: React.FC<
                 <div className="flex flex-row gap-2">
                     {/* PK Column (Source) */}
                     <div className="flex flex-1 flex-col gap-1.5">
-                        <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                             From (PK)
-                        </label>
+                        </span>
                         <div className="flex h-7 items-center rounded-md border border-slate-200 bg-slate-50 px-2.5 text-sm font-medium text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
                             {sourcePKField.name}
                         </div>
@@ -265,9 +265,9 @@ export const CreateRelationshipNode: React.FC<
 
                     {/* FK Column (Target) */}
                     <div className="flex flex-1 flex-col gap-1.5">
-                        <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                             To (FK)
-                        </label>
+                        </span>
                         <SelectBox
                             className="flex h-7 min-h-0 w-full dark:border-slate-200"
                             popoverClassName="!z-[1001]"

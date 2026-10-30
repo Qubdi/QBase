@@ -32,15 +32,26 @@ export function diagramStats(content: unknown): DiagramStats {
     };
 }
 
-// The list is read for every diagram a user can see, so the numbers are taken
-// inside the database instead of loading each full diagram: from the working
-// copy for writers, from the latest snapshot for viewers.
-const columnsOf = (col: PgColumn): { [K in keyof DiagramStats]: SQL<DiagramStats[K]> } => ({
+// The list is read for every diagram a user can see, so the numbers are never
+// worked out from the content on the way out. Writers' lists read the columns
+// the database keeps up to date as the working copy is written; viewers' read
+// the latest snapshot, where the numbers are taken inside the database instead
+// of loading each full diagram.
+export const statsColumns = {
+    databaseType: diagrams.statDatabaseType,
+    databaseEdition: diagrams.statDatabaseEdition,
+    tableCount: diagrams.statTableCount,
+    relationshipCount: diagrams.statRelationshipCount,
+    createdAt: diagrams.statCreatedAt,
+} satisfies { [K in keyof DiagramStats]: PgColumn };
+
+const snapshotColumnsOf = (
+    col: PgColumn
+): { [K in keyof DiagramStats]: SQL<DiagramStats[K]> } => ({
     databaseType: sql<string | null>`nullif(${col}->>'databaseType', '')`,
     databaseEdition: sql<string | null>`nullif(${col}->>'databaseEdition', '')`,
     tableCount: sql<number>`case when jsonb_typeof(${col}->'tables') = 'array' then jsonb_array_length(${col}->'tables') else 0 end`,
     relationshipCount: sql<number>`case when jsonb_typeof(${col}->'relationships') = 'array' then jsonb_array_length(${col}->'relationships') else 0 end`,
     createdAt: sql<string | null>`nullif(${col}->>'createdAt', '')`,
 });
-export const statsColumns = columnsOf(diagrams.content);
-export const snapshotStatsColumns = columnsOf(snapshots.content);
+export const snapshotStatsColumns = snapshotColumnsOf(snapshots.content);

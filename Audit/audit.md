@@ -1,20 +1,20 @@
 # QubdiDB — Audit
 
-**rev** 7 · **date** 2026-10-20
-**method** static analysis · whole-tree read · eslint, tsc -b, `npm run build`, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's `qubdidb_test` database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and `server/` (0 vulnerabilities) · no secret read
+**rev** 12 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 1 | 0 | 1 | 22 | 0 |
-| Repository | 0 | 0 | 0 | 22 | 0 |
-| Server | 0 | 0 | 0 | 16 | 0 |
-| Client | 0 | 0 | 0 | 19 | 0 |
-| **Total** | 1 | 0 | 1 | 79 | 0 |
+| Security & secrets | 1 | 0 | 1 | 26 | 0 |
+| Repository | 0 | 0 | 0 | 43 | 1 |
+| Server | 0 | 0 | 0 | 28 | 0 |
+| Client | 1 | 0 | 0 | 38 | 0 |
+| **Total** | 2 | 0 | 1 | 135 | 1 |
 
 ## Act first
 
-- `SEC-001` — the old `POSTGRES_PASSWORD` and `CONNECTION_KEY` are in git history and `.env`; rotate both.
+- `SEC-001` — old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` are in git history; rotate all three.
 
 ---
 
@@ -24,17 +24,13 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SEC-001 | High | Old `POSTGRES_PASSWORD` and `CONNECTION_KEY` values remain in git history and local `.env` | `.env.example` history | Rotate both; the example file is blank now |
-
-### Repository
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
+| SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` values remain in git history | `.env.example` history | Rotate all three; the example file is blank now |
 
 ### Client
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
+| CLI-039 | Low | Three `jsx-a11y` rules are off: 51 hits in autofocus and mouse-target code | `eslint.config.mjs:86` · `TODO.md` | Enable each rule; fix or justify every hit |
 
 ---
 
@@ -71,7 +67,6 @@
 | REPO-004 | Repository | `SECURITY.md` names `SESSION_SECRET`, which exists nowhere in code |
 | REPO-005 | Repository | release-please needs Conventional Commits; 2 of 426 commits follow them |
 | REPO-006 | Repository | `VITE_APP_URL` documented but never passed as Docker build arg |
-| REPO-007 | Repository | Server `@types/node` is `^26` against the Node 24 runtime |
 | REPO-009 | Repository | ESLint comment points to `TODO.md`, which is empty |
 | REPO-010 | Repository | Build-tasks doc still specifies the removed Comments feature |
 | REPO-011 | Repository | `test:coverage` needs `@vitest/coverage-v8`, which is not installed |
@@ -121,6 +116,63 @@
 | CLI-007 | Client | Qubdi and admin UI strings hard-coded English; 0 files use `useTranslation` |
 | REPO-016 | Repository | No CODEOWNERS file |
 | CLI-008 | Client | Lock release on `pagehide` waits behind the final-save promise |
+| CLI-020 | Client | Share, drift and re-sync call `syncDiagram` without flushing the autosaver |
+| CLI-021 | Client | Re-sync, Share and lint Fix offered to viewers and lock losers |
+| CLI-022 | Client | Re-sync swallows a failed save and still toasts success |
+| CLI-023 | Client | Disposed saver's failed final flush sets 'error' after the status reset |
+| CLI-024 | Client | Share-viewer stream has no `error` or `open` handler; a 429 ends live updates |
+| CLI-025 | Client | Open dialog and legacy route load every visible diagram unpaged |
+| CLI-026 | Client | Tooltips render nothing; icon-only toolbar buttons have no accessible name |
+| CLI-027 | Client | JSON import in server mode creates a diagram outside any project |
+| CLI-028 | Client | Editor statically imports `@dbml/core`; 15.7 MB chunk, 2.8 MB gzip |
+| CLI-029 | Client | Fade selector scans all nodes and edges per table node per store change |
+| CLI-030 | Client | Type colours legend text is hard-coded English |
+| CLI-031 | Client | `fieldTypeKind` tints `datetimeoffset`, `datetime64` and `uint*` as text |
+| CLI-032 | Client | `getWorkspaceId` uses bare `localStorage`; throws when storage is blocked |
+| CLI-033 | Client | Move-into-project picker capped at 100 projects |
+| CLI-034 | Client | `qubdidb.synced-content` entries never pruned when a diagram is unbound |
+| CLI-035 | Client | Meta description still advertises the removed Comments feature |
+| CLI-036 | Client | Import rethrows inside FileReader `onload`; unhandled rejection |
+| CLI-037 | Client | Unused `CommandDialog` lacks a DialogTitle |
+| CLI-038 | Client | `qrcode` imported eagerly by the 2FA dialog in the editor nav |
+| SRV-017 | Server | Stored-diagram lint returns 500 when a table lacks `fields` |
+| SRV-018 | Server | Diagram list runs `jsonb_array_length` on every listed row's content |
+| SRV-019 | Server | Publish reads the full previous snapshot and re-hashes content |
+| SRV-020 | Server | Drift list and badge load full report rows, including `changes` |
+| SRV-021 | Server | Each drift check re-derives its key with blocking `scryptSync` |
+| SRV-022 | Server | Drift check reconciles a working copy of any size |
+| SRV-023 | Server | `LOG_LEVEL` unvalidated; a typo throws in pino, not `ConfigError` |
+| SRV-024 | Server | Pool sets no `statement_timeout`; a slow query holds a connection |
+| SRV-025 | Server | Share-link create counts then inserts; parallel creates exceed `MAX_ACTIVE_LINKS` |
+| SRV-026 | Server | Link list caps 200 newest; revoked churn hides older active links |
+| SRV-027 | Server | Drift check with missing settings or diagram answers 409 `already_running` |
+| SRV-028 | Server | One failing purge skips every later maintenance step |
+| REPO-023 | Repository | CI server audit fails: high `@azure/msal-node` advisory via `mssql`; moderate `fast-uri` |
+| REPO-007 | Repository | Server `@types/node` is `^26` against the Node 24 runtime |
+| REPO-024 | Repository | Root `happy-dom` has two high advisories, including host code execution |
+| REPO-025 | Repository | Dependabot npm entries ignore no majors; TS 7, ESLint 10, `@types/node` 26 merged |
+| REPO-028 | Repository | README backup writes `qubdidb-backup.sql` into the repo root; not git-ignored |
+| REPO-026 | Repository | Root TypeScript 5.9 and server TypeScript 7 both compile `shared/` |
+| REPO-027 | Repository | No release tag or `bootstrap-sha`; first release-please run scans all history |
+| REPO-029 | Repository | CI never builds `db/postgres/Dockerfile`; Dependabot digest bumps go unbuilt |
+| REPO-030 | Repository | Postgres image digest duplicated in three files |
+| REPO-031 | Repository | Tag `verify` job skips CI's npm audit and gitleaks scan |
+| REPO-032 | Repository | Published images carry no provenance, SBOM or signature |
+| REPO-033 | Repository | Publish `verify` caches root npm only; server install uncached |
+| REPO-034 | Repository | CONTRIBUTING still links the removed Discord |
+| REPO-035 | Repository | CONTRIBUTING server test line omits `typecheck`, which CI runs |
+| REPO-036 | Repository | README and build-tasks say React 18; package is React 19 |
+| REPO-037 | Repository | ESLint ignores nonexistent `.eslintrc.cjs` but not `coverage/` |
+| REPO-038 | Repository | `components.json` `ui` alias points at missing `src/components/ui` |
+| REPO-039 | Repository | Pre-commit hook fails when `server/node_modules` is absent |
+| REPO-040 | Repository | Client image context ships `server/`, `Audit/`, `.github/` |
+| REPO-042 | Repository | `eslint-plugin-css-modules` configured; no `*.module.css` files exist |
+| REPO-043 | Repository | `jsx-a11y` plugin registered with zero rules enabled |
+| REPO-044 | Repository | Vite 8 config still uses `rollupOptions.manualChunks` |
+| SEC-024 | Security & secrets | `TRUST_PROXY=true` trusts client `X-Forwarded-For`; per-IP limits, lockout and SSE cap bypassable |
+| SEC-025 | Security & secrets | `/mfa/setup` and `/mfa/enable` need no password; stolen session can lock owner out |
+| SEC-026 | Security & secrets | Wrong password on 2FA disable or code renewal logged as `user.sign_in_failed` |
+| SEC-027 | Security & secrets | Tracked server example `DATABASE_URL` carries a working default password |
 
 ---
 
@@ -128,6 +180,7 @@
 
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
+| REPO-041 | Repository | `eslint-plugin-react` and `jsx-a11y` lack ESLint 10 peers; forced by overrides | Latest releases (react 7.37.5, jsx-a11y 6.10.2) still declare up to ESLint 9; the overrides stay until they do |
 
 ---
 
@@ -149,3 +202,8 @@
 | 5 | 2026-10-20 | 1 fixed |
 | 6 | 2026-10-20 | 1 fixed |
 | 7 | 2026-10-20 | 1 fixed |
+| 8 | 2026-10-30 | Deep pass: 57 new, 0 fixed, REPO-007 reopened; SEC-001 widened to `MSSQL_SA_PASSWORD` |
+| 9 | 2026-10-30 | 19 fixed: CLI-020 to CLI-038 |
+| 10 | 2026-10-30 | 12 fixed: SRV-017 to SRV-028 |
+| 11 | 2026-10-30 | 22 fixed: REPO-007, REPO-023 to REPO-040, REPO-042 to REPO-044; REPO-041 accepted; 1 new: CLI-039 |
+| 12 | 2026-10-30 | 4 fixed: SEC-024 to SEC-027; SEC-001 left open |

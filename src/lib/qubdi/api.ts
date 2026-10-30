@@ -502,9 +502,14 @@ export function createApi(
                 '/auth/mfa/setup',
                 {}
             ),
-        /** Checks a code from the app, switches it on; the recovery codes come back once. */
-        mfaEnable: (code: string) =>
+        /**
+         * Checks the password and a code from the app, switches it on; the
+         * recovery codes come back once. The password is what stops a stolen
+         * session from switching it on.
+         */
+        mfaEnable: (password: string, code: string) =>
             request<{ recoveryCodes: string[] }>('POST', '/auth/mfa/enable', {
+                password,
                 code,
             }),
         mfaDisable: (password: string, factor: SecondFactor) =>
@@ -532,7 +537,12 @@ export function createApi(
                 ...factor,
             }),
 
-        listDiagrams: () => request<RemoteDiagramSummary[]>('GET', '/diagrams'),
+        /** Every diagram the user may see; `projectId` keeps one project's. */
+        listDiagrams: (params?: { projectId?: string }) =>
+            request<RemoteDiagramSummary[]>(
+                'GET',
+                `/diagrams${listQuery({}, { projectId: params?.projectId })}`
+            ),
         /** One row of the list, without the content; 404 unless the user may see it. */
         getDiagramSummary: (id: string) =>
             request<RemoteDiagramSummary>(

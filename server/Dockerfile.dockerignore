@@ -1,0 +1,18 @@
+# Used instead of .dockerignore when building the server image from the repo
+# root (`docker build -f server/Dockerfile .`). Only what server/Dockerfile
+# copies goes into the build: the server, shared/, and the editor's metadata types.
+*
+
+!server/
+!shared/
+!src/lib/data/import-metadata/metadata-types/
+
+**/node_modules
+**/dist
+**/build
+**/.env
+**/.env.*
+**/test/
+**/__tests__/
+**/*.log
+**/coverage

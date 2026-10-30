@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 7</b></div>
+  <div class="eyebrow">QubdiDB &middot; Repository &amp; governance Audit &middot; <b>rev 12</b></div>
   <h1>0 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-20</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
+    <span><b>audit date</b> 2026-10-30</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -29,7 +29,7 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">0 open &middot; 22 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 43 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -41,7 +41,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (22)</summary>
+  <details><summary>Fixed (43)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -52,7 +52,6 @@
         <tr><td class="svc-name">REPO-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>SECURITY.md</code> names <code>SESSION_SECRET</code>, which exists nowhere in code</td></tr>
         <tr><td class="svc-name">REPO-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">release-please needs Conventional Commits; 2 of 426 commits follow them</td></tr>
         <tr><td class="svc-name">REPO-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>VITE_APP_URL</code> documented but never passed as Docker build arg</td></tr>
-        <tr><td class="svc-name">REPO-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server <code>@types/node</code> is <code>^26</code> against the Node 24 runtime</td></tr>
         <tr><td class="svc-name">REPO-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">ESLint comment points to <code>TODO.md</code>, which is empty</td></tr>
         <tr><td class="svc-name">REPO-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Build-tasks doc still specifies the removed Comments feature</td></tr>
         <tr><td class="svc-name">REPO-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>test:coverage</code> needs <code>@vitest/coverage-v8</code>, which is not installed</td></tr>
@@ -68,15 +67,38 @@
         <tr><td class="svc-name">REPO-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Release workflow grants <code>GITHUB_TOKEN</code> write yet acts with <code>OSS_RELEASE</code> PAT</td></tr>
         <tr><td class="svc-name">REPO-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README says forked but never names the upstream project</td></tr>
         <tr><td class="svc-name">REPO-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No CODEOWNERS file</td></tr>
+        <tr><td class="svc-name">REPO-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI server audit fails: high <code>@azure/msal-node</code> advisory via <code>mssql</code>; moderate <code>fast-uri</code></td></tr>
+        <tr><td class="svc-name">REPO-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server <code>@types/node</code> is <code>^26</code> against the Node 24 runtime</td></tr>
+        <tr><td class="svc-name">REPO-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Root <code>happy-dom</code> has two high advisories, including host code execution</td></tr>
+        <tr><td class="svc-name">REPO-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dependabot npm entries ignore no majors; TS 7, ESLint 10, <code>@types/node</code> 26 merged</td></tr>
+        <tr><td class="svc-name">REPO-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README backup writes <code>qubdidb-backup.sql</code> into the repo root; not git-ignored</td></tr>
+        <tr><td class="svc-name">REPO-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Root TypeScript 5.9 and server TypeScript 7 both compile <code>shared/</code></td></tr>
+        <tr><td class="svc-name">REPO-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No release tag or <code>bootstrap-sha</code>; first release-please run scans all history</td></tr>
+        <tr><td class="svc-name">REPO-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI never builds <code>db/postgres/Dockerfile</code>; Dependabot digest bumps go unbuilt</td></tr>
+        <tr><td class="svc-name">REPO-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Postgres image digest duplicated in three files</td></tr>
+        <tr><td class="svc-name">REPO-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Tag <code>verify</code> job skips CI's npm audit and gitleaks scan</td></tr>
+        <tr><td class="svc-name">REPO-032</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Published images carry no provenance, SBOM or signature</td></tr>
+        <tr><td class="svc-name">REPO-033</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish <code>verify</code> caches root npm only; server install uncached</td></tr>
+        <tr><td class="svc-name">REPO-034</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CONTRIBUTING still links the removed Discord</td></tr>
+        <tr><td class="svc-name">REPO-035</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CONTRIBUTING server test line omits <code>typecheck</code>, which CI runs</td></tr>
+        <tr><td class="svc-name">REPO-036</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README and build-tasks say React 18; package is React 19</td></tr>
+        <tr><td class="svc-name">REPO-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">ESLint ignores nonexistent <code>.eslintrc.cjs</code> but not <code>coverage/</code></td></tr>
+        <tr><td class="svc-name">REPO-038</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>components.json</code> <code>ui</code> alias points at missing <code>src/components/ui</code></td></tr>
+        <tr><td class="svc-name">REPO-039</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Pre-commit hook fails when <code>server/node_modules</code> is absent</td></tr>
+        <tr><td class="svc-name">REPO-040</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Client image context ships <code>server/</code>, <code>Audit/</code>, <code>.github/</code></td></tr>
+        <tr><td class="svc-name">REPO-042</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>eslint-plugin-css-modules</code> configured; no <code>*.module.css</code> files exist</td></tr>
+        <tr><td class="svc-name">REPO-043</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>jsx-a11y</code> plugin registered with zero rules enabled</td></tr>
+        <tr><td class="svc-name">REPO-044</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Vite 8 config still uses <code>rollupOptions.manualChunks</code></td></tr>
       </tbody>
     </table>
   </div>
   </details>
-  <details><summary>Accepted (0)</summary>
+  <details><summary>Accepted (1)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-041</td><td><span class="pill warn">Accepted</span></td><td class="wrap-cell"><code>eslint-plugin-react</code> and <code>jsx-a11y</code> lack ESLint 10 peers; forced by overrides</td><td class="wrap-cell">Latest releases (react 7.37.5, jsx-a11y 6.10.2) still declare up to ESLint 9; the overrides stay until they do</td></tr>
       </tbody>
     </table>
   </div>

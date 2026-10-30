@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const hashed = vi.hoisted(() => ({ calls: 0 }));
@@ -13,7 +13,7 @@ vi.mock('../src/lib/hash.js', async (importOriginal) => {
     };
 });
 
-const { diagrams } = await import('../src/db/schema.js');
+const { diagrams, snapshots } = await import('../src/db/schema.js');
 const { diagramHash } = await import('../src/lib/hash.js');
 const {
     as,
@@ -119,6 +119,41 @@ describe('the stored content hash', () => {
         expect(await callsDuring(get)).toBe(1);
         expect((await row()).contentHash).not.toBeNull();
         expect(await callsDuring(get)).toBe(0);
+    });
+
+    it('is reused to publish: nothing is hashed again once a save has stored it', async () => {
+        await put({ content: { ...sampleContent, name: 'Ready to publish' } });
+        expect(await callsDuring(publish)).toBe(0);
+        const snapshot = (
+            await ctx.db
+                .select()
+                .from(snapshots)
+                .where(eq(snapshots.diagramId, id))
+                .orderBy(desc(snapshots.version))
+                .limit(1)
+        )[0];
+        expect(snapshot.contentHash).toBe((await row()).contentHash);
+    });
+
+    it('is worked out once, for a diagram that has none stored, when it is published', async () => {
+        await put({ content: { ...sampleContent, name: 'No stored hash' } });
+        await ctx.db
+            .update(diagrams)
+            .set({ contentHash: null })
+            .where(eq(diagrams.id, id));
+        expect(await callsDuring(publish)).toBe(1);
+        const published = (
+            await ctx.db
+                .select()
+                .from(snapshots)
+                .where(eq(snapshots.diagramId, id))
+                .orderBy(desc(snapshots.version))
+                .limit(1)
+        )[0];
+        expect(published.contentHash).toBe(
+            diagramHash(published.title, published.content)
+        );
+        expect((await get()).json().unpublishedChanges).toBe(false);
     });
 
     it('still tells whether there is anything to publish', async () => {

@@ -7,6 +7,7 @@ import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { isLocked, lockedReason } from '@/lib/qubdi/access';
 import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';
+import { fetchAllPages } from '@/lib/qubdi/paging';
 import { useDiagramAccess } from './diagram-access-context';
 import { GetLatestDialog } from './get-latest-control';
 
@@ -32,8 +33,8 @@ export const AccessBanner: React.FC = () => {
     // the projects to choose from when moving a diagram into one
     useEffect(() => {
         if (!unbound) return;
-        api.listProjects({ limit: 100 })
-            .then((page) => setProjects(page.items))
+        fetchAllPages((page) => api.listProjects({ limit: 100, page }))
+            .then(setProjects)
             .catch(() => setProjects([]));
     }, [unbound]);
 

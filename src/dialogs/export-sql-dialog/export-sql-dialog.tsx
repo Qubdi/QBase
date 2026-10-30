@@ -158,6 +158,8 @@ export const ExportSQLDialog: React.FC<ExportSQLDialogProps> = ({
                         <Trans
                             i18nKey="export_sql_dialog.error.message" // optional -> fallbacks to defaults if not provided
                             components={[
+                                // Trans puts the translated text inside
+                                // eslint-disable-next-line jsx-a11y/anchor-has-content
                                 <a
                                     key={0}
                                     href="mailto:support@qubdi.dev"

@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 7</b></div>
+  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 12</b></div>
   <h1>0 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-20</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
+    <span><b>audit date</b> 2026-10-30</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (60 files, 907 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -29,7 +29,7 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">0 open &middot; 16 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 28 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -41,7 +41,7 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (16)</summary>
+  <details><summary>Fixed (28)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -62,6 +62,18 @@
         <tr><td class="svc-name">SRV-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No image HEALTHCHECK; forced exit equals Docker's 10 s stop grace</td></tr>
         <tr><td class="svc-name">SRV-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share links per diagram unbounded; listing caps at 200</td></tr>
         <tr><td class="svc-name">SRV-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CORS <code>onRequest</code> hook has no tests</td></tr>
+        <tr><td class="svc-name">SRV-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Stored-diagram lint returns 500 when a table lacks <code>fields</code></td></tr>
+        <tr><td class="svc-name">SRV-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Diagram list runs <code>jsonb_array_length</code> on every listed row's content</td></tr>
+        <tr><td class="svc-name">SRV-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish reads the full previous snapshot and re-hashes content</td></tr>
+        <tr><td class="svc-name">SRV-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift list and badge load full report rows, including <code>changes</code></td></tr>
+        <tr><td class="svc-name">SRV-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Each drift check re-derives its key with blocking <code>scryptSync</code></td></tr>
+        <tr><td class="svc-name">SRV-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift check reconciles a working copy of any size</td></tr>
+        <tr><td class="svc-name">SRV-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>LOG_LEVEL</code> unvalidated; a typo throws in pino, not <code>ConfigError</code></td></tr>
+        <tr><td class="svc-name">SRV-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Pool sets no <code>statement_timeout</code>; a slow query holds a connection</td></tr>
+        <tr><td class="svc-name">SRV-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-link create counts then inserts; parallel creates exceed <code>MAX_ACTIVE_LINKS</code></td></tr>
+        <tr><td class="svc-name">SRV-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Link list caps 200 newest; revoked churn hides older active links</td></tr>
+        <tr><td class="svc-name">SRV-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift check with missing settings or diagram answers 409 <code>already_running</code></td></tr>
+        <tr><td class="svc-name">SRV-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">One failing purge skips every later maintenance step</td></tr>
       </tbody>
     </table>
   </div>
