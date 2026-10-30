@@ -463,6 +463,19 @@ describe('two-factor sign-in', () => {
             expect((await ctx.app.inject({ url: '/auth/me', headers: as(user) })).json().mfaEnabled).toBe(true);
         });
 
+        it('logs a wrong password as a password check, not as a failed sign-in', async () => {
+            const { user, secret } = await enrolled();
+            nextStep();
+            const actions = async () => (await ctx.db.select().from(auditLog)).map((r) => r.action);
+            const before = (await actions()).length;
+            await post('/auth/mfa/disable', { password: 'wrong-wrong-1234', code: totp(secret) }, user);
+            await post('/auth/mfa/recovery-codes', { password: 'wrong-wrong-1234', code: totp(secret) }, user);
+            expect((await actions()).slice(before)).toEqual([
+                'user.password_check_failed',
+                'user.password_check_failed',
+            ]);
+        });
+
         it('with a code: back to the password alone, and nothing is left behind', async () => {
             const { user, secret } = await enrolled();
             nextStep();

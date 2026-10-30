@@ -239,7 +239,8 @@ export const mfaRoutes =
             const [user] = await db.select().from(users).where(eq(users.id, userId));
             if (!(await verifyPassword(user.passwordHash, body.password))) {
                 failures.recordFailure(key);
-                await audit(db, { userId, action: 'user.sign_in_failed' });
+                // not a sign-in: the person is already signed in
+                await audit(db, { userId, action: 'user.password_check_failed' });
                 reply.code(403).send({ error: 'wrong_password' });
                 return null;
             }
