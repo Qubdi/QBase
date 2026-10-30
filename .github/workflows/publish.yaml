@@ -44,6 +44,10 @@ jobs:
         with:
           node-version: 24.x
           cache: npm
+          # both packages install in this job
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
 
       - name: Install editor dependencies
         run: npm ci
