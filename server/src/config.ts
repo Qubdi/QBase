@@ -158,6 +158,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         );
     }
 
+    // `true` would believe the first X-Forwarded-For entry, which is whatever
+    // the visitor sent: a new value per request is a new rate-limit bucket and a
+    // new lockout key, so the limits would mean nothing
+    const trustProxy = parseTrustProxy(env.TRUST_PROXY);
+    if (trustProxy === true) {
+        problems.push(
+            'TRUST_PROXY=true trusts an X-Forwarded-For header that any visitor can send; ' +
+                'set the number of proxies in front of the server (1 for a single reverse proxy) or their addresses'
+        );
+    }
+
     // no built-in fallback: a default credential would be a known password
     const databaseUrl = env.DATABASE_URL?.trim() ?? '';
     if (!databaseUrl) problems.push('DATABASE_URL is required');
@@ -191,7 +202,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         sseMaxPerLink: int('SSE_MAX_PER_LINK', 100, 1),
         sseMaxPerIp: int('SSE_MAX_PER_IP', 20, 1),
         sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1),
-        trustProxy: parseTrustProxy(env.TRUST_PROXY),
+        trustProxy,
         logLevel,
         dbPoolMax: int('DB_POOL_MAX', 10, 1),
         dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),

@@ -28,6 +28,17 @@ describe('parseTrustProxy', () => {
 
     it('is part of the loaded config', () => {
         expect(loadConfig({ TRUST_PROXY: '1' }).trustProxy).toBe(1);
+        expect(loadConfig({ TRUST_PROXY: '10.0.0.1' }).trustProxy).toEqual([
+            '10.0.0.1',
+        ]);
+        expect(loadConfig({}).trustProxy).toBe(false);
+    });
+
+    it('refuses true, which would believe a header any visitor can send', () => {
+        expect(() => loadConfig({ TRUST_PROXY: 'true' })).toThrow(ConfigError);
+        expect(() => loadConfig({ TRUST_PROXY: ' true ' })).toThrow(
+            /TRUST_PROXY=true trusts an X-Forwarded-For header/
+        );
     });
 });
 
