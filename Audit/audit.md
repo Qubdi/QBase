@@ -1,17 +1,17 @@
 # QubdiDB — Audit
 
-**rev** 17 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (65 files, 943 tests: 928 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
+**rev** 18 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 1 | 0 | 1 | 28 | 0 |
 | Repository | 0 | 0 | 0 | 47 | 1 |
-| Server | 1 | 0 | 0 | 28 | 0 |
+| Server | 0 | 0 | 0 | 29 | 0 |
 | Database | 0 | 0 | 0 | 14 | 3 |
 | Client | 0 | 0 | 0 | 42 | 0 |
-| **Total** | 2 | 0 | 1 | 159 | 4 |
+| **Total** | 1 | 0 | 1 | 160 | 4 |
 
 ## Act first
 
@@ -26,12 +26,6 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` values remain in git history | `.env.example` · `server/.env.example` history | Rotate all three; the example files are blank now |
-
-### Server
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| SRV-029 | Med | Outbound limiter scans its whole map per request; junk cookies grow it unbounded | `server/src/lib/rate-key.ts:49` · `server/src/introspect/routes.ts:234` | Key after authentication; use a bounded store |
 
 ---
 
@@ -198,6 +192,7 @@
 | REPO-046 | Repository | Gitleaks comment cites compose profile `mssql`, which no longer exists |
 | REPO-047 | Repository | Bug template says the version is in the footer; UI shows none |
 | REPO-048 | Repository | PR checklist omits server `typecheck`, which CI runs |
+| SRV-029 | Server | Outbound limiter scans its whole map per request; junk cookies grow it unbounded |
 
 ---
 
@@ -271,3 +266,4 @@
 | 15 | 2026-10-30 | 14 fixed: DB-001 to DB-003, DB-005 to DB-010, DB-012, DB-013, DB-015 to DB-017; DB-004, DB-011, DB-014 accepted |
 | 16 | 2026-10-30 | 2 fixed: SEC-028, SEC-029; SEC-001 left open |
 | 17 | 2026-10-30 | 4 fixed: REPO-045 to REPO-048 |
+| 18 | 2026-10-30 | 1 fixed: SRV-029 |
