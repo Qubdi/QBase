@@ -1,10 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import net from 'node:net';
+import { afterEach, describe, expect, it } from 'vitest';
 import { assertReadOnlySql } from '../src/introspect/readonly-guard.js';
 import {
     SQLSERVER_QUERIES,
     buildFkDefs,
     buildPkDefs,
     mssqlColumnShape,
+    pinnedConnector,
 } from '../src/introspect/sqlserver.js';
 
 describe('mssqlColumnShape', () => {
@@ -112,5 +114,62 @@ describe('SQL Server catalog queries', () => {
         for (const [name, sql] of Object.entries(SQLSERVER_QUERIES)) {
             expect(() => assertReadOnlySql(sql), name).not.toThrow();
         }
+    });
+});
+
+describe('pinnedConnector', () => {
+    const open: net.Server[] = [];
+    const sockets: net.Socket[] = [];
+    afterEach(() => {
+        sockets.splice(0).forEach((s) => s.destroy());
+        open.splice(0).forEach((s) => s.close());
+    });
+
+    const listen = async () => {
+        const hits: string[] = [];
+        const server = net.createServer((s) => hits.push(s.localAddress ?? ''));
+        open.push(server);
+        await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+        return { port: (server.address() as net.AddressInfo).port, hits };
+    };
+    const signal = () => new AbortController().signal;
+
+    it('dials the vetted address on the vetted port', async () => {
+        const { port, hits } = await listen();
+        const connect = pinnedConnector({ address: '127.0.0.1' }, port);
+        const socket = await connect({ host: '127.0.0.1', port }, undefined, signal());
+        sockets.push(socket);
+        await new Promise((r) => setTimeout(r, 50));
+        expect(hits).toEqual(['127.0.0.1']);
+    });
+
+    it('refuses another port or host, which is what a redirect asks for, without dialling', async () => {
+        const vetted = await listen();
+        const other = await listen();
+        const connect = pinnedConnector({ address: '127.0.0.1' }, vetted.port);
+        await expect(
+            connect({ host: '127.0.0.1', port: other.port }, undefined, signal())
+        ).rejects.toThrow(/redirect/);
+        await expect(
+            connect({ host: '127.0.0.2', port: vetted.port }, undefined, signal())
+        ).rejects.toThrow(/redirect/);
+        await new Promise((r) => setTimeout(r, 50));
+        expect(vetted.hits).toEqual([]);
+        expect(other.hits).toEqual([]);
+    });
+
+    it('fails when the connection is refused, and when already aborted', async () => {
+        const { port } = await listen();
+        open.pop()!.close();
+        await new Promise((r) => setTimeout(r, 20));
+        const connect = pinnedConnector({ address: '127.0.0.1' }, port);
+        await expect(
+            connect({ host: '127.0.0.1', port }, undefined, signal())
+        ).rejects.toThrow(/ECONNREFUSED/);
+        const stop = new AbortController();
+        stop.abort(new Error('timed out'));
+        await expect(
+            connect({ host: '127.0.0.1', port }, undefined, stop.signal)
+        ).rejects.toThrow('timed out');
     });
 });
