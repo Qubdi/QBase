@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 8</b></div>
-  <h1>19 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Client Audit &middot; <b>rev 9</b></div>
+  <h1>0 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), <code>vite build</code>, client vitest run (223 files, 2622 tests, all pass) · npm audit root and <code>server/</code> · server tests skipped, no Postgres running · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), client vitest run (232 files, 2660 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> · server vitest run against a throwaway Postgres (57 files, 878 tests, 13 skipped for SQL Server, all pass) · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -29,30 +29,11 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">19 open &middot; 19 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 38 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">CLI-020</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Share, drift and re-sync call <code>syncDiagram</code> without flushing the autosaver</td><td><code>src/components/qubdi/account-menu.tsx:186</code> · <code>src/components/qubdi/drift-dialog.tsx:148</code> · <code>src/components/qubdi/resync-dialog.tsx:140</code></td><td class="wrap-cell">Call <code>flushPendingSave()</code> before each <code>syncDiagram</code></td></tr>
-        <tr><td class="svc-name">CLI-021</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Re-sync, Share and lint Fix offered to viewers and lock losers</td><td><code>src/components/qubdi/account-menu.tsx:133</code> · <code>src/components/qubdi/lint-control.tsx:88</code></td><td class="wrap-cell">Gate them on <code>access.status === 'editor'</code></td></tr>
-        <tr><td class="svc-name">CLI-022</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Re-sync swallows a failed save and still toasts success</td><td><code>src/components/qubdi/resync-dialog.tsx:140</code></td><td class="wrap-cell">Surface the save error instead of <code>.catch(() =&gt; undefined)</code></td></tr>
-        <tr><td class="svc-name">CLI-023</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Disposed saver's failed final flush sets 'error' after the status reset</td><td><code>src/components/qubdi/server-autosave.tsx:118</code> · <code>src/components/qubdi/server-autosave.tsx:185</code></td><td class="wrap-cell">Ignore <code>onStatus</code> from a disposed saver</td></tr>
-        <tr><td class="svc-name">CLI-024</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Share-viewer stream has no <code>error</code> or <code>open</code> handler; a 429 ends live updates</td><td><code>src/pages/share-viewer-page/share-viewer-page.tsx:79</code></td><td class="wrap-cell">Reload on <code>open</code>; retry with backoff on <code>error</code></td></tr>
-        <tr><td class="svc-name">CLI-025</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Open dialog and legacy route load every visible diagram unpaged</td><td><code>src/components/qubdi/project-open-dialog.tsx:56</code> · <code>src/components/qubdi/diagram-access.tsx:288</code></td><td class="wrap-cell">Filter by project and page on the server</td></tr>
-        <tr><td class="svc-name">CLI-026</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Tooltips render nothing; icon-only toolbar buttons have no accessible name</td><td><code>src/components/tooltip/tooltip.tsx:15</code> · <code>src/pages/editor-page/canvas/toolbar/toolbar.tsx:146</code></td><td class="wrap-cell">Add <code>aria-label</code> to icon-only buttons</td></tr>
-        <tr><td class="svc-name">CLI-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">JSON import in server mode creates a diagram outside any project</td><td><code>src/dialogs/import-diagram-dialog/import-diagram-dialog.tsx:61</code></td><td class="wrap-cell">Import into the current project, or hide in workspaces</td></tr>
-        <tr><td class="svc-name">CLI-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Editor statically imports <code>@dbml/core</code>; 15.7 MB chunk, 2.8 MB gzip</td><td><code>src/pages/editor-page/side-panel/dbml-section/table-dbml/table-dbml.tsx:25</code> · <code>vite build</code> output</td><td class="wrap-cell">Load DBML import and export with dynamic <code>import()</code></td></tr>
-        <tr><td class="svc-name">CLI-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Fade selector scans all nodes and edges per table node per store change</td><td><code>src/pages/editor-page/canvas/table-node/table-node.tsx:95</code></td><td class="wrap-cell">Compute the linked set once in the canvas</td></tr>
-        <tr><td class="svc-name">CLI-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Type colours legend text is hard-coded English</td><td><code>src/pages/editor-page/canvas/table-node/field-type-legend.tsx:38</code></td><td class="wrap-cell">Move legend labels to i18n keys</td></tr>
-        <tr><td class="svc-name">CLI-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>fieldTypeKind</code> tints <code>datetimeoffset</code>, <code>datetime64</code> and <code>uint*</code> as text</td><td><code>src/pages/editor-page/canvas/table-node/field-type-kind.ts:6</code></td><td class="wrap-cell">Add them to the TIME and NUMBER patterns</td></tr>
-        <tr><td class="svc-name">CLI-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>getWorkspaceId</code> uses bare <code>localStorage</code>; throws when storage is blocked</td><td><code>src/lib/utils/utils.ts:18</code></td><td class="wrap-cell">Use <code>readStored</code> and <code>writeStored</code></td></tr>
-        <tr><td class="svc-name">CLI-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Move-into-project picker capped at 100 projects</td><td><code>src/components/qubdi/access-banner.tsx:35</code></td><td class="wrap-cell">Use the paged project search picker</td></tr>
-        <tr><td class="svc-name">CLI-034</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>qubdidb.synced-content</code> entries never pruned when a diagram is unbound</td><td><code>src/lib/qubdi/remote-map.ts:32</code> · <code>src/lib/qubdi/sent-content.ts:94</code></td><td class="wrap-cell">Clear the synced fingerprint in <code>clearRemoteId</code></td></tr>
-        <tr><td class="svc-name">CLI-035</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Meta description still advertises the removed Comments feature</td><td><code>src/helmet/helmet-data.tsx:5</code></td><td class="wrap-cell">Drop "comment" from the description</td></tr>
-        <tr><td class="svc-name">CLI-036</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Import rethrows inside FileReader <code>onload</code>; unhandled rejection</td><td><code>src/dialogs/import-diagram-dialog/import-diagram-dialog.tsx:70</code></td><td class="wrap-cell">Remove <code>throw e</code> after <code>setError(true)</code></td></tr>
-        <tr><td class="svc-name">CLI-037</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unused <code>CommandDialog</code> lacks a DialogTitle</td><td><code>src/components/command/command.tsx:26</code></td><td class="wrap-cell">Delete <code>CommandDialog</code></td></tr>
-        <tr><td class="svc-name">CLI-038</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>qrcode</code> imported eagerly by the 2FA dialog in the editor nav</td><td><code>src/components/qubdi/two-factor-dialog.tsx:3</code></td><td class="wrap-cell">Load <code>qrcode</code> with <code>import()</code> at setup</td></tr>
       </tbody>
     </table>
   </div>
@@ -60,7 +41,7 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (19)</summary>
+  <details><summary>Fixed (38)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -84,6 +65,25 @@
         <tr><td class="svc-name">CLI-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Arabic registered but document <code>dir</code> never set to RTL</td></tr>
         <tr><td class="svc-name">CLI-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Qubdi and admin UI strings hard-coded English; 0 files use <code>useTranslation</code></td></tr>
         <tr><td class="svc-name">CLI-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lock release on <code>pagehide</code> waits behind the final-save promise</td></tr>
+        <tr><td class="svc-name">CLI-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share, drift and re-sync call <code>syncDiagram</code> without flushing the autosaver</td></tr>
+        <tr><td class="svc-name">CLI-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Re-sync, Share and lint Fix offered to viewers and lock losers</td></tr>
+        <tr><td class="svc-name">CLI-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Re-sync swallows a failed save and still toasts success</td></tr>
+        <tr><td class="svc-name">CLI-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Disposed saver's failed final flush sets 'error' after the status reset</td></tr>
+        <tr><td class="svc-name">CLI-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-viewer stream has no <code>error</code> or <code>open</code> handler; a 429 ends live updates</td></tr>
+        <tr><td class="svc-name">CLI-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Open dialog and legacy route load every visible diagram unpaged</td></tr>
+        <tr><td class="svc-name">CLI-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Tooltips render nothing; icon-only toolbar buttons have no accessible name</td></tr>
+        <tr><td class="svc-name">CLI-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">JSON import in server mode creates a diagram outside any project</td></tr>
+        <tr><td class="svc-name">CLI-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Editor statically imports <code>@dbml/core</code>; 15.7 MB chunk, 2.8 MB gzip</td></tr>
+        <tr><td class="svc-name">CLI-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Fade selector scans all nodes and edges per table node per store change</td></tr>
+        <tr><td class="svc-name">CLI-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Type colours legend text is hard-coded English</td></tr>
+        <tr><td class="svc-name">CLI-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>fieldTypeKind</code> tints <code>datetimeoffset</code>, <code>datetime64</code> and <code>uint*</code> as text</td></tr>
+        <tr><td class="svc-name">CLI-032</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>getWorkspaceId</code> uses bare <code>localStorage</code>; throws when storage is blocked</td></tr>
+        <tr><td class="svc-name">CLI-033</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Move-into-project picker capped at 100 projects</td></tr>
+        <tr><td class="svc-name">CLI-034</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>qubdidb.synced-content</code> entries never pruned when a diagram is unbound</td></tr>
+        <tr><td class="svc-name">CLI-035</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Meta description still advertises the removed Comments feature</td></tr>
+        <tr><td class="svc-name">CLI-036</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Import rethrows inside FileReader <code>onload</code>; unhandled rejection</td></tr>
+        <tr><td class="svc-name">CLI-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused <code>CommandDialog</code> lacks a DialogTitle</td></tr>
+        <tr><td class="svc-name">CLI-038</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>qrcode</code> imported eagerly by the 2FA dialog in the editor nav</td></tr>
       </tbody>
     </table>
   </div>

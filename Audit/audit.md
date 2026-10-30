@@ -1,7 +1,7 @@
 # QubdiDB — Audit
 
-**rev** 8 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), `vite build`, client vitest run (223 files, 2622 tests, all pass) · npm audit root and `server/` · server tests skipped, no Postgres running · no secret read
+**rev** 9 · **date** 2026-10-30
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck and build (TypeScript 7.0.2), client vitest run (232 files, 2660 tests, all pass), `vite build` · npm audit root and `server/` · server vitest run against a throwaway Postgres (57 files, 878 tests, 13 skipped for SQL Server, all pass) · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
@@ -9,8 +9,8 @@
 | Security & secrets | 5 | 0 | 1 | 22 | 0 |
 | Repository | 23 | 0 | 1 | 21 | 0 |
 | Server | 12 | 0 | 0 | 16 | 0 |
-| Client | 19 | 0 | 0 | 19 | 0 |
-| **Total** | 59 | 0 | 2 | 78 | 0 |
+| Client | 0 | 0 | 0 | 38 | 0 |
+| **Total** | 40 | 0 | 2 | 97 | 0 |
 
 ## Act first
 
@@ -76,29 +76,6 @@
 | SRV-027 | Low | Drift check with missing settings or diagram answers 409 `already_running` | `server/src/drift/service.ts:165` · `server/src/drift/routes.ts:190` | Return a distinct reason and status |
 | SRV-028 | Low | One failing purge skips every later maintenance step | `server/src/maintenance.ts:142` | Wrap each purge in its own try/catch |
 
-### Client
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| CLI-020 | Med | Share, drift and re-sync call `syncDiagram` without flushing the autosaver | `src/components/qubdi/account-menu.tsx:186` · `src/components/qubdi/drift-dialog.tsx:148` · `src/components/qubdi/resync-dialog.tsx:140` | Call `flushPendingSave()` before each `syncDiagram` |
-| CLI-021 | Med | Re-sync, Share and lint Fix offered to viewers and lock losers | `src/components/qubdi/account-menu.tsx:133` · `src/components/qubdi/lint-control.tsx:88` | Gate them on `access.status === 'editor'` |
-| CLI-022 | Med | Re-sync swallows a failed save and still toasts success | `src/components/qubdi/resync-dialog.tsx:140` | Surface the save error instead of `.catch(() => undefined)` |
-| CLI-023 | Med | Disposed saver's failed final flush sets 'error' after the status reset | `src/components/qubdi/server-autosave.tsx:118` · `src/components/qubdi/server-autosave.tsx:185` | Ignore `onStatus` from a disposed saver |
-| CLI-024 | Med | Share-viewer stream has no `error` or `open` handler; a 429 ends live updates | `src/pages/share-viewer-page/share-viewer-page.tsx:79` | Reload on `open`; retry with backoff on `error` |
-| CLI-025 | Med | Open dialog and legacy route load every visible diagram unpaged | `src/components/qubdi/project-open-dialog.tsx:56` · `src/components/qubdi/diagram-access.tsx:288` | Filter by project and page on the server |
-| CLI-026 | Med | Tooltips render nothing; icon-only toolbar buttons have no accessible name | `src/components/tooltip/tooltip.tsx:15` · `src/pages/editor-page/canvas/toolbar/toolbar.tsx:146` | Add `aria-label` to icon-only buttons |
-| CLI-027 | Med | JSON import in server mode creates a diagram outside any project | `src/dialogs/import-diagram-dialog/import-diagram-dialog.tsx:61` | Import into the current project, or hide in workspaces |
-| CLI-028 | Med | Editor statically imports `@dbml/core`; 15.7 MB chunk, 2.8 MB gzip | `src/pages/editor-page/side-panel/dbml-section/table-dbml/table-dbml.tsx:25` · `vite build` output | Load DBML import and export with dynamic `import()` |
-| CLI-029 | Low | Fade selector scans all nodes and edges per table node per store change | `src/pages/editor-page/canvas/table-node/table-node.tsx:95` | Compute the linked set once in the canvas |
-| CLI-030 | Low | Type colours legend text is hard-coded English | `src/pages/editor-page/canvas/table-node/field-type-legend.tsx:38` | Move legend labels to i18n keys |
-| CLI-031 | Low | `fieldTypeKind` tints `datetimeoffset`, `datetime64` and `uint*` as text | `src/pages/editor-page/canvas/table-node/field-type-kind.ts:6` | Add them to the TIME and NUMBER patterns |
-| CLI-032 | Low | `getWorkspaceId` uses bare `localStorage`; throws when storage is blocked | `src/lib/utils/utils.ts:18` | Use `readStored` and `writeStored` |
-| CLI-033 | Low | Move-into-project picker capped at 100 projects | `src/components/qubdi/access-banner.tsx:35` | Use the paged project search picker |
-| CLI-034 | Low | `qubdidb.synced-content` entries never pruned when a diagram is unbound | `src/lib/qubdi/remote-map.ts:32` · `src/lib/qubdi/sent-content.ts:94` | Clear the synced fingerprint in `clearRemoteId` |
-| CLI-035 | Low | Meta description still advertises the removed Comments feature | `src/helmet/helmet-data.tsx:5` | Drop "comment" from the description |
-| CLI-036 | Low | Import rethrows inside FileReader `onload`; unhandled rejection | `src/dialogs/import-diagram-dialog/import-diagram-dialog.tsx:70` | Remove `throw e` after `setError(true)` |
-| CLI-037 | Low | Unused `CommandDialog` lacks a DialogTitle | `src/components/command/command.tsx:26` | Delete `CommandDialog` |
-| CLI-038 | Low | `qrcode` imported eagerly by the 2FA dialog in the editor nav | `src/components/qubdi/two-factor-dialog.tsx:3` | Load `qrcode` with `import()` at setup |
 
 ---
 
@@ -184,6 +161,25 @@
 | CLI-007 | Client | Qubdi and admin UI strings hard-coded English; 0 files use `useTranslation` |
 | REPO-016 | Repository | No CODEOWNERS file |
 | CLI-008 | Client | Lock release on `pagehide` waits behind the final-save promise |
+| CLI-020 | Client | Share, drift and re-sync call `syncDiagram` without flushing the autosaver |
+| CLI-021 | Client | Re-sync, Share and lint Fix offered to viewers and lock losers |
+| CLI-022 | Client | Re-sync swallows a failed save and still toasts success |
+| CLI-023 | Client | Disposed saver's failed final flush sets 'error' after the status reset |
+| CLI-024 | Client | Share-viewer stream has no `error` or `open` handler; a 429 ends live updates |
+| CLI-025 | Client | Open dialog and legacy route load every visible diagram unpaged |
+| CLI-026 | Client | Tooltips render nothing; icon-only toolbar buttons have no accessible name |
+| CLI-027 | Client | JSON import in server mode creates a diagram outside any project |
+| CLI-028 | Client | Editor statically imports `@dbml/core`; 15.7 MB chunk, 2.8 MB gzip |
+| CLI-029 | Client | Fade selector scans all nodes and edges per table node per store change |
+| CLI-030 | Client | Type colours legend text is hard-coded English |
+| CLI-031 | Client | `fieldTypeKind` tints `datetimeoffset`, `datetime64` and `uint*` as text |
+| CLI-032 | Client | `getWorkspaceId` uses bare `localStorage`; throws when storage is blocked |
+| CLI-033 | Client | Move-into-project picker capped at 100 projects |
+| CLI-034 | Client | `qubdidb.synced-content` entries never pruned when a diagram is unbound |
+| CLI-035 | Client | Meta description still advertises the removed Comments feature |
+| CLI-036 | Client | Import rethrows inside FileReader `onload`; unhandled rejection |
+| CLI-037 | Client | Unused `CommandDialog` lacks a DialogTitle |
+| CLI-038 | Client | `qrcode` imported eagerly by the 2FA dialog in the editor nav |
 
 ---
 
@@ -213,3 +209,4 @@
 | 6 | 2026-10-20 | 1 fixed |
 | 7 | 2026-10-20 | 1 fixed |
 | 8 | 2026-10-30 | Deep pass: 57 new, 0 fixed, REPO-007 reopened; SEC-001 widened to `MSSQL_SA_PASSWORD` |
+| 9 | 2026-10-30 | 19 fixed: CLI-020 to CLI-038 |
