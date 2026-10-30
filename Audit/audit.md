@@ -1,17 +1,17 @@
 # QubdiDB — Audit
 
-**rev** 16 · **date** 2026-10-30
+**rev** 17 · **date** 2026-10-30
 **method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (65 files, 943 tests: 928 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 1 | 0 | 1 | 28 | 0 |
-| Repository | 4 | 0 | 0 | 43 | 1 |
+| Repository | 0 | 0 | 0 | 47 | 1 |
 | Server | 1 | 0 | 0 | 28 | 0 |
 | Database | 0 | 0 | 0 | 14 | 3 |
 | Client | 0 | 0 | 0 | 42 | 0 |
-| **Total** | 6 | 0 | 1 | 155 | 4 |
+| **Total** | 2 | 0 | 1 | 159 | 4 |
 
 ## Act first
 
@@ -26,15 +26,6 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` values remain in git history | `.env.example` · `server/.env.example` history | Rotate all three; the example files are blank now |
-
-### Repository
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| REPO-045 | Med | No upstream name, copyright or modification notice for the AGPL fork | `README.md:322` · `LICENSE` | Add a NOTICE naming upstream, its copyright and changes |
-| REPO-046 | Low | Gitleaks comment cites compose profile `mssql`, which no longer exists | `.gitleaks.toml:2` | Reword: value allowlisted for history only |
-| REPO-047 | Low | Bug template says the version is in the footer; UI shows none | `.github/ISSUE_TEMPLATE/bug_report.md:18` | Point to `package.json` only |
-| REPO-048 | Low | PR checklist omits server `typecheck`, which CI runs | `.github/pull_request_template.md:8` | Add `npm --prefix server run typecheck` |
 
 ### Server
 
@@ -203,6 +194,10 @@
 | DB-017 | Database | DB container keeps default 64 MB `/dev/shm`; backups are manual only |
 | SEC-028 | Security & secrets | SQL Server login reroute dials any host unchecked; net guard bypassed |
 | SEC-029 | Security & secrets | Blocked-target error returns the private IP a hostname resolves to |
+| REPO-045 | Repository | No upstream name, copyright or modification notice for the AGPL fork |
+| REPO-046 | Repository | Gitleaks comment cites compose profile `mssql`, which no longer exists |
+| REPO-047 | Repository | Bug template says the version is in the footer; UI shows none |
+| REPO-048 | Repository | PR checklist omits server `typecheck`, which CI runs |
 
 ---
 
@@ -275,3 +270,4 @@
 | 14 | 2026-10-30 | 4 fixed: CLI-039 to CLI-042 |
 | 15 | 2026-10-30 | 14 fixed: DB-001 to DB-003, DB-005 to DB-010, DB-012, DB-013, DB-015 to DB-017; DB-004, DB-011, DB-014 accepted |
 | 16 | 2026-10-30 | 2 fixed: SEC-028, SEC-029; SEC-001 left open |
+| 17 | 2026-10-30 | 4 fixed: REPO-045 to REPO-048 |

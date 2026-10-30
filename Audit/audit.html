@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 16</b></div>
-  <h1>6 open across five lenses: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 17</b></div>
+  <h1>2 open across five lenses: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-10-30</span>
     <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (65 files, 943 tests: 928 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
@@ -35,11 +35,11 @@
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
         <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>1</td><td>28</td><td>0</td></tr>
-        <tr><td>Repository</td><td>4</td><td>0</td><td>0</td><td>43</td><td>1</td></tr>
+        <tr><td>Repository</td><td>0</td><td>0</td><td>0</td><td>47</td><td>1</td></tr>
         <tr><td>Server</td><td>1</td><td>0</td><td>0</td><td>28</td><td>0</td></tr>
         <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>14</td><td>3</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>42</td><td>0</td></tr>
-        <tr><td>Total</td><td>6</td><td>0</td><td>1</td><td>155</td><td>4</td></tr>
+        <tr><td>Total</td><td>2</td><td>0</td><td>1</td><td>159</td><td>4</td></tr>
       </tbody>
     </table>
   </div>
@@ -54,8 +54,8 @@
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
-    <p>Top: No upstream name, copyright or modification notice for the AGPL fork</p>
-    <p class="lbl">4 open &middot; 0 Crit &middot; 0 High &middot; 43 fixed &middot; 1 accepted</p>
+    <p>Nothing open</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 47 fixed &middot; 1 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
@@ -96,6 +96,7 @@
         <tr><td>14</td><td>2026-10-30</td><td class="wrap-cell">4 fixed: CLI-039 to CLI-042</td></tr>
         <tr><td>15</td><td>2026-10-30</td><td class="wrap-cell">14 fixed: DB-001 to DB-003, DB-005 to DB-010, DB-012, DB-013, DB-015 to DB-017; DB-004, DB-011, DB-014 accepted</td></tr>
         <tr><td>16</td><td>2026-10-30</td><td class="wrap-cell">2 fixed: SEC-028, SEC-029; SEC-001 left open</td></tr>
+        <tr><td>17</td><td>2026-10-30</td><td class="wrap-cell">4 fixed: REPO-045 to REPO-048</td></tr>
       </tbody>
     </table>
   </div>
