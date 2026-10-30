@@ -8,17 +8,17 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 7</b></div>
-  <h1>1 open: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 8</b></div>
+  <h1>5 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-20</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
+    <span><b>audit date</b> 2026-10-30</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), <code>vite build</code>, client vitest run (223 files, 2622 tests, all pass) · npm audit root and <code>server/</code> · server tests skipped, no Postgres running · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="note crit">
     <span class="pill crit">Act first</span>
     <span><ul class="body">
-      <li><code>SEC-001</code> — the old <code>POSTGRES_PASSWORD</code> and <code>CONNECTION_KEY</code> are in git history and <code>.env</code>; rotate both.</li>
+      <li><code>SEC-001</code> — old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> are in git history; rotate all three.</li>
     </ul></span>
   </div>
   <div class="split-nav">
@@ -35,12 +35,16 @@
 
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">1 open &middot; 22 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">5 open &middot; 22 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code> and <code>CONNECTION_KEY</code> values remain in git history and local <code>.env</code></td><td><code>.env.example</code> history</td><td class="wrap-cell">Rotate both; the example file is blank now</td></tr>
+        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</td><td><code>.env.example</code> history</td><td class="wrap-cell">Rotate all three; the example file is blank now</td></tr>
+        <tr><td class="svc-name">SEC-024</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>TRUST_PROXY=true</code> trusts client <code>X-Forwarded-For</code>; per-IP limits, lockout and SSE cap bypassable</td><td><code>server/src/config.ts:95</code> · <code>server/.env.example:88</code></td><td class="wrap-cell">Refuse <code>true</code> at boot; require hop count or proxy list</td></tr>
+        <tr><td class="svc-name">SEC-025</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>/mfa/setup</code> and <code>/mfa/enable</code> need no password; stolen session can lock owner out</td><td><code>server/src/auth/mfa-routes.ts:46</code> · <code>server/src/auth/mfa-routes.ts:170</code></td><td class="wrap-cell">Require the current password on <code>/mfa/enable</code></td></tr>
+        <tr><td class="svc-name">SEC-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Wrong password on 2FA disable or code renewal logged as <code>user.sign_in_failed</code></td><td><code>server/src/auth/mfa-routes.ts:242</code></td><td class="wrap-cell">Log <code>user.password_check_failed</code> there</td></tr>
+        <tr><td class="svc-name">SEC-027</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Tracked server example <code>DATABASE_URL</code> carries a working default password</td><td><code>server/.env.example:3</code></td><td class="wrap-cell">Blank the password in the example <code>DATABASE_URL</code></td></tr>
       </tbody>
     </table>
   </div>

@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 7</b></div>
-  <h1>1 open across four lenses: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Audit Index &middot; <b>rev 8</b></div>
+  <h1>59 open across four lenses: 0 Crit, 2 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-20</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
+    <span><b>audit date</b> 2026-10-30</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), <code>vite build</code>, client vitest run (223 files, 2622 tests, all pass) · npm audit root and <code>server/</code> · server tests skipped, no Postgres running · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -33,11 +33,11 @@
     <table>
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
-        <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>1</td><td>22</td><td>0</td></tr>
-        <tr><td>Repository</td><td>0</td><td>0</td><td>0</td><td>22</td><td>0</td></tr>
-        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>16</td><td>0</td></tr>
-        <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>19</td><td>0</td></tr>
-        <tr><td>Total</td><td>1</td><td>0</td><td>1</td><td>79</td><td>0</td></tr>
+        <tr><td>Security &amp; secrets</td><td>5</td><td>0</td><td>1</td><td>22</td><td>0</td></tr>
+        <tr><td>Repository</td><td>23</td><td>0</td><td>1</td><td>21</td><td>0</td></tr>
+        <tr><td>Server</td><td>12</td><td>0</td><td>0</td><td>16</td><td>0</td></tr>
+        <tr><td>Client</td><td>19</td><td>0</td><td>0</td><td>19</td><td>0</td></tr>
+        <tr><td>Total</td><td>59</td><td>0</td><td>2</td><td>78</td><td>0</td></tr>
       </tbody>
     </table>
   </div>
@@ -47,23 +47,23 @@
   <div class="section-head"><span class="snum">02</span><h2>Lenses</h2></div>
   <a class="idx-card sec" href="audit-security.html">
     <h3>Security &amp; secrets</h3>
-    <p>Top: Old <code>POSTGRES_PASSWORD</code> and <code>CONNECTION_KEY</code> values remain in git history and local <code>.env</code></p>
-    <p class="lbl">1 open &middot; 0 Crit &middot; 1 High &middot; 22 fixed &middot; 0 accepted</p>
+    <p>Top: Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</p>
+    <p class="lbl">5 open &middot; 0 Crit &middot; 1 High &middot; 22 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
-    <p>Nothing open</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 22 fixed &middot; 0 accepted</p>
+    <p>Top: CI server audit fails: high <code>@azure/msal-node</code> advisory via <code>mssql</code>; moderate <code>fast-uri</code></p>
+    <p class="lbl">23 open &middot; 0 Crit &middot; 1 High &middot; 21 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
-    <p>Nothing open</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 16 fixed &middot; 0 accepted</p>
+    <p>Top: Stored-diagram lint returns 500 when a table lacks <code>fields</code></p>
+    <p class="lbl">12 open &middot; 0 Crit &middot; 0 High &middot; 16 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
-    <p>Nothing open</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 19 fixed &middot; 0 accepted</p>
+    <p>Top: Share, drift and re-sync call <code>syncDiagram</code> without flushing the autosaver</p>
+    <p class="lbl">19 open &middot; 0 Crit &middot; 0 High &middot; 19 fixed &middot; 0 accepted</p>
   </a>
 </section>
 
@@ -80,6 +80,7 @@
         <tr><td>5</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
         <tr><td>6</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
         <tr><td>7</td><td>2026-10-20</td><td class="wrap-cell">1 fixed</td></tr>
+        <tr><td>8</td><td>2026-10-30</td><td class="wrap-cell">Deep pass: 57 new, 0 fixed, REPO-007 reopened; SEC-001 widened to <code>MSSQL_SA_PASSWORD</code></td></tr>
       </tbody>
     </table>
   </div>

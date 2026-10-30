@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 7</b></div>
-  <h1>0 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 8</b></div>
+  <h1>12 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-20</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc -b, <code>npm run build</code>, client vitest run (223 files, 2620 tests, all pass), server vitest run against the dev Postgres's <code>qubdidb_test</code> database (57 files, 875 tests, 13 skipped for SQL Server, all pass) · npm audit root and <code>server/</code> (0 vulnerabilities) · no secret read</span>
+    <span><b>audit date</b> 2026-10-30</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck and build (TypeScript 7.0.2), <code>vite build</code>, client vitest run (223 files, 2622 tests, all pass) · npm audit root and <code>server/</code> · server tests skipped, no Postgres running · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -29,11 +29,23 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">0 open &middot; 16 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">12 open &middot; 16 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SRV-017</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Stored-diagram lint returns 500 when a table lacks <code>fields</code></td><td><code>server/src/lint/routes.ts:122</code> · <code>shared/schema-desc.ts:289</code></td><td class="wrap-cell">Validate stored content before <code>lint()</code>, as <code>POST /lint</code> does</td></tr>
+        <tr><td class="svc-name">SRV-018</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Diagram list runs <code>jsonb_array_length</code> on every listed row's content</td><td><code>server/src/diagrams/summary.ts:41</code></td><td class="wrap-cell">Store table and relationship counts as columns on save</td></tr>
+        <tr><td class="svc-name">SRV-019</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish reads the full previous snapshot and re-hashes content</td><td><code>server/src/diagrams/service.ts:127</code></td><td class="wrap-cell">Select only version and hash; reuse <code>contentHash</code></td></tr>
+        <tr><td class="svc-name">SRV-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Drift list and badge load full report rows, including <code>changes</code></td><td><code>server/src/drift/routes.ts:99</code> · <code>server/src/drift/routes.ts:210</code></td><td class="wrap-cell">Select only summary columns</td></tr>
+        <tr><td class="svc-name">SRV-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Each drift check re-derives its key with blocking <code>scryptSync</code></td><td><code>server/src/drift/service.ts:197</code></td><td class="wrap-cell">Reuse one <code>CryptoBox</code> per process</td></tr>
+        <tr><td class="svc-name">SRV-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Drift check reconciles a working copy of any size</td><td><code>server/src/drift/service.ts:227</code></td><td class="wrap-cell">Apply the lint <code>octet_length</code> cap first</td></tr>
+        <tr><td class="svc-name">SRV-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>LOG_LEVEL</code> unvalidated; a typo throws in pino, not <code>ConfigError</code></td><td><code>server/src/config.ts:175</code></td><td class="wrap-cell">Validate <code>LOG_LEVEL</code> against pino levels</td></tr>
+        <tr><td class="svc-name">SRV-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Pool sets no <code>statement_timeout</code>; a slow query holds a connection</td><td><code>server/src/db/client.ts:14</code></td><td class="wrap-cell">Add <code>statement_timeout</code> to the Pool options</td></tr>
+        <tr><td class="svc-name">SRV-025</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Share-link create counts then inserts; parallel creates exceed <code>MAX_ACTIVE_LINKS</code></td><td><code>server/src/share/routes.ts:137</code></td><td class="wrap-cell">Count and insert under a diagram row lock</td></tr>
+        <tr><td class="svc-name">SRV-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Link list caps 200 newest; revoked churn hides older active links</td><td><code>server/src/share/routes.ts:128</code></td><td class="wrap-cell">Order active links first in the capped list</td></tr>
+        <tr><td class="svc-name">SRV-027</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Drift check with missing settings or diagram answers 409 <code>already_running</code></td><td><code>server/src/drift/service.ts:165</code> · <code>server/src/drift/routes.ts:190</code></td><td class="wrap-cell">Return a distinct reason and status</td></tr>
+        <tr><td class="svc-name">SRV-028</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">One failing purge skips every later maintenance step</td><td><code>server/src/maintenance.ts:142</code></td><td class="wrap-cell">Wrap each purge in its own try/catch</td></tr>
       </tbody>
     </table>
   </div>
