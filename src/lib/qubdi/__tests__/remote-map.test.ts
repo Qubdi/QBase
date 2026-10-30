@@ -6,6 +6,7 @@ import {
     setProjectId,
     setRemoteId,
 } from '../remote-map';
+import { markSyncedContent, matchesSyncedContent } from '../sent-content';
 
 describe('remote map', () => {
     beforeEach(() => localStorage.clear());
@@ -24,6 +25,24 @@ describe('remote map', () => {
         clearRemoteId('a');
         expect(getRemoteId('a')).toBeUndefined();
         expect(getRemoteId('b')).toBe('2');
+    });
+
+    it('forgets what the copy last matched on the server when it is unbound', () => {
+        const content = { tables: [] };
+        setRemoteId('a', '1');
+        setRemoteId('b', '2');
+        markSyncedContent('a', content);
+        markSyncedContent('b', content);
+        expect(matchesSyncedContent('a', content)).toBe(true);
+        clearRemoteId('a');
+        // never recorded is not a yes, and the other copy keeps its record
+        expect(matchesSyncedContent('a', content)).toBeNull();
+        expect(matchesSyncedContent('b', content)).toBe(true);
+        expect(
+            Object.keys(
+                JSON.parse(localStorage.getItem('qubdidb.synced-content')!)
+            )
+        ).toEqual(['b']);
     });
 
     it('survives corrupted storage', () => {
