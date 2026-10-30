@@ -36,6 +36,9 @@ type LoadState =
 
 const nodeTypes = { viewerTable: ViewerTableNode };
 
+const RECONNECT_MIN_MS = 2_000;
+const RECONNECT_MAX_MS = 60_000;
+
 /**
  * Read-only view of a published diagram. It deliberately renders no editing UI
  * and uses none of the editor's providers.
@@ -72,12 +75,40 @@ export const ShareViewerPage: React.FC = () => {
     const live = state.kind === 'ok' && state.share.live;
     useEffect(() => {
         if (!live) return;
-        const source = new EventSource(
-            `${QUBDI_BACKEND_URL}/s/${encodeURIComponent(token)}/events`,
-            { withCredentials: true }
-        );
-        source.addEventListener('version', () => void load());
-        return () => source.close();
+        let source: EventSource | null = null;
+        let retry: ReturnType<typeof setTimeout> | undefined;
+        let delay = RECONNECT_MIN_MS;
+        // versions published while the stream was down are never replayed
+        let missed = false;
+        const connect = () => {
+            const next = new EventSource(
+                `${QUBDI_BACKEND_URL}/s/${encodeURIComponent(token)}/events`,
+                { withCredentials: true }
+            );
+            source = next;
+            next.addEventListener('version', () => void load());
+            next.addEventListener('open', () => {
+                delay = RECONNECT_MIN_MS;
+                if (missed) {
+                    missed = false;
+                    void load();
+                }
+            });
+            next.addEventListener('error', () => {
+                missed = true;
+                // the browser reconnects a dropped stream by itself, but gives
+                // up for good on an error reply such as 429: open a new one
+                if (next.readyState !== EventSource.CLOSED) return;
+                next.close();
+                retry = setTimeout(connect, delay);
+                delay = Math.min(delay * 2, RECONNECT_MAX_MS);
+            });
+        };
+        connect();
+        return () => {
+            clearTimeout(retry);
+            source?.close();
+        };
     }, [live, token, load]);
 
     const graph = useMemo(
