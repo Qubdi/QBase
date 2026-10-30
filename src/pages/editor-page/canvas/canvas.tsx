@@ -1798,6 +1798,16 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                                             <span>
                                                 <Button
                                                     variant="secondary"
+                                                    aria-label={t(
+                                                        'snap_to_grid_tooltip',
+                                                        {
+                                                            key:
+                                                                operatingSystem ===
+                                                                'mac'
+                                                                    ? '⇧'
+                                                                    : 'Shift',
+                                                        }
+                                                    )}
                                                     className={cn(
                                                         'size-8 p-1 shadow-none',
                                                         snapToGridEnabled ||
@@ -1830,6 +1840,13 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                                                 <span>
                                                     <Button
                                                         variant="secondary"
+                                                        aria-label={t(
+                                                            'toolbar.custom_type_highlight_tooltip',
+                                                            {
+                                                                typeName:
+                                                                    highlightedCustomType.name,
+                                                            }
+                                                        )}
                                                         className="size-8 border border-yellow-400 bg-yellow-200 p-1 shadow-none hover:bg-yellow-300 dark:border-yellow-700 dark:bg-yellow-800 dark:hover:bg-yellow-700"
                                                         onClick={() =>
                                                             highlightCustomTypeId(
@@ -1867,6 +1884,9 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                                         <span>
                                             <Button
                                                 variant="default"
+                                                aria-label={t(
+                                                    'toolbar.highlight_overlapping_tables'
+                                                )}
                                                 className="size-8 p-1 shadow-none"
                                                 onClick={pulseOverlappingTables}
                                             >
