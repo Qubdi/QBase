@@ -64,10 +64,8 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
                 closeCreateDiagramDialog();
 
                 navigate(`/diagrams/${diagram.id}`);
-            } catch (e) {
+            } catch {
                 setError(true);
-
-                throw e;
             }
         };
         reader.readAsText(file);
