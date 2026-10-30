@@ -15,7 +15,7 @@ labels: bug
 
 **Where**
 
-- QubdiDB version (see the footer, or `package.json`):
+- QubdiDB version (`version` in `package.json`):
 - Browser and OS:
 - Docker or a local `npm` run:
 
