@@ -23,17 +23,20 @@ export default defineConfig({
         },
     },
     build: {
-        rollupOptions: {
+        // Vite 8 bundles with Rolldown, which has its own option for this
+        rolldownOptions: {
             output: {
                 // vendor code changes far less often than the app, so it gets
                 // its own long-cached chunks
-                manualChunks: (id) => {
-                    if (!id.includes('node_modules')) return undefined;
-                    if (/node_modules\/(react|react-dom|scheduler)\//.test(id))
-                        return 'react';
-                    if (id.includes('@xyflow')) return 'xyflow';
-                    if (id.includes('@radix-ui')) return 'radix';
-                    return undefined;
+                codeSplitting: {
+                    groups: [
+                        {
+                            name: 'react',
+                            test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+                        },
+                        { name: 'xyflow', test: /node_modules[\\/]@xyflow/ },
+                        { name: 'radix', test: /node_modules[\\/]@radix-ui/ },
+                    ],
                 },
                 assetFileNames: (assetInfo) => {
                     if (
