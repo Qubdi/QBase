@@ -50,7 +50,7 @@ describe('two-factor sign-in', () => {
         const setup = await post('/auth/mfa/setup', {}, user);
         expect(setup.statusCode).toBe(200);
         const { secret } = setup.json();
-        const enable = await post('/auth/mfa/enable', { code: totp(secret) }, user);
+        const enable = await post('/auth/mfa/enable', { password: PASSWORD, code: totp(secret) }, user);
         expect(enable.statusCode).toBe(200);
         const recoveryCodes: string[] = enable.json().recoveryCodes;
         return { user, secret, recoveryCodes };
@@ -120,7 +120,7 @@ describe('two-factor sign-in', () => {
     describe('setting it up', () => {
         it('needs a signed-in person', async () => {
             expect((await post('/auth/mfa/setup', {})).statusCode).toBe(401);
-            expect((await post('/auth/mfa/enable', { code: '123456' })).statusCode).toBe(401);
+            expect((await post('/auth/mfa/enable', { password: PASSWORD, code: '123456' })).statusCode).toBe(401);
             expect((await ctx.app.inject({ url: '/auth/mfa' })).statusCode).toBe(401);
         });
 
@@ -142,15 +142,39 @@ describe('two-factor sign-in', () => {
 
         it('refuses a wrong code and a code before set-up', async () => {
             const user = await registerUser(ctx.app, `mfa${++counter}@example.com`);
-            expect((await post('/auth/mfa/enable', { code: '123456' }, user)).json().error).toBe(
+            expect((await post('/auth/mfa/enable', { password: PASSWORD, code: '123456' }, user)).json().error).toBe(
                 'setup_first'
             );
             const { secret } = (await post('/auth/mfa/setup', {}, user)).json();
             const wrong = totp(secret) === '000000' ? '000001' : '000000';
-            const res = await post('/auth/mfa/enable', { code: wrong }, user);
+            const res = await post('/auth/mfa/enable', { password: PASSWORD, code: wrong }, user);
             expect(res.statusCode).toBe(400);
             expect(res.json().error).toBe('invalid_code');
             expect((await ctx.app.inject({ url: '/auth/me', headers: as(user) })).json().mfaEnabled).toBe(false);
+        });
+
+        it('needs the password: a stolen session cannot switch it on', async () => {
+            const user = await registerUser(ctx.app, `mfa${++counter}@example.com`);
+            const { secret } = (await post('/auth/mfa/setup', {}, user)).json();
+            nextStep();
+            const code = totp(secret);
+            const wrong = await post('/auth/mfa/enable', { password: 'wrong-wrong-1234', code }, user);
+            expect(wrong.statusCode).toBe(403);
+            expect(wrong.json().error).toBe('wrong_password');
+            const missing = await post('/auth/mfa/enable', { code }, user);
+            expect(missing.statusCode).toBe(400);
+            expect((await ctx.app.inject({ url: '/auth/me', headers: as(user) })).json().mfaEnabled).toBe(false);
+            // with the password, the same code works
+            expect((await post('/auth/mfa/enable', { password: PASSWORD, code }, user)).statusCode).toBe(200);
+        });
+
+        it('counts a wrong password against the lockout, and logs it as a password check', async () => {
+            const user = await registerUser(ctx.app, `mfa${++counter}@example.com`);
+            await post('/auth/mfa/setup', {}, user);
+            const actions = async () => (await ctx.db.select().from(auditLog)).map((r) => r.action);
+            const before = (await actions()).length;
+            await post('/auth/mfa/enable', { password: 'wrong-wrong-1234', code: '000000' }, user);
+            expect((await actions()).slice(before)).toEqual(['user.password_check_failed']);
         });
 
         it('switches on with a real code and shows ten recovery codes, once', async () => {
@@ -164,7 +188,7 @@ describe('two-factor sign-in', () => {
             expect(status.json().enabledAt).toBeTruthy();
             // a second set-up while on is refused
             expect((await post('/auth/mfa/setup', {}, user)).statusCode).toBe(409);
-            expect((await post('/auth/mfa/enable', { code: '123456' }, user)).statusCode).toBe(409);
+            expect((await post('/auth/mfa/enable', { password: PASSWORD, code: '123456' }, user)).statusCode).toBe(409);
         });
 
         it('stores the secret encrypted and the recovery codes hashed; nothing returns them again', async () => {
@@ -616,7 +640,7 @@ describe('two-factor sign-in', () => {
             const enable = await app.app.inject({
                 method: 'POST',
                 url: '/auth/mfa/enable',
-                payload: { code: totp(secret) },
+                payload: { password: PASSWORD, code: totp(secret) },
                 headers: as(user),
             });
             expect(enable.statusCode).toBe(200);

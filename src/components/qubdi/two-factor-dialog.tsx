@@ -133,7 +133,10 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
     const turnOn = (e: React.FormEvent) => {
         e.preventDefault();
         void run(async () => {
-            const { recoveryCodes } = await api.mfaEnable(codeDigits(code));
+            const { recoveryCodes } = await api.mfaEnable(
+                password,
+                codeDigits(code)
+            );
             reset();
             setView({ kind: 'codes', codes: recoveryCodes });
             await refreshUser();
@@ -288,8 +291,31 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                     />
                                 </div>
                             </li>
+                            <li>
+                                {t('qubdi.account.twoFactor.stepPassword')}
+                                <div className="mt-2">
+                                    <Input
+                                        type="password"
+                                        placeholder={t(
+                                            'qubdi.account.twoFactor.password'
+                                        )}
+                                        aria-label={t(
+                                            'qubdi.account.twoFactor.password'
+                                        )}
+                                        autoComplete="current-password"
+                                        value={password}
+                                        onChange={(e) =>
+                                            setPassword(e.target.value)
+                                        }
+                                        required
+                                    />
+                                </div>
+                            </li>
                         </ol>
-                        <Button type="submit" disabled={busy || !isCode(code)}>
+                        <Button
+                            type="submit"
+                            disabled={busy || !isCode(code) || !password}
+                        >
                             {t('qubdi.account.twoFactor.turnOn')}
                         </Button>
                         <Button
