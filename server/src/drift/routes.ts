@@ -64,7 +64,7 @@ export const driftRoutes =
         const { db } = deps;
         // shares its allowance with the introspection routes
         const outbound = deps.outboundLimit
-            ? { onRequest: deps.outboundLimit }
+            ? { preHandler: deps.outboundLimit }
             : {};
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {

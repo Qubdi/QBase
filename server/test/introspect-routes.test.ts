@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { SESSION_COOKIE } from '../src/auth/sessions.js';
 import { auditLog, savedConnections } from '../src/db/schema.js';
 import { CryptoBox } from '../src/introspect/crypto-box.js';
 import { defaultIntrospectorFactory } from '../src/introspect/routes.js';
@@ -215,6 +216,43 @@ describe('introspect HTTP layer (fake driver)', () => {
                 expect(calls2).toHaveLength(2);
                 // another user is unaffected
                 expect((await send(bob, '/introspect/catalog')).statusCode).toBe(200);
+            } finally {
+                await limited.close();
+            }
+        });
+    });
+
+    describe('outbound rate limit and callers who are not signed in', () => {
+        it('turns them away with 401 and never counts them, whatever cookie they send', async () => {
+            const calls2: Call[] = [];
+            const limited = await createTestApp(
+                { outboundRateLimit: 2 },
+                { factory: fakeFactory(calls2), lookup: async () => [{ address: '93.184.216.34', family: 4 }] },
+                false
+            );
+            try {
+                const junk = (cookie: string) =>
+                    limited.app.inject({
+                        method: 'POST',
+                        url: '/introspect/catalog',
+                        headers: { cookie: `${SESSION_COOKIE}=${cookie}` },
+                        payload: { connection: conn() },
+                    });
+                // more calls than the allowance: all are refused as unauthorised
+                // (not 429), and a rotating cookie makes no difference
+                for (let i = 0; i < 6; i++) {
+                    expect((await junk('same')).statusCode).toBe(401);
+                    expect((await junk(`rotating-${i}`)).statusCode).toBe(401);
+                }
+                expect(calls2).toHaveLength(0);
+                // a real user's allowance is untouched
+                const real = await limited.app.inject({
+                    method: 'POST',
+                    url: '/introspect/catalog',
+                    headers: as(alice),
+                    payload: { connection: conn() },
+                });
+                expect(real.statusCode).toBe(200);
             } finally {
                 await limited.close();
             }

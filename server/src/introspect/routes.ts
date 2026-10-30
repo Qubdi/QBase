@@ -230,8 +230,8 @@ export const introspectRoutes =
         };
 
         // every route that opens a connection to a customer's database shares
-        // one per-user allowance
-        const outbound = outboundLimit ? { onRequest: outboundLimit } : {};
+        // one per-user allowance, counted once the user is known
+        const outbound = outboundLimit ? { preHandler: outboundLimit } : {};
 
         app.post('/catalog', outbound, async (req, reply) => {
             const body = requestConnection.parse(req.body);
