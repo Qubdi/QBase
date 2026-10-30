@@ -263,7 +263,8 @@ After the password, a person can be asked for the 6-digit code their authenticat
 The bundled `db` container now runs PostgreSQL 18 on a new volume, `postgres-data` (`qubdidb_postgres-data` in `docker volume ls`). A PostgreSQL 16 data folder cannot be opened by 18, so your data moves by a dump and restore. Do it before you pull the new `docker-compose.yml`, or `git stash` it for the first step. Your old volume `qubdidb-data` is never modified, so you can go back until you delete it yourself.
 
 ```bash
-# 1. with the OLD setup still running: dump everything (database, users, passwords)
+# 1. with the OLD setup still running: dump everything (database, users, passwords).
+#    The file holds password hashes: keep it private, and delete it when you are done.
 docker compose exec -T db pg_dumpall -U qubdidb > qubdidb-backup.sql
 # 2. stop it, then switch to the new docker-compose.yml (git pull)
 docker compose down

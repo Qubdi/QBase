@@ -159,3 +159,6 @@ stats/
 
 # Local development env file
 dev.env
+
+# Database dumps made by the upgrade guide: they hold roles and password hashes
+qubdidb-backup*.sql
