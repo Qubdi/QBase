@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import {
     Select,
     SelectContent,
@@ -15,7 +15,12 @@ import { useDiagram } from '@/hooks/use-diagram';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { CustomTypesSection } from './custom-types-section/custom-types-section';
 import { supportsCustomTypes } from '@/lib/domain/database-capabilities';
-import { DBMLSection } from './dbml-section/dbml-section';
+// DBML pulls in the whole DBML parser, so it loads when the section is opened
+const DBMLSection = React.lazy(() =>
+    import('./dbml-section/dbml-section').then((m) => ({
+        default: m.DBMLSection,
+    }))
+);
 import { RefsSection } from './refs-section/refs-section';
 import { VisualsSection } from './visuals-section/visuals-section';
 
@@ -72,7 +77,9 @@ export const SidePanel: React.FC<SidePanelProps> = () => {
             {selectedSidebarSection === 'tables' ? (
                 <TablesSection />
             ) : selectedSidebarSection === 'dbml' ? (
-                <DBMLSection />
+                <Suspense fallback={null}>
+                    <DBMLSection />
+                </Suspense>
             ) : selectedSidebarSection === 'refs' ? (
                 <RefsSection />
             ) : selectedSidebarSection === 'visuals' ? (
