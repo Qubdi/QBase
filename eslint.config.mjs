@@ -22,7 +22,7 @@ export default [
         ignores: [
             'server/**',
             '**/dist',
-            '**/.eslintrc.cjs',
+            '**/coverage',
             '**/tailwind.config.js',
         ],
         // files: ['**/*.ts', '**/*.tsx'],
