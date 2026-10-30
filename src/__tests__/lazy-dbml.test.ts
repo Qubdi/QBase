@@ -8,6 +8,14 @@ const read = (file: string) =>
 // The DBML parser is by far the heaviest part of the editor. These files sit
 // on the path every editor visit loads, so they may only reach it through
 // import(), which makes the browser fetch it when the feature is first used.
+describe('heavy libraries are not part of the main editor load', () => {
+    it('the QR code library loads when two-factor setup starts', () => {
+        const source = read('components/qubdi/two-factor-dialog.tsx');
+        expect(source).not.toMatch(/^import [^;]*from 'qrcode';/m);
+        expect(source).toContain("import('qrcode')");
+    });
+});
+
 describe('the DBML parser is not part of the main editor load', () => {
     it.each([
         [

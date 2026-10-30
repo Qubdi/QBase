@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import QRCode from 'qrcode';
 import { Copy, Download } from 'lucide-react';
 import {
     Dialog,
@@ -97,7 +96,11 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
         setQr(null);
         if (!otpauthUrl) return;
         let live = true;
-        QRCode.toDataURL(otpauthUrl, { margin: 1, width: 192 })
+        // the library loads here, as setup starts: most visits never need it
+        import('qrcode')
+            .then(({ default: QRCode }) =>
+                QRCode.toDataURL(otpauthUrl, { margin: 1, width: 192 })
+            )
             .then((url) => live && setQr(url))
             .catch(() => undefined);
         return () => {
