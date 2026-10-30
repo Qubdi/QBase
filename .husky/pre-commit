@@ -1,3 +1,8 @@
 #!/bin/sh
 npm run lint || { echo "lint failed, please run \"npm run lint:fix\" to fix the errors." ; exit 1; }
-npm --prefix server run lint || { echo "server lint failed, please run \"npm --prefix server run lint -- --fix\" to fix the errors." ; exit 1; }
+# the server has its own dependencies, installed on their own (see the README)
+if [ -d server/node_modules ]; then
+    npm --prefix server run lint || { echo "server lint failed, please run \"npm --prefix server run lint -- --fix\" to fix the errors." ; exit 1; }
+else
+    echo "server/node_modules is not installed: skipping the server lint (cd server && npm ci)"
+fi
