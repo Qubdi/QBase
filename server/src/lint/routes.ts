@@ -118,6 +118,11 @@ export const lintRoutes =
                 }
                 content = (await latestSnapshot(db, id))!.content;
             }
+            // a stored diagram is only as well formed as what the editor saved,
+            // and the linter must not meet a table without fields
+            if (!lintDiagram.safeParse(content).success) {
+                return reply.code(422).send({ error: 'invalid_diagram' });
+            }
             const config = normalizeConfig(d.lintConfig);
             const findings = lint(content as LintInput, config);
             return { source, findings, summary: summarizeFindings(findings), config };
