@@ -7,7 +7,7 @@ Paste the block below as the agent's task. It re-audits the whole repo, rewrites
 
 ## ROLE
 
-You audit the **QubdiDB** repository and maintain its audit files.
+You audit the **QBase** repository and maintain its audit files.
 You report findings. You do **not** fix code unless explicitly asked.
 
 ## FILES YOU OWN
@@ -17,9 +17,11 @@ You report findings. You do **not** fix code unless explicitly asked.
 | `Audit/audit.md` | Source of truth. Every finding lives here. You edit this first. |
 | `Audit/audit-security.html` | Rendered view — Security & secrets lens |
 | `Audit/audit-repository.html` | Rendered view — Repository & governance lens |
-| `Audit/audit-server.html` | Rendered view — Server (Fastify API, database, drift) lens |
+| `Audit/audit-server.html` | Rendered view — Server (Fastify API, drift) lens |
+| `Audit/audit-database.html` | Rendered view — Database & scale (schema, queries, migrations) lens |
 | `Audit/audit-client.html` | Rendered view — Client (React editor) lens |
-| `Audit/audit.html` | Rendered index — summary + links to the four lenses |
+| `Audit/audit-deadcode.html` | Rendered view — Dead code (unused files, exports, vars, deps) lens |
+| `Audit/audit.html` | Rendered index — summary + links to the six lenses |
 | `Audit/audit-shared.css` | **Read-only. Never edit.** |
 
 HTML is generated *from* `audit.md`. Never put a finding in HTML that is not in `audit.md`.
@@ -38,8 +40,11 @@ still count), `server/src/db/migrations/meta/` (generated), upstream package con
 
 Never print or store a secret value. Never run anything that mutates the tree or writes outside
 `Audit/`. Read-only checks that are allowed: `eslint`, `tsc`, `vitest run` (client), `npm audit`
-(advisory lookup only). Server tests need a live Postgres; skip them unless one is already up and
-say so in `method`.
+(advisory lookup only), `knip` / `depcheck` only if already in `node_modules/.bin`.
+Server tests and the database lens's live checks need a live Postgres; run them only against a
+throwaway instance (container or one already up), never a shared or production database, and
+say which in `method`. Live DB checks are read-only: `EXPLAIN`, catalog queries, `pg_stat_*`.
+`EXPLAIN ANALYZE` only on `SELECT`.
 
 ## PASS WORKFLOW
 
@@ -51,7 +56,7 @@ say so in `method`.
 4. **Sweep for new findings** using the checklist below.
 5. **Rewrite** `audit.md` — bump `rev`, update the date. Never record a branch name or a
    commit sha anywhere in the audit: findings are anchored to `path:line`, not to history.
-6. **Regenerate** the five HTML files from `audit.md`.
+6. **Regenerate** the seven HTML files from `audit.md`.
 7. **Report** in chat: `rev N — X open (a crit / b high), Y fixed this pass, Z new`.
    Do not paste the tables back into chat.
 
@@ -81,7 +86,10 @@ Fix: `Add per-IP and per-email rate limit to auth routes`
 - IDs are permanent. Never renumber, never reuse a retired ID.
 - Preserve every existing ID verbatim.
 - New findings only: `SEC-` security · `REPO-` repository/governance · `SRV-` server ·
-  `CLI-` client. Three digits, continuing from the highest existing number in that prefix.
+  `DB-` database · `CLI-` client · `DEAD-` dead code. Three digits, continuing from the highest
+  existing number in that prefix.
+- One defect, one ID. Unused code in a security path stays `SEC-`; a query defect stays `DB-`,
+  not `SRV-`. `DEAD-` is only for code, config or deps that nothing uses.
 
 ## SEVERITY
 
@@ -107,14 +115,54 @@ rate limits; queries that load more than they return; transactions and races (ch
 scheduler and in-process state vs multiple replicas; pool config and shutdown; logging; migrations
 vs `schema.ts`; retention of sessions, snapshots, audit and drift rows; test coverage per module.
 
+**Database** — migrations vs `server/src/db/schema.ts` (run `drizzle-kit generate` in a scratch
+copy only, or diff by hand; an empty diff is the pass); migration journal order, gaps, edited
+applied migrations; destructive or locking DDL (`DROP`, `ALTER TYPE`, non-concurrent index on a
+big table, `NOT NULL` without default); boot migration run under an advisory lock; every FK has
+an index and an explicit `ON DELETE`; unique constraints behind every check-then-write; `jsonb`
+columns that grow per save; queries in `server/src/**` — `SELECT *` or full-content loads for
+lists, N+1 loops, missing `LIMIT`/pagination, `.returning()` of large columns, filters on
+unindexed columns (confirm with `EXPLAIN` on seeded data); transaction scope and isolation for
+multi-row writes; pool size vs replicas vs `max_connections`, statement and idle timeouts;
+retention and cleanup of sessions, snapshots, audit, drift rows (job exists, bounded, indexed);
+growth per user action, measured on a seeded throwaway instance; introspection drivers
+(`server/src/introspect/`) — read-only guard, timeouts, Postgres and SQL Server parity;
+`db/postgres/Dockerfile` pin; backup and restore documented.
+
 **Client** — autosave and sync (`src/lib/qubdi/`, `src/components/qubdi/`); API error and 401
 handling; stubs and dead features left from the fork; hard-coded hosts; lint/TS suppressions
 and `any`; bundle weight; accessibility of dialogs; `eslint`, `tsc -b`, `vitest run` results.
 
+**Dead code** — run every tool below; a finding needs a tool hit *and* a grep that confirms
+zero references (including dynamic `import()`, string routes, `package.json` scripts, tests,
+config files, Dockerfiles, CI workflows).
+
+| Target | How to detect |
+|--------|---------------|
+| Unused locals, params, imports | `tsc -b` (client has `noUnusedLocals`); `npx tsc -p server --noEmit --noUnusedLocals --noUnusedParameters`; `eslint` `no-unused-vars` |
+| Unused exports | `knip` if installed; else per export `grep -rn "\b<name>\b" src server shared` — only the defining line means unused |
+| Unused files / modules | file never imported: `grep -rln "<basename>"` returns only itself; not an entry in `vite.config.ts`, `server/package.json` scripts, `index.html` |
+| Unused deps | `knip` / `depcheck` if installed; else each `dependencies` key with no `import`/`require` hit outside `node_modules/` |
+| Deps in wrong section | runtime import from a `devDependencies` package, or build-only tool in `dependencies` |
+| Unused env vars and config keys | key in `.env.example` / `server/src/config.ts` / `public/config.js` with no reader, or read but never documented |
+| Unused DB objects | table, column, index or enum in `schema.ts` that no query touches; `pg_stat_user_indexes.idx_scan = 0` after the test suite |
+| Unused i18n keys | key in `src/i18n/locales/en` with no `t('<key>')` hit; key used but missing from `en` |
+| Unused assets | file in `public/` not referenced by `index.html`, source, or nginx config |
+| Unused CSS / Tailwind | custom class in CSS with no hit in `src/` |
+| Dead branches | `if (false)`, constant feature flags, unreachable code after `return`, `TODO remove` stubs from the fork |
+| Commented-out code | blocks of ≥ 3 commented code lines |
+| Suppressions | `eslint-disable`, `@ts-ignore`, `@ts-expect-error` with nothing left to suppress (`--report-unused-disable-directives`) |
+| Unused scripts and CI | `package.json` scripts never called; workflow steps or jobs that do nothing |
+| Duplicates | two helpers with the same body; keep one, list both paths in Where |
+
+Sev for dead code: `Med` when it ships to the browser or image, holds a secret path, or misleads
+(stale config, unused route still mounted) · `Low` otherwise. Group trivial hits in one file into
+one row; Where lists `path:line` for each, comma-separated.
+
 ## audit.md TEMPLATE
 
 ````markdown
-# QubdiDB — Audit
+# QBase — Audit
 
 **rev** N · **date** YYYY-MM-DD
 **method** static analysis · whole-tree read · eslint, tsc, vitest run, npm audit · no secret read
@@ -125,7 +173,9 @@ and `any`; bundle weight; accessibility of dialogs; `eslint`, `tsc -b`, `vitest 
 | Security & secrets | 0 | 0 | 0 | 0 | 0 |
 | Repository | 0 | 0 | 0 | 0 | 0 |
 | Server | 0 | 0 | 0 | 0 | 0 |
+| Database | 0 | 0 | 0 | 0 | 0 |
 | Client | 0 | 0 | 0 | 0 | 0 |
+| Dead code | 0 | 0 | 0 | 0 | 0 |
 | **Total** | 0 | 0 | 0 | 0 | 0 |
 
 ## Act first
@@ -144,7 +194,9 @@ and `any`; bundle weight; accessibility of dialogs; `eslint`, `tsc -b`, `vitest 
 
 ### Repository
 ### Server
+### Database
 ### Client
+### Dead code
 
 *(same five columns; omit a lens heading when it has no open findings)*
 
@@ -187,7 +239,7 @@ Each lens file is a static page, no build step, matching the existing markup con
 - `<header>`: `.eyebrow` (lens · rev N), one-line `<h1>` verdict, `.meta-row` with date /
   method. No scores, no essays.
 - `.note.crit` + `.pill.crit` "Act first" block, only when Crit/High open findings exist.
-- `.split-nav` linking the other three lenses and `audit.html`; the current file gets
+- `.split-nav` linking the other five lenses and `audit.html`; the current file gets
   `<span class="here">`.
 - Two sections, in this order, each `.section-head` + `.snum` + `<h2>`:
   1. **Open** — `.table-wrap` > `<table>`, columns ID / Sev / Finding / Where / Fix.
@@ -195,10 +247,12 @@ Each lens file is a static page, no build step, matching the existing markup con
   2. **Fixed** — same table shape inside `<details><summary>Fixed (N)</summary>`, status
      `.pill.good`. Accepted rows get `.pill.warn` in their own `<details>`.
 - Section wrapper class by lens: `.sec-sector` (Security) / `.repo-sector` (Repository) /
-  `.dev-sector` (Server) / `.stg-sector` (Client).
+  `.dev-sector` (Server) / `.dev-sector` (Database) / `.stg-sector` (Client) /
+  `.repo-sector` (Dead code). No new classes: the CSS is read-only.
 - Keep the theme-toggle `<script>` verbatim, after the closing `</div>`.
-- `audit.html` (index): header, the summary table from `audit.md`, four `.idx-card` links
-  (`.idx-card.sec` / `.repo` / `.dev` / `.stg`), the changelog table. Nothing else.
+- `audit.html` (index): header, the summary table from `audit.md`, six `.idx-card` links
+  (`.idx-card.sec` Security / `.repo` Repository / `.dev` Server / `.dev` Database / `.stg` Client /
+  `.repo` Dead code), the changelog table. Nothing else.
 - Escape `&`, `<`, `>` in cell text. Wrap paths and keys in `<code>`.
 
 ## DONE WHEN
@@ -206,4 +260,6 @@ Each lens file is a static page, no build step, matching the existing markup con
 - Every open finding in `audit.md` has an evidence anchor and a one-line fix.
 - Every HTML row traces to a row in `audit.md`, and every `audit.md` row is rendered.
 - No cell exceeds its word cap.
+- Every `DEAD-` finding has a tool hit and a zero-reference grep behind it.
+- Every `DB-` finding measured live names the throwaway instance in `method`.
 - `audit-shared.css` is untouched.

@@ -1,4 +1,4 @@
-# QubdiDB — Audit
+# QBase — Audit
 
 **rev** 18 · **date** 2026-10-30
 **method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
@@ -170,7 +170,7 @@
 | SEC-027 | Security & secrets | Tracked server example `DATABASE_URL` carries a working default password |
 | CLI-039 | Client | Three `jsx-a11y` rules are off: 51 hits in autofocus and mouse-target code |
 | CLI-040 | Client | Sign-out ends the session before the autosave flush, then deletes the local copy |
-| CLI-041 | Client | Templates `og:image` points at missing `/qbase.png`; tags a nonexistent `@QubdiDB` |
+| CLI-041 | Client | Templates `og:image` points at missing `/qbase.png`; tags a nonexistent `@QBase` |
 | CLI-042 | Client | `clearLocalUserData` reads storage globals outside its try; blocked storage aborts sign-out |
 | DB-001 | Database | Viewer list computes stats on every snapshot version, not only the latest |
 | DB-002 | Database | Share live events use an in-process EventEmitter; other replicas never receive them |
