@@ -1,4 +1,21 @@
 QBase
+Copyright (C) 2026 Qubdi
 
-QBase is an open source database diagram.
-same terms: see LICENSE.
+QBase is an open source database diagram editor with an optional self-hosted
+backend, developed in-house by Qubdi.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. It is distributed WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+LICENSE file for the full text.
+
+Third-party software
+--------------------
+QBase depends on open source packages that are distributed under their own
+licences. They are listed in package.json and package-lock.json, and each
+package's licence is included in its distribution.
+
+If any part of this repository is adapted from another open source project,
+that project's copyright notice and licence must be listed here.
