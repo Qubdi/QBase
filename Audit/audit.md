@@ -1,21 +1,24 @@
 # QBase — Audit
 
-**rev** 18 · **date** 2026-10-30
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b`, server `tsc` typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read
+**rev** 19 · **date** 2026-11-03
+**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b` (0 errors), server `tsc` typecheck and `--noUnusedLocals --noUnusedParameters` (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), `vite build` · npm audit root (17 moderate) and `server/` (11 moderate), all `minimatch` in the ESLint dev chain · server vitest against a throwaway `postgres:18-alpine` container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · `drizzle-kit generate` in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 1 | 0 | 1 | 28 | 0 |
-| Repository | 0 | 0 | 0 | 47 | 1 |
-| Server | 0 | 0 | 0 | 29 | 0 |
-| Database | 0 | 0 | 0 | 14 | 3 |
-| Client | 0 | 0 | 0 | 42 | 0 |
-| **Total** | 1 | 0 | 1 | 160 | 4 |
+| Security & secrets | 3 | 0 | 1 | 28 | 0 |
+| Repository | 11 | 0 | 1 | 43 | 1 |
+| Server | 10 | 0 | 0 | 28 | 0 |
+| Database | 7 | 0 | 0 | 14 | 3 |
+| Client | 4 | 0 | 1 | 42 | 0 |
+| Dead code | 6 | 0 | 0 | 0 | 0 |
+| **Total** | 41 | 0 | 3 | 155 | 4 |
 
 ## Act first
 
-- `SEC-001` — old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` are in git history; rotate all three.
+- `SEC-001` — old secrets still reachable through remote PR refs; rotate all three.
+- `REPO-030` — Postgres digests disagree; CI's digest check fails and tests run another image.
+- `CLI-043` — sign-out deletes unsent edits when the final save fails.
 
 ---
 
@@ -25,7 +28,72 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY` and `MSSQL_SA_PASSWORD` values remain in git history | `.env.example` · `server/.env.example` history | Rotate all three; the example files are blank now |
+| SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD` reachable through 65 pre-rewrite remote PR refs | `git ls-remote origin 'refs/pull/*/head'` | Rotate all three; ask GitHub Support to purge PR refs |
+| SEC-030 | Med | Admin PATCH on own account sets password without current password or 2FA | `server/src/admin/routes.ts:354` | Refuse self reset; point to `/auth/change-password` |
+| SEC-031 | Low | Drift webhook URL stored and returned in plaintext; embedded tokens exposed | `server/src/db/schema.ts:439` | Encrypt with CryptoBox; return only the host |
+
+### Repository
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| REPO-030 | High | Postgres digest in `db/postgres/Dockerfile` differs from CI and publish; digest check fails | `db/postgres/Dockerfile:8` · `.github/workflows/ci.yaml:49` · `.github/workflows/publish.yaml:23` | Use one digest in all three files |
+| REPO-005 | Med | Merge commits land non-Conventional branch commits on the default branch | `.github/workflows/pr-title.yaml` · merge of PR #66 | Allow squash merges only in repository settings |
+| REPO-027 | Med | `bootstrap-sha` names a commit missing from the rewritten history | `release-please-config.json:4` | Point `bootstrap-sha` at the current root commit |
+| REPO-045 | Med | NOTICE says developed in-house; upstream name and copyright removed | `NOTICE:5` · `NOTICE:20` | Restore upstream name, copyright and modification notice |
+| REPO-049 | Med | NOTICE grants "any later version"; both packages declare `AGPL-3.0-only` | `NOTICE:9` · `package.json:7` · `server/package.json:3` | Make NOTICE and `license` fields name the same terms |
+| REPO-050 | Med | CLA licensee "QBase, Inc." differs from copyright holder "Qubdi" | `CLA.md:3` · `NOTICE:2` | Name one legal entity in both files |
+| REPO-051 | Med | README cron backup writes `qbase-*.dump`; not git- or docker-ignored | `README.md:350` · `.gitignore:164` · `Dockerfile.dockerignore:56` | Ignore `qbase-*.dump` in `.gitignore` and both dockerignores |
+| REPO-052 | Low | Gitleaks allowlist says the password stays in history; history was rewritten | `.gitleaks.toml:2` | Drop the allowlist or reword the comment |
+| REPO-053 | Low | PR and issue templates use repo-relative links that break in GitHub bodies | `.github/pull_request_template.md:10` · `.github/ISSUE_TEMPLATE/bug_report.md:22` | Use absolute `github.com/.../blob/...` URLs |
+| REPO-054 | Low | SECURITY.md excludes "example values"; example secrets are blank now | `SECURITY.md:34` | Say "left unset or weak" instead |
+| REPO-055 | Low | npm audit: 17 root, 11 server moderate `minimatch` advisories via ESLint | `npm audit` root and `server/` | Override `minimatch` to `>=11.0.1` in both packages |
+
+### Server
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| SRV-015 | Med | Links created with `access: "off"` skip `MAX_ACTIVE_LINKS` and are never purged | `server/src/share/routes.ts:159` · `server/src/share/active.ts:14` | Count every unrevoked link against the cap |
+| SRV-030 | Low | Link PATCH to `access: "anyone"` reactivates off links past `MAX_ACTIVE_LINKS` | `server/src/share/routes.ts:189` | Recount active links under the create lock |
+| SRV-031 | Low | `POST /lint` with two unnamed indexes on one field returns 500 | `server/src/lint/routes.ts:32` · `shared/lint.ts:591` | Require `name` on `lintTable` indexes |
+| SRV-032 | Low | `GET /diagrams/:id/versions/2147483648` overflows integer `version`; 500 | `server/src/diagrams/routes.ts:39` | Add `.max(2147483647)` to `versionParam.version` |
+| SRV-033 | Low | Dates outside Postgres range, e.g. year -5000, return 500 | `server/src/diagrams/routes.ts:79` · `server/src/audit/activity.ts:71` | Bound coerced dates to the Postgres timestamp range |
+| SRV-034 | Low | Diagram create and member set check parent, then insert; concurrent delete 500s | `server/src/diagrams/routes.ts:233` · `server/src/admin/routes.ts:879` | Catch `isForeignKeyViolation` on insert; answer 404 |
+| SRV-035 | Low | Saved-connection decrypt outside try; changed `CONNECTION_KEY` returns 500 | `server/src/introspect/routes.ts:171` | Catch decrypt failure; answer 409 `connection_key_changed` |
+| SRV-036 | Low | `DB_POOL_MAX=1` accepted; maintenance lock holds the only connection | `server/src/config.ts:211` · `server/src/maintenance.ts:602` | Set `DB_POOL_MAX` minimum to 2 |
+| SRV-037 | Low | SSE disconnect during token lookup leaks viewer slots | `server/src/share/routes.ts:360` · `server/src/share/routes.ts:484` | Check `req.raw.destroyed` before hijack; release slots |
+| SRV-038 | Low | Introspection test fixture hard-codes port 5433; ignores `TEST_PG_PORT` | `server/test/introspect-pg-fixture.ts:4` | Build fixture URLs from `TEST_PG_PORT` like `helpers.ts` |
+
+### Database
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| DB-018 | Med | Boot migrations set no `lock_timeout`; a queued DDL lock stalls table traffic | `server/src/db/client.ts:93` · `server/src/server.ts:26` | Set `lock_timeout` on the migration pool; retry on timeout |
+| DB-019 | Low | App pool sets no `idle_in_transaction_session_timeout` | `server/src/db/client.ts:16` | Add `idle_in_transaction_session_timeout` to the pool config |
+| DB-020 | Low | Diagram create `.returning()` reads full content back from Postgres | `server/src/diagrams/routes.ts:241` | Return listed columns; reuse body content in response |
+| DB-021 | Low | Unauthenticated `/auth/setup-status` counts every user row per call | `server/src/auth/routes.ts:110` | Use `select exists(select 1 from users)` |
+| DB-022 | Low | Version list has no LIMIT; `SNAPSHOT_KEEP=0` makes it unbounded | `server/src/diagrams/routes.ts:455` · `server/src/config.ts:191` | Add a LIMIT or paging to `/versions` |
+| DB-023 | Low | Diagram list `offset` has no upper bound; deep pages scan and discard | `server/src/diagrams/routes.ts:31` | Cap `offset` or switch to a keyset cursor |
+| DB-024 | Low | README backup uses `pg_dump -Fc`; no `pg_restore` step documented | `README.md:350` | Document the `pg_restore` command for the dump |
+
+### Client
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| CLI-043 | High | Sign-out deletes the local copy even when the final flush failed | `src/context/qubdi-context/qubdi-provider.tsx:109` · `src/lib/qubdi/save-status-store.ts:44` | Abort or confirm sign-out while `hasUnsavedChanges()` |
+| CLI-044 | Med | Side-panel icon-only buttons have no accessible name | `src/pages/editor-page/side-panel/refs-section/refs-section.tsx:178` · `src/pages/editor-page/side-panel/tables-section/table-list/table-list-item/table-list-item-header/table-list-item-header.tsx:317` | Add `aria-label` to every icon-only side-panel button |
+| CLI-045 | Med | Failed legacy DB move is silent; first new diagram blocks every retry | `src/lib/qubdi/local-data.ts:67` · `src/lib/qubdi/local-data.ts:95` | Retry while legacy exists; merge missing ids |
+| CLI-046 | Low | Import test asserts navigation synchronously; fails under full-suite load | `src/dialogs/import-diagram-dialog/__tests__/import-diagram-dialog.test.tsx:140` | Wrap the navigation assertion in `waitFor` |
+
+### Dead code
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| DEAD-001 | Med | 10 exports referenced only by their defining line | `server/src/drift/service.ts:68`, `src/hooks/use-mfa-available.ts:20`, `src/lib/colors.ts:23`, `src/lib/data/sql-export/cross-dialect/convert/render-type.ts:505`, `src/lib/data/sql-export/export-per-type/common.ts:95`, `src/lib/data/sql-import/common.ts:143`, `src/lib/data/sql-import/validators/postgresql-validator.ts:257`, `src/lib/domain/diff/diff.ts:99`, `src/lib/qubdi/api.ts:248`, `src/pages/editor-page/side-panel/custom-types-section/custom-type-list/custom-type-list-item/custom-type-list-item-content/composite-fields/composite-field.tsx:9` | Delete unused functions; drop `export` from unused types |
+| DEAD-002 | Med | About 36 fork i18n keys in `en` never looked up | `src/i18n/locales/en.ts:13`, `:43`, `:54`, `:106`, `:124`, `:194`, `:263`, `:304`, `:402`, `:482`, `:497` | Delete the keys from every locale |
+| DEAD-003 | Med | `.gradient-background` and two rainbow keyframes unused but shipped | `src/globals.css:157`, `src/globals.css:188`, `src/globals.css:196`, `src/globals.css:210` | Delete the class, hover rule and keyframes |
+| DEAD-004 | Low | `test:ui` and `test:coverage` scripts called nowhere | `package.json:17`, `package.json:18` | Document both scripts or remove them with their devDeps |
+| DEAD-005 | Low | Four helpers duplicated with identical bodies | `src/lib/data/sql-export/cross-dialect/common.ts:1`, `src/lib/data/sql-export/export-per-type/common.ts:51`, `server/src/auth/sessions.ts:27`, `server/src/share/tokens.ts:6`, `src/lib/data/sql-export/cross-dialect/convert/convert-schema.ts:119`, `src/lib/data/sql-export/foreign-keys.ts:21`, `src/lib/data/sql-import/dialect-importers/mysql/mysql-common.ts:185`, `src/lib/data/sql-import/dialect-importers/postgresql/postgresql-common.ts:217` | Keep one copy of each; import it elsewhere |
+| DEAD-006 | Low | Commented-out code blocks of three or more lines | `src/lib/data/data-types/postgres-data-types.ts:24`, `:45`, `:80`, `src/components/tree-view/tree-view.tsx:260`, `eslint.config.mjs:50` | Delete the commented-out code |
 
 ---
 
@@ -60,7 +128,6 @@
 | REPO-002 | Repository | README step 3 repeats `cp .env.example .env`, overwriting step 1 edits |
 | REPO-003 | Repository | README server command keeps default `DATABASE_URL`, not chosen `POSTGRES_PASSWORD` |
 | REPO-004 | Repository | `SECURITY.md` names `SESSION_SECRET`, which exists nowhere in code |
-| REPO-005 | Repository | release-please needs Conventional Commits; 2 of 426 commits follow them |
 | REPO-006 | Repository | `VITE_APP_URL` documented but never passed as Docker build arg |
 | REPO-009 | Repository | ESLint comment points to `TODO.md`, which is empty |
 | REPO-010 | Repository | Build-tasks doc still specifies the removed Comments feature |
@@ -88,7 +155,6 @@
 | SRV-012 | Server | Link regenerate update lacks `revokedAt` guard; races a concurrent revoke |
 | SRV-013 | Server | Writer GET and PUT hash full diagram content synchronously |
 | SRV-014 | Server | No image HEALTHCHECK; forced exit equals Docker's 10 s stop grace |
-| SRV-015 | Server | Share links per diagram unbounded; listing caps at 200 |
 | SRV-016 | Server | CORS `onRequest` hook has no tests |
 | CLI-001 | Client | Reopen reuses browser copy without checking server `updatedAt`; viewers see stale diagram |
 | CLI-002 | Client | Publish syncs outside the autosaver; both send same base and conflict |
@@ -148,9 +214,7 @@
 | REPO-025 | Repository | Dependabot npm entries ignore no majors; TS 7, ESLint 10, `@types/node` 26 merged |
 | REPO-028 | Repository | README backup writes `qbase-backup.sql` into the repo root; not git-ignored |
 | REPO-026 | Repository | Root TypeScript 5.9 and server TypeScript 7 both compile `shared/` |
-| REPO-027 | Repository | No release tag or `bootstrap-sha`; first release-please run scans all history |
 | REPO-029 | Repository | CI never builds `db/postgres/Dockerfile`; Dependabot digest bumps go unbuilt |
-| REPO-030 | Repository | Postgres image digest duplicated in three files |
 | REPO-031 | Repository | Tag `verify` job skips CI's npm audit and gitleaks scan |
 | REPO-032 | Repository | Published images carry no provenance, SBOM or signature |
 | REPO-033 | Repository | Publish `verify` caches root npm only; server install uncached |
@@ -188,7 +252,6 @@
 | DB-017 | Database | DB container keeps default 64 MB `/dev/shm`; backups are manual only |
 | SEC-028 | Security & secrets | SQL Server login reroute dials any host unchecked; net guard bypassed |
 | SEC-029 | Security & secrets | Blocked-target error returns the private IP a hostname resolves to |
-| REPO-045 | Repository | No upstream name, copyright or modification notice for the AGPL fork |
 | REPO-046 | Repository | Gitleaks comment cites compose profile `mssql`, which no longer exists |
 | REPO-047 | Repository | Bug template says the version is in the footer; UI shows none |
 | REPO-048 | Repository | PR checklist omits server `typecheck`, which CI runs |
@@ -267,3 +330,4 @@
 | 16 | 2026-10-30 | 2 fixed: SEC-028, SEC-029; SEC-001 left open |
 | 17 | 2026-10-30 | 4 fixed: REPO-045 to REPO-048 |
 | 18 | 2026-10-30 | 1 fixed: SRV-029 |
+| 19 | 2026-11-03 | Deep pass + new Dead code lens (`DEAD-` prefix): 35 new, 0 fixed, 5 reopened: REPO-005, REPO-027, REPO-030, REPO-045, SRV-015 |

@@ -8,20 +8,27 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 18</b></div>
-  <h1>0 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 19</b></div>
+  <h1>11 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
+    <span><b>audit date</b> 2026-11-03</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
+  <div class="note crit">
+    <span class="pill crit">Act first</span>
+    <span><ul class="body">
+      <li><code>REPO-030</code> — Postgres digests disagree; CI's digest check fails and tests run another image.</li>
+    </ul></span>
+  </div>
   <div class="split-nav">
-    <b>Part of a 5-file audit split &mdash;</b>
+    <b>Part of a 7-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <span class="here">Repository &amp; governance (this file)</span>
     <a href="audit-server.html">Server</a>
     <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
+    <a href="audit-deadcode.html">Dead code</a>
     <a href="audit.html">Index</a>
   </div>
 </header>
@@ -30,11 +37,22 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">0 open &middot; 47 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">11 open &middot; 43 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-030</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Postgres digest in <code>db/postgres/Dockerfile</code> differs from CI and publish; digest check fails</td><td><code>db/postgres/Dockerfile:8</code> · <code>.github/workflows/ci.yaml:49</code> · <code>.github/workflows/publish.yaml:23</code></td><td class="wrap-cell">Use one digest in all three files</td></tr>
+        <tr><td class="svc-name">REPO-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Merge commits land non-Conventional branch commits on the default branch</td><td><code>.github/workflows/pr-title.yaml</code> · merge of PR #66</td><td class="wrap-cell">Allow squash merges only in repository settings</td></tr>
+        <tr><td class="svc-name">REPO-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>bootstrap-sha</code> names a commit missing from the rewritten history</td><td><code>release-please-config.json:4</code></td><td class="wrap-cell">Point <code>bootstrap-sha</code> at the current root commit</td></tr>
+        <tr><td class="svc-name">REPO-045</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">NOTICE says developed in-house; upstream name and copyright removed</td><td><code>NOTICE:5</code> · <code>NOTICE:20</code></td><td class="wrap-cell">Restore upstream name, copyright and modification notice</td></tr>
+        <tr><td class="svc-name">REPO-049</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">NOTICE grants "any later version"; both packages declare <code>AGPL-3.0-only</code></td><td><code>NOTICE:9</code> · <code>package.json:7</code> · <code>server/package.json:3</code></td><td class="wrap-cell">Make NOTICE and <code>license</code> fields name the same terms</td></tr>
+        <tr><td class="svc-name">REPO-050</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">CLA licensee "QBase, Inc." differs from copyright holder "Qubdi"</td><td><code>CLA.md:3</code> · <code>NOTICE:2</code></td><td class="wrap-cell">Name one legal entity in both files</td></tr>
+        <tr><td class="svc-name">REPO-051</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README cron backup writes <code>qbase-*.dump</code>; not git- or docker-ignored</td><td><code>README.md:350</code> · <code>.gitignore:164</code> · <code>Dockerfile.dockerignore:56</code></td><td class="wrap-cell">Ignore <code>qbase-*.dump</code> in <code>.gitignore</code> and both dockerignores</td></tr>
+        <tr><td class="svc-name">REPO-052</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Gitleaks allowlist says the password stays in history; history was rewritten</td><td><code>.gitleaks.toml:2</code></td><td class="wrap-cell">Drop the allowlist or reword the comment</td></tr>
+        <tr><td class="svc-name">REPO-053</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">PR and issue templates use repo-relative links that break in GitHub bodies</td><td><code>.github/pull_request_template.md:10</code> · <code>.github/ISSUE_TEMPLATE/bug_report.md:22</code></td><td class="wrap-cell">Use absolute <code>github.com/.../blob/...</code> URLs</td></tr>
+        <tr><td class="svc-name">REPO-054</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SECURITY.md excludes "example values"; example secrets are blank now</td><td><code>SECURITY.md:34</code></td><td class="wrap-cell">Say "left unset or weak" instead</td></tr>
+        <tr><td class="svc-name">REPO-055</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">npm audit: 17 root, 11 server moderate <code>minimatch</code> advisories via ESLint</td><td><code>npm audit</code> root and <code>server/</code></td><td class="wrap-cell">Override <code>minimatch</code> to <code>&gt;=11.0.1</code> in both packages</td></tr>
       </tbody>
     </table>
   </div>
@@ -42,7 +60,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (47)</summary>
+  <details><summary>Fixed (43)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -51,7 +69,6 @@
         <tr><td class="svc-name">REPO-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README step 3 repeats <code>cp .env.example .env</code>, overwriting step 1 edits</td></tr>
         <tr><td class="svc-name">REPO-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README server command keeps default <code>DATABASE_URL</code>, not chosen <code>POSTGRES_PASSWORD</code></td></tr>
         <tr><td class="svc-name">REPO-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>SECURITY.md</code> names <code>SESSION_SECRET</code>, which exists nowhere in code</td></tr>
-        <tr><td class="svc-name">REPO-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">release-please needs Conventional Commits; 2 of 426 commits follow them</td></tr>
         <tr><td class="svc-name">REPO-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>VITE_APP_URL</code> documented but never passed as Docker build arg</td></tr>
         <tr><td class="svc-name">REPO-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">ESLint comment points to <code>TODO.md</code>, which is empty</td></tr>
         <tr><td class="svc-name">REPO-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Build-tasks doc still specifies the removed Comments feature</td></tr>
@@ -74,9 +91,7 @@
         <tr><td class="svc-name">REPO-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dependabot npm entries ignore no majors; TS 7, ESLint 10, <code>@types/node</code> 26 merged</td></tr>
         <tr><td class="svc-name">REPO-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README backup writes <code>qbase-backup.sql</code> into the repo root; not git-ignored</td></tr>
         <tr><td class="svc-name">REPO-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Root TypeScript 5.9 and server TypeScript 7 both compile <code>shared/</code></td></tr>
-        <tr><td class="svc-name">REPO-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No release tag or <code>bootstrap-sha</code>; first release-please run scans all history</td></tr>
         <tr><td class="svc-name">REPO-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI never builds <code>db/postgres/Dockerfile</code>; Dependabot digest bumps go unbuilt</td></tr>
-        <tr><td class="svc-name">REPO-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Postgres image digest duplicated in three files</td></tr>
         <tr><td class="svc-name">REPO-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Tag <code>verify</code> job skips CI's npm audit and gitleaks scan</td></tr>
         <tr><td class="svc-name">REPO-032</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Published images carry no provenance, SBOM or signature</td></tr>
         <tr><td class="svc-name">REPO-033</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish <code>verify</code> caches root npm only; server install uncached</td></tr>
@@ -90,7 +105,6 @@
         <tr><td class="svc-name">REPO-042</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>eslint-plugin-css-modules</code> configured; no <code>*.module.css</code> files exist</td></tr>
         <tr><td class="svc-name">REPO-043</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>jsx-a11y</code> plugin registered with zero rules enabled</td></tr>
         <tr><td class="svc-name">REPO-044</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Vite 8 config still uses <code>rollupOptions.manualChunks</code></td></tr>
-        <tr><td class="svc-name">REPO-045</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No upstream name, copyright or modification notice for the AGPL fork</td></tr>
         <tr><td class="svc-name">REPO-046</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Gitleaks comment cites compose profile <code>mssql</code>, which no longer exists</td></tr>
         <tr><td class="svc-name">REPO-047</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Bug template says the version is in the footer; UI shows none</td></tr>
         <tr><td class="svc-name">REPO-048</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">PR checklist omits server <code>typecheck</code>, which CI runs</td></tr>
@@ -112,12 +126,13 @@
 
 </main>
   <div class="split-nav">
-    <b>Part of a 5-file audit split &mdash;</b>
+    <b>Part of a 7-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <span class="here">Repository &amp; governance (this file)</span>
     <a href="audit-server.html">Server</a>
     <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
+    <a href="audit-deadcode.html">Dead code</a>
     <a href="audit.html">Index</a>
   </div>
 

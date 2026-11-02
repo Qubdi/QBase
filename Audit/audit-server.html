@@ -8,20 +8,21 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 18</b></div>
-  <h1>0 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 19</b></div>
+  <h1>10 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
+    <span><b>audit date</b> 2026-11-03</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
-    <b>Part of a 5-file audit split &mdash;</b>
+    <b>Part of a 7-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <span class="here">Server (this file)</span>
     <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
+    <a href="audit-deadcode.html">Dead code</a>
     <a href="audit.html">Index</a>
   </div>
 </header>
@@ -30,11 +31,21 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">0 open &middot; 29 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">10 open &middot; 28 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SRV-015</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Links created with <code>access: "off"</code> skip <code>MAX_ACTIVE_LINKS</code> and are never purged</td><td><code>server/src/share/routes.ts:159</code> · <code>server/src/share/active.ts:14</code></td><td class="wrap-cell">Count every unrevoked link against the cap</td></tr>
+        <tr><td class="svc-name">SRV-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Link PATCH to <code>access: "anyone"</code> reactivates off links past <code>MAX_ACTIVE_LINKS</code></td><td><code>server/src/share/routes.ts:189</code></td><td class="wrap-cell">Recount active links under the create lock</td></tr>
+        <tr><td class="svc-name">SRV-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>POST /lint</code> with two unnamed indexes on one field returns 500</td><td><code>server/src/lint/routes.ts:32</code> · <code>shared/lint.ts:591</code></td><td class="wrap-cell">Require <code>name</code> on <code>lintTable</code> indexes</td></tr>
+        <tr><td class="svc-name">SRV-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>GET /diagrams/:id/versions/2147483648</code> overflows integer <code>version</code>; 500</td><td><code>server/src/diagrams/routes.ts:39</code></td><td class="wrap-cell">Add <code>.max(2147483647)</code> to <code>versionParam.version</code></td></tr>
+        <tr><td class="svc-name">SRV-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Dates outside Postgres range, e.g. year -5000, return 500</td><td><code>server/src/diagrams/routes.ts:79</code> · <code>server/src/audit/activity.ts:71</code></td><td class="wrap-cell">Bound coerced dates to the Postgres timestamp range</td></tr>
+        <tr><td class="svc-name">SRV-034</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Diagram create and member set check parent, then insert; concurrent delete 500s</td><td><code>server/src/diagrams/routes.ts:233</code> · <code>server/src/admin/routes.ts:879</code></td><td class="wrap-cell">Catch <code>isForeignKeyViolation</code> on insert; answer 404</td></tr>
+        <tr><td class="svc-name">SRV-035</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Saved-connection decrypt outside try; changed <code>CONNECTION_KEY</code> returns 500</td><td><code>server/src/introspect/routes.ts:171</code></td><td class="wrap-cell">Catch decrypt failure; answer 409 <code>connection_key_changed</code></td></tr>
+        <tr><td class="svc-name">SRV-036</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>DB_POOL_MAX=1</code> accepted; maintenance lock holds the only connection</td><td><code>server/src/config.ts:211</code> · <code>server/src/maintenance.ts:602</code></td><td class="wrap-cell">Set <code>DB_POOL_MAX</code> minimum to 2</td></tr>
+        <tr><td class="svc-name">SRV-037</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SSE disconnect during token lookup leaks viewer slots</td><td><code>server/src/share/routes.ts:360</code> · <code>server/src/share/routes.ts:484</code></td><td class="wrap-cell">Check <code>req.raw.destroyed</code> before hijack; release slots</td></tr>
+        <tr><td class="svc-name">SRV-038</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Introspection test fixture hard-codes port 5433; ignores <code>TEST_PG_PORT</code></td><td><code>server/test/introspect-pg-fixture.ts:4</code></td><td class="wrap-cell">Build fixture URLs from <code>TEST_PG_PORT</code> like <code>helpers.ts</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -42,7 +53,7 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (29)</summary>
+  <details><summary>Fixed (28)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -61,7 +72,6 @@
         <tr><td class="svc-name">SRV-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Link regenerate update lacks <code>revokedAt</code> guard; races a concurrent revoke</td></tr>
         <tr><td class="svc-name">SRV-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Writer GET and PUT hash full diagram content synchronously</td></tr>
         <tr><td class="svc-name">SRV-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No image HEALTHCHECK; forced exit equals Docker's 10 s stop grace</td></tr>
-        <tr><td class="svc-name">SRV-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share links per diagram unbounded; listing caps at 200</td></tr>
         <tr><td class="svc-name">SRV-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CORS <code>onRequest</code> hook has no tests</td></tr>
         <tr><td class="svc-name">SRV-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Stored-diagram lint returns 500 when a table lacks <code>fields</code></td></tr>
         <tr><td class="svc-name">SRV-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Diagram list runs <code>jsonb_array_length</code> on every listed row's content</td></tr>
@@ -93,12 +103,13 @@
 
 </main>
   <div class="split-nav">
-    <b>Part of a 5-file audit split &mdash;</b>
+    <b>Part of a 7-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <span class="here">Server (this file)</span>
     <a href="audit-database.html">Database &amp; scale</a>
     <a href="audit-client.html">Client</a>
+    <a href="audit-deadcode.html">Dead code</a>
     <a href="audit.html">Index</a>
   </div>
 

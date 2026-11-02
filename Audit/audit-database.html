@@ -8,20 +8,21 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 18</b></div>
-  <h1>0 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 19</b></div>
+  <h1>7 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-10-30</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
+    <span><b>audit date</b> 2026-11-03</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
-    <b>Part of a 5-file audit split &mdash;</b>
+    <b>Part of a 7-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <a href="audit-server.html">Server</a>
     <span class="here">Database &amp; scale (this file)</span>
     <a href="audit-client.html">Client</a>
+    <a href="audit-deadcode.html">Dead code</a>
     <a href="audit.html">Index</a>
   </div>
 </header>
@@ -30,11 +31,18 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Database &amp; scale</h2></div>
-  <p class="section-note">0 open &middot; 14 fixed &middot; 3 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">7 open &middot; 14 fixed &middot; 3 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DB-018</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Boot migrations set no <code>lock_timeout</code>; a queued DDL lock stalls table traffic</td><td><code>server/src/db/client.ts:93</code> · <code>server/src/server.ts:26</code></td><td class="wrap-cell">Set <code>lock_timeout</code> on the migration pool; retry on timeout</td></tr>
+        <tr><td class="svc-name">DB-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">App pool sets no <code>idle_in_transaction_session_timeout</code></td><td><code>server/src/db/client.ts:16</code></td><td class="wrap-cell">Add <code>idle_in_transaction_session_timeout</code> to the pool config</td></tr>
+        <tr><td class="svc-name">DB-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Diagram create <code>.returning()</code> reads full content back from Postgres</td><td><code>server/src/diagrams/routes.ts:241</code></td><td class="wrap-cell">Return listed columns; reuse body content in response</td></tr>
+        <tr><td class="svc-name">DB-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unauthenticated <code>/auth/setup-status</code> counts every user row per call</td><td><code>server/src/auth/routes.ts:110</code></td><td class="wrap-cell">Use <code>select exists(select 1 from users)</code></td></tr>
+        <tr><td class="svc-name">DB-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Version list has no LIMIT; <code>SNAPSHOT_KEEP=0</code> makes it unbounded</td><td><code>server/src/diagrams/routes.ts:455</code> · <code>server/src/config.ts:191</code></td><td class="wrap-cell">Add a LIMIT or paging to <code>/versions</code></td></tr>
+        <tr><td class="svc-name">DB-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Diagram list <code>offset</code> has no upper bound; deep pages scan and discard</td><td><code>server/src/diagrams/routes.ts:31</code></td><td class="wrap-cell">Cap <code>offset</code> or switch to a keyset cursor</td></tr>
+        <tr><td class="svc-name">DB-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">README backup uses <code>pg_dump -Fc</code>; no <code>pg_restore</code> step documented</td><td><code>README.md:350</code></td><td class="wrap-cell">Document the <code>pg_restore</code> command for the dump</td></tr>
       </tbody>
     </table>
   </div>
@@ -120,12 +128,13 @@
 
 </main>
   <div class="split-nav">
-    <b>Part of a 5-file audit split &mdash;</b>
+    <b>Part of a 7-file audit split &mdash;</b>
     <a href="audit-security.html">Security &amp; secrets</a>
     <a href="audit-repository.html">Repository &amp; governance</a>
     <a href="audit-server.html">Server</a>
     <span class="here">Database &amp; scale (this file)</span>
     <a href="audit-client.html">Client</a>
+    <a href="audit-deadcode.html">Dead code</a>
     <a href="audit.html">Index</a>
   </div>
 
