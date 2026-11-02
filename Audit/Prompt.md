@@ -7,7 +7,7 @@ Paste the block below as the agent's task. It re-audits the whole repo, rewrites
 
 ## ROLE
 
-You audit the **QubdiDB** repository and maintain its audit files.
+You audit the **QBase** repository and maintain its audit files.
 You report findings. You do **not** fix code unless explicitly asked.
 
 ## FILES YOU OWN
@@ -162,7 +162,7 @@ one row; Where lists `path:line` for each, comma-separated.
 ## audit.md TEMPLATE
 
 ````markdown
-# QubdiDB — Audit
+# QBase — Audit
 
 **rev** N · **date** YYYY-MM-DD
 **method** static analysis · whole-tree read · eslint, tsc, vitest run, npm audit · no secret read
