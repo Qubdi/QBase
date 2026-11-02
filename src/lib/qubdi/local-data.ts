@@ -1,7 +1,10 @@
 import Dexie from 'dexie';
 
 /** The IndexedDB database that holds this browser's copies of diagrams. */
-export const LOCAL_DB_NAME = 'QubdiDB';
+export const LOCAL_DB_NAME = 'QBase';
+
+/** The name that database had before the rename; its copies move to `LOCAL_DB_NAME`. */
+export const LEGACY_LOCAL_DB_NAME = 'QubdiDB';
 
 /** Every key the server integration keeps in localStorage and sessionStorage. */
 export const LOCAL_KEY_PREFIX = 'qbase.';
@@ -33,11 +36,67 @@ export async function clearLocalUserData(
             // storage unavailable: nothing was kept there
         }
     }
+    for (const name of [LOCAL_DB_NAME, LEGACY_LOCAL_DB_NAME]) {
+        try {
+            await deleteDatabase(name);
+        } catch {
+            // could not delete (blocked or unsupported): the page reload that
+            // follows still drops everything held in memory
+        }
+    }
+}
+
+/**
+ * Moves the copies kept under the old database name into `target`, then
+ * deletes the old database. Runs while `target` opens. `openLegacy` must
+ * declare the same schema as `target`, so an old database still on an earlier
+ * version is upgraded before it is read. The copy is one transaction: it lands
+ * whole or not at all. If `target` already holds diagrams the old database is
+ * left alone, never merged or deleted. Any failure leaves the old database in
+ * place for the next load to retry.
+ */
+export async function adoptLegacyLocalData(
+    target: Dexie,
+    openLegacy: () => Dexie,
+    exists: (name: string) => Promise<boolean> = (name) => Dexie.exists(name),
+    deleteDatabase: (name: string) => Promise<unknown> = (name) =>
+        Dexie.delete(name)
+): Promise<void> {
     try {
-        await deleteDatabase(LOCAL_DB_NAME);
-    } catch {
-        // could not delete (blocked or unsupported): the page reload that
-        // follows still drops everything held in memory
+        if (!(await exists(LEGACY_LOCAL_DB_NAME))) return;
+        if ((await target.table('diagrams').count()) > 0) return;
+
+        const names = new Set(target.tables.map((table) => table.name));
+        const legacy = openLegacy();
+        let rows: [string, unknown[]][];
+        try {
+            await legacy.open();
+            rows = await Promise.all(
+                legacy.tables
+                    .filter((table) => names.has(table.name))
+                    .map(
+                        async (table) =>
+                            [table.name, await table.toArray()] as [
+                                string,
+                                unknown[],
+                            ]
+                    )
+            );
+        } finally {
+            legacy.close();
+        }
+
+        await target.transaction('rw', target.tables, async () => {
+            for (const [name, items] of rows) {
+                if (items.length > 0) await target.table(name).bulkPut(items);
+            }
+        });
+        await deleteDatabase(LEGACY_LOCAL_DB_NAME);
+    } catch (error) {
+        console.warn(
+            'Could not move local diagrams to the new database',
+            error
+        );
     }
 }
 

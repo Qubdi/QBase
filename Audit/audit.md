@@ -170,7 +170,7 @@
 | SEC-027 | Security & secrets | Tracked server example `DATABASE_URL` carries a working default password |
 | CLI-039 | Client | Three `jsx-a11y` rules are off: 51 hits in autofocus and mouse-target code |
 | CLI-040 | Client | Sign-out ends the session before the autosave flush, then deletes the local copy |
-| CLI-041 | Client | Templates `og:image` points at missing `/qbase.png`; tags a nonexistent `@QubdiDB` |
+| CLI-041 | Client | Templates `og:image` points at missing `/qbase.png`; tags a nonexistent `@QBase` |
 | CLI-042 | Client | `clearLocalUserData` reads storage globals outside its try; blocked storage aborts sign-out |
 | DB-001 | Database | Viewer list computes stats on every snapshot version, not only the latest |
 | DB-002 | Database | Share live events use an in-process EventEmitter; other replicas never receive them |

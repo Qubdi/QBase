@@ -18,221 +18,200 @@ import type { Area } from '@/lib/domain/area';
 import type { DBCustomType } from '@/lib/domain/db-custom-type';
 import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
 import type { Note } from '@/lib/domain/note';
-import { LOCAL_DB_NAME } from '@/lib/qubdi/local-data';
+import {
+    adoptLegacyLocalData,
+    LEGACY_LOCAL_DB_NAME,
+    LOCAL_DB_NAME,
+} from '@/lib/qubdi/local-data';
 
-export const StorageProvider: React.FC<React.PropsWithChildren> = ({
-    children,
-}) => {
-    const db = useMemo(() => {
-        const dexieDB = new Dexie(LOCAL_DB_NAME) as Dexie & {
-            diagrams: EntityTable<
-                Diagram,
-                'id' // primary key "id" (for the typings only)
-            >;
-            db_tables: EntityTable<
-                DBTable & { diagramId: string },
-                'id' // primary key "id" (for the typings only)
-            >;
-            db_relationships: EntityTable<
-                DBRelationship & { diagramId: string },
-                'id' // primary key "id" (for the typings only)
-            >;
-            db_dependencies: EntityTable<
-                DBDependency & { diagramId: string },
-                'id' // primary key "id" (for the typings only)
-            >;
-            areas: EntityTable<
-                Area & { diagramId: string },
-                'id' // primary key "id" (for the typings only)
-            >;
-            db_custom_types: EntityTable<
-                DBCustomType & { diagramId: string },
-                'id' // primary key "id" (for the typings only)
-            >;
-            notes: EntityTable<
-                Note & { diagramId: string },
-                'id' // primary key "id" (for the typings only)
-            >;
-            config: EntityTable<
-                DiagramConfig & { id: number },
-                'id' // primary key "id" (for the typings only)
-            >;
-            diagram_filters: EntityTable<
-                DiagramFilter & { diagramId: string },
-                'diagramId' // primary key "id" (for the typings only)
-            >;
-        };
+/** Opens a local diagrams database by name, with every schema version declared. */
+const openLocalDB = (name: string) => {
+    const dexieDB = new Dexie(name) as Dexie & {
+        diagrams: EntityTable<
+            Diagram,
+            'id' // primary key "id" (for the typings only)
+        >;
+        db_tables: EntityTable<
+            DBTable & { diagramId: string },
+            'id' // primary key "id" (for the typings only)
+        >;
+        db_relationships: EntityTable<
+            DBRelationship & { diagramId: string },
+            'id' // primary key "id" (for the typings only)
+        >;
+        db_dependencies: EntityTable<
+            DBDependency & { diagramId: string },
+            'id' // primary key "id" (for the typings only)
+        >;
+        areas: EntityTable<
+            Area & { diagramId: string },
+            'id' // primary key "id" (for the typings only)
+        >;
+        db_custom_types: EntityTable<
+            DBCustomType & { diagramId: string },
+            'id' // primary key "id" (for the typings only)
+        >;
+        notes: EntityTable<
+            Note & { diagramId: string },
+            'id' // primary key "id" (for the typings only)
+        >;
+        config: EntityTable<
+            DiagramConfig & { id: number },
+            'id' // primary key "id" (for the typings only)
+        >;
+        diagram_filters: EntityTable<
+            DiagramFilter & { diagramId: string },
+            'diagramId' // primary key "id" (for the typings only)
+        >;
+    };
 
-        // Schema declaration:
-        dexieDB.version(1).stores({
-            diagrams: '++id, name, databaseType, createdAt, updatedAt',
-            db_tables:
-                '++id, diagramId, name, x, y, fields, indexes, color, createdAt, width',
-            db_relationships:
-                '++id, diagramId, name, sourceTableId, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-            config: '++id, defaultDiagramId',
-        });
+    // Schema declaration:
+    dexieDB.version(1).stores({
+        diagrams: '++id, name, databaseType, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, x, y, fields, indexes, color, createdAt, width',
+        db_relationships:
+            '++id, diagramId, name, sourceTableId, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        config: '++id, defaultDiagramId',
+    });
 
-        dexieDB.version(2).upgrade((tx) =>
-            tx
-                .table<DBTable & { diagramId: string }>('db_tables')
-                .toCollection()
-                .modify((table) => {
-                    for (const field of table.fields) {
-                        // field.type was a plain string before this version
-                        const legacyType = field.type as unknown as string;
-                        field.type = {
-                            id: legacyType.split(' ').join('_'),
-                            name: legacyType,
-                        };
-                    }
-                })
-        );
-
-        dexieDB.version(3).stores({
-            diagrams:
-                '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
-            db_tables:
-                '++id, diagramId, name, x, y, fields, indexes, color, createdAt, width',
-            db_relationships:
-                '++id, diagramId, name, sourceTableId, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-            config: '++id, defaultDiagramId',
-        });
-
-        dexieDB.version(4).stores({
-            diagrams:
-                '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
-            db_tables:
-                '++id, diagramId, name, x, y, fields, indexes, color, createdAt, width, comment',
-            db_relationships:
-                '++id, diagramId, name, sourceTableId, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-            config: '++id, defaultDiagramId',
-        });
-
-        dexieDB.version(5).stores({
-            diagrams:
-                '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
-            db_tables:
-                '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment',
-            db_relationships:
-                '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-            config: '++id, defaultDiagramId',
-        });
-
-        dexieDB.version(6).upgrade((tx) =>
-            tx
-                .table<DBRelationship & { diagramId: string }>(
-                    'db_relationships'
-                )
-                .toCollection()
-                .modify((relationship, ref) => {
-                    // relationship.type was replaced by the cardinalities
-                    const legacy = relationship as unknown as {
-                        type?: RelationshipType | 'many_to_many';
+    dexieDB.version(2).upgrade((tx) =>
+        tx
+            .table<DBTable & { diagramId: string }>('db_tables')
+            .toCollection()
+            .modify((table) => {
+                for (const field of table.fields) {
+                    // field.type was a plain string before this version
+                    const legacyType = field.type as unknown as string;
+                    field.type = {
+                        id: legacyType.split(' ').join('_'),
+                        name: legacyType,
                     };
-                    const { sourceCardinality, targetCardinality } =
-                        determineCardinalities(
-                            legacy.type === 'many_to_many'
-                                ? 'one_to_many'
-                                : (legacy.type ?? 'one_to_one')
-                        );
-
-                    relationship.sourceCardinality = sourceCardinality;
-                    relationship.targetCardinality = targetCardinality;
-
-                    delete (ref.value as { type?: RelationshipType }).type;
-                })
-        );
-
-        dexieDB.version(7).stores({
-            diagrams:
-                '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
-            db_tables:
-                '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment',
-            db_relationships:
-                '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-            db_dependencies:
-                '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
-            config: '++id, defaultDiagramId',
-        });
-
-        dexieDB.version(8).stores({
-            diagrams:
-                '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
-            db_tables:
-                '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment, isView, isMaterializedView, order',
-            db_relationships:
-                '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-            db_dependencies:
-                '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
-            config: '++id, defaultDiagramId',
-        });
-
-        dexieDB.version(9).upgrade((tx) =>
-            tx
-                .table<DBTable & { diagramId: string }>('db_tables')
-                .toCollection()
-                .modify((table) => {
-                    for (const field of table.fields) {
-                        if (typeof field.nullable === 'string') {
-                            field.nullable =
-                                (field.nullable as string).toLowerCase() ===
-                                'true';
-                        }
-                    }
-                })
-        );
-
-        dexieDB.version(10).stores({
-            diagrams:
-                '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
-            db_tables:
-                '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment, isView, isMaterializedView, order',
-            db_relationships:
-                '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-            db_dependencies:
-                '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
-            areas: '++id, diagramId, name, x, y, width, height, color',
-            config: '++id, defaultDiagramId',
-        });
-
-        dexieDB.version(11).stores({
-            diagrams:
-                '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
-            db_tables:
-                '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment, isView, isMaterializedView, order',
-            db_relationships:
-                '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-            db_dependencies:
-                '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
-            areas: '++id, diagramId, name, x, y, width, height, color',
-            db_custom_types:
-                '++id, diagramId, schema, type, kind, values, fields',
-            config: '++id, defaultDiagramId',
-        });
-
-        dexieDB
-            .version(12)
-            .stores({
-                diagrams:
-                    '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
-                db_tables:
-                    '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment, isView, isMaterializedView, order',
-                db_relationships:
-                    '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
-                db_dependencies:
-                    '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
-                areas: '++id, diagramId, name, x, y, width, height, color',
-                db_custom_types:
-                    '++id, diagramId, schema, type, kind, values, fields',
-                config: '++id, defaultDiagramId',
-                diagram_filters: 'diagramId, tableIds, schemasIds',
+                }
             })
-            .upgrade((tx) => {
-                tx.table('config').clear();
-            });
+    );
 
-        dexieDB.version(13).stores({
+    dexieDB.version(3).stores({
+        diagrams:
+            '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, x, y, fields, indexes, color, createdAt, width',
+        db_relationships:
+            '++id, diagramId, name, sourceTableId, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        config: '++id, defaultDiagramId',
+    });
+
+    dexieDB.version(4).stores({
+        diagrams:
+            '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, x, y, fields, indexes, color, createdAt, width, comment',
+        db_relationships:
+            '++id, diagramId, name, sourceTableId, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        config: '++id, defaultDiagramId',
+    });
+
+    dexieDB.version(5).stores({
+        diagrams:
+            '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment',
+        db_relationships:
+            '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        config: '++id, defaultDiagramId',
+    });
+
+    dexieDB.version(6).upgrade((tx) =>
+        tx
+            .table<DBRelationship & { diagramId: string }>('db_relationships')
+            .toCollection()
+            .modify((relationship, ref) => {
+                // relationship.type was replaced by the cardinalities
+                const legacy = relationship as unknown as {
+                    type?: RelationshipType | 'many_to_many';
+                };
+                const { sourceCardinality, targetCardinality } =
+                    determineCardinalities(
+                        legacy.type === 'many_to_many'
+                            ? 'one_to_many'
+                            : (legacy.type ?? 'one_to_one')
+                    );
+
+                relationship.sourceCardinality = sourceCardinality;
+                relationship.targetCardinality = targetCardinality;
+
+                delete (ref.value as { type?: RelationshipType }).type;
+            })
+    );
+
+    dexieDB.version(7).stores({
+        diagrams:
+            '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment',
+        db_relationships:
+            '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        db_dependencies:
+            '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
+        config: '++id, defaultDiagramId',
+    });
+
+    dexieDB.version(8).stores({
+        diagrams:
+            '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment, isView, isMaterializedView, order',
+        db_relationships:
+            '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        db_dependencies:
+            '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
+        config: '++id, defaultDiagramId',
+    });
+
+    dexieDB.version(9).upgrade((tx) =>
+        tx
+            .table<DBTable & { diagramId: string }>('db_tables')
+            .toCollection()
+            .modify((table) => {
+                for (const field of table.fields) {
+                    if (typeof field.nullable === 'string') {
+                        field.nullable =
+                            (field.nullable as string).toLowerCase() === 'true';
+                    }
+                }
+            })
+    );
+
+    dexieDB.version(10).stores({
+        diagrams:
+            '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment, isView, isMaterializedView, order',
+        db_relationships:
+            '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        db_dependencies:
+            '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
+        areas: '++id, diagramId, name, x, y, width, height, color',
+        config: '++id, defaultDiagramId',
+    });
+
+    dexieDB.version(11).stores({
+        diagrams:
+            '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment, isView, isMaterializedView, order',
+        db_relationships:
+            '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        db_dependencies:
+            '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
+        areas: '++id, diagramId, name, x, y, width, height, color',
+        db_custom_types: '++id, diagramId, schema, type, kind, values, fields',
+        config: '++id, defaultDiagramId',
+    });
+
+    dexieDB
+        .version(12)
+        .stores({
             diagrams:
                 '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
             db_tables:
@@ -246,25 +225,55 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
                 '++id, diagramId, schema, type, kind, values, fields',
             config: '++id, defaultDiagramId',
             diagram_filters: 'diagramId, tableIds, schemasIds',
-            notes: '++id, diagramId, content, x, y, width, height, color',
+        })
+        .upgrade((tx) => {
+            tx.table('config').clear();
         });
 
-        dexieDB.version(14).upgrade((tx) =>
-            tx
-                .table<DBRelationship & { diagramId: string }>(
-                    'db_relationships'
-                )
-                .toCollection()
-                // there is no many-to-many relationship: a foreign key points at one row
-                .modify((relationship) => {
-                    Object.assign(
-                        relationship,
-                        normalizeCardinalities(relationship)
-                    );
-                })
-        );
+    dexieDB.version(13).stores({
+        diagrams:
+            '++id, name, databaseType, databaseEdition, createdAt, updatedAt',
+        db_tables:
+            '++id, diagramId, name, schema, x, y, fields, indexes, color, createdAt, width, comment, isView, isMaterializedView, order',
+        db_relationships:
+            '++id, diagramId, name, sourceSchema, sourceTableId, targetSchema, targetTableId, sourceFieldId, targetFieldId, type, createdAt',
+        db_dependencies:
+            '++id, diagramId, schema, tableId, dependentSchema, dependentTableId, createdAt',
+        areas: '++id, diagramId, name, x, y, width, height, color',
+        db_custom_types: '++id, diagramId, schema, type, kind, values, fields',
+        config: '++id, defaultDiagramId',
+        diagram_filters: 'diagramId, tableIds, schemasIds',
+        notes: '++id, diagramId, content, x, y, width, height, color',
+    });
+
+    dexieDB.version(14).upgrade((tx) =>
+        tx
+            .table<DBRelationship & { diagramId: string }>('db_relationships')
+            .toCollection()
+            // there is no many-to-many relationship: a foreign key points at one row
+            .modify((relationship) => {
+                Object.assign(
+                    relationship,
+                    normalizeCardinalities(relationship)
+                );
+            })
+    );
+
+    return dexieDB;
+};
+
+export const StorageProvider: React.FC<React.PropsWithChildren> = ({
+    children,
+}) => {
+    const db = useMemo(() => {
+        const dexieDB = openLocalDB(LOCAL_DB_NAME);
 
         dexieDB.on('ready', async () => {
+            // before the default config below, so an empty new database still counts as empty
+            await adoptLegacyLocalData(dexieDB, () =>
+                openLocalDB(LEGACY_LOCAL_DB_NAME)
+            );
+
             const config = await dexieDB.config.get(1);
 
             if (!config) {
