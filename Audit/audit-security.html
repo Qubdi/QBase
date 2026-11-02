@@ -1,0 +1,136 @@
+<meta charset="utf-8">
+<title>QubdiDB &mdash; Security &amp; secrets Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QubdiDB &middot; Security &amp; secrets Audit &middot; <b>rev 18</b></div>
+  <h1>1 open: 0 Crit, 1 High.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> 2026-10-30</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+  <div class="note crit">
+    <span class="pill crit">Act first</span>
+    <span><ul class="body">
+      <li><code>SEC-001</code> — old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> are in git history; rotate all three.</li>
+    </ul></span>
+  </div>
+  <div class="split-nav">
+    <b>Part of a 5-file audit split &mdash;</b>
+    <span class="here">Security &amp; secrets (this file)</span>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="reg" class="sec-sector">
+  <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
+  <p class="section-note">1 open &middot; 28 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code> and <code>MSSQL_SA_PASSWORD</code> values remain in git history</td><td><code>.env.example</code> · <code>server/.env.example</code> history</td><td class="wrap-cell">Rotate all three; the example files are blank now</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="closed" class="sec-sector">
+  <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
+  <details><summary>Fixed (28)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">SEC-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Session end or user switch keeps previous user's IndexedDB copies and id maps</td></tr>
+        <tr><td class="svc-name">SEC-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-link tokens in <code>/s/&lt;token&gt;</code> URLs written to Fastify request log</td></tr>
+        <tr><td class="svc-name">SEC-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-viewer <code>/s/&lt;token&gt;</code> paths written to nginx access log</td></tr>
+        <tr><td class="svc-name">SEC-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Connection edit keeps stored password when user, database or ssl change</td></tr>
+        <tr><td class="svc-name">SEC-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No Origin check on mutating requests; CSRF defence is SameSite=Lax alone</td></tr>
+        <tr><td class="svc-name">SEC-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Introspection with typed-in credentials writes no audit row</td></tr>
+        <tr><td class="svc-name">SEC-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lockout keyed on email alone; anyone can keep any account locked</td></tr>
+        <tr><td class="svc-name">SEC-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>currentPassword</code> has no max length; argon2 hashes up to 1 MB</td></tr>
+        <tr><td class="svc-name">SEC-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Wrong current password on change-password logged as <code>user.sign_in_failed</code></td></tr>
+        <tr><td class="svc-name">SEC-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Self sign-out writes no audit row</td></tr>
+        <tr><td class="svc-name">SEC-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Sessions have no idle timeout, only absolute 30-day expiry</td></tr>
+        <tr><td class="svc-name">SEC-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">GCM decipher does not enforce 16-byte auth tag length</td></tr>
+        <tr><td class="svc-name">SEC-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Public share JSON sent without <code>Cache-Control: no-store</code></td></tr>
+        <tr><td class="svc-name">SEC-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SSE viewer cap is per link only; one IP can take all slots</td></tr>
+        <tr><td class="svc-name">SEC-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SSE stream response skips CSP and frame security headers</td></tr>
+        <tr><td class="svc-name">SEC-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Disabled user's <code>signed_in</code> SSE stream stays open until next event</td></tr>
+        <tr><td class="svc-name">SEC-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Net guard treats <code>::ffff:0:0/96</code> and <code>64:ff9b:1::/48</code> as public</td></tr>
+        <tr><td class="svc-name">SEC-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Recovery codes stored as unsalted sha256</td></tr>
+        <tr><td class="svc-name">SEC-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server defaults <code>HOST</code> to <code>0.0.0.0</code> outside Docker</td></tr>
+        <tr><td class="svc-name">SEC-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Default core-DB credential hard-coded as <code>DATABASE_URL</code> fallback</td></tr>
+        <tr><td class="svc-name">SEC-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Compose gives <code>MSSQL_SA_PASSWORD</code> a hard-coded default</td></tr>
+        <tr><td class="svc-name">SEC-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">nginx <code>server_tokens</code> left on; version disclosed</td></tr>
+        <tr><td class="svc-name">SEC-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>TRUST_PROXY=true</code> trusts client <code>X-Forwarded-For</code>; per-IP limits, lockout and SSE cap bypassable</td></tr>
+        <tr><td class="svc-name">SEC-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>/mfa/setup</code> and <code>/mfa/enable</code> need no password; stolen session can lock owner out</td></tr>
+        <tr><td class="svc-name">SEC-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Wrong password on 2FA disable or code renewal logged as <code>user.sign_in_failed</code></td></tr>
+        <tr><td class="svc-name">SEC-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Tracked server example <code>DATABASE_URL</code> carries a working default password</td></tr>
+        <tr><td class="svc-name">SEC-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL Server login reroute dials any host unchecked; net guard bypassed</td></tr>
+        <tr><td class="svc-name">SEC-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Blocked-target error returns the private IP a hostname resolves to</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <details><summary>Accepted (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Part of a 5-file audit split &mdash;</b>
+    <span class="here">Security &amp; secrets (this file)</span>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qbase-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

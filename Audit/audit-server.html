@@ -1,0 +1,130 @@
+<meta charset="utf-8">
+<title>QubdiDB &mdash; Server Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QubdiDB &middot; Server Audit &middot; <b>rev 18</b></div>
+  <h1>0 open: 0 Crit, 0 High.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> 2026-10-30</span>
+    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code>, server <code>tsc</code> typecheck (TypeScript 6.0.2), client vitest run (233 files, 2662 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities, installed from the lockfiles) · server vitest run against a throwaway Postgres (66 files, 948 tests: 933 pass, 2 wrong-credential tests fail because the stock image trusts loopback, 13 SQL Server tests skipped there and run separately against the pinned SQL Server image, all pass) · database lens measured on a seeded throwaway Postgres 18 with every migration applied · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+  <div class="split-nav">
+    <b>Part of a 5-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <span class="here">Server (this file)</span>
+    <a href="audit-database.html">Database &amp; scale</a>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="reg" class="dev-sector">
+  <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
+  <p class="section-note">0 open &middot; 29 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="closed" class="dev-sector">
+  <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
+  <details><summary>Fixed (29)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">SRV-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>POST /lint</code> with a table lacking <code>fields</code> throws TypeError, returns 500</td></tr>
+        <tr><td class="svc-name">SRV-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>GET /diagrams</code> loads every visible diagram, then sorts and pages in JS</td></tr>
+        <tr><td class="svc-name">SRV-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>/admin/stats</code> fires 9 parallel queries at a 10-connection pool</td></tr>
+        <tr><td class="svc-name">SRV-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Every MFA operation re-derives its key with blocking <code>scryptSync</code></td></tr>
+        <tr><td class="svc-name">SRV-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Numeric env values unvalidated; NaN disables lockout or 500s later</td></tr>
+        <tr><td class="svc-name">SRV-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>SECRETS_KEY</code> under 16 chars accepted at boot; MFA requests then 500</td></tr>
+        <tr><td class="svc-name">SRV-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Stored-diagram lint runs on up to 50 MB, bypassing 5 MB cap</td></tr>
+        <tr><td class="svc-name">SRV-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift signature ignores change details; a second type change stays dismissed</td></tr>
+        <tr><td class="svc-name">SRV-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>pairUp</code> guesses when two left items share one right key</td></tr>
+        <tr><td class="svc-name">SRV-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Project delete checks emptiness then deletes; concurrent create hits FK 500</td></tr>
+        <tr><td class="svc-name">SRV-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Sign-up hashes the password before checking sign-up is closed</td></tr>
+        <tr><td class="svc-name">SRV-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Link regenerate update lacks <code>revokedAt</code> guard; races a concurrent revoke</td></tr>
+        <tr><td class="svc-name">SRV-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Writer GET and PUT hash full diagram content synchronously</td></tr>
+        <tr><td class="svc-name">SRV-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No image HEALTHCHECK; forced exit equals Docker's 10 s stop grace</td></tr>
+        <tr><td class="svc-name">SRV-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share links per diagram unbounded; listing caps at 200</td></tr>
+        <tr><td class="svc-name">SRV-016</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CORS <code>onRequest</code> hook has no tests</td></tr>
+        <tr><td class="svc-name">SRV-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Stored-diagram lint returns 500 when a table lacks <code>fields</code></td></tr>
+        <tr><td class="svc-name">SRV-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Diagram list runs <code>jsonb_array_length</code> on every listed row's content</td></tr>
+        <tr><td class="svc-name">SRV-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish reads the full previous snapshot and re-hashes content</td></tr>
+        <tr><td class="svc-name">SRV-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift list and badge load full report rows, including <code>changes</code></td></tr>
+        <tr><td class="svc-name">SRV-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Each drift check re-derives its key with blocking <code>scryptSync</code></td></tr>
+        <tr><td class="svc-name">SRV-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift check reconciles a working copy of any size</td></tr>
+        <tr><td class="svc-name">SRV-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>LOG_LEVEL</code> unvalidated; a typo throws in pino, not <code>ConfigError</code></td></tr>
+        <tr><td class="svc-name">SRV-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Pool sets no <code>statement_timeout</code>; a slow query holds a connection</td></tr>
+        <tr><td class="svc-name">SRV-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-link create counts then inserts; parallel creates exceed <code>MAX_ACTIVE_LINKS</code></td></tr>
+        <tr><td class="svc-name">SRV-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Link list caps 200 newest; revoked churn hides older active links</td></tr>
+        <tr><td class="svc-name">SRV-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift check with missing settings or diagram answers 409 <code>already_running</code></td></tr>
+        <tr><td class="svc-name">SRV-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">One failing purge skips every later maintenance step</td></tr>
+        <tr><td class="svc-name">SRV-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Outbound limiter scans its whole map per request; junk cookies grow it unbounded</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <details><summary>Accepted (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Part of a 5-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <span class="here">Server (this file)</span>
+    <a href="audit-database.html">Database &amp; scale</a>
+    <a href="audit-client.html">Client</a>
+    <a href="audit.html">Index</a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qbase-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

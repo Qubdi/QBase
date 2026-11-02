@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  # a direct push to main is checked too
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  client:
+    name: Editor (lint, build, test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # `npm run build` lints again first; the Lint step above already did
+      - name: Build
+        run: npx tsc -b && npx vite build
+
+      - name: Run tests
+        run: npm run test:ci
+
+  server:
+    name: Server (lint, typecheck, build, test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    services:
+      # the server tests expect this database on localhost:5433
+      postgres:
+        image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+        env:
+          POSTGRES_USER: qbase
+          POSTGRES_PASSWORD: qbase
+          POSTGRES_DB: qbase
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U qbase"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npx vitest run
+
+  audit:
+    name: Dependency audit and secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # the secret scan reads the whole history
+          fetch-depth: 0
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.x
+
+      # Fails on high and critical advisories in what ships.
+      - name: Audit editor dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit server dependencies
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: server
+
+      - name: Scan for committed secrets
+        run: >-
+          docker run --rm -v "${{ github.workspace }}:/repo"
+          zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --redact --no-banner
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build editor image
+        run: docker build -t qbase-ui:ci .
+
+      - name: Build server image
+        run: docker build -f server/Dockerfile -t qbase-server:ci .
+
+      # Dependabot bumps the digest this image is pinned to: build it, so a
+      # bad one fails here and not on a deploy
+      - name: Build database image
+        run: docker build -t qbase-postgres:ci db/postgres
+
+      # the tests and the shipped database must be the same image
+      - name: Check the database image is pinned the same everywhere
+        run: .github/scripts/check-postgres-digest.sh

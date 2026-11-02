@@ -1,0 +1,48 @@
+# A share link's token is its credential and sits in the URL (/s/<token>), and in
+# the Referer of whatever that page then loads. Neither may reach the access log.
+map $request $log_request {
+    ~^(?<m>\S+)\s+/s/[^/?\s]+(?<rest>\S*)\s+(?<proto>\S+)$  "$m /s/[redacted]$rest $proto";
+    default                                                $request;
+}
+map $http_referer $log_referer {
+    ~^(?<origin>https?://[^/]+)/s/[^/?]+(?<tail>.*)$  "$origin/s/[redacted]$tail";
+    default                                           $http_referer;
+}
+log_format qbase '$remote_addr - $remote_user [$time_local] "$log_request" '
+                   '$status $body_bytes_sent "$log_referer" "$http_user_agent"';
+
+server {
+    listen       80;
+    listen  [::]:80;
+
+    server_tokens off;
+    access_log /var/log/nginx/access.log qbase;
+
+    # Security headers. No location below uses add_header, so these apply to
+    # every response (an add_header inside a location would drop them).
+    # connect-src is the backend the editor talks to (QUBDI_BACKEND_URL).
+    # style-src needs 'unsafe-inline': React and the editor set inline styles.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' $QUBDI_BACKEND_URL; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+	    try_files  $uri $uri/ /index.html;
+    }
+
+    location /config.js {
+        default_type application/javascript;
+        return 200 "window.env = {
+            QUBDI_BACKEND_URL: \"$QUBDI_BACKEND_URL\"
+        };";
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}

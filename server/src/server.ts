@@ -1,0 +1,58 @@
+import { buildApp } from './app.js';
+import { ConfigError, loadConfig } from './config.js';
+import { createDb, runMigrations } from './db/client.js';
+import { startEventBridge } from './events.js';
+import { startMaintenance } from './maintenance.js';
+import { createShutdown } from './shutdown.js';
+
+// Settings live in server/.env (see .env.example); real environment variables win
+try {
+    process.loadEnvFile();
+} catch {
+    // no .env file: use the environment as is
+}
+
+let config: ReturnType<typeof loadConfig>;
+try {
+    config = loadConfig();
+} catch (err) {
+    if (!(err instanceof ConfigError)) throw err;
+    console.error(err.message);
+    process.exit(1);
+}
+// migrations get their own connection with no statement limit: one that
+// rewrites a large table can take longer than any request should. Two
+// connections: one holds the lock that makes replicas take turns, one migrates
+const migrating = createDb(config.databaseUrl, { max: 2 });
+await runMigrations(migrating.db);
+await migrating.pool.end();
+
+const { db, pool } = createDb(config.databaseUrl, {
+    max: config.dbPoolMax,
+    statementTimeoutMs: config.dbStatementTimeoutSeconds * 1000,
+});
+
+const app = buildApp({ config, db });
+await app.listen({ port: config.port, host: config.host });
+console.log(`QBase server listening on :${config.port}`);
+
+// share viewers are told of publishes made by any replica, through Postgres
+const stopEvents = await startEventBridge({
+    databaseUrl: config.databaseUrl,
+    notify: (channel, payload) =>
+        pool.query('select pg_notify($1, $2)', [channel, payload]),
+});
+
+// drops expired sessions and old audit rows
+const stopMaintenance = startMaintenance({ db, config });
+
+// Docker and process managers stop the server with SIGTERM
+const shutdown = createShutdown({
+    stopMaintenance,
+    stopEvents,
+    closeApp: () => app.close(),
+    closePool: () => pool.end(),
+    exit: (code) => process.exit(code),
+});
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));

@@ -1,0 +1,71 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # majors are taken on purpose, one step at a time (see TODO.md), not by
+      # a bot's pull request
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: npm
+    directory: /server
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # majors are taken on purpose, one step at a time (see TODO.md), not by
+      # a bot's pull request
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # keeps the pinned commit SHAs in the workflows current
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    # Node moves a major at a time on purpose: the even (LTS) release only,
+    # kept in step with .nvmrc, engines and CI
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directory: /server
+    schedule:
+      interval: weekly
+    # Node moves a major at a time on purpose: the even (LTS) release only,
+    # kept in step with .nvmrc, engines and CI
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  # the bundled database image, pinned by digest; its major version moves on
+  # purpose, with the data volume (see the README)
+  - package-ecosystem: docker
+    directory: /db/postgres
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+
+  # the compose files' other images (SQL Server) are pinned by digest too
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly

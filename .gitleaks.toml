@@ -1,0 +1,9 @@
+# Extends the default rules. Allows one password that was once the default of the
+# optional SQL Server test container (docker-compose.mssql.yml). It is gone from
+# the tree but stays in git history, which the scan reads.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SQL Server test container password"
+regexes = ['''Qubdi_Strong_Pass1''']
