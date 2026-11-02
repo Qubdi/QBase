@@ -469,7 +469,7 @@ export const uk: LanguageTranslation = {
             error: {
                 title: 'Помилка експорут діаграми',
                 description:
-                    'Щось пішло не так. Потрібна допомога? the Qubdi support team',
+                    'Щось пішло не так. Потрібна допомога? the QBase support team',
             },
         },
         import_diagram_dialog: {
@@ -480,7 +480,7 @@ export const uk: LanguageTranslation = {
             error: {
                 title: 'Помилка імпорту діаграми',
                 description:
-                    'JSON діаграми є неправильним. Будь ласка, перевірте JSON і спробуйте ще раз. Потрібна допомога? the Qubdi support team',
+                    'JSON діаграми є неправильним. Будь ласка, перевірте JSON і спробуйте ще раз. Потрібна допомога? the QBase support team',
             },
         },
         // TODO: Translate

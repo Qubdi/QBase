@@ -13,23 +13,25 @@ export const LogoMark: React.FC<{ className?: string }> = ({ className }) => (
         aria-hidden="true"
         className={cn('size-6 shrink-0 text-primary', className)}
     >
+        <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
+        <path
+            d="M16.5 16.5L21.5 21.5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+        />
         <ellipse
-            cx="12"
-            cy="6"
-            rx="8"
-            ry="3"
+            cx="11"
+            cy="8.5"
+            rx="4"
+            ry="1.6"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="1.6"
         />
         <path
-            d="M4 6v6c0 1.66 3.58 3 8 3s8-1.34 8-3V6"
+            d="M7 8.5v4.5c0 .9 1.8 1.6 4 1.6s4-.7 4-1.6V8.5"
             stroke="currentColor"
-            strokeWidth="2"
-        />
-        <path
-            d="M4 12v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"
-            stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="1.6"
         />
     </svg>
 );
@@ -48,7 +50,7 @@ export const Logo: React.FC<LogoProps> = ({
         <LogoMark />
         {showWordmark ? (
             <span>
-                Qubdi<span className="text-primary">DB</span>
+                <span className="text-primary">Q</span>Base
             </span>
         ) : null}
     </span>

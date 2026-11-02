@@ -1,4 +1,4 @@
-# QubdiDB TODO
+# QBase TODO
 
 Open work, newest first. Tick an item when it ships and note the commit.
 

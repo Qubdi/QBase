@@ -1,6 +1,6 @@
-# **Contributing to QubdiDB**
+# **Contributing to QBase**
 
-Thank you for your interest in contributing to QubdiDB! We want to make your experience as easy as possible.
+Thank you for your interest in contributing to QBase! We want to make your experience as easy as possible.
 
 ## How to Contribute
 
@@ -19,15 +19,15 @@ To submit a pull request:
 
 ### Reporting Bugs
 
-If you find a bug, check [GitHub issues](https://github.com/qubdi/qubdidb/issues) to see if it’s already reported. If not, feel free to [report it](https://github.com/qubdi/qubdidb/issues/new?labels=bug).
+If you find a bug, check [GitHub issues](https://github.com/qubdi/qbase/issues) to see if it’s already reported. If not, feel free to [report it](https://github.com/qubdi/qbase/issues/new?labels=bug).
 
-For questions about using QubdiDB, [email the project maintainers](mailto:support@qubdi.dev). For feature requests, create a [new feature](https://github.com/qubdi/qubdidb/issues/new?labels=enhancement).
+For questions about using QBase, [email the project maintainers](mailto:support@qubdi.dev). For feature requests, create a [new feature](https://github.com/qubdi/qbase/issues/new?labels=enhancement).
 
 ### Creating a Branch
 
 To get started:
 
-1. Fork [the repository](https://github.com/qubdi/qubdidb/fork).
+1. Fork [the repository](https://github.com/qubdi/qbase/fork).
 2. Create a branch from `main`.
 3. If you’re new to GitHub pull requests, check out [this video series](https://egghead.io/courses/how-to-contribute-to-an-open-source-project-on-github).
 
@@ -53,7 +53,7 @@ The server tests create their own `qubdidb_test` database next to the one the ap
 
 ### License
 
-By contributing, you agree that your work will be licensed under QubdiDB's [license](https://github.com/qubdi/qubdidb/blob/main/LICENSE).
+By contributing, you agree that your work will be licensed under QBase's [license](https://github.com/qubdi/qbase/blob/main/LICENSE).
 
 ## Questions?
 

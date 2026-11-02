@@ -543,7 +543,7 @@ export const en = {
         on: 'On',
         off: 'Off',
 
-        // the screens that need a QubdiDB server: sign-in, projects, sharing,
+        // the screens that need a QBase server: sign-in, projects, sharing,
         // drift, the admin panel. One file per area in src/i18n/qubdi/.
         qubdi: {
             account,

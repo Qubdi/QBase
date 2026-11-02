@@ -36,7 +36,7 @@ describe('qubdi.adminUsers keys', () => {
             i18n.t('qubdi.adminUsers.shell.titleWithSection', {
                 section: 'Users',
             })
-        ).toBe('QubdiDB - Admin - Users');
+        ).toBe('QBase - Admin - Users');
     });
 
     it('pluralises counts', () => {

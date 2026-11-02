@@ -1,6 +1,6 @@
-// The server speaks the exact JSON format QubdiDB's own "Smart Query" import
+// The server speaks the exact JSON format QBase's own "Smart Query" import
 // uses. Reusing the frontend's type means a change there breaks this build,
-// and the existing loader turns it into a diagram with QubdiDB's type mapping.
+// and the existing loader turns it into a diagram with QBase's type mapping.
 import type { DatabaseMetadata } from '../../../src/lib/data/import-metadata/metadata-types/database-metadata';
 import type { ResolvedTarget } from './net-guard.js';
 
@@ -52,7 +52,7 @@ export const DEFAULT_PORTS: Record<Dialect, number> = {
 export const STATEMENT_TIMEOUT_MS = 20_000;
 
 /**
- * QubdiDB's importer expects view definitions base64-encoded (the same form its
+ * QBase's importer expects view definitions base64-encoded (the same form its
  * own query scripts produce): UTF-8 for most engines, UTF-16LE for SQL Server.
  */
 export const encodeViewDefinition = (

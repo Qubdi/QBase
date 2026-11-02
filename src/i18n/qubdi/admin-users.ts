@@ -2,8 +2,8 @@
 // fall back to these until they are translated.
 export const adminUsers = {
     shell: {
-        title: 'QubdiDB - Admin',
-        titleWithSection: 'QubdiDB - Admin - {{section}}',
+        title: 'QBase - Admin',
+        titleWithSection: 'QBase - Admin - {{section}}',
         backToEditor: 'Back to editor',
         notFound: "Sorry, we can't find that page.",
     },

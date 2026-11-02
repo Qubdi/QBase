@@ -225,7 +225,7 @@ describe('two-factor dialog', () => {
         mocks.mfaStatus.mockResolvedValue(on);
         mocks.mfaSetup.mockResolvedValue({
             secret: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
-            otpauthUrl: 'otpauth://totp/QubdiDB:anna?secret=ABC',
+            otpauthUrl: 'otpauth://totp/QBase:anna?secret=ABC',
         });
         mocks.mfaEnable.mockResolvedValue({ recoveryCodes: codes });
         render(<TwoFactorDialog open onOpenChange={onOpenChange} />);
@@ -241,7 +241,7 @@ describe('two-factor dialog', () => {
             'QR code for your authenticator app'
         );
         expect(qr.getAttribute('src')).toContain(
-            'otpauth://totp/QubdiDB:anna?secret=ABC'
+            'otpauth://totp/QBase:anna?secret=ABC'
         );
 
         // 3 a real code, and the password: neither alone is enough

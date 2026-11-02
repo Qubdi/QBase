@@ -24,7 +24,7 @@ export const CHALLENGE_MINUTES = 5;
 export const CHALLENGE_MAX_ATTEMPTS = 5;
 
 /** What the authenticator app shows as the service name. */
-export const MFA_ISSUER = 'QubdiDB';
+export const MFA_ISSUER = 'QBase';
 
 /**
  * Two-factor exists on this server: switched on (MFA_ENABLED) and a key to

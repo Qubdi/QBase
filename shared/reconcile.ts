@@ -107,7 +107,7 @@ export interface ChangeSet {
 
 export interface ReconcileOptions {
     /**
-     * Names remembered from the last sync, keyed by QubdiDB id. This is the
+     * Names remembered from the last sync, keyed by QBase id. This is the
      * "stored source identity": it keeps a table matched even if someone
      * renamed it in the diagram.
      */

@@ -43,8 +43,8 @@ const EditorPageComponent: React.FC = () => {
             <Helmet>
                 <title>
                     {diagramName
-                        ? `QubdiDB - ${diagramName}`
-                        : 'QubdiDB - Database schema diagrams'}
+                        ? `QBase - ${diagramName}`
+                        : 'QBase - Database schema diagrams'}
                 </title>
             </Helmet>
             <section

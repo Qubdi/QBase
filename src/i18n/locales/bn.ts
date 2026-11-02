@@ -470,7 +470,7 @@ export const bn: LanguageTranslation = {
             error: {
                 title: 'চিত্র রপ্তানিতে ত্রুটি',
                 description:
-                    'কিছু ভুল হয়েছে। সাহায্যের প্রয়োজন? the Qubdi support team-এ যোগাযোগ করুন।',
+                    'কিছু ভুল হয়েছে। সাহায্যের প্রয়োজন? the QBase support team-এ যোগাযোগ করুন।',
             },
         },
 
@@ -482,7 +482,7 @@ export const bn: LanguageTranslation = {
             error: {
                 title: 'চিত্র আমদানিতে ত্রুটি',
                 description:
-                    'ডায়াগ্রাম JSON অবৈধ। অনুগ্রহ করে JSON পরীক্ষা করুন এবং আবার চেষ্টা করুন। সাহায্যের প্রয়োজন? the Qubdi support team-এ যোগাযোগ করুন।',
+                    'ডায়াগ্রাম JSON অবৈধ। অনুগ্রহ করে JSON পরীক্ষা করুন এবং আবার চেষ্টা করুন। সাহায্যের প্রয়োজন? the QBase support team-এ যোগাযোগ করুন।',
             },
         },
         // TODO: Translate

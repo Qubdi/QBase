@@ -40,13 +40,13 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
             ) : null}
 
             {tag ? (
-                <title>{`${tag} database schema diagram templates | QubdiDB`}</title>
+                <title>{`${tag} database schema diagram templates | QBase`}</title>
             ) : isFeatured ? (
                 <title>
-                    Featured database schema diagram templates | QubdiDB
+                    Featured database schema diagram templates | QBase
                 </title>
             ) : (
-                <title>Database schema diagram templates | QubdiDB</title>
+                <title>Database schema diagram templates | QBase</title>
             )}
 
             {tag ? (
@@ -64,17 +64,17 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
             {tag ? (
                 <meta
                     property="og:title"
-                    content={`${tag} database schema diagram templates | QubdiDB`}
+                    content={`${tag} database schema diagram templates | QBase`}
                 />
             ) : isFeatured ? (
                 <meta
                     property="og:title"
-                    content="Featured database schema diagram templates | QubdiDB"
+                    content="Featured database schema diagram templates | QBase"
                 />
             ) : (
                 <meta
                     property="og:title"
-                    content="Database schema diagram templates | QubdiDB"
+                    content="Database schema diagram templates | QBase"
                 />
             )}
 
@@ -104,17 +104,17 @@ export const TemplatesPageHelmet: React.FC<TemplatesPageHelmetProps> = ({
                 />
             )}
             <meta property="og:type" content="website" />
-            <meta property="og:site_name" content="QubdiDB" />
+            <meta property="og:site_name" content="QBase" />
 
             {tag ? (
                 <meta
                     name="twitter:title"
-                    content={`${tag} database schema diagram templates | QubdiDB`}
+                    content={`${tag} database schema diagram templates | QBase`}
                 />
             ) : (
                 <meta
                     name="twitter:title"
-                    content="Database schema diagram templates | QubdiDB"
+                    content="Database schema diagram templates | QBase"
                 />
             )}
 

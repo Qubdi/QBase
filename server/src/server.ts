@@ -34,7 +34,7 @@ const { db, pool } = createDb(config.databaseUrl, {
 
 const app = buildApp({ config, db });
 await app.listen({ port: config.port, host: config.host });
-console.log(`QubdiDB server listening on :${config.port}`);
+console.log(`QBase server listening on :${config.port}`);
 
 // share viewers are told of publishes made by any replica, through Postgres
 const stopEvents = await startEventBridge({

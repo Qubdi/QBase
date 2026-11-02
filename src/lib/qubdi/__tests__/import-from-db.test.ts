@@ -66,7 +66,7 @@ describe('selection helpers', () => {
         expect(schemasOfSelection(new Set())).toEqual([]);
     });
 
-    it('maps dialects to QubdiDB database types', () => {
+    it('maps dialects to QBase database types', () => {
         expect(dialectToDatabaseType('postgresql')).toBe(
             DatabaseType.POSTGRESQL
         );
@@ -150,7 +150,7 @@ describe.each([
                 .tables!.find((t) => t.id === tableId)!
                 .fields.find((f) => f.id === fieldId)!.name;
 
-        // QubdiDB's convention: the source is the referenced (one) side,
+        // QBase's convention: the source is the referenced (one) side,
         // the target is the table that holds the foreign key (many).
         const side = (id: string, fieldId: string) => [
             tableName(id),
@@ -181,7 +181,7 @@ describe.each([
         ]);
     });
 
-    it('maps column types through QubdiDB (never leaves a field without a type)', async () => {
+    it('maps column types through QBase (never leaves a field without a type)', async () => {
         const d = await build();
         for (const t of d.tables!) {
             for (const f of t.fields) {

@@ -185,7 +185,7 @@ export class PostgresIntrospector implements Introspector {
             return {
                 database_name: String(server.database_name),
                 version: String(server.version),
-                // like QubdiDB's own scripts, views are listed as tables too
+                // like QBase's own scripts, views are listed as tables too
                 // (type VIEW); the views list only carries their definitions
                 tables: [
                     ...tables.map((t) => ({
@@ -204,7 +204,7 @@ export class PostgresIntrospector implements Introspector {
                 views: views.map((v) => ({
                     schema: String(v.schema),
                     view_name: String(v.view_name),
-                    // pg_get_viewdef returns only the SELECT; QubdiDB parses a
+                    // pg_get_viewdef returns only the SELECT; QBase parses a
                     // full CREATE VIEW statement to find what a view depends on
                     view_definition: v.view_definition
                         ? encodeViewDefinition(

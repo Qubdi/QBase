@@ -25,7 +25,7 @@ export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
                             <MenuIcon className="size-5" />
                         </Button>
                         <span className="cursor-default text-base font-semibold tracking-tight">
-                            QubdiDB
+                            QBase
                         </span>
                     </div>
 

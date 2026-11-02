@@ -463,7 +463,7 @@ export const hr: LanguageTranslation = {
             error: {
                 title: 'Greška pri izvozu dijagrama',
                 description:
-                    'Nešto je pošlo po zlu. Trebate pomoć? the Qubdi support team',
+                    'Nešto je pošlo po zlu. Trebate pomoć? the QBase support team',
             },
         },
 
@@ -475,7 +475,7 @@ export const hr: LanguageTranslation = {
             error: {
                 title: 'Greška pri uvozu dijagrama',
                 description:
-                    'JSON dijagrama je nevažeći. Molimo provjerite JSON i pokušajte ponovno. Trebate pomoć? the Qubdi support team',
+                    'JSON dijagrama je nevažeći. Molimo provjerite JSON i pokušajte ponovno. Trebate pomoć? the QBase support team',
             },
         },
 

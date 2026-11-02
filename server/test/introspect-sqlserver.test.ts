@@ -53,7 +53,7 @@ describe.skipIf(!up)('SQL Server introspection against a real database', () => {
     });
 
     it('finds every user table and view and no system objects', () => {
-        // views are listed as tables too (type VIEW), as QubdiDB's own scripts do
+        // views are listed as tables too (type VIEW), as QBase's own scripts do
         expect(meta.tables.filter((t) => t.type !== 'VIEW').map((t) => `${t.schema}.${t.table}`).sort()).toEqual([
             'dbo.customers',
             'shop.order_items',
@@ -61,7 +61,7 @@ describe.skipIf(!up)('SQL Server introspection against a real database', () => {
         ]);
         expect(meta.tables.filter((t) => t.type === 'VIEW').map((t) => `${t.schema}.${t.table}`)).toEqual(['shop.paid_orders']);
         expect(meta.views.map((v) => `${v.schema}.${v.view_name}`)).toEqual(['shop.paid_orders']);
-        // QubdiDB expects view definitions base64-encoded (UTF-16LE for SQL Server)
+        // QBase expects view definitions base64-encoded (UTF-16LE for SQL Server)
         expect(Buffer.from(meta.views[0].view_definition!, 'base64').toString('utf16le')).toMatch(/note/i);
         expect(meta.columns.some((c) => c.schema === 'sys' || c.schema === 'INFORMATION_SCHEMA')).toBe(false);
     });

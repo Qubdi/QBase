@@ -68,7 +68,7 @@ export const account = {
         recoveryDescription:
             'Enter one of your recovery codes. Each one works only once.',
         codeDescription:
-            'Enter the 6-digit code your authenticator app shows for QubdiDB.',
+            'Enter the 6-digit code your authenticator app shows for QBase.',
         verify: 'Verify',
         useAuthenticator: 'Use the authenticator app instead',
         useRecovery: 'Use a recovery code instead',
@@ -76,7 +76,7 @@ export const account = {
         signIn: 'Sign in',
         createAdmin: 'Create admin account',
         signInDescription:
-            'Sign in to sync diagrams to your QubdiDB server. Accounts are created by an admin.',
+            'Sign in to sync diagrams to your QBase server. Accounts are created by an admin.',
         setupDescription:
             'This server has no users yet. The first account becomes its admin and can create everyone else.',
         email: 'Email',
@@ -144,7 +144,7 @@ export const account = {
     poweredBy: 'Powered by',
     appShell: {
         needsServer:
-            'Projects need a QubdiDB server. Set VITE_QUBDI_BACKEND_URL and sign in to use them.',
+            'Projects need a QBase server. Set VITE_QUBDI_BACKEND_URL and sign in to use them.',
     },
     listPager: {
         defaultNoun: 'items',
@@ -218,7 +218,7 @@ export const account = {
         factor: 'Authenticator or recovery code',
         turnOffTwoFactor: 'Turn off two-factor',
         copyFailed: 'Copy failed. Select the codes and copy them by hand.',
-        fileHeader: 'QubdiDB recovery codes',
+        fileHeader: 'QBase recovery codes',
         fileNote: 'Each code works once. Keep them somewhere safe.',
     },
     home: {
@@ -240,6 +240,6 @@ export const account = {
         diagrams_one: '{{count}} diagram',
         diagrams_other: '{{count}} diagrams',
         noun: 'projects',
-        pageTitle: 'QubdiDB - Projects',
+        pageTitle: 'QBase - Projects',
     },
 };

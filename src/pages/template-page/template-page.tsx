@@ -71,7 +71,7 @@ const TemplatePageComponent: React.FC = () => {
                             />
                         ) : null}
                         <title>
-                            {`Database schema diagram for - ${template.name} | QubdiDB`}
+                            {`Database schema diagram for - ${template.name} | QBase`}
                         </title>
                         <meta
                             name="description"
@@ -79,7 +79,7 @@ const TemplatePageComponent: React.FC = () => {
                         />
                         <meta
                             property="og:title"
-                            content={`Database schema diagram for - ${template.name} | QubdiDB`}
+                            content={`Database schema diagram for - ${template.name} | QBase`}
                         />
                         <meta
                             property="og:url"
@@ -94,10 +94,10 @@ const TemplatePageComponent: React.FC = () => {
                             content={`${HOST_URL}${template.image}`}
                         />
                         <meta property="og:type" content="website" />
-                        <meta property="og:site_name" content="QubdiDB" />
+                        <meta property="og:site_name" content="QBase" />
                         <meta
                             name="twitter:title"
-                            content={`Database schema for - ${template.name} | QubdiDB`}
+                            content={`Database schema for - ${template.name} | QBase`}
                         />
                         <meta
                             name="twitter:description"
@@ -113,7 +113,7 @@ const TemplatePageComponent: React.FC = () => {
                         />
                     </>
                 ) : (
-                    <title>Database Schema Diagram | QubdiDB</title>
+                    <title>Database Schema Diagram | QBase</title>
                 )}
             </Helmet>
 

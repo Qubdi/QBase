@@ -127,7 +127,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
         ]
     );
 
-    // no external links in QubdiDB's sidebar
+    // no external links in QBase's sidebar
     const footerItems: SidebarItem[] = useMemo(() => [], []);
 
     return (
@@ -140,7 +140,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
             {!isDesktop ? (
                 <SidebarHeader>
                     <span className="cursor-default text-base font-semibold tracking-tight">
-                        QubdiDB
+                        QBase
                     </span>
                 </SidebarHeader>
             ) : null}

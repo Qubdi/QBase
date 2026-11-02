@@ -1,4 +1,4 @@
-// Canonical, dependency-free description of a schema. Both a QubdiDB diagram
+// Canonical, dependency-free description of a schema. Both a QBase diagram
 // and a live database introspection are converted to this form so they can be
 // compared (re-sync, drift detection) and linted with one set of code that
 // runs in the browser, in the server and in the CLI.
@@ -16,7 +16,7 @@ export interface ColumnDesc {
     scale: number | null;
     identity: boolean;
     comment: string | null;
-    /** id of the matching QubdiDB field (diagram side only) */
+    /** id of the matching QBase field (diagram side only) */
     id?: string;
 }
 
@@ -36,7 +36,7 @@ export interface TableDesc {
     comment: string | null;
     columns: ColumnDesc[];
     indexes: IndexDesc[];
-    /** id of the matching QubdiDB table (diagram side only) */
+    /** id of the matching QBase table (diagram side only) */
     id?: string;
 }
 
@@ -91,13 +91,13 @@ export function canonicalType(raw: string): string {
         .toLowerCase()
         .replace(/\s+/g, ' ')
         .replace(/_/g, ' ');
-    // "character_varying" (a QubdiDB type id) and "character varying" are the same
+    // "character_varying" (a QBase type id) and "character varying" are the same
     const arrays = lower.match(/(\[\])+$/)?.[0] ?? '';
     const base = lower.slice(0, lower.length - arrays.length).trim();
     return `${ALIASES[base] ?? base}${arrays}`;
 }
 
-// --- conversion from an introspection (QubdiDB's metadata format) -----------
+// --- conversion from an introspection (QBase's metadata format) -----------
 
 export interface MetadataLike {
     tables: Array<{ schema: string; table: string; comment?: string }>;
@@ -140,7 +140,7 @@ const lengthOrNull = (v: string | null | undefined) =>
     v && v !== 'null' ? String(v) : null;
 
 export function metadataToDesc(meta: MetadataLike): SchemaDesc {
-    // QubdiDB lists views inside `tables` as well; `views` names them
+    // QBase lists views inside `tables` as well; `views` names them
     const viewKeys = new Set(
         (meta.views ?? []).map((v) => tableKey(v.schema, v.view_name))
     );
@@ -179,7 +179,7 @@ export function metadataToDesc(meta: MetadataLike): SchemaDesc {
             meta.columns.filter(inTable).map((c) => c.name)
         );
         const indexes: IndexDesc[] = [...byName.entries()]
-            // expression indexes (lower(email)) cannot be drawn in QubdiDB, so
+            // expression indexes (lower(email)) cannot be drawn in QBase, so
             // they are left out on this side just as the importer leaves them out
             .filter(([, rows]) => rows.every((r) => realColumns.has(r.column)))
             .map(([name, rows]) => {
@@ -226,7 +226,7 @@ export function metadataToDesc(meta: MetadataLike): SchemaDesc {
         };
     });
 
-    // QubdiDB keeps one relationship per foreign key column pair, so do the same
+    // QBase keeps one relationship per foreign key column pair, so do the same
     const relationships: RelationshipDesc[] = meta.fk_info.map((fk) => ({
         name: fk.foreign_key_name,
         fromTable: tableKey(fk.schema, fk.table),
@@ -238,7 +238,7 @@ export function metadataToDesc(meta: MetadataLike): SchemaDesc {
     return { tables, relationships };
 }
 
-// --- conversion from a QubdiDB diagram (works on plain JSON too) ------------
+// --- conversion from a QBase diagram (works on plain JSON too) ------------
 
 export interface DiagramLike {
     tables?: Array<{
@@ -332,7 +332,7 @@ export function diagramToDesc(diagram: DiagramLike): SchemaDesc {
 
     const relationships: RelationshipDesc[] = [];
     for (const r of diagram.relationships ?? []) {
-        // QubdiDB's source is the referenced table, the target holds the foreign key
+        // QBase's source is the referenced table, the target holds the foreign key
         const to = tableById.get(r.sourceTableId);
         const from = tableById.get(r.targetTableId);
         if (!to || !from) continue;

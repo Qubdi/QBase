@@ -65,7 +65,7 @@ export async function postJson(
                 headers: {
                     'content-type': 'application/json',
                     'content-length': Buffer.byteLength(body),
-                    'user-agent': 'QubdiDB-drift/1',
+                    'user-agent': 'QBase-drift/1',
                 },
                 timeout: WEBHOOK_TIMEOUT_MS,
                 // connect to the vetted address; TLS still verifies the hostname

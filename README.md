@@ -1,6 +1,6 @@
-# QubdiDB
+# QBase
 
-Database schema diagrams you can keep on your own server. QubdiDB is an AGPL-3.0
+Database schema diagrams you can keep on your own server. QBase is an AGPL-3.0
 diagram editor with an optional self-hosted backend. The editor
 still works fully offline in the browser; the backend adds accounts, published
 versions, share links, live-database import, re-sync, drift detection
@@ -28,11 +28,11 @@ There are no external services: no analytics, no GitHub integration, no social l
 
 ## Run it
 
-QubdiDB is two parts: the **server**, which keeps accounts, projects and diagrams in its own PostgreSQL database, and the **editor**, the web app. Pick one way to run them:
+QBase is two parts: the **server**, which keeps accounts, projects and diagrams in its own PostgreSQL database, and the **editor**, the web app. Pick one way to run them:
 
 | | Where it runs | Which PostgreSQL |
 | --- | --- | --- |
-| [**A**](#option-a-everything-in-docker-with-the-bundled-postgresql) | Docker | the one bundled with QubdiDB (simplest) |
+| [**A**](#option-a-everything-in-docker-with-the-bundled-postgresql) | Docker | the one bundled with QBase (simplest) |
 | [**B**](#option-b-docker-with-your-own-existing-postgresql) | Docker | one you already run |
 | [**C**](#option-c-from-source-for-development) | your machine, from source | either |
 
@@ -45,8 +45,8 @@ A secret in these steps means a long random string. Make one with `openssl rand 
 1. **Get the code.**
 
    ```bash
-   git clone https://github.com/Qubdi/QubdiDB.git
-   cd QubdiDB
+   git clone https://github.com/Qubdi/QBase.git
+   cd QBase
    ```
 
 2. **Create your settings file.**
@@ -94,7 +94,7 @@ Services listen on `127.0.0.1` only. To reach them from other machines, set the 
 
 ### Option B: Docker, with your own existing PostgreSQL
 
-QubdiDB then does not start a database of its own. You need PostgreSQL 16 or newer.
+QBase then does not start a database of its own. You need PostgreSQL 16 or newer.
 
 1. **Create an empty database and a role that owns it**, on your PostgreSQL:
 
@@ -114,8 +114,8 @@ QubdiDB then does not start a database of its own. You need PostgreSQL 16 or new
 3. **Get the code and create your settings file.**
 
    ```bash
-   git clone https://github.com/Qubdi/QubdiDB.git
-   cd QubdiDB
+   git clone https://github.com/Qubdi/QBase.git
+   cd QBase
    cp .env.example .env
    ```
 
@@ -141,7 +141,7 @@ QubdiDB then does not start a database of its own. You need PostgreSQL 16 or new
 6. **Check it.**
 
    ```bash
-   docker compose logs server        # contains: QubdiDB server listening on :3001
+   docker compose logs server        # contains: QBase server listening on :3001
    curl http://localhost:3001/health # {"ok":true}
    ```
 
@@ -165,8 +165,8 @@ The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the conne
 2. **Get a database.** Either start the bundled one:
 
    ```bash
-   git clone https://github.com/Qubdi/QubdiDB.git
-   cd QubdiDB
+   git clone https://github.com/Qubdi/QBase.git
+   cd QBase
    cp .env.example .env              # set POSTGRES_PASSWORD and CONNECTION_KEY in it (Compose needs both)
    docker compose up -d db           # PostgreSQL on localhost:5433
    ```
@@ -216,7 +216,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `DATABASE_URL` | none, required | Where QubdiDB stores its own data |
+| `DATABASE_URL` | none, required | Where QBase stores its own data |
 | `HOST` | `127.0.0.1` (`0.0.0.0` in the Docker image) | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
 | `CORS_ORIGIN` | unset | Origin of the editor when served from another host |
@@ -282,7 +282,7 @@ docker compose up -d --build server ui
 docker volume rm qubdidb_qubdidb-data        # `docker volume ls` shows the exact name
 ```
 
-A fresh install needs none of this. If you use your own Postgres (`POSTGRES_HOST`), nothing changes: QubdiDB runs on 16 and newer.
+A fresh install needs none of this. If you use your own Postgres (`POSTGRES_HOST`), nothing changes: QBase runs on 16 and newer.
 
 ## Tests
 
@@ -351,6 +351,6 @@ and 21 KB of WAL on a laptop. To go further:
   and keep copies off the machine. For point-in-time recovery use WAL archiving
   (`archive_mode`, `archive_command`) or a managed Postgres.
 
-QubdiDB is licensed under the AGPL-3.0. It is a modified version of
+QBase is licensed under the AGPL-3.0. It is a modified version of
 [ChartDB](https://github.com/chartdb/chartdb), also AGPL-3.0; [NOTICE](NOTICE) names it and
 lists what was changed.

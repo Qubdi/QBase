@@ -56,7 +56,7 @@ describe('lint on a real imported diagram', () => {
 });
 
 describe('planFix', () => {
-    it('plans a type change using QubdiDB data types', () => {
+    it('plans a type change using QBase data types', () => {
         const orders = table('orders');
         const customerId = orders.fields.find((f) => f.name === 'customer_id')!;
         const ops = planFix(
@@ -78,7 +78,7 @@ describe('planFix', () => {
             fieldId: customerId.id,
         });
         if (ops[0].kind === 'updateField') {
-            // QubdiDB spells integer "int"; what matters is that it is the same type
+            // QBase spells integer "int"; what matters is that it is the same type
             expect(canonicalType(ops[0].patch.type!.name)).toBe('integer');
             expect(ops[0].patch.type!.id).toBeTruthy();
         }
@@ -266,7 +266,7 @@ describe('planFix', () => {
 });
 
 describe('resolveDataType', () => {
-    it('finds QubdiDB types through synonyms and falls back for unknown ones', () => {
+    it('finds QBase types through synonyms and falls back for unknown ones', () => {
         const int = resolveDataType(DatabaseType.POSTGRESQL, 'integer');
         expect(canonicalType(int.name)).toBe('integer');
         expect(int.id).toBeTruthy();

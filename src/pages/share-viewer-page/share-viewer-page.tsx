@@ -244,7 +244,7 @@ export const ShareViewerPage: React.FC = () => {
             data-testid="viewer-readonly"
         >
             <header className="flex items-center gap-3 border-b px-4 py-2">
-                <span className="font-semibold tracking-tight">QubdiDB</span>
+                <span className="font-semibold tracking-tight">QBase</span>
                 <span className="truncate" data-testid="viewer-title">
                     {share.title}
                 </span>

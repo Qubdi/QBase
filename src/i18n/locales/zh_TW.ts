@@ -460,7 +460,7 @@ export const zh_TW: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? the Qubdi support team',
+                    'Something went wrong. Need help? the QBase support team',
             },
         },
 
@@ -472,7 +472,7 @@ export const zh_TW: LanguageTranslation = {
             error: {
                 title: '匯入圖表時發生錯誤',
                 description:
-                    '圖表的 JSON 無效。請檢查 JSON 並再試一次。如需幫助，請聯繫 the Qubdi support team',
+                    '圖表的 JSON 無效。請檢查 JSON 並再試一次。如需幫助，請聯繫 the QBase support team',
             },
         },
         // TODO: Translate

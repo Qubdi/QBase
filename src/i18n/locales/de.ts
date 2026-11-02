@@ -472,7 +472,7 @@ export const de: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? the Qubdi support team',
+                    'Something went wrong. Need help? the QBase support team',
             },
         },
         // TODO: Translate
@@ -484,7 +484,7 @@ export const de: LanguageTranslation = {
             error: {
                 title: 'Error importing diagram',
                 description:
-                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? the Qubdi support team',
+                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? the QBase support team',
             },
         },
         // TODO: Translate

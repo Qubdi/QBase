@@ -10,9 +10,9 @@ export const HelmetData: React.FC = () => (
         <meta property="og:type" content="website" />
         <meta
             property="og:title"
-            content="QubdiDB - Database schema diagrams"
+            content="QBase - Database schema diagrams"
         />
         <meta property="og:description" content={DESCRIPTION} />
-        <title>QubdiDB - Database schema diagrams</title>
+        <title>QBase - Database schema diagrams</title>
     </Helmet>
 );

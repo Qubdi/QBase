@@ -30,7 +30,7 @@ In scope: `server/`, `shared/`, `src/` (except the data folders below), `public/
 `.husky/`, `Dockerfile`, `server/Dockerfile`, `docker-compose.yml`, `default.conf.template`,
 `entrypoint.sh`, `.dockerignore`, `.gitignore`, `.nvmrc`, build and lint config
 (`package.json`, `server/package.json`, `vite.config.ts`, `vitest.config.ts`, `eslint.config.mjs`,
-`tsconfig*.json`), `README.md`, `CONTRIBUTING.md`, `TODO.md`, `QubdiDB-build-tasks.md`.
+`tsconfig*.json`), `README.md`, `CONTRIBUTING.md`, `TODO.md`, `QBase-build-tasks.md`.
 
 Out of scope: `node_modules/`, `.git/` internals, `stats/` (ignored build output),
 `src/templates-data/` and `src/i18n/locales/` content (data, not logic — presence and wiring

@@ -468,7 +468,7 @@ export const ru: LanguageTranslation = {
             error: {
                 title: 'Ошибка экспортирования диаграммы',
                 description:
-                    'Что-то пошло не так. Если вам нужна помощь, напишите нам: the Qubdi support team',
+                    'Что-то пошло не так. Если вам нужна помощь, напишите нам: the QBase support team',
             },
         },
         import_diagram_dialog: {
@@ -479,7 +479,7 @@ export const ru: LanguageTranslation = {
             error: {
                 title: 'Ошибка при импорте диаграммы',
                 description:
-                    'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: the Qubdi support team',
+                    'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: the QBase support team',
             },
         },
         import_dbml_dialog: {

@@ -680,7 +680,7 @@ export const importDBMLToDiagram = async (
             enums: allEnums,
         };
 
-        // Convert DBML tables to QubdiDB table objects
+        // Convert DBML tables to QBase table objects
         const tables: DBTable[] = extractedData.tables.map((table, index) => {
             const row = Math.floor(index / 4);
             const col = index % 4;
@@ -790,7 +790,7 @@ export const importDBMLToDiagram = async (
                 });
             }
 
-            // Convert DBML indexes to QubdiDB indexes (excluding PK indexes and their duplicates)
+            // Convert DBML indexes to QBase indexes (excluding PK indexes and their duplicates)
             const indexes: DBIndex[] =
                 table.indexes
                     ?.filter((dbmlIndex) => {

@@ -466,7 +466,7 @@ export const fr: LanguageTranslation = {
             error: {
                 title: "Erreur lors de l'exportation du diagramme",
                 description:
-                    "Une erreur s'est produite. Besoin d'aide ? the Qubdi support team",
+                    "Une erreur s'est produite. Besoin d'aide ? the QBase support team",
             },
         },
         import_diagram_dialog: {
@@ -477,7 +477,7 @@ export const fr: LanguageTranslation = {
             error: {
                 title: "Erreur lors de l'exportation du diagramme",
                 description:
-                    "Le diagramme JSON n'est pas valide. Veuillez vérifier le JSON et réessayer. Besoin d'aide ? the Qubdi support team",
+                    "Le diagramme JSON n'est pas valide. Veuillez vérifier le JSON et réessayer. Besoin d'aide ? the QBase support team",
             },
         },
         import_dbml_dialog: {

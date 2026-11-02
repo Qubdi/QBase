@@ -1,4 +1,4 @@
-// QubdiDB schema lint for CI:
+// QBase schema lint for CI:
 //   npx tsx src/cli/lint.ts diagram.json [--config lint.json] [--format text|json]
 //                           [--fail-on error|warning|info|never] [--database-type postgresql]
 // Exit codes: 0 = nothing at or above --fail-on, 1 = findings, 2 = bad usage or unreadable input.
@@ -69,14 +69,14 @@ export function parseArgs(argv: string[]): Args | { error: string } {
     return args;
 }
 
-/** A QubdiDB export, or the server's { title, content } wrapper. */
+/** A QBase export, or the server's { title, content } wrapper. */
 function diagramOf(json: unknown): LintInput {
     if (json && typeof json === 'object') {
         const o = json as Record<string, unknown>;
         if (Array.isArray(o.tables)) return o as LintInput;
         if (o.content && typeof o.content === 'object') return o.content as LintInput;
     }
-    throw new Error('the file does not look like a QubdiDB diagram (no "tables")');
+    throw new Error('the file does not look like a QBase diagram (no "tables")');
 }
 
 export function runCli(argv: string[], io: CliIo): number {

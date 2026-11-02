@@ -622,7 +622,7 @@ export const typeAffinity: Record<string, Record<string, string>> = {
 // CockroachDB uses PostgreSQL-compatible types - reference dynamically
 typeAffinity[DatabaseType.COCKROACHDB] = typeAffinity[DatabaseType.POSTGRESQL];
 
-// Convert SQLParserResult to QubdiDB Diagram structure
+// Convert SQLParserResult to QBase Diagram structure
 export function convertToDiagram(
     parserResult: SQLParserResult,
     sourceDatabaseType: DatabaseType,
@@ -631,7 +631,7 @@ export function convertToDiagram(
     // Create a mapping of old table IDs to new ones
     const tableIdMapping = new Map<string, string>();
 
-    // Convert SQL tables to QubdiDB tables
+    // Convert SQL tables to QBase tables
     const tables: DBTable[] = parserResult.tables.map((table, index) => {
         const row = Math.floor(index / 4);
         const col = index % 4;
@@ -1055,7 +1055,7 @@ export function convertToDiagram(
         });
     });
 
-    // Convert SQL enum types to QubdiDB custom types
+    // Convert SQL enum types to QBase custom types
     const customTypes: DBCustomType[] = [];
 
     if (parserResult.enums) {
