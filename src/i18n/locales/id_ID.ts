@@ -7,7 +7,6 @@ export const id_ID: LanguageTranslation = {
             browse: 'Buka',
             tables: 'Tabel',
             refs: 'Refs',
-            dependencies: 'Ketergantungan',
             custom_types: 'Tipe Kustom',
             visuals: 'Visual',
         },
@@ -37,8 +36,6 @@ export const id_ID: LanguageTranslation = {
                 zoom_on_scroll: 'Perbesar saat Scroll',
                 show_views: 'Tampilan Database',
                 theme: 'Tema',
-                show_dependencies: 'Tampilkan Dependensi',
-                hide_dependencies: 'Sembunyikan Dependensi',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -48,11 +45,7 @@ export const id_ID: LanguageTranslation = {
                 export_diagram: 'Ekspor Diagram',
                 restore_diagram: 'Pulihkan Diagram',
             },
-            help: {
-                help: 'Bantuan',
-                docs_website: 'Dokumentasi',
-                join_discord: 'Bergabunglah di Discord kami',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -101,8 +94,6 @@ export const id_ID: LanguageTranslation = {
             off: 'Nonaktif',
         },
 
-        last_saved: 'Terakhir disimpan',
-        saved: 'Tersimpan',
         loading_diagram: 'Memuat diagram...',
         deselect_all: 'Batalkan Semua',
         select_all: 'Pilih Semua',
@@ -119,19 +110,15 @@ export const id_ID: LanguageTranslation = {
                 add_table: 'Tambah Tabel',
                 add_view: 'Tambah Tampilan',
                 filter: 'Saring',
-                collapse: 'Lipat Semua',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'Semua tabel tersembunyi',
                 show_all: 'Tampilkan semua',
 
                 table: {
                     fields: 'Kolom',
-                    nullable: 'Bisa Kosong?',
                     primary_key: 'Kunci Utama',
                     indexes: 'Indeks',
                     check_constraints: 'Batasan Pemeriksaan',
@@ -193,7 +180,6 @@ export const id_ID: LanguageTranslation = {
                 relationships: 'Hubungan',
                 dependencies: 'Dependensi',
                 relationship: {
-                    relationship: 'Hubungan',
                     primary: 'Tabel Primer',
                     foreign: 'Tabel Terkait',
                     cardinality: 'Kardinalitas',
@@ -205,7 +191,6 @@ export const id_ID: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'Dependensi',
                     table: 'Tabel',
                     dependent_table: 'Tampilan Dependen',
                     delete_dependency: 'Hapus',
@@ -262,7 +247,6 @@ export const id_ID: LanguageTranslation = {
                     empty_note: 'Catatan kosong',
                     note_actions: {
                         title: 'Aksi Catatan',
-                        edit_content: 'Edit Konten',
                         delete_note: 'Hapus Catatan',
                     },
                 },
@@ -305,13 +289,11 @@ export const id_ID: LanguageTranslation = {
         toolbar: {
             zoom_in: 'Perbesar',
             zoom_out: 'Perkecil',
-            save: 'Simpan',
             show_all: 'Tampilkan Semua',
             undo: 'Undo',
             redo: 'Redo',
             reorder_diagram: 'Atur Otomatis Diagram',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'Sorot Tabel yang Tumpang Tindih',
@@ -332,7 +314,6 @@ export const id_ID: LanguageTranslation = {
                 database_edition: 'Edisi Database:',
                 step_1: 'Jalankan skrip ini di database Anda:',
                 step_2: 'Tempel hasil skrip di sini →',
-                script_results_placeholder: 'Hasil skrip di sini...',
                 ssms_instructions: {
                     button_text: 'Instruksi SSMS',
                     title: 'Instruksi',
@@ -403,19 +384,14 @@ export const id_ID: LanguageTranslation = {
         import_database_dialog: {
             title: 'Impor ke Diagram Saat Ini',
             override_alert: {
-                title: 'Impor Database',
                 content: {
-                    alert: 'Mengimpor diagram ini akan memengaruhi tabel dan hubungan yang ada.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> tabel baru akan ditambahkan.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> hubungan baru akan dibuat.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> tabel akan ditimpa.',
-                    proceed: 'Apakah Anda ingin melanjutkan?',
                 },
-                import: 'Impor',
-                cancel: 'Batal',
             },
         },
 
@@ -484,15 +460,7 @@ export const id_ID: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
@@ -500,7 +468,6 @@ export const id_ID: LanguageTranslation = {
         relationship_type: {
             one_to_one: 'Satu ke Satu',
             one_to_many: 'Satu ke Banyak',
-            many_to_one: 'Banyak ke Satu',
         },
 
         canvas_context_menu: {

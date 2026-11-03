@@ -7,7 +7,6 @@ export const te: LanguageTranslation = {
             browse: 'తెరవు',
             tables: 'టేబల్లు',
             refs: 'సంబంధాలు',
-            dependencies: 'ఆధారతలు',
             custom_types: 'కస్టమ్ టైప్స్',
             visuals: 'Visuals',
         },
@@ -37,8 +36,6 @@ export const te: LanguageTranslation = {
                 zoom_on_scroll: 'స్క్రోల్‌పై జూమ్',
                 show_views: 'డేటాబేస్ వ్యూలు',
                 theme: 'థీమ్',
-                show_dependencies: 'ఆధారాలు చూపించండి',
-                hide_dependencies: 'ఆధారాలను దాచండి',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -49,11 +46,7 @@ export const te: LanguageTranslation = {
                 export_diagram: 'Export Diagram',
                 restore_diagram: 'Restore Diagram',
             },
-            help: {
-                help: 'సహాయం',
-                docs_website: 'డాక్యుమెంటేషన్',
-                join_discord: 'డిస్కార్డ్‌లో మా నుంచి చేరండి',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -102,8 +95,6 @@ export const te: LanguageTranslation = {
             off: 'ఆఫ్',
         },
 
-        last_saved: 'చివరిగా సేవ్ చేయబడిన',
-        saved: 'సేవ్ చేయబడింది',
         loading_diagram: 'చిత్రం లోడ్ అవుతోంది...',
         deselect_all: 'అన్ని ఎంచుకోకుండా ఉంచు',
         select_all: 'అన్ని ఎంచుకోండి',
@@ -120,19 +111,15 @@ export const te: LanguageTranslation = {
                 add_table: 'పట్టికను జోడించు',
                 add_view: 'వ్యూ జోడించండి',
                 filter: 'ఫిల్టర్',
-                collapse: 'అన్ని కూల్ చేయి',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'అన్ని పట్టికలు దాచబడ్డాయి',
                 show_all: 'అన్ని చూపించు',
 
                 table: {
                     fields: 'ఫీల్డులు',
-                    nullable: 'నల్వాలు?',
                     primary_key: 'ప్రాథమిక కీ',
                     indexes: 'ఇండెక్సులు',
                     check_constraints: 'తనిఖీ పరిమితులు',
@@ -195,7 +182,6 @@ export const te: LanguageTranslation = {
                 relationships: 'సంబంధాలు',
                 dependencies: 'ఆధారాలు',
                 relationship: {
-                    relationship: 'సంబంధం',
                     primary: 'ప్రాథమిక పట్టిక',
                     foreign: 'సంబంధిత పట్టిక',
                     cardinality: 'కార్డినాలిటీ',
@@ -207,7 +193,6 @@ export const te: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'ఆధారం',
                     table: 'పట్టిక',
                     dependent_table: 'ఆధారిత వీక్షణ',
                     delete_dependency: 'ఆధారాన్ని తొలగించు',
@@ -264,7 +249,6 @@ export const te: LanguageTranslation = {
                     empty_note: 'ఖాళీ గమనిక',
                     note_actions: {
                         title: 'గమనిక చర్యలు',
-                        edit_content: 'కంటెంట్‌ను సవరించండి',
                         delete_note: 'గమనికను తొలగించండి',
                     },
                 },
@@ -306,13 +290,11 @@ export const te: LanguageTranslation = {
         toolbar: {
             zoom_in: 'జూమ్ ఇన్',
             zoom_out: 'జూమ్ అవుట్',
-            save: 'సేవ్',
             show_all: 'అన్ని చూపించు',
             undo: 'తిరిగి చేయు',
             redo: 'మరలా చేయు',
             reorder_diagram: 'చిత్రాన్ని స్వయంచాలకంగా అమర్చండి',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'అవకాశించు పట్టికలను హైలైట్ చేయండి',
@@ -333,7 +315,6 @@ export const te: LanguageTranslation = {
                 database_edition: 'డేటాబేస్ ఎడిషన్:',
                 step_1: 'ఈ స్క్రిప్ట్ను మీ డేటాబేస్‌లో అమలు చేయండి:',
                 step_2: 'స్క్రిప్ట్ ఫలితాన్ని ఇక్కడ పేస్ట్ చేయండి →',
-                script_results_placeholder: 'స్క్రిప్ట్ ఫలితాలు ఇక్కడ...',
                 ssms_instructions: {
                     button_text: 'SSMS సూచనల్ని చూపించు',
                     title: 'సూచనలు',
@@ -406,19 +387,14 @@ export const te: LanguageTranslation = {
         import_database_dialog: {
             title: 'ప్రస్తుత చిత్రానికి దిగుమతి చేయండి',
             override_alert: {
-                title: 'డేటాబేస్ దిగుమతి',
                 content: {
-                    alert: 'ఈ చిత్రాన్ని దిగుమతి చేసుకోవడం మునుపటి పట్టికలు మరియు సంబంధాలను ప్రభావితం చేస్తుంది.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> కొత్త పట్టికలు జోడించబడతాయి.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> కొత్త సంబంధాలు సృష్టించబడతాయి.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> పట్టికలు మళ్లీ రాయబడతాయి.',
-                    proceed: 'మీరు కొనసాగించాలనుకుంటున్నారా?',
                 },
-                import: 'డిగుమతి',
-                cancel: 'రద్దు',
             },
         },
 
@@ -489,15 +465,7 @@ export const te: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
@@ -505,7 +473,6 @@ export const te: LanguageTranslation = {
         relationship_type: {
             one_to_one: 'ఒకటి_కీ_ఒకటి',
             one_to_many: 'ఒకటి_కీ_చాలా',
-            many_to_one: 'చాలా_కీ_ఒకటి',
         },
 
         canvas_context_menu: {

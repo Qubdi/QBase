@@ -7,7 +7,6 @@ export const bn: LanguageTranslation = {
             browse: 'খুলুন',
             tables: 'টেবিল',
             refs: 'রেফস',
-            dependencies: 'নির্ভরতা',
             custom_types: 'কাস্টম টাইপ',
             visuals: 'ভিজ্যুয়াল',
         },
@@ -37,8 +36,6 @@ export const bn: LanguageTranslation = {
                 zoom_on_scroll: 'স্ক্রলে জুম করুন',
                 show_views: 'ডাটাবেস ভিউ',
                 theme: 'থিম',
-                show_dependencies: 'নির্ভরতাগুলি দেখান',
-                hide_dependencies: 'নির্ভরতাগুলি লুকান',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -49,11 +46,7 @@ export const bn: LanguageTranslation = {
                 export_diagram: 'ডায়াগ্রাম রপ্তানি করুন',
                 restore_diagram: 'ডায়াগ্রাম পুনরুদ্ধার করুন',
             },
-            help: {
-                help: 'সাহায্য',
-                docs_website: 'ডকুমেন্টেশন',
-                join_discord: 'আমাদের Discord-এ যোগ দিন',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -102,8 +95,6 @@ export const bn: LanguageTranslation = {
             off: 'বন্ধ',
         },
 
-        last_saved: 'সর্বশেষ সংরক্ষণ',
-        saved: 'সংরক্ষিত',
         loading_diagram: 'ডায়াগ্রাম লোড হচ্ছে...',
         deselect_all: 'সব নির্বাচন সরান',
         select_all: 'সব নির্বাচন করুন',
@@ -120,19 +111,15 @@ export const bn: LanguageTranslation = {
                 add_table: 'টেবিল যোগ করুন',
                 add_view: 'ভিউ যোগ করুন',
                 filter: 'ফিল্টার',
-                collapse: 'সব ভাঁজ করুন',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'সব টেবিল লুকানো আছে',
                 show_all: 'সব দেখান',
 
                 table: {
                     fields: 'ফিল্ড',
-                    nullable: 'নালযোগ্য?',
                     primary_key: 'প্রাথমিক কী',
                     indexes: 'ইনডেক্স',
                     check_constraints: 'চেক সীমাবদ্ধতা',
@@ -194,7 +181,6 @@ export const bn: LanguageTranslation = {
                 relationships: 'সম্পর্ক',
                 dependencies: 'নির্ভরতাগুলি',
                 relationship: {
-                    relationship: 'সম্পর্ক',
                     primary: 'প্রাথমিক টেবিল',
                     foreign: 'সম্পর্কিত টেবিল',
                     cardinality: 'কার্ডিনালিটি',
@@ -206,7 +192,6 @@ export const bn: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'নির্ভরতা',
                     table: 'টেবিল',
                     dependent_table: 'নির্ভরশীল ভিউ',
                     delete_dependency: 'মুছুন',
@@ -264,7 +249,6 @@ export const bn: LanguageTranslation = {
                     empty_note: 'খালি নোট',
                     note_actions: {
                         title: 'নোট ক্রিয়া',
-                        edit_content: 'বিষয়বস্তু সম্পাদনা',
                         delete_note: 'নোট মুছুন',
                     },
                 },
@@ -307,7 +291,6 @@ export const bn: LanguageTranslation = {
         toolbar: {
             zoom_in: 'জুম ইন',
             zoom_out: 'জুম আউট',
-            save: 'সংরক্ষণ করুন',
             show_all: 'সব দেখান',
             undo: 'পূর্বাবস্থায় ফিরুন',
             redo: 'পুনরায় করুন',
@@ -315,7 +298,6 @@ export const bn: LanguageTranslation = {
             highlight_overlapping_tables: 'ওভারল্যাপিং টেবিল হাইলাইট করুন',
 
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             filter: 'টেবিল ফিল্টার করুন',
@@ -335,7 +317,6 @@ export const bn: LanguageTranslation = {
                 database_edition: 'ডাটাবেস সংস্করণ:',
                 step_1: 'আপনার ডাটাবেসে এই স্ক্রিপ্ট চালান:',
                 step_2: 'স্ক্রিপ্টের ফলাফল এখানে পেস্ট করুন →',
-                script_results_placeholder: 'স্ক্রিপ্টের ফলাফল এখানে...',
                 ssms_instructions: {
                     button_text: 'SSMS নির্দেশনা',
                     title: 'নির্দেশনা',
@@ -407,19 +388,14 @@ export const bn: LanguageTranslation = {
         import_database_dialog: {
             title: 'বর্তমান চিত্রে আমদানি করুন',
             override_alert: {
-                title: 'ডাটাবেস আমদানি করুন',
                 content: {
-                    alert: 'এই চিত্র আমদানির ফলে বিদ্যমান টেবিল ও সম্পর্ক প্রভাবিত হবে।',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> নতুন টেবিল যোগ করা হবে।',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> নতুন সম্পর্ক তৈরি করা হবে।',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> টেবিল ওভাররাইট করা হবে।',
-                    proceed: 'আপনি কি এগিয়ে যেতে চান?',
                 },
-                import: 'আমদানি করুন',
-                cancel: 'বাতিল করুন',
             },
         },
 
@@ -487,22 +463,13 @@ export const bn: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'এক থেকে এক',
             one_to_many: 'এক থেকে অনেক',
-            many_to_one: 'অনেক থেকে এক',
         },
 
         canvas_context_menu: {

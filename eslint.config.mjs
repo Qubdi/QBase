@@ -47,9 +47,6 @@ export default [
             },
 
             parser: tsParser,
-            // parserOptions: {
-            //     project: './tsconfig.json',
-            // },
         },
 
         settings: {

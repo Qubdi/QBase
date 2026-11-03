@@ -10,7 +10,6 @@ export const en = {
             browse: 'Open',
             tables: 'Tables',
             refs: 'Refs',
-            dependencies: 'Dependencies',
             custom_types: 'Custom Types',
             visuals: 'Visuals',
         },
@@ -40,8 +39,6 @@ export const en = {
                 zoom_on_scroll: 'Zoom on Scroll',
                 show_views: 'Database Views',
                 theme: 'Theme',
-                show_dependencies: 'Show Dependencies',
-                hide_dependencies: 'Hide Dependencies',
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
             },
@@ -50,11 +47,7 @@ export const en = {
                 export_diagram: 'Export Diagram',
                 restore_diagram: 'Restore Diagram',
             },
-            help: {
-                help: 'Help',
-                docs_website: 'Docs',
-                join_discord: 'Join us on Discord',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -103,8 +96,6 @@ export const en = {
             off: 'Off',
         },
 
-        last_saved: 'Last saved',
-        saved: 'Saved',
         loading_diagram: 'Loading diagram...',
         deselect_all: 'Deselect All',
         select_all: 'Select All',
@@ -121,17 +112,13 @@ export const en = {
                 add_table: 'Add Table',
                 add_view: 'Add View',
                 filter: 'Filter',
-                collapse: 'Collapse All',
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'All tables are hidden',
                 show_all: 'Show all',
 
                 table: {
                     fields: 'Fields',
-                    nullable: 'Nullable?',
                     primary_key: 'Primary Key',
                     indexes: 'Indexes',
                     check_constraints: 'Check Constraints',
@@ -191,7 +178,6 @@ export const en = {
                 relationships: 'Relationships',
                 dependencies: 'Dependencies',
                 relationship: {
-                    relationship: 'Relationship',
                     primary: 'Primary Table',
                     foreign: 'Related Table',
                     cardinality: 'Cardinality',
@@ -203,7 +189,6 @@ export const en = {
                     },
                 },
                 dependency: {
-                    dependency: 'Dependency',
                     table: 'Table',
                     dependent_table: 'Dependent View',
                     delete_dependency: 'Delete',
@@ -260,7 +245,6 @@ export const en = {
                     empty_note: 'Empty note',
                     note_actions: {
                         title: 'Note Actions',
-                        edit_content: 'Edit Content',
                         delete_note: 'Delete Note',
                     },
                 },
@@ -301,13 +285,11 @@ export const en = {
         toolbar: {
             zoom_in: 'Zoom In',
             zoom_out: 'Zoom Out',
-            save: 'Save',
             show_all: 'Show All',
             undo: 'Undo',
             redo: 'Redo',
             reorder_diagram: 'Auto Arrange Diagram',
             highlight_overlapping_tables: 'Highlight Overlapping Tables',
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             filter: 'Filter Tables',
@@ -327,7 +309,6 @@ export const en = {
                 database_edition: 'Database Edition:',
                 step_1: 'Run this script in your database:',
                 step_2: 'Paste the script result into this modal →',
-                script_results_placeholder: 'Script results here...',
                 ssms_instructions: {
                     button_text: 'SSMS Instructions',
                     title: 'Instructions',
@@ -399,19 +380,14 @@ export const en = {
         import_database_dialog: {
             title: 'Import to Current Diagram',
             override_alert: {
-                title: 'Import Database',
                 content: {
-                    alert: 'Importing this diagram will affect existing tables and relationships.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> new tables will be added.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> new relationships will be created.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> tables will be overwritten.',
-                    proceed: 'Do you want to proceed?',
                 },
-                import: 'Import',
-                cancel: 'Cancel',
             },
         },
 
@@ -479,22 +455,13 @@ export const en = {
         },
 
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error importing DBML',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'One to One',
             one_to_many: 'One to Many',
-            many_to_one: 'Many to One',
         },
 
         canvas_context_menu: {

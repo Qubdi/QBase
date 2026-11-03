@@ -7,7 +7,6 @@ export const ko_KR: LanguageTranslation = {
             browse: '열기',
             tables: '테이블',
             refs: 'Refs',
-            dependencies: '종속성',
             custom_types: '사용자 지정 타입',
             visuals: '시각화',
         },
@@ -37,8 +36,6 @@ export const ko_KR: LanguageTranslation = {
                 zoom_on_scroll: '스크롤 시 확대',
                 show_views: '데이터베이스 뷰',
                 theme: '테마',
-                show_dependencies: '종속성 보이기',
-                hide_dependencies: '종속성 숨기기',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -48,11 +45,7 @@ export const ko_KR: LanguageTranslation = {
                 export_diagram: '다이어그램 내보내기',
                 restore_diagram: '다이어그램 복구',
             },
-            help: {
-                help: '도움말',
-                docs_website: '선적 서류 비치',
-                join_discord: 'Discord 가입',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -101,8 +94,6 @@ export const ko_KR: LanguageTranslation = {
             off: '비활성화',
         },
 
-        last_saved: '최근 저장일시: ',
-        saved: '저장됨',
         loading_diagram: '다이어그램 로딩중...',
         deselect_all: '모두 선택 해제',
         select_all: '모두 선택',
@@ -119,19 +110,15 @@ export const ko_KR: LanguageTranslation = {
                 add_table: '테이블 추가',
                 add_view: '뷰 추가',
                 filter: '필터',
-                collapse: '모두 접기',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: '모든 테이블이 숨겨져 있습니다',
                 show_all: '모두 표시',
 
                 table: {
                     fields: '필드',
-                    nullable: 'null 여부',
                     primary_key: '기본키',
                     indexes: '인덱스',
                     check_constraints: '체크 제약조건',
@@ -193,7 +180,6 @@ export const ko_KR: LanguageTranslation = {
                 relationships: '연관 관계',
                 dependencies: '종속성',
                 relationship: {
-                    relationship: '연관 관계',
                     primary: '주 테이블',
                     foreign: '관련 테이블',
                     cardinality: '카디널리티',
@@ -205,7 +191,6 @@ export const ko_KR: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: '종속성',
                     table: '테이블',
                     dependent_table: '뷰 테이블',
                     delete_dependency: '삭제',
@@ -262,7 +247,6 @@ export const ko_KR: LanguageTranslation = {
                     empty_note: '빈 메모',
                     note_actions: {
                         title: '메모 작업',
-                        edit_content: '내용 편집',
                         delete_note: '메모 삭제',
                     },
                 },
@@ -305,13 +289,11 @@ export const ko_KR: LanguageTranslation = {
         toolbar: {
             zoom_in: '확대',
             zoom_out: '축소',
-            save: '저장',
             show_all: '전체 저장',
             undo: '실행 취소',
             redo: '다시 실행',
             reorder_diagram: '다이어그램 자동 정렬',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: '겹치는 테이블 강조 표시',
@@ -332,7 +314,6 @@ export const ko_KR: LanguageTranslation = {
                 database_edition: '데이터베이스 세부 종류:',
                 step_1: '데이터베이스에서 아래의 SQL을 실행해주세요:',
                 step_2: '이곳에 결과를 붙여넣어주세요 →',
-                script_results_placeholder: '이곳에 스크립트 결과를 입력...',
                 ssms_instructions: {
                     button_text: 'SSMS을 사용하시는 경우',
                     title: '지침',
@@ -403,19 +384,14 @@ export const ko_KR: LanguageTranslation = {
         import_database_dialog: {
             title: '현재 다이어그램 가져오기',
             override_alert: {
-                title: '데이터베이스 가져오기',
                 content: {
-                    alert: '이 다이어그램을 가져오면 기존 테이블 및 연관 관계에 영향을 미칩니다.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold>개의 신규 테이블 생성됨',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold>개의 신규 연관 관계 생성됨',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold>개의 테이블이 덮어씌워짐',
-                    proceed: '정말로 가져오시겠습니까?',
                 },
-                import: '가져오기',
-                cancel: '취소',
             },
         },
 
@@ -483,22 +459,13 @@ export const ko_KR: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: '일대일 (1:1)',
             one_to_many: '일대다 (1:N)',
-            many_to_one: '다대일 (N:1)',
         },
 
         canvas_context_menu: {

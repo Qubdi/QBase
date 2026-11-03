@@ -7,7 +7,6 @@ export const mr: LanguageTranslation = {
             browse: 'उघडा',
             tables: 'टेबल',
             refs: 'Refs',
-            dependencies: 'अवलंबने',
             custom_types: 'कस्टम प्रकार',
             visuals: 'Visuals',
         },
@@ -37,8 +36,6 @@ export const mr: LanguageTranslation = {
                 zoom_on_scroll: 'स्क्रोलवर झूम करा',
                 show_views: 'डेटाबेस व्ह्यूज',
                 theme: 'थीम',
-                show_dependencies: 'डिपेंडेन्सि दाखवा',
-                hide_dependencies: 'डिपेंडेन्सि लपवा',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -49,11 +46,7 @@ export const mr: LanguageTranslation = {
                 export_diagram: 'Export Diagram',
                 restore_diagram: 'Restore Diagram',
             },
-            help: {
-                help: 'मदत',
-                docs_website: 'दस्तऐवजीकरण',
-                join_discord: 'आमच्या डिस्कॉर्डमध्ये सामील व्हा',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -102,8 +95,6 @@ export const mr: LanguageTranslation = {
             off: 'बंद',
         },
 
-        last_saved: 'शेवटचे जतन केले',
-        saved: 'जतन केले',
         loading_diagram: 'आरेख लोड करत आहे...',
         deselect_all: 'सर्व निवड रद्द करा',
         select_all: 'सर्व निवडा',
@@ -122,19 +113,15 @@ export const mr: LanguageTranslation = {
                 add_table: 'टेबल जोडा',
                 add_view: 'व्ह्यू जोडा',
                 filter: 'फिल्टर',
-                collapse: 'सर्व संकुचित करा',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'सर्व टेबल्स लपवलेले आहेत',
                 show_all: 'सर्व दाखवा',
 
                 table: {
                     fields: 'फील्ड्स',
-                    nullable: 'नल करण्यायोग्य?',
                     primary_key: 'प्राथमिक की',
                     indexes: 'सूचकांक',
                     check_constraints: 'तपासणी निर्बंध',
@@ -197,7 +184,6 @@ export const mr: LanguageTranslation = {
                 relationships: 'रिलेशनशिप',
                 dependencies: 'डिपेंडेन्सि',
                 relationship: {
-                    relationship: 'रिलेशनशिप',
                     primary: 'प्राथमिक टेबल',
                     foreign: 'संबंधित टेबल',
                     cardinality: 'कार्डिनॅलिटी',
@@ -209,7 +195,6 @@ export const mr: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'डिपेंडेन्सि',
                     table: 'टेबल',
                     dependent_table: 'डिपेंडेन्सि दृश्य',
                     delete_dependency: 'हटवा',
@@ -267,7 +252,6 @@ export const mr: LanguageTranslation = {
                     empty_note: 'रिकामी नोट',
                     note_actions: {
                         title: 'नोट क्रिया',
-                        edit_content: 'सामग्री संपादित करा',
                         delete_note: 'नोट हटवा',
                     },
                 },
@@ -310,13 +294,11 @@ export const mr: LanguageTranslation = {
         toolbar: {
             zoom_in: 'झूम इन',
             zoom_out: 'झूम आउट',
-            save: 'जतन करा',
             show_all: 'सर्व दाखवा',
             undo: 'पूर्ववत करा',
             redo: 'पुन्हा करा',
             reorder_diagram: 'आरेख स्वयंचलित व्यवस्थित करा',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'ओव्हरलॅपिंग टेबल्स हायलाइट करा',
@@ -337,7 +319,6 @@ export const mr: LanguageTranslation = {
                 database_edition: 'डेटाबेस संस्करण:',
                 step_1: 'तुमच्या डेटाबेसमध्ये हा स्क्रिप्ट चालवा:',
                 step_2: 'स्क्रिप्टचा परिणाम येथे पेस्ट करा →',
-                script_results_placeholder: 'स्क्रिप्ट परिणाम येथे...',
                 ssms_instructions: {
                     button_text: 'SSMS सूचना',
                     title: 'सूचना',
@@ -411,19 +392,14 @@ export const mr: LanguageTranslation = {
         import_database_dialog: {
             title: 'सध्याच्या आरेखात आयात करा',
             override_alert: {
-                title: 'डेटाबेस आयात करा',
                 content: {
-                    alert: 'हा आरेख आयात केल्याने सध्याचे टेबल्स आणि रिलेशनशिप वर फरक पडेल.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> नवीन टेबल्स जोडले जातील.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> नवीन रिलेशनशिप तयार केले जातील.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> टेबल्स अधिलिखित केले जातील.',
-                    proceed: 'तुम्हाला पुढे जायचे आहे का?',
                 },
-                import: 'आयात करा',
-                cancel: 'रद्द करा',
             },
         },
 
@@ -494,15 +470,7 @@ export const mr: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
@@ -510,7 +478,6 @@ export const mr: LanguageTranslation = {
         relationship_type: {
             one_to_one: 'एक ते एक',
             one_to_many: 'एक ते अनेक',
-            many_to_one: 'अनेक ते एक',
         },
 
         canvas_context_menu: {

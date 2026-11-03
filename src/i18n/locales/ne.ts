@@ -7,7 +7,6 @@ export const ne: LanguageTranslation = {
             browse: 'खोल्नुहोस्',
             tables: 'टेबलहरू',
             refs: 'Refs',
-            dependencies: 'निर्भरताहरू',
             custom_types: 'कस्टम प्रकारहरू',
             visuals: 'Visuals',
         },
@@ -37,8 +36,6 @@ export const ne: LanguageTranslation = {
                 zoom_on_scroll: 'स्क्रोलमा जुम गर्नुहोस्',
                 show_views: 'डाटाबेस भ्यूहरू',
                 theme: 'थिम',
-                show_dependencies: 'डिपेन्डेन्सीहरू देखाउनुहोस्',
-                hide_dependencies: 'डिपेन्डेन्सीहरू लुकाउनुहोस्',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -49,11 +46,7 @@ export const ne: LanguageTranslation = {
                 export_diagram: 'Export Diagram',
                 restore_diagram: 'Restore Diagram',
             },
-            help: {
-                help: 'मद्दत',
-                docs_website: 'कागजात',
-                join_discord: 'डिस्कोर्डमा सामिल हुनुहोस्',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -102,8 +95,6 @@ export const ne: LanguageTranslation = {
             off: 'बन्द',
         },
 
-        last_saved: 'अन्तिम सुरक्षित',
-        saved: 'सुरक्षित',
         loading_diagram: 'डायाग्राम लोड हुँदैछ...',
         deselect_all: 'सबै चयन हटाउनुहोस्',
         select_all: 'सबै चयन गर्नुहोस्',
@@ -120,19 +111,15 @@ export const ne: LanguageTranslation = {
                 add_table: 'तालिका थप्नुहोस्',
                 add_view: 'भ्यू थप्नुहोस्',
                 filter: 'फिल्टर',
-                collapse: 'सबै लुकाउनुहोस्',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'सबै तालिकाहरू लुकेका छन्',
                 show_all: 'सबै देखाउनुहोस्',
 
                 table: {
                     fields: 'क्षेत्रहरू',
-                    nullable: 'नलेबल?',
                     primary_key: 'प्राथमिक कुंजी',
                     indexes: 'सूचकहरू',
                     check_constraints: 'जाँच प्रतिबन्धहरू',
@@ -194,7 +181,6 @@ export const ne: LanguageTranslation = {
                 relationships: 'सम्बन्धहरू',
                 dependencies: 'डिपेन्डेन्सीहरू',
                 relationship: {
-                    relationship: 'सम्बन्ध',
                     primary: 'मुख्य तालिका',
                     foreign: 'सम्बन्धित तालिका',
                     cardinality: 'कार्डिन्यालिटी',
@@ -206,7 +192,6 @@ export const ne: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'डिपेन्डेन्सी',
                     table: 'तालिका',
                     dependent_table: 'विचलित तालिका',
                     delete_dependency: 'हटाउनुहोस्',
@@ -263,7 +248,6 @@ export const ne: LanguageTranslation = {
                     empty_note: 'खाली टिप्पणी',
                     note_actions: {
                         title: 'टिप्पणी कार्यहरू',
-                        edit_content: 'सामग्री सम्पादन गर्नुहोस्',
                         delete_note: 'टिप्पणी मेटाउनुहोस्',
                     },
                 },
@@ -306,13 +290,11 @@ export const ne: LanguageTranslation = {
         toolbar: {
             zoom_in: 'जुम इन',
             zoom_out: 'जुम आउट',
-            save: 'सुरक्षित गर्नुहोस्',
             show_all: 'सबै देखाउनुहोस्',
             undo: 'पूर्ववत',
             redo: 'पुनः गर्नुहोस्',
             reorder_diagram: 'डायाग्राम स्वचालित मिलाउनुहोस्',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables:
@@ -334,7 +316,6 @@ export const ne: LanguageTranslation = {
                 database_edition: 'डाटाबेस संस्करण:',
                 step_1: 'तपाईंको डाटाबेसमा यो स्क्रिप्ट चलाउनुहोस्:',
                 step_2: 'यो स्क्रिप्ट परिणाम यहाँ पेस्ट गर्नुहोस् →',
-                script_results_placeholder: 'स्क्रिप्ट परिणाम यहाँ...',
                 ssms_instructions: {
                     button_text: 'SSMS निर्देशन',
                     title: 'निर्देशन',
@@ -407,19 +388,14 @@ export const ne: LanguageTranslation = {
         import_database_dialog: {
             title: 'डाटाबेस आयात गर्नुहोस्',
             override_alert: {
-                title: 'डाटाबेस आयात गर्नुहोस्',
                 content: {
-                    alert: 'यो डायाग्राममा आयात गर्ने असर गर्नेछ।',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> नयाँ तालिकाहरू थपिनेछन्।',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> नयाँ सम्बन्धहरू बनाइनेछन्।',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> तालिकाहरू ओभरराइड गरिनेछन्।',
-                    proceed: 'के तपाईं जारी गर्न चाहनुहुन्छ?',
                 },
-                import: 'आयात गर्नुहोस्',
-                cancel: 'रद्द गर्नुहोस्',
             },
         },
 
@@ -488,15 +464,7 @@ export const ne: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
@@ -504,7 +472,6 @@ export const ne: LanguageTranslation = {
         relationship_type: {
             one_to_one: 'एक देखि एक',
             one_to_many: 'एक देखि धेरै',
-            many_to_one: 'धेरै देखि एक',
         },
 
         canvas_context_menu: {

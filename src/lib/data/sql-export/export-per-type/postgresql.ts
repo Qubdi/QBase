@@ -1,6 +1,6 @@
+import { escapeSQLComment } from '../cross-dialect/common';
 import {
     exportFieldComment,
-    escapeSQLComment,
     formatTableComment,
     isFunction,
     isKeyword,

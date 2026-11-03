@@ -7,7 +7,6 @@ export const de: LanguageTranslation = {
             browse: 'Öffnen',
             tables: 'Tabellen',
             refs: 'Refs',
-            dependencies: 'Abhängigkeiten',
             custom_types: 'Benutzerdefinierte Typen',
             visuals: 'Darstellungen',
         },
@@ -37,8 +36,6 @@ export const de: LanguageTranslation = {
                 zoom_on_scroll: 'Zoom beim Scrollen',
                 show_views: 'Datenbankansichten',
                 theme: 'Stil',
-                show_dependencies: 'Abhängigkeiten anzeigen',
-                hide_dependencies: 'Abhängigkeiten ausblenden',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -48,11 +45,7 @@ export const de: LanguageTranslation = {
                 export_diagram: 'Diagramm exportieren',
                 restore_diagram: 'Diagramm wiederherstellen',
             },
-            help: {
-                help: 'Hilfe',
-                docs_website: 'Dokumentation',
-                join_discord: 'Auf Discord beitreten',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -102,8 +95,6 @@ export const de: LanguageTranslation = {
             off: 'Aus',
         },
 
-        last_saved: 'Zuletzt gespeichert',
-        saved: 'Gespeichert',
         loading_diagram: 'Diagramm wird geladen...',
         deselect_all: 'Alles abwählen',
         select_all: 'Alles auswählen',
@@ -120,19 +111,15 @@ export const de: LanguageTranslation = {
                 add_table: 'Tabelle hinzufügen',
                 add_view: 'Ansicht hinzufügen',
                 filter: 'Filter',
-                collapse: 'Alle einklappen',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'Alle Tabellen sind ausgeblendet',
                 show_all: 'Alle anzeigen',
 
                 table: {
                     fields: 'Felder',
-                    nullable: 'Nullable?',
                     primary_key: 'Primärschlüssel',
                     indexes: 'Indizes',
                     check_constraints: 'Prüfbedingungen',
@@ -194,7 +181,6 @@ export const de: LanguageTranslation = {
                 relationships: 'Beziehungen',
                 dependencies: 'Abhängigkeiten',
                 relationship: {
-                    relationship: 'Beziehung',
                     primary: 'Primäre Tabelle',
                     foreign: 'Verknüpfte Tabelle',
                     cardinality: 'Kardinalität',
@@ -206,7 +192,6 @@ export const de: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'Abhängigkeit',
                     table: 'Tabelle',
                     dependent_table: 'Abhängige Ansicht',
                     delete_dependency: 'Löschen',
@@ -264,7 +249,6 @@ export const de: LanguageTranslation = {
                     empty_note: 'Leere Notiz',
                     note_actions: {
                         title: 'Notiz-Aktionen',
-                        edit_content: 'Inhalt bearbeiten',
                         delete_note: 'Notiz löschen',
                     },
                 },
@@ -307,14 +291,12 @@ export const de: LanguageTranslation = {
         toolbar: {
             zoom_in: 'Vergrößern',
             zoom_out: 'Verkleinern',
-            save: 'Speichern',
             show_all: 'Alle anzeigen',
             undo: 'Rückgängig',
             redo: 'Wiederholen',
             reorder_diagram: 'Diagramm automatisch anordnen',
 
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'Überlappende Tabellen hervorheben',
@@ -335,7 +317,6 @@ export const de: LanguageTranslation = {
                 database_edition: 'Datenbank Edition:',
                 step_1: 'Führen Sie dieses Skript in Ihrer Datenbank aus:',
                 step_2: 'Fügen Sie das Skriptergebnis hier ein →',
-                script_results_placeholder: 'Skriptergebnisse hier...',
                 ssms_instructions: {
                     button_text: 'SSMS Anweisungen',
                     title: 'Anweisungen',
@@ -408,19 +389,14 @@ export const de: LanguageTranslation = {
         import_database_dialog: {
             title: 'In aktuelles Diagramm importieren',
             override_alert: {
-                title: 'Datenbank importieren',
                 content: {
-                    alert: 'Das Importieren dieses Diagramms wird vorhandene Tabellen und Beziehungen beeinflussen.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> neue Tabellen werden hinzugefügt.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> neue Beziehungen werden erstellt.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> Tabellen werden überschrieben.',
-                    proceed: 'Möchten Sie fortfahren?',
                 },
-                import: 'Importieren',
-                cancel: 'Abbrechen',
             },
         },
 
@@ -489,22 +465,13 @@ export const de: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'Ein zu Eins (1:1)',
             one_to_many: 'Ein zu Viele (1:n)',
-            many_to_one: 'Viele zu Eins (n:1)',
         },
 
         canvas_context_menu: {

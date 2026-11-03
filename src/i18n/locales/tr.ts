@@ -7,7 +7,6 @@ export const tr: LanguageTranslation = {
             browse: 'Aç',
             tables: 'Tablolar',
             refs: 'Refs',
-            dependencies: 'Bağımlılıklar',
             custom_types: 'Özel Tipler',
             visuals: 'Görseller',
         },
@@ -37,8 +36,6 @@ export const tr: LanguageTranslation = {
                 zoom_on_scroll: 'Kaydırarak Yakınlaştır',
                 show_views: 'Veritabanı Görünümleri',
                 theme: 'Tema',
-                show_dependencies: 'Bağımlılıkları Göster',
-                hide_dependencies: 'Bağımlılıkları Gizle',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -49,11 +46,7 @@ export const tr: LanguageTranslation = {
                 export_diagram: 'Export Diagram',
                 restore_diagram: 'Restore Diagram',
             },
-            help: {
-                help: 'Yardım',
-                docs_website: 'Belgeleme',
-                join_discord: "Discord'a Katıl",
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -102,8 +95,6 @@ export const tr: LanguageTranslation = {
             off: 'Kapalı',
         },
 
-        last_saved: 'Son kaydedilen',
-        saved: 'Kaydedildi',
         loading_diagram: 'Diyagram yükleniyor...',
         deselect_all: 'Hepsini Seçme',
         select_all: 'Hepsini Seç',
@@ -119,19 +110,15 @@ export const tr: LanguageTranslation = {
                 add_table: 'Tablo Ekle',
                 add_view: 'Görünüm Ekle',
                 filter: 'Filtrele',
-                collapse: 'Hepsini Daralt',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'Tüm tablolar gizli',
                 show_all: 'Tümünü göster',
 
                 table: {
                     fields: 'Alanlar',
-                    nullable: 'Boş Bırakılabilir?',
                     primary_key: 'Birincil Anahtar',
                     indexes: 'İndeksler',
                     check_constraints: 'Kontrol Kısıtlamaları',
@@ -194,7 +181,6 @@ export const tr: LanguageTranslation = {
                 relationships: 'İlişkiler',
                 dependencies: 'Bağımlılıklar',
                 relationship: {
-                    relationship: 'İlişki',
                     primary: 'Birincil Tablo',
                     foreign: 'İlişkili Tablo',
                     cardinality: 'Kardinalite',
@@ -206,7 +192,6 @@ export const tr: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'Bağımlılık',
                     table: 'Tablo',
                     dependent_table: 'Bağımlı Görünüm',
                     delete_dependency: 'Sil',
@@ -263,7 +248,6 @@ export const tr: LanguageTranslation = {
                     empty_note: 'Boş not',
                     note_actions: {
                         title: 'Not İşlemleri',
-                        edit_content: 'İçeriği Düzenle',
                         delete_note: 'Notu Sil',
                     },
                 },
@@ -303,13 +287,11 @@ export const tr: LanguageTranslation = {
         toolbar: {
             zoom_in: 'Yakınlaştır',
             zoom_out: 'Uzaklaştır',
-            save: 'Kaydet',
             show_all: 'Hepsini Gör',
             undo: 'Geri Al',
             redo: 'Yinele',
             reorder_diagram: 'Diyagramı Otomatik Düzenle',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'Çakışan Tabloları Vurgula',
@@ -328,7 +310,6 @@ export const tr: LanguageTranslation = {
                 database_edition: 'Veritabanı Sürümü:',
                 step_1: 'Bu komut dosyasını veritabanınızda çalıştırın:',
                 step_2: 'Komut dosyası sonucunu buraya yapıştırın →',
-                script_results_placeholder: 'Komut dosyası sonuçları burada...',
                 ssms_instructions: {
                     button_text: 'SSMS Talimatları',
                     title: 'Talimatlar',
@@ -398,19 +379,14 @@ export const tr: LanguageTranslation = {
         import_database_dialog: {
             title: 'Mevcut Diyagrama İçe Aktar',
             override_alert: {
-                title: 'Veritabanını İçe Aktar',
                 content: {
-                    alert: 'Bu diyagramı içe aktarmak mevcut tabloları ve ilişkileri etkileyecektir.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> yeni tablo eklenecek.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> yeni ilişki oluşturulacak.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> tablo üzerine yazılacak.',
-                    proceed: 'Devam etmek istiyor musunuz?',
                 },
-                import: 'İçe Aktar',
-                cancel: 'İptal',
             },
         },
         export_image_dialog: {
@@ -476,22 +452,13 @@ export const tr: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'Bir Bir',
             one_to_many: 'Bir Çok',
-            many_to_one: 'Çok Bir',
         },
         canvas_context_menu: {
             new_table: 'Yeni Tablo',

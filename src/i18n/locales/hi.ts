@@ -7,7 +7,6 @@ export const hi: LanguageTranslation = {
             browse: 'खोलें',
             tables: 'टेबल',
             refs: 'रेफ्स',
-            dependencies: 'निर्भरताएं',
             custom_types: 'कस्टम टाइप',
             visuals: 'Visuals',
         },
@@ -37,8 +36,6 @@ export const hi: LanguageTranslation = {
                 zoom_on_scroll: 'स्क्रॉल पर ज़ूम',
                 show_views: 'डेटाबेस व्यू',
                 theme: 'थीम',
-                show_dependencies: 'निर्भरता दिखाएँ',
-                hide_dependencies: 'निर्भरता छिपाएँ',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -48,11 +45,7 @@ export const hi: LanguageTranslation = {
                 export_diagram: 'आरेख निर्यात करें',
                 restore_diagram: 'आरेख पुनर्स्थापित करें',
             },
-            help: {
-                help: 'मदद',
-                docs_website: 'દસ્તાવેજીકરણ',
-                join_discord: 'हमसे Discord पर जुड़ें',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -101,8 +94,6 @@ export const hi: LanguageTranslation = {
             off: 'बंद',
         },
 
-        last_saved: 'अंतिम सहेजा गया',
-        saved: 'सहेजा गया',
         loading_diagram: 'आरेख लोड हो रहा है...',
         deselect_all: 'सभी को अचयनित करें',
         select_all: 'सभी को चुनें',
@@ -120,19 +111,15 @@ export const hi: LanguageTranslation = {
                 add_table: 'तालिका जोड़ें',
                 add_view: 'व्यू जोड़ें',
                 filter: 'फ़िल्टर',
-                collapse: 'सभी को संक्षिप्त करें',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'सभी तालिकाएँ छिपी हुई हैं',
                 show_all: 'सभी दिखाएं',
 
                 table: {
                     fields: 'फ़ील्ड्स',
-                    nullable: 'Nullable?',
                     primary_key: 'प्राथमिक कुंजी',
                     indexes: 'सूचकांक',
                     check_constraints: 'जाँच प्रतिबंध',
@@ -194,7 +181,6 @@ export const hi: LanguageTranslation = {
                 relationships: 'संबंध',
                 dependencies: 'निर्भरताएँ',
                 relationship: {
-                    relationship: 'संबंध',
                     primary: 'प्राथमिक तालिका',
                     foreign: 'संबंधित तालिका',
                     cardinality: 'कार्डिनैलिटी',
@@ -206,7 +192,6 @@ export const hi: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'निर्भरता',
                     table: 'तालिका',
                     dependent_table: 'आश्रित दृश्य',
                     delete_dependency: 'हटाएँ',
@@ -264,7 +249,6 @@ export const hi: LanguageTranslation = {
                     empty_note: 'खाली नोट',
                     note_actions: {
                         title: 'नोट क्रियाएं',
-                        edit_content: 'सामग्री संपादित करें',
                         delete_note: 'नोट हटाएं',
                     },
                 },
@@ -307,13 +291,11 @@ export const hi: LanguageTranslation = {
         toolbar: {
             zoom_in: 'ज़ूम इन',
             zoom_out: 'ज़ूम आउट',
-            save: 'सहेजें',
             show_all: 'सभी दिखाएँ',
             undo: 'पूर्ववत करें',
             redo: 'पुनः करें',
             reorder_diagram: 'आरेख स्वचालित व्यवस्थित करें',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'ओवरलैपिंग तालिकाओं को हाइलाइट करें',
@@ -334,7 +316,6 @@ export const hi: LanguageTranslation = {
                 database_edition: 'डेटाबेस संस्करण:',
                 step_1: 'अपने डेटाबेस में यह स्क्रिप्ट चलाएँ:',
                 step_2: 'यहाँ स्क्रिप्ट का परिणाम पेस्ट करें →',
-                script_results_placeholder: 'स्क्रिप्ट के परिणाम यहाँ...',
                 ssms_instructions: {
                     button_text: 'SSMS निर्देश',
                     title: 'निर्देश',
@@ -408,19 +389,14 @@ export const hi: LanguageTranslation = {
         import_database_dialog: {
             title: 'वर्तमान आरेख में आयात करें',
             override_alert: {
-                title: 'डेटाबेस आयात करें',
                 content: {
-                    alert: 'इस आरेख को आयात करने से मौजूदा तालिकाओं और संबंधों पर प्रभाव पड़ेगा।',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> नई तालिकाएँ जोड़ी जाएँगी।',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> नए संबंध बनाए जाएँगे।',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> तालिकाएँ अधिलेखित की जाएँगी।',
-                    proceed: 'क्या आप जारी रखना चाहते हैं?',
                 },
-                import: 'आयात करें',
-                cancel: 'रद्द करें',
             },
         },
 
@@ -490,22 +466,13 @@ export const hi: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'एक से एक',
             one_to_many: 'एक से कई',
-            many_to_one: 'कई से एक',
         },
 
         canvas_context_menu: {

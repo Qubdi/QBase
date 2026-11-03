@@ -140,10 +140,6 @@ export interface SQLBooleanNode extends SQLASTNode {
     value: boolean;
 }
 
-export interface SQLNullNode extends SQLASTNode {
-    type: 'null';
-}
-
 export interface SQLNumberNode extends SQLASTNode {
     type: 'number';
     value: number;

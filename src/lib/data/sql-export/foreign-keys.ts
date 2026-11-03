@@ -18,7 +18,7 @@ export interface ForeignKey {
     problem?: string;
 }
 
-const sameSet = (a: string[], b: string[]) =>
+export const sameSet = (a: string[], b: string[]) =>
     a.length === b.length && a.every((x) => b.includes(x));
 
 /** Whether the fields identify a row of the table by themselves. */

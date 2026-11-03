@@ -7,7 +7,6 @@ export const gu: LanguageTranslation = {
             browse: 'ખોલો',
             tables: 'ટેબલો',
             refs: 'રેફ્સ',
-            dependencies: 'નિર્ભરતાઓ',
             custom_types: 'કસ્ટમ ટાઇપ',
             visuals: 'Visuals',
         },
@@ -37,8 +36,6 @@ export const gu: LanguageTranslation = {
                 zoom_on_scroll: 'સ્ક્રોલ પર ઝૂમ કરો',
                 show_views: 'ડેટાબેઝ વ્યૂઝ',
                 theme: 'થિમ',
-                show_dependencies: 'નિર્ભરતાઓ બતાવો',
-                hide_dependencies: 'નિર્ભરતાઓ છુપાવો',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -49,11 +46,7 @@ export const gu: LanguageTranslation = {
                 export_diagram: 'ડાયાગ્રામ નિકાસ કરો',
                 restore_diagram: 'ડાયાગ્રામ પુનઃસ્થાપિત કરો',
             },
-            help: {
-                help: 'મદદ',
-                docs_website: 'દસ્તાવેજીકરણ',
-                join_discord: 'અમારા Discordમાં જોડાઓ',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -102,8 +95,6 @@ export const gu: LanguageTranslation = {
             off: 'બંધ',
         },
 
-        last_saved: 'છેલ્લે સાચવ્યું',
-        saved: 'સાચવ્યું',
         loading_diagram: 'ડાયાગ્રામ લોડ થઈ રહ્યું છે...',
         deselect_all: 'બધાને ડીસેલેક્ટ કરો',
         select_all: 'બધા પસંદ કરો',
@@ -120,20 +111,16 @@ export const gu: LanguageTranslation = {
                 add_table: 'ટેબલ ઉમેરો',
                 add_view: 'વ્યૂ ઉમેરો',
                 filter: 'ફિલ્ટર',
-                collapse: 'બધાને સકુચિત કરો',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'બધી ટેબલ્સ છુપાયેલી છે',
                 show_all: 'બધું બતાવો',
 
                 table: {
                     fields: 'ફીલ્ડ્સ',
                     //TODO translate
-                    nullable: 'Nullable?',
                     primary_key: 'પ્રાથમિક કી',
                     indexes: 'ઈન્ડેક્સ',
                     check_constraints: 'ચકાસણી નિયંત્રણો',
@@ -195,7 +182,6 @@ export const gu: LanguageTranslation = {
                 relationships: 'સંબંધો',
                 dependencies: 'નિર્ભરતાઓ',
                 relationship: {
-                    relationship: 'સંબંધ',
                     primary: 'પ્રાથમિક ટેબલ',
                     foreign: 'સંબંધિત ટેબલ',
                     cardinality: 'કાર્ડિનાલિટી',
@@ -207,7 +193,6 @@ export const gu: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'નિર્ભરતા',
                     table: 'ટેબલ',
                     dependent_table: 'નિર્ભરશીલ વ્યૂ',
                     delete_dependency: 'કાઢી નાખો',
@@ -264,7 +249,6 @@ export const gu: LanguageTranslation = {
                     empty_note: 'ખાલી નોંધ',
                     note_actions: {
                         title: 'નોંધ ક્રિયાઓ',
-                        edit_content: 'સામગ્રી સંપાદિત કરો',
                         delete_note: 'નોંધ કાઢી નાખો',
                     },
                 },
@@ -306,13 +290,11 @@ export const gu: LanguageTranslation = {
         toolbar: {
             zoom_in: 'ઝૂમ ઇન',
             zoom_out: 'ઝૂમ આઉટ',
-            save: 'સાચવો',
             show_all: 'બધું બતાવો',
             undo: 'અનડુ',
             redo: 'રીડુ',
             reorder_diagram: 'ડાયાગ્રામ ઑટોમેટિક ગોઠવો',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'ઓવરલેપ કરતો ટેબલ હાઇલાઇટ કરો',
@@ -332,7 +314,6 @@ export const gu: LanguageTranslation = {
                 database_edition: 'ડેટાબેસ આવૃત્તિ:',
                 step_1: 'તમારા ડેટાબેસમાં આ સ્ક્રિપ્ટ ચલાવો:',
                 step_2: 'સ્ક્રિપ્ટનો પરિણામ અહીં પેસ્ટ કરો →',
-                script_results_placeholder: 'સ્ક્રિપ્ટના પરિણામ અહીં...',
                 ssms_instructions: {
                     button_text: 'SSMS સૂચનાઓ',
                     title: 'સૂચનાઓ',
@@ -404,19 +385,14 @@ export const gu: LanguageTranslation = {
         import_database_dialog: {
             title: 'વર્તમાન ડાયાગ્રામમાં આયાત કરો',
             override_alert: {
-                title: 'ડેટાબેસ આયાત કરો',
                 content: {
-                    alert: 'આ ડાયાગ્રામ આયાત કરવાથી હાલના ટેબલ્સ અને સંબંધો પર અસર થશે.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> નવા ટેબલ ઉમેરવામાં આવશે.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> નવા સંબંધો બનાવવામાં આવશે.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> ટેબલ ઓવરરાઇટ કરાશે.',
-                    proceed: 'શું તમે આગળ વધવા માંગો છો?',
                 },
-                import: 'આયાત કરો',
-                cancel: 'રદ કરો',
             },
         },
 
@@ -485,22 +461,13 @@ export const gu: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'એકથી એક',
             one_to_many: 'એકથી ઘણા',
-            many_to_one: 'ઘણા થી એક',
         },
 
         canvas_context_menu: {

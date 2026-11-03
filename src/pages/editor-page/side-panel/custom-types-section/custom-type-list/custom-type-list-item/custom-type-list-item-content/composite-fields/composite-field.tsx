@@ -6,11 +6,6 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDiagram } from '@/hooks/use-diagram';
 
-export interface CompositeFieldProps {
-    field: DBCustomTypeField;
-    onRemove: () => void;
-}
-
 export const CompositeField: React.FC<{
     field: DBCustomTypeField;
     onRemove: () => void;

@@ -21,32 +21,10 @@ export const postgresDataTypes: readonly DataTypeData[] = [
     // Level 2 - Second most common types
     { name: 'bigint', id: 'bigint', usageLevel: 2 },
     // { name: 'int8', id: 'int8', usageLevel: 2 },
-    // {
-    //     name: 'decimal',
-    //     id: 'decimal',
-    //     usageLevel: 2,
-    //     fieldAttributes: {
-    //         precision: {
-    //             max: 131072,
-    //             min: 0,
-    //             default: 10,
-    //         },
-    //         scale: {
-    //             max: 16383,
-    //             min: 0,
-    //             default: 2,
-    //         },
-    //     },
-    // },
     { name: 'serial', id: 'serial', usageLevel: 2 },
     { name: 'json', id: 'json', usageLevel: 2 },
     { name: 'jsonb', id: 'jsonb', usageLevel: 2 },
     { name: 'uuid', id: 'uuid', usageLevel: 2 },
-    // {
-    //     name: 'timestamp with time zone',
-    //     id: 'timestamp_with_time_zone',
-    //     usageLevel: 2,
-    // },
     // { name: 'int', id: 'int', usageLevel: 2 },
 
     // Less common types
@@ -77,16 +55,6 @@ export const postgresDataTypes: readonly DataTypeData[] = [
     { name: 'smallint', id: 'smallint' },
     // { name: 'int2', id: 'int2' },
     { name: 'char', id: 'char', fieldAttributes: { hasCharMaxLength: true } },
-    // {
-    //     name: 'character',
-    //     id: 'character',
-    //     fieldAttributes: { hasCharMaxLength: true },
-    // },
-    // {
-    //     name: 'character varying',
-    //     id: 'character_varying',
-    //     fieldAttributes: { hasCharMaxLength: true },
-    // },
     { name: 'time', id: 'time' },
     { name: 'timetz', id: 'timetz' },
     // { name: 'timestamp without time zone', id: 'timestamp_without_time_zone' },

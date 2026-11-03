@@ -16,11 +16,6 @@ const fetchAvailable = (): Promise<boolean> => {
     return known;
 };
 
-/** Forgets the answer, for tests. */
-export const resetMfaAvailable = () => {
-    known = null;
-};
-
 /**
  * Whether the server offers two-factor sign-in (it is switched on and has a
  * key). Until that is known, and when the server cannot be asked, it is not

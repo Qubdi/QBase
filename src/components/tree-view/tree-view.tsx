@@ -257,9 +257,6 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                     if (selectable && !node.unselectable) {
                         onSelect(node);
                     }
-                    // if (node.isFolder) {
-                    //     onToggle(node.id, node.children);
-                    // }
 
                     // called only once in case of double click
                     if (e.detail !== 2) {

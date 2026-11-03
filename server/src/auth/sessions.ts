@@ -1,6 +1,7 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { and, eq, gt, ne, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
+import { hashToken } from '../share/tokens.js';
 import { diagramLocks, sessions, users } from '../db/schema.js';
 
 export const SESSION_COOKIE = 'qbase_session';
@@ -23,9 +24,6 @@ export interface SessionUser {
     /** two-factor sign-in is on for this account */
     mfaEnabled: boolean;
 }
-
-const hashToken = (token: string) =>
-    createHash('sha256').update(token).digest('hex');
 
 /**
  * Starts a session. A user has one live session at a time: signing in ends

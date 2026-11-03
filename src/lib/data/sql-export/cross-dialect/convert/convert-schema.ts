@@ -9,7 +9,11 @@ import type { Diagram } from '@/lib/domain/diagram';
 import type { DBField } from '@/lib/domain/db-field';
 import type { DBTable } from '@/lib/domain/db-table';
 import { escapeSQLComment } from '../common';
-import { collectForeignKeys, type ForeignKey } from '../../foreign-keys';
+import {
+    collectForeignKeys,
+    sameSet,
+    type ForeignKey,
+} from '../../foreign-keys';
 import {
     parseSourceType,
     sourceDialectOf,
@@ -115,9 +119,6 @@ const stringLiteral = (
     const body = `'${value.replace(/'/g, "''")}'`;
     return target === 'sqlserver' && unicode ? `N${body}` : body;
 };
-
-const sameSet = (a: string[], b: string[]) =>
-    a.length === b.length && a.every((x) => b.includes(x));
 
 interface Column {
     field: DBField;

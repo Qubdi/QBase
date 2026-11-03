@@ -7,7 +7,6 @@ export const zh_CN: LanguageTranslation = {
             browse: '打开',
             tables: '表',
             refs: '引用',
-            dependencies: '依赖关系',
             custom_types: '自定义类型',
             visuals: '视觉效果',
         },
@@ -37,8 +36,6 @@ export const zh_CN: LanguageTranslation = {
                 zoom_on_scroll: '滚动缩放',
                 show_views: '数据库视图',
                 theme: '主题',
-                show_dependencies: '展示依赖',
-                hide_dependencies: '隐藏依赖',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -48,11 +45,7 @@ export const zh_CN: LanguageTranslation = {
                 export_diagram: '导出关系图',
                 restore_diagram: '还原图表',
             },
-            help: {
-                help: '帮助',
-                docs_website: '文档',
-                join_discord: '在 Discord 上加入我们',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -98,8 +91,6 @@ export const zh_CN: LanguageTranslation = {
             off: '禁用',
         },
 
-        last_saved: '上次保存时间：',
-        saved: '已保存',
         loading_diagram: '加载关系图...',
         deselect_all: '取消全选',
         select_all: '全选',
@@ -116,19 +107,15 @@ export const zh_CN: LanguageTranslation = {
                 add_table: '添加表',
                 add_view: '添加视图',
                 filter: '筛选',
-                collapse: '全部折叠',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: '所有表格已隐藏',
                 show_all: '显示全部',
 
                 table: {
                     fields: '字段',
-                    nullable: '可为空？',
                     primary_key: '主键',
                     indexes: '索引',
                     check_constraints: '检查约束',
@@ -190,7 +177,6 @@ export const zh_CN: LanguageTranslation = {
                 relationships: '关系',
                 dependencies: '依赖关系',
                 relationship: {
-                    relationship: '关系',
                     primary: '主表',
                     foreign: '关联表',
                     cardinality: '基数',
@@ -202,7 +188,6 @@ export const zh_CN: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: '依赖',
                     table: '表',
                     dependent_table: '依赖视图',
                     delete_dependency: '删除',
@@ -258,7 +243,6 @@ export const zh_CN: LanguageTranslation = {
                     empty_note: '空笔记',
                     note_actions: {
                         title: '笔记操作',
-                        edit_content: '编辑内容',
                         delete_note: '删除笔记',
                     },
                 },
@@ -299,13 +283,11 @@ export const zh_CN: LanguageTranslation = {
         toolbar: {
             zoom_in: '放大',
             zoom_out: '缩小',
-            save: '保存',
             show_all: '展示全部',
             undo: '撤销',
             redo: '重做',
             reorder_diagram: '自动排列关系图',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: '突出显示重叠的表',
@@ -325,7 +307,6 @@ export const zh_CN: LanguageTranslation = {
                 database_edition: '数据库类型：',
                 step_1: '在您的数据库中执行以下脚本：',
                 step_2: '将结果粘贴于此 →',
-                script_results_placeholder: '结果...',
                 ssms_instructions: {
                     button_text: 'SSMS 说明',
                     title: '说明',
@@ -397,19 +378,14 @@ export const zh_CN: LanguageTranslation = {
         import_database_dialog: {
             title: '导入到当前关系图',
             override_alert: {
-                title: '导入数据库',
                 content: {
-                    alert: '导入此关系图将影响现有的表和关系。',
                     new_tables:
                         '将添加 <bold>{{newTablesNumber}}</bold> 个新表。',
                     new_relationships:
                         '将创建 <bold>{{newRelationshipsNumber}}</bold> 个新关系。',
                     tables_override:
                         '将覆盖 <bold>{{tablesOverrideNumber}}</bold> 个表。',
-                    proceed: '您是否要继续操作？',
                 },
-                import: '导入',
-                cancel: '取消',
             },
         },
 
@@ -477,22 +453,13 @@ export const zh_CN: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: '一对一',
             one_to_many: '一对多',
-            many_to_one: '多对一',
         },
 
         canvas_context_menu: {

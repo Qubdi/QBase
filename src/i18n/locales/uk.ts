@@ -7,7 +7,6 @@ export const uk: LanguageTranslation = {
             browse: 'Відкрити',
             tables: 'Таблиці',
             refs: 'Зв’язки',
-            dependencies: 'Залежності',
             custom_types: 'Користувацькі типи',
             visuals: 'Візуальні елементи',
         },
@@ -37,8 +36,6 @@ export const uk: LanguageTranslation = {
                 zoom_on_scroll: 'Масштабувати прокручуванням',
                 show_views: 'Представлення бази даних',
                 theme: 'Тема',
-                show_dependencies: 'Показати залежності',
-                hide_dependencies: 'Приховати залежності',
                 show_minimap: 'Показати мінімапу',
                 hide_minimap: 'Приховати мінімапу',
             },
@@ -47,11 +44,7 @@ export const uk: LanguageTranslation = {
                 export_diagram: 'Експорт діаграми',
                 restore_diagram: 'Відновити діаграму',
             },
-            help: {
-                help: 'Довідка',
-                docs_website: 'Документація',
-                join_discord: 'Приєднуйтесь до нас в Діскорд',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -100,8 +93,6 @@ export const uk: LanguageTranslation = {
             off: 'Вимкнути',
         },
 
-        last_saved: 'Востаннє збережено',
-        saved: 'Збережено',
         loading_diagram: 'Завантаження діаграми…',
         deselect_all: 'Зняти виділення з усіх',
         select_all: 'Вибрати усі',
@@ -118,19 +109,15 @@ export const uk: LanguageTranslation = {
                 add_table: 'Додати таблицю',
                 add_view: 'Додати представлення',
                 filter: 'Фільтр',
-                collapse: 'Згорнути все',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'Всі таблиці приховані',
                 show_all: 'Показати все',
 
                 table: {
                     fields: 'Поля',
-                    nullable: 'Може бути Null?',
                     primary_key: 'Первинний ключ',
                     indexes: 'Індекси',
                     check_constraints: 'Перевірочні обмеження',
@@ -192,7 +179,6 @@ export const uk: LanguageTranslation = {
                 relationships: 'Звʼязки',
                 dependencies: 'Залежності',
                 relationship: {
-                    relationship: 'Звʼязок',
                     primary: 'Первинна таблиця',
                     foreign: 'Повʼязана таблиця',
                     cardinality: 'Звʼязок',
@@ -204,7 +190,6 @@ export const uk: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'Залежність',
                     table: 'Таблиця',
                     dependent_table: 'Залежне подання',
                     delete_dependency: 'Видалити',
@@ -262,7 +247,6 @@ export const uk: LanguageTranslation = {
                     empty_note: 'Порожня нотатка',
                     note_actions: {
                         title: 'Дії з Нотаткою',
-                        edit_content: 'Редагувати Вміст',
                         delete_note: 'Видалити Нотатку',
                     },
                 },
@@ -305,13 +289,11 @@ export const uk: LanguageTranslation = {
         toolbar: {
             zoom_in: 'Збільшити',
             zoom_out: 'Зменшити',
-            save: 'Зберегти',
             show_all: 'Показати все',
             undo: 'Скасувати',
             redo: 'Повторити',
             reorder_diagram: 'Автоматичне розміщення діаграми',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'Показати таблиці, що перекриваються',
@@ -332,7 +314,6 @@ export const uk: LanguageTranslation = {
                 database_edition: 'Варіант бази даних:',
                 step_1: 'Запустіть цей сценарій у своїй базі даних:',
                 step_2: 'Вставте сюди результат сценарію →',
-                script_results_placeholder: 'Результати сценарію має бути тут…',
                 ssms_instructions: {
                     button_text: 'SSMS Інструкції',
                     title: 'Інструкції',
@@ -405,19 +386,14 @@ export const uk: LanguageTranslation = {
         import_database_dialog: {
             title: 'Імпорт до поточної діаграми',
             override_alert: {
-                title: 'Імпорт бази даних',
                 content: {
-                    alert: 'Імпортування цієї діаграми вплине на наявні таблиці та зв’язки.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> будуть додані нові таблиці.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> будуть створені нові звʼязки.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> таблиці будуть перезаписані.',
-                    proceed: 'Ви хочете продовжити?',
                 },
-                import: 'Імпортувати',
-                cancel: 'Скасувати',
             },
         },
 
@@ -485,22 +461,13 @@ export const uk: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'Один до Одного',
             one_to_many: 'Один до Багатьох',
-            many_to_one: 'Багато до Одного',
         },
 
         canvas_context_menu: {

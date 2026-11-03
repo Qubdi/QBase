@@ -7,7 +7,6 @@ export const ru: LanguageTranslation = {
             browse: 'Открыть',
             tables: 'Таблицы',
             refs: 'Ссылки',
-            dependencies: 'Зависимости',
             custom_types: 'Пользовательские типы',
             visuals: 'Визуальные элементы',
         },
@@ -37,8 +36,6 @@ export const ru: LanguageTranslation = {
                 zoom_on_scroll: 'Увеличение при прокрутке',
                 show_views: 'Представления базы данных',
                 theme: 'Тема',
-                show_dependencies: 'Показать зависимости',
-                hide_dependencies: 'Скрыть зависимости',
                 show_minimap: 'Показать мини-карту',
                 hide_minimap: 'Скрыть мини-карту',
             },
@@ -47,11 +44,7 @@ export const ru: LanguageTranslation = {
                 export_diagram: 'Экспорт диаграммы',
                 restore_diagram: 'Восстановить диаграмму',
             },
-            help: {
-                help: 'Помощь',
-                docs_website: 'Документация',
-                join_discord: 'Присоединиться к сообществу в Discord',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -101,8 +94,6 @@ export const ru: LanguageTranslation = {
             off: 'Выключено',
         },
 
-        last_saved: 'Последнее сохранение',
-        saved: 'Сохранено',
         loading_diagram: 'Загрузка диаграммы...',
         deselect_all: 'Отменить выбор всех',
         select_all: 'Выбрать все',
@@ -117,19 +108,15 @@ export const ru: LanguageTranslation = {
                 add_table: 'Добавить таблицу',
                 add_view: 'Добавить представление',
                 filter: 'Фильтр',
-                collapse: 'Свернуть все',
                 clear: 'Очистить фильтр',
 
                 no_results:
                     'Таблицы не найдены, соответствующие вашему фильтру.',
-                show_list: 'Переключиться на список таблиц',
-                show_dbml: 'Переключиться на редактор DBML',
                 all_hidden: 'Все таблицы скрыты',
                 show_all: 'Показать все',
 
                 table: {
                     fields: 'Поля',
-                    nullable: 'Может быть NULL?',
                     primary_key: 'Первичный ключ',
                     indexes: 'Индексы',
                     check_constraints: 'Проверочные ограничения',
@@ -190,7 +177,6 @@ export const ru: LanguageTranslation = {
                 relationships: 'Отношения',
                 dependencies: 'Зависимости',
                 relationship: {
-                    relationship: 'Отношение',
                     primary: 'Основная таблица',
                     foreign: 'Связанная таблица',
                     cardinality: 'Тип множественной связи',
@@ -202,7 +188,6 @@ export const ru: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'Зависимость',
                     table: 'Таблица',
                     dependent_table: 'Зависимое представление',
                     delete_dependency: 'Удалить',
@@ -261,7 +246,6 @@ export const ru: LanguageTranslation = {
                     empty_note: 'Пустая заметка',
                     note_actions: {
                         title: 'Действия с Заметкой',
-                        edit_content: 'Редактировать Содержимое',
                         delete_note: 'Удалить Заметку',
                     },
                 },
@@ -304,13 +288,11 @@ export const ru: LanguageTranslation = {
         toolbar: {
             zoom_in: 'Увеличить масштаб',
             zoom_out: 'Уменьшить масштаб',
-            save: 'Сохранить',
             show_all: 'Показать все',
             undo: 'Отменить',
             redo: 'Вернуть',
             reorder_diagram: 'Автоматическая расстановка диаграммы',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'Выделение перекрывающихся таблиц',
@@ -331,7 +313,6 @@ export const ru: LanguageTranslation = {
                 database_edition: 'Версия базы данных:',
                 step_1: 'Запустите этот скрипт в своей базе данных:',
                 step_2: 'Вставьте вывод скрипта сюда →',
-                script_results_placeholder: 'Вывод скрипта здесь...',
                 ssms_instructions: {
                     button_text: 'SSMS Инструкции',
                     title: 'Инструкции',
@@ -404,19 +385,14 @@ export const ru: LanguageTranslation = {
         import_database_dialog: {
             title: 'Импорт в текущую диаграмму',
             override_alert: {
-                title: 'Импортировать базу данных',
                 content: {
-                    alert: 'Импорт этой диаграммы повлияет на существующие таблицы и связи.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> будут добавлены новые таблицы.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> будут созданы новые отношения.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> таблицы будут перезаписаны.',
-                    proceed: 'Хотите продолжить?',
                 },
-                import: 'Импорт',
-                cancel: 'Отмена',
             },
         },
 
@@ -483,16 +459,7 @@ export const ru: LanguageTranslation = {
             },
         },
         import_dbml_dialog: {
-            example_title: 'Импорт DBML',
-            title: 'Импортировать DBML',
-            description: 'Импортировать схему базы данных из DBML формата.',
-            import: 'Импортировать',
-            cancel: 'Отмена',
-            skip_and_empty: 'Продолжить с пустой диаграммой',
-            show_example: 'Использовать эту схему',
-
             error: {
-                title: 'Ошибка',
                 description:
                     'Ошибка парсинга DBML. Пожалуйста проверьте синтаксис.',
             },
@@ -500,7 +467,6 @@ export const ru: LanguageTranslation = {
         relationship_type: {
             one_to_one: 'Один к одному',
             one_to_many: 'Один ко многим',
-            many_to_one: 'Многие к одному',
         },
 
         canvas_context_menu: {

@@ -182,34 +182,6 @@ export function getTypeArgs(
 }
 
 // Helper function to find a table with consistent schema handling
-export function findTableWithSchemaSupport(
-    tables: TableLike[],
-    tableName: string,
-    schemaName?: string
-): TableLike | undefined {
-    // Default to public schema if none provided
-    const effectiveSchema = schemaName || 'public';
-
-    // First try with exact schema match
-    let table = tables.find(
-        (t) => t.name === tableName && t.schema === effectiveSchema
-    );
-
-    // If not found with schema, try with the legacy schema match
-    if (!table && schemaName) {
-        table = tables.find(
-            (t) => t.name === tableName && t.schema === schemaName
-        );
-    }
-
-    // If still not found with schema, try any match on the table name
-    if (!table) {
-        table = tables.find((t) => t.name === tableName);
-    }
-
-    return table;
-}
-
 // Helper function to find table ID with schema support
 export function getTableIdWithSchemaSupport(
     tableMap: Record<string, string>,

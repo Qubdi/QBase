@@ -500,6 +500,3 @@ export function renderType(
             return toSQLite(canon);
     }
 }
-
-/** True for the types SQL Server and MySQL will not let a number-generating column use. */
-export const isIntegerLike = (c: Canon): boolean => c.kind === 'int';

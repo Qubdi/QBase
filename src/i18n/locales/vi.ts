@@ -7,7 +7,6 @@ export const vi: LanguageTranslation = {
             browse: 'Mở',
             tables: 'Bảng',
             refs: 'Refs',
-            dependencies: 'Phụ thuộc',
             custom_types: 'Kiểu tùy chỉnh',
             visuals: 'Hình ảnh',
         },
@@ -37,8 +36,6 @@ export const vi: LanguageTranslation = {
                 zoom_on_scroll: 'Thu phóng khi cuộn',
                 show_views: 'Chế độ xem Cơ sở dữ liệu',
                 theme: 'Chủ đề',
-                show_dependencies: 'Hiển thị các phụ thuộc',
-                hide_dependencies: 'Ẩn các phụ thuộc',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -48,11 +45,7 @@ export const vi: LanguageTranslation = {
                 export_diagram: 'Xuất sơ đồ',
                 restore_diagram: 'Khôi phục sơ đồ',
             },
-            help: {
-                help: 'Trợ giúp',
-                docs_website: 'Tài liệu',
-                join_discord: 'Tham gia Discord',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -101,8 +94,6 @@ export const vi: LanguageTranslation = {
             off: 'Tất',
         },
 
-        last_saved: 'Đã lưu lần cuối',
-        saved: 'Đã lưu',
         loading_diagram: 'Đang tải sơ đồ...',
         deselect_all: 'Bỏ chọn tất cả',
         select_all: 'Chọn tất cả',
@@ -119,19 +110,15 @@ export const vi: LanguageTranslation = {
                 add_table: 'Thêm bảng',
                 add_view: 'Thêm Chế độ xem',
                 filter: 'Lọc',
-                collapse: 'Thu gọn tất cả',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'Tất cả bảng đã bị ẩn',
                 show_all: 'Hiển thị tất cả',
 
                 table: {
                     fields: 'Trường',
-                    nullable: 'Có thể NULL?',
                     primary_key: 'Khóa chính',
                     indexes: 'Chỉ mục',
                     check_constraints: 'Ràng buộc kiểm tra',
@@ -193,7 +180,6 @@ export const vi: LanguageTranslation = {
                 relationships: 'Quan hệ',
                 dependencies: 'Phụ thuộc',
                 relationship: {
-                    relationship: 'Quan hệ',
                     primary: 'Bảng chính',
                     foreign: 'Bảng liên quan',
                     cardinality: 'Quan hệ',
@@ -205,7 +191,6 @@ export const vi: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'Phụ thuộc',
                     table: 'Bảng',
                     dependent_table: 'Bảng xem phụ thuộc',
                     delete_dependency: 'Xóa',
@@ -262,7 +247,6 @@ export const vi: LanguageTranslation = {
                     empty_note: 'Ghi chú trống',
                     note_actions: {
                         title: 'Hành Động Ghi Chú',
-                        edit_content: 'Chỉnh Sửa Nội Dung',
                         delete_note: 'Xóa Ghi Chú',
                     },
                 },
@@ -305,13 +289,11 @@ export const vi: LanguageTranslation = {
         toolbar: {
             zoom_in: 'Phóng to',
             zoom_out: 'Thu nhỏ',
-            save: 'Lưu',
             show_all: 'Hiển thị tất cả',
             undo: 'Hoàn tác',
             redo: 'Làm lại',
             reorder_diagram: 'Tự động sắp xếp sơ đồ',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'Làm nổi bật các bảng chồng chéo',
@@ -332,7 +314,6 @@ export const vi: LanguageTranslation = {
                 database_edition: 'Loại:',
                 step_1: 'Chạy lệnh này trong cơ sở dữ liệu của bạn:',
                 step_2: 'Dán kết quả vào đây →',
-                script_results_placeholder: 'Kết quả...',
                 ssms_instructions: {
                     button_text: 'Hướng dẫn SSMS',
                     title: 'Hướng dẫn',
@@ -403,19 +384,14 @@ export const vi: LanguageTranslation = {
         import_database_dialog: {
             title: 'Nhập vào sơ đồ hiện tại',
             override_alert: {
-                title: 'Nhập cơ sở dữ liệu',
                 content: {
-                    alert: 'Việc nhập sơ đồ này sẽ ảnh hưởng đến các bảng và mối quan hệ hiện có.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> bảng mới sẽ được thêm vào.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> quan hệ mới sẽ được tạo.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> bảng sẽ bị ghi đè.',
-                    proceed: 'Bạn có muốn tiếp tục không?',
                 },
-                import: 'Nhập',
-                cancel: 'Hủy',
             },
         },
 
@@ -484,22 +460,13 @@ export const vi: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'Quan hệ một-một',
             one_to_many: 'Quan hệ một-nhiều',
-            many_to_one: 'Quan hệ nhiều-một',
         },
 
         canvas_context_menu: {

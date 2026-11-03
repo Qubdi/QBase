@@ -65,8 +65,6 @@ export const reportSummaryColumns = {
     webhook: driftReports.webhook,
 };
 export type ReportSummaryRow = Pick<ReportRow, keyof typeof reportSummaryColumns>;
-export type SettingsRow = typeof driftSettings.$inferSelect;
-
 export interface SourceKeys {
     tables: Record<string, string>;
     columns: Record<string, string>;

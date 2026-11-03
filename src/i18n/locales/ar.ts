@@ -7,7 +7,6 @@ export const ar: LanguageTranslation = {
             browse: 'فتح',
             tables: 'الجداول',
             refs: 'المراجع',
-            dependencies: 'التبعيات',
             custom_types: 'الأنواع المخصصة',
             visuals: 'مرئيات',
         },
@@ -37,8 +36,6 @@ export const ar: LanguageTranslation = {
                 zoom_on_scroll: 'تكبير/تصغير عند التمرير',
                 show_views: 'عروض قاعدة البيانات',
                 theme: 'المظهر',
-                show_dependencies: 'إظهار الاعتمادات',
-                hide_dependencies: 'إخفاء الاعتمادات',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -48,11 +45,7 @@ export const ar: LanguageTranslation = {
                 export_diagram: 'تصدير المخطط',
                 restore_diagram: 'استعادة المخطط',
             },
-            help: {
-                help: 'مساعدة',
-                docs_website: 'الوثائق',
-                join_discord: 'انضم إلينا على Discord',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -101,8 +94,6 @@ export const ar: LanguageTranslation = {
             off: 'إيقاف',
         },
 
-        last_saved: 'آخر حفظ',
-        saved: 'تم الحفظ',
         loading_diagram: '...جارِ تحميل الرسم البياني',
         deselect_all: 'إلغاء تحديد الكل',
         select_all: 'تحديد الكل',
@@ -119,19 +110,15 @@ export const ar: LanguageTranslation = {
                 add_table: 'إضافة جدول',
                 add_view: 'إضافة عرض',
                 filter: 'تصفية',
-                collapse: 'طي الكل',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'جميع الجداول مخفية',
                 show_all: 'عرض الكل',
 
                 table: {
                     fields: 'الحقول',
-                    nullable: 'يمكن ان يكون فارغاً؟',
                     primary_key: 'المفتاح الأساسي',
                     indexes: 'الفهارس',
                     check_constraints: 'قيود التحقق',
@@ -192,7 +179,6 @@ export const ar: LanguageTranslation = {
                 relationships: 'العلاقات',
                 dependencies: 'الاعتمادات',
                 relationship: {
-                    relationship: 'العلاقة',
                     primary: 'الجدول الأساسي',
                     foreign: 'الجدول المرتبط',
                     cardinality: 'الكاردينالية',
@@ -204,7 +190,6 @@ export const ar: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'الاعتماد',
                     table: 'الجدول',
                     dependent_table: 'عرض الاعتمادات',
                     delete_dependency: 'حذف',
@@ -260,7 +245,6 @@ export const ar: LanguageTranslation = {
                     empty_note: 'ملاحظة فارغة',
                     note_actions: {
                         title: 'إجراءات الملاحظة',
-                        edit_content: 'تحرير المحتوى',
                         delete_note: 'حذف الملاحظة',
                     },
                 },
@@ -301,14 +285,12 @@ export const ar: LanguageTranslation = {
         toolbar: {
             zoom_in: 'تكبير',
             zoom_out: 'تصغير',
-            save: 'حفظ',
             show_all: 'عرض الكل',
             undo: 'تراجع',
             redo: 'إعادة',
             reorder_diagram: 'ترتيب تلقائي للرسم البياني',
             highlight_overlapping_tables: 'تمييز الجداول المتداخلة',
             filter: 'تصفية الجداول',
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
         },
@@ -327,7 +309,6 @@ export const ar: LanguageTranslation = {
                 database_edition: ':إصدار قاعدة البيانات',
                 step_1: ':قم بتشغيل هذا البرنامج النصي في قاعدة بياناتك',
                 step_2: ':إلصق نتيجة البرنامج النصي هنا →',
-                script_results_placeholder: '...نتيجة البرنامج النصي هنا',
                 ssms_instructions: {
                     button_text: 'SSMS تعليمات',
                     title: 'تعليمات',
@@ -399,19 +380,14 @@ export const ar: LanguageTranslation = {
         import_database_dialog: {
             title: 'استيراد إلى المخطط الحالي',
             override_alert: {
-                title: 'استيراد قاعدة بيانات',
                 content: {
-                    alert: 'سيؤدي استيراد هذا المخطط إلى التأثير على الجداول والعلاقات الحالية.',
                     new_tables:
                         'جداول جديدة <bold>{{newTablesNumber}}</bold> سيتم إضافة',
                     new_relationships:
                         'علاقات جديدة <bold>{{newRelationshipsNumber}}</bold> سيتم إنشاء',
                     tables_override:
                         'جداول <bold>{{tablesOverrideNumber}}</bold> سيتم تعديل',
-                    proceed: 'هل تريد المتابعة؟',
                 },
-                import: 'استيراد',
-                cancel: 'إلغاء',
             },
         },
 
@@ -478,22 +454,13 @@ export const ar: LanguageTranslation = {
         },
         import_dbml_dialog: {
             // TODO: Translate
-            title: 'Import DBML',
-            example_title: 'Import Example DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: 'واحد إلى واحد',
             one_to_many: 'واحد إلى متعدد',
-            many_to_one: 'متعدد إلى واحد',
         },
 
         canvas_context_menu: {

@@ -7,7 +7,6 @@ export const fr: LanguageTranslation = {
             browse: 'Ouvrir',
             tables: 'Tables',
             refs: 'Refs',
-            dependencies: 'Dépendances',
             custom_types: 'Types Personnalisés',
             visuals: 'Visuels',
         },
@@ -37,8 +36,6 @@ export const fr: LanguageTranslation = {
                 zoom_on_scroll: 'Zoom sur le Défilement',
                 show_views: 'Vues de Base de Données',
                 theme: 'Thème',
-                show_dependencies: 'Afficher les Dépendances',
-                hide_dependencies: 'Masquer les Dépendances',
                 show_minimap: 'Afficher la Mini Carte',
                 hide_minimap: 'Masquer la Mini Carte',
             },
@@ -47,11 +44,7 @@ export const fr: LanguageTranslation = {
                 export_diagram: 'Exporter le diagramme',
                 restore_diagram: 'Restaurer le diagramme',
             },
-            help: {
-                help: 'Aide',
-                docs_website: 'Documentation',
-                join_discord: 'Rejoignez-nous sur Discord',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -100,8 +93,6 @@ export const fr: LanguageTranslation = {
             off: 'Désactivé',
         },
 
-        last_saved: 'Dernière sauvegarde',
-        saved: 'Enregistré',
         loading_diagram: 'Chargement du diagramme...',
         deselect_all: 'Tout désélectionner',
         select_all: 'Tout sélectionner',
@@ -118,18 +109,14 @@ export const fr: LanguageTranslation = {
                 add_table: 'Ajouter une Table',
                 add_view: 'Ajouter une Vue',
                 filter: 'Filtrer',
-                collapse: 'Réduire Tout',
                 clear: 'Effacer le Filtre',
                 no_results:
                     'Aucune table trouvée correspondant à votre filtre.',
-                show_list: 'Afficher la Liste des Tableaux',
-                show_dbml: "Afficher l'éditeur DBML",
                 all_hidden: 'Toutes les tables sont masquées',
                 show_all: 'Tout afficher',
 
                 table: {
                     fields: 'Champs',
-                    nullable: 'Nullable?',
                     primary_key: 'Clé Primaire',
                     indexes: 'Index',
                     check_constraints: 'Contraintes de vérification',
@@ -191,7 +178,6 @@ export const fr: LanguageTranslation = {
                 relationships: 'Relations',
                 dependencies: 'Dépendances',
                 relationship: {
-                    relationship: 'Relation',
                     primary: 'Table Principale',
                     foreign: 'Table Liée',
                     cardinality: 'Cardinalité',
@@ -203,7 +189,6 @@ export const fr: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'Dépendance',
                     table: 'Table',
                     dependent_table: 'Vue Dépendante',
                     delete_dependency: 'Supprimer',
@@ -260,7 +245,6 @@ export const fr: LanguageTranslation = {
                     empty_note: 'Note vide',
                     note_actions: {
                         title: 'Actions de Note',
-                        edit_content: 'Modifier le Contenu',
                         delete_note: 'Supprimer la Note',
                     },
                 },
@@ -303,13 +287,11 @@ export const fr: LanguageTranslation = {
         toolbar: {
             zoom_in: 'Zoom Avant',
             zoom_out: 'Zoom Arrière',
-            save: 'Enregistrer',
             show_all: 'Afficher Tout',
             undo: 'Annuler',
             redo: 'Rétablir',
             reorder_diagram: 'Organiser Automatiquement le Diagramme',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: 'Surligner les tables chevauchées',
@@ -330,7 +312,6 @@ export const fr: LanguageTranslation = {
                 database_edition: 'Édition de la Base de Données :',
                 step_1: 'Exécutez ce script dans votre base de données :',
                 step_2: 'Collez le résultat du script ici →',
-                script_results_placeholder: 'Résultats du script ici...',
                 ssms_instructions: {
                     button_text: 'Instructions SSMS',
                     title: 'Instructions',
@@ -442,19 +423,14 @@ export const fr: LanguageTranslation = {
         import_database_dialog: {
             title: 'Importer dans le Diagramme Actuel',
             override_alert: {
-                title: 'Importer Base de Données',
                 content: {
-                    alert: "L'importation de ce diagramme affectera les tables et relations existantes.",
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> nouvelles tables seront ajoutées.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> nouvelles relations seront créées.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> tables seront écrasées.',
-                    proceed: 'Voulez-vous continuer ?',
                 },
-                import: 'Importer',
-                cancel: 'Annuler',
             },
         },
         export_diagram_dialog: {
@@ -481,16 +457,7 @@ export const fr: LanguageTranslation = {
             },
         },
         import_dbml_dialog: {
-            example_title: "Exemple d'importation DBML",
-            title: 'Import DBML',
-            description:
-                'Importer un schéma de base de données à partir du format DBML.',
-            import: 'Importer',
-            cancel: 'Annuler',
-            skip_and_empty: 'Passer et vider',
-            show_example: 'Afficher un exemple',
             error: {
-                title: 'Erreur',
                 description:
                     "Erreur d'analyse du DBML. Veuillez vérifier la syntaxe.",
             },
@@ -498,7 +465,6 @@ export const fr: LanguageTranslation = {
         relationship_type: {
             one_to_one: 'Un à Un',
             one_to_many: 'Un à Plusieurs',
-            many_to_one: 'Plusieurs à Un',
         },
 
         canvas_context_menu: {

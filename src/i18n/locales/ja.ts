@@ -7,7 +7,6 @@ export const ja: LanguageTranslation = {
             browse: '開く',
             tables: 'テーブル',
             refs: '参照',
-            dependencies: '依存関係',
             custom_types: 'カスタムタイプ',
             visuals: 'ビジュアル',
         },
@@ -38,8 +37,6 @@ export const ja: LanguageTranslation = {
                 show_views: 'データベースビュー',
                 theme: 'テーマ',
                 // TODO: Translate
-                show_dependencies: 'Show Dependencies',
-                hide_dependencies: 'Hide Dependencies',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -49,11 +46,7 @@ export const ja: LanguageTranslation = {
                 export_diagram: 'ダイアグラムをエクスポート',
                 restore_diagram: 'ダイアグラムを復元',
             },
-            help: {
-                help: 'ヘルプ',
-                docs_website: 'ドキュメント',
-                join_discord: 'Discordに参加',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -103,8 +96,6 @@ export const ja: LanguageTranslation = {
             off: 'オフ',
         },
 
-        last_saved: '最後に保存された',
-        saved: '保存されました',
         loading_diagram: 'ダイアグラムを読み込み中...',
         deselect_all: 'すべての選択を解除',
         select_all: 'すべてを選択',
@@ -122,19 +113,15 @@ export const ja: LanguageTranslation = {
                 add_table: 'テーブルを追加',
                 add_view: 'ビューを追加',
                 filter: 'フィルタ',
-                collapse: 'すべて折りたたむ',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: 'すべてのテーブルが非表示です',
                 show_all: 'すべて表示',
 
                 table: {
                     fields: 'フィールド',
-                    nullable: 'NULL可能?',
                     primary_key: '主キー',
                     indexes: 'インデックス',
                     check_constraints: 'チェック制約',
@@ -196,7 +183,6 @@ export const ja: LanguageTranslation = {
                 relationships: 'リレーションシップ',
                 dependencies: '依存関係',
                 relationship: {
-                    relationship: 'リレーションシップ',
                     primary: '主テーブル',
                     foreign: '関連テーブル',
                     cardinality: 'カーディナリティ',
@@ -208,7 +194,6 @@ export const ja: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: '依存関係',
                     table: 'テーブル',
                     dependent_table: '依存ビュー',
                     delete_dependency: '削除',
@@ -266,7 +251,6 @@ export const ja: LanguageTranslation = {
                     empty_note: '空のノート',
                     note_actions: {
                         title: 'ノートアクション',
-                        edit_content: 'コンテンツを編集',
                         delete_note: 'ノートを削除',
                     },
                 },
@@ -308,14 +292,12 @@ export const ja: LanguageTranslation = {
         toolbar: {
             zoom_in: 'ズームイン',
             zoom_out: 'ズームアウト',
-            save: '保存',
             show_all: 'すべて表示',
             undo: '元に戻す',
             redo: 'やり直し',
             reorder_diagram: 'ダイアグラムを自動配置',
             // TODO: Translate
             highlight_overlapping_tables: 'Highlight Overlapping Tables',
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 '「{{typeName}}」をハイライト中 - クリックで解除',
             filter: 'テーブルをフィルタ',
@@ -334,7 +316,6 @@ export const ja: LanguageTranslation = {
                 database_edition: 'データベースエディション:',
                 step_1: 'このスクリプトをデータベースで実行してください:',
                 step_2: 'ここにスクリプトの結果を貼り付けてください →',
-                script_results_placeholder: 'ここにスクリプトの結果...',
                 ssms_instructions: {
                     button_text: 'SSMSの手順',
                     title: '手順',
@@ -408,19 +389,14 @@ export const ja: LanguageTranslation = {
         import_database_dialog: {
             title: '現在のダイアグラムにインポート',
             override_alert: {
-                title: 'データベースをインポート',
                 content: {
-                    alert: 'このダイアグラムをインポートすると、既存のテーブルおよびリレーションシップに影響を与えます。',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> 新しいテーブルが追加されます。',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> 新しいリレーションシップが作成されます。',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> テーブルが上書きされます。',
-                    proceed: '続行しますか？',
                 },
-                import: 'インポート',
-                cancel: 'キャンセル',
             },
         },
 
@@ -490,22 +466,13 @@ export const ja: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: '1対1',
             one_to_many: '1対多',
-            many_to_one: '多対1',
         },
 
         canvas_context_menu: {

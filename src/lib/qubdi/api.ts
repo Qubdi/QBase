@@ -245,13 +245,6 @@ export interface RemoteDiagram extends RemoteDiagramSummary {
     autoPublish?: boolean;
 }
 
-export interface RemoteVersion {
-    version: number;
-    note: string | null;
-    publishedAt: string;
-    publishedBy: string | null;
-}
-
 export interface RemoteMember {
     userId: string;
     email: string;

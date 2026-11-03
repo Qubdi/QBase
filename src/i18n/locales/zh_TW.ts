@@ -7,7 +7,6 @@ export const zh_TW: LanguageTranslation = {
             browse: '開啟',
             tables: '表格',
             refs: 'Refs',
-            dependencies: '相依性',
             custom_types: '自定義類型',
             visuals: '視覺效果',
         },
@@ -37,8 +36,6 @@ export const zh_TW: LanguageTranslation = {
                 zoom_on_scroll: '滾動縮放',
                 show_views: '資料庫檢視',
                 theme: '主題',
-                show_dependencies: '顯示相依性',
-                hide_dependencies: '隱藏相依性',
                 // TODO: Translate
                 show_minimap: 'Show Mini Map',
                 hide_minimap: 'Hide Mini Map',
@@ -48,11 +45,7 @@ export const zh_TW: LanguageTranslation = {
                 export_diagram: '匯出圖表',
                 restore_diagram: '恢復圖表',
             },
-            help: {
-                help: '幫助',
-                docs_website: '文件',
-                join_discord: '加入 Discord',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -98,8 +91,6 @@ export const zh_TW: LanguageTranslation = {
             off: '關閉',
         },
 
-        last_saved: '上次儲存於',
-        saved: '已儲存',
         loading_diagram: '正在載入圖表...',
         deselect_all: '取消所有選取',
         select_all: '全選',
@@ -116,19 +107,15 @@ export const zh_TW: LanguageTranslation = {
                 add_table: '新增表格',
                 add_view: '新增檢視',
                 filter: '篩選',
-                collapse: '全部摺疊',
                 // TODO: Translate
                 clear: 'Clear Filter',
                 no_results: 'No tables found matching your filter.',
                 // TODO: Translate
-                show_list: 'Show Table List',
-                show_dbml: 'Show DBML Editor',
                 all_hidden: '所有表格已隱藏',
                 show_all: '顯示全部',
 
                 table: {
                     fields: '欄位',
-                    nullable: '可為 NULL?',
                     primary_key: '主鍵',
                     indexes: '索引',
                     check_constraints: '檢查約束',
@@ -190,7 +177,6 @@ export const zh_TW: LanguageTranslation = {
                 relationships: '關聯',
                 dependencies: '相依性',
                 relationship: {
-                    relationship: '關聯',
                     primary: '主表格',
                     foreign: '關聯表格',
                     cardinality: '基數',
@@ -202,7 +188,6 @@ export const zh_TW: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: '相依性',
                     table: '表格',
                     dependent_table: '相依檢視',
                     delete_dependency: '刪除',
@@ -258,7 +243,6 @@ export const zh_TW: LanguageTranslation = {
                     empty_note: '空白筆記',
                     note_actions: {
                         title: '筆記操作',
-                        edit_content: '編輯內容',
                         delete_note: '刪除筆記',
                     },
                 },
@@ -299,13 +283,11 @@ export const zh_TW: LanguageTranslation = {
         toolbar: {
             zoom_in: '放大',
             zoom_out: '縮小',
-            save: '儲存',
             show_all: '顯示全部',
             undo: '復原',
             redo: '重做',
             reorder_diagram: '自動排列圖表',
             // TODO: Translate
-            clear_custom_type_highlight: 'Clear highlight for "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Highlighting "{{typeName}}" - Click to clear',
             highlight_overlapping_tables: '突出顯示重疊表格',
@@ -325,7 +307,6 @@ export const zh_TW: LanguageTranslation = {
                 database_edition: '資料庫版本:',
                 step_1: '請在資料庫中執行以下腳本:',
                 step_2: '將腳本結果貼到此處 →',
-                script_results_placeholder: '在此處貼上腳本結果...',
                 ssms_instructions: {
                     button_text: 'SSMS 操作步驟',
                     title: '操作步驟',
@@ -396,19 +377,14 @@ export const zh_TW: LanguageTranslation = {
         import_database_dialog: {
             title: '匯入至當前圖表',
             override_alert: {
-                title: '匯入資料庫',
                 content: {
-                    alert: '匯入此圖表將影響現有表格和關聯。',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> 個新表格將被新增。',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> 個新關聯將被建立。',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> 個表格將被覆蓋。',
-                    proceed: '是否繼續？',
                 },
-                import: '匯入',
-                cancel: '取消',
             },
         },
 
@@ -477,22 +453,13 @@ export const zh_TW: LanguageTranslation = {
         },
         // TODO: Translate
         import_dbml_dialog: {
-            example_title: 'Import Example DBML',
-            title: 'Import DBML',
-            description: 'Import a database schema from DBML format.',
-            import: 'Import',
-            cancel: 'Cancel',
-            skip_and_empty: 'Skip & Empty',
-            show_example: 'Show Example',
             error: {
-                title: 'Error',
                 description: 'Failed to parse DBML. Please check the syntax.',
             },
         },
         relationship_type: {
             one_to_one: '一對一',
             one_to_many: '一對多',
-            many_to_one: '多對一',
         },
 
         canvas_context_menu: {

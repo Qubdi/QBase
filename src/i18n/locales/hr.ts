@@ -7,7 +7,6 @@ export const hr: LanguageTranslation = {
             browse: 'Otvori',
             tables: 'Tablice',
             refs: 'Refs',
-            dependencies: 'Ovisnosti',
             custom_types: 'Prilagođeni Tipovi',
             visuals: 'Vizuali',
         },
@@ -37,8 +36,6 @@ export const hr: LanguageTranslation = {
                 zoom_on_scroll: 'Zumiranje pri skrolanju',
                 show_views: 'Pogledi Baze Podataka',
                 theme: 'Tema',
-                show_dependencies: 'Prikaži ovisnosti',
-                hide_dependencies: 'Sakrij ovisnosti',
                 show_minimap: 'Prikaži mini kartu',
                 hide_minimap: 'Sakrij mini kartu',
             },
@@ -47,11 +44,7 @@ export const hr: LanguageTranslation = {
                 export_diagram: 'Izvezi dijagram',
                 restore_diagram: 'Vrati dijagram',
             },
-            help: {
-                help: 'Pomoć',
-                docs_website: 'Dokumentacija',
-                join_discord: 'Pridružite nam se na Discordu',
-            },
+            help: {},
         },
 
         delete_diagram_alert: {
@@ -100,8 +93,6 @@ export const hr: LanguageTranslation = {
             off: 'Isključeno',
         },
 
-        last_saved: 'Zadnje spremljeno',
-        saved: 'Spremljeno',
         loading_diagram: 'Učitavanje dijagrama...',
         deselect_all: 'Odznači sve',
         select_all: 'Označi sve',
@@ -118,18 +109,14 @@ export const hr: LanguageTranslation = {
                 add_table: 'Dodaj tablicu',
                 add_view: 'Dodaj Pogled',
                 filter: 'Filtriraj',
-                collapse: 'Sažmi sve',
                 clear: 'Očisti filter',
                 no_results:
                     'Nema pronađenih tablica koje odgovaraju vašem filteru.',
-                show_list: 'Prikaži popis tablica',
-                show_dbml: 'Prikaži DBML uređivač',
                 all_hidden: 'Sve tablice su skrivene',
                 show_all: 'Prikaži sve',
 
                 table: {
                     fields: 'Polja',
-                    nullable: 'Može biti null?',
                     primary_key: 'Primarni ključ',
                     indexes: 'Indeksi',
                     check_constraints: 'Provjerna ograničenja',
@@ -189,7 +176,6 @@ export const hr: LanguageTranslation = {
                 relationships: 'Veze',
                 dependencies: 'Ovisnosti',
                 relationship: {
-                    relationship: 'Veza',
                     primary: 'Primarna tablica',
                     foreign: 'Povezana tablica',
                     cardinality: 'Kardinalnost',
@@ -201,7 +187,6 @@ export const hr: LanguageTranslation = {
                     },
                 },
                 dependency: {
-                    dependency: 'Ovisnost',
                     table: 'Tablica',
                     dependent_table: 'Ovisni pogled',
                     delete_dependency: 'Izbriši',
@@ -259,7 +244,6 @@ export const hr: LanguageTranslation = {
                     empty_note: 'Prazna bilješka',
                     note_actions: {
                         title: 'Akcije Bilješke',
-                        edit_content: 'Uredi Sadržaj',
                         delete_note: 'Obriši Bilješku',
                     },
                 },
@@ -302,13 +286,11 @@ export const hr: LanguageTranslation = {
         toolbar: {
             zoom_in: 'Uvećaj',
             zoom_out: 'Smanji',
-            save: 'Spremi',
             show_all: 'Prikaži sve',
             undo: 'Poništi',
             redo: 'Ponovi',
             reorder_diagram: 'Automatski preuredi dijagram',
             highlight_overlapping_tables: 'Istakni preklapajuće tablice',
-            clear_custom_type_highlight: 'Ukloni isticanje za "{{typeName}}"',
             custom_type_highlight_tooltip:
                 'Isticanje "{{typeName}}" - Kliknite za uklanjanje',
             filter: 'Filtriraj tablice',
@@ -328,7 +310,6 @@ export const hr: LanguageTranslation = {
                 database_edition: 'Verzija baze podataka:',
                 step_1: 'Pokrenite ovu skriptu u svojoj bazi podataka:',
                 step_2: 'Zalijepite rezultat skripte u ovaj dio →',
-                script_results_placeholder: 'Rezultati skripte ovdje...',
                 ssms_instructions: {
                     button_text: 'SSMS upute',
                     title: 'Upute',
@@ -400,19 +381,14 @@ export const hr: LanguageTranslation = {
         import_database_dialog: {
             title: 'Uvezi u trenutni dijagram',
             override_alert: {
-                title: 'Uvezi bazu podataka',
                 content: {
-                    alert: 'Uvoz ovog dijagrama će utjecati na postojeće tablice i veze.',
                     new_tables:
                         '<bold>{{newTablesNumber}}</bold> novih tablica će biti dodano.',
                     new_relationships:
                         '<bold>{{newRelationshipsNumber}}</bold> novih veza će biti stvoreno.',
                     tables_override:
                         '<bold>{{tablesOverrideNumber}}</bold> tablica će biti prepisano.',
-                    proceed: 'Želite li nastaviti?',
                 },
-                import: 'Uvezi',
-                cancel: 'Odustani',
             },
         },
 
@@ -480,15 +456,7 @@ export const hr: LanguageTranslation = {
         },
 
         import_dbml_dialog: {
-            example_title: 'Uvezi primjer DBML-a',
-            title: 'Uvezi DBML',
-            description: 'Uvezite shemu baze podataka iz DBML formata.',
-            import: 'Uvezi',
-            cancel: 'Odustani',
-            skip_and_empty: 'Preskoči i isprazni',
-            show_example: 'Prikaži primjer',
             error: {
-                title: 'Greška pri uvozu DBML-a',
                 description:
                     'Neuspješno parsiranje DBML-a. Molimo provjerite sintaksu.',
             },
@@ -496,7 +464,6 @@ export const hr: LanguageTranslation = {
         relationship_type: {
             one_to_one: 'Jedan na jedan',
             one_to_many: 'Jedan na više',
-            many_to_one: 'Više na jedan',
         },
 
         canvas_context_menu: {

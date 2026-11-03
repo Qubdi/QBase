@@ -51,6 +51,8 @@ cd server && npm run lint && npm run typecheck && npx vitest run   # server (tes
 
 The server tests create their own `qbase_test` database next to the one the app uses.
 
+Two optional editor scripts: `npm run test:ui` opens the Vitest browser UI, and `npm run test:coverage` writes a coverage report.
+
 ### License
 
 By contributing, you agree that your work will be licensed under QBase's [license](https://github.com/qubdi/qbase/blob/main/LICENSE).
