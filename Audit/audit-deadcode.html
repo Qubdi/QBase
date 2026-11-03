@@ -8,10 +8,10 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 19</b></div>
-  <h1>6 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 20</b></div>
+  <h1>0 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-03</span>
+    <span><b>audit date</b> 2026-11-04</span>
     <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
@@ -31,17 +31,11 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Dead code</h2></div>
-  <p class="section-note">6 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 6 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">DEAD-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">10 exports referenced only by their defining line</td><td><code>server/src/drift/service.ts:68</code>, <code>src/hooks/use-mfa-available.ts:20</code>, <code>src/lib/colors.ts:23</code>, <code>src/lib/data/sql-export/cross-dialect/convert/render-type.ts:505</code>, <code>src/lib/data/sql-export/export-per-type/common.ts:95</code>, <code>src/lib/data/sql-import/common.ts:143</code>, <code>src/lib/data/sql-import/validators/postgresql-validator.ts:257</code>, <code>src/lib/domain/diff/diff.ts:99</code>, <code>src/lib/qubdi/api.ts:248</code>, <code>src/pages/editor-page/side-panel/custom-types-section/custom-type-list/custom-type-list-item/custom-type-list-item-content/composite-fields/composite-field.tsx:9</code></td><td class="wrap-cell">Delete unused functions; drop <code>export</code> from unused types</td></tr>
-        <tr><td class="svc-name">DEAD-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">About 36 fork i18n keys in <code>en</code> never looked up</td><td><code>src/i18n/locales/en.ts:13</code>, <code>:43</code>, <code>:54</code>, <code>:106</code>, <code>:124</code>, <code>:194</code>, <code>:263</code>, <code>:304</code>, <code>:402</code>, <code>:482</code>, <code>:497</code></td><td class="wrap-cell">Delete the keys from every locale</td></tr>
-        <tr><td class="svc-name">DEAD-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>.gradient-background</code> and two rainbow keyframes unused but shipped</td><td><code>src/globals.css:157</code>, <code>src/globals.css:188</code>, <code>src/globals.css:196</code>, <code>src/globals.css:210</code></td><td class="wrap-cell">Delete the class, hover rule and keyframes</td></tr>
-        <tr><td class="svc-name">DEAD-004</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>test:ui</code> and <code>test:coverage</code> scripts called nowhere</td><td><code>package.json:19</code>, <code>package.json:20</code></td><td class="wrap-cell">Document both scripts or remove them with their devDeps</td></tr>
-        <tr><td class="svc-name">DEAD-005</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Four helpers duplicated with identical bodies</td><td><code>src/lib/data/sql-export/cross-dialect/common.ts:1</code>, <code>src/lib/data/sql-export/export-per-type/common.ts:51</code>, <code>server/src/auth/sessions.ts:27</code>, <code>server/src/share/tokens.ts:6</code>, <code>src/lib/data/sql-export/cross-dialect/convert/convert-schema.ts:119</code>, <code>src/lib/data/sql-export/foreign-keys.ts:21</code>, <code>src/lib/data/sql-import/dialect-importers/mysql/mysql-common.ts:185</code>, <code>src/lib/data/sql-import/dialect-importers/postgresql/postgresql-common.ts:217</code></td><td class="wrap-cell">Keep one copy of each; import it elsewhere</td></tr>
-        <tr><td class="svc-name">DEAD-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Commented-out code blocks of three or more lines</td><td><code>src/lib/data/data-types/postgres-data-types.ts:24</code>, <code>:45</code>, <code>:80</code>, <code>src/components/tree-view/tree-view.tsx:260</code>, <code>eslint.config.mjs:50</code></td><td class="wrap-cell">Delete the commented-out code</td></tr>
       </tbody>
     </table>
   </div>
@@ -49,11 +43,17 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (0)</summary>
+  <details><summary>Fixed (6)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DEAD-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">10 exports referenced only by their defining line</td></tr>
+        <tr><td class="svc-name">DEAD-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">About 36 fork i18n keys in <code>en</code> never looked up</td></tr>
+        <tr><td class="svc-name">DEAD-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>.gradient-background</code> and two rainbow keyframes unused but shipped</td></tr>
+        <tr><td class="svc-name">DEAD-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>test:ui</code> and <code>test:coverage</code> scripts called nowhere</td></tr>
+        <tr><td class="svc-name">DEAD-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Four helpers duplicated with identical bodies</td></tr>
+        <tr><td class="svc-name">DEAD-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Commented-out code blocks of three or more lines</td></tr>
       </tbody>
     </table>
   </div>

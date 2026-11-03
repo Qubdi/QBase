@@ -8,10 +8,10 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 19</b></div>
+  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 20</b></div>
   <h1>4 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-03</span>
+    <span><b>audit date</b> 2026-11-04</span>
     <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
