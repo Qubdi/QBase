@@ -118,6 +118,11 @@ const fakeDb = (rows: Rows, failOpen = false) => {
         name,
         count: async () => rows[name].length,
         toArray: async () => [...rows[name]],
+        toCollection: () => ({
+            primaryKeys: async () =>
+                rows[name].map((row) => (row as { id: unknown }).id),
+        }),
+        schema: { primKey: { keyPath: 'id' } },
         bulkPut: async (items: unknown[]) => {
             rows[name].push(...items);
         },
@@ -198,21 +203,24 @@ describe('adoptLegacyLocalData', () => {
         expect(deleteDatabase).not.toHaveBeenCalled();
     });
 
-    it('leaves the old database alone when the new one already has diagrams', async () => {
-        const target = fakeDb({ diagrams: [{ id: 'new' }] });
-        const openLegacy = vi.fn();
+    it('adds what the new database lacks and keeps what it already has', async () => {
+        const target = fakeDb({ diagrams: [{ id: 'new' }, { id: 'both', v: 2 }] });
+        const legacy = fakeDb({ diagrams: [{ id: 'both', v: 1 }, { id: 'old' }] });
         const deleteDatabase = vi.fn(async () => undefined);
         await adoptLegacyLocalData(
             target,
-            openLegacy,
+            () => legacy,
             async () => true,
             deleteDatabase
         );
-        expect(openLegacy).not.toHaveBeenCalled();
-        expect(deleteDatabase).not.toHaveBeenCalled();
         expect(await target.table('diagrams').toArray()).toEqual([
             { id: 'new' },
+            { id: 'both', v: 2 },
+            { id: 'old' },
         ]);
+        expect(deleteDatabase).toHaveBeenCalledExactlyOnceWith(
+            LEGACY_LOCAL_DB_NAME
+        );
     });
 
     it('keeps the old database when it cannot be read, and does not throw', async () => {

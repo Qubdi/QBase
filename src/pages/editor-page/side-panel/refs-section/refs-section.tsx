@@ -173,6 +173,9 @@ export const RefsSection: React.FC<RefsSectionProps> = () => {
                                 <Button
                                     variant="ghost"
                                     className="size-8 p-0"
+                                    aria-label={t(
+                                        'side_panel.refs_section.collapse'
+                                    )}
                                     onClick={closeAllRefsInSidebar}
                                 >
                                     <ListCollapse className="size-4" />

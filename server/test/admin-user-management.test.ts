@@ -482,6 +482,15 @@ describe('managing users: last sign-in, sessions and bulk actions', () => {
                 expect((await rowsFor(`user.${action}`)).length).toBe(before);
             });
 
+            it("refuses to set the caller's own password, and points to change-password", async () => {
+                const res = await call(admin, 'PATCH', `/admin/users/${admin.id}`, {
+                    password: 'Another-Password-9!',
+                });
+                expect(res.statusCode).toBe(400);
+                expect(res.json().error).toBe('use_change_password');
+                expect(await stillSignedIn(admin)).toBe(true);
+            });
+
             it('counts a repeated id once', async () => {
                 const a = await person('dup@example.com');
                 const res = await bulk(admin, 'disable', [a.id, a.id, a.id]);

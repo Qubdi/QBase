@@ -30,7 +30,11 @@ import {
     rememberSentContent,
 } from '@/lib/qubdi/sent-content';
 import { resetAdminLanding } from '@/lib/qubdi/admin-landing';
-import { flushPendingSave } from '@/lib/qubdi/save-status-store';
+import {
+    flushPendingSave,
+    hasUnsavedChanges,
+} from '@/lib/qubdi/save-status-store';
+import { i18n } from '@/i18n/i18n';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/lib/domain/diagram';
 
@@ -107,6 +111,14 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         // send the last edits while the session still works: after sign-out
         // they would get a 401, and the local copy holding them is deleted below
         await flushPendingSave();
+        // an edit the server refused is still only in the local copy, which
+        // is deleted below: let the person decide before it is gone
+        if (
+            hasUnsavedChanges() &&
+            !window.confirm(i18n.t('qubdi.account.accountMenu.signOutUnsaved'))
+        ) {
+            return;
+        }
         await api.logout().catch(() => undefined);
         resetAdminLanding();
         setSessionEnded(false);

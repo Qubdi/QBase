@@ -1,6 +1,7 @@
 # Extends the default rules. Allows one password that was once the default of the
 # optional SQL Server test container (docker-compose.mssql.yml). It is gone from
-# the tree but stays in git history, which the scan reads.
+# the tree. The allowlist only matters to a scan of old refs that predate the
+# history rewrite; drop it once those are purged (see SEC-001 in Audit/audit.md).
 [extend]
 useDefault = true
 

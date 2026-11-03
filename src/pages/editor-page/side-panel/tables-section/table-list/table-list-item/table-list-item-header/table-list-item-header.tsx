@@ -141,7 +141,7 @@ export const TableListItemHeader: React.FC<TableListItemHeaderProps> = ({
         () => (
             <DropdownMenu>
                 <DropdownMenuTrigger>
-                    <ListItemHeaderButton>
+                    <ListItemHeaderButton aria-label={t('qubdi.sidePanel.itemMenu')}>
                         <EllipsisVertical />
                     </ListItemHeaderButton>
                 </DropdownMenuTrigger>
@@ -314,17 +314,17 @@ export const TableListItemHeader: React.FC<TableListItemHeaderProps> = ({
                         ) : null}
                         <div className="flex flex-row-reverse md:hidden md:group-hover:flex">
                             {!readonly ? (
-                                <ListItemHeaderButton onClick={enterEditMode}>
+                                <ListItemHeaderButton onClick={enterEditMode} aria-label={t('qubdi.sidePanel.editName')}>
                                     <Pencil />
                                 </ListItemHeaderButton>
                             ) : null}
-                            <ListItemHeaderButton onClick={handleFocusOnTable}>
+                            <ListItemHeaderButton onClick={handleFocusOnTable} aria-label={t('qubdi.sidePanel.focusOn')}>
                                 <CircleDotDashed />
                             </ListItemHeaderButton>
                         </div>
                     </>
                 ) : (
-                    <ListItemHeaderButton onClick={editTableName}>
+                    <ListItemHeaderButton onClick={editTableName} aria-label={t('qubdi.sidePanel.saveName')}>
                         <Check />
                     </ListItemHeaderButton>
                 )}

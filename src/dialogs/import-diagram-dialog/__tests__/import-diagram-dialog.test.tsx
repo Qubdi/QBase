@@ -1,5 +1,11 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -107,8 +113,10 @@ describe('ImportDiagramDialog', () => {
             expect.objectContaining({ name: 'Shop' }),
             'p1'
         );
-        expect(screen.getByTestId('where').textContent).toBe(
-            '/billing/diagrams/remote-1'
+        await waitFor(() =>
+            expect(screen.getByTestId('where').textContent).toBe(
+                '/billing/diagrams/remote-1'
+            )
         );
     });
 
@@ -137,8 +145,10 @@ describe('ImportDiagramDialog', () => {
         show(sync, null);
         await importFile();
         expect(sync).not.toHaveBeenCalled();
-        expect(screen.getByTestId('where').textContent).toMatch(
-            /^\/diagrams\//
+        await waitFor(() =>
+            expect(screen.getByTestId('where').textContent).toMatch(
+                /^\/diagrams\//
+            )
         );
     });
 });

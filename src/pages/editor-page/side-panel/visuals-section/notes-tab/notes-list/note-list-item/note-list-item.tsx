@@ -70,7 +70,7 @@ export const NoteListItem = React.forwardRef<HTMLDivElement, NoteListItemProps>(
             () => (
                 <DropdownMenu>
                     <DropdownMenuTrigger>
-                        <ListItemHeaderButton>
+                        <ListItemHeaderButton aria-label={t('qubdi.sidePanel.itemMenu')}>
                             <EllipsisVertical />
                         </ListItemHeaderButton>
                     </DropdownMenuTrigger>
@@ -142,7 +142,7 @@ export const NoteListItem = React.forwardRef<HTMLDivElement, NoteListItemProps>(
                             <div className="hidden md:group-hover:flex">
                                 <ListItemHeaderButton
                                     onClick={handleFocusOnNote}
-                                >
+                                 aria-label={t('qubdi.sidePanel.focusOn')}>
                                     <CircleDotDashed />
                                 </ListItemHeaderButton>
                             </div>

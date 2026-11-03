@@ -1,4 +1,5 @@
 import { account } from '../qubdi/account';
+import { sidePanel } from '../qubdi/side-panel';
 import { database } from '../qubdi/database';
 import { workspace } from '../qubdi/workspace';
 import { adminUsers } from '../qubdi/admin-users';
@@ -514,6 +515,7 @@ export const en = {
         // drift, the admin panel. One file per area in src/i18n/qubdi/.
         qubdi: {
             account,
+            sidePanel,
             database,
             workspace,
             adminUsers,

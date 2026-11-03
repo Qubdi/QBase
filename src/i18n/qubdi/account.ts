@@ -96,6 +96,8 @@ export const account = {
         changePassword: 'Change password',
         twoFactor: 'Two-factor authentication',
         signOut: 'Sign out',
+        signOutUnsaved:
+            'Some changes could not be saved to the server. Signing out deletes the copy kept in this browser, so they will be lost. Sign out anyway?',
     },
     changePassword: {
         forcedTitle: 'Choose your own password',

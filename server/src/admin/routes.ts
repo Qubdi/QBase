@@ -348,6 +348,12 @@ export const adminRoutes =
             if (body.isActive === false && id === req.user!.id) {
                 return reply.code(400).send({ error: 'cannot_disable_self' });
             }
+            // An admin's own password changes only through /auth/change-password,
+            // which asks for the current password (and the 2FA code). Here a
+            // stolen admin session could set a new one with nothing else.
+            if (body.password !== undefined && id === req.user!.id) {
+                return reply.code(400).send({ error: 'use_change_password' });
+            }
             const patch: Partial<typeof users.$inferInsert> = {};
             if (body.isAdmin !== undefined) patch.isAdmin = body.isAdmin;
             if (body.isActive !== undefined) patch.isActive = body.isActive;
@@ -362,8 +368,8 @@ export const adminRoutes =
                 const weak = weakPassword(config, body.password, account.email);
                 if (weak) return reply.code(400).send(weak);
                 patch.passwordHash = await hashPassword(body.password);
-                // a reset is a temporary password, unless the admin set their own
-                patch.mustChangePassword = id !== req.user!.id;
+                // a reset is a temporary password: its owner chooses their own
+                patch.mustChangePassword = true;
             }
             // the check and the write happen under one lock, so two admins
             // demoting each other at once cannot leave nobody

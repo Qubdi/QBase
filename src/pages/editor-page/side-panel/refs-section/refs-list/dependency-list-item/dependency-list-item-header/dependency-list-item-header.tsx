@@ -98,7 +98,7 @@ export const DependencyListItemHeader: React.FC<
         () => (
             <DropdownMenu>
                 <DropdownMenuTrigger>
-                    <ListItemHeaderButton>
+                    <ListItemHeaderButton aria-label={t('qubdi.sidePanel.itemMenu')}>
                         <EllipsisVertical />
                     </ListItemHeaderButton>
                 </DropdownMenuTrigger>
@@ -134,7 +134,7 @@ export const DependencyListItemHeader: React.FC<
             <div className="flex flex-row-reverse items-center">
                 <div>{renderDropDownMenu()}</div>
                 <div className="flex flex-row-reverse md:hidden md:group-hover:flex">
-                    <ListItemHeaderButton onClick={focusOnDependency}>
+                    <ListItemHeaderButton onClick={focusOnDependency} aria-label={t('qubdi.sidePanel.focusOn')}>
                         <CircleDotDashed />
                     </ListItemHeaderButton>
                 </div>

@@ -63,8 +63,10 @@ export async function adoptLegacyLocalData(
         Dexie.delete(name)
 ): Promise<void> {
     try {
+        // Retried on every start for as long as the old database exists, so a
+        // move that failed once is not given up on; rows the new database
+        // already has (made since) are kept as they are.
         if (!(await exists(LEGACY_LOCAL_DB_NAME))) return;
-        if ((await target.table('diagrams').count()) > 0) return;
 
         const names = new Set(target.tables.map((table) => table.name));
         const legacy = openLegacy();
@@ -88,7 +90,23 @@ export async function adoptLegacyLocalData(
 
         await target.transaction('rw', target.tables, async () => {
             for (const [name, items] of rows) {
-                if (items.length > 0) await target.table(name).bulkPut(items);
+                if (items.length === 0) continue;
+                const table = target.table(name);
+                const have = new Set(await table.toCollection().primaryKeys());
+                const keyOf = (item: unknown) =>
+                    table.schema.primKey.keyPath
+                        ? table.schema.primKey.keyPath
+                              .toString()
+                              .split('.')
+                              .reduce<unknown>(
+                                  (v, k) => (v as Record<string, unknown>)?.[k],
+                                  item
+                              )
+                        : undefined;
+                const missing = items.filter(
+                    (item) => !have.has(keyOf(item) as never)
+                );
+                if (missing.length > 0) await table.bulkPut(missing);
             }
         });
         await deleteDatabase(LEGACY_LOCAL_DB_NAME);
