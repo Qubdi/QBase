@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { audit, auditDiagramSave } from '../audit/audit.js';
@@ -27,10 +27,15 @@ const NO_LIMIT = 2_147_483_647;
  * diagram there is. One project's list is bounded by the project.
  */
 const DEFAULT_LIST_LIMIT = 100;
+/** Deepest page the diagram list will skip to; narrow the list with `projectId` to go further. */
+const MAX_LIST_OFFSET = 10_000;
+/** Most versions the version list returns for one diagram, newest first. */
+export const MAX_LISTED_VERSIONS = 500;
 const idParam = z.object({ id: z.string().uuid() });
 const listQuery = z.object({
     limit: z.coerce.number().int().min(1).max(500).optional(),
-    offset: z.coerce.number().int().min(0).default(0),
+    /** deep pages scan and discard every row before them, so the depth is bounded */
+    offset: z.coerce.number().int().min(0).max(MAX_LIST_OFFSET).default(0),
     /** only this project's diagrams */
     projectId: z.string().uuid().optional(),
 });
@@ -234,7 +239,11 @@ export const diagramRoutes =
             // the project can be deleted between the check and the insert
             let diagram;
             try {
-                [diagram] = await db
+                // everything but the content: the response reuses the content
+                // that was just sent instead of reading it back
+                const { content: _content, ...columns } =
+                    getTableColumns(diagrams);
+                const [row] = await db
                     .insert(diagrams)
                     .values({
                         ownerId: userId,
@@ -243,7 +252,8 @@ export const diagramRoutes =
                         content: body.content,
                         contentHash: diagramHash(body.title, body.content),
                     })
-                    .returning();
+                    .returning(columns);
+                diagram = { ...row, content: body.content };
             } catch (err) {
                 if (isForeignKeyViolation(err)) {
                     return reply.code(404).send({ error: 'not_found' });
@@ -473,7 +483,9 @@ export const diagramRoutes =
                 .from(snapshots)
                 .leftJoin(users, eq(users.id, snapshots.publishedBy))
                 .where(eq(snapshots.diagramId, id))
-                .orderBy(desc(snapshots.version));
+                .orderBy(desc(snapshots.version))
+                // SNAPSHOT_KEEP=0 keeps every version, so the list is bounded here
+                .limit(MAX_LISTED_VERSIONS);
         });
 
         app.get('/:id/versions/:version', async (req, reply) => {

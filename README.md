@@ -348,7 +348,9 @@ and 21 KB of WAL on a laptop. To go further:
   the numbers if the database is large.
 - **Backups.** The dump above is a manual step. Run it from cron, for example
   `docker compose exec -T db pg_dump -U qbase -Fc qbase > qbase-$(date +%F).dump`,
-  and keep copies off the machine. For point-in-time recovery use WAL archiving
+  and keep copies off the machine. To restore a dump into an empty database:
+  `docker compose exec -T db pg_restore -U qbase -d qbase --no-owner < qbase-2026-01-01.dump`
+  (add `--clean --if-exists` to replace what is already there). For point-in-time recovery use WAL archiving
   (`archive_mode`, `archive_command`) or a managed Postgres.
 
 QBase is licensed under the AGPL-3.0.

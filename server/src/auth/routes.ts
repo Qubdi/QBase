@@ -1,4 +1,4 @@
-import { count, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type {
     FastifyPluginAsync,
     FastifyReply,
@@ -107,10 +107,14 @@ export const authRoutes =
 
         // lets the UI show the first-run "create admin" form only when it applies
         app.get('/setup-status', async () => {
-            const [{ value }] = await db.select({ value: count() }).from(users);
+            // one row is enough to know; counting would visit every user
+            const anyUser = await db
+                .select({ id: users.id })
+                .from(users)
+                .limit(1);
             // the form needs the minimum length to tick its checklist as people type
             return {
-                needsSetup: value === 0,
+                needsSetup: anyUser.length === 0,
                 passwordMinLength: config.passwordMinLength,
                 // whether the account menu offers two-factor at all
                 mfaAvailable: mfaAvailable(config),

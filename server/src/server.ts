@@ -23,7 +23,12 @@ try {
 // migrations get their own connection with no statement limit: one that
 // rewrites a large table can take longer than any request should. Two
 // connections: one holds the lock that makes replicas take turns, one migrates
-const migrating = createDb(config.databaseUrl, { max: 2 });
+const migrating = createDb(config.databaseUrl, {
+    max: 2,
+    // a migration that cannot get its table lock gives up and is retried,
+    // instead of queueing and stalling the traffic behind it
+    lockTimeoutMs: 10_000,
+});
 await runMigrations(migrating.db);
 await migrating.pool.end();
 
