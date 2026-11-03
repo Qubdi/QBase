@@ -16,6 +16,8 @@ import {
     publishSnapshot,
 } from './service.js';
 import { diagramHash } from '../lib/hash.js';
+import { isForeignKeyViolation } from '../lib/pg-errors.js';
+import { pgDate } from '../lib/pg-date.js';
 
 /** `limit` stand-in when the list is not paged (Postgres' largest integer). */
 const NO_LIMIT = 2_147_483_647;
@@ -36,7 +38,7 @@ const listQuery = z.object({
 const editorIdSchema = z.string().min(1).max(100);
 const versionParam = z.object({
     id: z.string().uuid(),
-    version: z.coerce.number().int().positive(),
+    version: z.coerce.number().int().positive().max(2147483647),
 });
 
 /**
@@ -76,7 +78,7 @@ const updateBody = z
          * needs it, so a save made on top of someone else's newer one is
          * refused instead of silently replacing it.
          */
-        baseUpdatedAt: z.coerce.date().optional(),
+        baseUpdatedAt: pgDate().optional(),
         /**
          * The editor making the change. Without one the change is taken to be
          * the user's own API call, which holds the lock just for itself.
@@ -229,16 +231,25 @@ export const diagramRoutes =
             if (!canWrite(projectRole)) {
                 return reply.code(403).send({ error: 'forbidden' });
             }
-            const [diagram] = await db
-                .insert(diagrams)
-                .values({
-                    ownerId: userId,
-                    projectId: body.projectId,
-                    title: body.title,
-                    content: body.content,
-                    contentHash: diagramHash(body.title, body.content),
-                })
-                .returning();
+            // the project can be deleted between the check and the insert
+            let diagram;
+            try {
+                [diagram] = await db
+                    .insert(diagrams)
+                    .values({
+                        ownerId: userId,
+                        projectId: body.projectId,
+                        title: body.title,
+                        content: body.content,
+                        contentHash: diagramHash(body.title, body.content),
+                    })
+                    .returning();
+            } catch (err) {
+                if (isForeignKeyViolation(err)) {
+                    return reply.code(404).send({ error: 'not_found' });
+                }
+                throw err;
+            }
             await audit(db, {
                 userId,
                 action: 'diagram.create',

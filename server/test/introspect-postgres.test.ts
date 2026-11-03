@@ -10,12 +10,17 @@ import {
 import { assertReadOnlySql } from '../src/introspect/readonly-guard.js';
 import { decodeTypmod, splitArrayType } from '../src/introspect/typmod.js';
 import type { DatabaseMetadata } from '../src/introspect/types.js';
-import { resetSampleDatabase, SAMPLE_DB, SAMPLE_URL } from './introspect-pg-fixture.js';
+import {
+    PG_PORT,
+    resetSampleDatabase,
+    SAMPLE_DB,
+    SAMPLE_URL,
+} from './introspect-pg-fixture.js';
 
 const params = {
     dialect: 'postgresql' as const,
     host: 'localhost',
-    port: 5433,
+    port: PG_PORT,
     database: SAMPLE_DB,
     user: 'qbase',
     password: 'qbase',

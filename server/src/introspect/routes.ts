@@ -168,7 +168,13 @@ export const introspectRoutes =
                         .send({ error: 'encryption_not_configured' });
                     return null;
                 }
-                password = box.decrypt(saved.passwordEnc);
+                try {
+                    password = box.decrypt(saved.passwordEnc);
+                } catch {
+                    // CONNECTION_KEY was changed after the password was saved
+                    reply.code(409).send({ error: 'connection_key_changed' });
+                    return null;
+                }
             }
             return {
                 dialect: saved.dialect as ConnectionParams['dialect'],

@@ -887,13 +887,25 @@ export const adminRoutes =
             if (!project || !user) {
                 return reply.code(404).send({ error: 'not_found' });
             }
-            await db
-                .insert(projectMembers)
-                .values({ projectId: id, userId, role: body.role })
-                .onConflictDoUpdate({
-                    target: [projectMembers.projectId, projectMembers.userId],
-                    set: { role: body.role },
-                });
+            // the project or the user can be deleted between the check and
+            // the insert
+            try {
+                await db
+                    .insert(projectMembers)
+                    .values({ projectId: id, userId, role: body.role })
+                    .onConflictDoUpdate({
+                        target: [
+                            projectMembers.projectId,
+                            projectMembers.userId,
+                        ],
+                        set: { role: body.role },
+                    });
+            } catch (err) {
+                if (isForeignKeyViolation(err)) {
+                    return reply.code(404).send({ error: 'not_found' });
+                }
+                throw err;
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.member_set',

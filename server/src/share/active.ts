@@ -15,6 +15,17 @@ export const activeLinkSql = () =>
         or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, sql`now()`))
     );
 
+/**
+ * Whether a link takes one of a diagram's MAX_ACTIVE_LINKS places: not revoked
+ * and not expired. A link switched off still counts, so turning it back on
+ * (or creating one as "off") can never take a diagram past the cap.
+ */
+export const countedLinkSql = () =>
+    and(
+        isNull(shareLinks.revokedAt),
+        or(isNull(shareLinks.expiresAt), gt(shareLinks.expiresAt, sql`now()`))
+    );
+
 export type LinkStatus = 'active' | 'off' | 'expired' | 'revoked';
 
 /**

@@ -10,7 +10,11 @@ import type {
     Introspector,
     IntrospectorFactory,
 } from '../src/introspect/types.js';
-import { resetSampleDatabase, SAMPLE_DB } from './introspect-pg-fixture.js';
+import {
+    PG_PORT,
+    resetSampleDatabase,
+    SAMPLE_DB,
+} from './introspect-pg-fixture.js';
 import {
     as,
     registerUser,
@@ -600,7 +604,7 @@ describe('introspect HTTP layer (fake driver)', () => {
                 const before = await storedPassword(editId);
                 for (const move of [
                     { host: '93.184.216.35' },
-                    { port: 5433 },
+                    { port: PG_PORT + 1 },
                     { dialect: 'sqlserver' },
                     { database: 'another_database' },
                     { user: 'another_user' },
@@ -748,7 +752,7 @@ describe('introspect end to end against the real sample database', () => {
     const real = (over: object = {}) => ({
         dialect: 'postgresql',
         host: '127.0.0.1',
-        port: 5433,
+        port: PG_PORT,
         database: SAMPLE_DB,
         user: 'qbase',
         password: 'qbase',

@@ -1,9 +1,10 @@
 import pg from 'pg';
 
 export const SAMPLE_DB = 'qbase_sample';
-export const SAMPLE_ADMIN_URL =
-    'postgres://qbase:qbase@localhost:5433/postgres';
-export const SAMPLE_URL = `postgres://qbase:qbase@localhost:5433/${SAMPLE_DB}`;
+// TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
+export const PG_PORT = Number(process.env.TEST_PG_PORT ?? 5433);
+export const SAMPLE_ADMIN_URL = `postgres://qbase:qbase@localhost:${PG_PORT}/postgres`;
+export const SAMPLE_URL = `postgres://qbase:qbase@localhost:${PG_PORT}/${SAMPLE_DB}`;
 
 export const SAMPLE_DDL = `
 CREATE SCHEMA shop;

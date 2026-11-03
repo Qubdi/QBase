@@ -2,6 +2,7 @@ import { and, desc, eq, gte, inArray, lte, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db } from '../db/client.js';
 import { auditLog, diagrams, projects, users } from '../db/schema.js';
+import { pgDate } from '../lib/pg-date.js';
 import {
     actionsInGroup,
     AUDIT_GROUP_NAMES,
@@ -68,8 +69,8 @@ export const activityQuery = z.object({
     action: z.string().trim().max(60).optional(),
     userId: z.string().uuid().optional(),
     diagramId: z.string().uuid().optional(),
-    from: z.coerce.date().optional(),
-    to: z.coerce.date().optional(),
+    from: pgDate().optional(),
+    to: pgDate().optional(),
     /**
      * A save is a row of its own and by far the most frequent action, so a
      * list of what people did is easier to read without them. The API shows

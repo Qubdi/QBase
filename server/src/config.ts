@@ -208,7 +208,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1),
         trustProxy,
         logLevel,
-        dbPoolMax: int('DB_POOL_MAX', 10, 1),
+        dbPoolMax: int('DB_POOL_MAX', 10, 2),
         auditSaveMinutes: int('AUDIT_SAVE_MINUTES', 60),
         autoPublishCoalesceSeconds: int('AUTO_PUBLISH_COALESCE_SECONDS', 300),
         dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),

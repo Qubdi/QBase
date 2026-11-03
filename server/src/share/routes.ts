@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -10,7 +10,7 @@ import { CryptoBox } from '../introspect/crypto-box.js';
 import { API_SECURITY_HEADERS } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
-import { activeLinkSql } from './active.js';
+import { activeLinkSql, countedLinkSql } from './active.js';
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
 import { createSnapshotCache } from './snapshot-cache.js';
 import { generateToken, hashToken } from './tokens.js';
@@ -156,7 +156,8 @@ export const shareManagementRoutes =
                 const [{ open }] = await tx
                     .select({ open: count() })
                     .from(shareLinks)
-                    .where(and(eq(shareLinks.diagramId, id), activeLinkSql()));
+                    
+                    .where(and(eq(shareLinks.diagramId, id), countedLinkSql()));
                 if (open >= MAX_ACTIVE_LINKS) return null;
                 const [created] = await tx
                     .insert(shareLinks)
@@ -192,20 +193,52 @@ export const shareManagementRoutes =
             const link = await findLink(id, linkId);
             if (!link) return reply.code(404).send({ error: 'not_found' });
             const body = patchBody.parse(req.body);
-            const [updated] = await db
-                .update(shareLinks)
-                .set({
-                    access: body.access,
-                    live: body.live,
-                    expiresAt:
-                        body.expiresAt === undefined
-                            ? undefined
-                            : body.expiresAt === null
-                              ? null
-                              : new Date(body.expiresAt),
-                })
-                .where(eq(shareLinks.id, linkId))
-                .returning();
+            const nextExpiresAt =
+                body.expiresAt === undefined
+                    ? link.expiresAt
+                    : body.expiresAt === null
+                      ? null
+                      : new Date(body.expiresAt);
+            // A link that takes a place (not revoked, not expired) must fit
+            // under the cap. Check it under the same lock creates take, so a
+            // PATCH cannot slip past a create (or another PATCH) in flight.
+            const takesPlace =
+                !link.revokedAt &&
+                (!nextExpiresAt || nextExpiresAt.getTime() > Date.now());
+            const updated = await db.transaction(async (tx) => {
+                if (takesPlace) {
+                    await tx.execute(
+                        sql`select pg_advisory_xact_lock(hashtextextended(${linkCreateLockKey(id)}, 0))`
+                    );
+                    const [{ others }] = await tx
+                        .select({ others: count() })
+                        .from(shareLinks)
+                        .where(
+                            and(
+                                eq(shareLinks.diagramId, id),
+                                ne(shareLinks.id, linkId),
+                                countedLinkSql()
+                            )
+                        );
+                    if (others >= MAX_ACTIVE_LINKS) return null;
+                }
+                const [row] = await tx
+                    .update(shareLinks)
+                    .set({
+                        access: body.access,
+                        live: body.live,
+                        expiresAt:
+                            body.expiresAt === undefined
+                                ? undefined
+                                : nextExpiresAt,
+                    })
+                    .where(eq(shareLinks.id, linkId))
+                    .returning();
+                return row;
+            });
+            if (!updated) {
+                return reply.code(409).send({ error: 'too_many_links' });
+            }
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.update',
@@ -367,6 +400,11 @@ export const publicShareRoutes =
                 return reply.code(404).send({ error: 'not_found' });
             }
             const { id: linkId, diagramId, tokenHash: openedWith } = check.link;
+
+            // The browser can leave while the token is being looked up. Its
+            // 'close' event has then already fired and will not fire again, so
+            // a slot taken now would never be given back.
+            if (req.raw.destroyed) return reply.hijack();
 
             const open = viewers.get(linkId) ?? 0;
             const ip = req.ip;

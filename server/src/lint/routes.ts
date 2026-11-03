@@ -29,7 +29,11 @@ const lintTable = z.looseObject({
     id: z.string(),
     name: z.string(),
     fields: z.array(lintField),
-    indexes: z.array(z.looseObject({ fieldIds: z.array(z.string()) })).optional(),
+    indexes: z
+        .array(
+            z.looseObject({ name: z.string(), fieldIds: z.array(z.string()) })
+        )
+        .optional(),
 });
 const lintDiagram = z.looseObject({
     tables: z.array(lintTable).optional(),
