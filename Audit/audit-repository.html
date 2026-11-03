@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 20</b></div>
-  <h1>11 open: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 21</b></div>
+  <h1>7 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-04</span>
     <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
@@ -37,7 +37,7 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">11 open &middot; 43 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">7 open &middot; 47 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -48,10 +48,6 @@
         <tr><td class="svc-name">REPO-045</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">NOTICE says developed in-house; upstream name and copyright removed</td><td><code>NOTICE:5</code> · <code>NOTICE:20</code></td><td class="wrap-cell">Restore upstream name, copyright and modification notice</td></tr>
         <tr><td class="svc-name">REPO-049</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">NOTICE grants "any later version"; both packages declare <code>AGPL-3.0-only</code></td><td><code>NOTICE:9</code> · <code>package.json:7</code> · <code>server/package.json:3</code></td><td class="wrap-cell">Make NOTICE and <code>license</code> fields name the same terms</td></tr>
         <tr><td class="svc-name">REPO-050</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">CLA licensee "QBase, Inc." differs from copyright holder "Qubdi"</td><td><code>CLA.md:3</code> · <code>NOTICE:2</code></td><td class="wrap-cell">Name one legal entity in both files</td></tr>
-        <tr><td class="svc-name">REPO-051</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README cron backup writes <code>qbase-*.dump</code>; not git- or docker-ignored</td><td><code>README.md:350</code> · <code>.gitignore:164</code> · <code>Dockerfile.dockerignore:56</code></td><td class="wrap-cell">Ignore <code>qbase-*.dump</code> in <code>.gitignore</code> and both dockerignores</td></tr>
-        <tr><td class="svc-name">REPO-052</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Gitleaks allowlist says the password stays in history; history was rewritten</td><td><code>.gitleaks.toml:2</code></td><td class="wrap-cell">Drop the allowlist or reword the comment</td></tr>
-        <tr><td class="svc-name">REPO-053</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">PR and issue templates use repo-relative links that break in GitHub bodies</td><td><code>.github/pull_request_template.md:10</code> · <code>.github/ISSUE_TEMPLATE/bug_report.md:22</code></td><td class="wrap-cell">Use absolute <code>github.com/.../blob/...</code> URLs</td></tr>
-        <tr><td class="svc-name">REPO-054</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SECURITY.md excludes "example values"; example secrets are blank now</td><td><code>SECURITY.md:34</code></td><td class="wrap-cell">Say "left unset or weak" instead</td></tr>
         <tr><td class="svc-name">REPO-055</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">npm audit: 17 root, 11 server moderate <code>minimatch</code> advisories via ESLint</td><td><code>npm audit</code> root and <code>server/</code></td><td class="wrap-cell">Override <code>minimatch</code> to <code>&gt;=11.0.1</code> in both packages</td></tr>
       </tbody>
     </table>
@@ -60,11 +56,15 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (43)</summary>
+  <details><summary>Fixed (47)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-051</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README cron backup writes <code>qbase-*.dump</code>; not git- or docker-ignored</td></tr>
+        <tr><td class="svc-name">REPO-052</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Gitleaks allowlist says the password stays in history; history was rewritten</td></tr>
+        <tr><td class="svc-name">REPO-053</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">PR and issue templates use repo-relative links that break in GitHub bodies</td></tr>
+        <tr><td class="svc-name">REPO-054</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SECURITY.md excludes "example values"; example secrets are blank now</td></tr>
         <tr><td class="svc-name">REPO-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI runs on pull requests only; direct pushes to <code>main</code> unchecked</td></tr>
         <tr><td class="svc-name">REPO-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README step 3 repeats <code>cp .env.example .env</code>, overwriting step 1 edits</td></tr>
         <tr><td class="svc-name">REPO-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README server command keeps default <code>DATABASE_URL</code>, not chosen <code>POSTGRES_PASSWORD</code></td></tr>

@@ -104,7 +104,9 @@ export const AreaListItem = React.forwardRef<HTMLDivElement, AreaListItemProps>(
             () => (
                 <DropdownMenu>
                     <DropdownMenuTrigger>
-                        <ListItemHeaderButton aria-label={t('qubdi.sidePanel.itemMenu')}>
+                        <ListItemHeaderButton
+                            aria-label={t('qubdi.sidePanel.itemMenu')}
+                        >
                             <EllipsisVertical />
                         </ListItemHeaderButton>
                     </DropdownMenuTrigger>
@@ -214,13 +216,19 @@ export const AreaListItem = React.forwardRef<HTMLDivElement, AreaListItemProps>(
                                 <div className="hidden md:group-hover:flex">
                                     <ListItemHeaderButton
                                         onClick={handleFocusOnArea}
-                                     aria-label={t('qubdi.sidePanel.focusOn')}>
+                                        aria-label={t(
+                                            'qubdi.sidePanel.focusOn'
+                                        )}
+                                    >
                                         <CircleDotDashed />
                                     </ListItemHeaderButton>
                                 </div>
                             </div>
                         ) : (
-                            <ListItemHeaderButton onClick={saveAreaName} aria-label={t('qubdi.sidePanel.saveName')}>
+                            <ListItemHeaderButton
+                                onClick={saveAreaName}
+                                aria-label={t('qubdi.sidePanel.saveName')}
+                            >
                                 <Check />
                             </ListItemHeaderButton>
                         )}

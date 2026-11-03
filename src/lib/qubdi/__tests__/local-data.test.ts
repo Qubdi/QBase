@@ -204,8 +204,12 @@ describe('adoptLegacyLocalData', () => {
     });
 
     it('adds what the new database lacks and keeps what it already has', async () => {
-        const target = fakeDb({ diagrams: [{ id: 'new' }, { id: 'both', v: 2 }] });
-        const legacy = fakeDb({ diagrams: [{ id: 'both', v: 1 }, { id: 'old' }] });
+        const target = fakeDb({
+            diagrams: [{ id: 'new' }, { id: 'both', v: 2 }],
+        });
+        const legacy = fakeDb({
+            diagrams: [{ id: 'both', v: 1 }, { id: 'old' }],
+        });
         const deleteDatabase = vi.fn(async () => undefined);
         await adoptLegacyLocalData(
             target,

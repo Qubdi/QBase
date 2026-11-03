@@ -119,7 +119,9 @@ export const CustomTypeListItemHeader: React.FC<
         return (
             <DropdownMenu>
                 <DropdownMenuTrigger>
-                    <ListItemHeaderButton aria-label={t('qubdi.sidePanel.itemMenu')}>
+                    <ListItemHeaderButton
+                        aria-label={t('qubdi.sidePanel.itemMenu')}
+                    >
                         <EllipsisVertical />
                     </ListItemHeaderButton>
                 </DropdownMenuTrigger>
@@ -238,14 +240,20 @@ export const CustomTypeListItemHeader: React.FC<
                         ) : null}
                         {!readonly ? (
                             <div className="flex flex-row-reverse md:hidden md:group-hover:flex">
-                                <ListItemHeaderButton onClick={enterEditMode} aria-label={t('qubdi.sidePanel.editName')}>
+                                <ListItemHeaderButton
+                                    onClick={enterEditMode}
+                                    aria-label={t('qubdi.sidePanel.editName')}
+                                >
                                     <Pencil />
                                 </ListItemHeaderButton>
                             </div>
                         ) : null}
                     </>
                 ) : (
-                    <ListItemHeaderButton onClick={editCustomTypeName} aria-label={t('qubdi.sidePanel.saveName')}>
+                    <ListItemHeaderButton
+                        onClick={editCustomTypeName}
+                        aria-label={t('qubdi.sidePanel.saveName')}
+                    >
                         <Check />
                     </ListItemHeaderButton>
                 )}

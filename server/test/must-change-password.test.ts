@@ -166,16 +166,12 @@ describe('must change password', () => {
             expect((await get('/projects', bob)).statusCode).toBe(403);
         });
 
-        it('does not flag an admin who sets their own password', async () => {
+        it('refuses an admin setting their own password, and changes nothing', async () => {
             const res = await resetByAdmin(admin.id, 'Boss-New-Pass-1!');
-            expect(res.statusCode).toBe(200);
+            expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('use_change_password');
             expect(await flagOf(admin.id)).toBe(false);
-            // the reset ended the admin's own session; sign in again
-            admin = await loginUser(
-                ctx.app,
-                'admin@example.com',
-                'Boss-New-Pass-1!'
-            );
+            // the old password still works and the session is still alive
             expect((await get('/admin/users', admin)).statusCode).toBe(200);
         });
 

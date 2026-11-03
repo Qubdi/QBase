@@ -8,18 +8,12 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 20</b></div>
-  <h1>4 open: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 21</b></div>
+  <h1>0 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-04</span>
     <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
-  </div>
-  <div class="note crit">
-    <span class="pill crit">Act first</span>
-    <span><ul class="body">
-      <li><code>CLI-043</code> — sign-out deletes unsent edits when the final save fails.</li>
-    </ul></span>
   </div>
   <div class="split-nav">
     <b>Part of a 7-file audit split &mdash;</b>
@@ -37,15 +31,11 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">4 open &middot; 42 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 46 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">CLI-043</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Sign-out deletes the local copy even when the final flush failed</td><td><code>src/context/qubdi-context/qubdi-provider.tsx:109</code> · <code>src/lib/qubdi/save-status-store.ts:44</code></td><td class="wrap-cell">Abort or confirm sign-out while <code>hasUnsavedChanges()</code></td></tr>
-        <tr><td class="svc-name">CLI-044</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Side-panel icon-only buttons have no accessible name</td><td><code>src/pages/editor-page/side-panel/refs-section/refs-section.tsx:178</code> · <code>src/pages/editor-page/side-panel/tables-section/table-list/table-list-item/table-list-item-header/table-list-item-header.tsx:317</code></td><td class="wrap-cell">Add <code>aria-label</code> to every icon-only side-panel button</td></tr>
-        <tr><td class="svc-name">CLI-045</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Failed legacy DB move is silent; first new diagram blocks every retry</td><td><code>src/lib/qubdi/local-data.ts:67</code> · <code>src/lib/qubdi/local-data.ts:95</code></td><td class="wrap-cell">Retry while legacy exists; merge missing ids</td></tr>
-        <tr><td class="svc-name">CLI-046</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Import test asserts navigation synchronously; fails under full-suite load</td><td><code>src/dialogs/import-diagram-dialog/__tests__/import-diagram-dialog.test.tsx:140</code></td><td class="wrap-cell">Wrap the navigation assertion in <code>waitFor</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -53,11 +43,15 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (42)</summary>
+  <details><summary>Fixed (46)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-043</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Sign-out deletes the local copy even when the final flush failed</td></tr>
+        <tr><td class="svc-name">CLI-044</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Side-panel icon-only buttons have no accessible name</td></tr>
+        <tr><td class="svc-name">CLI-045</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Failed legacy DB move is silent; first new diagram blocks every retry</td></tr>
+        <tr><td class="svc-name">CLI-046</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Import test asserts navigation synchronously; fails under full-suite load</td></tr>
         <tr><td class="svc-name">CLI-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Reopen reuses browser copy without checking server <code>updatedAt</code>; viewers see stale diagram</td></tr>
         <tr><td class="svc-name">CLI-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish syncs outside the autosaver; both send same base and conflict</td></tr>
         <tr><td class="svc-name">CLI-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish and drift controls render for viewers and lock losers</td></tr>

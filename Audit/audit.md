@@ -1,24 +1,23 @@
 # QBase — Audit
 
-**rev** 20 · **date** 2026-11-04
+**rev** 21 · **date** 2026-11-04
 **method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b` (0 errors), server `tsc` typecheck and `--noUnusedLocals --noUnusedParameters` (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), `vite build` · npm audit root (17 moderate) and `server/` (11 moderate), all `minimatch` in the ESLint dev chain · server vitest against a throwaway `postgres:18-alpine` container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · `drizzle-kit generate` in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 3 | 0 | 1 | 28 | 0 |
-| Repository | 11 | 0 | 1 | 43 | 1 |
+| Security & secrets | 2 | 0 | 1 | 29 | 0 |
+| Repository | 7 | 0 | 1 | 47 | 1 |
 | Server | 0 | 0 | 0 | 38 | 0 |
 | Database | 0 | 0 | 0 | 21 | 3 |
-| Client | 4 | 0 | 1 | 42 | 0 |
+| Client | 0 | 0 | 0 | 46 | 0 |
 | Dead code | 0 | 0 | 0 | 6 | 0 |
-| **Total** | 18 | 0 | 3 | 178 | 4 |
+| **Total** | 9 | 0 | 2 | 187 | 4 |
 
 ## Act first
 
 - `SEC-001` — old secrets still reachable through remote PR refs; rotate all three.
 - `REPO-030` — Postgres digests disagree; CI's digest check fails and tests run another image.
-- `CLI-043` — sign-out deletes unsent edits when the final save fails.
 
 ---
 
@@ -29,7 +28,6 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD` reachable through 65 pre-rewrite remote PR refs | `git ls-remote origin 'refs/pull/*/head'` | Rotate all three; ask GitHub Support to purge PR refs |
-| SEC-030 | Med | Admin PATCH on own account sets password without current password or 2FA | `server/src/admin/routes.ts:354` | Refuse self reset; point to `/auth/change-password` |
 | SEC-031 | Low | Drift webhook URL stored and returned in plaintext; embedded tokens exposed | `server/src/db/schema.ts:439` | Encrypt with CryptoBox; return only the host |
 
 ### Repository
@@ -42,20 +40,7 @@
 | REPO-045 | Med | NOTICE says developed in-house; upstream name and copyright removed | `NOTICE:5` · `NOTICE:20` | Restore upstream name, copyright and modification notice |
 | REPO-049 | Med | NOTICE grants "any later version"; both packages declare `AGPL-3.0-only` | `NOTICE:9` · `package.json:7` · `server/package.json:3` | Make NOTICE and `license` fields name the same terms |
 | REPO-050 | Med | CLA licensee "QBase, Inc." differs from copyright holder "Qubdi" | `CLA.md:3` · `NOTICE:2` | Name one legal entity in both files |
-| REPO-051 | Med | README cron backup writes `qbase-*.dump`; not git- or docker-ignored | `README.md:350` · `.gitignore:164` · `Dockerfile.dockerignore:56` | Ignore `qbase-*.dump` in `.gitignore` and both dockerignores |
-| REPO-052 | Low | Gitleaks allowlist says the password stays in history; history was rewritten | `.gitleaks.toml:2` | Drop the allowlist or reword the comment |
-| REPO-053 | Low | PR and issue templates use repo-relative links that break in GitHub bodies | `.github/pull_request_template.md:10` · `.github/ISSUE_TEMPLATE/bug_report.md:22` | Use absolute `github.com/.../blob/...` URLs |
-| REPO-054 | Low | SECURITY.md excludes "example values"; example secrets are blank now | `SECURITY.md:34` | Say "left unset or weak" instead |
 | REPO-055 | Low | npm audit: 17 root, 11 server moderate `minimatch` advisories via ESLint | `npm audit` root and `server/` | Override `minimatch` to `>=11.0.1` in both packages |
-
-### Client
-
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| CLI-043 | High | Sign-out deletes the local copy even when the final flush failed | `src/context/qubdi-context/qubdi-provider.tsx:109` · `src/lib/qubdi/save-status-store.ts:44` | Abort or confirm sign-out while `hasUnsavedChanges()` |
-| CLI-044 | Med | Side-panel icon-only buttons have no accessible name | `src/pages/editor-page/side-panel/refs-section/refs-section.tsx:178` · `src/pages/editor-page/side-panel/tables-section/table-list/table-list-item/table-list-item-header/table-list-item-header.tsx:317` | Add `aria-label` to every icon-only side-panel button |
-| CLI-045 | Med | Failed legacy DB move is silent; first new diagram blocks every retry | `src/lib/qubdi/local-data.ts:67` · `src/lib/qubdi/local-data.ts:95` | Retry while legacy exists; merge missing ids |
-| CLI-046 | Low | Import test asserts navigation synchronously; fails under full-suite load | `src/dialogs/import-diagram-dialog/__tests__/import-diagram-dialog.test.tsx:140` | Wrap the navigation assertion in `waitFor` |
 
 ---
 
@@ -63,6 +48,15 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-030 | Security & secrets | Admin PATCH on own account sets password without current password or 2FA |
+| REPO-051 | Repository | README cron backup writes `qbase-*.dump`; not git- or docker-ignored |
+| REPO-052 | Repository | Gitleaks allowlist says the password stays in history; history was rewritten |
+| REPO-053 | Repository | PR and issue templates use repo-relative links that break in GitHub bodies |
+| REPO-054 | Repository | SECURITY.md excludes "example values"; example secrets are blank now |
+| CLI-043 | Client | Sign-out deletes the local copy even when the final flush failed |
+| CLI-044 | Client | Side-panel icon-only buttons have no accessible name |
+| CLI-045 | Client | Failed legacy DB move is silent; first new diagram blocks every retry |
+| CLI-046 | Client | Import test asserts navigation synchronously; fails under full-suite load |
 | SRV-015 | Server | Links created with `access: "off"` skip `MAX_ACTIVE_LINKS` and are never purged |
 | SRV-030 | Server | Link PATCH to `access: "anyone"` reactivates off links past `MAX_ACTIVE_LINKS` |
 | SRV-031 | Server | `POST /lint` with two unnamed indexes on one field returns 500 |
@@ -317,3 +311,4 @@
 | 18 | 2026-10-30 | 1 fixed: SRV-029 |
 | 19 | 2026-11-03 | Deep pass + new Dead code lens (`DEAD-` prefix): 35 new, 0 fixed, 5 reopened: REPO-005, REPO-027, REPO-030, REPO-045, SRV-015 |
 | 20 | 2026-11-04 | 23 fixed: SRV-015, SRV-030 to SRV-038, DB-018 to DB-024, DEAD-001 to DEAD-006 |
+| 21 | 2026-11-04 | 9 fixed: SEC-030, REPO-051 to REPO-054, CLI-043 to CLI-046 |
