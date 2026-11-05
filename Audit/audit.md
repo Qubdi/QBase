@@ -1,22 +1,25 @@
 # QBase — Audit
 
-**rev** 22 · **date** 2026-11-05
-**method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b` (0 errors), server `tsc` typecheck and `--noUnusedLocals --noUnusedParameters` (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), `vite build` · npm audit root (17 moderate) and `server/` (11 moderate), all `minimatch` in the ESLint dev chain · server vitest against a throwaway `postgres:18-alpine` container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · `drizzle-kit generate` in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read
+**rev** 24 · **date** 2026-11-06
+**method** static analysis · whole-tree read · portable Node 24.22.2 on a clean `git archive` copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; `server/` eslint (0 problems), `tsc -b` (0 errors), server `tsc` typecheck and `--noUnusedLocals --noUnusedParameters` (0 errors), client vitest run (233 files, 2669 tests, all pass), `vite build` · npm audit root and `server/` (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 1 | 0 | 1 | 30 | 0 |
-| Repository | 2 | 0 | 0 | 52 | 1 |
-| Server | 0 | 0 | 0 | 38 | 0 |
-| Database | 0 | 0 | 0 | 21 | 3 |
-| Client | 0 | 0 | 0 | 46 | 0 |
-| Dead code | 0 | 0 | 0 | 6 | 0 |
-| **Total** | 3 | 0 | 1 | 193 | 4 |
+| Security & secrets | 19 | 0 | 2 | 30 | 0 |
+| Repository | 14 | 0 | 1 | 52 | 1 |
+| Server | 14 | 0 | 0 | 38 | 0 |
+| Database | 8 | 0 | 0 | 21 | 3 |
+| Client | 24 | 0 | 1 | 46 | 0 |
+| Dead code | 2 | 0 | 0 | 6 | 0 |
+| **Total** | 81 | 0 | 4 | 193 | 4 |
 
 ## Act first
 
 - `SEC-001` — old secrets still reachable through remote PR refs; rotate all three.
+- `REPO-056` — root `npm run lint` crashes; CI, publish and pre-commit all fail.
+- `SEC-032` — `.env.example` ships working secrets; blank them before anyone copies it.
+- `CLI-050` — Publish and auto-publish toggle always fail with 423; send `editorId`.
 
 ---
 
@@ -27,13 +30,111 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD` reachable through 65 pre-rewrite remote PR refs | `git ls-remote origin 'refs/pull/*/head'` | Rotate all three; ask GitHub Support to purge PR refs |
+| SEC-032 | High | `.env.example` sets `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD`; copying it bypasses Compose `:?` guards | `.env.example:11` · `.env.example:25` · `.env.example:65` | Blank all three values again |
+| SEC-033 | Med | Webhook URLs saved before encryption stay plaintext at rest | `server/src/drift/webhook.ts:28` | Re-seal plaintext `webhook_url` rows at boot or in a migration |
+| SEC-034 | Med | `drift.configure` audit row omits webhook set, change or clear | `server/src/drift/routes.ts:181` | Record webhook host and change flag in audit meta |
+| SEC-035 | Low | One fixed scrypt salt for every CryptoBox; MFA and webhooks share one key | `server/src/introspect/crypto-box.ts:20` | Derive a separate key per purpose |
+| SEC-036 | Med | In-session wrong passwords share the `mfa:` lock key; stolen session locks owner out | `server/src/auth/mfa-routes.ts:243` · `server/src/auth/mfa-routes.ts:98` · `server/src/auth/routes.ts:306` | Count in-session password failures under a separate key |
+| SEC-037 | Med | SQL export never escapes quote characters in identifiers; names inject DDL | `src/lib/data/sql-export/export-sql-script.ts:119` · `src/lib/data/sql-export/export-per-type/postgresql.ts:254` · `src/lib/data/sql-export/export-per-type/mssql.ts:108` | Double the dialect quote character, as `quoteName` does |
+| SEC-038 | Med | Introspection results unbounded; a hostile DB server can exhaust process memory | `server/src/introspect/postgres.ts:148` · `server/src/introspect/sqlserver.ts:234` | Cap rows per query; abort over a byte budget |
+| SEC-039 | Low | Link revoke within 2 s of a publish reuses cached check; streams stay open | `server/src/share/routes.ts:357` | Skip the recheck cache on link-change events |
+| SEC-040 | Low | Heartbeat session check uses link access captured at stream open | `server/src/share/routes.ts:496` | Re-read link access before each heartbeat check |
+| SEC-041 | Low | Failed sign-in audit insert runs only for real emails; timing reveals accounts | `server/src/auth/routes.ts:209` | Write the audit row after replying |
+| SEC-042 | Low | Audit rows cannot tell an admin grant from a revoke | `server/src/admin/routes.ts:410` | Record the new `isAdmin` value in user audit meta |
+| SEC-043 | Low | `audit.export` row omits which filters were exported | `server/src/admin/routes.ts:211` | Add the export filters to the audit meta |
+| SEC-044 | Low | Net guard treats site-local `fec0::/10` as public | `server/src/introspect/net-guard.ts:117` | Classify `fe80::/9` as non-public |
+| SEC-045 | Low | Postgres TLS `servername` set even when host is an IP literal | `server/src/introspect/postgres.ts:295` | Omit `servername` when the host is an IP |
+| SEC-046 | Low | `QUBDI_BACKEND_URL` substituted unescaped into `config.js`, CSP and nginx config | `default.conf.template:25` · `default.conf.template:40` · `entrypoint.sh:4` | Validate it as a plain http(s) origin in `entrypoint.sh` |
+| SEC-047 | Low | UI image runs nginx master as root; no `USER` line | `Dockerfile:20` | Base on `nginx-unprivileged`; add a non-root `USER` |
+| SEC-048 | Low | CI checkouts persist `GITHUB_TOKEN` in a workspace mounted into gitleaks | `.github/workflows/ci.yaml:19` · `.github/workflows/publish.yaml:37` | Set `persist-credentials: false` on every checkout |
+| SEC-049 | Low | Gitleaks allowlist stores the old SA password as a literal | `.gitleaks.toml:10` | Allowlist by fingerprint, not the literal password |
 
 ### Repository
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-005 | Med | Merge commits land non-Conventional branch commits on the default branch | `.github/workflows/pr-title.yaml` · merge of PR #66 | Allow squash merges only in repository settings |
+| REPO-005 | Med | Merge commits and direct pushes land non-Conventional commits on `main` | `.github/workflows/pr-title.yaml:7` · `.github/workflows/release.yaml:3` | Protect `main`: require PRs, allow squash merges only |
 | REPO-045 | Med | NOTICE says developed in-house; upstream name and copyright removed | `NOTICE:5` · `NOTICE:20` | Restore upstream name, copyright and modification notice |
+| REPO-056 | High | Global `minimatch >=11.0.1` override crashes root ESLint on load | `package.json:124` · `server/package.json:47` | Scope the override to vulnerable consumers; keep `^3` for ESLint plugins |
+| REPO-057 | Low | CONTRIBUTING server test line omits the fixed test DB credentials | `CONTRIBUTING.md:49` | State the `POSTGRES_PASSWORD` the server tests expect |
+| REPO-058 | Low | MSSQL test fixture hard-codes port 14333; ignores `MSSQL_PORT` | `server/test/introspect-mssql-fixture.ts:4` | Read `MSSQL_PORT` from env, default 14333 |
+| REPO-059 | Low | Fixture-dump script cites removed compose profile `mssql` | `server/scripts/dump-fixtures.ts:4` | Use `docker compose -f docker-compose.mssql.yml up -d` |
+| REPO-060 | Low | Root `.dockerignore` lacks `qbase-*.dump`; only `Dockerfile.dockerignore` has it | `.dockerignore:47` | Add `qbase-*.dump` to `.dockerignore` |
+| REPO-061 | Low | CODEOWNERS ship block omits `/db/`, `.gitleaks.toml`, release-please config | `.github/CODEOWNERS:9` | Add owner lines for the three paths |
+| REPO-062 | Med | No `restart:` policy on db, server or ui; reboot leaves QBase down | `docker-compose.yml:5` | Add `restart: unless-stopped` to all three services |
+| REPO-063 | Low | Compose defaults unset `QUBDI_BACKEND_URL` to localhost; documented local-only mode unreachable | `docker-compose.yml:104` · `.env.example:51` | Use `${QUBDI_BACKEND_URL-}` or reword the doc |
+| REPO-064 | Low | `.env.example` header names only `POSTGRES_PASSWORD` as required | `.env.example:2` | Name `CONNECTION_KEY` as required in the header |
+| REPO-065 | Low | UI image and ui service have no healthcheck | `Dockerfile:27` | Add a `HEALTHCHECK` fetching `/config.js` |
+| REPO-066 | Low | `listen [::]:80` fails on IPv6-less hosts; custom entrypoint skips nginx's check | `default.conf.template:16` | Drop the IPv6 listen or make it conditional |
+| REPO-067 | Low | SPA fallback answers missing `/assets/*` with `index.html` | `default.conf.template:34` | Add `location /assets/` with `try_files $uri =404` |
+
+### Server
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| SRV-039 | Med | Undecryptable stored webhook skipped silently; no report note, UI shows none | `server/src/drift/service.ts:326` | Set `webhookNote` when the stored URL fails to open |
+| SRV-040 | Low | Signed-in user on temporary password gets 403 on public `/s/<token>` | `server/src/app.ts:43` · `server/src/app.ts:163` | Exempt `/s/` paths from the temporary-password hook |
+| SRV-041 | Low | Diagram deleted mid-request makes lint routes throw TypeError; 500 | `server/src/lint/routes.ts:102` · `server/src/lint/routes.ts:109` · `server/src/lint/routes.ts:143` | Return 404 when the row select is empty |
+| SRV-042 | Med | Drift check scans every catalog row once per table; quadratic on big schemas | `shared/schema-desc.ts:168` | Group metadata rows by table once before mapping |
+| SRV-043 | Med | Share SSE sends no `X-Accel-Buffering: no`; proxied live events stall | `server/src/share/routes.ts:421` | Send `X-Accel-Buffering: no` on the event stream |
+| SRV-044 | Low | `NOTIFY qubdi_events, 'null'` throws in the listener; process exits | `server/src/events.ts:60` | Ignore payloads that are not objects |
+| SRV-045 | Low | `COOKIE_SECURE`, `MFA_WINDOW_STEPS`, `MFA_ENABLED` typos fall back silently | `server/src/config.ts:87` · `server/src/config.ts:92` · `server/src/config.ts:222` | Raise `ConfigError` on unrecognised values |
+| SRV-046 | Low | Diagram delete never closes its share links' live streams | `server/src/diagrams/routes.ts:436` | Emit link-changed for the diagram's links on delete |
+| SRV-047 | Low | Diagram deleted mid-request: GET, lock, save and link create return 500 | `server/src/diagrams/routes.ts:288` · `server/src/share/routes.ts:163` | Return 404 on empty select or FK violation |
+| SRV-048 | Low | Manual publish noted "Auto-published on save" is overwritten by next autosave | `server/src/diagrams/service.ts:250` | Flag auto snapshots in a column, not by note text |
+| SRV-049 | Low | Webhook timeout is idle-only; a trickling server holds the drift check | `server/src/drift/webhook.ts:102` | Add an overall deadline to the request |
+| SRV-050 | Low | `databaseType` "constructor" makes lint throw TypeError; 500 | `shared/lint.ts:300` | Look up `DIALECT_RESERVED` with `Object.hasOwn` |
+| SRV-051 | Low | CLI lint crashes on a table without `fields`; exits 1, not 2 | `server/src/cli/lint.ts:108` | Validate diagram shape; return 2 on bad input |
+| SRV-052 | Low | Composite FK change emits duplicate `relationship_changed` ids | `shared/reconcile.ts:544` | Add `fromColumns` to the change id |
+
+### Database
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| DB-025 | Low | Shared paging `page` has no upper bound; admin and project list offsets unbounded | `server/src/lib/paging.ts:8` | Cap `page` so the offset stays at most 10,000 |
+| DB-026 | Low | Connection edit updates `drift_settings` by unindexed `connection_id` | `server/src/introspect/routes.ts:450` · `server/src/db/schema.ts:428` | Index `drift_settings(connection_id)` |
+| DB-027 | Low | Unauthenticated `/auth/register` counts every user row per call | `server/src/auth/routes.ts:138` | Select one `id` with `LIMIT 1`, as `/setup-status` does |
+| DB-028 | Med | SQL Server introspection uses `STRING_SPLIT`; fails below compatibility level 130 | `server/src/introspect/sqlserver.ts:17` | Bind one parameter per schema instead of splitting |
+| DB-029 | Low | SQL Server schema filter splits on commas; comma names unselectable | `server/src/introspect/sqlserver.ts:232` | Bind one parameter per schema |
+| DB-030 | Low | Negative numeric scale (PG 15+) decoded as 2046 | `server/src/introspect/typmod.ts:53` | Sign-extend the 11-bit scale |
+| DB-031 | Low | User delete can cascade-delete a diagram the target creates mid-delete | `server/src/admin/routes.ts:147` | Lock target users `FOR UPDATE` before reassigning diagrams |
+| DB-032 | Low | Viewer list sorted by working-copy `updated_at` but shows `publishedAt` | `server/src/diagrams/routes.ts:143` | Sort viewer rows by latest snapshot `publishedAt` |
+
+### Client
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| CLI-047 | Med | `webhookSaved` key sits under `connections`; drift dialog shows the raw key | `src/i18n/qubdi/database.ts:34` · `src/components/qubdi/drift-dialog.tsx:266` | Move `webhookSaved` into the `drift` block |
+| CLI-048 | Low | Saved webhook cannot be cleared as the hint says; field loads empty | `src/components/qubdi/drift-dialog.tsx:114` · `src/i18n/qubdi/database.ts:35` | Add a remove-webhook button; reword the hint |
+| CLI-049 | Low | Legacy-move doc comment says never merged; code merges missing rows | `src/lib/qubdi/local-data.ts:55` | Reword the comment to describe the merge |
+| CLI-050 | High | Publish and auto-publish PUT omit `editorId`; server answers 423 | `src/components/qubdi/publish-control.tsx:99` · `src/components/qubdi/publish-control.tsx:124` | Send `editorId: getEditorId()`; adopt returned `updatedAt` as base |
+| CLI-051 | Med | Drift Check now blanks server scope and sourceKeys without local sync state | `src/components/qubdi/drift-dialog.tsx:169` | Resend the server's saved scope when local state is missing |
+| CLI-052 | Med | Share-link expiry shown in UTC but parsed as local time | `src/components/qubdi/share-dialog.tsx:42` | Format with local time parts; commit on blur |
+| CLI-053 | Med | Editor id in sessionStorage; a duplicated tab shares the edit lock | `src/lib/qubdi/editor-id.ts:13` | Keep the editor id in memory only |
+| CLI-054 | Med | Type picker compiles enum values as regex; `+` or `(` throws | `src/components/select-box/select-box.tsx:411` | Drop the `new RegExp(keyword)` branch |
+| CLI-055 | Low | Lock granted after unmount is never released; held 90 s | `src/components/qubdi/use-edit-lock.ts:35` | Release when a cancelled request comes back held |
+| CLI-056 | Low | Get latest makes a new local id; sync state and drift scope lost | `src/lib/qubdi/get-latest.ts:20` | Move sync state to the new local id |
+| CLI-057 | Low | Import wizard keeps stale saved-connection id across reopen | `src/components/qubdi/import-from-database-dialog.tsx:71` | Reset form and saved ids when the dialog opens |
+| CLI-058 | Low | DB import leaves an orphan local diagram when server create fails | `src/components/qubdi/import-from-database-dialog.tsx:161` | Delete the local diagram in the catch |
+| CLI-059 | Low | Get latest does not wait for an in-flight autosave PUT | `src/components/qubdi/get-latest-control.tsx:51` | Await the running save before reloading |
+| CLI-060 | Low | Save confirm clears other in-flight fingerprints; false conflict shown | `src/lib/qubdi/sent-content.ts:80` | Remove only the confirmed fingerprint |
+| CLI-061 | Low | Failed autosave not retried when the browser comes back online | `src/lib/qubdi/autosave.ts:68` | Retry the flush on the `online` event |
+| CLI-062 | Low | Share viewer applies out-of-order reload replies; older version can win | `src/pages/share-viewer-page/share-viewer-page.tsx:55` | Drop replies older than the newest request |
+| CLI-063 | Low | Lint settings fetched once; failed save swallowed silently | `src/components/qubdi/lint-control.tsx:61` · `src/components/qubdi/lint-control.tsx:85` | Re-read config on open; toast and roll back failures |
+| CLI-064 | Low | Change-password and Create-link lack busy guards; double click submits twice | `src/components/qubdi/change-password-dialog.tsx:142` · `src/components/qubdi/share-dialog.tsx:279` | Disable submit while the request is pending |
+| CLI-065 | Low | 33 API paths interpolate ids without `encodeURIComponent` | `src/lib/qubdi/api.ts:581` | Wrap every path id in `encodeURIComponent` |
+| CLI-066 | Low | Non-API errors, e.g. corrupt server content, shown as unreachable | `src/lib/qubdi/api.ts:897` | Map `InvalidServerDiagramError` to its own message |
+| CLI-067 | Low | Lock check unreachable on first ask never retried; editor stays read-only | `src/components/qubdi/use-edit-lock.ts:47` | Offer a retry in the access banner |
+| CLI-068 | Low | Share viewer keeps a selection whose table a reload removed | `src/pages/share-viewer-page/share-viewer-page.tsx:126` | Clear selection when the table is gone |
+| CLI-069 | Low | Inline-ref regex built from an unescaped field name | `src/lib/dbml/dbml-export/dbml-export.ts:520` | Escape `fieldName` as line 731 does |
+| CLI-070 | Low | Hard-coded English toasts and labels in fork editor code | `src/pages/editor-page/canvas/canvas.tsx:847` · `src/pages/editor-page/top-navbar/menu/menu.tsx:90` | Move strings into `en` and call `t()` |
+
+### Dead code
+
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| DEAD-007 | Low | `sha256` and `DiffKind` exported but referenced nowhere | `src/lib/utils/utils.ts:98` · `src/lib/domain/diff/diff.ts:79` | Delete both |
+| DEAD-008 | Med | Constant `withExtras`/`withDefault` flags ship dead query branches to the browser | `src/lib/data/import-metadata/scripts/postgres-script.ts:66` · `src/lib/data/import-metadata/scripts/mysql-script.ts:11` · `src/lib/data/import-metadata/scripts/sqlserver-script.ts:3` | Inline the chosen branch; drop the flags |
 
 ---
 
@@ -312,3 +413,5 @@
 | 20 | 2026-11-04 | 23 fixed: SRV-015, SRV-030 to SRV-038, DB-018 to DB-024, DEAD-001 to DEAD-006 |
 | 21 | 2026-11-04 | 9 fixed: SEC-030, REPO-051 to REPO-054, CLI-043 to CLI-046 |
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
+| 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
+| 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |

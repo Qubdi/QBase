@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 21</b></div>
-  <h1>0 open: 0 Crit, 0 High.</h1>
+  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 24</b></div>
+  <h1>8 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-04</span>
-    <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
+    <span><b>audit date</b> 2026-11-06</span>
+    <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -31,11 +31,19 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Database &amp; scale</h2></div>
-  <p class="section-note">0 open &middot; 21 fixed &middot; 3 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">8 open &middot; 21 fixed &middot; 3 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DB-025</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Shared paging <code>page</code> has no upper bound; admin and project list offsets unbounded</td><td><code>server/src/lib/paging.ts:8</code></td><td class="wrap-cell">Cap <code>page</code> so the offset stays at most 10,000</td></tr>
+        <tr><td class="svc-name">DB-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Connection edit updates <code>drift_settings</code> by unindexed <code>connection_id</code></td><td><code>server/src/introspect/routes.ts:450</code> · <code>server/src/db/schema.ts:428</code></td><td class="wrap-cell">Index <code>drift_settings(connection_id)</code></td></tr>
+        <tr><td class="svc-name">DB-027</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unauthenticated <code>/auth/register</code> counts every user row per call</td><td><code>server/src/auth/routes.ts:138</code></td><td class="wrap-cell">Select one <code>id</code> with <code>LIMIT 1</code>, as <code>/setup-status</code> does</td></tr>
+        <tr><td class="svc-name">DB-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL Server introspection uses <code>STRING_SPLIT</code>; fails below compatibility level 130</td><td><code>server/src/introspect/sqlserver.ts:17</code></td><td class="wrap-cell">Bind one parameter per schema instead of splitting</td></tr>
+        <tr><td class="svc-name">DB-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server schema filter splits on commas; comma names unselectable</td><td><code>server/src/introspect/sqlserver.ts:232</code></td><td class="wrap-cell">Bind one parameter per schema</td></tr>
+        <tr><td class="svc-name">DB-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Negative numeric scale (PG 15+) decoded as 2046</td><td><code>server/src/introspect/typmod.ts:53</code></td><td class="wrap-cell">Sign-extend the 11-bit scale</td></tr>
+        <tr><td class="svc-name">DB-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">User delete can cascade-delete a diagram the target creates mid-delete</td><td><code>server/src/admin/routes.ts:147</code></td><td class="wrap-cell">Lock target users <code>FOR UPDATE</code> before reassigning diagrams</td></tr>
+        <tr><td class="svc-name">DB-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Viewer list sorted by working-copy <code>updated_at</code> but shows <code>publishedAt</code></td><td><code>server/src/diagrams/routes.ts:143</code></td><td class="wrap-cell">Sort viewer rows by latest snapshot <code>publishedAt</code></td></tr>
       </tbody>
     </table>
   </div>
