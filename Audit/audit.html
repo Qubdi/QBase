@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 21</b></div>
-  <h1>9 open across six lenses: 0 Crit, 2 High.</h1>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 22</b></div>
+  <h1>3 open across six lenses: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-04</span>
     <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
@@ -35,13 +35,13 @@
     <table>
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
-        <tr><td>Security &amp; secrets</td><td>2</td><td>0</td><td>1</td><td>29</td><td>0</td></tr>
-        <tr><td>Repository</td><td>7</td><td>0</td><td>1</td><td>47</td><td>1</td></tr>
+        <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>1</td><td>30</td><td>0</td></tr>
+        <tr><td>Repository</td><td>2</td><td>0</td><td>0</td><td>52</td><td>1</td></tr>
         <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>38</td><td>0</td></tr>
         <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>21</td><td>3</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>46</td><td>0</td></tr>
         <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>6</td><td>0</td></tr>
-        <tr><td>Total</td><td>9</td><td>0</td><td>2</td><td>187</td><td>4</td></tr>
+        <tr><td>Total</td><td>3</td><td>0</td><td>1</td><td>193</td><td>4</td></tr>
       </tbody>
     </table>
   </div>
@@ -52,12 +52,12 @@
   <a class="idx-card sec" href="audit-security.html">
     <h3>Security &amp; secrets</h3>
     <p>Top: Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code>, <code>MSSQL_SA_PASSWORD</code> reachable through 65 pre-rewrite remote PR refs</p>
-    <p class="lbl">2 open &middot; 0 Crit &middot; 1 High &middot; 29 fixed &middot; 0 accepted</p>
+    <p class="lbl">1 open &middot; 0 Crit &middot; 1 High &middot; 30 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
-    <p>Top: Postgres digest in <code>db/postgres/Dockerfile</code> differs from CI and publish; digest check fails</p>
-    <p class="lbl">7 open &middot; 0 Crit &middot; 1 High &middot; 47 fixed &middot; 1 accepted</p>
+    <p>Top: Merge commits land non-Conventional branch commits on the default branch</p>
+    <p class="lbl">2 open &middot; 0 Crit &middot; 0 High &middot; 52 fixed &middot; 1 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
@@ -108,6 +108,7 @@
         <tr><td>19</td><td>2026-11-03</td><td class="wrap-cell">Deep pass + new Dead code lens (<code>DEAD-</code> prefix): 35 new, 0 fixed, 5 reopened: REPO-005, REPO-027, REPO-030, REPO-045, SRV-015</td></tr>
         <tr><td>20</td><td>2026-11-04</td><td class="wrap-cell">23 fixed: SRV-015, SRV-030 to SRV-038, DB-018 to DB-024, DEAD-001 to DEAD-006</td></tr>
         <tr><td>21</td><td>2026-11-04</td><td class="wrap-cell">9 fixed: SEC-030, REPO-051 to REPO-054, CLI-043 to CLI-046</td></tr>
+        <tr><td>22</td><td>2026-11-05</td><td class="wrap-cell">6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055</td></tr>
       </tbody>
     </table>
   </div>

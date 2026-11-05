@@ -20,7 +20,7 @@ import type {
     IntrospectorFactory,
 } from '../introspect/types.js';
 import type { RequestHook } from '../lib/rate-key.js';
-import { postJson } from './webhook.js';
+import { openWebhookUrl, postJson } from './webhook.js';
 import {
     countBySeverity,
     driftSignature,
@@ -323,13 +323,21 @@ export async function runDriftCheck(
         const dismissedAt = sameAsBefore ? (previous?.dismissedAt ?? null) : null;
 
         let webhookNote: string | null = null;
-        if (outcome.status !== 'clean' && !sameAsBefore && settings.webhookUrl) {
+        const webhookUrl = settings.webhookUrl
+            ? openWebhookUrl(
+                  deps.config.secretsKey
+                      ? cryptoBoxFor(deps.config.secretsKey)
+                      : null,
+                  settings.webhookUrl
+              )
+            : null;
+        if (outcome.status !== 'clean' && !sameAsBefore && webhookUrl) {
             const diagramRow = await db
                 .select({ title: diagrams.title })
                 .from(diagrams)
                 .where(eq(diagrams.id, diagramId));
             const result = await postJson(
-                settings.webhookUrl,
+                webhookUrl,
                 {
                     event: 'qbase.drift',
                     diagramId,

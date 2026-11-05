@@ -121,6 +121,7 @@
     },
     "overrides": {
         "dompurify": "^3.4.16",
+        "minimatch": ">=11.0.1",
         "eslint-plugin-jsx-a11y": {
             "eslint": "$eslint"
         },

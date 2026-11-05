@@ -31,6 +31,8 @@ export const database = {
         testNeedsPassword: 'Type the password to test the connection',
         test: 'Test connection',
         back: 'Back',
+        webhookSaved:
+            'Webhook saved for {{host}}: type a new URL to replace it, or clear the field to remove it',
         working: 'Working…',
         save: 'Save',
         tested_one: 'Connected to {{database}}. Found {{count}} schema.',

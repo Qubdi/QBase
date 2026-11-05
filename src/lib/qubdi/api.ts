@@ -346,7 +346,10 @@ export interface DriftSettings {
         tables: Record<string, string>;
         columns: Record<string, string>;
     };
-    webhookUrl: string | null;
+    /** Left out keeps the saved webhook; null clears it. Never sent back by the server. */
+    webhookUrl?: string | null;
+    /** Where the saved webhook points: the path and query stay on the server. */
+    webhookHost?: string | null;
 }
 
 export interface DriftOverview {

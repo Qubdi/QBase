@@ -168,8 +168,9 @@ describe('drift detection', () => {
             expect(res.statusCode).toBe(200);
             expect(res.json()).toMatchObject({
                 connectionId,
-                webhookUrl: 'https://hooks.example.com/drift',
+                webhookHost: 'hooks.example.com',
             });
+            expect(res.json()).not.toHaveProperty('webhookUrl');
             const stored = (await get()).json().settings;
             for (const gone of ['enabled', 'schedule', 'nextRunAt']) {
                 expect(res.json()).not.toHaveProperty(gone);

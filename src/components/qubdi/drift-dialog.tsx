@@ -85,6 +85,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
     const [connectionsOpen, setConnectionsOpen] = useState(false);
     const [connectionId, setConnectionId] = useState('');
     const [webhook, setWebhook] = useState('');
+    // the saved URL is never sent back, only its host; `webhook` holds what was typed since
+    const [webhookHost, setWebhookHost] = useState<string | null>(null);
+    const [webhookEdited, setWebhookEdited] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -108,7 +111,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
             onBadgeChange(o.badge);
             if (o.settings) {
                 setConnectionId(o.settings.connectionId ?? '');
-                setWebhook(o.settings.webhookUrl ?? '');
+                setWebhook('');
+                setWebhookEdited(false);
+                setWebhookHost(o.settings.webhookHost ?? null);
             } else if (syncState?.source.kind === 'saved') {
                 setConnectionId(syncState.source.savedConnectionId);
             }
@@ -168,8 +173,17 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                     tables: {},
                     columns: {},
                 },
-                webhookUrl: webhook.trim() || null,
+                ...(webhookEdited
+                    ? { webhookUrl: webhook.trim() || null }
+                    : {}),
             });
+            if (webhookEdited) {
+                setWebhookHost(
+                    webhook.trim() ? new URL(webhook.trim()).host : null
+                );
+                setWebhook('');
+                setWebhookEdited(false);
+            }
             const r = await api.checkDrift(id);
             setReport(r);
             const o = await api.getDrift(id);
@@ -247,11 +261,18 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                     ) : null}
                     <Input
                         aria-label={t('qubdi.database.drift.webhookLabel')}
-                        placeholder={t(
-                            'qubdi.database.drift.webhookPlaceholder'
-                        )}
+                        placeholder={
+                            webhookHost
+                                ? t('qubdi.database.drift.webhookSaved', {
+                                      host: webhookHost,
+                                  })
+                                : t('qubdi.database.drift.webhookPlaceholder')
+                        }
                         value={webhook}
-                        onChange={(e) => setWebhook(e.target.value)}
+                        onChange={(e) => {
+                            setWebhook(e.target.value);
+                            setWebhookEdited(true);
+                        }}
                     />
                     <div className="flex gap-2">
                         <Button

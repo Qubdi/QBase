@@ -1,5 +1,6 @@
 import http from 'node:http';
 import https from 'node:https';
+import type { CryptoBox } from '../introspect/crypto-box.js';
 import {
     ForbiddenTargetError,
     resolveAllowedTarget,
@@ -13,6 +14,37 @@ export interface WebhookResult {
 }
 
 export const WEBHOOK_TIMEOUT_MS = 5000;
+
+const SEALED_PREFIX = 'v1:';
+
+/** The stored form of a webhook URL: its path and query may hold a token, so it is encrypted. */
+export const sealWebhookUrl = (box: CryptoBox, url: string) => box.encrypt(url);
+
+/** Reads a stored webhook URL; rows saved before encryption hold the plain URL. */
+export const openWebhookUrl = (
+    box: CryptoBox | null,
+    stored: string
+): string | null => {
+    if (!stored.startsWith(SEALED_PREFIX)) return stored;
+    if (!box) return null;
+    try {
+        return box.decrypt(stored);
+    } catch {
+        return null;
+    }
+};
+
+/** Where a stored webhook points, without the path or query that may carry a token. */
+export const webhookHost = (box: CryptoBox | null, stored: string | null) => {
+    if (!stored) return null;
+    const url = openWebhookUrl(box, stored);
+    if (!url) return null;
+    try {
+        return new URL(url).host;
+    } catch {
+        return null;
+    }
+};
 
 /** http(s) only, no credentials in the URL; returns the parsed URL or an error. */
 export function parseWebhookUrl(raw: string): { url: URL } | { error: string } {

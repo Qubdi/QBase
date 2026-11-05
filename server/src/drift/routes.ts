@@ -19,7 +19,8 @@ import {
     type DriftDeps,
     type ReportRow,
 } from './service.js';
-import { parseWebhookUrl } from './webhook.js';
+import { cryptoBoxFor, type CryptoBox } from '../introspect/crypto-box.js';
+import { parseWebhookUrl, sealWebhookUrl, webhookHost } from './webhook.js';
 
 const diagramParam = z.object({ id: z.string().uuid() });
 const reportParam = z.object({
@@ -46,15 +47,19 @@ const settingsBody = z.object({
             columns: z.record(z.string(), z.string()).default({}),
         })
         .default({ tables: {}, columns: {} }),
-    webhookUrl: z.string().trim().max(2000).nullable().default(null),
+    // left out keeps the stored URL, which is never sent back; null or blank clears it
+    webhookUrl: z.string().trim().max(2000).nullable().optional(),
 });
 
-const presentSettings = (s: typeof driftSettings.$inferSelect) => ({
+const presentSettings = (
+    s: typeof driftSettings.$inferSelect,
+    box: CryptoBox | null
+) => ({
     connectionId: s.connectionId,
     schemas: s.schemas,
     tables: s.tables,
     sourceKeys: s.sourceKeys,
-    webhookUrl: s.webhookUrl,
+    webhookHost: webhookHost(box, s.webhookUrl),
     updatedAt: s.updatedAt,
 });
 
@@ -62,6 +67,8 @@ export const driftRoutes =
     (deps: DriftDeps): FastifyPluginAsync =>
     async (app) => {
         const { db } = deps;
+        const key = deps.config.secretsKey;
+        const box = () => (key ? cryptoBoxFor(key) : null);
         // shares its allowance with the introspection routes
         const outbound = deps.outboundLimit
             ? { preHandler: deps.outboundLimit }
@@ -99,7 +106,7 @@ export const driftRoutes =
                 .where(eq(driftSettings.diagramId, id));
             const latest = await latestReportSummary(db, id);
             return {
-                settings: settings ? presentSettings(settings) : null,
+                settings: settings ? presentSettings(settings, box()) : null,
                 latest: latest ? summarizeReport(latest) : null,
                 badge: badgeOf(latest),
             };
@@ -142,12 +149,24 @@ export const driftRoutes =
                 }
             }
 
+            if (body.webhookUrl && !box()) {
+                return reply.code(400).send({
+                    error: 'encryption_key_missing',
+                    message: 'Set SECRETS_KEY or CONNECTION_KEY to store a webhook',
+                });
+            }
             const values = {
                 connectionId: body.connectionId,
                 schemas: body.schemas,
                 tables: body.tables,
                 sourceKeys: body.sourceKeys,
-                webhookUrl: body.webhookUrl || null,
+                ...(body.webhookUrl === undefined
+                    ? {}
+                    : {
+                          webhookUrl: body.webhookUrl
+                              ? sealWebhookUrl(box()!, body.webhookUrl)
+                              : null,
+                      }),
                 updatedBy: req.user!.id,
                 updatedAt: new Date(),
             };
@@ -164,7 +183,7 @@ export const driftRoutes =
                 action: 'drift.configure',
                 diagramId: id,
             });
-            return presentSettings(row);
+            return presentSettings(row, box());
         });
 
         app.post('/:id/drift/check', outbound, async (req, reply) => {

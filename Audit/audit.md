@@ -1,23 +1,22 @@
 # QBase — Audit
 
-**rev** 21 · **date** 2026-11-04
+**rev** 22 · **date** 2026-11-05
 **method** static analysis · whole-tree read · in a `node:24-alpine` container on a clean export: eslint root and `server/` (0 problems), `tsc -b` (0 errors), server `tsc` typecheck and `--noUnusedLocals --noUnusedParameters` (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), `vite build` · npm audit root (17 moderate) and `server/` (11 moderate), all `minimatch` in the ESLint dev chain · server vitest against a throwaway `postgres:18-alpine` container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · `drizzle-kit generate` in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 2 | 0 | 1 | 29 | 0 |
-| Repository | 7 | 0 | 1 | 47 | 1 |
+| Security & secrets | 1 | 0 | 1 | 30 | 0 |
+| Repository | 2 | 0 | 0 | 52 | 1 |
 | Server | 0 | 0 | 0 | 38 | 0 |
 | Database | 0 | 0 | 0 | 21 | 3 |
 | Client | 0 | 0 | 0 | 46 | 0 |
 | Dead code | 0 | 0 | 0 | 6 | 0 |
-| **Total** | 9 | 0 | 2 | 187 | 4 |
+| **Total** | 3 | 0 | 1 | 193 | 4 |
 
 ## Act first
 
 - `SEC-001` — old secrets still reachable through remote PR refs; rotate all three.
-- `REPO-030` — Postgres digests disagree; CI's digest check fails and tests run another image.
 
 ---
 
@@ -28,19 +27,13 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD` reachable through 65 pre-rewrite remote PR refs | `git ls-remote origin 'refs/pull/*/head'` | Rotate all three; ask GitHub Support to purge PR refs |
-| SEC-031 | Low | Drift webhook URL stored and returned in plaintext; embedded tokens exposed | `server/src/db/schema.ts:439` | Encrypt with CryptoBox; return only the host |
 
 ### Repository
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-030 | High | Postgres digest in `db/postgres/Dockerfile` differs from CI and publish; digest check fails | `db/postgres/Dockerfile:8` · `.github/workflows/ci.yaml:49` · `.github/workflows/publish.yaml:23` | Use one digest in all three files |
 | REPO-005 | Med | Merge commits land non-Conventional branch commits on the default branch | `.github/workflows/pr-title.yaml` · merge of PR #66 | Allow squash merges only in repository settings |
-| REPO-027 | Med | `bootstrap-sha` names a commit missing from the rewritten history | `release-please-config.json:4` | Point `bootstrap-sha` at the current root commit |
 | REPO-045 | Med | NOTICE says developed in-house; upstream name and copyright removed | `NOTICE:5` · `NOTICE:20` | Restore upstream name, copyright and modification notice |
-| REPO-049 | Med | NOTICE grants "any later version"; both packages declare `AGPL-3.0-only` | `NOTICE:9` · `package.json:7` · `server/package.json:3` | Make NOTICE and `license` fields name the same terms |
-| REPO-050 | Med | CLA licensee "QBase, Inc." differs from copyright holder "Qubdi" | `CLA.md:3` · `NOTICE:2` | Name one legal entity in both files |
-| REPO-055 | Low | npm audit: 17 root, 11 server moderate `minimatch` advisories via ESLint | `npm audit` root and `server/` | Override `minimatch` to `>=11.0.1` in both packages |
 
 ---
 
@@ -48,7 +41,13 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-031 | Security & secrets | Drift webhook URL stored and returned in plaintext; embedded tokens exposed |
 | SEC-030 | Security & secrets | Admin PATCH on own account sets password without current password or 2FA |
+| REPO-027 | Repository | `bootstrap-sha` names a commit missing from the rewritten history |
+| REPO-030 | Repository | Postgres digest in `db/postgres/Dockerfile` differs from CI and publish; digest check fails |
+| REPO-049 | Repository | NOTICE grants "any later version"; both packages declare `AGPL-3.0-only` |
+| REPO-050 | Repository | CLA licensee "QBase, Inc." differs from copyright holder "Qubdi" |
+| REPO-055 | Repository | npm audit: 17 root, 11 server moderate `minimatch` advisories via ESLint |
 | REPO-051 | Repository | README cron backup writes `qbase-*.dump`; not git- or docker-ignored |
 | REPO-052 | Repository | Gitleaks allowlist says the password stays in history; history was rewritten |
 | REPO-053 | Repository | PR and issue templates use repo-relative links that break in GitHub bodies |
@@ -312,3 +311,4 @@
 | 19 | 2026-11-03 | Deep pass + new Dead code lens (`DEAD-` prefix): 35 new, 0 fixed, 5 reopened: REPO-005, REPO-027, REPO-030, REPO-045, SRV-015 |
 | 20 | 2026-11-04 | 23 fixed: SRV-015, SRV-030 to SRV-038, DB-018 to DB-024, DEAD-001 to DEAD-006 |
 | 21 | 2026-11-04 | 9 fixed: SEC-030, REPO-051 to REPO-054, CLI-043 to CLI-046 |
+| 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |

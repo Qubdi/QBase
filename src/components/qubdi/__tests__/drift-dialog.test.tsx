@@ -187,15 +187,37 @@ describe('DriftDialog', () => {
                     schemas: [],
                     tables: [],
                     sourceKeys: { tables: {}, columns: {} },
-                    webhookUrl: 'https://hooks.example.com/drift',
+                    webhookHost: 'hooks.example.com',
                 },
             })
         );
         await show();
         expect(checkNow().disabled).toBe(false);
-        expect(
-            (screen.getByLabelText('Webhook URL') as HTMLInputElement).value
-        ).toBe('https://hooks.example.com/drift');
+        // the saved URL stays on the server: the field is empty and shows the host
+        const field = screen.getByLabelText('Webhook URL') as HTMLInputElement;
+        expect(field.value).toBe('');
+        expect(field.placeholder).toBe('qubdi.database.drift.webhookSaved');
+    });
+
+    it('leaves the saved webhook alone unless it is edited', async () => {
+        getDrift.mockResolvedValue(
+            overview({
+                settings: {
+                    connectionId: 'c1',
+                    schemas: [],
+                    tables: [],
+                    sourceKeys: { tables: {}, columns: {} },
+                    webhookHost: 'hooks.example.com',
+                },
+            })
+        );
+        checkDrift.mockResolvedValue(report({ status: 'clean', changes: [] }));
+        await show();
+        await act(async () => {
+            fireEvent.click(checkNow());
+        });
+        await settle();
+        expect(saveDrift.mock.calls[0][1]).not.toHaveProperty('webhookUrl');
     });
 
     it('saves what to compare with, then checks, in one step', async () => {
@@ -224,7 +246,8 @@ describe('DriftDialog', () => {
         expect(order).toEqual(['save', 'check']);
         const [id, saved] = saveDrift.mock.calls[0];
         expect(id).toBe('r1');
-        expect(saved).toMatchObject({ connectionId: 'c1', webhookUrl: null });
+        expect(saved).toMatchObject({ connectionId: 'c1' });
+        expect(saved).not.toHaveProperty('webhookUrl');
         // nothing about a schedule is sent
         expect(saved).not.toHaveProperty('enabled');
         expect(saved).not.toHaveProperty('schedule');

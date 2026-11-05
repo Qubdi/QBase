@@ -1,6 +1,6 @@
 # QBase Contributors License Agreement
 
-This Contributors License Agreement ("CLA") is entered into between the Contributor, and QBase, Inc. ("QBase"), collectively referred to as the "Parties."
+This Contributors License Agreement ("CLA") is entered into between the Contributor, and Qubdi ("Qubdi"), collectively referred to as the "Parties."
 
 ## Background:
 
@@ -10,7 +10,7 @@ QBase is an open-source project aimed at providing an open-source database diagr
 
 **1. Contributor Grant of License:**
 
-By submitting code, documentation, or any other materials (collectively, "Contributions") to the QBase project, the Contributor grants QBase a perpetual, worldwide, non-exclusive, royalty-free, sublicensable license to use, modify, distribute, and otherwise exploit the Contributions, including any intellectual property rights therein, for the purposes of the QBase project.
+By submitting code, documentation, or any other materials (collectively, "Contributions") to the QBase project, the Contributor grants Qubdi a perpetual, worldwide, non-exclusive, royalty-free, sublicensable license to use, modify, distribute, and otherwise exploit the Contributions, including any intellectual property rights therein, for the purposes of the QBase project.
 
 **2. Representation of Ownership and Right to Contribute:**
 
@@ -18,11 +18,11 @@ The Contributor represents that they have the legal right to grant the license s
 
 **3. Patent Grant:**
 
-If the Contributions include any method, process, or apparatus that is covered by a patent, the Contributor agrees to grant QBase a non-exclusive, worldwide, royalty-free license under any patent claims necessary to use, modify, distribute, and otherwise exploit the Contributions for the purposes of the QBase project.
+If the Contributions include any method, process, or apparatus that is covered by a patent, the Contributor agrees to grant Qubdi a non-exclusive, worldwide, royalty-free license under any patent claims necessary to use, modify, distribute, and otherwise exploit the Contributions for the purposes of the QBase project.
 
 **4. No Implied Warranties or Support:**
 
-The Contributor acknowledges that the Contributions are provided "as is," without any warranties or support of any kind. QBase shall have no obligation to provide maintenance, updates, bug fixes, or support for the Contributions.
+The Contributor acknowledges that the Contributions are provided "as is," without any warranties or support of any kind. Qubdi shall have no obligation to provide maintenance, updates, bug fixes, or support for the Contributions.
 
 **5. Retention of Contributor Rights:**
 

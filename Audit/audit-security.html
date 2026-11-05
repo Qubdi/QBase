@@ -8,10 +8,10 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 21</b></div>
-  <h1>2 open: 0 Crit, 1 High.</h1>
+  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 22</b></div>
+  <h1>1 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-04</span>
+    <span><b>audit date</b> 2026-11-05</span>
     <span><b>method</b> static analysis · whole-tree read · in a <code>node:24-alpine</code> container on a clean export: eslint root and <code>server/</code> (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2668 tests: 2667 pass, 1 timing failure that passes alone, see CLI-046), <code>vite build</code> · npm audit root (17 moderate) and <code>server/</code> (11 moderate), all <code>minimatch</code> in the ESLint dev chain · server vitest against a throwaway <code>postgres:18-alpine</code> container (66 files, 948 tests: introspection fixture needs port 5433, see SRV-038; rerun through a 5433 forward, 2 wrong-credential tests fail because the stock image trusts loopback, as before) · <code>drizzle-kit generate</code> in a scratch copy: no schema changes · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
@@ -37,13 +37,12 @@
 
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">2 open &middot; 29 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 30 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
         <tr><td class="svc-name">SEC-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code>, <code>MSSQL_SA_PASSWORD</code> reachable through 65 pre-rewrite remote PR refs</td><td><code>git ls-remote origin 'refs/pull/*/head'</code></td><td class="wrap-cell">Rotate all three; ask GitHub Support to purge PR refs</td></tr>
-        <tr><td class="svc-name">SEC-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Drift webhook URL stored and returned in plaintext; embedded tokens exposed</td><td><code>server/src/db/schema.ts:439</code></td><td class="wrap-cell">Encrypt with CryptoBox; return only the host</td></tr>
       </tbody>
     </table>
   </div>
@@ -51,11 +50,12 @@
 
 <section id="closed" class="sec-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (29)</summary>
+  <details><summary>Fixed (30)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SEC-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift webhook URL stored and returned in plaintext; embedded tokens exposed</td></tr>
         <tr><td class="svc-name">SEC-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Admin PATCH on own account sets password without current password or 2FA</td></tr>
         <tr><td class="svc-name">SEC-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Session end or user switch keeps previous user's IndexedDB copies and id maps</td></tr>
         <tr><td class="svc-name">SEC-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share-link tokens in <code>/s/&lt;token&gt;</code> URLs written to Fastify request log</td></tr>
