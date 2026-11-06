@@ -97,6 +97,64 @@ describe('ImportFromDatabaseDialog', () => {
         );
     };
 
+    it('starts from an empty form and the first step when it is opened again', async () => {
+        const view = mount();
+        await fillAndConnect();
+        view.rerender(
+            <ImportFromDatabaseDialog
+                open={false}
+                onOpenChange={vi.fn()}
+                projectId="p1"
+                projectSlug="shop"
+            />
+        );
+        view.rerender(
+            <ImportFromDatabaseDialog
+                open
+                onOpenChange={vi.fn()}
+                projectId="p1"
+                projectSlug="shop"
+            />
+        );
+        expect(await screen.findByLabelText('Host')).toHaveProperty('value', '');
+        expect(screen.getByLabelText('Database')).toHaveProperty('value', '');
+        expect(screen.getByLabelText('Password')).toHaveProperty('value', '');
+    });
+
+    it('forgets the chosen saved connection when it is opened again', async () => {
+        listSavedConnections.mockResolvedValue([
+            {
+                id: 'c1',
+                name: 'Prod',
+                dialect: 'postgresql',
+                host: 'h',
+                port: 5432,
+                database: 'd',
+                user: 'u',
+                ssl: false,
+                trustServerCertificate: false,
+            },
+        ]);
+        const props = {
+            onOpenChange: vi.fn(),
+            projectId: 'p1',
+            projectSlug: 'shop',
+        };
+        const view = render(<ImportFromDatabaseDialog open {...props} />);
+        fireEvent.click(await screen.findByRole('combobox', { name: 'Saved connection' }));
+        fireEvent.click(await screen.findByRole('option', { name: 'Prod' }));
+        await waitFor(() =>
+            expect(screen.getByLabelText('Host')).toHaveProperty('value', 'h')
+        );
+        view.rerender(<ImportFromDatabaseDialog open={false} {...props} />);
+        view.rerender(<ImportFromDatabaseDialog open {...props} />);
+        await waitFor(() =>
+            expect(screen.getByLabelText('Host')).toHaveProperty('value', '')
+        );
+        // the host field is editable again: no saved connection is selected
+        expect(screen.getByLabelText('Host')).toHaveProperty('disabled', false);
+    });
+
     it('takes the local diagram back when the server refuses to create it', async () => {
         syncDiagram.mockRejectedValue(new Error('down'));
         mount();

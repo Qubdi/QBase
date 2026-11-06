@@ -77,8 +77,15 @@ export const ImportFromDatabaseDialog: React.FC<
 
     useEffect(() => {
         if (!open) return;
+        // a fresh run each time: nothing typed or picked last time carries over
         setStep('connect');
         setError(null);
+        setForm(emptyForm);
+        setSavedId('');
+        setJustSavedId(null);
+        setCatalog(null);
+        setSelected(new Set());
+        setName('');
         api.listSavedConnections(projectId)
             .then(setSaved)
             .catch(() => setSaved([]));
