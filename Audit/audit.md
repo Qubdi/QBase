@@ -11,8 +11,8 @@
 | Server | 14 | 0 | 0 | 38 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
 | Client | 24 | 0 | 1 | 46 | 0 |
-| Dead code | 2 | 0 | 0 | 6 | 0 |
-| **Total** | 81 | 0 | 4 | 193 | 4 |
+| Dead code | 1 | 0 | 0 | 7 | 0 |
+| **Total** | 80 | 0 | 4 | 194 | 4 |
 
 ## Act first
 
@@ -133,7 +133,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| DEAD-007 | Low | `sha256` and `DiffKind` exported but referenced nowhere | `src/lib/utils/utils.ts:98` · `src/lib/domain/diff/diff.ts:79` | Delete both |
 | DEAD-008 | Med | Constant `withExtras`/`withDefault` flags ship dead query branches to the browser | `src/lib/data/import-metadata/scripts/postgres-script.ts:66` · `src/lib/data/import-metadata/scripts/mysql-script.ts:11` · `src/lib/data/import-metadata/scripts/sqlserver-script.ts:3` | Inline the chosen branch; drop the flags |
 
 ---
@@ -142,6 +141,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| DEAD-007 | Dead code | `sha256` and `DiffKind` exported but referenced nowhere |
 | SEC-031 | Security & secrets | Drift webhook URL stored and returned in plaintext; embedded tokens exposed |
 | SEC-030 | Security & secrets | Admin PATCH on own account sets password without current password or 2FA |
 | REPO-027 | Repository | `bootstrap-sha` names a commit missing from the rewritten history |
@@ -415,3 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
+| 25 | 2026-11-06 | 1 fixed: DEAD-007 |

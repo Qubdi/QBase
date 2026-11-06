@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 24</b></div>
-  <h1>2 open: 0 Crit, 0 High.</h1>
+  <h1>1 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -31,12 +31,11 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Dead code</h2></div>
-  <p class="section-note">2 open &middot; 6 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 7 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">DEAD-007</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>sha256</code> and <code>DiffKind</code> exported but referenced nowhere</td><td><code>src/lib/utils/utils.ts:98</code> · <code>src/lib/domain/diff/diff.ts:79</code></td><td class="wrap-cell">Delete both</td></tr>
         <tr><td class="svc-name">DEAD-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Constant <code>withExtras</code>/<code>withDefault</code> flags ship dead query branches to the browser</td><td><code>src/lib/data/import-metadata/scripts/postgres-script.ts:66</code> · <code>src/lib/data/import-metadata/scripts/mysql-script.ts:11</code> · <code>src/lib/data/import-metadata/scripts/sqlserver-script.ts:3</code></td><td class="wrap-cell">Inline the chosen branch; drop the flags</td></tr>
       </tbody>
     </table>
@@ -45,11 +44,12 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (6)</summary>
+  <details><summary>Fixed (7)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DEAD-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>sha256</code> and <code>DiffKind</code> exported but referenced nowhere</td></tr>
         <tr><td class="svc-name">DEAD-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">10 exports referenced only by their defining line</td></tr>
         <tr><td class="svc-name">DEAD-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">About 36 fork i18n keys in <code>en</code> never looked up</td></tr>
         <tr><td class="svc-name">DEAD-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>.gradient-background</code> and two rainbow keyframes unused but shipped</td></tr>

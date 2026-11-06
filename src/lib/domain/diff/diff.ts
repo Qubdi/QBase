@@ -70,28 +70,3 @@ export type DiffObject<
     | AreaDiff<TArea>['object']
     | NoteDiff<TNote>['object'];
 
-type ExtractDiffKind<T> = T extends { object: infer O; type: infer Type }
-    ? T extends { attribute: infer A }
-        ? { object: O; type: Type; attribute: A }
-        : { object: O; type: Type }
-    : never;
-
-export type DiffKind<
-    TTable = DBTable,
-    TField = DBField,
-    TIndex = DBIndex,
-    TCheckConstraint = DBCheckConstraint,
-    TRelationship = DBRelationship,
-    TArea = Area,
-    TNote = Note,
-> = ExtractDiffKind<
-    DiagramDiff<
-        TTable,
-        TField,
-        TIndex,
-        TCheckConstraint,
-        TRelationship,
-        TArea,
-        TNote
-    >
->;
