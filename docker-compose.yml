@@ -4,6 +4,7 @@ name: qbase
 services:
   db:
     container_name: qbase-postgres
+    restart: unless-stopped
     # built from the pinned image in db/postgres/Dockerfile, so it carries a tag
     build: ./db/postgres
     image: qbase-postgres:18-alpine
@@ -43,6 +44,7 @@ services:
 
   server:
     container_name: qbase-server
+    restart: unless-stopped
     # the server force-quits 10 s after SIGTERM; give it longer than Docker's default
     # 10 s before SIGKILL so a clean shutdown is never cut off
     stop_grace_period: 15s
@@ -94,6 +96,7 @@ services:
 
   ui:
     container_name: qbase-ui
+    restart: unless-stopped
     build:
       context: .
       args:
