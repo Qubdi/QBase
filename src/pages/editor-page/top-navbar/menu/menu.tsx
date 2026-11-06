@@ -87,12 +87,12 @@ export const Menu: React.FC<MenuProps> = () => {
             navigate(projectHomePath(workspace.project.slug));
         } catch (e) {
             toast({
-                title: 'Could not delete the diagram',
+                title: t('qubdi.workspace.editorToasts.deleteDiagramFailed'),
                 description: errorMessage(e),
                 variant: 'destructive',
             });
         }
-    }, [workspace, deleteDiagram, navigate, toast]);
+    }, [workspace, deleteDiagram, navigate, toast, t]);
 
     const exportSVG = useCallback(() => {
         exportImage('svg', {

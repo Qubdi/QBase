@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 24</b></div>
-  <h1>8 open: 0 Crit, 1 High.</h1>
+  <h1>7 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -37,7 +37,7 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">8 open &middot; 62 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">7 open &middot; 63 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -49,7 +49,6 @@
         <tr><td class="svc-name">CLI-053</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Editor id in sessionStorage; a duplicated tab shares the edit lock</td><td><code>src/lib/qubdi/editor-id.ts:13</code></td><td class="wrap-cell">Keep the editor id in memory only</td></tr>
         <tr><td class="svc-name">CLI-054</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Type picker compiles enum values as regex; <code>+</code> or <code>(</code> throws</td><td><code>src/components/select-box/select-box.tsx:411</code></td><td class="wrap-cell">Drop the <code>new RegExp(keyword)</code> branch</td></tr>
         <tr><td class="svc-name">CLI-056</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Get latest makes a new local id; sync state and drift scope lost</td><td><code>src/lib/qubdi/get-latest.ts:20</code></td><td class="wrap-cell">Move sync state to the new local id</td></tr>
-        <tr><td class="svc-name">CLI-070</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Hard-coded English toasts and labels in fork editor code</td><td><code>src/pages/editor-page/canvas/canvas.tsx:847</code> · <code>src/pages/editor-page/top-navbar/menu/menu.tsx:90</code></td><td class="wrap-cell">Move strings into <code>en</code> and call <code>t()</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -57,11 +56,12 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (62)</summary>
+  <details><summary>Fixed (63)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-070</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Hard-coded English toasts in fork editor code: the five in <code>canvas.tsx</code> and <code>menu.tsx</code> now use <code>t()</code>; other upstream strings elsewhere are untouched</td></tr>
         <tr><td class="svc-name">CLI-067</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lock check unreachable on first ask never retried; editor stays read-only</td></tr>
         <tr><td class="svc-name">CLI-048</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Saved webhook cannot be cleared as the hint says; field loads empty</td></tr>
         <tr><td class="svc-name">CLI-063</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lint settings fetched once; failed save swallowed silently</td></tr>

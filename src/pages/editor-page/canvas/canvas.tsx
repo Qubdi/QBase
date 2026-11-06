@@ -844,10 +844,11 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 )
             ) {
                 toast({
-                    title: 'Field types are not compatible',
+                    title: t('qubdi.workspace.editorToasts.fieldTypesIncompatibleTitle'),
                     variant: 'destructive',
-                    description:
-                        'Relationships can only be created between compatible field types',
+                    description: t(
+                        'qubdi.workspace.editorToasts.fieldTypesIncompatibleBody'
+                    ),
                 });
                 return;
             }
@@ -861,10 +862,11 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 })
             ) {
                 toast({
-                    title: 'Already connected',
+                    title: t('qubdi.workspace.editorToasts.alreadyConnectedTitle'),
                     variant: 'destructive',
-                    description:
-                        'These two fields already have a relationship between them',
+                    description: t(
+                        'qubdi.workspace.editorToasts.alreadyConnectedBody'
+                    ),
                 });
                 return;
             }
@@ -881,6 +883,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
             createDependency,
             getField,
             toast,
+            t,
             databaseType,
             relationships,
         ]

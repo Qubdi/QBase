@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { i18n } from '@/i18n/i18n';
 import { workspace } from '@/i18n/qubdi/workspace';
@@ -47,5 +48,40 @@ describe('qubdi.workspace keys', () => {
         expect(
             i18n.t('qubdi.workspace.viewerNode.fieldCount', { count: 2 })
         ).toBe('2 fields');
+    });
+});
+
+describe('editor toasts', () => {
+    const english = {
+        fieldTypesIncompatibleTitle: 'Field types are not compatible',
+        fieldTypesIncompatibleBody:
+            'Relationships can only be created between compatible field types',
+        alreadyConnectedTitle: 'Already connected',
+        alreadyConnectedBody:
+            'These two fields already have a relationship between them',
+        deleteDiagramFailed: 'Could not delete the diagram',
+    };
+
+    it('say what the editor used to hard-code', () => {
+        for (const [key, text] of Object.entries(english)) {
+            expect(i18n.t(`qubdi.workspace.editorToasts.${key}`)).toBe(text);
+        }
+    });
+
+    it('are looked up, not written out, in the canvas and the menu', () => {
+        for (const file of [
+            'src/pages/editor-page/canvas/canvas.tsx',
+            'src/pages/editor-page/top-navbar/menu/menu.tsx',
+        ]) {
+            const source = readFileSync(file, 'utf8');
+            for (const text of Object.values(english)) {
+                expect(source, `${file}: ${text}`).not.toContain(`'${text}'`);
+            }
+        }
+        const canvas = readFileSync(
+            'src/pages/editor-page/canvas/canvas.tsx',
+            'utf8'
+        );
+        expect(canvas).toContain('qubdi.workspace.editorToasts.alreadyConnectedBody');
     });
 });
