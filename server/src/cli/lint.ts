@@ -69,11 +69,47 @@ export function parseArgs(argv: string[]): Args | { error: string } {
     return args;
 }
 
+const isObject = (v: unknown): v is Record<string, unknown> =>
+    typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Throws, naming the table, when the lint would hit a table or column shape it cannot read. */
+function checkShape(diagram: Record<string, unknown>): void {
+    (diagram.tables as unknown[]).forEach((t, i) => {
+        if (!isObject(t)) throw new Error(`tables[${i}] is not an object`);
+        const where = `table ${typeof t.name === 'string' ? `"${t.name}"` : `#${i}`}`;
+        if (!Array.isArray(t.fields)) throw new Error(`${where} has no "fields" array`);
+        t.fields.forEach((f, j) => {
+            if (!isObject(f) || !isObject(f.type)) {
+                throw new Error(`${where}: fields[${j}] needs an object "type"`);
+            }
+        });
+        if (t.indexes !== undefined && !Array.isArray(t.indexes)) {
+            throw new Error(`${where}: "indexes" is not an array`);
+        }
+        (t.indexes as unknown[] | undefined)?.forEach((x, j) => {
+            if (!isObject(x) || !Array.isArray(x.fieldIds)) {
+                throw new Error(`${where}: indexes[${j}] needs a "fieldIds" array`);
+            }
+        });
+    });
+    if (diagram.relationships !== undefined && !Array.isArray(diagram.relationships)) {
+        throw new Error('"relationships" is not an array');
+    }
+}
+
 /** A QBase export, or the server's { title, content } wrapper. */
 function diagramOf(json: unknown): LintInput {
     if (json && typeof json === 'object') {
         const o = json as Record<string, unknown>;
-        if (Array.isArray(o.tables)) return o as LintInput;
+        const diagram = Array.isArray(o.tables)
+            ? o
+            : isObject(o.content) && Array.isArray(o.content.tables)
+              ? o.content
+              : undefined;
+        if (diagram) {
+            checkShape(diagram);
+            return diagram as LintInput;
+        }
         if (o.content && typeof o.content === 'object') return o.content as LintInput;
     }
     throw new Error('the file does not look like a QBase diagram (no "tables")');
