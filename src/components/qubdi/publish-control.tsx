@@ -15,6 +15,8 @@ import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useDiagramAccess } from './diagram-access-context';
 import { api, errorMessage } from '@/lib/qubdi/api';
+import { getEditorId } from '@/lib/qubdi/editor-id';
+import { setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import {
     publishStatusBadge,
@@ -89,6 +91,20 @@ export const PublishControl: React.FC = () => {
 
     const badge = publishStatusBadge(status);
 
+    // The server takes a save only from the editor holding the diagram's lock,
+    // so it is told which editor this is. The save moves `updatedAt`: the new
+    // value becomes the base of the next autosave, or that save would be a
+    // conflict with this one.
+    const saveAutoPublish = async (id: string, value: boolean) => {
+        const updated = await api.updateDiagram(id, {
+            autoPublish: value,
+            editorId: getEditorId(),
+        });
+        if (updated?.updatedAt) {
+            setBaseUpdatedAt(currentDiagram.id, updated.updatedAt);
+        }
+    };
+
     const publish = async () => {
         setBusy(true);
         try {
@@ -96,7 +112,7 @@ export const PublishControl: React.FC = () => {
             // this save and its own never go out with the same base version
             await flushPendingSave();
             const id = await syncDiagram(currentDiagram);
-            if (autoPublish) await api.updateDiagram(id, { autoPublish });
+            if (autoPublish) await saveAutoPublish(id, autoPublish);
             const res = await api.publish(id, note.trim() || undefined);
             setNote('');
             setOpen(false);
@@ -121,7 +137,7 @@ export const PublishControl: React.FC = () => {
         setAutoPublish(value);
         if (!remoteId) return;
         try {
-            await api.updateDiagram(remoteId, { autoPublish: value });
+            await saveAutoPublish(remoteId, value);
         } catch (e) {
             setAutoPublish(!value);
             toast({

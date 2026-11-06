@@ -9,9 +9,11 @@ import { PublishControl } from '../publish-control';
 import { registerFlushNow } from '@/lib/qubdi/save-status-store';
 import { DiagramAccessContext } from '../diagram-access-context';
 import { fireEvent, waitFor } from '@testing-library/react';
+import { getBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 
 const getDiagram = vi.fn();
 const publish = vi.fn();
+const updateDiagram = vi.fn();
 const calls: string[] = [];
 const syncDiagram = vi.fn(async () => {
     calls.push('sync');
@@ -22,9 +24,11 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     api: {
         getDiagram: (...a: unknown[]) => getDiagram(...a),
         publish: (...a: unknown[]) => publish(...a),
-        updateDiagram: vi.fn(),
+        updateDiagram: (...a: unknown[]) => updateDiagram(...a),
     },
 }));
+
+vi.mock('@/lib/qubdi/editor-id', () => ({ getEditorId: () => 'tab-1' }));
 
 vi.mock('@/hooks/use-diagram', () => ({
     useDiagram: () => ({ currentDiagram: { id: 'local-1' } }),
@@ -153,6 +157,42 @@ describe('PublishControl publishing', () => {
         } finally {
             registerFlushNow(null);
         }
+    });
+});
+
+describe('PublishControl saving the auto-publish setting', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        getDiagram.mockReset().mockResolvedValue({
+            publishedVersion: 1,
+            unpublishedChanges: false,
+            autoPublish: false,
+        });
+        publish.mockReset().mockResolvedValue({ version: 2 });
+        syncDiagram.mockClear();
+        updateDiagram
+            .mockReset()
+            .mockResolvedValue({ updatedAt: '2026-02-02T00:00:00.000Z' });
+    });
+
+    const toggle = async () => {
+        fireEvent.click(
+            await screen.findByRole('button', { name: /^Publish\./ })
+        );
+        fireEvent.click(await screen.findByRole('checkbox'));
+    };
+
+    it('names its editor, so the server does not answer 423, and adopts the new base time', async () => {
+        show();
+        await toggle();
+        await waitFor(() => expect(updateDiagram).toHaveBeenCalled());
+        expect(updateDiagram).toHaveBeenCalledWith('r1', {
+            autoPublish: true,
+            editorId: 'tab-1',
+        });
+        await waitFor(() =>
+            expect(getBaseUpdatedAt('local-1')).toBe('2026-02-02T00:00:00.000Z')
+        );
     });
 });
 
