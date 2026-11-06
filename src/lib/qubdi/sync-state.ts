@@ -58,6 +58,51 @@ export const clearSyncState = (diagramId: string) => {
     }
 };
 
+// "Get latest" drops the local copy and downloads the server's under a new
+// local id. What a diagram remembers about its database would be lost with the
+// old id, so it waits here, by server id, until the new copy is made.
+const HANDOFF_KEY = 'qbase.sync-state-handoff';
+
+const readHandoff = (): All => {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(HANDOFF_KEY) ?? '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+        return {};
+    }
+};
+
+/** Keeps `diagramId`'s sync state for the next local copy of `remoteId`. */
+export const handOffSyncState = (diagramId: string, remoteId: string) => {
+    const state = getSyncState(diagramId);
+    if (!state) return;
+    try {
+        localStorage.setItem(
+            HANDOFF_KEY,
+            JSON.stringify({ ...readHandoff(), [remoteId]: state })
+        );
+    } catch {
+        // storage unavailable: re-sync just will not be one click
+    }
+};
+
+/** Gives the kept sync state of `remoteId`, if any, to its new local copy. */
+export const adoptHandedOffSyncState = (
+    remoteId: string,
+    diagramId: string
+) => {
+    const all = readHandoff();
+    const state = all[remoteId];
+    if (!state) return;
+    setSyncState(diagramId, state);
+    delete all[remoteId];
+    try {
+        localStorage.setItem(HANDOFF_KEY, JSON.stringify(all));
+    } catch {
+        // ignore
+    }
+};
+
 /** The request body for the server; inline connections need the password again. */
 export function toConnectionRef(
     state: SyncState,

@@ -15,6 +15,12 @@ import {
     UnpublishedDiagramError,
 } from '../open-remote';
 import {
+    getSyncState,
+    handOffSyncState,
+    setSyncState,
+    type SyncState,
+} from '../sync-state';
+import {
     findLocalId,
     getProjectId,
     getRemoteId,
@@ -119,6 +125,22 @@ describe('ensureLocalCopy', () => {
         expect(fetches()).toBe(1);
         expect(getRemoteId('fresh-local-id')).toBe('remote-1');
         expect(getProjectId('fresh-local-id')).toBe('p1');
+    });
+
+    it('gives the new copy the database source that Get latest kept', async () => {
+        const state: SyncState = {
+            dialect: 'postgresql',
+            source: { kind: 'saved', savedConnectionId: 'c1' },
+            tables: [],
+            schemas: [],
+            sourceKeys: { tables: {}, columns: {} },
+            lastSyncedAt: '2026-01-01T00:00:00.000Z',
+        };
+        setSyncState('old-local', state);
+        handOffSyncState('old-local', 'remote-1');
+        const { args } = setup();
+        await ensureLocalCopy(args());
+        expect(getSyncState('fresh-local-id')).toEqual(state);
     });
 
     it('reuses the copy that is already in this browser', async () => {

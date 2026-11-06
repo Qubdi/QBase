@@ -1,5 +1,6 @@
 import { projectDiagramPath } from './project-path';
 import { clearRemoteId } from './remote-map';
+import { clearSyncState, handOffSyncState } from './sync-state';
 
 export interface GetLatestArgs {
     /** the diagram's copy in this browser */
@@ -18,6 +19,9 @@ export interface GetLatestArgs {
  */
 export async function getLatestFromServer(args: GetLatestArgs): Promise<void> {
     await args.deleteLocal(args.localId);
+    // the new copy gets a new local id: what it remembers about its database moves along
+    handOffSyncState(args.localId, args.remoteId);
+    clearSyncState(args.localId);
     clearRemoteId(args.localId);
     await args.beforeReload?.();
     window.location.assign(projectDiagramPath(args.projectSlug, args.remoteId));

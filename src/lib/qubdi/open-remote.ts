@@ -3,6 +3,7 @@ import { findLocalId, setProjectId, setRemoteId } from './remote-map';
 import { diagramToServerContent } from './content';
 import { getBaseUpdatedAt, setBaseUpdatedAt } from './remote-version';
 import { markSyncedContent, matchesSyncedContent } from './sent-content';
+import { adoptHandedOffSyncState } from './sync-state';
 export class InvalidServerDiagramError extends Error {
     constructor() {
         super('The server copy of this diagram could not be read.');
@@ -136,5 +137,7 @@ export async function ensureLocalCopy(
     setProjectId(localId, args.projectId);
     if (remote.updatedAt) setBaseUpdatedAt(localId, remote.updatedAt);
     markSyncedContent(localId, diagramToServerContent(diagram));
+    // a "Get latest" just before this keeps the diagram's database source
+    adoptHandedOffSyncState(args.remoteId, localId);
     return { localId, created: true };
 }

@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getLatestFromServer } from '../get-latest';
 import { getRemoteId, setRemoteId } from '../remote-map';
+import {
+    adoptHandedOffSyncState,
+    getSyncState,
+    setSyncState,
+    type SyncState,
+} from '../sync-state';
 
 const assign = vi.fn();
 
@@ -56,6 +62,31 @@ describe('getLatestFromServer', () => {
         settle();
         await done;
         expect(order).toEqual(['saved', 'reload']);
+    });
+
+    it('hands the database source on to the copy that will be downloaded', async () => {
+        const state: SyncState = {
+            dialect: 'postgresql',
+            source: { kind: 'saved', savedConnectionId: 'c1' },
+            tables: ['public.users'],
+            schemas: ['public'],
+            sourceKeys: { tables: { t1: 'users' }, columns: { f1: 'users.id' } },
+            lastSyncedAt: '2026-01-01T00:00:00.000Z',
+        };
+        setSyncState('local-1', state);
+        await getLatestFromServer(args());
+        expect(getSyncState('local-1')).toBeUndefined();
+        adoptHandedOffSyncState('r1', 'local-2');
+        expect(getSyncState('local-2')).toEqual(state);
+        // handed on once
+        adoptHandedOffSyncState('r1', 'local-3');
+        expect(getSyncState('local-3')).toBeUndefined();
+    });
+
+    it('hands nothing on for a diagram that has no database source', async () => {
+        await getLatestFromServer(args());
+        adoptHandedOffSyncState('r1', 'local-2');
+        expect(getSyncState('local-2')).toBeUndefined();
     });
 
     it('keeps the page and the saves when the copy cannot be deleted', async () => {
