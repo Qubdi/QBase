@@ -13,7 +13,8 @@ log_format qbase '$remote_addr - $remote_user [$time_local] "$log_request" '
 
 server {
     listen       80;
-    listen  [::]:80;
+    # empty on a host without IPv6, where nginx would refuse to start (see entrypoint.sh)
+    ${LISTEN_IPV6}
 
     server_tokens off;
     access_log /var/log/nginx/access.log qbase;

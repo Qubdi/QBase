@@ -11,8 +11,17 @@ if [ -n "${QUBDI_BACKEND_URL:-}" ]; then
     fi
 fi
 
+# nginx fails to start on `listen [::]:80` when the host has no IPv6. The stock
+# image checks this in its own entrypoint, which this script replaces.
+if [ -f /proc/net/if_inet6 ]; then
+    LISTEN_IPV6='listen  [::]:80;'
+else
+    LISTEN_IPV6=''
+fi
+export LISTEN_IPV6
+
 # Replace placeholders in nginx.conf
-envsubst '${QUBDI_BACKEND_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+envsubst '${QUBDI_BACKEND_URL} ${LISTEN_IPV6}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
 # Start Nginx as this shell's process (exec), so Docker's SIGTERM reaches it
 exec nginx -g "daemon off;"
