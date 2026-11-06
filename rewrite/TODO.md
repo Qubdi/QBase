@@ -33,7 +33,8 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
 
 1. [x] **Phase 0: tooling and records.** Similarity tool, inventories, CI workflow, licence
    list, provenance and log files, parity checklist skeleton. Open parts are under "Now".
-2. [ ] **Phase 1: behaviour spec** in `spec/`. Fill in `parity-checklist.md` by using the app
+2. [x] **Phase 1: behaviour spec** (done 2026-11-07; the specs come from reading `main`, not from running
+   it: cross-check with the live walkthrough when browser tooling exists) in `spec/`. Fill in `parity-checklist.md` by using the app
    on `main`; mark each behaviour keep, change or drop; document the saved-diagram data
    format; write `spec/manual-test-script.md`; get the owner's sign-off on the drop list.
 3. [ ] **Phase 2: architecture** in `architecture.md`: folders, naming, state management, data
