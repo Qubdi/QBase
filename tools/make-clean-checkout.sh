@@ -29,13 +29,15 @@ git gc --quiet --prune=now
 find src -mindepth 1 -maxdepth 1 ! -name test -exec rm -rf {} +
 # Inventories name ChartDB's files; plans and logs of the process are not the author's business.
 rm -rf rewrite/inventory rewrite/PLAN.md rewrite/TODO.md rewrite/README.md Audit tools/similarity.mjs \
-       tools/licences.mjs .github/workflows/similarity.yaml
+       tools/licences.mjs tools/spec-check.mjs tools/make-clean-checkout.sh .github/workflows/similarity.yaml
 # Specs outside the phase 4 scope (shell and QBase contract, manual script, import/export engines).
 rm -f rewrite/spec/app-shell.md rewrite/spec/manual-test-script.md rewrite/spec/import-export.md
 # Parity rows for the shell and the QBase contract are not in scope.
 grep -v -E '^\| (SHL|QBS|IMP|EXP)-' rewrite/parity-checklist.md > rewrite/parity-checklist.tmp
 mv rewrite/parity-checklist.tmp rewrite/parity-checklist.md
 cp "$src/rewrite/clean-author-brief.md" CLAUDE.md
+git config user.name "Clean author session"
+git config user.email "clean-author@invalid"
 rm -f rewrite/clean-author-brief.md
 
 # Check what is left for anything that names the other project or the old layout.
