@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 24</b></div>
-  <h1>7 open: 0 Crit, 1 High.</h1>
+  <h1>6 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -37,7 +37,7 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">7 open &middot; 59 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">6 open &middot; 60 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -48,7 +48,6 @@
         <tr><td class="svc-name">REPO-062</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No <code>restart:</code> policy on db, server or ui; reboot leaves QBase down</td><td><code>docker-compose.yml:5</code></td><td class="wrap-cell">Add <code>restart: unless-stopped</code> to all three services</td></tr>
         <tr><td class="svc-name">REPO-065</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">UI image and ui service have no healthcheck</td><td><code>Dockerfile:27</code></td><td class="wrap-cell">Add a <code>HEALTHCHECK</code> fetching <code>/config.js</code></td></tr>
         <tr><td class="svc-name">REPO-066</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>listen [::]:80</code> fails on IPv6-less hosts; custom entrypoint skips nginx's check</td><td><code>default.conf.template:16</code></td><td class="wrap-cell">Drop the IPv6 listen or make it conditional</td></tr>
-        <tr><td class="svc-name">REPO-067</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SPA fallback answers missing <code>/assets/*</code> with <code>index.html</code></td><td><code>default.conf.template:34</code></td><td class="wrap-cell">Add <code>location /assets/</code> with <code>try_files $uri =404</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -56,11 +55,12 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (59)</summary>
+  <details><summary>Fixed (60)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-067</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SPA fallback answers missing <code>/assets/*</code> with <code>index.html</code></td></tr>
         <tr><td class="svc-name">REPO-063</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Compose defaults unset <code>QUBDI_BACKEND_URL</code> to localhost; documented local-only mode unreachable</td></tr>
         <tr><td class="svc-name">REPO-064</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>.env.example</code> header names only <code>POSTGRES_PASSWORD</code> as required</td></tr>
         <tr><td class="svc-name">REPO-057</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CONTRIBUTING server test line omits the fixed test DB credentials</td></tr>

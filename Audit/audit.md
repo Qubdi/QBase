@@ -7,12 +7,12 @@
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 12 | 0 | 2 | 37 | 0 |
-| Repository | 7 | 0 | 1 | 59 | 1 |
+| Repository | 6 | 0 | 1 | 60 | 1 |
 | Server | 8 | 0 | 0 | 44 | 0 |
 | Database | 6 | 0 | 0 | 23 | 3 |
 | Client | 6 | 0 | 1 | 64 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 40 | 0 | 4 | 234 | 4 |
+| **Total** | 39 | 0 | 4 | 235 | 4 |
 
 ## Act first
 
@@ -52,7 +52,6 @@
 | REPO-062 | Med | No `restart:` policy on db, server or ui; reboot leaves QBase down | `docker-compose.yml:5` | Add `restart: unless-stopped` to all three services |
 | REPO-065 | Low | UI image and ui service have no healthcheck | `Dockerfile:27` | Add a `HEALTHCHECK` fetching `/config.js` |
 | REPO-066 | Low | `listen [::]:80` fails on IPv6-less hosts; custom entrypoint skips nginx's check | `default.conf.template:16` | Drop the IPv6 listen or make it conditional |
-| REPO-067 | Low | SPA fallback answers missing `/assets/*` with `index.html` | `default.conf.template:34` | Add `location /assets/` with `try_files $uri =404` |
 
 ### Server
 
@@ -101,6 +100,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| REPO-067 | Repository | SPA fallback answers missing `/assets/*` with `index.html` |
 | SRV-049 | Server | Webhook timeout is idle-only; a trickling server holds the drift check |
 | SRV-045 | Server | `COOKIE_SECURE`, `MFA_WINDOW_STEPS`, `MFA_ENABLED` typos fall back silently |
 | DB-025 | Database | Shared paging `page` has no upper bound; admin and project list offsets unbounded |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 41 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049 |
+| 25 | 2026-11-06 | 42 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067 |

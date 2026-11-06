@@ -34,6 +34,13 @@ server {
 	    try_files  $uri $uri/ /index.html;
     }
 
+    # a missing build file is a 404, not index.html: a stale asset URL must not
+    # get HTML where a script or stylesheet was expected
+    location /assets/ {
+        root   /usr/share/nginx/html;
+        try_files  $uri =404;
+    }
+
     location /config.js {
         default_type application/javascript;
         return 200 "window.env = {
