@@ -31,8 +31,6 @@ export const database = {
         testNeedsPassword: 'Type the password to test the connection',
         test: 'Test connection',
         back: 'Back',
-        webhookSaved:
-            'Webhook saved for {{host}}: type a new URL to replace it, or clear the field to remove it',
         working: 'Working…',
         save: 'Save',
         tested_one: 'Connected to {{database}}. Found {{count}} schema.',
@@ -125,6 +123,11 @@ export const database = {
         webhookLabel: 'Webhook URL',
         webhookPlaceholder:
             'Webhook URL (optional): receives a JSON POST when drift is found',
+        webhookSaved:
+            'Webhook saved for {{host}}: type a new URL to replace it',
+        removeWebhook: 'Remove webhook',
+        webhookRemoved:
+            'The saved webhook is removed the next time you press Check now',
         working: 'Working…',
         checkNow: 'Check now',
         lastCheck: 'Last check {{date}}:',

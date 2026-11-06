@@ -10,9 +10,9 @@
 | Repository | 7 | 0 | 1 | 59 | 1 |
 | Server | 10 | 0 | 0 | 42 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
-| Client | 10 | 0 | 1 | 60 | 0 |
+| Client | 9 | 0 | 1 | 61 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 48 | 0 | 4 | 226 | 4 |
+| **Total** | 47 | 0 | 4 | 227 | 4 |
 
 ## Act first
 
@@ -87,7 +87,6 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | CLI-047 | Med | `webhookSaved` key sits under `connections`; drift dialog shows the raw key | `src/i18n/qubdi/database.ts:34` · `src/components/qubdi/drift-dialog.tsx:266` | Move `webhookSaved` into the `drift` block |
-| CLI-048 | Low | Saved webhook cannot be cleared as the hint says; field loads empty | `src/components/qubdi/drift-dialog.tsx:114` · `src/i18n/qubdi/database.ts:35` | Add a remove-webhook button; reword the hint |
 | CLI-050 | High | Publish and auto-publish PUT omit `editorId`; server answers 423 | `src/components/qubdi/publish-control.tsx:99` · `src/components/qubdi/publish-control.tsx:124` | Send `editorId: getEditorId()`; adopt returned `updatedAt` as base |
 | CLI-051 | Med | Drift Check now blanks server scope and sourceKeys without local sync state | `src/components/qubdi/drift-dialog.tsx:169` | Resend the server's saved scope when local state is missing |
 | CLI-052 | Med | Share-link expiry shown in UTC but parsed as local time | `src/components/qubdi/share-dialog.tsx:42` | Format with local time parts; commit on blur |
@@ -109,6 +108,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| CLI-048 | Client | Saved webhook cannot be cleared as the hint says; field loads empty |
 | CLI-063 | Client | Lint settings fetched once; failed save swallowed silently |
 | CLI-064 | Client | Change-password and Create-link lack busy guards; double click submits twice |
 | CLI-057 | Client | Import wizard keeps stale saved-connection id across reopen |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 33 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063 |
+| 25 | 2026-11-06 | 34 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048 |

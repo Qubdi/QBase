@@ -197,6 +197,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
             await load();
         });
 
+    // a saved webhook with nothing typed over it, after Remove: the next save clears it
+    const removingWebhook =
+        webhookHost !== null && webhookEdited && webhook.trim() === '';
     const split = report ? splitByCategory(report.changes) : null;
     const remoteId = remoteIdFor(currentDiagram.id);
 
@@ -259,21 +262,41 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                             {t('qubdi.database.drift.noConnections')}
                         </p>
                     ) : null}
-                    <Input
-                        aria-label={t('qubdi.database.drift.webhookLabel')}
-                        placeholder={
-                            webhookHost
-                                ? t('qubdi.database.drift.webhookSaved', {
-                                      host: webhookHost,
-                                  })
-                                : t('qubdi.database.drift.webhookPlaceholder')
-                        }
-                        value={webhook}
-                        onChange={(e) => {
-                            setWebhook(e.target.value);
-                            setWebhookEdited(true);
-                        }}
-                    />
+                    {/* the saved URL never comes back, so removing it is a button of its own */}
+                    <div className="flex gap-2">
+                        <Input
+                            aria-label={t('qubdi.database.drift.webhookLabel')}
+                            placeholder={
+                                removingWebhook
+                                    ? t('qubdi.database.drift.webhookRemoved')
+                                    : webhookHost
+                                      ? t('qubdi.database.drift.webhookSaved', {
+                                            host: webhookHost,
+                                        })
+                                      : t(
+                                            'qubdi.database.drift.webhookPlaceholder'
+                                        )
+                            }
+                            value={webhook}
+                            onChange={(e) => {
+                                setWebhook(e.target.value);
+                                setWebhookEdited(true);
+                            }}
+                        />
+                        {webhookHost && !removingWebhook ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setWebhook('');
+                                    setWebhookEdited(true);
+                                }}
+                            >
+                                {t('qubdi.database.drift.removeWebhook')}
+                            </Button>
+                        ) : null}
+                    </div>
                     <div className="flex gap-2">
                         <Button
                             type="submit"

@@ -196,7 +196,9 @@ describe('DriftDialog', () => {
         // the saved URL stays on the server: the field is empty and shows the host
         const field = screen.getByLabelText('Webhook URL') as HTMLInputElement;
         expect(field.value).toBe('');
-        expect(field.placeholder).toBe('qubdi.database.drift.webhookSaved');
+        expect(field.placeholder).toBe(
+            'Webhook saved for hooks.example.com: type a new URL to replace it'
+        );
     });
 
     it('leaves the saved webhook alone unless it is edited', async () => {
@@ -218,6 +220,54 @@ describe('DriftDialog', () => {
         });
         await settle();
         expect(saveDrift.mock.calls[0][1]).not.toHaveProperty('webhookUrl');
+    });
+
+    it('removes a saved webhook with the Remove button, on the next check', async () => {
+        getDrift.mockResolvedValue(
+            overview({
+                settings: {
+                    connectionId: 'c1',
+                    schemas: [],
+                    tables: [],
+                    sourceKeys: { tables: {}, columns: {} },
+                    webhookHost: 'hooks.example.com',
+                },
+            })
+        );
+        checkDrift.mockResolvedValue(report({ status: 'clean', changes: [] }));
+        await show();
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Remove webhook',
+            })
+        );
+        const field = screen.getByLabelText('Webhook URL') as HTMLInputElement;
+        expect(field.placeholder).toBe(
+            'The saved webhook is removed the next time you press Check now'
+        );
+        expect(
+            screen.queryByRole('button', {
+                name: 'Remove webhook',
+            })
+        ).toBeNull();
+        await act(async () => {
+            fireEvent.click(checkNow());
+        });
+        await settle();
+        expect(saveDrift.mock.calls[0][1]).toMatchObject({ webhookUrl: null });
+        // gone from the server now: no button, the plain placeholder again
+        expect(field.placeholder).toBe(
+            'Webhook URL (optional): receives a JSON POST when drift is found'
+        );
+    });
+
+    it('offers no Remove button when no webhook is saved', async () => {
+        await show();
+        expect(
+            screen.queryByRole('button', {
+                name: 'Remove webhook',
+            })
+        ).toBeNull();
     });
 
     it('saves what to compare with, then checks, in one step', async () => {
