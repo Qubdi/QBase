@@ -26,4 +26,8 @@ RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
+# nginx answers /config.js itself, so a 200 there means the container is serving
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1/config.js || exit 1
+
 ENTRYPOINT ["/entrypoint.sh"]
