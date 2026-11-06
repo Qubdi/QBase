@@ -7,12 +7,12 @@
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 12 | 0 | 2 | 37 | 0 |
-| Repository | 8 | 0 | 1 | 58 | 1 |
+| Repository | 7 | 0 | 1 | 59 | 1 |
 | Server | 14 | 0 | 0 | 38 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
 | Client | 24 | 0 | 1 | 46 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 67 | 0 | 4 | 207 | 4 |
+| **Total** | 66 | 0 | 4 | 208 | 4 |
 
 ## Act first
 
@@ -50,7 +50,6 @@
 | REPO-045 | Med | NOTICE says developed in-house; upstream name and copyright removed | `NOTICE:5` · `NOTICE:20` | Restore upstream name, copyright and modification notice |
 | REPO-056 | High | Global `minimatch >=11.0.1` override crashes root ESLint on load | `package.json:124` · `server/package.json:47` | Scope the override to vulnerable consumers; keep `^3` for ESLint plugins |
 | REPO-062 | Med | No `restart:` policy on db, server or ui; reboot leaves QBase down | `docker-compose.yml:5` | Add `restart: unless-stopped` to all three services |
-| REPO-063 | Low | Compose defaults unset `QUBDI_BACKEND_URL` to localhost; documented local-only mode unreachable | `docker-compose.yml:104` · `.env.example:51` | Use `${QUBDI_BACKEND_URL-}` or reword the doc |
 | REPO-065 | Low | UI image and ui service have no healthcheck | `Dockerfile:27` | Add a `HEALTHCHECK` fetching `/config.js` |
 | REPO-066 | Low | `listen [::]:80` fails on IPv6-less hosts; custom entrypoint skips nginx's check | `default.conf.template:16` | Drop the IPv6 listen or make it conditional |
 | REPO-067 | Low | SPA fallback answers missing `/assets/*` with `index.html` | `default.conf.template:34` | Add `location /assets/` with `try_files $uri =404` |
@@ -128,6 +127,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| REPO-063 | Repository | Compose defaults unset `QUBDI_BACKEND_URL` to localhost; documented local-only mode unreachable |
 | REPO-064 | Repository | `.env.example` header names only `POSTGRES_PASSWORD` as required |
 | REPO-057 | Repository | CONTRIBUTING server test line omits the fixed test DB credentials |
 | REPO-061 | Repository | CODEOWNERS ship block omits `/db/`, `.gitleaks.toml`, release-please config |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 14 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064 |
+| 25 | 2026-11-06 | 15 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063 |

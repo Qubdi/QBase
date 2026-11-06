@@ -101,7 +101,7 @@ services:
         VITE_APP_URL: ${VITE_APP_URL:-}
     environment:
       # read by the browser at run time through /config.js
-      QUBDI_BACKEND_URL: ${QUBDI_BACKEND_URL:-http://localhost:3001}
+      QUBDI_BACKEND_URL: ${QUBDI_BACKEND_URL-http://localhost:3001}
     depends_on:
       - server
     ports:
