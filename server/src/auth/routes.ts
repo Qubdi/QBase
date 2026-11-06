@@ -1,4 +1,4 @@
-import { count, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type {
     FastifyPluginAsync,
     FastifyReply,
@@ -134,10 +134,12 @@ export const authRoutes =
             // Once sign-up is closed, say so before the (slow) hash: otherwise anyone
             // can make the server spend a hash per request. The count inside the
             // transaction below is the one that decides; this only saves work.
-            const [{ value: already }] = await db
-                .select({ value: count() })
-                .from(users);
-            if (already > 0) {
+            // (one row is enough to know; counting would visit every user)
+            const anyUser = await db
+                .select({ id: users.id })
+                .from(users)
+                .limit(1);
+            if (anyUser.length > 0) {
                 return reply.code(403).send({ error: 'signup_disabled' });
             }
             const passwordHash = await hashPassword(body.password);
@@ -148,11 +150,12 @@ export const authRoutes =
                 await tx.execute(
                     sql`select pg_advisory_xact_lock(${FIRST_USER_LOCK})`
                 );
-                const [{ value: existing }] = await tx
-                    .select({ value: count() })
-                    .from(users);
+                const anyUser = await tx
+                    .select({ id: users.id })
+                    .from(users)
+                    .limit(1);
                 // accounts are created by an admin; only the very first one may self-register
-                if (existing > 0) return { error: 'signup_disabled' as const };
+                if (anyUser.length > 0) return { error: 'signup_disabled' as const };
                 const taken = await tx
                     .select({ id: users.id })
                     .from(users)
