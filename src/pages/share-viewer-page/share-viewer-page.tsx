@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -52,8 +58,12 @@ export const ShareViewerPage: React.FC = () => {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [authOpen, setAuthOpen] = useState(false);
 
+    // replies can arrive out of order: only the newest request may set the state
+    const newestLoad = useRef(0);
     const load = useCallback(async () => {
+        const request = ++newestLoad.current;
         const res = await api.getPublicShare(token);
+        if (request !== newestLoad.current) return;
         if (res.status === 'ok') {
             setState({ kind: 'ok', share: res.share });
         } else {

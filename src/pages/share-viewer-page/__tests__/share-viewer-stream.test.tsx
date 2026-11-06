@@ -125,3 +125,38 @@ describe('ShareViewerPage live stream', () => {
         expect(FakeEventSource.instances).toHaveLength(1);
     });
 });
+
+describe('ShareViewerPage reloads', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        FakeEventSource.instances = [];
+        vi.stubGlobal('EventSource', FakeEventSource);
+        getPublicShare.mockReset().mockResolvedValue(share(1));
+    });
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+    });
+
+    const titled = (title: string, version: number) => {
+        const r = share(version);
+        return { ...r, share: { ...r.share, title } };
+    };
+
+    it('keeps the newest version when an older reload answers last', async () => {
+        const view = await show();
+        const stream = FakeEventSource.instances[0];
+        let answerOld!: (v: unknown) => void;
+        let answerNew!: (v: unknown) => void;
+        getPublicShare
+            .mockReturnValueOnce(new Promise((r) => (answerOld = r)))
+            .mockReturnValueOnce(new Promise((r) => (answerNew = r)));
+        act(() => stream.emit('version'));
+        act(() => stream.emit('version'));
+
+        await act(async () => answerNew(titled('Version 3', 3)));
+        expect(view.getByTestId('viewer-title').textContent).toBe('Version 3');
+        await act(async () => answerOld(titled('Version 2', 2)));
+        expect(view.getByTestId('viewer-title').textContent).toBe('Version 3');
+    });
+});
