@@ -46,10 +46,10 @@ database, the server and the editor.
 ```bash
 npm run lint && npx vitest run       # editor: lint and tests
 npm run build                        # editor: lint, type check and bundle
-cd server && npm run lint && npm run typecheck && npx vitest run   # server (tests need the Postgres from `docker compose up -d db`)
+cd server && npm run lint && npm run typecheck && npx vitest run   # server (tests need the Postgres from `docker compose up -d db`, started with POSTGRES_USER=qbase and POSTGRES_PASSWORD=qbase)
 ```
 
-The server tests create their own `qbase_test` database next to the one the app uses.
+The server tests create their own `qbase_test` database next to the one the app uses. They connect as `qbase`/`qbase` on `localhost:5433`; set `TEST_PG_PORT` to use another port. A Postgres started with a different user or password makes them fail to connect.
 
 Two optional editor scripts: `npm run test:ui` opens the Vitest browser UI, and `npm run test:coverage` writes a coverage report.
 
