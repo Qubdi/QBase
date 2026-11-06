@@ -52,6 +52,14 @@ export const OPEN_TO_TEMPORARY_PASSWORD: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Public share pages (`/s/<token>`, `/s/<token>/events`) show a published copy,
+ * not the account's own data: someone on a temporary password may open a link
+ * that was sent to them.
+ */
+export const isOpenToTemporaryPassword = (path: string): boolean =>
+    OPEN_TO_TEMPORARY_PASSWORD.has(path) || path.startsWith('/s/');
+
+/**
  * A share link's token is the credential for it, and it sits in the URL
  * (`/s/<token>`, `/s/<token>/events`): the request log must not keep it.
  */
@@ -160,7 +168,7 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     app.addHook('preHandler', async (req, reply) => {
         if (!req.user?.mustChangePassword) return;
         const path = req.url.split('?')[0];
-        if (OPEN_TO_TEMPORARY_PASSWORD.has(path)) return;
+        if (isOpenToTemporaryPassword(path)) return;
         return reply.code(403).send({ error: 'password_change_required' });
     });
 
