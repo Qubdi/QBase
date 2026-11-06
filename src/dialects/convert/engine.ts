@@ -208,6 +208,15 @@ export function convertDesign(
     for (const t of exported) {
         const tableName = nameOf(t);
         const where = (c: Column): string => `${t.entity.name}.${c.name}`;
+        const tooLong = (name: string, what: string): void => {
+            if (name.length > tgt.identifierLimit)
+                notes.add(
+                    'Names',
+                    name,
+                    `${what} name is longer than ${tgt.identifierLimit} characters, the limit of ${target.label}`
+                );
+        };
+        tooLong(tableName, 'table');
         const afterTable: string[] = [];
         const numberedColumns: Column[] = [];
 
@@ -267,6 +276,13 @@ export function convertDesign(
                           ? 'bigserial'
                           : 'serial';
             const type = writeNeutral(neutral, flavour, { keySized: isKey });
+            tooLong(column.name, 'column');
+            if (flavour === 'sqlite' && neutral.kind === 'decimal')
+                notes.add(
+                    'Type conversions',
+                    '',
+                    'SQLite has no fixed point type: DECIMAL and NUMERIC columns use NUMERIC affinity'
+                );
             for (const n of type.notes)
                 notes.add('Type conversions', where(column), n);
             if (p.read.note)
@@ -286,7 +302,12 @@ export function convertDesign(
             }
             if (type.enumValues)
                 enumChecks.push(
-                    `CHECK (${q(column.name)} IN (${type.enumValues.map((v) => `'${v.replace(/'/g, "''")}'`).join(', ')}))`
+                    `CHECK (${q(column.name)} IN (${type.enumValues
+                        .map(
+                            (v) =>
+                                `${flavour === 'sqlserver' ? 'N' : ''}'${v.replace(/'/g, "''")}'`
+                        )
+                        .join(', ')}))`
                 );
             neutral = p.neutral;
 
@@ -335,7 +356,10 @@ export function convertDesign(
                     : '';
             return {
                 text: `${above}    ${line}`,
-                was: p.read.approximate ? ` -- Was: ${column.type.name}` : '',
+                was:
+                    p.read.approximate || type.approximate
+                        ? ` -- Was: ${column.type.name}`
+                        : '',
             };
         });
 
@@ -346,9 +370,10 @@ export function convertDesign(
             );
         if (flavour === 'mysql')
             for (const c of numberedColumns) {
+                // MySQL needs the numbered column first in some key (error 1075)
                 const indexed =
-                    t.primary.some((p) => p.id === c.id) ||
-                    t.keys.some((k) => k.columns[0]?.id === c.id);
+                    t.primary[0]?.id === c.id ||
+                    t.keys.some((k) => !k.key.pk && k.columns[0]?.id === c.id);
                 if (!indexed) constraints.push(`KEY (${q(c.name)})`);
             }
         constraints.push(...enumChecks);
@@ -399,15 +424,13 @@ export function convertDesign(
         };
         for (const fk of foreignKeysHeldBy(model, t.entity)) {
             const bad = validFor(fk);
-            const list = `FOREIGN KEY (${commaList(fk.columns.map((c) => q(c.name)))}) on ${fk.holder.name} -> ${fk.referenced.name}`;
+            const cols = commaList(fk.columns.map((c) => q(c.name)));
+            const list = `FOREIGN KEY (${cols}) on ${fk.holder.name} -> ${fk.referenced.name}`;
             if (bad) {
                 notes.add(
                     'Foreign keys',
                     fk.holder.name,
-                    `${list.replace(' on ', ' (')}) not created: ${bad}`.replace(
-                        '(' + fk.holder.name,
-                        fk.holder.name
-                    )
+                    `FOREIGN KEY (${cols}) -> ${fk.referenced.name} not created: ${bad}`
                 );
                 foreignStatements.push(`-- not created (${bad}): ${list}`);
                 continue;

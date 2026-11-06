@@ -208,3 +208,147 @@ describe('EXP-037 EXP-040 EXP-041 EXP-042 EXP-043 EXP-044 EXP-048 converter rule
         );
     });
 });
+
+describe('converter fixes found in integration', () => {
+    const base = sampleS1('sql_server');
+    const withColumn = (
+        design: typeof base,
+        table: string,
+        patch: Record<string, unknown>,
+        name: string
+    ) => {
+        const e = Object.values(design.entities.byId).find(
+            (x) => x.name === table
+        )!;
+        const c = e.columnIds
+            .map((id) => design.columns[id])
+            .find((x) => x.name === name)!;
+        return {
+            ...design,
+            columns: { ...design.columns, [c.id]: { ...c, ...patch } },
+        };
+    };
+    it('EXP-039 a time-zone type becomes DATETIME with a Was comment and a note', () => {
+        const d = withColumn(
+            base,
+            'customers',
+            { type: { id: 'datetimeoffset', name: 'datetimeoffset' } },
+            'created_at'
+        );
+        const text = exportSql(d, 'mysql').text;
+        expect(text).toMatch(
+            /`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Was: datetimeoffset|`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,? -- Was: datetimeoffset/
+        );
+        expect(text).toContain('customers.created_at: time zone is lost');
+    });
+    it('EXP-037 EXP-047 decimal columns give one NUMERIC affinity note for SQLite', () => {
+        const text = exportSql(sampleS1('postgresql'), 'sqlite').text;
+        expect(text.match(/NUMERIC affinity/g)).toHaveLength(1);
+    });
+    it('EXP-040 a numbered column that is not first in the primary key gets KEY (col) in MySQL', () => {
+        const d = sampleS2('postgresql');
+        const e = Object.values(d.entities.byId).find(
+            (x) => x.name === 'enrolments'
+        )!;
+        const second = d.columns[e.columnIds[1]];
+        const text = exportSql(
+            {
+                ...d,
+                columns: {
+                    ...d.columns,
+                    [second.id]: {
+                        ...second,
+                        type: { id: 'integer', name: 'integer' },
+                        increment: true,
+                    },
+                },
+                entities: {
+                    ...d.entities,
+                    byId: {
+                        ...d.entities.byId,
+                        [e.id]: {
+                            ...e,
+                            keyIds: e.keyIds.filter((id) => d.keys[id].pk),
+                        },
+                    },
+                },
+            },
+            'mysql'
+        ).text;
+        expect(text).toContain(
+            'PRIMARY KEY (`student_id`, `course_code`),\n    KEY (`course_code`)'
+        );
+    });
+    it('EXP-037 TEXT from MySQL is written as lower-case text for PostgreSQL', () => {
+        const d = sampleS3('mysql');
+        expect(exportSql(d, 'postgresql').text).toContain('"body" text');
+    });
+    it('EXP-043 an empty array default becomes [] when arrays are stored as JSON', () => {
+        const d = sampleS3('postgresql');
+        const t = Object.values(d.columns).find((c) => c.name === 'tags')!;
+        const text = exportSql(
+            {
+                ...d,
+                columns: { ...d.columns, [t.id]: { ...t, default: "'{}'" } },
+            },
+            'mysql'
+        ).text;
+        expect(text).toContain("`tags` JSON DEFAULT ('[]')");
+    });
+    it('EXP-047 names longer than the target limit get a note in Names', () => {
+        const d = sampleS1('postgresql');
+        const e = Object.values(d.entities.byId).find(
+            (x) => x.name === 'orders'
+        )!;
+        const long = 'x'.repeat(70);
+        const renamed = {
+            ...d,
+            entities: {
+                ...d.entities,
+                byId: { ...d.entities.byId, [e.id]: { ...e, name: long } },
+            },
+        };
+        const text = exportSql(renamed, 'mysql').text;
+        expect(text).toContain('-- Names:');
+        expect(text).toContain('longer than 64 characters');
+    });
+    it('EXP-042 the foreign key note is well formed', () => {
+        const d = sampleS1('postgresql');
+        const cust = Object.values(d.columns).find(
+            (c) => c.name === 'full_name'
+        )!;
+        const link = Object.values(d.links.byId)[0];
+        const bad = {
+            ...d,
+            links: {
+                ...d.links,
+                byId: { [link.id]: { ...link, sourceColumnId: cust.id } },
+            },
+        };
+        const text = exportSql(bad, 'mysql').text;
+        expect(text).toContain(
+            '--   - orders: FOREIGN KEY (`customer_id`) -> customers not created: customers.full_name is not unique'
+        );
+    });
+    it('EXP-044 SQL Server check strings and enum checks use N prefix', () => {
+        const text = exportSql(sampleS3('postgresql'), 'sql_server').text;
+        expect(text).toContain(
+            "CHECK ([status] IN (N'open', N'closed', N'it''s done'))"
+        );
+    });
+});
+
+describe('IMP-014 SQL Server reader warns about backticks', () => {
+    it('warns with the line', async () => {
+        const { importSql } = await import('@/formats/sql/import-sql');
+        const r = importSql('CREATE TABLE `a` (\n  `id` INT\n);', 'sql_server');
+        expect(
+            r.diagnostics.some(
+                (d) =>
+                    d.severity === 'warning' &&
+                    d.message.includes('backticks') &&
+                    d.line === 1
+            )
+        ).toBe(true);
+    });
+});

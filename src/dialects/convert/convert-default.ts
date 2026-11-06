@@ -115,6 +115,21 @@ export function convertDefault(
                 return drop('a number on a date column');
             return wrap(textual ? `'${d.v}'` : d.v);
         case 'string': {
+            if (
+                neutral.kind === 'array' &&
+                target !== 'postgres' &&
+                /^\{.*\}$/s.test(d.v)
+            ) {
+                const items = d.v
+                    .slice(1, -1)
+                    .split(',')
+                    .map((x) => x.trim().replace(/^"|"$/g, ''))
+                    .filter((x) => x !== '')
+                    .map((x) =>
+                        /^-?\d+(\.\d+)?$/.test(x) ? x : JSON.stringify(x)
+                    );
+                return wrap(`'[${items.join(', ')}]'`);
+            }
             const body = d.v.replace(/'/g, "''");
             const text = isMy ? body.replace(/\\/g, '\\\\') : body;
             return wrap(isMs && national ? `N'${text}'` : `'${text}'`);

@@ -7,6 +7,8 @@ export interface TypeOut {
     enumValues?: string[];
     /** the type is the native one for an auto-numbered integer column */
     integer?: boolean;
+    /** only approximated: the column gets a "Was:" comment */
+    approximate?: boolean;
 }
 
 interface Context {
@@ -104,13 +106,11 @@ export function writeNeutral(
                         : `numeric${pair(n.precision, n.scale)}`
                 );
             if (flavour === 'sqlite')
-                return n.precision === undefined
-                    ? out('NUMERIC', [
-                          'SQLite has no fixed point type: NUMERIC used',
-                      ])
-                    : out(`DECIMAL${pair(n.precision, n.scale)}`, [
-                          'SQLite has no fixed point type: values are stored as NUMERIC',
-                      ]);
+                return out(
+                    n.precision === undefined
+                        ? 'NUMERIC'
+                        : `DECIMAL${pair(n.precision, n.scale)}`
+                );
             const max = isMy ? 65 : 38;
             const maxScale = isMy ? 30 : 38;
             if (n.precision === undefined) return out('DECIMAL(38, 10)');
@@ -191,7 +191,8 @@ export function writeNeutral(
                 : out(`${prefix}(MAX)`);
         }
         case 'text':
-            if (isPg || flavour === 'sqlite') return out('TEXT');
+            if (isPg) return out('text');
+            if (flavour === 'sqlite') return out('TEXT');
             if (isMy)
                 return ctx.keySized
                     ? out('VARCHAR(768)', [
@@ -227,10 +228,22 @@ export function writeNeutral(
             return out(isMy || isMs || flavour === 'sqlite' ? 'DATE' : 'date');
         case 'time':
             if (isPg) return out(n.zone ? 'timetz' : 'time');
+            if (n.zone && !isMs)
+                return out(
+                    'TIME',
+                    ['time zone is lost: stored without a zone'],
+                    { approximate: true }
+                );
             return out('TIME');
         case 'datetime':
             if (isPg) return out(n.zone ? 'timestamptz' : 'timestamp');
             if (isMs) return out(n.zone ? 'DATETIMEOFFSET' : 'DATETIME2');
+            if (n.zone)
+                return out(
+                    'DATETIME',
+                    ['time zone is lost: stored without a zone'],
+                    { approximate: true }
+                );
             return out('DATETIME');
         case 'json':
             if (isPg) return out(n.binary ? 'jsonb' : 'json');

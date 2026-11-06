@@ -30,7 +30,7 @@ const LENGTH_NAMES = new Set([
     'LENGTH',
 ]);
 const TOKEN =
-    /\s+|'(?:[^']|'')*'|"(?:[^"]|"")*"|`[^`]*`|\[[^\]]*\]|\d+(?:\.\d+)?|[A-Za-z_][\w$]*|<>|<=|>=|!=|[()=<>+\-*/%,]|[\s\S]/gy;
+    /\s+|N'(?:[^']|'')*'|'(?:[^']|'')*'|"(?:[^"]|"")*"|`[^`]*`|\[[^\]]*\]|\d+(?:\.\d+)?|[A-Za-z_][\w$]*|<>|<=|>=|!=|[()=<>+\-*/%,]|[\s\S]/gy;
 
 export type CheckResult = { text: string } | { reason: string };
 
@@ -67,6 +67,11 @@ export function convertCheck(
         const t = tokens[i];
         if (/^\s+$/.test(t)) {
             out += ' ';
+            continue;
+        }
+        if (/^N'/.test(t) || t.startsWith("'")) {
+            const bare = t.startsWith('N') ? t.slice(1) : t;
+            out += target === 'sqlserver' ? `N${bare}` : bare;
             continue;
         }
         if (/^(?:'|\d|<>|<=|>=|!=|[()=<>+\-*/%,])/.test(t)) {
