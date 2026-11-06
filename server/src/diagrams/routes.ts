@@ -410,6 +410,7 @@ export const diagramRoutes =
             if (d.autoPublish) {
                 const snap = await publishSnapshot(db, id, req.user!.id, {
                     note: AUTO_PUBLISH_NOTE,
+                    auto: true,
                     onlyIfChanged: true,
                     keep: config.snapshotKeep,
                     coalesceSeconds: config.autoPublishCoalesceSeconds,

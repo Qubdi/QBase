@@ -295,6 +295,9 @@ export const snapshots = pgTable(
             .notNull()
             .defaultNow(),
         note: text('note'),
+        // made by auto-publish (and so rewritten by the next one), as opposed to a
+        // publish someone asked for, whatever note it carries
+        auto: boolean('auto').notNull().default(false),
     },
     (t) => [
         // also serves diagram_id lookups (version history, latest version)

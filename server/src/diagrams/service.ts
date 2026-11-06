@@ -166,7 +166,7 @@ export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
 /** The note of a snapshot made by auto-publish, which is the one kind that may be rewritten. */
 export const AUTO_PUBLISH_NOTE = 'Auto-published on save';
 
-export type SnapshotMeta = Omit<SnapshotRow, 'content'>;
+export type SnapshotMeta = Omit<SnapshotRow, 'content' | 'auto'>;
 
 const snapshotMetaColumns = {
     id: snapshots.id,
@@ -201,6 +201,8 @@ export async function publishSnapshot(
          * types. 0 or unset: always a new snapshot.
          */
         coalesceSeconds?: number;
+        /** this snapshot is an auto-publish: it may be rewritten by the next one */
+        auto?: boolean;
     } = {}
 ): Promise<(SnapshotMeta & { coalesced: boolean }) | null> {
     const row = await db.transaction(async (tx) => {
@@ -221,6 +223,7 @@ export async function publishSnapshot(
                 version: snapshots.version,
                 contentHash: snapshots.contentHash,
                 note: snapshots.note,
+                auto: snapshots.auto,
                 publishedBy: snapshots.publishedBy,
                 publishedAt: snapshots.publishedAt,
             })
@@ -246,8 +249,8 @@ export async function publishSnapshot(
         if (
             opts.coalesceSeconds &&
             last &&
-            note === AUTO_PUBLISH_NOTE &&
-            last.note === AUTO_PUBLISH_NOTE &&
+            opts.auto &&
+            last.auto &&
             last.publishedBy === userId &&
             Date.now() - last.publishedAt.getTime() <
                 opts.coalesceSeconds * 1000
@@ -269,9 +272,9 @@ export async function publishSnapshot(
         const version = (last?.version ?? 0) + 1;
         const inserted = await tx.execute<{ id: string }>(sql`
             insert into snapshots
-                (diagram_id, version, title, content, content_hash, published_by, note)
+                (diagram_id, version, title, content, content_hash, published_by, note, auto)
             select d.id, ${version}::integer, d.title, d.content, ${hash}::text,
-                   ${userId}::uuid, ${note}::text
+                   ${userId}::uuid, ${note}::text, ${opts.auto ?? false}::boolean
             from diagrams d
             where d.id = ${diagramId}::uuid
             returning id

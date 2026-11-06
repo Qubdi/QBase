@@ -169,6 +169,13 @@
       "when": 1793961457969,
       "tag": "0023_drift_settings_connection_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793961567335,
+      "tag": "0024_snapshot_auto_flag",
+      "breakpoints": true
     }
   ]
 }

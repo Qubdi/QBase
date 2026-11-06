@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 9 | 0 | 2 | 40 | 0 |
 | Repository | 4 | 0 | 1 | 62 | 1 |
-| Server | 4 | 0 | 0 | 48 | 0 |
+| Server | 3 | 0 | 0 | 49 | 0 |
 | Database | 1 | 0 | 0 | 28 | 3 |
 | Client | 6 | 0 | 1 | 64 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 25 | 0 | 4 | 249 | 4 |
+| **Total** | 24 | 0 | 4 | 250 | 4 |
 
 ## Act first
 
@@ -55,7 +55,6 @@
 | SRV-039 | Med | Undecryptable stored webhook skipped silently; no report note, UI shows none | `server/src/drift/service.ts:326` | Set `webhookNote` when the stored URL fails to open |
 | SRV-042 | Med | Drift check scans every catalog row once per table; quadratic on big schemas | `shared/schema-desc.ts:168` | Group metadata rows by table once before mapping |
 | SRV-043 | Med | Share SSE sends no `X-Accel-Buffering: no`; proxied live events stall | `server/src/share/routes.ts:421` | Send `X-Accel-Buffering: no` on the event stream |
-| SRV-048 | Low | Manual publish noted "Auto-published on save" is overwritten by next autosave | `server/src/diagrams/service.ts:250` | Flag auto snapshots in a column, not by note text |
 
 ### Database
 
@@ -86,6 +85,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SRV-048 | Server | Manual publish noted "Auto-published on save" is overwritten by next autosave |
 | DB-032 | Database | Viewer list sorted by working-copy `updated_at` but shows `publishedAt` |
 | DB-031 | Database | User delete can cascade-delete a diagram the target creates mid-delete |
 | DB-029 | Database | SQL Server schema filter splits on commas; comma names unselectable |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 56 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032 |
+| 25 | 2026-11-06 | 57 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048 |
