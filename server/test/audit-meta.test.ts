@@ -138,6 +138,22 @@ describe('audit meta: what an action was done to', () => {
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,
                 changed: ['isAdmin'],
+                isAdmin: true,
+            });
+
+            // a revoke is told from a grant by the new value
+            await call(admin, 'PATCH', `/admin/users/${targetId}`, {
+                isAdmin: false,
+            });
+            expect((await latest('user.update')).meta).toEqual({
+                targetUserId: targetId,
+                changed: ['isAdmin'],
+                isAdmin: false,
+            });
+
+            // the next test expects the target to be an admin again
+            await call(admin, 'PATCH', `/admin/users/${targetId}`, {
+                isAdmin: true,
             });
         });
 

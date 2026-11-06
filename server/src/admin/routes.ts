@@ -417,7 +417,13 @@ export const adminRoutes =
                         ? 'user.enable'
                         : 'user.disable'
                     : 'user.update',
-                meta: { targetUserId: id, changed },
+                meta: {
+                    targetUserId: id,
+                    changed,
+                    ...(changed.includes('isAdmin')
+                        ? { isAdmin: body.isAdmin }
+                        : {}),
+                },
             });
             return {
                 id,

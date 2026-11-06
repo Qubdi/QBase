@@ -101,6 +101,8 @@ export interface AuditMeta {
     rows?: number;
     /** user.update: what the admin changed */
     changed?: ('password' | 'isAdmin' | 'isActive')[];
+    /** user.update: the admin flag after the change, when it changed (true is a grant, false a revoke) */
+    isAdmin?: boolean;
 }
 
 const MAX_NAME_LENGTH = 100;

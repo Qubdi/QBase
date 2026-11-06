@@ -187,6 +187,7 @@ export interface ActivityItem {
         /** share.revoke: when the link was made */
         madeAt?: string;
         changed?: ('password' | 'isAdmin' | 'isActive')[];
+        isAdmin?: boolean;
         /** a saved connection's name, for the connection actions */
         name?: string;
         /** audit.export: how many rows the file held */
