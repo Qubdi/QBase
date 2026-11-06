@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 12 | 0 | 2 | 37 | 0 |
 | Repository | 7 | 0 | 1 | 59 | 1 |
-| Server | 13 | 0 | 0 | 39 | 0 |
+| Server | 12 | 0 | 0 | 40 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
 | Client | 24 | 0 | 1 | 46 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 65 | 0 | 4 | 209 | 4 |
+| **Total** | 64 | 0 | 4 | 210 | 4 |
 
 ## Act first
 
@@ -68,7 +68,6 @@
 | SRV-047 | Low | Diagram deleted mid-request: GET, lock, save and link create return 500 | `server/src/diagrams/routes.ts:288` · `server/src/share/routes.ts:163` | Return 404 on empty select or FK violation |
 | SRV-048 | Low | Manual publish noted "Auto-published on save" is overwritten by next autosave | `server/src/diagrams/service.ts:250` | Flag auto snapshots in a column, not by note text |
 | SRV-049 | Low | Webhook timeout is idle-only; a trickling server holds the drift check | `server/src/drift/webhook.ts:102` | Add an overall deadline to the request |
-| SRV-050 | Low | `databaseType` "constructor" makes lint throw TypeError; 500 | `shared/lint.ts:300` | Look up `DIALECT_RESERVED` with `Object.hasOwn` |
 | SRV-051 | Low | CLI lint crashes on a table without `fields`; exits 1, not 2 | `server/src/cli/lint.ts:108` | Validate diagram shape; return 2 on bad input |
 | SRV-052 | Low | Composite FK change emits duplicate `relationship_changed` ids | `shared/reconcile.ts:544` | Add `fromColumns` to the change id |
 
@@ -126,6 +125,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SRV-050 | Server | `databaseType` "constructor" makes lint throw TypeError; 500 |
 | SRV-044 | Server | `NOTIFY qubdi_events, 'null'` throws in the listener; process exits |
 | REPO-063 | Repository | Compose defaults unset `QUBDI_BACKEND_URL` to localhost; documented local-only mode unreachable |
 | REPO-064 | Repository | `.env.example` header names only `POSTGRES_PASSWORD` as required |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 16 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044 |
+| 25 | 2026-11-06 | 17 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050 |

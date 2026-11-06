@@ -737,6 +737,17 @@ describe('reserved-word', () => {
         expect(isReservedWord('identity', 'sql_server')).toBe(true);
         expect(isReservedWord('identity', 'postgresql')).toBe(false);
     });
+
+    it('does not read dialect lists off the object prototype', () => {
+        for (const dialect of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+            expect(() => isReservedWord('users', dialect)).not.toThrow();
+            expect(isReservedWord('users', dialect)).toBe(false);
+            expect(isReservedWord('select', dialect)).toBe(true);
+            expect(
+                only(lint(diagram([tbl('t', [{ name: 'id', pk: true }], { comments: 'x' })], [], dialect)), 'reserved-word')
+            ).toEqual([]);
+        }
+    });
 });
 
 describe('orphan-table', () => {

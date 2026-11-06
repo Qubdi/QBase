@@ -297,7 +297,11 @@ const DIALECT_RESERVED: Record<string, string[]> = {
 
 export const isReservedWord = (name: string, dialect = ''): boolean =>
     RESERVED.has(name.toLowerCase()) ||
-    (DIALECT_RESERVED[dialect] ?? []).includes(name.toLowerCase());
+    // `databaseType` comes from the diagram, so "constructor" or "__proto__" must not reach the prototype
+    (Object.hasOwn(DIALECT_RESERVED, dialect)
+        ? DIALECT_RESERVED[dialect]
+        : []
+    ).includes(name.toLowerCase());
 
 export type NameStyle = 'snake' | 'camel' | 'neutral';
 
