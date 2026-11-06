@@ -1,0 +1,72 @@
+import type { Dialect } from '../dialect';
+import { readSqlServer } from './read';
+import { writeSqlServer } from './write';
+import { quoteBracket } from '../shared/text';
+
+export const SQL_SERVER_TYPES: readonly string[] = [
+    'int',
+    'bit',
+    'varchar',
+    'nvarchar',
+    'text',
+    'datetime',
+    'date',
+    'bigint',
+    'decimal',
+    'datetime2',
+    'uniqueidentifier',
+    'json',
+    'numeric',
+    'smallint',
+    'smallmoney',
+    'tinyint',
+    'money',
+    'float',
+    'real',
+    'char',
+    'nchar',
+    'ntext',
+    'binary',
+    'varbinary',
+    'image',
+    'datetimeoffset',
+    'smalldatetime',
+    'time',
+    'timestamp',
+    'xml',
+    'cursor',
+    'hierarchyid',
+    'sql_variant',
+    'geometry',
+    'geography',
+];
+
+export const sqlServer: Dialect = {
+    id: 'sql_server',
+    label: 'SQL Server',
+    capabilities: {
+        schemas: true,
+        enumTypes: false,
+        compositeTypes: false,
+        arrayColumns: false,
+        checkConstraints: true,
+        views: true,
+        materializedViews: false,
+        nativeComments: false,
+        indexMethods: [],
+        numbering: 'identity-property',
+    },
+    types: SQL_SERVER_TYPES,
+    defaultType: 'bigint',
+    defaultSchema: 'dbo',
+    sql: {
+        source: { flavour: 'sqlserver', defaultSchema: 'dbo' },
+        target: {
+            flavour: 'sqlserver',
+            quote: quoteBracket,
+            identifierLimit: 128,
+        },
+        read: readSqlServer,
+        write: writeSqlServer,
+    },
+};
