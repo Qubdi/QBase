@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 24</b></div>
-  <h1>6 open: 0 Crit, 1 High.</h1>
+  <h1>5 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -37,12 +37,11 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">6 open &middot; 64 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">5 open &middot; 65 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">CLI-047</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>webhookSaved</code> key sits under <code>connections</code>; drift dialog shows the raw key</td><td><code>src/i18n/qubdi/database.ts:34</code> · <code>src/components/qubdi/drift-dialog.tsx:266</code></td><td class="wrap-cell">Move <code>webhookSaved</code> into the <code>drift</code> block</td></tr>
         <tr><td class="svc-name">CLI-050</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Publish and auto-publish PUT omit <code>editorId</code>; server answers 423</td><td><code>src/components/qubdi/publish-control.tsx:99</code> · <code>src/components/qubdi/publish-control.tsx:124</code></td><td class="wrap-cell">Send <code>editorId: getEditorId()</code>; adopt returned <code>updatedAt</code> as base</td></tr>
         <tr><td class="svc-name">CLI-051</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Drift Check now blanks server scope and sourceKeys without local sync state</td><td><code>src/components/qubdi/drift-dialog.tsx:169</code></td><td class="wrap-cell">Resend the server's saved scope when local state is missing</td></tr>
         <tr><td class="svc-name">CLI-052</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Share-link expiry shown in UTC but parsed as local time</td><td><code>src/components/qubdi/share-dialog.tsx:42</code></td><td class="wrap-cell">Format with local time parts; commit on blur</td></tr>
@@ -55,11 +54,12 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (64)</summary>
+  <details><summary>Fixed (65)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-047</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>webhookSaved</code> key sits under <code>connections</code>; drift dialog shows the raw key</td></tr>
         <tr><td class="svc-name">CLI-056</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Get latest makes a new local id; sync state and drift scope lost</td></tr>
         <tr><td class="svc-name">CLI-070</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Hard-coded English toasts in fork editor code: the five in <code>canvas.tsx</code> and <code>menu.tsx</code> now use <code>t()</code>; other upstream strings elsewhere are untouched</td></tr>
         <tr><td class="svc-name">CLI-067</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lock check unreachable on first ask never retried; editor stays read-only</td></tr>

@@ -9,10 +9,10 @@
 | Security & secrets | 9 | 0 | 2 | 40 | 0 |
 | Repository | 4 | 0 | 1 | 62 | 1 |
 | Server | 3 | 0 | 0 | 49 | 0 |
-| Database | 1 | 0 | 0 | 28 | 3 |
-| Client | 6 | 0 | 1 | 64 | 0 |
+| Database | 0 | 0 | 0 | 29 | 3 |
+| Client | 5 | 0 | 1 | 65 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 24 | 0 | 4 | 250 | 4 |
+| **Total** | 22 | 0 | 4 | 252 | 4 |
 
 ## Act first
 
@@ -60,13 +60,11 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| DB-028 | Med | SQL Server introspection uses `STRING_SPLIT`; fails below compatibility level 130 | `server/src/introspect/sqlserver.ts:17` | Bind one parameter per schema instead of splitting |
 
 ### Client
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-047 | Med | `webhookSaved` key sits under `connections`; drift dialog shows the raw key | `src/i18n/qubdi/database.ts:34` · `src/components/qubdi/drift-dialog.tsx:266` | Move `webhookSaved` into the `drift` block |
 | CLI-050 | High | Publish and auto-publish PUT omit `editorId`; server answers 423 | `src/components/qubdi/publish-control.tsx:99` · `src/components/qubdi/publish-control.tsx:124` | Send `editorId: getEditorId()`; adopt returned `updatedAt` as base |
 | CLI-051 | Med | Drift Check now blanks server scope and sourceKeys without local sync state | `src/components/qubdi/drift-dialog.tsx:169` | Resend the server's saved scope when local state is missing |
 | CLI-052 | Med | Share-link expiry shown in UTC but parsed as local time | `src/components/qubdi/share-dialog.tsx:42` | Format with local time parts; commit on blur |
@@ -85,6 +83,8 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| DB-028 | Database | SQL Server introspection uses `STRING_SPLIT`; fails below compatibility level 130 |
+| CLI-047 | Client | `webhookSaved` key sits under `connections`; drift dialog shows the raw key |
 | SRV-048 | Server | Manual publish noted "Auto-published on save" is overwritten by next autosave |
 | DB-032 | Database | Viewer list sorted by working-copy `updated_at` but shows `publishedAt` |
 | DB-031 | Database | User delete can cascade-delete a diagram the target creates mid-delete |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 57 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048 |
+| 25 | 2026-11-06 | 59 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028 |
