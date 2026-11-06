@@ -208,12 +208,14 @@ The spec describes behaviour, not code.
 Deliverables: `rewrite/architecture.md`.
 
 Done when:
-- Folder layout, naming rules, state management and data flow are written down and differ
-  from ChartDB's.
-- Module interfaces are fixed so phases 4 to 6 can proceed independently.
-- Storage design covers local Dexie data, server sync and migration of existing saved
-  diagrams.
-- A lawyer has reviewed the process in sections 6 and 9.
+- [x] Folder layout, naming rules, state management and data flow are written down and differ
+  from ChartDB's (`rewrite/architecture.md`, 2026-11-07).
+- [x] Module interfaces are fixed so phases 4 to 6 can proceed independently (section 9).
+- [x] Storage design covers local Dexie data, server sync and migration of existing saved
+  diagrams (section 5).
+- [ ] A lawyer has reviewed the process in sections 6 and 9. Owner action; the brief is
+  `rewrite/lawyer-brief.md`. Phases 3 to 8 continue meanwhile, at the risk that the lawyer asks
+  for a stricter process.
 
 ### Phase 3: Foundations
 

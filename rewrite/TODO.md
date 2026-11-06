@@ -37,7 +37,7 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
    it: cross-check with the live walkthrough when browser tooling exists) in `spec/`. Fill in `parity-checklist.md` by using the app
    on `main`; mark each behaviour keep, change or drop; document the saved-diagram data
    format; write `spec/manual-test-script.md`; get the owner's sign-off on the drop list.
-3. [ ] **Phase 2: architecture** in `architecture.md`: folders, naming, state management, data
+3. [x] **Phase 2: architecture** (done 2026-11-07 except the lawyer review: owner sends `lawyer-brief.md`) in `architecture.md`: folders, naming, state management, data
    flow, storage and migration, module interfaces. Ask a lawyer to review the process.
 4. [ ] **Phase 3: foundations.** UI primitives (shadcn CLI), theme, i18n loader, toasts,
    dialogs, router, app shell, build configs. The branch builds and tests again.

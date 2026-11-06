@@ -1,6 +1,7 @@
 # Architecture of the rewritten editor
 
-Status: draft for owner and lawyer review (Phase 2). Written 2026-11-07 from `rewrite/spec/`
+Status: accepted by the owner 2026-11-07; lawyer review pending (see `rewrite/lawyer-brief.md`).
+Written 2026-11-07 from `rewrite/spec/`
 and `rewrite/PLAN.md`. It does not use ChartDB's source. Where the spec records a fact the
 old editor fixes (JSON keys, storage database name, import path), that fact is kept; every
 other name, folder and mechanism below is chosen here.
@@ -125,6 +126,15 @@ written, over IndexedDB with Dexie.
 Layout decision (answers data-format Q on Dexie layout): **one record per diagram** holding
 the whole serialised design, plus a small index store (id, name, database type, dates) for
 the list screens. The old nine-store layout is read once and never written again.
+
+Server sync (unchanged in behaviour, original code in `lib/qubdi`): the server keeps its own
+copy of each published diagram as JSON in the wire format. The editor never talks to the server
+directly; the QBase code reads the current design through `qbase/editor-api` and serialises it
+with `core/wire`, so one serialiser feeds local storage, files and the server. A local diagram
+and a server diagram are linked by the ids the QBase code stores beside the design (binding
+rules in `spec/data-format.md` section 6.3); replacing the local copy from the server is one
+"replace whole design" command, so it can be undone. Conflicts (409 on `baseUpdatedAt`) and the
+edit lock (423) stay in the QBase code and surface as save status in the navbar slot.
 
 Compatibility rules:
 
