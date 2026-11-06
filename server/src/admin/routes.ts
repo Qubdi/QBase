@@ -141,6 +141,17 @@ type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
  * cascade): the team keeps them, owned by `heirId`.
  */
 const removeUsers = async (tx: Tx, ids: string[], heirId: string) => {
+    // Lock the accounts first. A diagram the user creates while this runs
+    // inserts a row that points at the user, which waits for this lock, and
+    // then the reassignment below sees it; without the lock it would appear
+    // after the reassignment and be cascade-deleted with the account. Ordered,
+    // so two deletions of overlapping sets cannot lock in opposite orders.
+    await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(inArray(users.id, ids))
+        .orderBy(users.id)
+        .for('update');
     await tx
         .update(diagrams)
         .set({ ownerId: heirId })
