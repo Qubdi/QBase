@@ -1,0 +1,132 @@
+<meta charset="utf-8">
+<title>QBase &mdash; Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 0</b></div>
+  <h1>0 open across six lenses.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> –</span>
+    <span><b>method</b> none yet: no audit pass has been run</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+  <div class="split-nav">
+    <b>Part of a 7-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
+    <a href="audit-client.html">Client</a>
+    <a href="audit-deadcode.html">Dead code</a>
+    <span class="here">Index (this file)</span>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="summary">
+  <div class="section-head"><span class="snum">01</span><h2>Summary</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
+      <tbody>
+        <tr><td>Security &amp; secrets</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Repository</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Total</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="lenses">
+  <div class="section-head"><span class="snum">02</span><h2>Lenses</h2></div>
+  <a class="idx-card sec" href="audit-security.html">
+    <h3>Security &amp; secrets</h3>
+    <p>No findings.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+  </a>
+  <a class="idx-card repo" href="audit-repository.html">
+    <h3>Repository &amp; governance</h3>
+    <p>No findings.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+  </a>
+  <a class="idx-card dev" href="audit-server.html">
+    <h3>Server</h3>
+    <p>No findings.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+  </a>
+  <a class="idx-card dev" href="audit-database.html">
+    <h3>Database &amp; scale</h3>
+    <p>No findings.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+  </a>
+  <a class="idx-card stg" href="audit-client.html">
+    <h3>Client</h3>
+    <p>No findings.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+  </a>
+  <a class="idx-card repo" href="audit-deadcode.html">
+    <h3>Dead code</h3>
+    <p>No findings.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+  </a>
+</section>
+
+<section id="changelog">
+  <div class="section-head"><span class="snum">03</span><h2>Changelog</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
+      <tbody>
+        </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Part of a 7-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
+    <a href="audit-client.html">Client</a>
+    <a href="audit-deadcode.html">Dead code</a>
+    <span class="here">Index (this file)</span>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qbase-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

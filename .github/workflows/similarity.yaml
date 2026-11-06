@@ -1,0 +1,39 @@
+name: Upstream similarity
+
+# Part of the clean-room rewrite (see REWRITE-PLAN.md). Fails when a new or
+# rewritten file shares too much code with ChartDB.
+
+on:
+  pull_request:
+    branches: [main, rewrite/clean-room]
+
+permissions:
+  contents: read
+
+jobs:
+  similarity:
+    name: Shared code with upstream
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.x
+
+      # Pinned to the commit the comparison was made against
+      - name: Fetch upstream
+        run: |
+          git init upstream
+          git -C upstream fetch --depth 1 https://github.com/chartdb/chartdb.git ee95448d154cfdcf65264c45745f440c0480ef84
+          git -C upstream checkout FETCH_HEAD
+
+      - name: Check added and rewritten files
+        run: >
+          node tools/similarity.mjs --upstream upstream --src src --check
+          --base origin/${{ github.base_ref }} --rewritten docs/rewritten.txt

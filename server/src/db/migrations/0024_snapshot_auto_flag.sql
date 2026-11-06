@@ -1,0 +1,1 @@
+ALTER TABLE "snapshots" ADD COLUMN "auto" boolean DEFAULT false NOT NULL;

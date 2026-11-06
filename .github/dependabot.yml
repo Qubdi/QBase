@@ -1,0 +1,60 @@
+# npm updates are PAUSED: both npm entries have open-pull-requests-limit: 0, so
+# Dependabot opens no version-update pull requests for packages. To resume, set
+# them back to 5. The pinned images (Node, Postgres) and the workflows' action
+# SHAs keep being updated: a pin nobody bumps misses its security fixes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # majors are taken on purpose, one step at a time (see TODO.md), not by
+      # a bot's pull request
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: npm
+    directory: /server
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # majors are taken on purpose, one step at a time (see TODO.md), not by
+      # a bot's pull request
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # keeps the pinned commit SHAs in the workflows current
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    # Node moves a major at a time on purpose: the even (LTS) release only,
+    # kept in step with .nvmrc, engines and CI
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  # the compose files' images (the bundled Postgres, SQL Server) are pinned by
+  # digest; Postgres' major version moves on purpose, with the data volume (see
+  # the README)
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]

@@ -1,0 +1,19 @@
+# Builds the app image from this checkout instead of pulling it, under the same
+# name Docker Hub uses: qubdi/qbase:${QBASE_VERSION:-latest}. Use it on top of
+# docker-compose.yml:
+#
+#   QBASE_VERSION=1.3.0-rc1 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml push app   # when it is good
+#
+# Set QBASE_VERSION to the tag you are testing: the local build replaces any
+# image of that name on this machine, so building "latest" hides the published
+# latest until you `docker compose pull` again. The build is for this machine's
+# platform only; the tag workflow (.github/workflows/publish.yaml) builds amd64
+# and arm64.
+services:
+  app:
+    build:
+      context: .
+      args:
+        VITE_HOST_URL: ${VITE_HOST_URL:-}
+        VITE_APP_URL: ${VITE_APP_URL:-}

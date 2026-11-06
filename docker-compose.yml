@@ -1,0 +1,101 @@
+# Runs the published image, qubdi/qbase from Docker Hub (built and pushed only by
+# the tag workflow, .github/workflows/publish.yaml, after its checks pass), with
+# the bundled PostgreSQL. To run an image built from this checkout instead, add
+# docker-compose.build.yml; to work on the code itself, see "Option C" in the README.
+# Configuration comes from .env (see .env.example); the defaults suit local development.
+name: qbase
+
+services:
+  db:
+    container_name: qbase-db
+    restart: unless-stopped
+    # the official image, pinned by digest (Dependabot keeps it current; the major
+    # version moves on purpose, with the data volume: see the README)
+    image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-qbase}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-qbase}
+    # Postgres' stock settings suit a laptop: 128 MB of shared buffers, 100
+    # connections and a 64 MB /dev/shm. Sized for a server with 2 GB or more for
+    # the database; lower them on a smaller one. See README, "Scaling".
+    shm_size: 256mb
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=64MB
+    ports:
+      - "${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_PUBLISH_PORT:-5433}:5432"
+    volumes:
+      # PostgreSQL 18 images keep the data in a version folder below this path, so the
+      # mount is /var/lib/postgresql, not .../data. A new volume name on purpose: the old
+      # qbase-data holds PostgreSQL 16 files and is left untouched (see "Upgrading the
+      # bundled database" in the README)
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    container_name: qbase-app
+    # the image published on Docker Hub; pin QBASE_VERSION in .env to a release
+    # so an update happens when you decide (`docker compose pull`)
+    image: qubdi/qbase:${QBASE_VERSION:-latest}
+    restart: unless-stopped
+    # the server force-quits 10 s after SIGTERM; give it longer than Docker's default
+    # 10 s before SIGKILL so a clean shutdown is never cut off
+    stop_grace_period: 15s
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-qbase}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-qbase}
+      CONNECTION_KEY: ${CONNECTION_KEY:?Set CONNECTION_KEY in .env (copy .env.example)}
+      SECRETS_KEY: ${SECRETS_KEY:-}
+      MFA_ENABLED: ${MFA_ENABLED:-true}
+      MFA_WINDOW_STEPS: ${MFA_WINDOW_STEPS:-1}
+      INTROSPECT_ALLOW_HOSTS: ${INTROSPECT_ALLOW_HOSTS:-}
+      PORT: "3001"
+      # the rest of the server's settings (see server/.env.example); the
+      # defaults here are the server's own
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      SESSION_IDLE_DAYS: ${SESSION_IDLE_DAYS:-14}
+      COOKIE_SECURE: ${COOKIE_SECURE:-auto}
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-20}
+      AUTH_MAX_FAILURES: ${AUTH_MAX_FAILURES:-10}
+      AUTH_LOCKOUT_MINUTES: ${AUTH_LOCKOUT_MINUTES:-15}
+      PASSWORD_MIN_LENGTH: ${PASSWORD_MIN_LENGTH:-12}
+      DRIFT_CACHE_SECONDS: ${DRIFT_CACHE_SECONDS:-300}
+      SHARE_RATE_LIMIT: ${SHARE_RATE_LIMIT:-60}
+      LINT_RATE_LIMIT: ${LINT_RATE_LIMIT:-30}
+      OUTBOUND_RATE_LIMIT: ${OUTBOUND_RATE_LIMIT:-20}
+      BODY_LIMIT_KB: ${BODY_LIMIT_KB:-1024}
+      DIAGRAM_BODY_LIMIT_MB: ${DIAGRAM_BODY_LIMIT_MB:-50}
+      SNAPSHOT_KEEP: ${SNAPSHOT_KEEP:-200}
+      AUTO_PUBLISH_COALESCE_SECONDS: ${AUTO_PUBLISH_COALESCE_SECONDS:-300}
+      DRIFT_REPORT_KEEP: ${DRIFT_REPORT_KEEP:-50}
+      DEAD_LINK_KEEP_DAYS: ${DEAD_LINK_KEEP_DAYS:-30}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-365}
+      AUDIT_SAVE_MINUTES: ${AUDIT_SAVE_MINUTES:-60}
+      SSE_MAX_PER_LINK: ${SSE_MAX_PER_LINK:-100}
+      SSE_MAX_PER_IP: ${SSE_MAX_PER_IP:-20}
+      SSE_HEARTBEAT_SECONDS: ${SSE_HEARTBEAT_SECONDS:-25}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      DB_STATEMENT_TIMEOUT_SECONDS: ${DB_STATEMENT_TIMEOUT_SECONDS:-120}
+    ports:
+      - "${APP_BIND_IP:-127.0.0.1}:${APP_PORT:-8080}:3001"
+
+volumes:
+  postgres-data:

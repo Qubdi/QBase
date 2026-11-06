@@ -1,0 +1,3 @@
+# Findings gitleaks reports that are not secrets, by fingerprint (commit:file:rule:line).
+# A fixed test key in the first commit (16 characters the share-link tests encrypt with).
+6bb2ee17591ae5cfd3c48749b9abee4709edf893:server/test/share-token-copy.test.ts:generic-api-key:25

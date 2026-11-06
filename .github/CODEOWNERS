@@ -1,0 +1,15 @@
+# Who is asked to review a change. Later lines win over earlier ones.
+# An email works here when it is verified on the owner's GitHub account;
+# swap it for an @username (or an @org/team) if you prefer.
+
+* anri.tvalabeishvili1@gmail.com
+
+# what builds, ships and guards the project
+/.github/ anri.tvalabeishvili1@gmail.com
+/Dockerfile anri.tvalabeishvili1@gmail.com
+/docker-compose* anri.tvalabeishvili1@gmail.com
+/SECURITY.md anri.tvalabeishvili1@gmail.com
+/.gitleaks.toml anri.tvalabeishvili1@gmail.com
+/.gitleaksignore anri.tvalabeishvili1@gmail.com
+/release-please-config.json anri.tvalabeishvili1@gmail.com
+/.release-please-manifest.json anri.tvalabeishvili1@gmail.com

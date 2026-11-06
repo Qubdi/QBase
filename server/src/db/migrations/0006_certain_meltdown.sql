@@ -1,0 +1,1 @@
+ALTER TABLE "diagrams" ADD COLUMN "lint_config" jsonb DEFAULT '{}'::jsonb NOT NULL;

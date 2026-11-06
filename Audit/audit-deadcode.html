@@ -1,0 +1,103 @@
+<meta charset="utf-8">
+<title>QBase &mdash; Dead code Audit</title>
+<link rel="stylesheet" href="audit-shared.css">
+
+<a class="skip" href="#main">Skip to report</a>
+<button id="theme-toggle" type="button" aria-label="Toggle colour theme">Theme</button>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 0</b></div>
+  <h1>0 open.</h1>
+  <div class="meta-row">
+    <span><b>audit date</b> –</span>
+    <span><b>method</b> none yet: no audit pass has been run</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+  </div>
+  <div class="split-nav">
+    <b>Part of a 7-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
+    <a href="audit-client.html">Client</a>
+    <span class="here">Dead code (this file)</span>
+    <a href="audit.html">Index</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="reg" class="repo-sector">
+  <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Dead code</h2></div>
+  <p class="section-note">0 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="closed" class="repo-sector">
+  <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
+  <details><summary>Fixed (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <details><summary>Accepted (0)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+</main>
+  <div class="split-nav">
+    <b>Part of a 7-file audit split &mdash;</b>
+    <a href="audit-security.html">Security &amp; secrets</a>
+    <a href="audit-repository.html">Repository &amp; governance</a>
+    <a href="audit-server.html">Server</a>
+    <a href="audit-database.html">Database &amp; scale</a>
+    <a href="audit-client.html">Client</a>
+    <span class="here">Dead code (this file)</span>
+    <a href="audit.html">Index</a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  var KEY = 'qbase-audit-theme';
+  function current() {
+    var s = null;
+    try { s = localStorage.getItem(KEY); } catch (e) {}
+    if (s === 'dark' || s === 'light') return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+  apply(current());
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    apply(next);
+  });
+})();
+</script>

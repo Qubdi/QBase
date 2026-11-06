@@ -1,0 +1,4 @@
+# Files that have been rewritten and must stay clear of ChartDB code.
+# One repo-relative path per line. The similarity check (tools/similarity.mjs --check)
+# fails if any listed file shares too much with upstream. Newly added files are
+# checked automatically, so list a file here only when you rewrote it in place.

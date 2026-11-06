@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "outDir": "dist",
+        // the server imports ../shared, so the output keeps both folders
+        "rootDir": "..",
+        "sourceMap": true,
+        "declaration": false,
+        "paths": {}
+    },
+    "include": ["src", "../shared/*.ts"],
+    "exclude": ["../shared/__tests__"]
+}

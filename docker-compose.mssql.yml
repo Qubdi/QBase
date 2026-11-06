@@ -1,0 +1,17 @@
+# Optional: a SQL Server to run the introspection tests against. It is its own
+# file because it needs a password of your choosing, and a required variable
+# would stop `docker compose up` for everyone else.
+#
+#   MSSQL_SA_PASSWORD='<a strong password>' docker compose -f docker-compose.mssql.yml up -d
+#   MSSQL_SA_PASSWORD='<the same>' npx vitest run   # in server/
+#
+# SQL Server wants at least 8 characters from three of: upper, lower, digit, symbol.
+services:
+  mssql:
+    container_name: qbase-mssql
+    image: mcr.microsoft.com/mssql/server:2025-latest@sha256:742481d1b1186cccc81220a1eaacef244ca8d0f7d19c8e5c70df8ae541ffbab2
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD to a password of your own}
+    ports:
+      - "${MSSQL_BIND_IP:-127.0.0.1}:${MSSQL_PORT:-14333}:1433"
