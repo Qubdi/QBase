@@ -8,10 +8,8 @@ export const getMySQLQuery = (
     const databaseEdition: DatabaseEdition | undefined =
         options.databaseEdition;
 
-    const withDefault = true;
 
-    const withDefaultExpr = `IFNULL(REPLACE(REPLACE(cols.column_default, '\\\\', ''), '"', 'ֿֿֿ\\"'), '')`;
-    const withoutDefault = `""`;
+    const defaultExpr = `IFNULL(REPLACE(REPLACE(cols.column_default, '\\\\', ''), '"', 'ֿֿֿ\\"'), '')`;
 
     const newMySQLQuery = `WITH fk_info as (
 (SELECT (@fk_info:=NULL),
@@ -91,7 +89,7 @@ export const getMySQLQuery = (
                     END,
                 ',"ordinal_position":', cols.ordinal_position,
                 ',"nullable":', IF(cols.is_nullable = 'YES', 'true', 'false'),
-                ',"default":"', ${withDefault ? withDefaultExpr : withoutDefault},
+                ',"default":"', ${defaultExpr},
                 '","collation":"', IFNULL(cols.collation_name, ''),
                 '","is_identity":', IF(cols.extra LIKE '%auto_increment%', 'true', 'false'),
                 ',"comment":"', REPLACE(REPLACE(IFNULL(cols.column_comment, ''), '"', '\\\\"'), '\\n', ' '),
@@ -220,7 +218,7 @@ export const getMySQLQuery = (
                          ',"scale":', IFNULL(cols.numeric_scale, 'null'), '}'), 'null'),
                ',"ordinal_position":', cols.ordinal_position,
                ',"nullable":', IF(cols.is_nullable = 'YES', 'true', 'false'),
-               ',"default":"', ${withDefault ? withDefaultExpr : withoutDefault},
+               ',"default":"', ${defaultExpr},
                '","collation":"', IFNULL(cols.collation_name, ''),
                '","comment":"', REPLACE(REPLACE(IFNULL(cols.column_comment, ''), '"', '\\"'), '\\n', ' '), '"}')
     ) FROM (

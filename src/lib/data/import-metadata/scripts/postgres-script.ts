@@ -63,14 +63,8 @@ export const getPostgresQuery = (
                 AND n.nspname !~ '^(timescaledb_|_timescaledb_)'
     `;
 
-    const withExtras = false;
-    const withDefault = true;
+    const defaultExpr = `CASE WHEN cols.column_default IS NOT NULL AND cols.column_default LIKE 'nextval(%' THEN '' ELSE COALESCE(replace(replace(cols.column_default, '"', '\\"'), '\\x', '\\\\x'), '') END`;
 
-    const withDefaultExpr = `CASE WHEN cols.column_default IS NOT NULL AND cols.column_default LIKE 'nextval(%' THEN '' ELSE COALESCE(replace(replace(cols.column_default, '"', '\\"'), '\\x', '\\\\x'), '') END`;
-    const withoutDefault = `null`;
-
-    const withComments = `COALESCE(replace(replace(dsc.description, '"', '\\"'), '\\x', '\\\\x'), '')`;
-    const withoutComments = `null`;
 
     // Define the base query
     const query = `${`/* ${databaseEdition ? databaseEditionToLabelMap[databaseEdition] : 'PostgreSQL'} edition */`}
@@ -205,9 +199,9 @@ cols AS (
                                                     ELSE 'null'
                                                 END,
                                             ',"nullable":', CASE WHEN (cols.IS_NULLABLE = 'YES') THEN 'true' ELSE 'false' END,
-                                            ',"default":"', ${withDefault ? withDefaultExpr : withoutDefault},
+                                            ',"default":"', ${defaultExpr},
                                             '","collation":"', COALESCE(cols.COLLATION_NAME, ''),
-                                            '","comment":"', ${withExtras ? withComments : withoutComments},
+                                            '","comment":"', null,
                                             '","is_identity":', CASE
                                                 WHEN cols.is_identity = 'YES' THEN 'true'
                                                 WHEN cols.column_default IS NOT NULL AND cols.column_default LIKE 'nextval(%' THEN 'true'
@@ -265,7 +259,7 @@ cols AS (
                                                 FROM pg_stat_user_tables s
                                                 WHERE tbls.TABLE_SCHEMA = s.schemaname AND tbls.TABLE_NAME = s.relname),
                                                 0), ', "type":"', tbls.TABLE_TYPE, '",', '"engine":"",', '"collation":"",',
-                        '"comment":"', ${withExtras ? withComments : withoutComments},
+                        '"comment":"', null,
                         '"}'
                 )),
                 ',') AS tbls_metadata
