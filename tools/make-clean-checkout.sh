@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Builds a checkout for a CLEAN AUTHOR (see rewrite/provenance.md and
+# rewrite/clean-author-brief.md): this branch only, shallow, no `main`, no ChartDB, no remote,
+# and with the files that name ChartDB's layout or old code removed.
+#
+# Usage: tools/make-clean-checkout.sh <destination-dir>
+#
+# Put the destination OUTSIDE the QBase folders (for example ~/clean-room/qbase-phase4) and,
+# while the clean session runs, move the `main` worktree and any ChartDB clone out of reach
+# (see "Residual risk" in rewrite/clean-author-brief.md hand-off notes printed at the end).
+set -euo pipefail
+
+dest="${1:-}"
+[ -n "$dest" ] || { echo "usage: $0 <destination-dir>" >&2; exit 2; }
+src="$(git rev-parse --show-toplevel)"
+branch="$(git -C "$src" rev-parse --abbrev-ref HEAD)"
+[ "$branch" = "rewrite/clean-room" ] || { echo "run this on rewrite/clean-room (on: $branch)" >&2; exit 1; }
+[ -z "$(git -C "$src" status --porcelain)" ] || { echo "commit your changes first: the checkout is built from HEAD" >&2; exit 1; }
+[ ! -e "$dest" ] || { echo "$dest already exists" >&2; exit 1; }
+case "$(realpath -m "$dest")/" in "$src"/*) echo "destination must be outside $src" >&2; exit 1;; esac
+
+git clone --quiet --depth 1 --single-branch --branch rewrite/clean-room "file://$src" "$dest"
+cd "$dest"
+git remote remove origin
+git reflog expire --expire=now --all
+git gc --quiet --prune=now
+
+# Everything under src/ except the test setup: the remaining files use the old naming.
+find src -mindepth 1 -maxdepth 1 ! -name test -exec rm -rf {} +
+# Inventories name ChartDB's files; plans and logs of the process are not the author's business.
+rm -rf rewrite/inventory rewrite/PLAN.md rewrite/TODO.md rewrite/README.md Audit tools/similarity.mjs \
+       tools/licences.mjs .github/workflows/similarity.yaml
+# Specs outside the phase 4 scope (shell and QBase contract, manual script, import/export engines).
+rm -f rewrite/spec/app-shell.md rewrite/spec/manual-test-script.md rewrite/spec/import-export.md
+# Parity rows for the shell and the QBase contract are not in scope.
+grep -v -E '^\| (SHL|QBS|IMP|EXP)-' rewrite/parity-checklist.md > rewrite/parity-checklist.tmp
+mv rewrite/parity-checklist.tmp rewrite/parity-checklist.md
+cp "$src/rewrite/clean-author-brief.md" CLAUDE.md
+rm -f rewrite/clean-author-brief.md
+
+# Check what is left for anything that names the other project or the old layout.
+echo "--- scan for forbidden terms in the checkout (should print nothing) ---"
+grep -r -n -i -E 'chartdb|\.\./QBase-main|git show main' --exclude-dir=.git --exclude-dir=node_modules . \
+  | grep -v -E '^\./(CLAUDE\.md|rewrite/(provenance|log|architecture|similarity-allow)\.|rewrite/rewritten\.txt)' || true
+echo "--- remaining refs/branches (should be one) ---"
+git branch -a
+echo "--- remaining src/ ---"
+find src -type f | head
+cat <<EOF
+
+Clean checkout ready: $dest
+Residual risk: the session can still read any path the OS lets it. Before starting it:
+  1. git worktree remove ../QBase-main   (re-add it after the session)
+  2. delete or move the ChartDB clone and any /tmp scratch copy of it
+  3. start the session with the working directory set to $dest, and no extra directories
+EOF

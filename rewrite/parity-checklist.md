@@ -681,12 +681,12 @@ owner signs off).
 | SHL-113 | Access | Old `/diagrams/<id>` link redirects to the project URL if bound, otherwise opens read-only with the move banner [A2, A8] | keep | [ ] | |
 | SHL-114 | Account menu | Signed-out shows Sign in; signed-in shows Admin button (admins) and an email dropdown with the items listed in A8 [A8] | keep | [ ] | |
 | SHL-115 | Build | One image serves the editor and the API under `/api` on port 3001 with long cache for hashed assets and pre-compressed files [A17] | keep | [ ] | |
-| QBS-001 | Contract | The editor exposes `useDiagram()` with `currentDiagram`, `tables`, `databaseType`, `readonly`, `addIndex`, `removeIndex`, `updateField`, `updateTable`, `updateDiagramData` [B1 C1] | keep | [ ] | |
+| QBS-001 | Contract | The editor exposes `useDiagram()` with `currentDiagram`, `tables`, `databaseType`, `readonly`, `addIndex`, `removeIndex`, `updateField`, `updateTable`, `updateDiagramData` [B1 C1] | change: the capability stays; the hook name and shape are ours and QBase files are edited to use the adapter in src/qbase (architecture.md section 8, 2026-11-07) | [ ] | |
 | QBS-002 | Contract | Each edit replaces the changed top-level array of the diagram by a new reference; untouched parts keep theirs; `updatedAt` moves on every edit [B1 C1] | keep | [ ] | |
 | QBS-003 | Contract | While another diagram loads, `currentDiagram` is an empty placeholder with a different id [B1 C1] | keep | [ ] | |
-| QBS-004 | Contract | `DiagramProvider` accepts `readonly`; read-only means nothing is changed or stored and edit controls are inactive [B1 C2] | keep | [ ] | |
+| QBS-004 | Contract | `DiagramProvider` accepts `readonly`; read-only means nothing is changed or stored and edit controls are inactive [B1 C2] | change: read-only behaviour stays; it is a store flag, not a provider prop (architecture.md section 8, 2026-11-07) | [ ] | |
 | QBS-005 | Contract | `Diagram` type and `diagramSchema` keep the saved shape and stay backward compatible with data already on servers [B1 C3] | keep | [ ] | |
-| QBS-006 | Contract | `DatabaseType` and `DatabaseEdition` string values and `DBTable/DBField/DBIndex/DBRelationship/DBCustomType` shapes are not renamed [B1 C4] | keep | [ ] | |
+| QBS-006 | Contract | `DatabaseType` and `DatabaseEdition` string values and `DBTable/DBField/DBIndex/DBRelationship/DBCustomType` shapes are not renamed [B1 C4] | change: the saved JSON shapes and string values stay; internal type names are ours (architecture section 3) (architecture.md section 8, 2026-11-07) | [ ] | |
 | QBS-007 | Contract | `databaseTypeToLabelMap`, `databasesWithSchemas` and `dataTypeMap` are provided at their paths [B1 C5, C6] | keep | [ ] | |
 | QBS-008 | Contract | `useStorage()` offers `addDiagram`, `deleteDiagram`, `listDiagrams`, `getDiagram`; `StorageProvider` also works on the home page [B1 C7] | keep | [ ] | |
 | QBS-009 | Contract | The storage provider migrates the legacy `QubdiDB` through `adoptLegacyLocalData` and uses the shared database names [B1 C7] | keep | [ ] | |
