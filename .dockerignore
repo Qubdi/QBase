@@ -45,3 +45,4 @@ coverage
 
 # Database dumps made by the upgrade guide: they hold roles and password hashes
 qbase-backup*.sql
+qbase-*.dump
