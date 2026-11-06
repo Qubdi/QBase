@@ -41,7 +41,7 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
    dialogs, router, app shell, build configs. The branch builds and tests again.
 5. [x] **Phase 4: domain model and storage** (clean author; done 2026-11-07, commits b48a944..ffadd67; owner confirmations in `decisions-phase4.md`). Types, local storage, undo and
    redo, migration of existing local data.
-6. [ ] **Phase 5: import and export** (clean author). SQL import per dialect, SQL, DBML, JSON
+6. [x] **Phase 5: import and export** (clean author; done 2026-11-07, commits ffb0448..73c0a74; not done: import into an open diagram, re-sync and DBML apply, rows IMP-075 to IMP-083, which need the store: Phase 6; open points in `decisions-phase5.md`). SQL import per dialect, SQL, DBML, JSON
    and image export; round-trip tests with our own sample schemas.
 7. [ ] **Phase 6: editor** (canvas by a clean author). Canvas, sidebar, table and field editors,
    relationship dialogs, filters, diff view, shortcuts, clipboard; end-to-end check of the
