@@ -356,11 +356,16 @@ export const publicShareRoutes =
         const stillValidShared = (
             linkId: string,
             openedWith: string,
-            user: Parameters<typeof resolveLinkById>[2]
+            user: Parameters<typeof resolveLinkById>[2],
+            // a link was just changed (revoked, regenerated...): an answer
+            // cached from the publish just before it is stale by definition
+            fresh = false
         ) => {
             const key = `${linkId}:${openedWith}:${user?.id ?? ''}`;
             const hit = rechecks.get(key);
-            if (hit && Date.now() - hit.at < RECHECK_TTL_MS) return hit.result;
+            if (!fresh && hit && Date.now() - hit.at < RECHECK_TTL_MS) {
+                return hit.result;
+            }
             const result = resolveLinkById(db, linkId, user).then(
                 (c) => c.ok && c.link.live && c.link.tokenHash === openedWith
             );
@@ -455,8 +460,8 @@ export const publicShareRoutes =
 
             // still allowed? (revoked, expired, access changed, live turned off,
             // or the token was regenerated so this URL is no longer the real one)
-            const stillValid = () =>
-                stillValidShared(linkId, openedWith, req.user);
+            const stillValid = (fresh = false) =>
+                stillValidShared(linkId, openedWith, req.user, fresh);
 
             // The listeners run detached from any request, so a database error
             // in one would be an unhandled rejection and end the process. The
@@ -482,7 +487,7 @@ export const publicShareRoutes =
                 onLinkChanged(async (changedLinkId) => {
                     if (closed || changedLinkId !== linkId) return;
                     try {
-                        if (!(await stillValid())) close();
+                        if (!(await stillValid(true))) close();
                     } catch (err) {
                         req.log.error(
                             { err },
