@@ -12,9 +12,14 @@ import {
     type Introspector,
 } from './types.js';
 
-// @schemas is a comma separated list; empty means "all user schemas".
+// @schemas is a JSON array of names (see `schemasParam`); empty means "all user
+// schemas". A comma list would split a schema whose name holds a comma.
 const SCHEMA_FILTER = (alias: string) =>
-    `(@schemas = '' OR ${alias}.name IN (SELECT value FROM STRING_SPLIT(@schemas, ',')))`;
+    `(@schemas = '' OR ${alias}.name IN (SELECT value FROM OPENJSON(@schemas)))`;
+
+/** The value bound to @schemas: '' for every schema, else a JSON array of names. */
+export const schemasParam = (schemas: string[]): string =>
+    schemas.length === 0 ? '' : JSON.stringify(schemas);
 
 export const SQLSERVER_QUERIES = {
     server: `SELECT DB_NAME() AS database_name, @@VERSION AS version`,
@@ -229,7 +234,7 @@ export class SqlServerIntrospector implements Introspector {
         assertReadOnlySql(text);
         const request = this.pool.request();
         if (text.includes('@schemas')) {
-            request.input('schemas', sql.NVarChar(sql.MAX), schemas.join(','));
+            request.input('schemas', sql.NVarChar(sql.MAX), schemasParam(schemas));
         }
         const result = await request.query(text);
         return result.recordset as Row[];

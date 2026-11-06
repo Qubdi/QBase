@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { assertReadOnlySql } from '../src/introspect/readonly-guard.js';
 import {
     SQLSERVER_QUERIES,
+    schemasParam,
     buildFkDefs,
     buildPkDefs,
     mssqlColumnShape,
@@ -113,6 +114,23 @@ describe('SQL Server catalog queries', () => {
     it('are all read-only', () => {
         for (const [name, sql] of Object.entries(SQLSERVER_QUERIES)) {
             expect(() => assertReadOnlySql(sql), name).not.toThrow();
+        }
+    });
+});
+
+describe('schema filter', () => {
+    it('binds every schema as an element of a JSON array, so a comma in a name is kept', () => {
+        expect(schemasParam([])).toBe('');
+        expect(schemasParam(['dbo'])).toBe('["dbo"]');
+        expect(JSON.parse(schemasParam(['sales,eu', 'a"b', 'dbo']))).toEqual(['sales,eu', 'a"b', 'dbo']);
+    });
+
+    it('reads that array in every catalog query that filters by schema', () => {
+        const filtered = Object.values(SQLSERVER_QUERIES).filter((q) => q.includes('@schemas'));
+        expect(filtered.length).toBeGreaterThan(3);
+        for (const q of filtered) {
+            expect(q).toContain('OPENJSON(@schemas)');
+            expect(q).not.toContain('STRING_SPLIT');
         }
     });
 });

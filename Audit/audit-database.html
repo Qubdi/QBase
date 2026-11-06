@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 24</b></div>
-  <h1>4 open: 0 Crit, 0 High.</h1>
+  <h1>3 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -31,13 +31,12 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Database &amp; scale</h2></div>
-  <p class="section-note">4 open &middot; 25 fixed &middot; 3 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">3 open &middot; 26 fixed &middot; 3 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
         <tr><td class="svc-name">DB-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL Server introspection uses <code>STRING_SPLIT</code>; fails below compatibility level 130</td><td><code>server/src/introspect/sqlserver.ts:17</code></td><td class="wrap-cell">Bind one parameter per schema instead of splitting</td></tr>
-        <tr><td class="svc-name">DB-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server schema filter splits on commas; comma names unselectable</td><td><code>server/src/introspect/sqlserver.ts:232</code></td><td class="wrap-cell">Bind one parameter per schema</td></tr>
         <tr><td class="svc-name">DB-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">User delete can cascade-delete a diagram the target creates mid-delete</td><td><code>server/src/admin/routes.ts:147</code></td><td class="wrap-cell">Lock target users <code>FOR UPDATE</code> before reassigning diagrams</td></tr>
         <tr><td class="svc-name">DB-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Viewer list sorted by working-copy <code>updated_at</code> but shows <code>publishedAt</code></td><td><code>server/src/diagrams/routes.ts:143</code></td><td class="wrap-cell">Sort viewer rows by latest snapshot <code>publishedAt</code></td></tr>
       </tbody>
@@ -47,11 +46,12 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (25)</summary>
+  <details><summary>Fixed (26)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DB-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL Server schema filter splits on commas; comma names unselectable</td></tr>
         <tr><td class="svc-name">DB-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Connection edit updates <code>drift_settings</code> by unindexed <code>connection_id</code></td></tr>
         <tr><td class="svc-name">DB-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unauthenticated <code>/auth/register</code> counts every user row per call</td></tr>
         <tr><td class="svc-name">DB-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Shared paging <code>page</code> has no upper bound; admin and project list offsets unbounded</td></tr>
