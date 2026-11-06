@@ -435,6 +435,8 @@ export const publicShareRoutes =
             raw.writeHead(200, {
                 'content-type': 'text/event-stream',
                 'cache-control': 'no-cache, no-transform',
+                // nginx would hold events back in a buffer until it fills
+                'x-accel-buffering': 'no',
                 // the stream bypasses the app's onSend hook
                 ...API_SECURITY_HEADERS,
                 connection: 'keep-alive',
