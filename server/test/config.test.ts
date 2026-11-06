@@ -43,6 +43,24 @@ describe('parseTrustProxy', () => {
     });
 });
 
+describe('COOKIE_SECURE', () => {
+    it('accepts true, false and auto in any case, and an empty value', () => {
+        expect(loadConfig({ COOKIE_SECURE: 'TRUE' }).cookieSecure).toBe(true);
+        expect(loadConfig({ COOKIE_SECURE: 'false' }).cookieSecure).toBe(false);
+        expect(loadConfig({ COOKIE_SECURE: 'auto' }).cookieSecure).toBe('auto');
+        expect(loadConfig({ COOKIE_SECURE: '' }).cookieSecure).toBe('auto');
+        expect(loadConfig({}).cookieSecure).toBe('auto');
+    });
+
+    it('refuses a typo instead of quietly meaning auto', () => {
+        for (const bad of ['ture', 'yes', '1']) {
+            expect(() => loadConfig({ COOKIE_SECURE: bad })).toThrow(
+                /COOKIE_SECURE must be one of true, false, auto/
+            );
+        }
+    });
+});
+
 describe('parseCookieSecure', () => {
     it('reads true and false, and falls back to auto', () => {
         expect(parseCookieSecure('true')).toBe(true);
@@ -65,11 +83,26 @@ describe('two-factor settings', () => {
         expect(loadConfig({ MFA_ENABLED: 'false' }).mfaEnabled).toBe(false);
     });
 
-    it('reads the window and ignores nonsense', () => {
+    it('reads the window, and refuses nonsense instead of falling back', () => {
         expect(loadConfig({ MFA_WINDOW_STEPS: '2' }).mfaWindowSteps).toBe(2);
         expect(loadConfig({ MFA_WINDOW_STEPS: '0' }).mfaWindowSteps).toBe(0);
-        expect(loadConfig({ MFA_WINDOW_STEPS: '-1' }).mfaWindowSteps).toBe(1);
-        expect(loadConfig({ MFA_WINDOW_STEPS: 'x' }).mfaWindowSteps).toBe(1);
+        expect(loadConfig({ MFA_WINDOW_STEPS: '5' }).mfaWindowSteps).toBe(5);
+        expect(loadConfig({ MFA_WINDOW_STEPS: '' }).mfaWindowSteps).toBe(1);
+        for (const bad of ['-1', 'x', '6', '1.5']) {
+            expect(() => loadConfig({ MFA_WINDOW_STEPS: bad })).toThrow(
+                /MFA_WINDOW_STEPS must be a whole number from 0 to 5/
+            );
+        }
+    });
+
+    it('refuses an MFA_ENABLED that is neither true nor false', () => {
+        expect(loadConfig({ MFA_ENABLED: ' TRUE ' }).mfaEnabled).toBe(true);
+        expect(loadConfig({ MFA_ENABLED: '' }).mfaEnabled).toBe(true);
+        for (const bad of ['flase', 'no', '0']) {
+            expect(() => loadConfig({ MFA_ENABLED: bad })).toThrow(
+                /MFA_ENABLED must be one of true, false/
+            );
+        }
     });
 
     it('encrypts with SECRETS_KEY, else the connection key, else nothing', () => {

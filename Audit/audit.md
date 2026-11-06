@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 12 | 0 | 2 | 37 | 0 |
 | Repository | 7 | 0 | 1 | 59 | 1 |
-| Server | 10 | 0 | 0 | 42 | 0 |
+| Server | 9 | 0 | 0 | 43 | 0 |
 | Database | 6 | 0 | 0 | 23 | 3 |
 | Client | 6 | 0 | 1 | 64 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 42 | 0 | 4 | 232 | 4 |
+| **Total** | 41 | 0 | 4 | 233 | 4 |
 
 ## Act first
 
@@ -63,7 +63,6 @@
 | SRV-041 | Low | Diagram deleted mid-request makes lint routes throw TypeError; 500 | `server/src/lint/routes.ts:102` · `server/src/lint/routes.ts:109` · `server/src/lint/routes.ts:143` | Return 404 when the row select is empty |
 | SRV-042 | Med | Drift check scans every catalog row once per table; quadratic on big schemas | `shared/schema-desc.ts:168` | Group metadata rows by table once before mapping |
 | SRV-043 | Med | Share SSE sends no `X-Accel-Buffering: no`; proxied live events stall | `server/src/share/routes.ts:421` | Send `X-Accel-Buffering: no` on the event stream |
-| SRV-045 | Low | `COOKIE_SECURE`, `MFA_WINDOW_STEPS`, `MFA_ENABLED` typos fall back silently | `server/src/config.ts:87` · `server/src/config.ts:92` · `server/src/config.ts:222` | Raise `ConfigError` on unrecognised values |
 | SRV-046 | Low | Diagram delete never closes its share links' live streams | `server/src/diagrams/routes.ts:436` | Emit link-changed for the diagram's links on delete |
 | SRV-047 | Low | Diagram deleted mid-request: GET, lock, save and link create return 500 | `server/src/diagrams/routes.ts:288` · `server/src/share/routes.ts:163` | Return 404 on empty select or FK violation |
 | SRV-048 | Low | Manual publish noted "Auto-published on save" is overwritten by next autosave | `server/src/diagrams/service.ts:250` | Flag auto snapshots in a column, not by note text |
@@ -103,6 +102,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SRV-045 | Server | `COOKIE_SECURE`, `MFA_WINDOW_STEPS`, `MFA_ENABLED` typos fall back silently |
 | DB-025 | Database | Shared paging `page` has no upper bound; admin and project list offsets unbounded |
 | DB-030 | Database | Negative numeric scale (PG 15+) decoded as 2046 |
 | CLI-056 | Client | Get latest makes a new local id; sync state and drift scope lost |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 39 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025 |
+| 25 | 2026-11-06 | 40 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045 |

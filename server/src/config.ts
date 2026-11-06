@@ -162,6 +162,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         );
     }
 
+    // a setting that is present must be one the server understands: a typo
+    // such as COOKIE_SECURE=ture would otherwise quietly mean "auto"
+    const oneOf = (name: string, allowed: readonly string[]) => {
+        const raw = env[name]?.trim();
+        if (raw && !allowed.includes(raw.toLowerCase())) {
+            problems.push(`${name} must be one of ${allowed.join(', ')} (got "${raw}")`);
+        }
+    };
+    oneOf('COOKIE_SECURE', ['true', 'false', 'auto']);
+    oneOf('MFA_ENABLED', ['true', 'false']);
+    if (env.MFA_WINDOW_STEPS?.trim()) {
+        const steps = Number(env.MFA_WINDOW_STEPS.trim());
+        if (!Number.isInteger(steps) || steps < 0 || steps > 5) {
+            problems.push(
+                `MFA_WINDOW_STEPS must be a whole number from 0 to 5 (got "${env.MFA_WINDOW_STEPS.trim()}")`
+            );
+        }
+    }
+
     // `true` would believe the first X-Forwarded-For entry, which is whatever
     // the visitor sent: a new value per request is a new rate-limit bucket and a
     // new lockout key, so the limits would mean nothing
