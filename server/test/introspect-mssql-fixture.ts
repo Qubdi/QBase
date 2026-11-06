@@ -1,7 +1,8 @@
 import sql from 'mssql';
 
 export const MSSQL_HOST = '127.0.0.1';
-export const MSSQL_PORT = 14333;
+// the host port of docker-compose.mssql.yml (MSSQL_PORT there too)
+export const MSSQL_PORT = Number(process.env.MSSQL_PORT ?? 14333);
 export const MSSQL_USER = 'sa';
 // chosen by whoever starts the container (see docker-compose.mssql.yml); without it the tests skip
 export const MSSQL_PASSWORD = process.env.MSSQL_SA_PASSWORD ?? '';
