@@ -207,15 +207,22 @@ export const authRoutes =
                 : await verifyAgainstNobody(body.password);
             if (!user || !ok) {
                 failures.recordFailure(key);
-                // only for an account that exists: guesses at made-up emails
-                // would otherwise fill the log
+                reply.code(401).send({ error: 'invalid_credentials' });
+                // The row is written after the answer has gone out, and only for
+                // an account that exists (guesses at made-up emails would fill the
+                // log): a write that took time before replying would tell a real
+                // email from a made-up one by how long the answer took.
                 if (user) {
-                    await audit(db, {
-                        userId: user.id,
-                        action: 'user.sign_in_failed',
-                    });
+                    try {
+                        await audit(db, {
+                            userId: user.id,
+                            action: 'user.sign_in_failed',
+                        });
+                    } catch (err) {
+                        req.log.error({ err }, 'sign-in failure was not logged');
+                    }
                 }
-                return reply.code(401).send({ error: 'invalid_credentials' });
+                return reply;
             }
             failures.reset(key);
             if (!user.isActive) {

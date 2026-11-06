@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { auditLog, sessions, users } from '../src/db/schema.js';
 import {
     as,
@@ -461,6 +461,10 @@ describe('auth audit trail', () => {
                     payload: { email, password },
                 });
             await login('a@example.com', 'wrong-password');
+            // the failure is logged just after the answer has gone out
+            await vi.waitFor(async () =>
+                expect(await actionsOf(ctx)).toContain('user.sign_in_failed')
+            );
             await login('nobody@example.com', 'wrong-password');
             await login('a@example.com', 'Password-123!');
             expect(await actionsOf(ctx)).toEqual([
