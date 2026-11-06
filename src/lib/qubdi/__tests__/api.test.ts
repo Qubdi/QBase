@@ -16,6 +16,37 @@ const jsonResponse = (status: number, body: unknown) =>
     });
 
 describe('qubdi api client', () => {
+    describe('path ids', () => {
+        it('encodes an id in every path it is put into', async () => {
+            const hostile = 'a/../b?c#d';
+            const urls: string[] = [];
+            const fetchMock = vi.fn(async (url: string) => {
+                urls.push(url);
+                return jsonResponse(200, {});
+            });
+            const api = createApi(
+                'http://srv',
+                fetchMock as unknown as typeof fetch
+            );
+            const methods = Object.values(api) as Array<
+                (...args: unknown[]) => Promise<unknown>
+            >;
+            for (const method of methods) {
+                if (typeof method !== 'function') continue;
+                // a method that rejects the made-up arguments is not the point
+                await Promise.resolve(
+                    method(hostile, hostile, hostile, hostile)
+                ).catch(() => undefined);
+            }
+            const withId = urls.filter((u) => u.includes('a%2F..%2Fb'));
+            expect(withId.length).toBeGreaterThan(25);
+            for (const url of urls) {
+                expect(url).not.toContain('a/../b');
+                expect(url).not.toContain('c#d');
+            }
+        });
+    });
+
     describe('keepalive', () => {
         const run = async (
             content: Record<string, unknown>,

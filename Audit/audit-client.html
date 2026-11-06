@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 24</b></div>
-  <h1>22 open: 0 Crit, 1 High.</h1>
+  <h1>21 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -37,7 +37,7 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">22 open &middot; 48 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">21 open &middot; 49 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -59,7 +59,6 @@
         <tr><td class="svc-name">CLI-062</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Share viewer applies out-of-order reload replies; older version can win</td><td><code>src/pages/share-viewer-page/share-viewer-page.tsx:55</code></td><td class="wrap-cell">Drop replies older than the newest request</td></tr>
         <tr><td class="svc-name">CLI-063</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lint settings fetched once; failed save swallowed silently</td><td><code>src/components/qubdi/lint-control.tsx:61</code> · <code>src/components/qubdi/lint-control.tsx:85</code></td><td class="wrap-cell">Re-read config on open; toast and roll back failures</td></tr>
         <tr><td class="svc-name">CLI-064</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Change-password and Create-link lack busy guards; double click submits twice</td><td><code>src/components/qubdi/change-password-dialog.tsx:142</code> · <code>src/components/qubdi/share-dialog.tsx:279</code></td><td class="wrap-cell">Disable submit while the request is pending</td></tr>
-        <tr><td class="svc-name">CLI-065</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">33 API paths interpolate ids without <code>encodeURIComponent</code></td><td><code>src/lib/qubdi/api.ts:581</code></td><td class="wrap-cell">Wrap every path id in <code>encodeURIComponent</code></td></tr>
         <tr><td class="svc-name">CLI-066</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Non-API errors, e.g. corrupt server content, shown as unreachable</td><td><code>src/lib/qubdi/api.ts:897</code></td><td class="wrap-cell">Map <code>InvalidServerDiagramError</code> to its own message</td></tr>
         <tr><td class="svc-name">CLI-067</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lock check unreachable on first ask never retried; editor stays read-only</td><td><code>src/components/qubdi/use-edit-lock.ts:47</code></td><td class="wrap-cell">Offer a retry in the access banner</td></tr>
         <tr><td class="svc-name">CLI-068</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Share viewer keeps a selection whose table a reload removed</td><td><code>src/pages/share-viewer-page/share-viewer-page.tsx:126</code></td><td class="wrap-cell">Clear selection when the table is gone</td></tr>
@@ -71,11 +70,12 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (48)</summary>
+  <details><summary>Fixed (49)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-065</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">33 API paths interpolate ids without <code>encodeURIComponent</code></td></tr>
         <tr><td class="svc-name">CLI-069</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Inline-ref regex built from an unescaped field name</td></tr>
         <tr><td class="svc-name">CLI-049</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Legacy-move doc comment says never merged; code merges missing rows</td></tr>
         <tr><td class="svc-name">CLI-043</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Sign-out deletes the local copy even when the final flush failed</td></tr>

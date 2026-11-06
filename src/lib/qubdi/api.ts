@@ -579,11 +579,11 @@ export function createApi(
         ) =>
             request<{ id: string; isAdmin: boolean; isActive: boolean }>(
                 'PATCH',
-                `/admin/users/${id}`,
+                `/admin/users/${encodeURIComponent(id)}`,
                 body
             ),
         adminDeleteUser: (id: string) =>
-            request<void>('DELETE', `/admin/users/${id}`),
+            request<void>('DELETE', `/admin/users/${encodeURIComponent(id)}`),
         /** Enable, disable or delete up to 100 accounts; all or nothing. */
         adminBulkUsers: (action: BulkUserAction, ids: string[]) =>
             request<BulkUsersResult>('POST', '/admin/users/bulk', {
@@ -591,16 +591,16 @@ export function createApi(
                 ids,
             }),
         adminListUserSessions: (id: string) =>
-            request<AdminSession[]>('GET', `/admin/users/${id}/sessions`),
+            request<AdminSession[]>('GET', `/admin/users/${encodeURIComponent(id)}/sessions`),
         /** Ends every session of the user; says how many were live. */
         adminSignOutUser: (id: string) =>
             request<{ signedOut: number }>(
                 'DELETE',
-                `/admin/users/${id}/sessions`
+                `/admin/users/${encodeURIComponent(id)}/sessions`
             ),
         /** Switches off a person's two-factor sign-in (lost phone) and signs them out. */
         adminResetMfa: (id: string) =>
-            request<{ reset: boolean }>('POST', `/admin/users/${id}/mfa/reset`),
+            request<{ reset: boolean }>('POST', `/admin/users/${encodeURIComponent(id)}/mfa/reset`),
         /** `timeZone` makes a "day" on the chart the viewer's own. */
         adminStats: (timeZone?: string) =>
             request<AdminStats>(
@@ -615,13 +615,13 @@ export function createApi(
         adminListDiagramLinks: (id: string) =>
             request<AdminShareLink[]>(
                 'GET',
-                `/admin/diagrams/${id}/share-links`
+                `/admin/diagrams/${encodeURIComponent(id)}/share-links`
             ),
         /** Ends a share link at once, for anyone using it. */
         adminRevokeDiagramLink: (id: string, linkId: string) =>
             request<void>(
                 'DELETE',
-                `/admin/diagrams/${id}/share-links/${linkId}`
+                `/admin/diagrams/${encodeURIComponent(id)}/share-links/${encodeURIComponent(linkId)}`
             ),
         adminListActivity: (params: ActivityParams = {}) =>
             request<ActivityPage>(
@@ -682,11 +682,11 @@ export function createApi(
         adminUpdateProject: (
             id: string,
             body: { name?: string; description?: string }
-        ) => request<AdminProject>('PATCH', `/admin/projects/${id}`, body),
+        ) => request<AdminProject>('PATCH', `/admin/projects/${encodeURIComponent(id)}`, body),
         adminDeleteProject: (id: string) =>
-            request<void>('DELETE', `/admin/projects/${id}`),
+            request<void>('DELETE', `/admin/projects/${encodeURIComponent(id)}`),
         adminListProjectMembers: (id: string) =>
-            request<ProjectMember[]>('GET', `/admin/projects/${id}/members`),
+            request<ProjectMember[]>('GET', `/admin/projects/${encodeURIComponent(id)}/members`),
         adminSetProjectMember: (
             id: string,
             userId: string,
@@ -694,13 +694,13 @@ export function createApi(
         ) =>
             request<ProjectMember>(
                 'PUT',
-                `/admin/projects/${id}/members/${userId}`,
+                `/admin/projects/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`,
                 { role }
             ),
         adminRemoveProjectMember: (id: string, userId: string) =>
-            request<void>('DELETE', `/admin/projects/${id}/members/${userId}`),
+            request<void>('DELETE', `/admin/projects/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`),
         getDiagram: (id: string) =>
-            request<RemoteDiagram>('GET', `/diagrams/${id}`),
+            request<RemoteDiagram>('GET', `/diagrams/${encodeURIComponent(id)}`),
         updateDiagram: (
             id: string,
             patch: {
@@ -713,18 +713,18 @@ export function createApi(
                 editorId?: string;
             },
             options?: RequestOptions
-        ) => request<RemoteDiagram>('PUT', `/diagrams/${id}`, patch, options),
+        ) => request<RemoteDiagram>('PUT', `/diagrams/${encodeURIComponent(id)}`, patch, options),
         /** Only one editor at a time: `held: false` means someone else has it. */
         acquireLock: (id: string, editorId: string) =>
             request<{ held: true } | { held: false; holder: string }>(
                 'POST',
-                `/diagrams/${id}/lock`,
+                `/diagrams/${encodeURIComponent(id)}/lock`,
                 { editorId }
             ),
         releaseLock: (id: string, editorId: string, options?: RequestOptions) =>
             request<void>(
                 'DELETE',
-                `/diagrams/${id}/lock?editorId=${encodeURIComponent(editorId)}`,
+                `/diagrams/${encodeURIComponent(id)}/lock?editorId=${encodeURIComponent(editorId)}`,
                 undefined,
                 options
             ),
@@ -733,9 +733,9 @@ export function createApi(
                 version: number;
                 note: string | null;
                 publishedAt: string;
-            }>('POST', `/diagrams/${id}/publish`, note ? { note } : {}),
+            }>('POST', `/diagrams/${encodeURIComponent(id)}/publish`, note ? { note } : {}),
         listShareLinks: (id: string) =>
-            request<RemoteShareLink[]>('GET', `/diagrams/${id}/share-links`),
+            request<RemoteShareLink[]>('GET', `/diagrams/${encodeURIComponent(id)}/share-links`),
         createShareLink: (
             id: string,
             body: {
@@ -746,7 +746,7 @@ export function createApi(
         ) =>
             request<RemoteShareLinkWithToken>(
                 'POST',
-                `/diagrams/${id}/share-links`,
+                `/diagrams/${encodeURIComponent(id)}/share-links`,
                 body
             ),
         updateShareLink: (
@@ -760,15 +760,15 @@ export function createApi(
         ) =>
             request<RemoteShareLink>(
                 'PATCH',
-                `/diagrams/${id}/share-links/${linkId}`,
+                `/diagrams/${encodeURIComponent(id)}/share-links/${encodeURIComponent(linkId)}`,
                 body
             ),
         revokeShareLink: (id: string, linkId: string) =>
-            request<void>('DELETE', `/diagrams/${id}/share-links/${linkId}`),
+            request<void>('DELETE', `/diagrams/${encodeURIComponent(id)}/share-links/${encodeURIComponent(linkId)}`),
         regenerateShareLink: (id: string, linkId: string) =>
             request<RemoteShareLinkWithToken>(
                 'POST',
-                `/diagrams/${id}/share-links/${linkId}/regenerate`
+                `/diagrams/${encodeURIComponent(id)}/share-links/${encodeURIComponent(linkId)}/regenerate`
             ),
         getPublicShare: async (token: string): Promise<PublicShareResult> => {
             try {
@@ -828,7 +828,7 @@ export function createApi(
         ) =>
             request<SavedConnection>(
                 'PUT',
-                `/introspect/connections/${id}`,
+                `/introspect/connections/${encodeURIComponent(id)}`,
                 input
             ),
         /** Whether the server can store connection passwords (CONNECTION_KEY is set). */
@@ -838,17 +838,17 @@ export function createApi(
                 '/introspect/capabilities'
             ),
         deleteSavedConnection: (id: string) =>
-            request<void>('DELETE', `/introspect/connections/${id}`),
+            request<void>('DELETE', `/introspect/connections/${encodeURIComponent(id)}`),
         getLintConfig: (id: string) =>
-            request<LintConfig>('GET', `/diagrams/${id}/lint-config`),
+            request<LintConfig>('GET', `/diagrams/${encodeURIComponent(id)}/lint-config`),
         saveLintConfig: (id: string, config: LintConfig) =>
-            request<LintConfig>('PUT', `/diagrams/${id}/lint-config`, {
+            request<LintConfig>('PUT', `/diagrams/${encodeURIComponent(id)}/lint-config`, {
                 config,
             }),
         getDrift: (id: string) =>
-            request<DriftOverview>('GET', `/diagrams/${id}/drift`),
+            request<DriftOverview>('GET', `/diagrams/${encodeURIComponent(id)}/drift`),
         saveDrift: (id: string, settings: DriftSettings) =>
-            request<DriftSettings>('PUT', `/diagrams/${id}/drift`, settings),
+            request<DriftSettings>('PUT', `/diagrams/${encodeURIComponent(id)}/drift`, settings),
         /**
          * Reads the database and stores a report. With `cached`, a recent report
          * of an unchanged diagram is handed back instead (opening a diagram).
@@ -856,23 +856,23 @@ export function createApi(
         checkDrift: (id: string, options?: { cached?: boolean }) =>
             request<DriftCheckResult>(
                 'POST',
-                `/diagrams/${id}/drift/check${options?.cached ? '?cached=1' : ''}`
+                `/diagrams/${encodeURIComponent(id)}/drift/check${options?.cached ? '?cached=1' : ''}`
             ),
         getDriftReport: (id: string, reportId: string) =>
             request<DriftReport>(
                 'GET',
-                `/diagrams/${id}/drift/reports/${reportId}`
+                `/diagrams/${encodeURIComponent(id)}/drift/reports/${encodeURIComponent(reportId)}`
             ),
         dismissDrift: (id: string) =>
             request<{
                 latest: DriftReportSummary | null;
                 badge: DriftBadge | null;
-            }>('POST', `/diagrams/${id}/drift/dismiss`),
+            }>('POST', `/diagrams/${encodeURIComponent(id)}/drift/dismiss`),
         deleteDiagram: (id: string) =>
-            request<void>('DELETE', `/diagrams/${id}`),
+            request<void>('DELETE', `/diagrams/${encodeURIComponent(id)}`),
 
         listMembers: (id: string) =>
-            request<RemoteMember[]>('GET', `/diagrams/${id}/members`),
+            request<RemoteMember[]>('GET', `/diagrams/${encodeURIComponent(id)}/members`),
     };
 }
 
