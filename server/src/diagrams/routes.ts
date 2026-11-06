@@ -142,6 +142,13 @@ export const diagramRoutes =
                 ...statsColumns,
             };
             const order = [desc(diagrams.updatedAt), diagrams.id];
+            const viewerOrder = desc(sql`case when ${projectMembers.role} = 'viewer'
+                then coalesce(
+                    (select ${snapshots.publishedAt} from ${snapshots}
+                     where ${snapshots.diagramId} = ${diagrams.id}
+                     order by ${snapshots.version} desc limit 1),
+                    ${diagrams.updatedAt})
+                else ${diagrams.updatedAt} end`);
             const only = and(
                 opts.id ? eq(diagrams.id, opts.id) : undefined,
                 opts.projectId
@@ -172,7 +179,9 @@ export const diagramRoutes =
                       )
                       .leftJoin(users, eq(users.id, diagrams.ownerId))
                       .where(and(eq(projectMembers.userId, me.id), only))
-                      .orderBy(...order)
+                      // a viewer sees the published time (below), so the list is
+                      // ordered by that, not by the working copy's own edits
+                      .orderBy(viewerOrder, diagrams.id)
                       .limit(opts.limit ?? NO_LIMIT)
                       .offset(opts.offset);
             // viewers must not learn about unpublished renames
