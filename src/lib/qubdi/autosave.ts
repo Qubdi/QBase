@@ -41,6 +41,8 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
     let running: Promise<void> | null = null;
     let disposed = false;
     let pending = false;
+    // the last save failed and nothing has retried it since
+    let failed = false;
 
     const clear = () => {
         if (timer !== undefined) clearTimeout(timer);
@@ -52,6 +54,7 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
         if (!latest || latest.key === baseline) return Promise.resolve();
         const attempt = latest;
         pending = false;
+        failed = false;
         onStatus('saving');
         running = save(attempt.value)
             .then(
@@ -65,6 +68,7 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
                     onStatus('saved');
                 },
                 (error: unknown) => {
+                    failed = true;
                     onStatus('error', error);
                 }
             )
@@ -73,6 +77,19 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
             });
         return running;
     };
+
+    // a save that failed because the connection dropped is retried when it is back
+    const onOnline = () => {
+        if (failed && !disposed) void run();
+    };
+    const stopListening = () => {
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('online', onOnline);
+        }
+    };
+    if (typeof window !== 'undefined') {
+        window.addEventListener('online', onOnline);
+    }
 
     return {
         update(value) {
@@ -118,10 +135,12 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
             latest = null;
             pending = false;
             clear();
+            stopListening();
         },
         dispose() {
             disposed = true;
             clear();
+            stopListening();
         },
     };
 }

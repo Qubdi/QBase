@@ -138,6 +138,53 @@ describe('createAutosaver', () => {
         expect(statuses.at(-1)).toBe('saved');
     });
 
+    it('retries a failed save when the browser comes back online', async () => {
+        let fail = true;
+        const { saver, saved, statuses } = setup(async () => {
+            if (fail) throw new Error('offline');
+        });
+        saver.update({ n: 1 });
+        saver.update({ n: 2 });
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(statuses.at(-1)).toBe('error');
+        fail = false;
+        window.dispatchEvent(new Event('online'));
+        await vi.advanceTimersByTimeAsync(0);
+        expect(saved).toEqual([2, 2]);
+        expect(statuses.at(-1)).toBe('saved');
+        // nothing failed any more: another online event sends nothing
+        window.dispatchEvent(new Event('online'));
+        await vi.advanceTimersByTimeAsync(0);
+        expect(saved).toEqual([2, 2]);
+        saver.dispose();
+    });
+
+    it('does not save on coming online when the last save did not fail', async () => {
+        const { saver, saved } = setup();
+        saver.update({ n: 1 });
+        saver.update({ n: 2 });
+        window.dispatchEvent(new Event('online'));
+        await vi.advanceTimersByTimeAsync(0);
+        expect(saved).toEqual([]);
+        saver.dispose();
+    });
+
+    it('stops listening once disposed or discarded', async () => {
+        for (const stop of ['dispose', 'discard'] as const) {
+            const { saver, saved } = setup(async () => {
+                throw new Error('offline');
+            });
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(saved).toEqual([2]);
+            saver[stop]();
+            window.dispatchEvent(new Event('online'));
+            await vi.advanceTimersByTimeAsync(0);
+            expect(saved).toEqual([2]);
+        }
+    });
+
     it('flushes a pending change immediately', async () => {
         const { saver, saved } = setup();
         saver.update({ n: 1 });
