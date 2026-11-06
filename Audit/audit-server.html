@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 24</b></div>
-  <h1>9 open: 0 Crit, 0 High.</h1>
+  <h1>8 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -31,7 +31,7 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">9 open &middot; 43 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">8 open &middot; 44 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -44,7 +44,6 @@
         <tr><td class="svc-name">SRV-046</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Diagram delete never closes its share links' live streams</td><td><code>server/src/diagrams/routes.ts:436</code></td><td class="wrap-cell">Emit link-changed for the diagram's links on delete</td></tr>
         <tr><td class="svc-name">SRV-047</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Diagram deleted mid-request: GET, lock, save and link create return 500</td><td><code>server/src/diagrams/routes.ts:288</code> · <code>server/src/share/routes.ts:163</code></td><td class="wrap-cell">Return 404 on empty select or FK violation</td></tr>
         <tr><td class="svc-name">SRV-048</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Manual publish noted "Auto-published on save" is overwritten by next autosave</td><td><code>server/src/diagrams/service.ts:250</code></td><td class="wrap-cell">Flag auto snapshots in a column, not by note text</td></tr>
-        <tr><td class="svc-name">SRV-049</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Webhook timeout is idle-only; a trickling server holds the drift check</td><td><code>server/src/drift/webhook.ts:102</code></td><td class="wrap-cell">Add an overall deadline to the request</td></tr>
       </tbody>
     </table>
   </div>
@@ -52,11 +51,12 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (43)</summary>
+  <details><summary>Fixed (44)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SRV-049</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Webhook timeout is idle-only; a trickling server holds the drift check</td></tr>
         <tr><td class="svc-name">SRV-045</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>COOKIE_SECURE</code>, <code>MFA_WINDOW_STEPS</code>, <code>MFA_ENABLED</code> typos fall back silently</td></tr>
         <tr><td class="svc-name">SRV-051</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CLI lint crashes on a table without <code>fields</code>; exits 1, not 2</td></tr>
         <tr><td class="svc-name">SRV-052</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Composite FK change emits duplicate <code>relationship_changed</code> ids</td></tr>

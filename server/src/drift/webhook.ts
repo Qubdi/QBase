@@ -13,7 +13,10 @@ export interface WebhookResult {
     error?: string;
 }
 
+/** How long the connection may sit silent. A server that keeps trickling bytes resets it. */
 export const WEBHOOK_TIMEOUT_MS = 5000;
+/** How long a whole request may take, trickling or not. */
+export const WEBHOOK_DEADLINE_MS = 15_000;
 
 const SEALED_PREFIX = 'v1:';
 
@@ -71,7 +74,7 @@ export function parseWebhookUrl(raw: string): { url: URL } | { error: string } {
 export async function postJson(
     rawUrl: string,
     payload: unknown,
-    opts: { allow: string[]; lookup?: LookupAll }
+    opts: { allow: string[]; lookup?: LookupAll; deadlineMs?: number }
 ): Promise<WebhookResult> {
     const parsed = parseWebhookUrl(rawUrl);
     if ('error' in parsed) return { ok: false, error: parsed.error };
@@ -122,6 +125,13 @@ export async function postJson(
         req.on('timeout', () => {
             req.destroy(new Error('timed out'));
         });
+        // the idle timeout above never fires for a server that sends a byte now
+        // and then: an overall deadline ends it, so a check cannot be held open
+        const deadline = setTimeout(() => {
+            req.destroy(new Error('timed out'));
+        }, opts.deadlineMs ?? WEBHOOK_DEADLINE_MS);
+        deadline.unref();
+        req.on('close', () => clearTimeout(deadline));
         req.on('error', (err) => resolve({ ok: false, error: err.message.slice(0, 200) }));
         req.end(body);
     });
