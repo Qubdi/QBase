@@ -1,3 +1,4 @@
+import { quoteBracket, quoteSingle } from '../cross-dialect/common';
 import {
     exportFieldComment,
     formatMSSQLTableComment,
@@ -105,7 +106,7 @@ export function exportMSSQL({
 
         // Add schema creation statements
         schemas.forEach((schema) => {
-            sqlScript += `IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '${schema}')\nBEGIN\n    EXEC('CREATE SCHEMA [${schema}]');\nEND;\n`;
+            sqlScript += `IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '${quoteSingle(schema)}')\nBEGIN\n    EXEC('CREATE SCHEMA [${quoteSingle(quoteBracket(schema))}]');\nEND;\n`;
         });
 
         // Generate table creation SQL
@@ -117,8 +118,8 @@ export function exportMSSQL({
                 }
 
                 const tableName = table.schema
-                    ? `[${table.schema}].[${table.name}]`
-                    : `[${table.name}]`;
+                    ? `[${quoteBracket(table.schema)}].[${quoteBracket(table.name)}]`
+                    : `[${quoteBracket(table.name)}]`;
 
                 return `${
                     table.comments
@@ -126,7 +127,7 @@ export function exportMSSQL({
                         : ''
                 }CREATE TABLE ${tableName} (\n${table.fields
                     .map((field: DBField) => {
-                        const fieldName = `[${field.name}]`;
+                        const fieldName = `[${quoteBracket(field.name)}]`;
                         const typeName = field.type.name;
 
                         // Handle SQL Server specific type formatting
@@ -190,7 +191,7 @@ export function exportMSSQL({
                     table.fields.filter((f) => f.primaryKey).length > 0
                         ? `,\n    PRIMARY KEY (${table.fields
                               .filter((f) => f.primaryKey)
-                              .map((f) => `[${f.name}]`)
+                              .map((f) => `[${quoteBracket(f.name)}]`)
                               .join(', ')})`
                         : ''
                 }${
@@ -217,14 +218,14 @@ export function exportMSSQL({
                             }
 
                             const indexName = table.schema
-                                ? `[${table.schema}_${index.name}]`
-                                : `[${index.name}]`;
+                                ? `[${quoteBracket(table.schema)}_${quoteBracket(index.name)}]`
+                                : `[${quoteBracket(index.name)}]`;
                             const indexFields = index.fieldIds
                                 .map((fieldId) => {
                                     const field = table.fields.find(
                                         (f) => f.id === fieldId
                                     );
-                                    return field ? `[${field.name}]` : '';
+                                    return field ? `[${quoteBracket(field.name)}]` : '';
                                 })
                                 .filter(Boolean);
 
@@ -265,16 +266,16 @@ export function exportMSSQL({
             .map((k) => {
                 const { fkTable, refTable } = k;
                 const fkTableName = fkTable.schema
-                    ? `[${fkTable.schema}].[${fkTable.name}]`
-                    : `[${fkTable.name}]`;
+                    ? `[${quoteBracket(fkTable.schema)}].[${quoteBracket(fkTable.name)}]`
+                    : `[${quoteBracket(fkTable.name)}]`;
                 const refTableName = refTable.schema
-                    ? `[${refTable.schema}].[${refTable.name}]`
-                    : `[${refTable.name}]`;
+                    ? `[${quoteBracket(refTable.schema)}].[${quoteBracket(refTable.name)}]`
+                    : `[${quoteBracket(refTable.name)}]`;
                 const fkColumns = k.fkFields
-                    .map((f) => `[${f.name}]`)
+                    .map((f) => `[${quoteBracket(f.name)}]`)
                     .join(', ');
                 const refColumns = k.refFields
-                    .map((f) => `[${f.name}]`)
+                    .map((f) => `[${quoteBracket(f.name)}]`)
                     .join(', ');
                 const name =
                     k.name ||
@@ -282,7 +283,7 @@ export function exportMSSQL({
 
                 return {
                     schema: fkTable.schema || 'dbo',
-                    sql: `ALTER TABLE ${fkTableName} ADD CONSTRAINT [${name}] FOREIGN KEY(${fkColumns}) REFERENCES ${refTableName}(${refColumns});`,
+                    sql: `ALTER TABLE ${fkTableName} ADD CONSTRAINT [${quoteBracket(name)}] FOREIGN KEY(${fkColumns}) REFERENCES ${refTableName}(${refColumns});`,
                 };
             })
             .filter(Boolean); // Remove empty objects

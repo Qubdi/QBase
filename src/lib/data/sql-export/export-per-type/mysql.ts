@@ -1,4 +1,4 @@
-import { escapeSQLComment } from '../cross-dialect/common';
+import { escapeSQLComment, quoteBacktick } from '../cross-dialect/common';
 import {
     exportFieldComment,
     formatTableComment,
@@ -203,7 +203,7 @@ export function exportMySQL({
         });
 
         schemas.forEach((schema) => {
-            sqlScript += `CREATE DATABASE IF NOT EXISTS \`${schema}\`;\n`;
+            sqlScript += `CREATE DATABASE IF NOT EXISTS \`${quoteBacktick(schema)}\`;\n`;
         });
 
         if (schemas.size > 0) {
@@ -220,8 +220,8 @@ export function exportMySQL({
 
                 // Use schema prefix if available
                 const tableName = table.schema
-                    ? `\`${table.schema}\`.\`${table.name}\``
-                    : `\`${table.name}\``;
+                    ? `\`${quoteBacktick(table.schema)}\`.\`${quoteBacktick(table.name)}\``
+                    : `\`${quoteBacktick(table.name)}\``;
 
                 // Get primary key fields
                 const primaryKeyFields = table.fields.filter(
@@ -232,7 +232,7 @@ export function exportMySQL({
                     table.comments ? formatTableComment(table.comments) : ''
                 }\nCREATE TABLE IF NOT EXISTS ${tableName} (\n${table.fields
                     .map((field: DBField) => {
-                        const fieldName = `\`${field.name}\``;
+                        const fieldName = `\`${quoteBacktick(field.name)}\``;
 
                         // Handle type name - map to MySQL compatible types
                         const typeName = mapMySQLType(field.type.name);
@@ -317,7 +317,7 @@ export function exportMySQL({
                     // Add PRIMARY KEY as table constraint
                     primaryKeyFields.length > 0
                         ? `,\n    PRIMARY KEY (${primaryKeyFields
-                              .map((f) => `\`${f.name}\``)
+                              .map((f) => `\`${quoteBacktick(f.name)}\``)
                               .join(', ')})`
                         : ''
                 }${
@@ -381,7 +381,7 @@ export function exportMySQL({
                                 // Get the properly quoted field names
                                 const indexFieldNames = indexFields
                                     .map((field) =>
-                                        field ? `\`${field.name}\`` : ''
+                                        field ? `\`${quoteBacktick(field.name)}\`` : ''
                                     )
                                     .filter(Boolean);
 
@@ -404,7 +404,7 @@ export function exportMySQL({
                                 const indexFieldsWithPrefix = hasTextOrBlob
                                     ? indexFieldNames.map((name) => {
                                           const field = indexFields.find(
-                                              (f) => `\`${f?.name}\`` === name
+                                              (f) => `\`${quoteBacktick(f?.name)}\`` === name
                                           );
                                           if (!field) return name;
 
@@ -448,16 +448,16 @@ export function exportMySQL({
             .map((k) => {
                 const { fkTable, refTable } = k;
                 const fkTableName = fkTable.schema
-                    ? `\`${fkTable.schema}\`.\`${fkTable.name}\``
-                    : `\`${fkTable.name}\``;
+                    ? `\`${quoteBacktick(fkTable.schema)}\`.\`${quoteBacktick(fkTable.name)}\``
+                    : `\`${quoteBacktick(fkTable.name)}\``;
                 const refTableName = refTable.schema
-                    ? `\`${refTable.schema}\`.\`${refTable.name}\``
-                    : `\`${refTable.name}\``;
+                    ? `\`${quoteBacktick(refTable.schema)}\`.\`${quoteBacktick(refTable.name)}\``
+                    : `\`${quoteBacktick(refTable.name)}\``;
                 const fkColumns = k.fkFields
-                    .map((f) => `\`${f.name}\``)
+                    .map((f) => `\`${quoteBacktick(f.name)}\``)
                     .join(', ');
                 const refColumns = k.refFields
-                    .map((f) => `\`${f.name}\``)
+                    .map((f) => `\`${quoteBacktick(f.name)}\``)
                     .join(', ');
 
                 // Create a descriptive constraint name

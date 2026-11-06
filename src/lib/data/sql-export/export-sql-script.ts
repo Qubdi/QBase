@@ -11,7 +11,7 @@ import {
     convertDiagram,
     DATABASE_LABEL,
 } from './cross-dialect/convert/convert-schema';
-import { escapeSQLComment } from './cross-dialect/common';
+import { escapeSQLComment, quoteDouble, isQuotedIdentifier } from './cross-dialect/common';
 import {
     databaseTypesWithCommentSupport,
     supportsCustomTypes,
@@ -102,13 +102,8 @@ const getQuotedTableName = (
     isDBMLFlow: boolean = false
 ): string => {
     // Check if a name is already quoted
-    const isAlreadyQuoted = (name: string) => {
-        return (
-            (name.startsWith('"') && name.endsWith('"')) ||
-            (name.startsWith('`') && name.endsWith('`')) ||
-            (name.startsWith('[') && name.endsWith(']'))
-        );
-    };
+    // only a name that is one well formed quoted identifier is trusted as it is
+    const isAlreadyQuoted = isQuotedIdentifier;
 
     // Only add quotes if needed and not already quoted
     const quoteIfNeeded = (name: string) => {
@@ -116,7 +111,7 @@ const getQuotedTableName = (
             return name;
         }
         const needsQuoting = /[^a-zA-Z0-9_]/.test(name) || isDBMLFlow;
-        return needsQuoting ? `"${name}"` : name;
+        return needsQuoting ? `"${quoteDouble(name)}"` : name;
     };
 
     if (table.schema) {
@@ -133,13 +128,8 @@ const getQuotedFieldName = (
     isDBMLFlow: boolean = false
 ): string => {
     // Check if a name is already quoted
-    const isAlreadyQuoted = (name: string) => {
-        return (
-            (name.startsWith('"') && name.endsWith('"')) ||
-            (name.startsWith('`') && name.endsWith('`')) ||
-            (name.startsWith('[') && name.endsWith(']'))
-        );
-    };
+    // only a name that is one well formed quoted identifier is trusted as it is
+    const isAlreadyQuoted = isQuotedIdentifier;
 
     if (isAlreadyQuoted(fieldName)) {
         return fieldName;
@@ -148,7 +138,7 @@ const getQuotedFieldName = (
     // For DBML flow, always quote field names
     // Otherwise, only quote if it contains special characters
     const needsQuoting = /[^a-zA-Z0-9_]/.test(fieldName) || isDBMLFlow;
-    return needsQuoting ? `"${fieldName}"` : fieldName;
+    return needsQuoting ? `"${quoteDouble(fieldName)}"` : fieldName;
 };
 
 export const exportBaseSQL = ({
@@ -237,7 +227,7 @@ export const exportBaseSQL = ({
 
         // Add CREATE SCHEMA statements if any schemas exist
         schemas.forEach((schema) => {
-            sqlScript += `CREATE SCHEMA IF NOT EXISTS "${schema}";\n`;
+            sqlScript += `CREATE SCHEMA IF NOT EXISTS "${quoteDouble(schema)}";\n`;
         });
         if (schemas.size > 0) sqlScript += '\n'; // Add newline only if schemas were added
     }
@@ -399,7 +389,7 @@ export const exportBaseSQL = ({
             // Quote multi-word type names for DBML flow to prevent @dbml/core parser issues
             const quotedTypeName =
                 isDBMLFlow && typeName.includes(' ')
-                    ? `"${typeName}"`
+                    ? `"${quoteDouble(typeName)}"`
                     : typeName;
 
             sqlScript += `  ${quotedFieldName} ${quotedTypeName}`;
@@ -642,7 +632,7 @@ export const exportBaseSQL = ({
                 // For DBML flow, also quote if contains special characters
                 const needsQuoting = /[^a-zA-Z0-9_]/.test(rawIndexName);
                 const indexName = needsQuoting
-                    ? `"${rawIndexName}"`
+                    ? `"${quoteDouble(rawIndexName)}"`
                     : rawIndexName;
                 indexStatements.push(
                     `CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${indexName} ON ${tableName} (${fieldNames});`

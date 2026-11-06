@@ -1,4 +1,4 @@
-import { escapeSQLComment } from '../cross-dialect/common';
+import { escapeSQLComment, quoteDouble } from '../cross-dialect/common';
 import {
     exportFieldComment,
     formatTableComment,
@@ -149,8 +149,8 @@ function exportCustomTypes(customTypes: DBCustomType[]): string {
 
     sortedTypes.forEach((customType) => {
         const typeName = customType.schema
-            ? `"${customType.schema}"."${customType.name}"`
-            : `"${customType.name}"`;
+            ? `"${quoteDouble(customType.schema)}"."${quoteDouble(customType.name)}"`
+            : `"${quoteDouble(customType.name)}"`;
 
         if (customType.kind === DBCustomTypeKind.enum) {
             // Export enum type
@@ -164,7 +164,7 @@ function exportCustomTypes(customTypes: DBCustomType[]): string {
             // Export composite type
             if (customType.fields && customType.fields.length > 0) {
                 const compositeFields = customType.fields
-                    .map((field) => `"${field.field}" ${field.type}`)
+                    .map((field) => `"${quoteDouble(field.field)}" ${field.type}`)
                     .join(', ');
                 typesSql += `CREATE TYPE ${typeName} AS (${compositeFields});\n`;
             }
@@ -209,7 +209,7 @@ export function exportPostgreSQL({
 
         // Add schema creation statements
         schemas.forEach((schema) => {
-            sqlScript += `CREATE SCHEMA IF NOT EXISTS "${schema}";\n`;
+            sqlScript += `CREATE SCHEMA IF NOT EXISTS "${quoteDouble(schema)}";\n`;
         });
         if (schemas.size > 0) {
             sqlScript += '\n';
@@ -251,8 +251,8 @@ export function exportPostgreSQL({
                 }
 
                 const tableName = table.schema
-                    ? `"${table.schema}"."${table.name}"`
-                    : `"${table.name}"`;
+                    ? `"${quoteDouble(table.schema)}"."${quoteDouble(table.name)}"`
+                    : `"${quoteDouble(table.name)}"`;
 
                 // Get primary key fields
                 const primaryKeyFields = table.fields.filter(
@@ -263,7 +263,7 @@ export function exportPostgreSQL({
                     table.comments ? formatTableComment(table.comments) : ''
                 }CREATE TABLE ${tableName} (\n${table.fields
                     .map((field: DBField) => {
-                        const fieldName = `"${field.name}"`;
+                        const fieldName = `"${quoteDouble(field.name)}"`;
 
                         // Handle type name - map problematic types to PostgreSQL compatible types
                         const typeName = mapPostgresType(
@@ -361,7 +361,7 @@ export function exportPostgreSQL({
                     .join(',\n')}${
                     primaryKeyFields.length > 0
                         ? `,\n    PRIMARY KEY (${primaryKeyFields
-                              .map((f) => `"${f.name}"`)
+                              .map((f) => `"${quoteDouble(f.name)}"`)
                               .join(', ')})`
                         : ''
                 }${
@@ -390,7 +390,7 @@ export function exportPostgreSQL({
                         .filter((f) => f.comments)
                         .map(
                             (f) =>
-                                `\nCOMMENT ON COLUMN ${tableName}."${f.name}" IS '${escapeSQLComment(f.comments || '')}';`
+                                `\nCOMMENT ON COLUMN ${tableName}."${quoteDouble(f.name)}" IS '${escapeSQLComment(f.comments || '')}';`
                         )
                         .join('')
                 }${
@@ -438,12 +438,12 @@ export function exportPostgreSQL({
                                     table.name,
                                     index.name
                                 );
-                                const indexName = `"${combinedName}"`;
+                                const indexName = `"${quoteDouble(combinedName)}"`;
 
                                 // Get the properly quoted field names
                                 const indexFieldNames = indexFields
                                     .map((field) =>
-                                        field ? `"${field.name}"` : ''
+                                        field ? `"${quoteDouble(field.name)}"` : ''
                                     )
                                     .filter(Boolean);
 
@@ -461,7 +461,7 @@ export function exportPostgreSQL({
                                     table.name,
                                     index.name
                                 );
-                                return `COMMENT ON INDEX "${combinedName}" IS '${escapeSQLComment(index.comments!)}';`;
+                                return `COMMENT ON INDEX "${quoteDouble(combinedName)}" IS '${escapeSQLComment(index.comments!)}';`;
                             })
                             .filter(Boolean);
 
@@ -491,16 +491,16 @@ export function exportPostgreSQL({
             .map((k) => {
                 const { fkTable, refTable } = k;
                 const fkTableName = fkTable.schema
-                    ? `"${fkTable.schema}"."${fkTable.name}"`
-                    : `"${fkTable.name}"`;
+                    ? `"${quoteDouble(fkTable.schema)}"."${quoteDouble(fkTable.name)}"`
+                    : `"${quoteDouble(fkTable.name)}"`;
                 const refTableName = refTable.schema
-                    ? `"${refTable.schema}"."${refTable.name}"`
-                    : `"${refTable.name}"`;
+                    ? `"${quoteDouble(refTable.schema)}"."${quoteDouble(refTable.name)}"`
+                    : `"${quoteDouble(refTable.name)}"`;
                 const fkColumns = k.fkFields
-                    .map((f) => `"${f.name}"`)
+                    .map((f) => `"${quoteDouble(f.name)}"`)
                     .join(', ');
                 const refColumns = k.refFields
-                    .map((f) => `"${f.name}"`)
+                    .map((f) => `"${quoteDouble(f.name)}"`)
                     .join(', ');
 
                 // Create a unique constraint name by combining table and field names
@@ -515,7 +515,7 @@ export function exportPostgreSQL({
                               .replace(/[^a-zA-Z0-9_]/g, '_')
                         : baseName.replace(/[^a-zA-Z0-9_]/g, '_');
 
-                const constraintName = `"${safeConstraintName}"`;
+                const constraintName = `"${quoteDouble(safeConstraintName)}"`;
 
                 return {
                     schema: fkTable.schema || 'public',

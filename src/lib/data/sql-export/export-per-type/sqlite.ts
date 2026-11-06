@@ -1,3 +1,4 @@
+import { quoteDouble } from '../cross-dialect/common';
 import {
     exportFieldComment,
     formatTableComment,
@@ -192,7 +193,7 @@ export function exportSQLite({
 
                 // Skip SQLite system tables
                 if (sqliteSystemTables.includes(table.name.toLowerCase())) {
-                    return `-- Skipping SQLite system table: "${table.name}"\n`;
+                    return `-- Skipping SQLite system table: "${quoteDouble(table.name)}"\n`;
                 }
 
                 // SQLite doesn't use schema prefixes, so we use just the table name
@@ -200,7 +201,7 @@ export function exportSQLite({
                 const schemaComment = table.schema
                     ? `-- Original schema: ${table.schema}\n`
                     : '';
-                const tableName = `"${table.name}"`;
+                const tableName = `"${quoteDouble(table.name)}"`;
 
                 // Get primary key fields
                 const primaryKeyFields = table.fields.filter(
@@ -230,13 +231,13 @@ export function exportSQLite({
                         // If this foreign key belongs to the current table, add it
                         if (k.fkTable.id === table.id) {
                             const fkColumns = k.fkFields
-                                .map((f) => `"${f.name}"`)
+                                .map((f) => `"${quoteDouble(f.name)}"`)
                                 .join(', ');
                             const refColumns = k.refFields
-                                .map((f) => `"${f.name}"`)
+                                .map((f) => `"${quoteDouble(f.name)}"`)
                                 .join(', ');
                             tableForeignKeys.push(
-                                `    FOREIGN KEY(${fkColumns}) REFERENCES "${k.refTable.name}"(${refColumns})`
+                                `    FOREIGN KEY(${fkColumns}) REFERENCES "${quoteDouble(k.refTable.name)}"(${refColumns})`
                             );
                         }
                     });
@@ -245,7 +246,7 @@ export function exportSQLite({
                     table.comments ? formatTableComment(table.comments) : ''
                 }CREATE TABLE IF NOT EXISTS ${tableName} (\n${table.fields
                     .map((field: DBField) => {
-                        const fieldName = `"${field.name}"`;
+                        const fieldName = `"${quoteDouble(field.name)}"`;
 
                         // Handle type name - map to SQLite compatible types
                         const baseTypeName = mapSQLiteType(
@@ -337,7 +338,7 @@ export function exportSQLite({
                     // Add PRIMARY KEY as table constraint for composite primary keys or non-INTEGER primary keys
                     primaryKeyFields.length > 0 && !singleIntegerPrimaryKey
                         ? `,\n    PRIMARY KEY (${primaryKeyFields
-                              .map((f) => `"${f.name}"`)
+                              .map((f) => `"${quoteDouble(f.name)}"`)
                               .join(', ')})`
                         : ''
                 }${
@@ -378,7 +379,7 @@ export function exportSQLite({
                                 // Get the properly quoted field names
                                 const indexFieldNames = indexFields
                                     .map((field) =>
-                                        field ? `"${field.name}"` : ''
+                                        field ? `"${quoteDouble(field.name)}"` : ''
                                     )
                                     .filter(Boolean);
 
@@ -403,7 +404,7 @@ export function exportSQLite({
                                         .substring(0, 60);
 
                                 return indexFieldNames.length > 0
-                                    ? `CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX IF NOT EXISTS "${safeIndexName}"\nON ${tableName} (${indexFieldNames.join(', ')});`
+                                    ? `CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX IF NOT EXISTS "${quoteDouble(safeIndexName)}"\nON ${tableName} (${indexFieldNames.join(', ')});`
                                     : '';
                             })
                             .filter(Boolean)
