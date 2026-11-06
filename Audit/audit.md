@@ -9,10 +9,10 @@
 | Security & secrets | 12 | 0 | 2 | 37 | 0 |
 | Repository | 7 | 0 | 1 | 59 | 1 |
 | Server | 10 | 0 | 0 | 42 | 0 |
-| Database | 8 | 0 | 0 | 21 | 3 |
+| Database | 7 | 0 | 0 | 22 | 3 |
 | Client | 6 | 0 | 1 | 64 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 44 | 0 | 4 | 230 | 4 |
+| **Total** | 43 | 0 | 4 | 231 | 4 |
 
 ## Act first
 
@@ -78,7 +78,6 @@
 | DB-027 | Low | Unauthenticated `/auth/register` counts every user row per call | `server/src/auth/routes.ts:138` | Select one `id` with `LIMIT 1`, as `/setup-status` does |
 | DB-028 | Med | SQL Server introspection uses `STRING_SPLIT`; fails below compatibility level 130 | `server/src/introspect/sqlserver.ts:17` | Bind one parameter per schema instead of splitting |
 | DB-029 | Low | SQL Server schema filter splits on commas; comma names unselectable | `server/src/introspect/sqlserver.ts:232` | Bind one parameter per schema |
-| DB-030 | Low | Negative numeric scale (PG 15+) decoded as 2046 | `server/src/introspect/typmod.ts:53` | Sign-extend the 11-bit scale |
 | DB-031 | Low | User delete can cascade-delete a diagram the target creates mid-delete | `server/src/admin/routes.ts:147` | Lock target users `FOR UPDATE` before reassigning diagrams |
 | DB-032 | Low | Viewer list sorted by working-copy `updated_at` but shows `publishedAt` | `server/src/diagrams/routes.ts:143` | Sort viewer rows by latest snapshot `publishedAt` |
 
@@ -105,6 +104,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| DB-030 | Database | Negative numeric scale (PG 15+) decoded as 2046 |
 | CLI-056 | Client | Get latest makes a new local id; sync state and drift scope lost |
 | CLI-070 | Client | Hard-coded English toasts in fork editor code: the five in `canvas.tsx` and `menu.tsx` now use `t()`; other upstream strings elsewhere are untouched |
 | CLI-067 | Client | Lock check unreachable on first ask never retried; editor stays read-only |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 37 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056 |
+| 25 | 2026-11-06 | 38 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030 |

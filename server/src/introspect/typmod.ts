@@ -48,9 +48,13 @@ export function decodeTypmod(type: string, typmod: number): DecodedTypmod {
     if (base === 'numeric' || base === 'decimal') {
         const m = typmod - VARHDRSZ;
         if (m < 0) return none;
+        // PostgreSQL 15 allows a negative scale: the scale is an 11 bit signed
+        // number in the low bits, so its sign must be extended
+        const rawScale = m & 0x7ff;
+        const scale = rawScale & 0x400 ? rawScale - 0x800 : rawScale;
         return {
             characterMaximumLength: null,
-            precision: { precision: (m >> 16) & 0xffff, scale: m & 0xffff },
+            precision: { precision: (m >> 16) & 0xffff, scale },
         };
     }
     if (TIME_LIKE.has(base)) {
