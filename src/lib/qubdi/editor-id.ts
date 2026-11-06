@@ -1,26 +1,10 @@
 import { generateId } from '@/lib/utils';
 
-// Names this browser tab to the server's edit lock, so a second tab of the same
-// user counts as a second editor. Kept for the life of the tab: a reload is the
-// same editor and takes its lock back at once instead of waiting for it to run out.
-const KEY = 'qbase.editor-id';
-
+// Names this open page to the server's edit lock, so a second tab of the same
+// user counts as a second editor. Kept in memory only: session storage is
+// copied when a tab is duplicated, and two tabs holding one id would share one
+// lock. A reload is a new editor; the page gives its lock back as it leaves
+// (use-edit-lock), so the new one takes it at once.
 let id: string | undefined;
 
-export const getEditorId = (): string => {
-    if (id) return id;
-    try {
-        id = sessionStorage.getItem(KEY) ?? undefined;
-    } catch {
-        // storage unavailable: this tab keeps one id for as long as it stays open
-    }
-    if (!id) {
-        id = generateId();
-        try {
-            sessionStorage.setItem(KEY, id);
-        } catch {
-            // see above
-        }
-    }
-    return id;
-};
+export const getEditorId = (): string => (id ??= generateId());

@@ -8,41 +8,41 @@ describe('getEditorId', () => {
 
     const load = async () => (await import('../editor-id')).getEditorId;
 
-    it('names the tab with one id for as long as the page lives', async () => {
+    it('names the page with one id for as long as it lives', async () => {
         const getEditorId = await load();
         expect(getEditorId()).toBeTruthy();
         expect(getEditorId()).toBe(getEditorId());
     });
 
-    it('keeps the id when the tab reloads, so it takes its own lock back', async () => {
+    it('gives a reloaded page a new id: its old lock is released as it leaves', async () => {
         const first = (await load())();
-        vi.resetModules(); // a reload: a fresh page, the same tab
-        const second = (await load())();
-        expect(second).toBe(first);
-    });
-
-    it('gives another tab its own id', async () => {
-        const first = (await load())();
-        sessionStorage.clear(); // a new tab starts with empty session storage
-        vi.resetModules();
+        vi.resetModules(); // a reload: a fresh page
         const second = (await load())();
         expect(second).not.toBe(first);
     });
 
-    it('still works when the browser will not store anything', async () => {
-        const spy = vi
-            .spyOn(Storage.prototype, 'getItem')
-            .mockImplementation(() => {
-                throw new Error('blocked');
-            });
-        const setSpy = vi
-            .spyOn(Storage.prototype, 'setItem')
-            .mockImplementation(() => {
-                throw new Error('blocked');
-            });
+    it('is not copied into a duplicated tab, which copies session storage', async () => {
+        const first = (await load())();
+        const copy = new Map<string, string>();
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i)!;
+            copy.set(key, sessionStorage.getItem(key)!);
+        }
+        // nothing in the copy can carry the id into the other tab
+        expect([...copy.values()]).not.toContain(first);
+        vi.resetModules();
+        for (const [k, v] of copy) sessionStorage.setItem(k, v);
+        expect((await load())()).not.toBe(first);
+    });
+
+    it('never touches storage, so a browser that blocks it changes nothing', async () => {
+        const get = vi.spyOn(Storage.prototype, 'getItem');
+        const set = vi.spyOn(Storage.prototype, 'setItem');
         const getEditorId = await load();
-        expect(getEditorId()).toBe(getEditorId());
-        spy.mockRestore();
-        setSpy.mockRestore();
+        getEditorId();
+        expect(get).not.toHaveBeenCalled();
+        expect(set).not.toHaveBeenCalled();
+        get.mockRestore();
+        set.mockRestore();
     });
 });
