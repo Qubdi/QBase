@@ -36,3 +36,31 @@ describe('cryptoBoxFor', () => {
         expect(() => cryptoBoxFor('short')).toThrow(/at least 16/);
     });
 });
+
+describe('CryptoBox purposes', () => {
+    const secret = 'purpose-secret-16-chars';
+
+    it('keeps one purpose from opening another purpose or the bare box', async () => {
+        const { CryptoBox } = await import('../src/introspect/crypto-box.js');
+        const mfa = new CryptoBox(secret, 'mfa');
+        const hook = new CryptoBox(secret, 'webhook');
+        const bare = new CryptoBox(secret);
+        const sealed = mfa.encrypt('seed');
+        expect(mfa.decrypt(sealed)).toBe('seed');
+        expect(() => hook.decrypt(sealed)).toThrow();
+        expect(() => bare.decrypt(sealed)).toThrow();
+    });
+
+    it('still opens values sealed before purposes existed', async () => {
+        const { CryptoBox } = await import('../src/introspect/crypto-box.js');
+        const old = new CryptoBox(secret).encrypt('https://hook.example/t0ken');
+        expect(new CryptoBox(secret, 'webhook').decrypt(old)).toBe(
+            'https://hook.example/t0ken'
+        );
+    });
+
+    it('does not mix cached boxes of different purposes', () => {
+        expect(cryptoBoxFor(secret, 'a')).not.toBe(cryptoBoxFor(secret, 'b'));
+        expect(cryptoBoxFor(secret, 'a')).toBe(cryptoBoxFor(secret, 'a'));
+    });
+});

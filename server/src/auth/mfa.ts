@@ -77,7 +77,7 @@ export function createMfa(
     let sealed: CryptoBox | undefined;
     const box = () => {
         if (!config.secretsKey) throw new Error('No key to encrypt secrets with');
-        return (sealed ??= new CryptoBox(config.secretsKey));
+        return (sealed ??= new CryptoBox(config.secretsKey, 'mfa'));
     };
     // the secret is sealed together with its owner's id, so a copied value
     // does not open under another account

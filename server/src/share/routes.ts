@@ -72,7 +72,7 @@ export const shareManagementRoutes =
         // link lives and wiped when it is revoked. Without a key, tokens are
         // shown once, as before.
         const box = config.connectionKey
-            ? new CryptoBox(config.connectionKey)
+            ? new CryptoBox(config.connectionKey, 'share-link')
             : null;
         const sealed = (token: string) => box?.encrypt(token) ?? null;
         const unsealed = (l: ShareLinkRow) => {

@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 24</b></div>
-  <h1>80 open across six lenses: 0 Crit, 4 High.</h1>
+  <h1>79 open across six lenses: 0 Crit, 4 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -35,13 +35,13 @@
     <table>
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
-        <tr><td>Security &amp; secrets</td><td>19</td><td>0</td><td>2</td><td>30</td><td>0</td></tr>
+        <tr><td>Security &amp; secrets</td><td>18</td><td>0</td><td>2</td><td>31</td><td>0</td></tr>
         <tr><td>Repository</td><td>14</td><td>0</td><td>1</td><td>52</td><td>1</td></tr>
         <tr><td>Server</td><td>14</td><td>0</td><td>0</td><td>38</td><td>0</td></tr>
         <tr><td>Database</td><td>8</td><td>0</td><td>0</td><td>21</td><td>3</td></tr>
         <tr><td>Client</td><td>24</td><td>0</td><td>1</td><td>46</td><td>0</td></tr>
         <tr><td>Dead code</td><td>1</td><td>0</td><td>0</td><td>7</td><td>0</td></tr>
-        <tr><td>Total</td><td>80</td><td>0</td><td>4</td><td>194</td><td>4</td></tr>
+        <tr><td>Total</td><td>79</td><td>0</td><td>4</td><td>195</td><td>4</td></tr>
       </tbody>
     </table>
   </div>
@@ -52,7 +52,7 @@
   <a class="idx-card sec" href="audit-security.html">
     <h3>Security &amp; secrets</h3>
     <p>Top: Old <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code>, <code>MSSQL_SA_PASSWORD</code> reachable through 65 pre-rewrite remote PR refs</p>
-    <p class="lbl">19 open &middot; 0 Crit &middot; 2 High &middot; 30 fixed &middot; 0 accepted</p>
+    <p class="lbl">18 open &middot; 0 Crit &middot; 2 High &middot; 31 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
@@ -111,7 +111,7 @@
         <tr><td>22</td><td>2026-11-05</td><td class="wrap-cell">6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055</td></tr>
         <tr><td>23</td><td>2026-11-06</td><td class="wrap-cell">Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes</td></tr>
         <tr><td>24</td><td>2026-11-06</td><td class="wrap-cell">Deep pass: 59 new, 0 fixed, 0 regressed</td></tr>
-        <tr><td>25</td><td>2026-11-06</td><td class="wrap-cell">1 fixed: DEAD-007</td></tr>
+        <tr><td>25</td><td>2026-11-06</td><td class="wrap-cell">2 fixed: DEAD-007, SEC-035</td></tr>
       </tbody>
     </table>
   </div>

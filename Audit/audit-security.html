@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 24</b></div>
-  <h1>19 open: 0 Crit, 2 High.</h1>
+  <h1>18 open: 0 Crit, 2 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -38,7 +38,7 @@
 
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">19 open &middot; 30 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">18 open &middot; 31 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -47,7 +47,6 @@
         <tr><td class="svc-name">SEC-032</td><td><span class="pill crit">High</span></td><td class="wrap-cell"><code>.env.example</code> sets <code>POSTGRES_PASSWORD</code>, <code>CONNECTION_KEY</code>, <code>MSSQL_SA_PASSWORD</code>; copying it bypasses Compose <code>:?</code> guards</td><td><code>.env.example:11</code> · <code>.env.example:25</code> · <code>.env.example:65</code></td><td class="wrap-cell">Blank all three values again</td></tr>
         <tr><td class="svc-name">SEC-033</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Webhook URLs saved before encryption stay plaintext at rest</td><td><code>server/src/drift/webhook.ts:28</code></td><td class="wrap-cell">Re-seal plaintext <code>webhook_url</code> rows at boot or in a migration</td></tr>
         <tr><td class="svc-name">SEC-034</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>drift.configure</code> audit row omits webhook set, change or clear</td><td><code>server/src/drift/routes.ts:181</code></td><td class="wrap-cell">Record webhook host and change flag in audit meta</td></tr>
-        <tr><td class="svc-name">SEC-035</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">One fixed scrypt salt for every CryptoBox; MFA and webhooks share one key</td><td><code>server/src/introspect/crypto-box.ts:20</code></td><td class="wrap-cell">Derive a separate key per purpose</td></tr>
         <tr><td class="svc-name">SEC-036</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">In-session wrong passwords share the <code>mfa:</code> lock key; stolen session locks owner out</td><td><code>server/src/auth/mfa-routes.ts:243</code> · <code>server/src/auth/mfa-routes.ts:98</code> · <code>server/src/auth/routes.ts:306</code></td><td class="wrap-cell">Count in-session password failures under a separate key</td></tr>
         <tr><td class="svc-name">SEC-037</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL export never escapes quote characters in identifiers; names inject DDL</td><td><code>src/lib/data/sql-export/export-sql-script.ts:119</code> · <code>src/lib/data/sql-export/export-per-type/postgresql.ts:254</code> · <code>src/lib/data/sql-export/export-per-type/mssql.ts:108</code></td><td class="wrap-cell">Double the dialect quote character, as <code>quoteName</code> does</td></tr>
         <tr><td class="svc-name">SEC-038</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Introspection results unbounded; a hostile DB server can exhaust process memory</td><td><code>server/src/introspect/postgres.ts:148</code> · <code>server/src/introspect/sqlserver.ts:234</code></td><td class="wrap-cell">Cap rows per query; abort over a byte budget</td></tr>
@@ -69,11 +68,12 @@
 
 <section id="closed" class="sec-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (30)</summary>
+  <details><summary>Fixed (31)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SEC-035</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">One fixed scrypt salt for every CryptoBox; MFA and webhooks share one key</td></tr>
         <tr><td class="svc-name">SEC-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift webhook URL stored and returned in plaintext; embedded tokens exposed</td></tr>
         <tr><td class="svc-name">SEC-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Admin PATCH on own account sets password without current password or 2FA</td></tr>
         <tr><td class="svc-name">SEC-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Session end or user switch keeps previous user's IndexedDB copies and id maps</td></tr>

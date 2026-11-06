@@ -326,7 +326,7 @@ export async function runDriftCheck(
         const webhookUrl = settings.webhookUrl
             ? openWebhookUrl(
                   deps.config.secretsKey
-                      ? cryptoBoxFor(deps.config.secretsKey)
+                      ? cryptoBoxFor(deps.config.secretsKey, 'webhook')
                       : null,
                   settings.webhookUrl
               )

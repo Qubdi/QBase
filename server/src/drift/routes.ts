@@ -68,7 +68,7 @@ export const driftRoutes =
     async (app) => {
         const { db } = deps;
         const key = deps.config.secretsKey;
-        const box = () => (key ? cryptoBoxFor(key) : null);
+        const box = () => (key ? cryptoBoxFor(key, 'webhook') : null);
         // shares its allowance with the introspection routes
         const outbound = deps.outboundLimit
             ? { preHandler: deps.outboundLimit }

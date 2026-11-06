@@ -6,13 +6,13 @@
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 19 | 0 | 2 | 30 | 0 |
+| Security & secrets | 18 | 0 | 2 | 31 | 0 |
 | Repository | 14 | 0 | 1 | 52 | 1 |
 | Server | 14 | 0 | 0 | 38 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
 | Client | 24 | 0 | 1 | 46 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 80 | 0 | 4 | 194 | 4 |
+| **Total** | 79 | 0 | 4 | 195 | 4 |
 
 ## Act first
 
@@ -33,7 +33,6 @@
 | SEC-032 | High | `.env.example` sets `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD`; copying it bypasses Compose `:?` guards | `.env.example:11` · `.env.example:25` · `.env.example:65` | Blank all three values again |
 | SEC-033 | Med | Webhook URLs saved before encryption stay plaintext at rest | `server/src/drift/webhook.ts:28` | Re-seal plaintext `webhook_url` rows at boot or in a migration |
 | SEC-034 | Med | `drift.configure` audit row omits webhook set, change or clear | `server/src/drift/routes.ts:181` | Record webhook host and change flag in audit meta |
-| SEC-035 | Low | One fixed scrypt salt for every CryptoBox; MFA and webhooks share one key | `server/src/introspect/crypto-box.ts:20` | Derive a separate key per purpose |
 | SEC-036 | Med | In-session wrong passwords share the `mfa:` lock key; stolen session locks owner out | `server/src/auth/mfa-routes.ts:243` · `server/src/auth/mfa-routes.ts:98` · `server/src/auth/routes.ts:306` | Count in-session password failures under a separate key |
 | SEC-037 | Med | SQL export never escapes quote characters in identifiers; names inject DDL | `src/lib/data/sql-export/export-sql-script.ts:119` · `src/lib/data/sql-export/export-per-type/postgresql.ts:254` · `src/lib/data/sql-export/export-per-type/mssql.ts:108` | Double the dialect quote character, as `quoteName` does |
 | SEC-038 | Med | Introspection results unbounded; a hostile DB server can exhaust process memory | `server/src/introspect/postgres.ts:148` · `server/src/introspect/sqlserver.ts:234` | Cap rows per query; abort over a byte budget |
@@ -141,6 +140,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-035 | Security & secrets | One fixed scrypt salt for every CryptoBox; MFA and webhooks share one key |
 | DEAD-007 | Dead code | `sha256` and `DiffKind` exported but referenced nowhere |
 | SEC-031 | Security & secrets | Drift webhook URL stored and returned in plaintext; embedded tokens exposed |
 | SEC-030 | Security & secrets | Admin PATCH on own account sets password without current password or 2FA |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 1 fixed: DEAD-007 |
+| 25 | 2026-11-06 | 2 fixed: DEAD-007, SEC-035 |
