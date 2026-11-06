@@ -153,11 +153,15 @@ describe('password dialogs', () => {
             const form = button('Change password').closest('form')!;
             fireEvent.submit(form);
             fireEvent.submit(form);
-            await waitFor(() => expect(button('Change password').disabled).toBe(true));
+            await waitFor(() =>
+                expect(button('Change password').disabled).toBe(true)
+            );
             fireEvent.submit(form);
             expect(changePassword).toHaveBeenCalledTimes(1);
             finish({ ok: true });
-            await waitFor(() => expect(screen.getByText(/changed|updated/i)).toBeTruthy());
+            await waitFor(() =>
+                expect(screen.getByText(/changed|updated/i)).toBeTruthy()
+            );
             expect(changePassword).toHaveBeenCalledTimes(1);
         });
 

@@ -54,7 +54,8 @@ describe('getLatestFromServer', () => {
         const running = new Promise<void>((r) => (settle = r));
         const done = getLatestFromServer(
             args({
-                beforeReload: () => running.then(() => void order.push('saved')),
+                beforeReload: () =>
+                    running.then(() => void order.push('saved')),
             })
         );
         await new Promise((r) => setTimeout(r, 10));
@@ -70,7 +71,10 @@ describe('getLatestFromServer', () => {
             source: { kind: 'saved', savedConnectionId: 'c1' },
             tables: ['public.users'],
             schemas: ['public'],
-            sourceKeys: { tables: { t1: 'users' }, columns: { f1: 'users.id' } },
+            sourceKeys: {
+                tables: { t1: 'users' },
+                columns: { f1: 'users.id' },
+            },
             lastSyncedAt: '2026-01-01T00:00:00.000Z',
         };
         setSyncState('local-1', state);

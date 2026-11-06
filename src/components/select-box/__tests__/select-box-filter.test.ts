@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selectBoxFilter } from '../select-box';
+import { selectBoxFilter } from '../select-box-filter';
 
 describe('selectBoxFilter', () => {
     it('keeps a value or keyword that contains the text, in any case', () => {

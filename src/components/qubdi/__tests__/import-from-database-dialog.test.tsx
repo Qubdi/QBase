@@ -116,7 +116,10 @@ describe('ImportFromDatabaseDialog', () => {
                 projectSlug="shop"
             />
         );
-        expect(await screen.findByLabelText('Host')).toHaveProperty('value', '');
+        expect(await screen.findByLabelText('Host')).toHaveProperty(
+            'value',
+            ''
+        );
         expect(screen.getByLabelText('Database')).toHaveProperty('value', '');
         expect(screen.getByLabelText('Password')).toHaveProperty('value', '');
     });
@@ -141,7 +144,9 @@ describe('ImportFromDatabaseDialog', () => {
             projectSlug: 'shop',
         };
         const view = render(<ImportFromDatabaseDialog open {...props} />);
-        fireEvent.click(await screen.findByRole('combobox', { name: 'Saved connection' }));
+        fireEvent.click(
+            await screen.findByRole('combobox', { name: 'Saved connection' })
+        );
         fireEvent.click(await screen.findByRole('option', { name: 'Prod' }));
         await waitFor(() =>
             expect(screen.getByLabelText('Host')).toHaveProperty('value', 'h')
@@ -159,7 +164,9 @@ describe('ImportFromDatabaseDialog', () => {
         syncDiagram.mockRejectedValue(new Error('down'));
         mount();
         await createDiagram();
-        await waitFor(() => expect(deleteDiagram).toHaveBeenCalledWith('local-new'));
+        await waitFor(() =>
+            expect(deleteDiagram).toHaveBeenCalledWith('local-new')
+        );
         expect(addDiagram).toHaveBeenCalledTimes(1);
         expect(navigate).not.toHaveBeenCalled();
     });

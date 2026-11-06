@@ -11,7 +11,11 @@ import {
     convertDiagram,
     DATABASE_LABEL,
 } from './cross-dialect/convert/convert-schema';
-import { escapeSQLComment, quoteDouble, isQuotedIdentifier } from './cross-dialect/common';
+import {
+    escapeSQLComment,
+    quoteDouble,
+    isQuotedIdentifier,
+} from './cross-dialect/common';
 import {
     databaseTypesWithCommentSupport,
     supportsCustomTypes,

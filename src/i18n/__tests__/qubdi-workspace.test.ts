@@ -82,6 +82,8 @@ describe('editor toasts', () => {
             'src/pages/editor-page/canvas/canvas.tsx',
             'utf8'
         );
-        expect(canvas).toContain('qubdi.workspace.editorToasts.alreadyConnectedBody');
+        expect(canvas).toContain(
+            'qubdi.workspace.editorToasts.alreadyConnectedBody'
+        );
     });
 });

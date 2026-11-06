@@ -17,7 +17,10 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
 
 vi.mock('@/hooks/use-focus-on', () => ({ useFocusOn: () => ({}) }));
 vi.mock('@/hooks/use-layout', () => ({
-    useLayout: () => ({ isSidePanelShowed: true, openTableFromSidebar: vi.fn() }),
+    useLayout: () => ({
+        isSidePanelShowed: true,
+        openTableFromSidebar: vi.fn(),
+    }),
 }));
 vi.mock('@/hooks/use-diagram', () => ({
     useDiagram: () => ({
@@ -29,10 +32,14 @@ vi.mock('@/hooks/use-diagram', () => ({
 const qubdi = { remoteIdFor: () => 'r1', user: { id: 'u1' } };
 vi.mock('@/hooks/use-qubdi', () => ({ useQubdi: () => qubdi }));
 const toast = vi.fn();
-vi.mock('@/components/toast/use-toast', () => ({ useToast: () => ({ toast }) }));
+vi.mock('@/components/toast/use-toast', () => ({
+    useToast: () => ({ toast }),
+}));
 
 // the settings form has its own tests: a stand-in that saves a known change
-const changed = normalizeConfig({ rules: { 'orphan-table': { enabled: false } } });
+const changed = normalizeConfig({
+    rules: { 'orphan-table': { enabled: false } },
+});
 vi.mock('../lint-settings-dialog', () => ({
     LintSettingsDialog: (p: { open: boolean; onSave: (c: unknown) => void }) =>
         p.open ? (
@@ -40,7 +47,8 @@ vi.mock('../lint-settings-dialog', () => ({
         ) : null,
 }));
 
-const settle = () => act(async () => void (await new Promise((r) => setTimeout(r, 0))));
+const settle = () =>
+    act(async () => void (await new Promise((r) => setTimeout(r, 0))));
 
 const openPanel = async () => {
     fireEvent.click(screen.getByRole('button', { name: /^Lint/ }));

@@ -1,6 +1,5 @@
 import { DatabaseEdition } from '@/lib/domain/database-edition';
 
-
 const defaultExpr = `'"' + STRING_ESCAPE(COALESCE(REPLACE(CAST(cols.COLUMN_DEFAULT AS NVARCHAR(MAX)), '"', '\\"'), ''), 'json') + '"'`;
 
 const sqlServerQuery = `${`/* SQL Server 2017 and above edition (14.0, 15.0, 16.0, 17.0)*/`}

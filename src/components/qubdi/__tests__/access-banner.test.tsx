@@ -40,9 +40,7 @@ const show = (
             <qubdiContext.Provider
                 value={{ user: { email } } as unknown as QubdiContext}
             >
-                <DiagramAccessContext.Provider
-                    value={{ access, refresh }}
-                >
+                <DiagramAccessContext.Provider value={{ access, refresh }}>
                     <AccessBanner />
                 </DiagramAccessContext.Provider>
             </qubdiContext.Provider>

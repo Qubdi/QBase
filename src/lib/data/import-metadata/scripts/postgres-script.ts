@@ -65,7 +65,6 @@ export const getPostgresQuery = (
 
     const defaultExpr = `CASE WHEN cols.column_default IS NOT NULL AND cols.column_default LIKE 'nextval(%' THEN '' ELSE COALESCE(replace(replace(cols.column_default, '"', '\\"'), '\\x', '\\\\x'), '') END`;
 
-
     // Define the base query
     const query = `${`/* ${databaseEdition ? databaseEditionToLabelMap[databaseEdition] : 'PostgreSQL'} edition */`}
 WITH fk_info${databaseEdition ? '_' + databaseEdition : ''} AS (

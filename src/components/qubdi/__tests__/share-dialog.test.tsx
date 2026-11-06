@@ -1,7 +1,8 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fromLocalInput, ShareDialog, toLocalInput } from '../share-dialog';
+import { fromLocalInput, toLocalInput } from '@/lib/qubdi/local-datetime';
+import { ShareDialog } from '../share-dialog';
 
 const listShareLinks = vi.fn();
 const createShareLink = vi.fn();

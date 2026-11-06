@@ -379,7 +379,9 @@ export function exportSQLite({
                                 // Get the properly quoted field names
                                 const indexFieldNames = indexFields
                                     .map((field) =>
-                                        field ? `"${quoteDouble(field.name)}"` : ''
+                                        field
+                                            ? `"${quoteDouble(field.name)}"`
+                                            : ''
                                     )
                                     .filter(Boolean);
 

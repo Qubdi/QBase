@@ -739,12 +739,30 @@ describe('reserved-word', () => {
     });
 
     it('does not read dialect lists off the object prototype', () => {
-        for (const dialect of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+        for (const dialect of [
+            'constructor',
+            '__proto__',
+            'toString',
+            'hasOwnProperty',
+        ]) {
             expect(() => isReservedWord('users', dialect)).not.toThrow();
             expect(isReservedWord('users', dialect)).toBe(false);
             expect(isReservedWord('select', dialect)).toBe(true);
             expect(
-                only(lint(diagram([tbl('t', [{ name: 'id', pk: true }], { comments: 'x' })], [], dialect)), 'reserved-word')
+                only(
+                    lint(
+                        diagram(
+                            [
+                                tbl('t', [{ name: 'id', pk: true }], {
+                                    comments: 'x',
+                                }),
+                            ],
+                            [],
+                            dialect
+                        )
+                    ),
+                    'reserved-word'
+                )
             ).toEqual([]);
         }
     });

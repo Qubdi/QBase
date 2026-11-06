@@ -164,7 +164,9 @@ function exportCustomTypes(customTypes: DBCustomType[]): string {
             // Export composite type
             if (customType.fields && customType.fields.length > 0) {
                 const compositeFields = customType.fields
-                    .map((field) => `"${quoteDouble(field.field)}" ${field.type}`)
+                    .map(
+                        (field) => `"${quoteDouble(field.field)}" ${field.type}`
+                    )
                     .join(', ');
                 typesSql += `CREATE TYPE ${typeName} AS (${compositeFields});\n`;
             }
@@ -443,7 +445,9 @@ export function exportPostgreSQL({
                                 // Get the properly quoted field names
                                 const indexFieldNames = indexFields
                                     .map((field) =>
-                                        field ? `"${quoteDouble(field.name)}"` : ''
+                                        field
+                                            ? `"${quoteDouble(field.name)}"`
+                                            : ''
                                     )
                                     .filter(Boolean);
 

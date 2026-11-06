@@ -93,7 +93,10 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
     const serverScope = useRef<{
         schemas: string[];
         tables: string[];
-        sourceKeys: { tables: Record<string, string>; columns: Record<string, string> };
+        sourceKeys: {
+            tables: Record<string, string>;
+            columns: Record<string, string>;
+        };
     } | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -181,7 +184,8 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         run(async (id) => {
             await api.saveDrift(id, {
                 connectionId: connectionId || null,
-                schemas: syncState?.schemas ?? serverScope.current?.schemas ?? [],
+                schemas:
+                    syncState?.schemas ?? serverScope.current?.schemas ?? [],
                 tables: syncState?.tables ?? serverScope.current?.tables ?? [],
                 sourceKeys: syncState?.sourceKeys ??
                     serverScope.current?.sourceKeys ?? {

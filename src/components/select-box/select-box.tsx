@@ -19,6 +19,7 @@ import {
 import { ScrollArea } from '@/components/scroll-area/scroll-area';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
+import { selectBoxFilter } from './select-box-filter';
 
 export interface SelectBoxOption {
     value: string;
@@ -61,23 +62,6 @@ export interface SelectBoxProps {
     onSearchChange?: (search: string) => void;
     modal?: boolean;
 }
-
-/**
- * What the list keeps for the typed text: a value or one of its keywords that
- * contains it. Plain text only: a keyword such as an enum value "a+b" or "(x"
- * is not a pattern.
- */
-export const selectBoxFilter = (
-    value: string,
-    search: string,
-    keywords?: string[]
-): number => {
-    const searchLower = search.toLowerCase();
-    if (keywords?.some((keyword) => keyword.toLowerCase().includes(searchLower))) {
-        return 1;
-    }
-    return value.toLowerCase().includes(searchLower) ? 1 : 0;
-};
 
 export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
     (
@@ -414,9 +398,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <Command
-                        filter={selectBoxFilter}
-                    >
+                    <Command filter={selectBoxFilter}>
                         <div className="relative">
                             <CommandInput
                                 value={searchTerm}

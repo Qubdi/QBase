@@ -225,7 +225,9 @@ export function exportMSSQL({
                                     const field = table.fields.find(
                                         (f) => f.id === fieldId
                                     );
-                                    return field ? `[${quoteBracket(field.name)}]` : '';
+                                    return field
+                                        ? `[${quoteBracket(field.name)}]`
+                                        : '';
                                 })
                                 .filter(Boolean);
 

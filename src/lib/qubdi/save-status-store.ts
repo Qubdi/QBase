@@ -53,7 +53,9 @@ export const hasUnsavedChanges = (): boolean =>
 // the flush on page leave cannot push those edits back to the server.
 let discard: (() => Promise<void> | void) | null = null;
 
-export const registerSaveDiscard = (fn: (() => Promise<void> | void) | null) => {
+export const registerSaveDiscard = (
+    fn: (() => Promise<void> | void) | null
+) => {
     discard = fn;
 };
 

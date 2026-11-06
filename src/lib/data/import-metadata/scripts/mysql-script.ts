@@ -8,7 +8,6 @@ export const getMySQLQuery = (
     const databaseEdition: DatabaseEdition | undefined =
         options.databaseEdition;
 
-
     const defaultExpr = `IFNULL(REPLACE(REPLACE(cols.column_default, '\\\\', ''), '"', 'ֿֿֿ\\"'), '')`;
 
     const newMySQLQuery = `WITH fk_info as (

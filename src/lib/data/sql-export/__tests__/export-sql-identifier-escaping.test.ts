@@ -42,11 +42,31 @@ const diagram = (type: DatabaseType, tables: DBTable[]): Diagram =>
 
 // a name that tries to end its quoting and run a statement of its own
 const attack = {
-    [DatabaseType.POSTGRESQL]: { name: 'x"; DROP TABLE users; --', safe: '"x""; DROP TABLE users; --"', raw: 'x"; DROP TABLE users' },
-    [DatabaseType.SQLITE]: { name: 'x"; DROP TABLE users; --', safe: '"x""; DROP TABLE users; --"', raw: 'x"; DROP TABLE users' },
-    [DatabaseType.MYSQL]: { name: 'x`; DROP TABLE users; --', safe: '`x``; DROP TABLE users; --`', raw: 'x`; DROP TABLE users' },
-    [DatabaseType.MARIADB]: { name: 'x`; DROP TABLE users; --', safe: '`x``; DROP TABLE users; --`', raw: 'x`; DROP TABLE users' },
-    [DatabaseType.SQL_SERVER]: { name: 'x]; DROP TABLE users; --', safe: '[x]]; DROP TABLE users; --]', raw: 'x]; DROP TABLE users' },
+    [DatabaseType.POSTGRESQL]: {
+        name: 'x"; DROP TABLE users; --',
+        safe: '"x""; DROP TABLE users; --"',
+        raw: 'x"; DROP TABLE users',
+    },
+    [DatabaseType.SQLITE]: {
+        name: 'x"; DROP TABLE users; --',
+        safe: '"x""; DROP TABLE users; --"',
+        raw: 'x"; DROP TABLE users',
+    },
+    [DatabaseType.MYSQL]: {
+        name: 'x`; DROP TABLE users; --',
+        safe: '`x``; DROP TABLE users; --`',
+        raw: 'x`; DROP TABLE users',
+    },
+    [DatabaseType.MARIADB]: {
+        name: 'x`; DROP TABLE users; --',
+        safe: '`x``; DROP TABLE users; --`',
+        raw: 'x`; DROP TABLE users',
+    },
+    [DatabaseType.SQL_SERVER]: {
+        name: 'x]; DROP TABLE users; --',
+        safe: '[x]]; DROP TABLE users; --]',
+        raw: 'x]; DROP TABLE users',
+    },
 } as const;
 
 describe('SQL export identifier escaping', () => {
@@ -56,7 +76,9 @@ describe('SQL export identifier escaping', () => {
                 diagram: diagram(type as DatabaseType, [
                     table({
                         name,
-                        fields: [field({ name, primaryKey: true, nullable: false })],
+                        fields: [
+                            field({ name, primaryKey: true, nullable: false }),
+                        ],
                         indexes: [
                             {
                                 id: 'i1',
@@ -79,7 +101,16 @@ describe('SQL export identifier escaping', () => {
         const hostile = '"a"; DROP TABLE users; --"';
         const sql = exportBaseSQL({
             diagram: diagram(DatabaseType.GENERIC, [
-                table({ name: hostile, fields: [field({ name: 'id', primaryKey: true, nullable: false })] }),
+                table({
+                    name: hostile,
+                    fields: [
+                        field({
+                            name: 'id',
+                            primaryKey: true,
+                            nullable: false,
+                        }),
+                    ],
+                }),
             ]),
             targetDatabaseType: DatabaseType.GENERIC,
             isDBMLFlow: true,
@@ -91,7 +122,16 @@ describe('SQL export identifier escaping', () => {
     it('still passes a well formed quoted name through unchanged', () => {
         const sql = exportBaseSQL({
             diagram: diagram(DatabaseType.GENERIC, [
-                table({ name: '"already quoted"', fields: [field({ name: 'id', primaryKey: true, nullable: false })] }),
+                table({
+                    name: '"already quoted"',
+                    fields: [
+                        field({
+                            name: 'id',
+                            primaryKey: true,
+                            nullable: false,
+                        }),
+                    ],
+                }),
             ]),
             targetDatabaseType: DatabaseType.GENERIC,
             isDBMLFlow: true,
@@ -102,13 +142,25 @@ describe('SQL export identifier escaping', () => {
     it('keeps the SQL Server schema script safe for a hostile schema name', () => {
         const sql = exportBaseSQL({
             diagram: diagram(DatabaseType.SQL_SERVER, [
-                table({ name: 't', schema: "s'];DROP TABLE users;--", fields: [field({ name: 'id', primaryKey: true, nullable: false })] }),
+                table({
+                    name: 't',
+                    schema: "s'];DROP TABLE users;--",
+                    fields: [
+                        field({
+                            name: 'id',
+                            primaryKey: true,
+                            nullable: false,
+                        }),
+                    ],
+                }),
             ]),
             targetDatabaseType: DatabaseType.SQL_SERVER,
         });
         // in the string literal only the quote is doubled
         expect(sql).toContain("WHERE name = 's''];DROP TABLE users;--'");
         // inside EXEC('...') the ] is doubled for the identifier, then the quote for the literal
-        expect(sql).toContain("EXEC('CREATE SCHEMA [s'']];DROP TABLE users;--]')");
+        expect(sql).toContain(
+            "EXEC('CREATE SCHEMA [s'']];DROP TABLE users;--]')"
+        );
     });
 });

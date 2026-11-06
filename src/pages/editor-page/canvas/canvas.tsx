@@ -844,7 +844,9 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 )
             ) {
                 toast({
-                    title: t('qubdi.workspace.editorToasts.fieldTypesIncompatibleTitle'),
+                    title: t(
+                        'qubdi.workspace.editorToasts.fieldTypesIncompatibleTitle'
+                    ),
                     variant: 'destructive',
                     description: t(
                         'qubdi.workspace.editorToasts.fieldTypesIncompatibleBody'
@@ -862,7 +864,9 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 })
             ) {
                 toast({
-                    title: t('qubdi.workspace.editorToasts.alreadyConnectedTitle'),
+                    title: t(
+                        'qubdi.workspace.editorToasts.alreadyConnectedTitle'
+                    ),
                     variant: 'destructive',
                     description: t(
                         'qubdi.workspace.editorToasts.alreadyConnectedBody'

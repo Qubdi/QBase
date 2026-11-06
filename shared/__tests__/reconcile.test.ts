@@ -937,7 +937,11 @@ describe('metadataToDesc on a big schema', () => {
                 ordinal_position: number;
                 nullable: boolean;
             }>,
-            pk_info: [] as Array<{ schema: string; table: string; column: string }>,
+            pk_info: [] as Array<{
+                schema: string;
+                table: string;
+                column: string;
+            }>,
             indexes: [] as Array<{
                 schema: string;
                 table: string;
@@ -962,17 +966,34 @@ describe('metadataToDesc on a big schema', () => {
                 });
             }
             meta.pk_info.push({ schema: 'public', table, column: 'c0' });
-            meta.indexes.push({ schema: 'public', table, name: `i${t}`, column: 'c1', unique: true, column_position: 1 });
+            meta.indexes.push({
+                schema: 'public',
+                table,
+                name: `i${t}`,
+                column: 'c1',
+                unique: true,
+                column_position: 1,
+            });
         }
         const started = performance.now();
         const desc = metadataToDesc(meta);
         const ms = performance.now() - started;
         expect(desc.tables).toHaveLength(tables);
         const first = desc.tables[0];
-        expect(first.columns.map((c) => c.name)).toEqual(['c4', 'c3', 'c2', 'c1', 'c0']);
-        expect(first.columns.find((c) => c.name === 'c0')?.primaryKey).toBe(true);
+        expect(first.columns.map((c) => c.name)).toEqual([
+            'c4',
+            'c3',
+            'c2',
+            'c1',
+            'c0',
+        ]);
+        expect(first.columns.find((c) => c.name === 'c0')?.primaryKey).toBe(
+            true
+        );
         expect(first.columns.find((c) => c.name === 'c1')?.unique).toBe(true);
-        expect(first.indexes).toEqual([{ name: 'i0', unique: true, columns: ['c1'] }]);
+        expect(first.indexes).toEqual([
+            { name: 'i0', unique: true, columns: ['c1'] },
+        ]);
         // 4000 tables x 20000 columns would be 80 million row reads the old way
         expect(ms).toBeLessThan(1000);
     });

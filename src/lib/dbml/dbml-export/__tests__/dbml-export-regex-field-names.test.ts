@@ -23,7 +23,9 @@ Table "orders" {
 
             const out = generateDBMLFromDiagram(diagram);
             expect(out.inlineDbml).toContain(`"${column}" int [ref:`);
-            expect(out.inlineDbml).toMatch(/ref:\s*>\s*"public"\."users"\."id"/);
+            expect(out.inlineDbml).toMatch(
+                /ref:\s*>\s*"public"\."users"\."id"/
+            );
         }
     );
 });

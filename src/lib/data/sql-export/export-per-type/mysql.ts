@@ -381,7 +381,9 @@ export function exportMySQL({
                                 // Get the properly quoted field names
                                 const indexFieldNames = indexFields
                                     .map((field) =>
-                                        field ? `\`${quoteBacktick(field.name)}\`` : ''
+                                        field
+                                            ? `\`${quoteBacktick(field.name)}\``
+                                            : ''
                                     )
                                     .filter(Boolean);
 
@@ -404,7 +406,9 @@ export function exportMySQL({
                                 const indexFieldsWithPrefix = hasTextOrBlob
                                     ? indexFieldNames.map((name) => {
                                           const field = indexFields.find(
-                                              (f) => `\`${quoteBacktick(f?.name)}\`` === name
+                                              (f) =>
+                                                  `\`${quoteBacktick(f?.name)}\`` ===
+                                                  name
                                           );
                                           if (!field) return name;
 

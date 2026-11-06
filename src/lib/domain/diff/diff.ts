@@ -69,4 +69,3 @@ export type DiffObject<
     | RelationshipDiff<TRelationship>['object']
     | AreaDiff<TArea>['object']
     | NoteDiff<TNote>['object'];
-
