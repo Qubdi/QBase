@@ -86,8 +86,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         return () => clearTimeout(timer);
     }, [copied]);
 
+    // one change at a time: a double click must not make two links
+    const working = useRef(false);
+    const [busy, setBusy] = useState(false);
     const run = async (fn: (id: string) => Promise<unknown>) => {
-        if (!remoteId) return false;
+        if (!remoteId || working.current) return false;
+        working.current = true;
+        setBusy(true);
         setError(null);
         try {
             await fn(remoteId);
@@ -96,6 +101,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         } catch (e) {
             setError(errorMessage(e));
             return false;
+        } finally {
+            working.current = false;
+            setBusy(false);
         }
     };
 
@@ -276,7 +284,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 />
 
                 <Button
-                    disabled={!remoteId}
+                    disabled={!remoteId || busy}
                     onClick={() =>
                         void run(async (id) => {
                             const r = await api.createShareLink(id, {});

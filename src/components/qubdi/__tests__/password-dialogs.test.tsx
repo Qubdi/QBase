@@ -138,6 +138,29 @@ describe('password dialogs', () => {
             );
         });
 
+        it('sends once however often it is submitted while the request is on its way', async () => {
+            let finish!: (v: unknown) => void;
+            changePassword.mockReturnValue(
+                new Promise((resolve) => (finish = resolve))
+            );
+            render(<ChangePasswordDialog open onOpenChange={vi.fn()} />);
+            fireEvent.change(screen.getByPlaceholderText('Current password'), {
+                target: { value: 'old-password' },
+            });
+            fireEvent.change(screen.getByLabelText('New password'), {
+                target: { value: 'Brand-New-Pw-7?' },
+            });
+            const form = button('Change password').closest('form')!;
+            fireEvent.submit(form);
+            fireEvent.submit(form);
+            await waitFor(() => expect(button('Change password').disabled).toBe(true));
+            fireEvent.submit(form);
+            expect(changePassword).toHaveBeenCalledTimes(1);
+            finish({ ok: true });
+            await waitFor(() => expect(screen.getByText(/changed|updated/i)).toBeTruthy());
+            expect(changePassword).toHaveBeenCalledTimes(1);
+        });
+
         it('uses the signed-in email for the email rule', () => {
             render(<ChangePasswordDialog open onOpenChange={vi.fn()} />);
             fireEvent.change(screen.getByLabelText('New password'), {

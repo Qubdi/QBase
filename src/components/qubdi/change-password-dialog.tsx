@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Dialog,
@@ -43,6 +43,8 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     const [factor, setFactor] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [done, setDone] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const sending = useRef(false);
     const { user, logout } = useQubdi();
     const minLength = usePasswordMinLength(open);
     const weak =
@@ -50,6 +52,10 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
+        // a second submit while the first is on its way would reuse a one-time code
+        if (sending.current) return;
+        sending.current = true;
+        setBusy(true);
         setError(null);
         try {
             if (user?.mfaEnabled) {
@@ -64,6 +70,9 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             onChanged?.();
         } catch (err) {
             setError(errorMessage(err));
+        } finally {
+            sending.current = false;
+            setBusy(false);
         }
     };
 
@@ -139,7 +148,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                             {t('qubdi.account.changePassword.done')}
                         </p>
                     ) : null}
-                    <Button type="submit" disabled={weak}>
+                    <Button type="submit" disabled={weak || busy}>
                         {t('qubdi.account.changePassword.submit')}
                     </Button>
                     {forced ? (

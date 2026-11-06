@@ -1,12 +1,16 @@
 import React from 'react';
-import { act, render } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShareDialog } from '../share-dialog';
 
 const listShareLinks = vi.fn();
+const createShareLink = vi.fn();
 vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
-    api: { listShareLinks: (id: unknown) => listShareLinks(id) },
+    api: {
+        listShareLinks: (id: unknown) => listShareLinks(id),
+        createShareLink: (...a: unknown[]) => createShareLink(...a),
+    },
 }));
 // the list has its own tests
 vi.mock('../share-link-list', () => ({ ShareLinkList: () => null }));
@@ -84,5 +88,37 @@ describe('ShareDialog loading', () => {
         );
         await settle();
         expect(listShareLinks).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('ShareDialog create link', () => {
+    beforeEach(() => {
+        listShareLinks.mockReset().mockResolvedValue([]);
+        createShareLink.mockReset();
+    });
+
+    it('makes one link however often Create link is clicked while it is working', async () => {
+        let finish!: (v: unknown) => void;
+        createShareLink.mockReturnValue(
+            new Promise((resolve) => (finish = resolve))
+        );
+        render(
+            <ShareDialog
+                open
+                onOpenChange={() => undefined}
+                ensureRemoteId={async () => 'r1'}
+            />
+        );
+        await settle();
+        const create = screen.getByRole('button', { name: 'Create link' });
+        fireEvent.click(create);
+        fireEvent.click(create);
+        fireEvent.click(create);
+        expect(createShareLink).toHaveBeenCalledTimes(1);
+        expect((create as HTMLButtonElement).disabled).toBe(true);
+        await act(async () => finish({ id: 'l1', token: 't1' }));
+        expect((create as HTMLButtonElement).disabled).toBe(false);
+        fireEvent.click(create);
+        expect(createShareLink).toHaveBeenCalledTimes(2);
     });
 });
