@@ -3,8 +3,10 @@
 # rewrite/clean-author-brief-phase*.md): this branch only, shallow, no `main`, no ChartDB, no remote,
 # and with the files that name ChartDB's layout or old code removed.
 #
-# Usage: tools/make-clean-checkout.sh <phase: 4|5> <destination-dir>
+# Usage: tools/make-clean-checkout.sh <phase: 4|5|6> <destination-dir>
 #   phase 4: domain model and storage (brief: rewrite/clean-author-brief-phase4.md)
+#   phase 6: the canvas (brief: rewrite/clean-author-brief-phase6.md); keeps core, persistence,
+#            store, platform, i18n and globals.css from earlier phases
 #   phase 5: dialects and formats (brief: rewrite/clean-author-brief-phase5.md); needs the
 #            accepted src/core from phase 4 to be committed on this branch already
 #
@@ -14,8 +16,8 @@
 set -euo pipefail
 
 phase="${1:-}"; dest="${2:-}"
-case "$phase" in 4|5) ;; *) echo "usage: $0 <phase: 4|5> <destination-dir>" >&2; exit 2;; esac
-[ -n "$dest" ] || { echo "usage: $0 <phase: 4|5> <destination-dir>" >&2; exit 2; }
+case "$phase" in 4|5|6) ;; *) echo "usage: $0 <phase: 4|5|6> <destination-dir>" >&2; exit 2;; esac
+[ -n "$dest" ] || { echo "usage: $0 <phase: 4|5|6> <destination-dir>" >&2; exit 2; }
 src="$(git rev-parse --show-toplevel)"
 branch="$(git -C "$src" rev-parse --abbrev-ref HEAD)"
 [ "$branch" = "rewrite/clean-room" ] || { echo "run this on rewrite/clean-room (on: $branch)" >&2; exit 1; }
@@ -31,7 +33,13 @@ git gc --quiet --prune=now
 
 # Everything under src/ except the test setup and the accepted clean modules: the remaining
 # files use the old naming.
-find src -mindepth 1 -maxdepth 1 ! -name test ! -name core ! -name persistence -exec rm -rf {} +
+keep=( -name test -o -name core -o -name persistence )
+if [ "$phase" = 6 ]; then keep+=( -o -name store -o -name platform -o -name i18n -o -name globals.css -o -name lib ); fi
+find src -mindepth 1 -maxdepth 1 ! \( "${keep[@]}" \) -exec rm -rf {} +
+if [ "$phase" = 6 ]; then
+  find src/lib -mindepth 1 -maxdepth 1 ! -name utils ! -name colors.ts -exec rm -rf {} +
+  rm -rf src/platform/router src/platform/config
+fi
 if [ "$phase" = 5 ]; then
   [ -d src/core/model ] || { echo "phase 5 needs the accepted src/core on this branch" >&2; exit 1; }
 fi
@@ -43,9 +51,12 @@ rm -f rewrite/spec/app-shell.md rewrite/spec/manual-test-script.md
 if [ "$phase" = 4 ]; then
   rm -f rewrite/spec/import-export.md
   drop='SHL|QBS|IMP|EXP'
-else
+elif [ "$phase" = 5 ]; then
   rm -f rewrite/spec/editor.md
   drop='SHL|QBS|EDT'
+else
+  rm -f rewrite/spec/import-export.md
+  drop='SHL|QBS|IMP|EXP|DAT'
 fi
 grep -v -E "^\\| ($drop)-" rewrite/parity-checklist.md > rewrite/parity-checklist.tmp
 mv rewrite/parity-checklist.tmp rewrite/parity-checklist.md
