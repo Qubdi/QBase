@@ -57,6 +57,7 @@ export const workspace = {
         choosePlaceholder: 'Choose a project…',
         move: 'Move into project',
         askAdmin: 'Ask an admin to add you to a project.',
+        retry: 'Try again',
     },
     diagramAccess: {
         backToProjects: 'Back to projects',

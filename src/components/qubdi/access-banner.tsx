@@ -92,6 +92,12 @@ export const AccessBanner: React.FC = () => {
                     />
                 </>
             ) : null}
+            {access.status === 'error' ? (
+                // the server could not be asked (the lock, the diagram list): ask again
+                <Button size="sm" onClick={refresh}>
+                    {t('qubdi.workspace.accessBanner.retry')}
+                </Button>
+            ) : null}
             {unbound && writable.length > 0 ? (
                 <span className="flex items-center gap-2">
                     <OptionSelect

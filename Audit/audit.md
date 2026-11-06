@@ -10,9 +10,9 @@
 | Repository | 7 | 0 | 1 | 59 | 1 |
 | Server | 10 | 0 | 0 | 42 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
-| Client | 9 | 0 | 1 | 61 | 0 |
+| Client | 8 | 0 | 1 | 62 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 47 | 0 | 4 | 227 | 4 |
+| **Total** | 46 | 0 | 4 | 228 | 4 |
 
 ## Act first
 
@@ -93,7 +93,6 @@
 | CLI-053 | Med | Editor id in sessionStorage; a duplicated tab shares the edit lock | `src/lib/qubdi/editor-id.ts:13` | Keep the editor id in memory only |
 | CLI-054 | Med | Type picker compiles enum values as regex; `+` or `(` throws | `src/components/select-box/select-box.tsx:411` | Drop the `new RegExp(keyword)` branch |
 | CLI-056 | Low | Get latest makes a new local id; sync state and drift scope lost | `src/lib/qubdi/get-latest.ts:20` | Move sync state to the new local id |
-| CLI-067 | Low | Lock check unreachable on first ask never retried; editor stays read-only | `src/components/qubdi/use-edit-lock.ts:47` | Offer a retry in the access banner |
 | CLI-070 | Low | Hard-coded English toasts and labels in fork editor code | `src/pages/editor-page/canvas/canvas.tsx:847` · `src/pages/editor-page/top-navbar/menu/menu.tsx:90` | Move strings into `en` and call `t()` |
 
 ### Dead code
@@ -108,6 +107,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| CLI-067 | Client | Lock check unreachable on first ask never retried; editor stays read-only |
 | CLI-048 | Client | Saved webhook cannot be cleared as the hint says; field loads empty |
 | CLI-063 | Client | Lint settings fetched once; failed save swallowed silently |
 | CLI-064 | Client | Change-password and Create-link lack busy guards; double click submits twice |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 34 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048 |
+| 25 | 2026-11-06 | 35 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067 |

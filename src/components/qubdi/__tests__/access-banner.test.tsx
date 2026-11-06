@@ -30,14 +30,18 @@ vi.mock('../get-latest-control', () => ({
 }));
 
 // the banner looks up the project list when it mounts: let that settle
-const show = (access: AccessState, email = 'me@corp.io') =>
+const show = (
+    access: AccessState,
+    email = 'me@corp.io',
+    refresh: () => void = () => undefined
+) =>
     act(async () => {
         render(
             <qubdiContext.Provider
                 value={{ user: { email } } as unknown as QubdiContext}
             >
                 <DiagramAccessContext.Provider
-                    value={{ access, refresh: () => undefined }}
+                    value={{ access, refresh }}
                 >
                     <AccessBanner />
                 </DiagramAccessContext.Provider>
@@ -86,6 +90,20 @@ describe('AccessBanner when someone else is editing', () => {
     it('stays away from an editor who holds the lock', async () => {
         await show({ status: 'editor', projectId: 'p', remoteId: 'r' });
         expect(screen.queryByRole('status')).toBeNull();
+    });
+});
+
+describe('AccessBanner when the server could not be reached', () => {
+    it('offers Try again, which asks the server again', async () => {
+        const refresh = vi.fn();
+        await show({ status: 'error' }, 'me@corp.io', refresh);
+        fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+        expect(refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('has no Try again for the other reasons', async () => {
+        await show({ status: 'viewer', projectId: 'p', remoteId: 'r' });
+        expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
     });
 });
 
