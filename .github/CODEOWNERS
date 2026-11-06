@@ -12,3 +12,7 @@
 /default.conf.template anri.tvalabeishvili1@gmail.com
 /entrypoint.sh anri.tvalabeishvili1@gmail.com
 /SECURITY.md anri.tvalabeishvili1@gmail.com
+/db/ anri.tvalabeishvili1@gmail.com
+/.gitleaks.toml anri.tvalabeishvili1@gmail.com
+/release-please-config.json anri.tvalabeishvili1@gmail.com
+/.release-please-manifest.json anri.tvalabeishvili1@gmail.com
