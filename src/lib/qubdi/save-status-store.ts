@@ -51,13 +51,15 @@ export const hasUnsavedChanges = (): boolean =>
 
 // The running autosaver lets "Get latest" throw away what it has not sent, so
 // the flush on page leave cannot push those edits back to the server.
-let discard: (() => void) | null = null;
+let discard: (() => Promise<void> | void) | null = null;
 
-export const registerSaveDiscard = (fn: (() => void) | null) => {
+export const registerSaveDiscard = (fn: (() => Promise<void> | void) | null) => {
     discard = fn;
 };
 
-export const discardUnsavedChanges = () => discard?.();
+/** Drops the unsent edits; settles once a save already on its way has. */
+export const discardUnsavedChanges = (): Promise<void> =>
+    Promise.resolve(discard?.()).catch(() => undefined);
 
 // The edit lock may only be let go once the final save has settled: released
 // first, the server would hand the lock to someone else (or give it back to

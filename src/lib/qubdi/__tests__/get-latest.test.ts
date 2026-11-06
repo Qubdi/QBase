@@ -41,6 +41,23 @@ describe('getLatestFromServer', () => {
         expect(order).toEqual(['delete', 'before', 'reload']);
     });
 
+    it('waits for a save that is already on its way before it reloads', async () => {
+        const order: string[] = [];
+        assign.mockImplementation(() => order.push('reload'));
+        let settle!: () => void;
+        const running = new Promise<void>((r) => (settle = r));
+        const done = getLatestFromServer(
+            args({
+                beforeReload: () => running.then(() => void order.push('saved')),
+            })
+        );
+        await new Promise((r) => setTimeout(r, 10));
+        expect(order).toEqual([]);
+        settle();
+        await done;
+        expect(order).toEqual(['saved', 'reload']);
+    });
+
     it('keeps the page and the saves when the copy cannot be deleted', async () => {
         const beforeReload = vi.fn();
         await expect(

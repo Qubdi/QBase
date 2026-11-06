@@ -275,6 +275,31 @@ describe('createAutosaver', () => {
             expect(saved).toEqual([]);
         });
 
+        it('resolves only once a save already on its way has settled', async () => {
+            let finish!: () => void;
+            const { saver, saved } = setup(
+                () => new Promise<void>((r) => (finish = r))
+            );
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(saved).toEqual([2]);
+            let settled = false;
+            const done = saver.discard().then(() => (settled = true));
+            await vi.advanceTimersByTimeAsync(0);
+            expect(settled).toBe(false);
+            finish();
+            await done;
+            expect(settled).toBe(true);
+        });
+
+        it('resolves at once when nothing is on its way', async () => {
+            const { saver } = setup();
+            saver.update({ n: 1 });
+            saver.update({ n: 2 });
+            await expect(saver.discard()).resolves.toBeUndefined();
+        });
+
         it('ignores edits made afterwards', async () => {
             const { saver, saved } = setup();
             saver.update({ n: 1 });

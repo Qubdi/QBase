@@ -7,8 +7,8 @@ export interface GetLatestArgs {
     remoteId: string;
     projectSlug: string;
     deleteLocal: (localId: string) => Promise<void>;
-    /** runs once the local copy is gone, right before the page reloads */
-    beforeReload?: () => void;
+    /** runs once the local copy is gone, right before the page reloads; the reload waits for it */
+    beforeReload?: () => Promise<void> | void;
 }
 
 /**
@@ -19,6 +19,6 @@ export interface GetLatestArgs {
 export async function getLatestFromServer(args: GetLatestArgs): Promise<void> {
     await args.deleteLocal(args.localId);
     clearRemoteId(args.localId);
-    args.beforeReload?.();
+    await args.beforeReload?.();
     window.location.assign(projectDiagramPath(args.projectSlug, args.remoteId));
 }

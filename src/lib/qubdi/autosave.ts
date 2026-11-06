@@ -22,8 +22,12 @@ export interface Autosaver<T> {
     markUnsaved: () => void;
     /** Send any unsent change now (also retries after a failure). */
     flush: () => Promise<void>;
-    /** Forget every unsent change and stop saving (the user threw them away). */
-    discard: () => void;
+    /**
+     * Forget every unsent change and stop saving (the user threw them away).
+     * Resolves once a save already on its way has settled, so the caller can
+     * be sure nothing of the discarded work is still travelling; never rejects.
+     */
+    discard: () => Promise<void>;
     dispose: () => void;
 }
 
@@ -136,6 +140,7 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
             pending = false;
             clear();
             stopListening();
+            return running ?? Promise.resolve();
         },
         dispose() {
             disposed = true;
