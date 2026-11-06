@@ -1,0 +1,198 @@
+import type { DexieOptions } from 'dexie';
+import type { Design } from '../core/model/design';
+import type { VisibilityFilter } from '../core/model/visibility-filter';
+import { parse } from '../core/wire/parse';
+import { serialise } from '../core/wire/serialise';
+import { QBaseDatabase } from './database';
+import { LEGACY_CHILD_STORES } from './legacy-schema';
+import { mergePreviousDatabase } from './merge-previous';
+import { migrateLegacyLayout } from './migrate-legacy';
+import type { MigrationReport } from './migrate-legacy';
+import { summaryOf } from './storage-adapter';
+import type {
+    DiagramSummary,
+    LoadedDesign,
+    LocalSettings,
+    StorageAdapter,
+} from './storage-adapter';
+
+const CONFIG_ID = 1;
+
+/** The adapter over the `QBase` IndexedDB database (Dexie). */
+export class DexieStorageAdapter implements StorageAdapter {
+    private readonly listeners = new Set<() => void>();
+    private channel: BroadcastChannel | undefined;
+
+    constructor(readonly db: QBaseDatabase) {}
+
+    private get channelName(): string {
+        return `qbase-storage:${this.db.name}`;
+    }
+
+    /** tell this tab's listeners and every other tab that the list changed */
+    private announce(): void {
+        for (const listener of [...this.listeners]) listener();
+        try {
+            const channel = new BroadcastChannel(this.channelName);
+            channel.postMessage('changed');
+            channel.close();
+        } catch {
+            // no cross-tab channel in this browser: only this tab is told
+        }
+    }
+
+    /** closes the database and the cross-tab channel */
+    close(): void {
+        this.channel?.close();
+        this.channel = undefined;
+        this.db.close();
+    }
+
+    async list(): Promise<DiagramSummary[]> {
+        const rows = await this.db.design_index
+            .orderBy('updatedAt')
+            .reverse()
+            .toArray();
+        return rows.map((row) => ({ ...row }) as DiagramSummary);
+    }
+
+    async load(id: string): Promise<LoadedDesign | undefined> {
+        const record = await this.db.designs.get(id);
+        if (!record) return undefined;
+        return parse(record.doc);
+    }
+
+    async save(design: Design): Promise<void> {
+        await this.db.transaction(
+            'rw',
+            [this.db.designs, this.db.design_index],
+            async () => {
+                await this.db.designs.put({
+                    id: design.id,
+                    doc: serialise(design),
+                });
+                await this.db.design_index.put(summaryOf(design));
+            }
+        );
+        this.announce();
+    }
+
+    async remove(id: string): Promise<void> {
+        const db = this.db;
+        await db.transaction(
+            'rw',
+            [
+                db.designs,
+                db.design_index,
+                db.diagram_filters,
+                db.config,
+                db.diagrams,
+                ...LEGACY_CHILD_STORES.map((name) => db.table(name)),
+            ],
+            async () => {
+                await db.designs.delete(id);
+                await db.design_index.delete(id);
+                await db.diagram_filters.delete(id);
+                // rows the old layout still holds for it must not come back
+                await db.diagrams.delete(id);
+                for (const name of LEGACY_CHILD_STORES)
+                    await db.table(name).where('diagramId').equals(id).delete();
+                const config = await db.config.get(CONFIG_ID);
+                if (config && config.defaultDiagramId === id)
+                    await db.config.put({ ...config, defaultDiagramId: '' });
+            }
+        );
+        this.announce();
+    }
+
+    async readSettings(): Promise<LocalSettings> {
+        const row = await this.db.config.get(CONFIG_ID);
+        return {
+            defaultDiagramId: row?.defaultDiagramId ?? '',
+            ...(row?.exportActions ? { exportActions: row.exportActions } : {}),
+        };
+    }
+
+    async writeSettings(patch: Partial<LocalSettings>): Promise<void> {
+        const current = await this.db.config.get(CONFIG_ID);
+        await this.db.config.put({
+            ...(current ?? { defaultDiagramId: '' }),
+            ...patch,
+            id: CONFIG_ID,
+        });
+    }
+
+    async readFilter(diagramId: string): Promise<VisibilityFilter | undefined> {
+        const row = await this.db.diagram_filters.get(diagramId);
+        if (!row) return undefined;
+        const filter: VisibilityFilter = {};
+        if (Array.isArray(row.schemaIds)) filter.schemaIds = row.schemaIds;
+        if (Array.isArray(row.tableIds)) filter.tableIds = row.tableIds;
+        return filter;
+    }
+
+    async writeFilter(
+        diagramId: string,
+        filter: VisibilityFilter
+    ): Promise<void> {
+        await this.db.diagram_filters.put({
+            diagramId,
+            ...(filter.schemaIds ? { schemaIds: filter.schemaIds } : {}),
+            ...(filter.tableIds ? { tableIds: filter.tableIds } : {}),
+        });
+    }
+
+    onChange(listener: () => void): () => void {
+        this.listeners.add(listener);
+        if (!this.channel) {
+            try {
+                this.channel = new BroadcastChannel(this.channelName);
+                this.channel.onmessage = () => {
+                    for (const each of [...this.listeners]) each();
+                };
+            } catch {
+                this.channel = undefined;
+            }
+        }
+        return () => {
+            this.listeners.delete(listener);
+            if (this.listeners.size === 0) {
+                this.channel?.close();
+                this.channel = undefined;
+            }
+        };
+    }
+}
+
+export interface OpenResult {
+    adapter: DexieStorageAdapter;
+    /** what the one-time move of the old layout did */
+    migration: MigrationReport;
+}
+
+/**
+ * Opens `QBase` and brings it up to date, in the order the spec fixes: merge
+ * the earlier `QubdiDB` first, then move the old layout to the new one, then
+ * make sure the config row exists (data-format 2.4).
+ */
+export async function openDexieStorage(
+    options: DexieOptions & {
+        name?: string;
+        warn?: (message: string, error: unknown) => void;
+        now?: number;
+    } = {}
+): Promise<OpenResult> {
+    const { name, warn, now, ...dexieOptions } = options;
+    const db = new QBaseDatabase(name, dexieOptions);
+    await db.open();
+    await mergePreviousDatabase(db, dexieOptions, warn);
+    const migration = await migrateLegacyLayout(db, now);
+    if ((await db.config.get(CONFIG_ID)) === undefined) {
+        const first = await db.design_index.orderBy('id').first();
+        await db.config.put({
+            id: CONFIG_ID,
+            defaultDiagramId: first?.id ?? '',
+        });
+    }
+    return { adapter: new DexieStorageAdapter(db), migration };
+}
