@@ -1,4 +1,4 @@
-import { loadFromDatabaseMetadata } from '@/lib/data/import-metadata/import';
+import { loadFromDatabaseMetadata } from '@/qbase/metadata-adapters';
 import {
     DatabaseMetadataSchema,
     type DatabaseMetadata,

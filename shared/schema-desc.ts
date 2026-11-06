@@ -100,7 +100,11 @@ export function canonicalType(raw: string): string {
 // --- conversion from an introspection (QBase's metadata format) -----------
 
 export interface MetadataLike {
-    tables: Array<{ schema: string; table: string; comment?: string }>;
+    tables: Array<{
+        schema: string;
+        table: string;
+        comment?: string | null;
+    }>;
     views?: Array<{ schema: string; view_name: string }>;
     columns: Array<{
         schema: string;
@@ -130,7 +134,7 @@ export interface MetadataLike {
         table: string;
         column: string;
         foreign_key_name: string;
-        reference_schema?: string;
+        reference_schema?: string | null;
         reference_table: string;
         reference_column: string;
     }>;

@@ -1,5 +1,7 @@
-import { loadFromDatabaseMetadata } from '@/lib/data/import-metadata/import';
-import { createRelationshipsFromMetadata } from '@/lib/data/import-metadata/import/relationships';
+import {
+    createRelationshipsFromMetadata,
+    loadFromDatabaseMetadata,
+} from '@/qbase/metadata-adapters';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import {
     type DBField,

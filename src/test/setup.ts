@@ -3,8 +3,10 @@ import { expect, afterEach } from 'vitest';
 import { cleanup, configure } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { i18nReady } from '../i18n/i18n';
+import { provideDialectTypes } from '../qbase/dialect-types';
 
 expect.extend(matchers);
+provideDialectTypes();
 
 // `findBy...` and `waitFor` give up after one second by default. A full run has a
 // worker per core, and a page that loads its data in two steps (the name, then

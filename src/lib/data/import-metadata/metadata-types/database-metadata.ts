@@ -106,3 +106,6 @@ export const DatabaseMetadata = z.object({
 });
 
 export type DatabaseMetadata = z.infer<typeof DatabaseMetadata>;
+
+/** The same schema under the name the import and re-sync code uses. */
+export const DatabaseMetadataSchema = DatabaseMetadata;
