@@ -42,3 +42,10 @@ Needs a change in `src/dialects` (not done here):
 - Note wording follows the spec (`not an integer column: the column is not numbered`, ...).
 - Imported PostgreSQL/SQL Server diagrams mark a column `unique` when a single-column unique index
   covers it, the primary key index included (the old importer did; re-sync compares it).
+
+
+## Update after the converter fixes
+
+The six `it.skip` tests are enabled again; three needed their expected wording updated to the new
+notes (time zone is lost, `N'` prefix on SQL Server check strings, long-name notes). All of
+`src/lib/data/sql-export` now runs with nothing skipped.

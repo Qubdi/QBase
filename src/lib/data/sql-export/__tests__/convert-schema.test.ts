@@ -72,16 +72,14 @@ describe('converting a diagram between databases', () => {
             expect(sql).toContain('t.amount: money converted to a fixed-point');
         });
 
-        // Skipped in Phase 5b: the new converter in src/dialects does not do this
-        // yet. See rewrite/decisions-phase5b.md.
-        it.skip('flags a time zone type that MySQL can only approximate', () => {
+        it('flags a time zone type that MySQL can only approximate', () => {
             const t = table('t', [
                 pk('id', 'int'),
                 field('at', 'datetimeoffset'),
             ]);
             const sql = convert(diagram(SQL_SERVER, [t]), MYSQL);
             expect(sql).toContain('`at` DATETIME, -- Was: datetimeoffset');
-            expect(sql).toContain('t.at: MySQL DATETIME has no time zone');
+            expect(sql).toContain('t.at: time zone is lost');
         });
 
         it('drops the dbo schema, which MySQL does not have', () => {
@@ -131,9 +129,7 @@ describe('converting a diagram between databases', () => {
             expect(sql).toContain('SQLite has no schemas');
         });
 
-        // Skipped in Phase 5b: the new converter in src/dialects does not do this
-        // yet. See rewrite/decisions-phase5b.md.
-        it.skip('says once that decimals are not exact there', () => {
+        it('says once that decimals are not exact there', () => {
             const t = table('t', [
                 field('a', 'decimal', { precision: 5, scale: 2 }),
                 field('b', 'decimal', { precision: 9, scale: 4 }),
@@ -269,9 +265,7 @@ describe('converting a diagram between databases', () => {
             );
         });
 
-        // Skipped in Phase 5b: the new converter in src/dialects does not do this
-        // yet. See rewrite/decisions-phase5b.md.
-        it.skip('are left alone for PostgreSQL and SQLite', () => {
+        it('are left alone for PostgreSQL and SQLite', () => {
             const mysqlSource = diagram(MYSQL, [keyed({ str: 'text' })]);
             expect(convert(mysqlSource, POSTGRESQL)).toContain(
                 '"code" text NOT NULL'
@@ -305,13 +299,11 @@ describe('converting a diagram between databases', () => {
             expect(sqlite).toContain('"s" TEXT');
             expect(sqlite).toContain(`CHECK ("s" IN ('new', 'paid'))`);
             expect(convert(d, SQL_SERVER)).toContain(
-                `CHECK ([s] IN ('new', 'paid'))`
+                `CHECK ([s] IN (N'new', N'paid'))`
             );
         });
 
-        // Skipped in Phase 5b: the new converter in src/dialects does not do this
-        // yet. See rewrite/decisions-phase5b.md.
-        it.skip('stores an array as JSON text where there is no array type', () => {
+        it('stores an array as JSON text where there is no array type', () => {
             const d = pg(
                 field('tags', 'text', {
                     isArray: true,
@@ -491,20 +483,18 @@ describe('converting a diagram between databases', () => {
             expect(sql).not.toContain('public');
         });
 
-        // Skipped in Phase 5b: the new converter in src/dialects does not do this
-        // yet. See rewrite/decisions-phase5b.md.
-        it.skip('says when a table or column name is longer than the target keeps', () => {
+        it('says when a table or column name is longer than the target keeps', () => {
             const long = 'x'.repeat(70);
             const t = table(long, [pk('id', 'int'), field(long, 'int')]);
             const mysql = convert(diagram(SQL_SERVER, [t]), MYSQL);
             expect(mysql).toContain(
-                `${long}: the name is 70 characters, longer than the 64 MySQL allows`
+                `${long}: table name is longer than 64 characters, the limit of MySQL`
             );
             expect(mysql).toContain(
-                `${long}.${long}: the name is 70 characters`
+                `${long}: column name is longer than 64 characters, the limit of MySQL`
             );
             expect(convert(diagram(MYSQL, [t]), POSTGRESQL)).toContain(
-                'PostgreSQL shortens it to 63'
+                'table name is longer than 63 characters, the limit of PostgreSQL'
             );
             // SQL Server and SQLite take it
             expect(convert(diagram(MYSQL, [t]), SQL_SERVER)).not.toContain(
@@ -540,9 +530,7 @@ describe('converting a diagram between databases', () => {
             ).toHaveLength(2);
         });
 
-        // Skipped in Phase 5b: the new converter in src/dialects does not do this
-        // yet. See rewrite/decisions-phase5b.md.
-        it.skip('adds the key MySQL wants on a numbered column that is not the first of the key', () => {
+        it('adds the key MySQL wants on a numbered column that is not the first of the key', () => {
             const t = table('t', [
                 pk('a', 'int'),
                 pk('b', 'int', { increment: true }),
