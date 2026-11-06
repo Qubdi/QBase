@@ -1,23 +1,21 @@
 name: Release
 
+# Opens and updates the release pull request on every push to main.
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
-# release-please acts with the OSS_RELEASE token below, not GITHUB_TOKEN
+# release-please authenticates with the OSS_RELEASE token, not GITHUB_TOKEN
 permissions:
   contents: read
 
 jobs:
-  release:
+  release-please:
     runs-on: ubuntu-latest
     steps:
-      - name: release-please
-        id: release
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
-          # one release bumps the editor and server/ together (see the config)
+          # a release bumps the editor and server/ together (see the config)
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.OSS_RELEASE }}

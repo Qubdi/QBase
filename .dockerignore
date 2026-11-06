@@ -1,53 +1,43 @@
-# Ignore node_modules and build directories, at any depth (including server/)
+# Dependencies and build output, at any depth (server/ has its own)
 **/node_modules
 **/dist
 **/build
+coverage
 
-# Ignore logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Ignore local environment files at any depth (server/.env holds secrets)
+# Environment files at any depth: server/.env holds secrets
 **/.env
 **/.env.*
 
-# What the image never reads: the audit, CI files and hooks
+# Not read by the image: audit notes, CI, git hooks, version control
 Audit/
 .github/
 .husky/
-
-# Ignore Dockerfile and Docker Compose files
-Dockerfile
-docker-compose.yml
-
-# Ignore git files
 .git
 .gitignore
 
-# Ignore IDE and editor settings
+# The image build does not need the build files themselves
+Dockerfile
+docker-compose.yml
+
+# Editors
 .vscode/
 .idea/
 
-# Ignore tests and documentation
+# Tests and documents
 **/__tests__/
 **/test/
 **/tests/
 **/spec/
 *.md
 
-# Ignore temporary files
-*.swp
-*.swo
-*.DS_Store
+# Scratch files
 *.log
 *.lock
 *.tmp
+*.swp
+*.swo
+*.DS_Store
 
-# Ignore coverage output
-coverage
-
-# Database dumps made by the upgrade guide: they hold roles and password hashes
+# Dumps written by the upgrade guide: they contain roles and password hashes
 qbase-backup*.sql
 qbase-*.dump

@@ -1,28 +1,25 @@
+import { fileURLToPath } from 'node:url';
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import path from 'path';
 
 export default defineConfig({
     plugins: [react()],
+    resolve: {
+        alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+    },
     test: {
-        // The first test in a file pays for importing its modules (the DBML
-        // parser and the admin pages are large), and a full run has a worker
-        // per core, so 5 s is not enough on a busy machine. The server tests
-        // already allow 20 s.
-        testTimeout: 20_000,
-        globals: true,
-        // the server has its own vitest run; keep the defaults (dist, .git, ...)
-        exclude: [...configDefaults.exclude, 'server/**'],
         environment: 'happy-dom',
-        setupFiles: './src/test/setup.ts',
+        globals: true,
+        setupFiles: ['./src/test/setup.ts'],
+        // The first test of a file pays for importing its modules (the DBML
+        // parser, the admin pages), and a full run uses one worker per core.
+        // 5 s is too short on a busy machine; the server tests allow 20 s too.
+        testTimeout: 20_000,
+        // server/ has its own vitest run
+        exclude: [...configDefaults.exclude, 'server/**'],
         coverage: {
             reporter: ['text', 'json', 'html'],
             exclude: ['node_modules/', 'src/test/setup.ts'],
-        },
-    },
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src'),
         },
     },
 });

@@ -182,9 +182,12 @@ Done when:
 - [x] `.github/workflows/similarity.yaml` checks every file on this branch. (Written; not yet
       run on GitHub.)
 - [ ] The workflow has passed once on GitHub.
-- [ ] The root files in section 4 are rewritten and listed in `rewrite/rewritten.txt`.
-- [ ] Fixture strategy decided (section 8, decision 4).
-- [ ] Interim compliance decided (section 2).
+- [x] The root files in section 4 are rewritten and listed in `rewrite/rewritten.txt`
+      (2026-11-07; local check passes, 0 files over the limits).
+- [x] Fixture strategy decided (section 8, decision 4): drop all ChartDB templates, examples
+      and fixtures; write our own (2026-11-07).
+- [x] Interim compliance decided (section 2): take the image down; the owner removes it
+      from Docker Hub (2026-11-07). Confirm it is done before Phase 1 ends.
 
 ### Phase 1: Behaviour spec
 
@@ -301,10 +304,10 @@ Done when:
 
 | # | Decision | Recommendation | Status |
 | --- | --- | --- | --- |
-| 1 | Interim compliance (section 2) | take the image down until release | open |
+| 1 | Interim compliance (section 2) | take the image down until release | decided 2026-11-07: take down (owner does it) |
 | 2 | Keep saved diagrams compatible | yes: you have users and a server | open |
 | 3 | Which features to drop | decide in Phase 1, fewer is faster | open |
-| 4 | Templates and examples | drop all ChartDB ones (50 data files, 100 PNGs); add own later | open |
+| 4 | Templates and examples | drop all ChartDB ones (50 data files, 100 PNGs); add own later | decided 2026-11-07: drop all |
 | 5 | Final licence | BSL or PolyForm Shield blocks SaaS use but allows reading and self-hosting | open |
 | 6 | Who writes the risky modules | a clean author, from the spec | open |
 

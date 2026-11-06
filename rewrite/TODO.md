@@ -10,15 +10,14 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
 
 ## Now (decisions and open Phase 0 items)
 
-- [ ] **Interim compliance (plan section 2).** The Docker Hub image `qubdi/qbase` is public
+- [x] **Interim compliance (plan section 2)** decided 2026-11-07: take it down; owner removes the image.
+      (Original item:) The Docker Hub image `qubdi/qbase` is public
       and ships the ChartDB-derived editor. Take it down until release, or comply with the
       AGPL now. Also confirm the GitHub repository is private.
 - [ ] **Run the similarity workflow once on GitHub** and confirm it passes.
-- [ ] **Rewrite the derived root files** and list them in `rewritten.txt`: `tailwind.config.js`, `components.json` (regenerate with the shadcn
-      CLI), `tsconfig.app.json`, `index.html`, `vite.config.ts`, `vitest.config.ts`,
-      `eslint.config.mjs`, `.dockerignore`, `.github/workflows/cla.yaml` and `release.yaml`.
-      Review wording of `CLA.md`, `CONTRIBUTING.md`, `publish.yaml`, `package.json`.
-      Replace `public/load-new-db-instructions.gif`.
+- [x] **Rewrite the derived root files** (2026-11-07). Rewritten and listed in `rewritten.txt`; the
+      reviewed ones are listed too. The GIF was unused and is deleted. `components.json` was
+      written by hand, not with the CLI, and now shares 0 lines.
 - [ ] **Decide the open questions** in plan section 8: saved-diagram compatibility,
       templates and examples, final licence, who writes the risky modules.
 - [ ] **Add a branch protection rule** for `rewrite/clean-room` (reviews and the similarity
