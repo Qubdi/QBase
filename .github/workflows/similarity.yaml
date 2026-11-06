@@ -1,11 +1,16 @@
 name: Upstream similarity
 
-# Part of the clean-room rewrite (see REWRITE-PLAN.md). Fails when a new or
-# rewritten file shares too much code with ChartDB.
+# Part of the clean-room rewrite (see rewrite/PLAN.md). This branch must contain
+# only original code, so every file under src/, server/ and shared/ is checked,
+# plus the files listed in rewrite/rewritten.txt. It fails when a file is identical
+# to ChartDB, shares 30% or more of its lines, or has a run of more than 25
+# identical lines.
 
 on:
   pull_request:
-    branches: [main, rewrite/clean-room]
+    branches: [rewrite/clean-room]
+  push:
+    branches: [rewrite/clean-room]
 
 permissions:
   contents: read
@@ -18,7 +23,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 24.x
@@ -33,7 +37,9 @@ jobs:
           git -C upstream fetch --depth 1 https://github.com/chartdb/chartdb.git ee95448d154cfdcf65264c45745f440c0480ef84
           git -C upstream checkout FETCH_HEAD
 
-      - name: Check added and rewritten files
+      - name: Check every file against upstream
         run: >
-          node tools/similarity.mjs --upstream upstream --src src --check
-          --base origin/${{ github.base_ref }} --rewritten docs/rewritten.txt
+          node tools/similarity.mjs --upstream upstream
+          --src src --src server/src --src shared
+          --check --all
+          --rewritten rewrite/rewritten.txt --allow rewrite/similarity-allow.txt

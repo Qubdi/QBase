@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Measures how much of this repository's code is shared with an upstream checkout
-// (ChartDB), for the clean-room rewrite described in REWRITE-PLAN.md.
+// (ChartDB), for the clean-room rewrite described in rewrite/PLAN.md.
 //
 // How it works
-//   1. Every text file in the upstream source folder is turned into a list of
+//   1. Every text file in the upstream repository is turned into a list of
 //      normalised lines (whitespace collapsed, blank lines and lines of three
 //      characters or fewer dropped, line endings ignored).
 //   2. Every run of SHINGLE consecutive lines is hashed. This is the upstream index.
@@ -15,15 +15,25 @@
 //   node tools/similarity.mjs --upstream <chartdb checkout> [options]
 //
 // Options
-//   --upstream <dir>     ChartDB repository root (its src/ is indexed) or a src folder
-//   --src <dir>          folder to measure; repeatable (default: src)
+//   --upstream <dir>     ChartDB repository root (the whole repository is indexed)
+//   --src <path>         folder or single file to measure; repeatable (default: src)
+//   --tracked            measure every git-tracked text file instead of --src
+//   --exclude <prefix>   with --tracked: skip paths starting with this; repeatable
 //   --csv <file>         write the per-file inventory to this CSV file
 //   --threshold <pct>    shared-lines percentage that counts as derived (default 30)
 //   --max-run <lines>    longest allowed run of shared lines (default 25)
-//   --check              exit 1 when a checked file is over either limit
-//   --base <git ref>     with --check: only check files added since this ref
+//   --check              exit 1 when a checked file is over a limit or identical
+//   --all                with --check: check every measured file
+//   --base <git ref>     with --check: also check files added since this ref
 //   --rewritten <file>   with --check: also check every path listed in this file
+//                        (any tracked path; measured on demand)
+//   --allow <file>       with --check: paths accepted even if identical to upstream
+//                        (tiny generic config files); one path per line, # = comment
 //   --shingle <n>        run length used for matching (default 4)
+//
+// Limits: it finds copied and lightly edited text. It does not find code that was
+// translated, restructured or reimplemented from reading the original, and it does
+// not look at binary files. See "Limits of the similarity check" in rewrite/PLAN.md.
 //
 // Status values in the CSV
 //   identical  same path as upstream and the same normalised content
@@ -53,6 +63,8 @@ const TEXT_EXTENSIONS = new Set([
     '.dbml',
     '.yaml',
     '.yml',
+    '.sh',
+    '.toml',
 ]);
 const SKIP_DIRECTORIES = new Set(['node_modules', 'dist', 'coverage', '.git']);
 
@@ -60,6 +72,10 @@ function parseArguments(argv) {
     const options = {
         upstream: null,
         src: [],
+        tracked: false,
+        exclude: [],
+        all: false,
+        allow: null,
         csv: null,
         threshold: 30,
         maxRun: 25,
@@ -81,6 +97,18 @@ function parseArguments(argv) {
                 break;
             case '--src':
                 options.src.push(value());
+                break;
+            case '--tracked':
+                options.tracked = true;
+                break;
+            case '--exclude':
+                options.exclude.push(value());
+                break;
+            case '--all':
+                options.all = true;
+                break;
+            case '--allow':
+                options.allow = value();
                 break;
             case '--csv':
                 options.csv = value();
@@ -108,11 +136,33 @@ function parseArguments(argv) {
         }
     }
     if (!options.upstream) throw new Error('--upstream is required');
-    if (options.src.length === 0) options.src.push('src');
+    if (options.src.length === 0 && !options.tracked) options.src.push('src');
     return options;
 }
 
+const SKIP_FILES = new Set(['package-lock.json']);
+// Text files without a useful extension.
+const TEXT_NAMES = new Set([
+    'Dockerfile',
+    '.dockerignore',
+    '.gitignore',
+    '.gitattributes',
+    '.nvmrc',
+    '.prettierignore',
+    '.editorconfig',
+    'pre-commit',
+]);
+
+function isTextFile(file) {
+    const name = path.basename(file);
+    if (SKIP_FILES.has(name)) return false;
+    return TEXT_EXTENSIONS.has(path.extname(name)) || TEXT_NAMES.has(name);
+}
+
 function listFiles(directory) {
+    if (fs.statSync(directory).isFile()) {
+        return isTextFile(directory) ? [directory] : [];
+    }
     const found = [];
     const walk = (current) => {
         for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
@@ -120,7 +170,7 @@ function listFiles(directory) {
                 if (!SKIP_DIRECTORIES.has(entry.name)) {
                     walk(path.join(current, entry.name));
                 }
-            } else if (TEXT_EXTENSIONS.has(path.extname(entry.name))) {
+            } else if (isTextFile(entry.name)) {
                 found.push(path.join(current, entry.name));
             }
         }
@@ -150,13 +200,7 @@ function toPosix(file) {
     return file.split(path.sep).join('/');
 }
 
-function upstreamSourceDirectory(upstream) {
-    const nested = path.join(upstream, 'src');
-    return fs.existsSync(nested) ? nested : upstream;
-}
-
-function buildUpstreamIndex(upstream, size) {
-    const root = upstreamSourceDirectory(upstream);
+function buildUpstreamIndex(root, size) {
     const index = new Set();
     const contentByPath = new Map();
     for (const file of listFiles(root)) {
@@ -167,7 +211,7 @@ function buildUpstreamIndex(upstream, size) {
     return { index, contentByPath, fileCount: contentByPath.size };
 }
 
-function measure(file, upstream, size, sourceRoot) {
+function measure(file, upstream, size) {
     const lines = normalisedLines(file);
     const covered = new Array(lines.length).fill(false);
     shingles(lines, size).forEach((shingle, start) => {
@@ -189,12 +233,13 @@ function measure(file, upstream, size, sourceRoot) {
             run = 0;
         }
     }
-    const relativeToSource = toPosix(path.relative(sourceRoot, file));
-    const upstreamContent = upstream.contentByPath.get(relativeToSource);
+    // Same layout as upstream: src/x here is src/x there.
+    const relativePath = toPosix(path.relative(process.cwd(), file));
+    const upstreamContent = upstream.contentByPath.get(relativePath);
     const identical =
         upstreamContent !== undefined && upstreamContent === lines.join('\n');
     return {
-        file: toPosix(path.relative(process.cwd(), file)),
+        file: relativePath,
         lines: lines.length,
         shared,
         percent: lines.length === 0 ? 0 : (100 * shared) / lines.length,
@@ -213,6 +258,25 @@ function statusOf(result, threshold) {
 
 function git(...args) {
     return execFileSync('git', args, { encoding: 'utf8' });
+}
+
+function trackedFiles(exclude) {
+    return git('ls-files')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .filter((file) => isTextFile(file))
+        .filter((file) => !exclude.some((prefix) => file.startsWith(prefix)));
+}
+
+function readPathList(file) {
+    if (!file || !fs.existsSync(file)) return [];
+    return fs
+        .readFileSync(file, 'utf8')
+        .replace(/\r/g, '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith('#'));
 }
 
 function addedFiles(base) {
@@ -282,22 +346,23 @@ function main() {
         `Indexed ${upstream.fileCount} upstream files (${upstream.index.size} runs of ${options.shingle} lines)`
     );
 
-    const upstreamRoot = upstreamSourceDirectory(options.upstream);
-    const rows = [];
-    for (const source of options.src) {
-        if (!fs.existsSync(source)) {
-            console.warn(`Skipping ${source}: not found`);
-            continue;
-        }
-        // Files are matched against upstream files by their path inside the source folder.
-        for (const file of listFiles(source)) {
-            const result = measure(file, upstream, options.shingle, source);
-            result.status = statusOf(result, options.threshold);
-            rows.push(result);
-        }
-    }
+    const files = options.tracked
+        ? trackedFiles(options.exclude)
+        : options.src.flatMap((source) => {
+              if (!fs.existsSync(source)) {
+                  console.warn(`Skipping ${source}: not found`);
+                  return [];
+              }
+              return listFiles(source);
+          });
+    const measureFile = (file) => {
+        const result = measure(file, upstream, options.shingle);
+        result.status = statusOf(result, options.threshold);
+        return result;
+    };
+    const rows = files.map(measureFile);
     rows.sort((a, b) => a.file.localeCompare(b.file));
-    console.log(`Measured ${rows.length} files against ${upstreamRoot}`);
+    console.log(`Measured ${rows.length} files against ${options.upstream}`);
     printSummary(rows);
 
     if (options.csv) {
@@ -308,32 +373,38 @@ function main() {
     if (!options.check) return;
 
     const toCheck = new Set();
+    if (options.all) for (const row of rows) toCheck.add(row.file);
     if (options.base)
         for (const file of addedFiles(options.base)) toCheck.add(file);
-    if (options.rewritten && fs.existsSync(options.rewritten)) {
-        for (const line of fs
-            .readFileSync(options.rewritten, 'utf8')
-            .split('\n')) {
-            const entry = line.trim();
-            if (entry && !entry.startsWith('#')) toCheck.add(entry);
+    for (const entry of readPathList(options.rewritten)) toCheck.add(entry);
+
+    // Listed paths that were not in the measured set are measured now.
+    const measured = new Set(rows.map((row) => row.file));
+    const checked = rows.filter((row) => toCheck.has(row.file));
+    for (const entry of toCheck) {
+        if (!measured.has(entry) && fs.existsSync(entry) && isTextFile(entry)) {
+            checked.push(measureFile(entry));
         }
     }
-    const failures = rows.filter(
+    const allowed = new Set(readPathList(options.allow));
+    const failures = checked.filter(
         (row) =>
-            toCheck.has(row.file) &&
-            (row.percent >= options.threshold ||
+            !allowed.has(row.file) &&
+            (row.identical ||
+                row.percent >= options.threshold ||
                 row.longestRun > options.maxRun)
     );
-    console.log(`\nChecked ${toCheck.size} listed or added paths`);
+    console.log(`\nChecked ${checked.length} files`);
     if (failures.length === 0) {
         console.log('No checked file is over the limits.');
         return;
     }
     console.error('\nToo much shared code with upstream:');
     for (const row of failures) {
-        console.error(
-            `  ${row.file}  ${row.percent.toFixed(1)}% shared, longest run ${row.longestRun} lines`
-        );
+        const detail = row.identical
+            ? 'identical to upstream'
+            : `${row.percent.toFixed(1)}% shared, longest run ${row.longestRun} lines`;
+        console.error(`  ${row.file}  ${detail}`);
     }
     process.exitCode = 1;
 }

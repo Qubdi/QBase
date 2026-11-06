@@ -1,0 +1,21 @@
+# Paths the similarity check accepts even though they match ChartDB.
+# Only generic files that nobody can claim as creative work belong here: one-line
+# version files, empty files, and standard templates from third-party tools.
+# Give a reason for every entry. Real source code never goes in this list.
+
+# One line: the Node.js version
+.nvmrc
+
+# One line of ignore patterns
+.prettierignore
+
+# Empty runtime-config placeholder
+public/config.js
+
+# Standard Vite project references (the generated file, unchanged)
+tsconfig.json
+tsconfig.node.json
+
+# Contributor Covenant 2.x. It is a third-party text under CC BY 4.0 and keeps its
+# own attribution paragraph; it is not ChartDB's work.
+CODE_OF_CONDUCT.md
