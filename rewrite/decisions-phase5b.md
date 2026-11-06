@@ -28,6 +28,7 @@ Needs a change in `src/dialects` (not done here):
 - Array columns stored as JSON get the default `'{}'` where `'[]'` is the JSON array.
 - A table or column name longer than the target keeps (MySQL 64) is written unchanged, with no "Names"
   note.
+- SQL Server reader: no warning for backtick-quoted names (the old validator had one).
 - The foreign key note reads `child: FOREIGN KEY ("code") child -> parent) not created: ...` (a stray
   bracket, no "on").
 

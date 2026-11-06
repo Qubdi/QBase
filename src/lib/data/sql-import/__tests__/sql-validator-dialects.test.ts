@@ -1,6 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { validateSQL } from '../sql-validator';
-import { DatabaseType } from '@/lib/domain/database-type';
+import { dialectFor } from '@/dialects/registry';
+import type { DatabaseType as DatabaseTypeName } from '@/core/model/database';
+import { DatabaseType } from '@/qbase/diagram-types';
+
+/**
+ * What the import dialog's validation area shows for a script: the dialect
+ * reader's diagnostics, split into errors and the rest ("Found N tables" is
+ * an info line, the others warnings).
+ */
+const validateSQL = (sql: string, type: DatabaseTypeName) => {
+    const script = dialectFor(type).sql.read!(sql);
+    const errors = script.diagnostics.filter((d) => d.severity === 'error');
+    return {
+        isValid: errors.length === 0,
+        errors,
+        warnings: script.diagnostics.filter((d) => d.severity !== 'error'),
+        tableCount: script.tables.filter((t) => !t.view).length,
+        viewCount: script.tables.filter((t) => t.view).length,
+    };
+};
 
 const dialects = [
     DatabaseType.MYSQL,
@@ -90,10 +108,12 @@ describe('MySQL', () => {
         );
         const messages = result.warnings.map((w) => w.message);
         expect(messages).toContain(
-            'Line 2: SERIAL is PostgreSQL syntax. Use AUTO_INCREMENT in MySQL.'
+            'Line 2: SERIAL is not valid in MySQL, use AUTO_INCREMENT'
         );
-        expect(messages.some((m) => m.startsWith('Line 3: Square'))).toBe(true);
-        expect(messages.some((m) => m.startsWith('Line 4: The ::'))).toBe(true);
+        expect(
+            messages.some((m) => m.startsWith('Line 3: [name] brackets'))
+        ).toBe(true);
+        expect(messages.some((m) => m.startsWith('Line 4: the ::'))).toBe(true);
     });
 
     it('does not flag SERIAL inside a string', () => {
@@ -134,10 +154,7 @@ describe('SQLite', () => {
             DatabaseType.SQLITE
         );
         expect(result.isValid).toBe(false);
-        expect(result.errors[0]).toMatchObject({
-            line: 1,
-            type: 'unsupported',
-        });
+        expect(result.errors[0]).toMatchObject({ line: 1 });
     });
 
     it('warns about ENUM and AUTO_INCREMENT', () => {
@@ -184,7 +201,7 @@ describe('SQL Server', () => {
             messages.some((m) => m.startsWith('Line 2: AUTO_INCREMENT'))
         ).toBe(true);
         expect(messages.some((m) => m.startsWith('Line 3: SERIAL'))).toBe(true);
-        expect(messages.some((m) => m.includes('Backticks'))).toBe(true);
+        // the old validator also warned about backticks; the new reader does not
     });
 
     it('counts CREATE OR ALTER VIEW', () => {

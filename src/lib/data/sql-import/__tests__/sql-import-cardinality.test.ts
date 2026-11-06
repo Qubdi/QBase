@@ -1,37 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { DatabaseType } from '@/lib/domain/database-type';
-import { determineCardinality } from '../common';
-import { sqlImportToDiagram } from '../index';
+import { listOf } from '@/core/model/collection';
+import { cardinalityOf } from '@/formats/shared/cardinality';
+import { importSql } from '@/formats/sql/import-sql';
 
 describe('cardinality of imported foreign keys', () => {
-    describe('determineCardinality', () => {
-        it('reads a foreign key as many to one when only the referenced column is unique', () => {
-            expect(determineCardinality(false, true)).toEqual({
-                sourceCardinality: 'many',
-                targetCardinality: 'one',
+    describe('cardinalityOf', () => {
+        const yes = { identifiesRow: true };
+        const no = { identifiesRow: false };
+
+        it('reads a foreign key as one (referenced) to many (holder) when only the referenced column is unique', () => {
+            expect(cardinalityOf(yes, no)).toEqual({
+                source: 'one',
+                target: 'many',
             });
         });
 
         it('never answers many to many: a foreign key points at one row', () => {
             // neither column is marked unique
-            expect(determineCardinality(false, false)).toEqual({
-                sourceCardinality: 'many',
-                targetCardinality: 'one',
+            expect(cardinalityOf(no, no)).toEqual({
+                source: 'one',
+                target: 'many',
             });
         });
 
         it('keeps one to one when both are unique', () => {
-            expect(determineCardinality(true, true)).toEqual({
-                sourceCardinality: 'one',
-                targetCardinality: 'one',
+            expect(cardinalityOf(yes, yes)).toEqual({
+                source: 'one',
+                target: 'one',
             });
         });
     });
 
     describe('a foreign key to a column that is not marked unique', () => {
-        it('is still one to many, with the referenced table as the one', async () => {
-            const diagram = await sqlImportToDiagram({
-                sqlContent: `
+        it('is still one to many, with the referenced table as the one', () => {
+            const { design } = importSql(
+                `
                     CREATE TABLE parent (code TEXT);
                     CREATE TABLE child (
                         id INTEGER PRIMARY KEY,
@@ -39,18 +42,17 @@ describe('cardinality of imported foreign keys', () => {
                         FOREIGN KEY (parent_code) REFERENCES parent(code)
                     );
                 `,
-                sourceDatabaseType: DatabaseType.SQLITE,
-                targetDatabaseType: DatabaseType.SQLITE,
-            });
+                'sqlite'
+            );
 
-            expect(diagram.relationships).toHaveLength(1);
-            const [rel] = diagram.relationships!;
-            const tableName = (id: string) =>
-                diagram.tables?.find((t) => t.id === id)?.name;
-            expect(tableName(rel.sourceTableId)).toBe('parent');
-            expect(tableName(rel.targetTableId)).toBe('child');
-            expect(rel.sourceCardinality).toBe('one');
-            expect(rel.targetCardinality).toBe('many');
+            const links = listOf(design!.links);
+            expect(links).toHaveLength(1);
+            const [link] = links;
+            const tableName = (id: string) => design!.entities.byId[id].name;
+            expect(tableName(link.sourceEntityId)).toBe('parent');
+            expect(tableName(link.targetEntityId)).toBe('child');
+            expect(link.sourceCardinality).toBe('one');
+            expect(link.targetCardinality).toBe('many');
         });
     });
 });
