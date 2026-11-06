@@ -7,12 +7,12 @@
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 12 | 0 | 2 | 37 | 0 |
-| Repository | 14 | 0 | 1 | 52 | 1 |
+| Repository | 13 | 0 | 1 | 53 | 1 |
 | Server | 14 | 0 | 0 | 38 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
 | Client | 24 | 0 | 1 | 46 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 73 | 0 | 4 | 201 | 4 |
+| **Total** | 72 | 0 | 4 | 202 | 4 |
 
 ## Act first
 
@@ -51,7 +51,6 @@
 | REPO-056 | High | Global `minimatch >=11.0.1` override crashes root ESLint on load | `package.json:124` · `server/package.json:47` | Scope the override to vulnerable consumers; keep `^3` for ESLint plugins |
 | REPO-057 | Low | CONTRIBUTING server test line omits the fixed test DB credentials | `CONTRIBUTING.md:49` | State the `POSTGRES_PASSWORD` the server tests expect |
 | REPO-058 | Low | MSSQL test fixture hard-codes port 14333; ignores `MSSQL_PORT` | `server/test/introspect-mssql-fixture.ts:4` | Read `MSSQL_PORT` from env, default 14333 |
-| REPO-059 | Low | Fixture-dump script cites removed compose profile `mssql` | `server/scripts/dump-fixtures.ts:4` | Use `docker compose -f docker-compose.mssql.yml up -d` |
 | REPO-060 | Low | Root `.dockerignore` lacks `qbase-*.dump`; only `Dockerfile.dockerignore` has it | `.dockerignore:47` | Add `qbase-*.dump` to `.dockerignore` |
 | REPO-061 | Low | CODEOWNERS ship block omits `/db/`, `.gitleaks.toml`, release-please config | `.github/CODEOWNERS:9` | Add owner lines for the three paths |
 | REPO-062 | Med | No `restart:` policy on db, server or ui; reboot leaves QBase down | `docker-compose.yml:5` | Add `restart: unless-stopped` to all three services |
@@ -134,6 +133,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| REPO-059 | Repository | Fixture-dump script cites removed compose profile `mssql` |
 | SEC-046 | Security & secrets | `QUBDI_BACKEND_URL` substituted unescaped into `config.js`, CSP and nginx config |
 | SEC-048 | Security & secrets | CI checkouts persist `GITHUB_TOKEN` in a workspace mounted into gitleaks |
 | SEC-043 | Security & secrets | `audit.export` row omits which filters were exported |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 8 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046 |
+| 25 | 2026-11-06 | 9 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059 |

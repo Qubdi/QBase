@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 24</b></div>
-  <h1>14 open: 0 Crit, 1 High.</h1>
+  <h1>13 open: 0 Crit, 1 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -37,7 +37,7 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">14 open &middot; 52 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">13 open &middot; 53 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -47,7 +47,6 @@
         <tr><td class="svc-name">REPO-056</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Global <code>minimatch &gt;=11.0.1</code> override crashes root ESLint on load</td><td><code>package.json:124</code> · <code>server/package.json:47</code></td><td class="wrap-cell">Scope the override to vulnerable consumers; keep <code>^3</code> for ESLint plugins</td></tr>
         <tr><td class="svc-name">REPO-057</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CONTRIBUTING server test line omits the fixed test DB credentials</td><td><code>CONTRIBUTING.md:49</code></td><td class="wrap-cell">State the <code>POSTGRES_PASSWORD</code> the server tests expect</td></tr>
         <tr><td class="svc-name">REPO-058</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">MSSQL test fixture hard-codes port 14333; ignores <code>MSSQL_PORT</code></td><td><code>server/test/introspect-mssql-fixture.ts:4</code></td><td class="wrap-cell">Read <code>MSSQL_PORT</code> from env, default 14333</td></tr>
-        <tr><td class="svc-name">REPO-059</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Fixture-dump script cites removed compose profile <code>mssql</code></td><td><code>server/scripts/dump-fixtures.ts:4</code></td><td class="wrap-cell">Use <code>docker compose -f docker-compose.mssql.yml up -d</code></td></tr>
         <tr><td class="svc-name">REPO-060</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Root <code>.dockerignore</code> lacks <code>qbase-*.dump</code>; only <code>Dockerfile.dockerignore</code> has it</td><td><code>.dockerignore:47</code></td><td class="wrap-cell">Add <code>qbase-*.dump</code> to <code>.dockerignore</code></td></tr>
         <tr><td class="svc-name">REPO-061</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CODEOWNERS ship block omits <code>/db/</code>, <code>.gitleaks.toml</code>, release-please config</td><td><code>.github/CODEOWNERS:9</code></td><td class="wrap-cell">Add owner lines for the three paths</td></tr>
         <tr><td class="svc-name">REPO-062</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No <code>restart:</code> policy on db, server or ui; reboot leaves QBase down</td><td><code>docker-compose.yml:5</code></td><td class="wrap-cell">Add <code>restart: unless-stopped</code> to all three services</td></tr>
@@ -63,11 +62,12 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (52)</summary>
+  <details><summary>Fixed (53)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-059</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Fixture-dump script cites removed compose profile <code>mssql</code></td></tr>
         <tr><td class="svc-name">REPO-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>bootstrap-sha</code> names a commit missing from the rewritten history</td></tr>
         <tr><td class="svc-name">REPO-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Postgres digest in <code>db/postgres/Dockerfile</code> differs from CI and publish; digest check fails</td></tr>
         <tr><td class="svc-name">REPO-049</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">NOTICE grants "any later version"; both packages declare <code>AGPL-3.0-only</code></td></tr>

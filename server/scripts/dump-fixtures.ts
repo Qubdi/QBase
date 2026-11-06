@@ -1,7 +1,7 @@
 // Regenerates the frontend fixtures from the real sample databases:
 //   npx tsx scripts/dump-fixtures.ts
 // Needs the sample Postgres (docker compose up -d db) and, for SQL Server,
-// the optional container (docker compose --profile mssql up -d mssql).
+// the optional container (MSSQL_SA_PASSWORD='<a strong password>' docker compose -f docker-compose.mssql.yml up -d).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
