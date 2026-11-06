@@ -36,6 +36,7 @@ One row per person or AI session. Add a row before the first commit of a module.
 | 2026-11-07 | Anri Tvalabeishvili and an AI assistant | yes (both) | plan, tooling, inventory | not a clean author for any module |
 | 2026-11-07 | AI assistant sessions (4 spec writers) | yes (read `main` via ../QBase-main) | `rewrite/spec/` only | spec authors, not clean for any code module |
 | 2026-11-07 | Clean author session (AI assistant, Phase 4 checkout) | no | `src/core/model`, `src/core/wire`, `src/core/commands`, `src/core/history`, `src/persistence` | worked only from `CLAUDE.md`, `rewrite/architecture.md`, `rewrite/spec/`, `rewrite/parity-checklist.md`, `shared/` and `server/src/diagrams` in this checkout; never opened ChartDB or `main`; node ran only in docker with this directory mounted |
+| 2026-11-07 | Clean author session (AI assistant, Phase 5 checkout) | no | `src/dialects`, `src/formats`, `src/lib/data/import-metadata` | worked only from `CLAUDE.md`, `rewrite/architecture.md`, `rewrite/spec/`, `rewrite/parity-checklist.md`, `src/core` and `server/src/introspect` (plus the server's own test fixtures) in this checkout; never opened ChartDB or `main`; node ran only in docker with this directory mounted |
 
 
 ## Per-module record
