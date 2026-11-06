@@ -351,7 +351,10 @@ export const publicShareRoutes =
         const RECHECK_TTL_MS = 2_000;
         const rechecks = new Map<
             string,
-            { at: number; result: Promise<boolean> }
+            {
+                at: number;
+                result: Promise<{ valid: boolean; access: string | null }>;
+            }
         >();
         const stillValidShared = (
             linkId: string,
@@ -366,9 +369,10 @@ export const publicShareRoutes =
             if (!fresh && hit && Date.now() - hit.at < RECHECK_TTL_MS) {
                 return hit.result;
             }
-            const result = resolveLinkById(db, linkId, user).then(
-                (c) => c.ok && c.link.live && c.link.tokenHash === openedWith
-            );
+            const result = resolveLinkById(db, linkId, user).then((c) => ({
+                valid: c.ok && c.link.live && c.link.tokenHash === openedWith,
+                access: c.ok ? c.link.access : null,
+            }));
             rechecks.set(key, { at: Date.now(), result });
             // a failed check must not be served from the cache
             result.catch(() => rechecks.delete(key));
@@ -460,8 +464,8 @@ export const publicShareRoutes =
 
             // still allowed? (revoked, expired, access changed, live turned off,
             // or the token was regenerated so this URL is no longer the real one)
-            const stillValid = (fresh = false) =>
-                stillValidShared(linkId, openedWith, req.user, fresh);
+            const stillValid = async (fresh = false) =>
+                (await stillValidShared(linkId, openedWith, req.user, fresh)).valid;
 
             // The listeners run detached from any request, so a database error
             // in one would be an unhandled rejection and end the process. The
@@ -504,18 +508,22 @@ export const publicShareRoutes =
             // publish). The check is skipped for links open to anyone.
             const heartbeat = setInterval(async () => {
                 if (closed) return;
-                if (check.link.access === 'signed_in' && req.user) {
-                    try {
+                try {
+                    // the link's access may have changed since this stream
+                    // opened: read it again instead of trusting what was seen then
+                    const now = await stillValidShared(linkId, openedWith, req.user);
+                    if (!now.valid) return close();
+                    if (now.access === 'signed_in' && req.user) {
                         const still = await getSessionUser(
                             db,
                             req.cookies[SESSION_COOKIE],
                             config.sessionIdleDays * 86_400
                         );
                         if (!still || still.id !== req.user.id) return close();
-                    } catch (err) {
-                        req.log.error({ err }, 'share events: session check failed');
-                        return close();
                     }
+                } catch (err) {
+                    req.log.error({ err }, 'share events: heartbeat check failed');
+                    return close();
                 }
                 if (!closed) raw.write(': ping\n\n');
             }, config.sseHeartbeatSeconds * 1000);
