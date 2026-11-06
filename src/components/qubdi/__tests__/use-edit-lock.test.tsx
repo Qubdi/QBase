@@ -198,6 +198,46 @@ describe('useEditLock', () => {
         expect(release).not.toHaveBeenCalled();
     });
 
+    it('gives back a lock that was granted after the editor had already left', async () => {
+        let grant!: (v: unknown) => void;
+        acquire.mockReturnValue(new Promise((r) => (grant = r)));
+        const { unmount } = renderHook(() => useEditLock('r1'));
+        await tick();
+        unmount();
+        expect(release).not.toHaveBeenCalled();
+        grant(held);
+        await tick();
+        expect(release).toHaveBeenCalledTimes(1);
+        expect(release).toHaveBeenCalledWith('r1', 'tab-1', {
+            keepalive: true,
+        });
+    });
+
+    it('sends nothing for a late reply saying someone else holds the lock', async () => {
+        let grant!: (v: unknown) => void;
+        acquire.mockReturnValue(new Promise((r) => (grant = r)));
+        const { unmount } = renderHook(() => useEditLock('r1'));
+        await tick();
+        unmount();
+        grant(takenBy('sam@corp.io'));
+        await tick();
+        expect(release).not.toHaveBeenCalled();
+    });
+
+    it('keeps a late grant when the same diagram was opened again meanwhile', async () => {
+        let first!: (v: unknown) => void;
+        acquire.mockReturnValueOnce(new Promise((r) => (first = r)));
+        acquire.mockResolvedValueOnce(held);
+        const gone = renderHook(() => useEditLock('r1'));
+        await tick();
+        gone.unmount();
+        renderHook(() => useEditLock('r1'));
+        await tick();
+        first(held);
+        await tick();
+        expect(release).not.toHaveBeenCalled();
+    });
+
     it('reports an unreachable server when the very first ask fails', async () => {
         acquire.mockRejectedValue(new Error('offline'));
         const { result } = renderHook(() => useEditLock('r1'));

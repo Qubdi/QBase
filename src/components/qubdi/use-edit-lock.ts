@@ -10,6 +10,11 @@ export const LOCK_HEARTBEAT_MS = 20_000;
 
 const CHECKING: LockState = { status: 'checking' };
 
+// The editor open on each diagram. A grant that arrives after its editor left
+// is given back, unless another editor has opened the same diagram since (the
+// lock is per tab, so giving it back would take it from that one).
+const openEditors = new Map<string, symbol>();
+
 /**
  * Holds the edit lock of a server diagram while the editor is open: takes it,
  * renews it, and lets go when the editor leaves. Only one editor at a time may
@@ -25,6 +30,8 @@ export function useEditLock(remoteId: string | undefined): LockState {
     useEffect(() => {
         if (!remoteId) return;
         const editorId = getEditorId();
+        const me = Symbol(remoteId);
+        openEditors.set(remoteId, me);
         let cancelled = false;
         let held = false;
         let timer: ReturnType<typeof setInterval> | undefined;
@@ -32,7 +39,11 @@ export function useEditLock(remoteId: string | undefined): LockState {
         const ask = async () => {
             try {
                 const res = await api.acquireLock(remoteId, editorId);
-                if (cancelled) return;
+                if (cancelled) {
+                    // granted after the editor left: nobody would ever release it
+                    if (res.held && !openEditors.has(remoteId)) sendRelease();
+                    return;
+                }
                 held = res.held;
                 if (res.held) {
                     setLock({ status: 'held' });
@@ -93,6 +104,7 @@ export function useEditLock(remoteId: string | undefined): LockState {
         window.addEventListener('pagehide', releaseNow);
         return () => {
             cancelled = true;
+            if (openEditors.get(remoteId) === me) openEditors.delete(remoteId);
             stopListening();
             clearInterval(timer);
             window.removeEventListener('pagehide', releaseNow);
