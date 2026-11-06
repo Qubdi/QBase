@@ -7,8 +7,7 @@ import {
     setLintConfig,
 } from '../lint-config-store';
 import { planFix, resolveDataType } from '../lint-fix';
-import { DatabaseType } from '@/lib/domain/database-type';
-import type { Diagram } from '@/lib/domain/diagram';
+import { DatabaseType, type Diagram } from '@/qbase/diagram-types';
 import { lint, type Finding } from '../../../../shared/lint';
 import { canonicalType } from '../../../../shared/schema-desc';
 

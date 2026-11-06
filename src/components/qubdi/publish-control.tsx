@@ -11,7 +11,7 @@ import {
 } from '@/platform/ui/dialog';
 import { Input } from '@/platform/ui/input';
 import { useToast } from '@/platform/toast/use-toast';
-import { useDiagram } from '@/hooks/use-diagram';
+import { useDiagram } from '@/qbase/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useDiagramAccess } from './diagram-access-context';
 import { api, errorMessage } from '@/lib/qubdi/api';

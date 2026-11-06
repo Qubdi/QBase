@@ -11,7 +11,7 @@ import {
 import { Button } from '@/platform/ui/button';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { Input } from '@/platform/ui/input';
-import { useStorage } from '@/hooks/use-storage';
+import { useStorage } from '@/qbase/use-storage';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { projectDiagramPath } from '@/lib/qubdi/project-path';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';

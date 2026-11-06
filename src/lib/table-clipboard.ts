@@ -1,5 +1,5 @@
 import { cloneTable } from './clone';
-import type { DBTable } from './domain/db-table';
+import type { DBTable } from '@/qbase/diagram-types';
 
 // Copy and paste for tables (Ctrl/Cmd+C, Ctrl/Cmd+V). Only the tables travel:
 // no relationships and no dependencies, so a paste never ties the copy to

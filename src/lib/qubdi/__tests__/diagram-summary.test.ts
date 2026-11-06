@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DatabaseEdition } from '@/lib/domain/database-edition';
-import { DatabaseType } from '@/lib/domain/database-type';
+import { DatabaseEdition, DatabaseType } from '@/qbase/diagram-types';
 import {
     countLabel,
     formatWhen,

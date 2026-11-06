@@ -19,7 +19,7 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
 
 const addDiagram = vi.fn();
 const deleteDiagram = vi.fn();
-vi.mock('@/hooks/use-storage', () => ({
+vi.mock('@/qbase/use-storage', () => ({
     useStorage: () => ({ addDiagram, deleteDiagram }),
 }));
 

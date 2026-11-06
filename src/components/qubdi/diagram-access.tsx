@@ -10,9 +10,9 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/platform/ui/button';
 import { Logo } from '@/components/logo/logo';
 import { Spinner } from '@/platform/ui/spinner';
-import { DiagramProvider } from '@/context/diagram-context/diagram-provider';
+import { DiagramProvider } from '@/qbase/diagram-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { useStorage } from '@/hooks/use-storage';
+import { useStorage } from '@/qbase/use-storage';
 import {
     applyLock,
     isLocked,

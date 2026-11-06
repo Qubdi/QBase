@@ -18,14 +18,14 @@ import {
 } from '@/components/qubdi/workspace-context';
 import type { MyProject } from '@/lib/qubdi/api';
 import { emptyDiagram } from '@/lib/qubdi/new-diagram';
-import { DatabaseType } from '@/lib/domain/database-type';
+import { DatabaseType } from '@/qbase/diagram-types';
 import { diagramToJSONOutput } from '@/lib/export-import-utils';
 import { ImportDiagramDialog } from '../import-diagram-dialog';
 
 let badFile = false;
 const addDiagram = vi.fn();
 const deleteDiagram = vi.fn();
-vi.mock('@/hooks/use-storage', () => ({
+vi.mock('@/qbase/use-storage', () => ({
     useStorage: () => ({ addDiagram, deleteDiagram }),
 }));
 vi.mock('@/hooks/use-dialog', () => ({

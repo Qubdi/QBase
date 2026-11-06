@@ -21,7 +21,7 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
 }));
 
 let currentId = 'local-1';
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({ currentDiagram: { id: currentId } }),
 }));
 

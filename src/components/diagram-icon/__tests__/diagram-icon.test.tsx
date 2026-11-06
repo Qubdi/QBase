@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { TooltipProvider } from '@/platform/ui/tooltip';
-import { DatabaseType } from '@/lib/domain/database-type';
+import { DatabaseType } from '@/qbase/diagram-types';
 import { DiagramIcon } from '../diagram-icon';
 
 const show = (onClick?: () => void) =>

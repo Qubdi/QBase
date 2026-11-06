@@ -14,7 +14,7 @@ import { ProjectDiagrams } from '../project-diagrams';
 
 const deleteLocal = vi.fn();
 const listLocal = vi.fn();
-vi.mock('@/hooks/use-storage', () => ({
+vi.mock('@/qbase/use-storage', () => ({
     useStorage: () => ({
         deleteDiagram: (...a: unknown[]) => deleteLocal(...a),
         listDiagrams: (...a: unknown[]) => listLocal(...a),

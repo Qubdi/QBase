@@ -14,7 +14,7 @@ const getProject = vi.fn(async (id: unknown) => {
     return { name: 'Billing' };
 });
 
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({ currentDiagram: { name: 'Shop' } }),
 }));
 vi.mock('@/lib/qubdi/api', async (importOriginal) => ({

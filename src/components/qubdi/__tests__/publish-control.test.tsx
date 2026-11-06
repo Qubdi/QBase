@@ -30,7 +30,7 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
 
 vi.mock('@/lib/qubdi/editor-id', () => ({ getEditorId: () => 'tab-1' }));
 
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({ currentDiagram: { id: 'local-1' } }),
 }));
 

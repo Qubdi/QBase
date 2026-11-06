@@ -1,8 +1,10 @@
-import { dataTypeMap } from '@/lib/data/data-types/data-types';
-import type { DatabaseType } from '@/lib/domain/database-type';
-import type { DBField } from '@/lib/domain/db-field';
-import type { DBIndex } from '@/lib/domain/db-index';
-import type { DBTable } from '@/lib/domain/db-table';
+import { knownTypes } from '@/qbase/type-catalogue';
+import {
+    type DBField,
+    type DBIndex,
+    type DBTable,
+    type DatabaseType,
+} from '@/qbase/diagram-types';
 import { generateId } from '@/lib/utils';
 import { canonicalType } from '../../../shared/schema-desc';
 import type { LintFix } from '../../../shared/lint';
@@ -25,7 +27,7 @@ export function resolveDataType(
     typeName: string
 ): { id: string; name: string } {
     const wanted = canonicalType(typeName);
-    const known = (dataTypeMap[databaseType] ?? []).find(
+    const known = knownTypes(databaseType).find(
         (t) => canonicalType(t.name) === wanted
     );
     return known

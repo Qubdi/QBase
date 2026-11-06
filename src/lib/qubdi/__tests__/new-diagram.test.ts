@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { diagramSchema } from '@/lib/domain/diagram';
-import { DatabaseType } from '@/lib/domain/database-type';
+import { diagramSchema } from '@/qbase/diagram-convert';
+import { DatabaseType } from '@/qbase/diagram-types';
 import { defaultDiagramName, emptyDiagram } from '../new-diagram';
 
 describe('emptyDiagram', () => {

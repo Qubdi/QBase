@@ -4,8 +4,7 @@ import {
     type DatabaseMetadata,
 } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import { i18n } from '@/i18n/i18n';
-import { DatabaseType } from '@/lib/domain/database-type';
-import type { Diagram } from '@/lib/domain/diagram';
+import { DatabaseType, type Diagram } from '@/qbase/diagram-types';
 
 export type ServerDialect = 'postgresql' | 'sqlserver';
 

@@ -4,13 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LintControl } from '../lint-control';
 
 const focusOnTable = vi.fn();
-vi.mock('@/hooks/use-focus-on', () => ({
+vi.mock('@/qbase/use-focus-on', () => ({
     useFocusOn: () => ({ focusOnTable }),
 }));
 
 const openTableFromSidebar = vi.fn();
 let isSidePanelShowed = true;
-vi.mock('@/hooks/use-layout', () => ({
+vi.mock('@/qbase/use-layout', () => ({
     useLayout: () => ({ isSidePanelShowed, openTableFromSidebar }),
 }));
 
@@ -31,7 +31,7 @@ const tables = [
         ],
     },
 ];
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({
         currentDiagram: { id: 'local-1', tables },
         tables,

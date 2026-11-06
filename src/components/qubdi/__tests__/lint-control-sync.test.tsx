@@ -15,14 +15,14 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     },
 }));
 
-vi.mock('@/hooks/use-focus-on', () => ({ useFocusOn: () => ({}) }));
-vi.mock('@/hooks/use-layout', () => ({
+vi.mock('@/qbase/use-focus-on', () => ({ useFocusOn: () => ({}) }));
+vi.mock('@/qbase/use-layout', () => ({
     useLayout: () => ({
         isSidePanelShowed: true,
         openTableFromSidebar: vi.fn(),
     }),
 }));
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({
         currentDiagram: { id: 'local-1', tables: [] },
         tables: [],

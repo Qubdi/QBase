@@ -5,7 +5,7 @@ import { LastSaved } from '../last-saved';
 
 const updatedAt = new Date(Date.now() - 5 * 60 * 1000);
 
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({ currentDiagram: { updatedAt } }),
 }));
 vi.mock('react-i18next', () => ({

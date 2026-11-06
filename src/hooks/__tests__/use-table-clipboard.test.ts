@@ -1,8 +1,10 @@
 import { act, fireEvent, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { databasesWithSchemas } from '@/lib/domain';
-import { DatabaseType } from '@/lib/domain/database-type';
-import type { DBTable } from '@/lib/domain/db-table';
+import {
+    DatabaseType,
+    databasesWithSchemas,
+    type DBTable,
+} from '@/qbase/diagram-types';
 import { clearCopiedTables } from '@/lib/table-clipboard';
 import {
     useTableClipboard,

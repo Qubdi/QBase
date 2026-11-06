@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { DBTable } from '../domain/db-table';
+import type { DBTable } from '@/qbase/diagram-types';
 import {
     clearCopiedTables,
     copyTables,

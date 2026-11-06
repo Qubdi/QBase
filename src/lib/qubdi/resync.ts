@@ -1,9 +1,11 @@
 import { loadFromDatabaseMetadata } from '@/lib/data/import-metadata/import';
 import { createRelationshipsFromMetadata } from '@/lib/data/import-metadata/import/relationships';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
-import type { DBField } from '@/lib/domain/db-field';
-import type { DBTable } from '@/lib/domain/db-table';
-import type { Diagram } from '@/lib/domain/diagram';
+import {
+    type DBField,
+    type DBTable,
+    type Diagram,
+} from '@/qbase/diagram-types';
 import {
     reconcile,
     type Change,

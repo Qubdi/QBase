@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DatabaseType } from '@/lib/domain/database-type';
-import type { Diagram } from '@/lib/domain/diagram';
+import { DatabaseType, type Diagram } from '@/qbase/diagram-types';
 import { diagramToServerContent } from '../content';
 import {
     clearBaseUpdatedAt,

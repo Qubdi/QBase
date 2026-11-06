@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, CloudCheck, CloudUpload, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
-import { useDiagram } from '@/hooks/use-diagram';
+import { useDiagram } from '@/qbase/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, ApiError } from '@/lib/qubdi/api';
 import { reportLockLost } from '@/lib/qubdi/lock-lost';
@@ -14,7 +14,7 @@ import {
     createAutosaver,
     type Autosaver,
 } from '@/lib/qubdi/autosave';
-import type { Diagram } from '@/lib/domain/diagram';
+import type { Diagram } from '@/qbase/diagram-types';
 import { createRevisionTracker } from '@/lib/qubdi/revision';
 import {
     registerFinalFlush,

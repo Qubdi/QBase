@@ -31,7 +31,7 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
         checkDrift: (...a: unknown[]) => checkDrift(...a),
     },
 }));
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({ currentDiagram: { id: 'local-1', name: 'Shop' } }),
 }));
 // OptionSelect has the shape of a native select. Radix's own, under happy-dom,

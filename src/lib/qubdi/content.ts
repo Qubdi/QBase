@@ -1,4 +1,4 @@
-import type { Diagram } from '@/lib/domain/diagram';
+import type { Diagram } from '@/qbase/diagram-types';
 
 /**
  * Serializes a local diagram for the server, keeping every id as-is.

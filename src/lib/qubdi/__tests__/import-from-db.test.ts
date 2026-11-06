@@ -10,8 +10,7 @@ import {
     tableKey,
     type CatalogSchema,
 } from '../import-from-db';
-import { DatabaseType } from '@/lib/domain/database-type';
-import type { Diagram } from '@/lib/domain/diagram';
+import { DatabaseType, type Diagram } from '@/qbase/diagram-types';
 
 const catalog: CatalogSchema[] = [
     { schema: 'public', tables: ['customers'], views: [] },

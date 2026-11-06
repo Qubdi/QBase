@@ -1,6 +1,5 @@
 import { i18n } from '@/i18n/i18n';
-import { DatabaseEdition } from '@/lib/domain/database-edition';
-import { DatabaseType } from '@/lib/domain/database-type';
+import { DatabaseEdition, DatabaseType } from '@/qbase/diagram-types';
 
 /** The database a server diagram is for; anything unknown is the generic one. */
 export const toDatabaseType = (

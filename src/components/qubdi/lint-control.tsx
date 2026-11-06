@@ -4,9 +4,9 @@ import { ListChecks, Settings2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
 import { useToast } from '@/platform/toast/use-toast';
-import { useDiagram } from '@/hooks/use-diagram';
-import { useFocusOn } from '@/hooks/use-focus-on';
-import { useLayout } from '@/hooks/use-layout';
+import { useDiagram } from '@/qbase/use-diagram';
+import { useFocusOn } from '@/qbase/use-focus-on';
+import { useLayout } from '@/qbase/use-layout';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api } from '@/lib/qubdi/api';
 import {

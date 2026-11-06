@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Diagram } from '@/lib/domain/diagram';
+import type { Diagram } from '@/qbase/diagram-types';
 import { examples } from '@/pages/examples-page/examples-data/examples-data';
 import { templates } from '../templates-data';
 

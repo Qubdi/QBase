@@ -1,4 +1,5 @@
-import { diagramSchema, type Diagram } from '@/lib/domain/diagram';
+import { diagramSchema } from '@/qbase/diagram-convert';
+import type { Diagram } from '@/qbase/diagram-types';
 import { findLocalId, setProjectId, setRemoteId } from './remote-map';
 import { diagramToServerContent } from './content';
 import { getBaseUpdatedAt, setBaseUpdatedAt } from './remote-version';

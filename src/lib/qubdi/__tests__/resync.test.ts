@@ -8,7 +8,7 @@ import {
     snapshotSourceKeys,
 } from '../resync';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
-import type { Diagram } from '@/lib/domain/diagram';
+import type { Diagram } from '@/qbase/diagram-types';
 import { estimateBox } from '../placement';
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x));

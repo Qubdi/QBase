@@ -6,7 +6,7 @@ import { TooltipProvider } from '@/platform/ui/tooltip';
 import type { MyProject, RemoteDiagramSummary } from '@/lib/qubdi/api';
 import { ProjectOpenDialog } from '../project-open-dialog';
 
-vi.mock('@/hooks/use-storage', () => ({
+vi.mock('@/qbase/use-storage', () => ({
     useStorage: () => ({
         deleteDiagram: vi.fn(),
         listDiagrams: async () => [],

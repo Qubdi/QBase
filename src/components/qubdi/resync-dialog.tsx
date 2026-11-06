@@ -10,9 +10,9 @@ import {
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
 import { useToast } from '@/platform/toast/use-toast';
-import { useDiagram } from '@/hooks/use-diagram';
+import { useDiagram } from '@/qbase/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
+import { useRedoUndoStack } from '@/qbase/use-redo-undo-stack';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import { flushPendingSave } from '@/lib/qubdi/save-status-store';
 import {

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
-import { useDiagram } from '@/hooks/use-diagram';
+import { useDiagram } from '@/qbase/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, type DriftBadge } from '@/lib/qubdi/api';
 import { checkDriftOnOpen } from '@/lib/qubdi/auto-drift';

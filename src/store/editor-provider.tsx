@@ -43,14 +43,11 @@ export const EditorStoreProvider: React.FC<EditorStoreProviderProps> = ({
         };
     }, [store, adapter, autosaveDelayMs]);
 
-    // a saved design is edited by the person who just opened it
+    // the flag follows the prop: a lost edit lock turns it on, a regained one off
     useEffect(() => {
         const state = store.getState();
-        if (
-            options.readonly !== undefined &&
-            state.session.readonly !== options.readonly
-        )
-            state.setReadonly(options.readonly);
+        const wanted = options.readonly ?? false;
+        if (state.session.readonly !== wanted) state.setReadonly(wanted);
     }, [store, options.readonly]);
 
     return (

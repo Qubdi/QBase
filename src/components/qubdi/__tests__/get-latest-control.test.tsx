@@ -17,11 +17,11 @@ vi.mock('@/lib/qubdi/get-latest', () => ({
 }));
 
 const deleteLocal = vi.fn();
-vi.mock('@/hooks/use-storage', () => ({
+vi.mock('@/qbase/use-storage', () => ({
     useStorage: () => ({ deleteDiagram: deleteLocal }),
 }));
 
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({ currentDiagram: { name: 'Shop' } }),
 }));
 

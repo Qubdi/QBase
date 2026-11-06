@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { diagramToServerContent } from '../content';
-import { DatabaseType } from '@/lib/domain/database-type';
-import type { Diagram } from '@/lib/domain/diagram';
+import { DatabaseType, type Diagram } from '@/qbase/diagram-types';
 
 const diagram: Diagram = {
     id: 'local-diagram',

@@ -12,9 +12,8 @@ import {
 } from '@/platform/ui/dialog';
 import { Input } from '@/platform/ui/input';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { useStorage } from '@/hooks/use-storage';
-import { databaseTypeToLabelMap } from '@/lib/databases';
-import { DatabaseType } from '@/lib/domain/database-type';
+import { useStorage } from '@/qbase/use-storage';
+import { DatabaseType, databaseTypeToLabelMap } from '@/qbase/diagram-types';
 import { errorMessage } from '@/lib/qubdi/api';
 import { emptyDiagram } from '@/lib/qubdi/new-diagram';
 import { projectDiagramPath } from '@/lib/qubdi/project-path';

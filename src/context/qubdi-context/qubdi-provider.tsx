@@ -36,7 +36,7 @@ import {
 } from '@/lib/qubdi/save-status-store';
 import { i18n } from '@/i18n/i18n';
 import { diagramToServerContent } from '@/lib/qubdi/content';
-import type { Diagram } from '@/lib/domain/diagram';
+import type { Diagram } from '@/qbase/diagram-types';
 
 export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
     children,

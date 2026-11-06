@@ -22,7 +22,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/platform/ui/dropdown-menu';
-import { useDiagram } from '@/hooks/use-diagram';
+import { useDiagram } from '@/qbase/use-diagram';
 import { useMfaAvailable } from '@/hooks/use-mfa-available';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { getProjectId } from '@/lib/qubdi/remote-map';

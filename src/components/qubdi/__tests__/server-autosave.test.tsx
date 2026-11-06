@@ -12,7 +12,7 @@ import {
     hasUnsavedChanges,
     resetSaveStatus,
 } from '@/lib/qubdi/save-status-store';
-import type { Diagram } from '@/lib/domain/diagram';
+import type { Diagram } from '@/qbase/diagram-types';
 import { DiagramAccessContext } from '../diagram-access-context';
 import { WorkspaceContext, type Workspace } from '../workspace-context';
 import { ServerAutosave } from '../server-autosave';
@@ -26,7 +26,7 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
 vi.mock('@/lib/qubdi/lock-lost', () => ({ reportLockLost: vi.fn() }));
 
 let current: Diagram;
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({ currentDiagram: current }),
 }));
 

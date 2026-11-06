@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 import type { RemoteUser, RequestOptions, SecondFactor } from '@/lib/qubdi/api';
-import type { Diagram } from '@/lib/domain/diagram';
+import type { Diagram } from '@/qbase/diagram-types';
 
 export interface QubdiContext {
     enabled: boolean;

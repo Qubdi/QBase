@@ -32,7 +32,7 @@ const tables = [
         indexes: [index('i1', 'idx_a'), index('i2', 'idx_b')],
     },
 ];
-vi.mock('@/hooks/use-diagram', () => ({
+vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({
         currentDiagram: { id: 'local-1', tables },
         tables,
@@ -43,10 +43,10 @@ vi.mock('@/hooks/use-diagram', () => ({
 vi.mock('@/hooks/use-qubdi', () => ({
     useQubdi: () => ({ remoteIdFor: () => undefined, user: null }),
 }));
-vi.mock('@/hooks/use-focus-on', () => ({
+vi.mock('@/qbase/use-focus-on', () => ({
     useFocusOn: () => ({ focusOnTable: vi.fn() }),
 }));
-vi.mock('@/hooks/use-layout', () => ({
+vi.mock('@/qbase/use-layout', () => ({
     useLayout: () => ({
         isSidePanelShowed: true,
         openTableFromSidebar: vi.fn(),

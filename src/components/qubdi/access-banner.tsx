@@ -3,7 +3,7 @@ import { Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
 import { OptionSelect } from '@/components/option-select/option-select';
-import { useDiagram } from '@/hooks/use-diagram';
+import { useDiagram } from '@/qbase/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { isLocked, lockedReason } from '@/lib/qubdi/access';
 import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';

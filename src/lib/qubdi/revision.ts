@@ -1,4 +1,4 @@
-import type { Diagram } from '@/lib/domain/diagram';
+import type { Diagram } from '@/qbase/diagram-types';
 
 /** The parts of a diagram that are saved to the server. */
 const savedParts = (d: Diagram): unknown[] => [

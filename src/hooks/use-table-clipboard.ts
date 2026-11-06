@@ -1,8 +1,10 @@
 import { useCallback } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import type { DatabaseType } from '@/lib/domain/database-type';
-import { databasesWithSchemas } from '@/lib/domain';
-import type { DBTable } from '@/lib/domain/db-table';
+import {
+    databasesWithSchemas,
+    type DBTable,
+    type DatabaseType,
+} from '@/qbase/diagram-types';
 import { copyTables, hasCopiedTables, planPaste } from '@/lib/table-clipboard';
 import { getOperatingSystem } from '@/lib/utils';
 

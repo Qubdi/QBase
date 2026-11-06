@@ -10,7 +10,7 @@ import { ListPager } from '@/components/qubdi/list-pager';
 import { SearchInput } from '@/components/qubdi/search-input';
 import { Spinner } from '@/platform/ui/spinner';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
-import { StorageProvider } from '@/context/storage-context/storage-provider';
+import { StorageProvider } from '@/qbase/storage-provider';
 import { ThemeProvider } from '@/platform/theme/theme-provider';
 import { usePagedList } from '@/hooks/use-paged-list';
 import { useQubdi } from '@/hooks/use-qubdi';
