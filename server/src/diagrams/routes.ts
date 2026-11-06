@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { audit, auditDiagramSave } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
-import { diagrams, projectMembers, snapshots, users } from '../db/schema.js';
+import { diagrams, projectMembers, shareLinks, snapshots, users } from '../db/schema.js';
+import { emitLinkChanged } from '../events.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import { diagramStats, statsColumns } from './summary.js';
@@ -453,7 +454,13 @@ export const diagramRoutes =
                 .select({ title: diagrams.title, projectId: diagrams.projectId })
                 .from(diagrams)
                 .where(eq(diagrams.id, id));
+            // its links die with it: tell their open live streams to look again
+            const links = await db
+                .select({ id: shareLinks.id })
+                .from(shareLinks)
+                .where(eq(shareLinks.diagramId, id));
             await db.delete(diagrams).where(eq(diagrams.id, id));
+            for (const link of links) emitLinkChanged(link.id);
             await audit(db, {
                 userId: req.user!.id,
                 action: 'diagram.delete',
