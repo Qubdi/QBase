@@ -45,6 +45,7 @@ export const workspace = {
     viewer: {
         unnamedTable: 'unnamed',
     },
+    lastSaved: 'Saved {{when}}',
     diagramSummary: {
         table_one: '{{count}} table',
         table_other: '{{count}} tables',
