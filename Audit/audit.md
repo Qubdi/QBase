@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 12 | 0 | 2 | 37 | 0 |
 | Repository | 4 | 0 | 1 | 62 | 1 |
-| Server | 8 | 0 | 0 | 44 | 0 |
+| Server | 7 | 0 | 0 | 45 | 0 |
 | Database | 5 | 0 | 0 | 24 | 3 |
 | Client | 6 | 0 | 1 | 64 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 36 | 0 | 4 | 238 | 4 |
+| **Total** | 35 | 0 | 4 | 239 | 4 |
 
 ## Act first
 
@@ -57,7 +57,6 @@
 |----|-----|---------|-------|-----|
 | SRV-039 | Med | Undecryptable stored webhook skipped silently; no report note, UI shows none | `server/src/drift/service.ts:326` | Set `webhookNote` when the stored URL fails to open |
 | SRV-040 | Low | Signed-in user on temporary password gets 403 on public `/s/<token>` | `server/src/app.ts:43` · `server/src/app.ts:163` | Exempt `/s/` paths from the temporary-password hook |
-| SRV-041 | Low | Diagram deleted mid-request makes lint routes throw TypeError; 500 | `server/src/lint/routes.ts:102` · `server/src/lint/routes.ts:109` · `server/src/lint/routes.ts:143` | Return 404 when the row select is empty |
 | SRV-042 | Med | Drift check scans every catalog row once per table; quadratic on big schemas | `shared/schema-desc.ts:168` | Group metadata rows by table once before mapping |
 | SRV-043 | Med | Share SSE sends no `X-Accel-Buffering: no`; proxied live events stall | `server/src/share/routes.ts:421` | Send `X-Accel-Buffering: no` on the event stream |
 | SRV-046 | Low | Diagram delete never closes its share links' live streams | `server/src/diagrams/routes.ts:436` | Emit link-changed for the diagram's links on delete |
@@ -97,6 +96,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SRV-041 | Server | Diagram deleted mid-request makes lint routes throw TypeError; 500 |
 | DB-027 | Database | Unauthenticated `/auth/register` counts every user row per call |
 | REPO-065 | Repository | UI image and ui service have no healthcheck |
 | REPO-066 | Repository | `listen [::]:80` fails on IPv6-less hosts; custom entrypoint skips nginx's check |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 45 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027 |
+| 25 | 2026-11-06 | 46 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041 |

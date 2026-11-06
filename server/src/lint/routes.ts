@@ -97,6 +97,8 @@ export const lintRoutes =
                 })
                 .from(diagrams)
                 .where(eq(diagrams.id, id));
+            // deleted since the role check above
+            if (!d) return reply.code(404).send({ error: 'not_found' });
             let content: unknown;
             if (source === 'working') {
                 if (d.size > LINT_BODY_LIMIT) {
@@ -106,6 +108,7 @@ export const lintRoutes =
                     .select({ content: diagrams.content })
                     .from(diagrams)
                     .where(eq(diagrams.id, id));
+                if (!row) return reply.code(404).send({ error: 'not_found' });
                 content = row.content;
             } else {
                 const [latest] = await db
@@ -120,7 +123,9 @@ export const lintRoutes =
                 if (latest.size > LINT_BODY_LIMIT) {
                     return reply.code(413).send({ error: 'diagram_too_large' });
                 }
-                content = (await latestSnapshot(db, id))!.content;
+                const snapshot = await latestSnapshot(db, id);
+                if (!snapshot) return reply.code(404).send({ error: 'not_published' });
+                content = snapshot.content;
             }
             // a stored diagram is only as well formed as what the editor saved,
             // and the linter must not meet a table without fields
@@ -140,6 +145,7 @@ export const lintRoutes =
                 .select({ lintConfig: diagrams.lintConfig })
                 .from(diagrams)
                 .where(eq(diagrams.id, id));
+            if (!d) return reply.code(404).send({ error: 'not_found' });
             return normalizeConfig(d.lintConfig);
         });
 
