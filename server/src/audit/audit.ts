@@ -99,6 +99,8 @@ export interface AuditMeta {
     host?: string;
     /** audit.export: how many rows the file held */
     rows?: number;
+    /** drift.configure: what the request did to the webhook, if it touched it (its host goes in `host`) */
+    webhook?: 'set' | 'changed' | 'cleared';
     /** audit.export: the filters the file was cut with (set ones only) */
     filters?: {
         group?: string;

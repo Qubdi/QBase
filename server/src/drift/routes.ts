@@ -155,6 +155,22 @@ export const driftRoutes =
                     message: 'Set SECRETS_KEY or CONNECTION_KEY to store a webhook',
                 });
             }
+            // what the request does to the webhook, for the audit row
+            let webhookChange: 'set' | 'changed' | 'cleared' | undefined;
+            if (body.webhookUrl !== undefined) {
+                const [before] = await db
+                    .select({ webhookUrl: driftSettings.webhookUrl })
+                    .from(driftSettings)
+                    .where(eq(driftSettings.diagramId, id));
+                const had = !!before?.webhookUrl;
+                webhookChange = body.webhookUrl
+                    ? had
+                        ? 'changed'
+                        : 'set'
+                    : had
+                      ? 'cleared'
+                      : undefined;
+            }
             const values = {
                 connectionId: body.connectionId,
                 schemas: body.schemas,
@@ -182,6 +198,15 @@ export const driftRoutes =
                 userId: req.user!.id,
                 action: 'drift.configure',
                 diagramId: id,
+                // the host only: the path and query may hold a token
+                meta: webhookChange
+                    ? {
+                          webhook: webhookChange,
+                          ...(body.webhookUrl
+                              ? { host: new URL(body.webhookUrl).host }
+                              : {}),
+                      }
+                    : undefined,
             });
             return presentSettings(row, box());
         });

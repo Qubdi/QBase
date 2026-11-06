@@ -189,6 +189,8 @@ export interface ActivityItem {
         madeAt?: string;
         changed?: ('password' | 'isAdmin' | 'isActive')[];
         isAdmin?: boolean;
+        /** drift.configure: what happened to the webhook (its host is in `host`) */
+        webhook?: 'set' | 'changed' | 'cleared';
         /** a saved connection's name, for the connection actions */
         name?: string;
         /** audit.export: how many rows the file held */
