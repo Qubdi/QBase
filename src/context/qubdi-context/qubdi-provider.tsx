@@ -160,7 +160,7 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
                         options
                     );
                     setBaseUpdatedAt(diagram.id, updated.updatedAt);
-                    confirmSentContent(diagram.id);
+                    confirmSentContent(diagram.id, content);
                     markSyncedContent(diagram.id, content);
                     return updated.id;
                 } catch (e) {

@@ -10,9 +10,9 @@
 | Repository | 7 | 0 | 1 | 59 | 1 |
 | Server | 10 | 0 | 0 | 42 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
-| Client | 18 | 0 | 1 | 52 | 0 |
+| Client | 17 | 0 | 1 | 53 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 56 | 0 | 4 | 218 | 4 |
+| **Total** | 55 | 0 | 4 | 219 | 4 |
 
 ## Act first
 
@@ -98,7 +98,6 @@
 | CLI-057 | Low | Import wizard keeps stale saved-connection id across reopen | `src/components/qubdi/import-from-database-dialog.tsx:71` | Reset form and saved ids when the dialog opens |
 | CLI-058 | Low | DB import leaves an orphan local diagram when server create fails | `src/components/qubdi/import-from-database-dialog.tsx:161` | Delete the local diagram in the catch |
 | CLI-059 | Low | Get latest does not wait for an in-flight autosave PUT | `src/components/qubdi/get-latest-control.tsx:51` | Await the running save before reloading |
-| CLI-060 | Low | Save confirm clears other in-flight fingerprints; false conflict shown | `src/lib/qubdi/sent-content.ts:80` | Remove only the confirmed fingerprint |
 | CLI-061 | Low | Failed autosave not retried when the browser comes back online | `src/lib/qubdi/autosave.ts:68` | Retry the flush on the `online` event |
 | CLI-063 | Low | Lint settings fetched once; failed save swallowed silently | `src/components/qubdi/lint-control.tsx:61` · `src/components/qubdi/lint-control.tsx:85` | Re-read config on open; toast and roll back failures |
 | CLI-064 | Low | Change-password and Create-link lack busy guards; double click submits twice | `src/components/qubdi/change-password-dialog.tsx:142` · `src/components/qubdi/share-dialog.tsx:279` | Disable submit while the request is pending |
@@ -117,6 +116,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| CLI-060 | Client | Save confirm clears other in-flight fingerprints; false conflict shown |
 | CLI-068 | Client | Share viewer keeps a selection whose table a reload removed |
 | CLI-062 | Client | Share viewer applies out-of-order reload replies; older version can win |
 | CLI-066 | Client | Non-API errors, e.g. corrupt server content, shown as unreachable |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 25 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068 |
+| 25 | 2026-11-06 | 26 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060 |

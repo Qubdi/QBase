@@ -76,8 +76,22 @@ export const rememberSentContent = (
     write(localId, [...sentOf(localId), fingerprint(content)].slice(-MAX_KEPT));
 };
 
-/** The server answered a save, so nothing sent earlier is in doubt any more. */
-export const confirmSentContent = (localId: string) => write(localId, []);
+/**
+ * The server answered the save of `content`, so that send is no longer in
+ * doubt. Other sends of this diagram may still be in flight, and their replies
+ * can be lost, so only this one is forgotten. Without `content`, all are.
+ */
+export const confirmSentContent = (
+    localId: string,
+    content?: Record<string, unknown>
+) => {
+    if (!content) return write(localId, []);
+    const print = fingerprint(content);
+    write(
+        localId,
+        sentOf(localId).filter((p) => p !== print)
+    );
+};
 
 /** True when the server's content is something this editor sent. */
 export const isLastSentContent = (

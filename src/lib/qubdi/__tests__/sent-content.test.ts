@@ -40,6 +40,14 @@ describe('sent content', () => {
         expect(isLastSentContent('d1', { a: 1 })).toBe(false);
     });
 
+    it('forgets only the confirmed send when others may still be in flight', () => {
+        rememberSentContent('d1', { a: 1 });
+        rememberSentContent('d1', { a: 2 });
+        confirmSentContent('d1', { a: 2 });
+        expect(isLastSentContent('d1', { a: 2 })).toBe(false);
+        expect(isLastSentContent('d1', { a: 1 })).toBe(true);
+    });
+
     it('is separate for each diagram', () => {
         rememberSentContent('d1', { a: 1 });
         expect(isLastSentContent('d2', { a: 1 })).toBe(false);
