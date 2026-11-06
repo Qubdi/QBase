@@ -115,3 +115,5 @@ server,dev,tsx,4.23.15,MIT,no
 server,dev,typescript,6.0.2,Apache-2.0,no
 server,dev,typescript-eslint,8.72.1,MIT,no
 server,dev,vitest,5.0.5,MIT,no
+client,runtime,zustand,5.1.0,MIT,no
+client,dev,fake-indexeddb,6.2.7,Apache-2.0,no
