@@ -60,7 +60,7 @@ export const ImportFromDatabaseDialog: React.FC<
     ImportFromDatabaseDialogProps
 > = ({ open, onOpenChange, projectId, projectSlug }) => {
     const { t } = useTranslation();
-    const { addDiagram } = useStorage();
+    const { addDiagram, deleteDiagram } = useStorage();
     const { syncDiagram } = useQubdi();
     const navigate = useNavigate();
     const [step, setStep] = useState<Step>('connect');
@@ -147,6 +147,8 @@ export const ImportFromDatabaseDialog: React.FC<
         if (!catalog) return;
         setBusy(true);
         setError(null);
+        // set while the copy exists only in this browser, so a failed server create can take it back
+        let localId: string | null = null;
         try {
             const res = await api.introspect({
                 ...ref(),
@@ -159,8 +161,10 @@ export const ImportFromDatabaseDialog: React.FC<
                 name.trim() || catalog.database
             );
             await addDiagram({ diagram });
+            localId = diagram.id;
             // nothing lives outside a project: create it on the server right away
             const remoteId = await syncDiagram(diagram, projectId);
+            localId = null; // the server has it now: nothing to take back
             // remember where this diagram came from so re-sync is one click;
             // passwords are never stored in the browser
             const usedSaved = savedId || justSavedId;
@@ -182,6 +186,9 @@ export const ImportFromDatabaseDialog: React.FC<
             onOpenChange(false);
             navigate(projectDiagramPath(projectSlug, remoteId));
         } catch (err) {
+            // the diagram exists only in this browser and the server never got it:
+            // a retry would make a second copy, and the first would be orphaned
+            if (localId) await deleteDiagram(localId).catch(() => undefined);
             setError(errorMessage(err));
         } finally {
             setBusy(false);
