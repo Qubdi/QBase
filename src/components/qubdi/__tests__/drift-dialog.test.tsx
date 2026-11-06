@@ -270,6 +270,37 @@ describe('DriftDialog', () => {
         ).toBeNull();
     });
 
+    it('sends the scope the server already holds when this browser has no sync state', async () => {
+        getDrift.mockResolvedValue(
+            overview({
+                settings: {
+                    connectionId: 'c1',
+                    schemas: ['sales'],
+                    tables: ['sales.orders'],
+                    sourceKeys: {
+                        tables: { t1: 'sales.orders' },
+                        columns: { f1: 'sales.orders.id' },
+                    },
+                },
+            })
+        );
+        checkDrift.mockResolvedValue(report({ status: 'clean', changes: [] }));
+        localStorage.clear(); // no sync state for this diagram here
+        await show();
+        await act(async () => {
+            fireEvent.click(checkNow());
+        });
+        await settle();
+        expect(saveDrift.mock.calls[0][1]).toMatchObject({
+            schemas: ['sales'],
+            tables: ['sales.orders'],
+            sourceKeys: {
+                tables: { t1: 'sales.orders' },
+                columns: { f1: 'sales.orders.id' },
+            },
+        });
+    });
+
     it('saves what to compare with, then checks, in one step', async () => {
         getDrift.mockResolvedValue(
             overview({

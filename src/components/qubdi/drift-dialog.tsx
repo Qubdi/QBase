@@ -88,6 +88,13 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
     // the saved URL is never sent back, only its host; `webhook` holds what was typed since
     const [webhookHost, setWebhookHost] = useState<string | null>(null);
     const [webhookEdited, setWebhookEdited] = useState(false);
+    // what the server already holds to compare with: sent again when this
+    // browser has no sync state of its own, so a check never blanks it
+    const serverScope = useRef<{
+        schemas: string[];
+        tables: string[];
+        sourceKeys: { tables: Record<string, string>; columns: Record<string, string> };
+    } | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -109,6 +116,13 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
             }
             const o = await api.getDrift(remoteId);
             onBadgeChange(o.badge);
+            serverScope.current = o.settings
+                ? {
+                      schemas: o.settings.schemas,
+                      tables: o.settings.tables,
+                      sourceKeys: o.settings.sourceKeys,
+                  }
+                : null;
             if (o.settings) {
                 setConnectionId(o.settings.connectionId ?? '');
                 setWebhook('');
@@ -167,12 +181,13 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
         run(async (id) => {
             await api.saveDrift(id, {
                 connectionId: connectionId || null,
-                schemas: syncState?.schemas ?? [],
-                tables: syncState?.tables ?? [],
-                sourceKeys: syncState?.sourceKeys ?? {
-                    tables: {},
-                    columns: {},
-                },
+                schemas: syncState?.schemas ?? serverScope.current?.schemas ?? [],
+                tables: syncState?.tables ?? serverScope.current?.tables ?? [],
+                sourceKeys: syncState?.sourceKeys ??
+                    serverScope.current?.sourceKeys ?? {
+                        tables: {},
+                        columns: {},
+                    },
                 ...(webhookEdited
                     ? { webhookUrl: webhook.trim() || null }
                     : {}),
