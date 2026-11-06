@@ -1,0 +1,115 @@
+// The pure part of image export. The DOM capture itself is Phase 6.
+
+export type ImageFormat = 'png' | 'jpeg' | 'svg';
+export type ImageTheme = 'light' | 'dark';
+
+export interface ImageOptions {
+    format: ImageFormat;
+    /** pixel ratio */
+    scale: 1 | 2 | 4;
+    /** draw the dot grid behind the diagram */
+    pattern: boolean;
+    transparent: boolean;
+    theme: ImageTheme;
+}
+
+export const DEFAULT_IMAGE_OPTIONS: Omit<ImageOptions, 'format' | 'theme'> = {
+    scale: 4,
+    pattern: true,
+    transparent: false,
+};
+
+export const IMAGE_EXTENSION: Record<ImageFormat, string> = {
+    png: 'png',
+    jpeg: 'jpeg',
+    svg: 'svg',
+};
+
+export const JPEG_QUALITY = 1;
+
+/** `<diagram name>.<ext>` (EXP-060). */
+export function imageFileName(
+    diagramName: string,
+    format: ImageFormat
+): string {
+    return `${diagramName}.${IMAGE_EXTENSION[format]}`;
+}
+
+const SURFACE: Record<ImageTheme, string> = {
+    light: '#ffffff',
+    dark: '#141414',
+};
+const DOTS: Record<ImageTheme, string> = { light: '#92939C', dark: '#777777' };
+
+/**
+ * Background fill (EXP-063, EXP-065): none for a transparent PNG or SVG; a
+ * JPEG has no alpha, so it always gets the theme surface.
+ */
+export function backgroundFill(
+    options: Pick<ImageOptions, 'format' | 'transparent' | 'theme'>
+): string | undefined {
+    if (options.transparent && options.format !== 'jpeg') return undefined;
+    return SURFACE[options.theme];
+}
+
+export interface DotPattern {
+    colour: string;
+    /** distance between dots, in image pixels before the pixel ratio */
+    gap: number;
+    radius: number;
+}
+
+/** Dot grid at the given zoom: every 16 px, radius half a pixel, times zoom. */
+export function dotPattern(theme: ImageTheme, zoom = 1): DotPattern {
+    return { colour: DOTS[theme], gap: 16 * zoom, radius: 0.5 * zoom };
+}
+
+export interface Rect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** The box that holds every rectangle, with a margin; undefined when there are none. */
+export function diagramBounds(
+    rects: readonly Rect[],
+    margin = 50
+): Rect | undefined {
+    if (rects.length === 0) return undefined;
+    const left = Math.min(...rects.map((r) => r.x));
+    const top = Math.min(...rects.map((r) => r.y));
+    const right = Math.max(...rects.map((r) => r.x + r.width));
+    const bottom = Math.max(...rects.map((r) => r.y + r.height));
+    return {
+        x: left - margin,
+        y: top - margin,
+        width: right - left + 2 * margin,
+        height: bottom - top + 2 * margin,
+    };
+}
+
+/** Size of the file in pixels (EXP-061, EXP-064: the whole diagram is fitted). */
+export function outputSize(
+    bounds: Pick<Rect, 'width' | 'height'>,
+    scale: number
+): { width: number; height: number } {
+    return {
+        width: Math.ceil(bounds.width * scale),
+        height: Math.ceil(bounds.height * scale),
+    };
+}
+
+export interface LogoPlacement {
+    height: number;
+    margin: number;
+    opacity: number;
+}
+
+/** The corner logo of PNG and JPEG (EXP-066); SVG has none. */
+export function logoPlacement(imageWidth: number): LogoPlacement {
+    const height = Math.max(24, imageWidth * 0.024);
+    return { height, margin: Math.max(12, height / 2), opacity: 0.9 };
+}
+
+export const hasLogo = (format: ImageFormat): boolean => format !== 'svg';
