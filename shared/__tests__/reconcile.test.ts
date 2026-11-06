@@ -820,6 +820,29 @@ describe('reconcile: relationships', () => {
         expect(cs.changes.map((c) => c.kind)).toEqual(['relationship_changed']);
     });
 
+    it('gives each changed relationship its own id when they share a table and a name', () => {
+        const tables = () => [
+            users(),
+            table('accounts', [col('id', { primaryKey: true })]),
+            table('orders', [
+                col('id', { primaryKey: true }),
+                col('user_id'),
+                col('buyer_id'),
+            ]),
+        ];
+        const a = schema(tables(), [
+            rel('fk', 'orders', 'user_id', 'users'),
+            rel('fk', 'orders', 'buyer_id', 'users'),
+        ]);
+        const b = schema(tables(), [
+            rel('fk', 'orders', 'user_id', 'accounts'),
+            rel('fk', 'orders', 'buyer_id', 'accounts'),
+        ]);
+        const ids = reconcile(a, b).changes.map((c) => c.id);
+        expect(ids).toHaveLength(2);
+        expect(new Set(ids).size).toBe(2);
+    });
+
     it('does not list relationships of tables that are being removed', () => {
         const a = schema(
             [users(), orders()],

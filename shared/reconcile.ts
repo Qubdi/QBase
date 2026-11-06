@@ -541,7 +541,7 @@ function diffRelationships(
             usedDb.add(hit);
             usedDiagram.add(m.original);
             out.push({
-                id: `relationship_changed:${m.original.fromTable}.${m.original.name}`,
+                id: `relationship_changed:${m.original.fromTable}.${m.original.name}.${m.original.fromColumns.join(',')}`,
                 kind: 'relationship_changed',
                 before: m.original,
                 after: hit,

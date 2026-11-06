@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 24</b></div>
-  <h1>12 open: 0 Crit, 0 High.</h1>
+  <h1>11 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -31,7 +31,7 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">12 open &middot; 40 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">11 open &middot; 41 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -47,7 +47,6 @@
         <tr><td class="svc-name">SRV-048</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Manual publish noted "Auto-published on save" is overwritten by next autosave</td><td><code>server/src/diagrams/service.ts:250</code></td><td class="wrap-cell">Flag auto snapshots in a column, not by note text</td></tr>
         <tr><td class="svc-name">SRV-049</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Webhook timeout is idle-only; a trickling server holds the drift check</td><td><code>server/src/drift/webhook.ts:102</code></td><td class="wrap-cell">Add an overall deadline to the request</td></tr>
         <tr><td class="svc-name">SRV-051</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CLI lint crashes on a table without <code>fields</code>; exits 1, not 2</td><td><code>server/src/cli/lint.ts:108</code></td><td class="wrap-cell">Validate diagram shape; return 2 on bad input</td></tr>
-        <tr><td class="svc-name">SRV-052</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Composite FK change emits duplicate <code>relationship_changed</code> ids</td><td><code>shared/reconcile.ts:544</code></td><td class="wrap-cell">Add <code>fromColumns</code> to the change id</td></tr>
       </tbody>
     </table>
   </div>
@@ -55,11 +54,12 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (40)</summary>
+  <details><summary>Fixed (41)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SRV-052</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Composite FK change emits duplicate <code>relationship_changed</code> ids</td></tr>
         <tr><td class="svc-name">SRV-050</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>databaseType</code> "constructor" makes lint throw TypeError; 500</td></tr>
         <tr><td class="svc-name">SRV-044</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>NOTIFY qubdi_events, 'null'</code> throws in the listener; process exits</td></tr>
         <tr><td class="svc-name">SRV-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Links created with <code>access: "off"</code> skip <code>MAX_ACTIVE_LINKS</code> and are never purged</td></tr>
