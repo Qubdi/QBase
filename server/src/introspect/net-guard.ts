@@ -116,6 +116,7 @@ export function classifyIp(ip: string): IpClass {
     if (b.slice(0, 12).every((x) => x === 0)) return 'reserved'; // ::a.b.c.d, ::/96
     if (b[0] === 0xfe && (b[1] & 0xc0) === 0x80) return 'link_local';
     if ((b[0] & 0xfe) === 0xfc) return 'private'; // fc00::/7
+    if (b[0] === 0xfe && (b[1] & 0xc0) === 0xc0) return 'private'; // fec0::/10, deprecated site-local
     if (b[0] === 0xff) return 'multicast';
     if (b[0] === 0x20 && b[1] === 0x01 && b[2] === 0x0d && b[3] === 0xb8) {
         return 'reserved'; // documentation range

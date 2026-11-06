@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 24</b></div>
-  <h1>18 open: 0 Crit, 2 High.</h1>
+  <h1>17 open: 0 Crit, 2 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -38,7 +38,7 @@
 
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">18 open &middot; 31 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">17 open &middot; 32 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -55,7 +55,6 @@
         <tr><td class="svc-name">SEC-041</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Failed sign-in audit insert runs only for real emails; timing reveals accounts</td><td><code>server/src/auth/routes.ts:209</code></td><td class="wrap-cell">Write the audit row after replying</td></tr>
         <tr><td class="svc-name">SEC-042</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Audit rows cannot tell an admin grant from a revoke</td><td><code>server/src/admin/routes.ts:410</code></td><td class="wrap-cell">Record the new <code>isAdmin</code> value in user audit meta</td></tr>
         <tr><td class="svc-name">SEC-043</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>audit.export</code> row omits which filters were exported</td><td><code>server/src/admin/routes.ts:211</code></td><td class="wrap-cell">Add the export filters to the audit meta</td></tr>
-        <tr><td class="svc-name">SEC-044</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Net guard treats site-local <code>fec0::/10</code> as public</td><td><code>server/src/introspect/net-guard.ts:117</code></td><td class="wrap-cell">Classify <code>fe80::/9</code> as non-public</td></tr>
         <tr><td class="svc-name">SEC-045</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Postgres TLS <code>servername</code> set even when host is an IP literal</td><td><code>server/src/introspect/postgres.ts:295</code></td><td class="wrap-cell">Omit <code>servername</code> when the host is an IP</td></tr>
         <tr><td class="svc-name">SEC-046</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>QUBDI_BACKEND_URL</code> substituted unescaped into <code>config.js</code>, CSP and nginx config</td><td><code>default.conf.template:25</code> · <code>default.conf.template:40</code> · <code>entrypoint.sh:4</code></td><td class="wrap-cell">Validate it as a plain http(s) origin in <code>entrypoint.sh</code></td></tr>
         <tr><td class="svc-name">SEC-047</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">UI image runs nginx master as root; no <code>USER</code> line</td><td><code>Dockerfile:20</code></td><td class="wrap-cell">Base on <code>nginx-unprivileged</code>; add a non-root <code>USER</code></td></tr>
@@ -68,11 +67,12 @@
 
 <section id="closed" class="sec-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (31)</summary>
+  <details><summary>Fixed (32)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">SEC-044</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Net guard treats site-local <code>fec0::/10</code> as public</td></tr>
         <tr><td class="svc-name">SEC-035</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">One fixed scrypt salt for every CryptoBox; MFA and webhooks share one key</td></tr>
         <tr><td class="svc-name">SEC-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift webhook URL stored and returned in plaintext; embedded tokens exposed</td></tr>
         <tr><td class="svc-name">SEC-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Admin PATCH on own account sets password without current password or 2FA</td></tr>
