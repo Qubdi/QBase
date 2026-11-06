@@ -109,6 +109,10 @@ export function badgeOf(latest: ReportSummaryRow | undefined) {
     };
 }
 
+/** What a report says when the saved webhook cannot be opened. */
+export const UNREADABLE_WEBHOOK_NOTE =
+    'not sent: the saved webhook could not be read (was the encryption key changed?)';
+
 /** The latest report without its changes. */
 export async function latestReportSummary(db: Db, diagramId: string) {
     const [r] = await db
@@ -357,6 +361,15 @@ export async function runDriftCheck(
             webhookNote = result.ok
                 ? `sent (${result.status})`
                 : `failed: ${result.error ?? `HTTP ${result.status}`}`;
+        } else if (
+            settings.webhookUrl &&
+            !webhookUrl &&
+            outcome.status !== 'clean' &&
+            !sameAsBefore
+        ) {
+            // there is a webhook, but it cannot be opened (the key changed, or
+            // the value is damaged): say so in the report instead of staying silent
+            webhookNote = UNREADABLE_WEBHOOK_NOTE;
         }
 
         const [report] = await db
