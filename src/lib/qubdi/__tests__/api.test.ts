@@ -8,6 +8,7 @@ import {
     type RemoteUser,
     REQUEST_TIMEOUT_MS,
 } from '../api';
+import { InvalidServerDiagramError } from '../open-remote';
 
 const jsonResponse = (status: number, body: unknown) =>
     new Response(JSON.stringify(body), {
@@ -361,6 +362,15 @@ describe('qubdi api client', () => {
             ).toBe('sam@corp.io is editing this diagram.');
             expect(errorMessage(new ApiError(423, 'locked'))).toBe(
                 'Someone else is editing this diagram.'
+            );
+        });
+
+        it('does not call corrupt server content "unreachable"', () => {
+            expect(errorMessage(new InvalidServerDiagramError())).toBe(
+                'The server copy of this diagram could not be read.'
+            );
+            expect(errorMessage(new TypeError('Failed to fetch'))).toBe(
+                'Could not reach the server.'
             );
         });
     });

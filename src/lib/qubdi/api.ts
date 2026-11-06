@@ -2,6 +2,7 @@ import { QUBDI_BACKEND_URL } from './config';
 import { i18n } from '@/i18n/i18n';
 import type { LintConfig } from '../../../shared/lint';
 import { listQuery, type ListParams, type Page } from './paging';
+import { InvalidServerDiagramError } from './open-remote';
 
 export type MemberRole = 'owner' | 'editor' | 'viewer';
 
@@ -894,6 +895,10 @@ export const errorMessage = (e: unknown): string => {
         // only server codes (word characters) are looked up; the fallback names the code
         if (/^\w+$/.test(e.code) && i18n.exists(key)) return i18n.t(key);
         return i18n.t('qubdi.account.errors.requestFailed', { code: e.code });
+    }
+    // the server answered, but its copy of the diagram is not one this editor can read
+    if (e instanceof InvalidServerDiagramError) {
+        return i18n.t('qubdi.account.errors.invalidDiagram');
     }
     return i18n.t('qubdi.account.errors.unreachable');
 };

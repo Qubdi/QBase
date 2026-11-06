@@ -62,6 +62,8 @@ export const account = {
         requestFailed: 'Request failed ({{code}}).',
         locked: 'Someone else is editing this diagram.',
         unreachable: 'Could not reach the server.',
+        invalidDiagram:
+            'The server copy of this diagram could not be read.',
     },
     authDialog: {
         twoFactorTitle: 'Two-factor authentication',

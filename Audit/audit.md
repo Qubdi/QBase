@@ -10,9 +10,9 @@
 | Repository | 7 | 0 | 1 | 59 | 1 |
 | Server | 10 | 0 | 0 | 42 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
-| Client | 21 | 0 | 1 | 49 | 0 |
+| Client | 20 | 0 | 1 | 50 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 59 | 0 | 4 | 215 | 4 |
+| **Total** | 58 | 0 | 4 | 216 | 4 |
 
 ## Act first
 
@@ -103,7 +103,6 @@
 | CLI-062 | Low | Share viewer applies out-of-order reload replies; older version can win | `src/pages/share-viewer-page/share-viewer-page.tsx:55` | Drop replies older than the newest request |
 | CLI-063 | Low | Lint settings fetched once; failed save swallowed silently | `src/components/qubdi/lint-control.tsx:61` · `src/components/qubdi/lint-control.tsx:85` | Re-read config on open; toast and roll back failures |
 | CLI-064 | Low | Change-password and Create-link lack busy guards; double click submits twice | `src/components/qubdi/change-password-dialog.tsx:142` · `src/components/qubdi/share-dialog.tsx:279` | Disable submit while the request is pending |
-| CLI-066 | Low | Non-API errors, e.g. corrupt server content, shown as unreachable | `src/lib/qubdi/api.ts:897` | Map `InvalidServerDiagramError` to its own message |
 | CLI-067 | Low | Lock check unreachable on first ask never retried; editor stays read-only | `src/components/qubdi/use-edit-lock.ts:47` | Offer a retry in the access banner |
 | CLI-068 | Low | Share viewer keeps a selection whose table a reload removed | `src/pages/share-viewer-page/share-viewer-page.tsx:126` | Clear selection when the table is gone |
 | CLI-070 | Low | Hard-coded English toasts and labels in fork editor code | `src/pages/editor-page/canvas/canvas.tsx:847` · `src/pages/editor-page/top-navbar/menu/menu.tsx:90` | Move strings into `en` and call `t()` |
@@ -120,6 +119,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| CLI-066 | Client | Non-API errors, e.g. corrupt server content, shown as unreachable |
 | CLI-065 | Client | 33 API paths interpolate ids without `encodeURIComponent` |
 | CLI-069 | Client | Inline-ref regex built from an unescaped field name |
 | CLI-049 | Client | Legacy-move doc comment says never merged; code merges missing rows |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 22 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065 |
+| 25 | 2026-11-06 | 23 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066 |
