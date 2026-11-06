@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import pg from 'pg';
 import { assertReadOnlySql } from './readonly-guard.js';
 import type { ResolvedTarget } from './net-guard.js';
@@ -279,6 +280,17 @@ export class PostgresIntrospector implements Introspector {
     }
 }
 
+/** TLS options for a connection. SNI must be a hostname, so an IP literal sends none. */
+export function postgresSsl(
+    params: Pick<ConnectionParams, 'ssl' | 'host' | 'trustServerCertificate'>
+) {
+    if (!params.ssl) return false;
+    return {
+        ...(isIP(params.host) ? {} : { servername: params.host }),
+        rejectUnauthorized: !params.trustServerCertificate,
+    };
+}
+
 export async function connectPostgres(
     params: ConnectionParams,
     target: ResolvedTarget
@@ -290,12 +302,7 @@ export async function connectPostgres(
         database: params.database,
         user: params.user,
         password: params.password,
-        ssl: params.ssl
-            ? {
-                  servername: params.host,
-                  rejectUnauthorized: !params.trustServerCertificate,
-              }
-            : false,
+        ssl: postgresSsl(params),
         connectionTimeoutMillis: 10_000,
         statement_timeout: STATEMENT_TIMEOUT_MS,
         query_timeout: STATEMENT_TIMEOUT_MS + 5_000,

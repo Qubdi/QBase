@@ -6,13 +6,13 @@
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 17 | 0 | 2 | 32 | 0 |
+| Security & secrets | 16 | 0 | 2 | 33 | 0 |
 | Repository | 14 | 0 | 1 | 52 | 1 |
 | Server | 14 | 0 | 0 | 38 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
 | Client | 24 | 0 | 1 | 46 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 78 | 0 | 4 | 196 | 4 |
+| **Total** | 77 | 0 | 4 | 197 | 4 |
 
 ## Act first
 
@@ -41,7 +41,6 @@
 | SEC-041 | Low | Failed sign-in audit insert runs only for real emails; timing reveals accounts | `server/src/auth/routes.ts:209` | Write the audit row after replying |
 | SEC-042 | Low | Audit rows cannot tell an admin grant from a revoke | `server/src/admin/routes.ts:410` | Record the new `isAdmin` value in user audit meta |
 | SEC-043 | Low | `audit.export` row omits which filters were exported | `server/src/admin/routes.ts:211` | Add the export filters to the audit meta |
-| SEC-045 | Low | Postgres TLS `servername` set even when host is an IP literal | `server/src/introspect/postgres.ts:295` | Omit `servername` when the host is an IP |
 | SEC-046 | Low | `QUBDI_BACKEND_URL` substituted unescaped into `config.js`, CSP and nginx config | `default.conf.template:25` · `default.conf.template:40` · `entrypoint.sh:4` | Validate it as a plain http(s) origin in `entrypoint.sh` |
 | SEC-047 | Low | UI image runs nginx master as root; no `USER` line | `Dockerfile:20` | Base on `nginx-unprivileged`; add a non-root `USER` |
 | SEC-048 | Low | CI checkouts persist `GITHUB_TOKEN` in a workspace mounted into gitleaks | `.github/workflows/ci.yaml:19` · `.github/workflows/publish.yaml:37` | Set `persist-credentials: false` on every checkout |
@@ -139,6 +138,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-045 | Security & secrets | Postgres TLS `servername` set even when host is an IP literal |
 | SEC-044 | Security & secrets | Net guard treats site-local `fec0::/10` as public |
 | SEC-035 | Security & secrets | One fixed scrypt salt for every CryptoBox; MFA and webhooks share one key |
 | DEAD-007 | Dead code | `sha256` and `DiffKind` exported but referenced nowhere |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 3 fixed: DEAD-007, SEC-035, SEC-044 |
+| 25 | 2026-11-06 | 4 fixed: DEAD-007, SEC-035, SEC-044, SEC-045 |
