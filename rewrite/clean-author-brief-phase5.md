@@ -62,7 +62,9 @@ paths. Nothing else lives in `src/lib/data`.
    `rewrite/log.md` and list it in your final message. Do not guess at old behaviour beyond the spec.
 4. Round trip: for every sample, import then export then import gives the same model; export is
    byte-for-byte as the spec says.
-5. Docker for node tooling (see the Phase 4 pattern): `docker run --rm -u $(id -u) -v "$PWD":/w
+5. Test setup: this trimmed checkout lacks `src/i18n`, so the repo's `vitest.config.ts` (which loads
+   `src/test/setup.ts`) cannot run. Add your own `vitest.phase5.config.ts` (node environment, only your
+   test folders) and run with `--config`; the owner removes it on copy. Docker for node tooling (see the Phase 4 pattern): `docker run --rm -u $(id -u) -v "$PWD":/w
    -w /w node:24 npx vitest run src/dialects src/formats` (run `npm ci` first if needed).
 6. Gates before hand-back: `npx tsc -p tsconfig.app.json --noEmit` clean for your files;
    `npx eslint src/dialects src/formats src/lib/data --max-warnings 0` clean; tests pass.

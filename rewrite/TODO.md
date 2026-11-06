@@ -39,7 +39,7 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
    flow, storage and migration, module interfaces. Ask a lawyer to review the process.
 4. [ ] **Phase 3: foundations.** UI primitives (shadcn CLI), theme, i18n loader, toasts,
    dialogs, router, app shell, build configs. The branch builds and tests again.
-5. [ ] **Phase 4: domain model and storage** (clean author). Types, local storage, undo and
+5. [x] **Phase 4: domain model and storage** (clean author; done 2026-11-07, commits b48a944..ffadd67; owner confirmations in `decisions-phase4.md`). Types, local storage, undo and
    redo, migration of existing local data.
 6. [ ] **Phase 5: import and export** (clean author). SQL import per dialect, SQL, DBML, JSON
    and image export; round-trip tests with our own sample schemas.
