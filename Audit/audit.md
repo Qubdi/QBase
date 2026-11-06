@@ -10,9 +10,9 @@
 | Repository | 7 | 0 | 1 | 59 | 1 |
 | Server | 10 | 0 | 0 | 42 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
-| Client | 24 | 0 | 1 | 46 | 0 |
+| Client | 23 | 0 | 1 | 47 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 62 | 0 | 4 | 212 | 4 |
+| **Total** | 61 | 0 | 4 | 213 | 4 |
 
 ## Act first
 
@@ -88,7 +88,6 @@
 |----|-----|---------|-------|-----|
 | CLI-047 | Med | `webhookSaved` key sits under `connections`; drift dialog shows the raw key | `src/i18n/qubdi/database.ts:34` · `src/components/qubdi/drift-dialog.tsx:266` | Move `webhookSaved` into the `drift` block |
 | CLI-048 | Low | Saved webhook cannot be cleared as the hint says; field loads empty | `src/components/qubdi/drift-dialog.tsx:114` · `src/i18n/qubdi/database.ts:35` | Add a remove-webhook button; reword the hint |
-| CLI-049 | Low | Legacy-move doc comment says never merged; code merges missing rows | `src/lib/qubdi/local-data.ts:55` | Reword the comment to describe the merge |
 | CLI-050 | High | Publish and auto-publish PUT omit `editorId`; server answers 423 | `src/components/qubdi/publish-control.tsx:99` · `src/components/qubdi/publish-control.tsx:124` | Send `editorId: getEditorId()`; adopt returned `updatedAt` as base |
 | CLI-051 | Med | Drift Check now blanks server scope and sourceKeys without local sync state | `src/components/qubdi/drift-dialog.tsx:169` | Resend the server's saved scope when local state is missing |
 | CLI-052 | Med | Share-link expiry shown in UTC but parsed as local time | `src/components/qubdi/share-dialog.tsx:42` | Format with local time parts; commit on blur |
@@ -123,6 +122,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| CLI-049 | Client | Legacy-move doc comment says never merged; code merges missing rows |
 | SRV-051 | Server | CLI lint crashes on a table without `fields`; exits 1, not 2 |
 | SRV-052 | Server | Composite FK change emits duplicate `relationship_changed` ids |
 | SRV-050 | Server | `databaseType` "constructor" makes lint throw TypeError; 500 |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 19 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051 |
+| 25 | 2026-11-06 | 20 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049 |

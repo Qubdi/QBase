@@ -51,9 +51,10 @@ export async function clearLocalUserData(
  * deletes the old database. Runs while `target` opens. `openLegacy` must
  * declare the same schema as `target`, so an old database still on an earlier
  * version is upgraded before it is read. The copy is one transaction: it lands
- * whole or not at all. If `target` already holds diagrams the old database is
- * left alone, never merged or deleted. Any failure leaves the old database in
- * place for the next load to retry.
+ * whole or not at all. Rows `target` already has (made since) are kept as
+ * they are and never overwritten; only the rows it lacks are added, so the
+ * result is a merge. The old database is deleted once the copy has landed. Any
+ * failure leaves the old database in place for the next load to retry.
  */
 export async function adoptLegacyLocalData(
     target: Dexie,
