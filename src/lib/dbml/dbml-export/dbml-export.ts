@@ -517,7 +517,9 @@ const convertToInlineRefs = (dbml: string): string => {
 
         if (!tableData) return;
 
-        const fieldStartPattern = new RegExp(`^([ \\t]*)"${fieldName}"\\s+`);
+        const fieldStartPattern = new RegExp(
+            `^([ \\t]*)"${fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"\\s+`
+        );
         const lines = tableData.content.split('\n');
         let modified = false;
 

@@ -10,9 +10,9 @@
 | Repository | 7 | 0 | 1 | 59 | 1 |
 | Server | 10 | 0 | 0 | 42 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
-| Client | 23 | 0 | 1 | 47 | 0 |
+| Client | 22 | 0 | 1 | 48 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 61 | 0 | 4 | 213 | 4 |
+| **Total** | 60 | 0 | 4 | 214 | 4 |
 
 ## Act first
 
@@ -107,7 +107,6 @@
 | CLI-066 | Low | Non-API errors, e.g. corrupt server content, shown as unreachable | `src/lib/qubdi/api.ts:897` | Map `InvalidServerDiagramError` to its own message |
 | CLI-067 | Low | Lock check unreachable on first ask never retried; editor stays read-only | `src/components/qubdi/use-edit-lock.ts:47` | Offer a retry in the access banner |
 | CLI-068 | Low | Share viewer keeps a selection whose table a reload removed | `src/pages/share-viewer-page/share-viewer-page.tsx:126` | Clear selection when the table is gone |
-| CLI-069 | Low | Inline-ref regex built from an unescaped field name | `src/lib/dbml/dbml-export/dbml-export.ts:520` | Escape `fieldName` as line 731 does |
 | CLI-070 | Low | Hard-coded English toasts and labels in fork editor code | `src/pages/editor-page/canvas/canvas.tsx:847` · `src/pages/editor-page/top-navbar/menu/menu.tsx:90` | Move strings into `en` and call `t()` |
 
 ### Dead code
@@ -122,6 +121,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| CLI-069 | Client | Inline-ref regex built from an unescaped field name |
 | CLI-049 | Client | Legacy-move doc comment says never merged; code merges missing rows |
 | SRV-051 | Server | CLI lint crashes on a table without `fields`; exits 1, not 2 |
 | SRV-052 | Server | Composite FK change emits duplicate `relationship_changed` ids |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 20 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049 |
+| 25 | 2026-11-06 | 21 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069 |
