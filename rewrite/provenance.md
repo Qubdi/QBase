@@ -34,6 +34,8 @@ One row per person or AI session. Add a row before the first commit of a module.
 | Date | Author | Has read ChartDB source? | Modules written | Notes |
 | --- | --- | --- | --- | --- |
 | 2026-11-07 | Anri Tvalabeishvili and an AI assistant | yes (both) | plan, tooling, inventory | not a clean author for any module |
+| 2026-11-07 | AI assistant sessions (4 spec writers) | yes (read `main` via ../QBase-main) | `rewrite/spec/` only | spec authors, not clean for any code module |
+
 
 ## Per-module record
 

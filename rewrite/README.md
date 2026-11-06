@@ -38,4 +38,8 @@ node tools/similarity.mjs --upstream <chartdb> --tracked \
   --exclude rewrite/ --exclude tools/ --csv rewrite/inventory/other.csv
 ```
 
+Check that the behaviour spec holds prose, not code (no ts/js fences, no source-like lines, no
+8 consecutive lines shared with ChartDB; CI runs it as the "spec" step):
+`node tools/spec-check.mjs --upstream <chartdb>`.
+
 Regenerate the dependency licence list: `node tools/licences.mjs`.

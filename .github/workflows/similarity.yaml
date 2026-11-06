@@ -43,3 +43,7 @@ jobs:
           --src src --src server/src --src shared
           --check --all
           --rewritten rewrite/rewritten.txt --allow rewrite/similarity-allow.txt
+
+      # The spec must describe behaviour, not contain ChartDB code
+      - name: Check the behaviour spec
+        run: node tools/spec-check.mjs --dir rewrite/spec --upstream upstream
