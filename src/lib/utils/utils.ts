@@ -43,3 +43,21 @@ export const getWorkspaceId = (): string => {
 /** The id of a diagram kept in this browser: the workspace prefix plus 4 characters. */
 export const generateDiagramId = (): string =>
     `${getWorkspaceId()}${randomText(4)}`;
+
+export type OperatingSystem = 'mac' | 'windows' | 'linux' | 'other';
+
+/** The operating system the page runs on, read from the browser; `other` when unknown. */
+export function getOperatingSystem(): OperatingSystem {
+    if (typeof navigator === 'undefined') return 'other';
+    const hint = (
+        (navigator as Navigator & { userAgentData?: { platform?: string } })
+            .userAgentData?.platform ||
+        navigator.platform ||
+        navigator.userAgent ||
+        ''
+    ).toLowerCase();
+    if (/mac|iphone|ipad|ipod/.test(hint)) return 'mac';
+    if (/win/.test(hint)) return 'windows';
+    if (/linux|x11|android|cros/.test(hint)) return 'linux';
+    return 'other';
+}

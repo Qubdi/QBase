@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
     databasesWithSchemas,
@@ -17,7 +17,21 @@ export interface TableClipboardOptions {
     readonly?: boolean;
     createTable: (table: DBTable) => Promise<unknown>;
     notify?: (title: string, description?: string) => void;
+    /** the words of the notices; English when not given */
+    text?: Partial<ClipboardText>;
 }
+
+export interface ClipboardText {
+    copied: (count: number) => string;
+    pasteHint: (key: string) => string;
+    pasted: (count: number) => string;
+}
+
+const ENGLISH: ClipboardText = {
+    copied: (n) => (n === 1 ? 'Table copied' : `${n} tables copied`),
+    pasteHint: (key) => `Press ${key} to paste it.`,
+    pasted: (n) => (n === 1 ? 'Table pasted' : `${n} tables pasted`),
+};
 
 /**
  * Ctrl/Cmd+C and Ctrl/Cmd+V for the selected tables, like Delete works. Only
@@ -32,8 +46,11 @@ export function useTableClipboard({
     readonly,
     createTable,
     notify,
+    text,
 }: TableClipboardOptions) {
-    const mod = getOperatingSystem() === 'mac' ? 'meta' : 'ctrl';
+    const onMac = getOperatingSystem() === 'mac';
+    const mod = onMac ? 'meta' : 'ctrl';
+    const words = useMemo(() => ({ ...ENGLISH, ...text }), [text]);
 
     const copy = useCallback(() => {
         // leave ordinary text copying alone
@@ -42,12 +59,13 @@ export function useTableClipboard({
             tables.filter((t) => selectedIds.includes(t.id))
         );
         if (count > 0) {
+            // EDT-228: name the key of this platform
             notify?.(
-                count === 1 ? 'Table copied' : `${count} tables copied`,
-                'Press Ctrl+V to paste it.'
+                words.copied(count),
+                words.pasteHint(onMac ? 'Cmd+V' : 'Ctrl+V')
             );
         }
-    }, [tables, selectedIds, notify]);
+    }, [tables, selectedIds, notify, words, onMac]);
 
     const paste = useCallback(async () => {
         if (readonly || !hasCopiedTables()) return;
@@ -59,13 +77,9 @@ export function useTableClipboard({
             await createTable(table);
         }
         if (planned.length > 0) {
-            notify?.(
-                planned.length === 1
-                    ? 'Table pasted'
-                    : `${planned.length} tables pasted`
-            );
+            notify?.(words.pasted(planned.length));
         }
-    }, [readonly, tables, areaIds, databaseType, createTable, notify]);
+    }, [readonly, tables, areaIds, databaseType, createTable, notify, words]);
 
     useHotkeys(`${mod}+c`, copy, { preventDefault: false }, [copy]);
     useHotkeys(`${mod}+v`, () => void paste(), { preventDefault: false }, [
