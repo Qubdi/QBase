@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 # Builds a checkout for a CLEAN AUTHOR (see rewrite/provenance.md and
-# rewrite/clean-author-brief.md): this branch only, shallow, no `main`, no ChartDB, no remote,
+# rewrite/clean-author-brief-phase*.md): this branch only, shallow, no `main`, no ChartDB, no remote,
 # and with the files that name ChartDB's layout or old code removed.
 #
-# Usage: tools/make-clean-checkout.sh <destination-dir>
+# Usage: tools/make-clean-checkout.sh <phase: 4|5> <destination-dir>
+#   phase 4: domain model and storage (brief: rewrite/clean-author-brief-phase4.md)
+#   phase 5: dialects and formats (brief: rewrite/clean-author-brief-phase5.md); needs the
+#            accepted src/core from phase 4 to be committed on this branch already
 #
 # Put the destination OUTSIDE the QBase folders (for example ~/clean-room/qbase-phase4) and,
 # while the clean session runs, move the `main` worktree and any ChartDB clone out of reach
 # (see "Residual risk" in rewrite/clean-author-brief.md hand-off notes printed at the end).
 set -euo pipefail
 
-dest="${1:-}"
-[ -n "$dest" ] || { echo "usage: $0 <destination-dir>" >&2; exit 2; }
+phase="${1:-}"; dest="${2:-}"
+case "$phase" in 4|5) ;; *) echo "usage: $0 <phase: 4|5> <destination-dir>" >&2; exit 2;; esac
+[ -n "$dest" ] || { echo "usage: $0 <phase: 4|5> <destination-dir>" >&2; exit 2; }
 src="$(git rev-parse --show-toplevel)"
 branch="$(git -C "$src" rev-parse --abbrev-ref HEAD)"
 [ "$branch" = "rewrite/clean-room" ] || { echo "run this on rewrite/clean-room (on: $branch)" >&2; exit 1; }
@@ -25,20 +29,30 @@ git remote remove origin
 git reflog expire --expire=now --all
 git gc --quiet --prune=now
 
-# Everything under src/ except the test setup: the remaining files use the old naming.
-find src -mindepth 1 -maxdepth 1 ! -name test -exec rm -rf {} +
+# Everything under src/ except the test setup and the accepted clean modules: the remaining
+# files use the old naming.
+find src -mindepth 1 -maxdepth 1 ! -name test ! -name core ! -name persistence -exec rm -rf {} +
+if [ "$phase" = 5 ]; then
+  [ -d src/core/model ] || { echo "phase 5 needs the accepted src/core on this branch" >&2; exit 1; }
+fi
 # Inventories name ChartDB's files; plans and logs of the process are not the author's business.
 rm -rf rewrite/inventory rewrite/PLAN.md rewrite/TODO.md rewrite/README.md Audit tools/similarity.mjs \
        tools/licences.mjs tools/spec-check.mjs tools/make-clean-checkout.sh .github/workflows/similarity.yaml
-# Specs outside the phase 4 scope (shell and QBase contract, manual script, import/export engines).
-rm -f rewrite/spec/app-shell.md rewrite/spec/manual-test-script.md rewrite/spec/import-export.md
-# Parity rows for the shell and the QBase contract are not in scope.
-grep -v -E '^\| (SHL|QBS|IMP|EXP)-' rewrite/parity-checklist.md > rewrite/parity-checklist.tmp
+# Specs and parity rows outside this phase's scope.
+rm -f rewrite/spec/app-shell.md rewrite/spec/manual-test-script.md
+if [ "$phase" = 4 ]; then
+  rm -f rewrite/spec/import-export.md
+  drop='SHL|QBS|IMP|EXP'
+else
+  rm -f rewrite/spec/editor.md
+  drop='SHL|QBS|EDT'
+fi
+grep -v -E "^\\| ($drop)-" rewrite/parity-checklist.md > rewrite/parity-checklist.tmp
 mv rewrite/parity-checklist.tmp rewrite/parity-checklist.md
-cp "$src/rewrite/clean-author-brief.md" CLAUDE.md
+cp "$src/rewrite/clean-author-brief-phase$phase.md" CLAUDE.md
 git config user.name "Clean author session"
 git config user.email "clean-author@invalid"
-rm -f rewrite/clean-author-brief.md
+rm -f rewrite/clean-author-brief-phase*.md
 
 # Check what is left for anything that names the other project or the old layout.
 echo "--- scan for forbidden terms in the checkout (should print nothing) ---"
