@@ -1,5 +1,22 @@
 # Decisions for the owner (Phase 1 sign-off)
 
+## Signed off 2026-11-07 (project owner)
+
+1. **Drop list: accepted, all 15 rows**, including the whole dependency feature (EDT-183 to EDT-186).
+2. **Local-only mode: keep.** The editor works with no server; the server features stay optional.
+3. **Import path kept:** `src/lib/data/import-metadata/metadata-types/database-metadata` (type and
+   zod schema) stays at that path; the server and the Docker build keep working unchanged (QBS-016).
+4. **Dialects: keep PostgreSQL, MySQL, SQL Server, SQLite, plus MariaDB and CockroachDB as
+   aliases. Drop Oracle and ClickHouse import and export.** Old saved diagrams that carry those
+   database types must still open (DAT-020 stays a keep for the stored value); the editor may show
+   them read-only or as generic, to be fixed in the architecture. Rows about Oracle/ClickHouse
+   behaviour (DAT-036 Oracle part, EDT-275 Oracle/ClickHouse part, IMP-001, IMP-008 Oracle
+   detection, EXP-007) are narrowed to this ruling when Phase 2 writes the interfaces.
+5. **Exported diagram JSON gets a version key** (DAT-064 = change, accepted). Files without the key
+   are treated as version 1 and still open.
+
+Still to decide later (not blocking): the open questions listed at the end of each spec file.
+
 Generated from the rows in `parity-checklist.md`. Everything not listed here is recommended **keep**.
 
 Sign-off = reply per section: accept, or name the IDs to change. Open questions from each spec are collected at the end of that spec file.

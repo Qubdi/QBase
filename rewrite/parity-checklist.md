@@ -109,7 +109,7 @@ owner signs off).
 | DAT-061 | Export | Export downloads `QBase(<name>).json`, pretty-printed with 2 spaces | keep | [ ] | |
 | DAT-062 | Export | Exported ids are renumbered to small numeric strings and all references follow | keep | [ ] | |
 | DAT-063 | Export | Dangling relationships and dependencies are left out of the file | keep | [ ] | |
-| DAT-064 | Export | Export has no version marker | change | [ ] | |
+| DAT-064 | Export | Export has no version marker | change: add a version key (signed off) | [ ] | |
 | DAT-065 | Export | Filter and editor config are not in the exported file | keep | [ ] | |
 | DAT-066 | Import | Importing a JSON file adds a new diagram with new ids and fresh dates | keep | [ ] | |
 | DAT-067 | Import | An invalid or incomplete file is refused with an error and nothing is added | keep | [ ] | |
