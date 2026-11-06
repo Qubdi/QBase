@@ -6,20 +6,17 @@
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 5 | 0 | 2 | 44 | 0 |
+| Security & secrets | 4 | 0 | 1 | 45 | 0 |
 | Repository | 2 | 0 | 0 | 64 | 1 |
 | Server | 0 | 0 | 0 | 52 | 0 |
 | Database | 0 | 0 | 0 | 29 | 3 |
 | Client | 0 | 0 | 0 | 70 | 0 |
 | Dead code | 0 | 0 | 0 | 8 | 0 |
-| **Total** | 7 | 0 | 2 | 267 | 4 |
+| **Total** | 6 | 0 | 1 | 268 | 4 |
 
 ## Act first
 
-- `SEC-001` — old secrets still reachable through remote PR refs; rotate all three.
-- `REPO-056` — root `npm run lint` crashes; CI, publish and pre-commit all fail.
-- `SEC-032` — `.env.example` ships working secrets; blank them before anyone copies it.
-- `CLI-050` — Publish and auto-publish toggle always fail with 423; send `editorId`.
+- `SEC-001` — old secrets still reachable through remote PR refs; rotate all three (needs a GitHub owner: it cannot be done from the repository).
 
 ---
 
@@ -30,7 +27,6 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD` reachable through 65 pre-rewrite remote PR refs | `git ls-remote origin 'refs/pull/*/head'` | Rotate all three; ask GitHub Support to purge PR refs |
-| SEC-032 | High | `.env.example` sets `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD`; copying it bypasses Compose `:?` guards | `.env.example:11` · `.env.example:25` · `.env.example:65` | Blank all three values again |
 | SEC-038 | Med | Introspection results unbounded; a hostile DB server can exhaust process memory | `server/src/introspect/postgres.ts:148` · `server/src/introspect/sqlserver.ts:234` | Cap rows per query; abort over a byte budget |
 | SEC-047 | Low | UI image runs nginx master as root; no `USER` line | `Dockerfile:20` | Base on `nginx-unprivileged`; add a non-root `USER` |
 | SEC-049 | Low | Gitleaks allowlist stores the old SA password as a literal | `.gitleaks.toml:10` | Allowlist by fingerprint, not the literal password |
@@ -68,6 +64,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-032 | Security & secrets | `.env.example` sets `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD`; copying it bypasses Compose `:?` guards |
 | REPO-056 | Repository | Global `minimatch >=11.0.1` override crashes root ESLint on load | Root `npm run lint` now passes on the whole tree; the formatting it flagged in files changed in rev 25 is fixed in the same commit.
 | CLI-050 | Client | Publish and auto-publish PUT omit `editorId`; server answers 423 |
 | SEC-033 | Security & secrets | Webhook URLs saved before encryption stay plaintext at rest |
@@ -415,4 +412,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 74 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036, SEC-037, SRV-042, DEAD-008, SEC-033, CLI-050, REPO-056 |
+| 25 | 2026-11-06 | 75 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036, SEC-037, SRV-042, DEAD-008, SEC-033, CLI-050, REPO-056, SEC-032 |

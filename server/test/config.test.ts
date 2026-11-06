@@ -207,3 +207,27 @@ describe('the example settings file', () => {
         }
     });
 });
+
+describe("the repository's example settings file", () => {
+    const example = readFileSync(
+        new URL('../../.env.example', import.meta.url),
+        'utf8'
+    );
+    const settings = new Map(
+        example
+            .split('\n')
+            .filter((line) => /^[A-Z_]+=/.test(line))
+            .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)])
+    );
+
+    it('ships no usable password or key: copying it must not bypass the Compose guards', () => {
+        for (const name of ['POSTGRES_PASSWORD', 'CONNECTION_KEY', 'MSSQL_SA_PASSWORD']) {
+            expect(settings.has(name), name).toBe(true);
+        }
+        for (const [name, value] of settings) {
+            if (/(KEY|SECRET|PASSWORD)$/.test(name)) {
+                expect(value, name).toBe('');
+            }
+        }
+    });
+});
