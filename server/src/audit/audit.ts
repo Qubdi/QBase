@@ -99,6 +99,17 @@ export interface AuditMeta {
     host?: string;
     /** audit.export: how many rows the file held */
     rows?: number;
+    /** audit.export: the filters the file was cut with (set ones only) */
+    filters?: {
+        group?: string;
+        action?: string;
+        userId?: string;
+        diagramId?: string;
+        /** ISO times */
+        from?: string;
+        to?: string;
+        saves?: 'hide';
+    };
     /** user.update: what the admin changed */
     changed?: ('password' | 'isAdmin' | 'isActive')[];
     /** user.update: the admin flag after the change, when it changed (true is a grant, false a revoke) */

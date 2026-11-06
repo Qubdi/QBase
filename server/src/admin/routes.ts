@@ -21,7 +21,7 @@ import {
 } from './diagrams.js';
 import { adminStats, statsQuery } from './stats.js';
 import { activityQuery, listActivity } from '../audit/activity.js';
-import { exportActivityCsv, exportQuery } from '../audit/export.js';
+import { exportActivityCsv, exportFilters, exportQuery } from '../audit/export.js';
 import {
     audit,
     auditMany,
@@ -201,14 +201,19 @@ export const adminRoutes =
         // EXPORT_MAX_ROWS rows). An admin taking a copy of who did what is
         // itself logged.
         app.get('/audit/export', async (req, reply) => {
+            const filters = exportQuery.parse(req.query);
             const { csv, rows, truncated } = await exportActivityCsv(
                 db,
-                exportQuery.parse(req.query)
+                filters
             );
+            const used = exportFilters(filters);
             await audit(db, {
                 userId: req.user!.id,
                 action: 'audit.export',
-                meta: { rows },
+                meta: {
+                    rows,
+                    ...(Object.keys(used).length > 0 ? { filters: used } : {}),
+                },
             });
             const day = new Date().toISOString().slice(0, 10);
             return reply

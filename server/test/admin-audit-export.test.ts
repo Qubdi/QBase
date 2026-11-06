@@ -276,7 +276,7 @@ describe('GET /admin/audit/export', () => {
         expect(after.items[0]).toMatchObject({
             action: 'audit.export',
             userEmail: 'admin@example.com',
-            meta: { rows },
+            meta: { rows, filters: { saves: 'hide' } },
         });
     });
 

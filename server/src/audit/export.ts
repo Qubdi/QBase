@@ -6,6 +6,7 @@ import {
     type ActivityItem,
     type ActivityQuery,
 } from './activity.js';
+import type { AuditMeta } from './audit.js';
 
 /** The most rows one export holds; a log that long is exported in date ranges. */
 export const EXPORT_MAX_ROWS = 50_000;
@@ -13,6 +14,19 @@ const EXPORT_PAGE = 500;
 
 /** The same filters as the Activity list; an export has no page or cursor. */
 export const exportQuery = activityQuery.omit({ limit: true, cursor: true });
+
+/** The filters an export was cut with, for its audit row: only those that were set. */
+export const exportFilters = (
+    q: Omit<ActivityQuery, 'limit' | 'cursor'>
+): NonNullable<AuditMeta['filters']> => ({
+    ...(q.group ? { group: q.group } : {}),
+    ...(q.action ? { action: q.action } : {}),
+    ...(q.userId ? { userId: q.userId } : {}),
+    ...(q.diagramId ? { diagramId: q.diagramId } : {}),
+    ...(q.from ? { from: q.from.toISOString() } : {}),
+    ...(q.to ? { to: q.to.toISOString() } : {}),
+    ...(q.saves === 'hide' ? { saves: 'hide' as const } : {}),
+});
 
 export const CSV_COLUMNS = [
     'time_utc',
