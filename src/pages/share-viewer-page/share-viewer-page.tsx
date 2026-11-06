@@ -129,13 +129,27 @@ export const ShareViewerPage: React.FC = () => {
         [state]
     );
 
+    // a reload can remove the selected table: nothing is selected then
+    const activeId = useMemo(
+        () =>
+            selectedId && graph.tables.some((t) => t.id === selectedId)
+                ? selectedId
+                : null,
+        [graph.tables, selectedId]
+    );
+    useEffect(() => {
+        if (selectedId && activeId === null) {
+            setSelectedId(null);
+        }
+    }, [selectedId, activeId]);
+
     const matches = useMemo(
         () => searchTables(graph.tables, query),
         [graph.tables, query]
     );
     const related = useMemo(
-        () => (selectedId ? relatedTableIds(graph.edges, selectedId) : null),
-        [graph.edges, selectedId]
+        () => (activeId ? relatedTableIds(graph.edges, activeId) : null),
+        [graph.edges, activeId]
     );
 
     const positions = useMemo(
@@ -153,7 +167,7 @@ export const ShareViewerPage: React.FC = () => {
                 connectable: false,
                 data: {
                     table: t,
-                    selected: t.id === selectedId,
+                    selected: t.id === activeId,
                     matched: matches?.has(t.id) ?? false,
                     dimmed:
                         (related !== null && !related.has(t.id)) ||
@@ -162,13 +176,13 @@ export const ShareViewerPage: React.FC = () => {
                             !matches.has(t.id)),
                 },
             })),
-        [graph.tables, selectedId, matches, related]
+        [graph.tables, activeId, matches, related]
     );
 
     const edges: Edge[] = useMemo(
         () =>
             graph.edges.map((e) => {
-                const active = selectedId ? edgeTouches(e, selectedId) : false;
+                const active = activeId ? edgeTouches(e, activeId) : false;
                 const sourceX = positions.get(e.source) ?? 0;
                 const targetX = positions.get(e.target) ?? 0;
                 const sourceOnRight = sourceX >= targetX;
@@ -182,11 +196,11 @@ export const ShareViewerPage: React.FC = () => {
                     animated: active,
                     style: {
                         strokeWidth: active ? 3 : 1.5,
-                        opacity: selectedId && !active ? 0.15 : 1,
+                        opacity: activeId && !active ? 0.15 : 1,
                     },
                 };
             }),
-        [graph.edges, selectedId, positions]
+        [graph.edges, activeId, positions]
     );
 
     if (state.kind === 'loading') {

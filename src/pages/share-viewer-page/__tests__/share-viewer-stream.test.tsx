@@ -12,12 +12,23 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
 vi.mock('@/hooks/use-qubdi', () => ({
     useQubdi: () => ({ user: null }),
 }));
+const flow = vi.hoisted(() => ({
+    props: undefined as
+        | undefined
+        | {
+              nodes: Array<{ id: string; data: { selected: boolean } }>;
+              onNodeClick: (e: unknown, node: { id: string }) => void;
+          },
+}));
 vi.mock('@xyflow/react', () => ({
     Background: () => null,
     Controls: () => null,
     MiniMap: () => null,
     Panel: () => null,
-    ReactFlow: () => null,
+    ReactFlow: (props: NonNullable<typeof flow.props>) => {
+        flow.props = props;
+        return null;
+    },
     Handle: () => null,
     Position: { Left: 'left', Right: 'right' },
 }));
@@ -158,5 +169,58 @@ describe('ShareViewerPage reloads', () => {
         expect(view.getByTestId('viewer-title').textContent).toBe('Version 3');
         await act(async () => answerOld(titled('Version 2', 2)));
         expect(view.getByTestId('viewer-title').textContent).toBe('Version 3');
+    });
+});
+
+describe('ShareViewerPage selection', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        FakeEventSource.instances = [];
+        vi.stubGlobal('EventSource', FakeEventSource);
+    });
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+    });
+
+    const withTables = (ids: string[], version: number) => {
+        const r = share(version);
+        return {
+            ...r,
+            share: {
+                ...r.share,
+                content: {
+                    tables: ids.map((id) => ({ id, name: id, fields: [] })),
+                    relationships: [],
+                },
+            },
+        };
+    };
+    const selected = () =>
+        flow.props!.nodes.filter((n) => n.data.selected).map((n) => n.id);
+
+    it('forgets a selected table that a reload removed, even if it comes back', async () => {
+        getPublicShare.mockReset().mockResolvedValue(withTables(['a', 'b'], 1));
+        await show();
+        act(() => flow.props!.onNodeClick({}, { id: 'a' }));
+        expect(selected()).toEqual(['a']);
+
+        getPublicShare.mockResolvedValue(withTables(['b'], 2));
+        await act(async () => FakeEventSource.instances[0].emit('version'));
+        expect(flow.props!.nodes.map((n) => n.id)).toEqual(['b']);
+        expect(selected()).toEqual([]);
+
+        getPublicShare.mockResolvedValue(withTables(['a', 'b'], 3));
+        await act(async () => FakeEventSource.instances[0].emit('version'));
+        expect(selected()).toEqual([]);
+    });
+
+    it('keeps a selected table that is still there after a reload', async () => {
+        getPublicShare.mockReset().mockResolvedValue(withTables(['a', 'b'], 1));
+        await show();
+        act(() => flow.props!.onNodeClick({}, { id: 'b' }));
+        getPublicShare.mockResolvedValue(withTables(['a', 'b'], 2));
+        await act(async () => FakeEventSource.instances[0].emit('version'));
+        expect(selected()).toEqual(['b']);
     });
 });
