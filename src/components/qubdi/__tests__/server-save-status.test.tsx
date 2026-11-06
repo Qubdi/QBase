@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TooltipProvider } from '@/components/tooltip/tooltip';
+import { TooltipProvider } from '@/platform/ui/tooltip';
 import {
     qubdiContext,
     type QubdiContext,

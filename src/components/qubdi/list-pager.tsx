@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import { pageRange } from '@/lib/qubdi/paging';
 
 export interface ListPagerProps {

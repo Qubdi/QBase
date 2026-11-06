@@ -7,10 +7,10 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Button } from '@/components/button/button';
-import { Checkbox } from '@/components/checkbox/checkbox';
-import { Input } from '@/components/input/input';
+} from '@/platform/ui/dialog';
+import { Button } from '@/platform/ui/button';
+import { Checkbox } from '@/platform/ui/checkbox';
+import { Input } from '@/platform/ui/input';
 import { api, errorMessage, type MfaStatus } from '@/lib/qubdi/api';
 import { saveBlob } from '@/lib/qubdi/save-blob';
 import {

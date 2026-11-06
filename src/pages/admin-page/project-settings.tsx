@@ -1,8 +1,8 @@
 import React, { useEffect, useId, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { Button } from '@/components/button/button';
-import { Input } from '@/components/input/input';
-import { Label } from '@/components/label/label';
+import { Button } from '@/platform/ui/button';
+import { Input } from '@/platform/ui/input';
+import { Label } from '@/platform/ui/label';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -12,7 +12,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from '@/components/alert-dialog/alert-dialog';
+} from '@/platform/ui/alert-dialog';
 import { projectHomePath } from '@/lib/qubdi/project-path';
 import type { AdminProject } from '@/lib/qubdi/api';
 

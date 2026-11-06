@@ -6,7 +6,7 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
+} from '@/platform/ui/dialog';
 import { api, errorMessage, type RemoteMember } from '@/lib/qubdi/api';
 
 export interface MembersDialogProps {

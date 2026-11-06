@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyRound, Monitor, Plus, Smartphone, Trash2 } from 'lucide-react';
-import { Button } from '@/components/button/button';
-import { Badge } from '@/components/badge/badge';
+import { Button } from '@/platform/ui/button';
+import { Badge } from '@/platform/ui/badge';
 import {
     Table,
     TableBody,
@@ -10,7 +10,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from '@/components/table/table';
+} from '@/platform/ui/table';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,15 +20,15 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from '@/components/alert-dialog/alert-dialog';
+} from '@/platform/ui/alert-dialog';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { useToast } from '@/components/toast/use-toast';
+} from '@/platform/ui/dialog';
+import { useToast } from '@/platform/toast/use-toast';
 import { ListPager } from '@/components/qubdi/list-pager';
 import { SearchInput } from '@/components/qubdi/search-input';
 import { usePagedList } from '@/hooks/use-paged-list';

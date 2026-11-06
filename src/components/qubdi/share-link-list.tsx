@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/badge/badge';
-import { Button } from '@/components/button/button';
+import { Badge } from '@/platform/ui/badge';
+import { Button } from '@/platform/ui/button';
 import type { ShareLinkStatus } from '@/lib/qubdi/api';
 import {
     ACCESS_LABEL,

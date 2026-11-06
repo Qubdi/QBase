@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, CloudCheck, CloudUpload, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, ApiError } from '@/lib/qubdi/api';

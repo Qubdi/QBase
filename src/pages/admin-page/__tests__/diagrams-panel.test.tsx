@@ -25,7 +25,7 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
             adminRevokeDiagramLink(...a),
     },
 }));
-vi.mock('@/components/toast/use-toast', () => ({
+vi.mock('@/platform/toast/use-toast', () => ({
     useToast: () => ({ toast: vi.fn() }),
 }));
 

@@ -66,4 +66,9 @@ export default [
         settings: { react: { version: 'detect' } },
         rules: ourRules,
     },
+    {
+        // shadcn-style primitives export a variants helper next to the component
+        files: ['src/platform/ui/**', 'src/platform/toast/**'],
+        rules: { 'react-refresh/only-export-components': 'off' },
+    },
 ];

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';

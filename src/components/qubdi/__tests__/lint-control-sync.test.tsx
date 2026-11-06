@@ -32,7 +32,7 @@ vi.mock('@/hooks/use-diagram', () => ({
 const qubdi = { remoteIdFor: () => 'r1', user: { id: 'u1' } };
 vi.mock('@/hooks/use-qubdi', () => ({ useQubdi: () => qubdi }));
 const toast = vi.fn();
-vi.mock('@/components/toast/use-toast', () => ({
+vi.mock('@/platform/toast/use-toast', () => ({
     useToast: () => ({ toast }),
 }));
 

@@ -7,7 +7,7 @@ import {
     within,
 } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TooltipProvider } from '@/components/tooltip/tooltip';
+import { TooltipProvider } from '@/platform/ui/tooltip';
 import type { RemoteDiagramSummary } from '@/lib/qubdi/api';
 import { setRemoteId } from '@/lib/qubdi/remote-map';
 import { ProjectDiagrams } from '../project-diagrams';

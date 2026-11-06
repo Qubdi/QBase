@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/input/input';
+import { Input } from '@/platform/ui/input';
 
 export interface CodeFieldProps {
     value: string;

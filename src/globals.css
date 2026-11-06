@@ -1,0 +1,116 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/manrope/500.css';
+@import '@fontsource/manrope/600.css';
+@import '@fontsource/manrope/700.css';
+@import '@fontsource/manrope/800.css';
+@import 'tailwindcss';
+@config '../tailwind.config.js';
+
+/*
+ * Colours are "H S% L%" triples so tailwind.config.js can wrap them in hsl()
+ * and still allow an opacity modifier. One calm slate neutral, one teal accent.
+ */
+:root {
+    --background: 210 25% 98%;
+    --foreground: 215 28% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 14%;
+    --primary: 174 72% 26%;
+    --primary-foreground: 170 40% 98%;
+    --secondary: 214 22% 94%;
+    --secondary-foreground: 215 28% 20%;
+    --muted: 214 22% 94%;
+    --muted-foreground: 215 14% 40%;
+    --accent: 174 40% 90%;
+    --accent-foreground: 174 72% 16%;
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 87%;
+    --input: 214 20% 84%;
+    --ring: 174 72% 32%;
+    --subtitle: 215 14% 44%;
+    --radius: 0.5rem;
+
+    --sidebar-background: 210 25% 96%;
+    --sidebar-foreground: 215 24% 22%;
+    --sidebar-primary: 174 72% 26%;
+    --sidebar-primary-foreground: 170 40% 98%;
+    --sidebar-accent: 214 22% 91%;
+    --sidebar-accent-foreground: 215 28% 14%;
+    --sidebar-border: 214 20% 87%;
+    --sidebar-ring: 174 72% 32%;
+}
+
+.dark {
+    --background: 215 24% 9%;
+    --foreground: 210 20% 94%;
+    --card: 215 22% 12%;
+    --card-foreground: 210 20% 94%;
+    --popover: 215 22% 12%;
+    --popover-foreground: 210 20% 94%;
+    --primary: 172 60% 46%;
+    --primary-foreground: 175 60% 8%;
+    --secondary: 215 18% 18%;
+    --secondary-foreground: 210 20% 90%;
+    --muted: 215 18% 18%;
+    --muted-foreground: 214 14% 66%;
+    --accent: 174 30% 20%;
+    --accent-foreground: 172 50% 88%;
+    --destructive: 0 68% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 16% 22%;
+    --input: 215 16% 26%;
+    --ring: 172 60% 50%;
+    --subtitle: 214 14% 62%;
+
+    --sidebar-background: 215 24% 11%;
+    --sidebar-foreground: 210 18% 88%;
+    --sidebar-primary: 172 60% 46%;
+    --sidebar-primary-foreground: 175 60% 8%;
+    --sidebar-accent: 215 18% 18%;
+    --sidebar-accent-foreground: 210 20% 94%;
+    --sidebar-border: 215 16% 22%;
+    --sidebar-ring: 172 60% 50%;
+}
+
+@layer base {
+    * {
+        border-color: hsl(var(--border));
+    }
+
+    html,
+    body,
+    #root {
+        height: 100%;
+    }
+
+    body {
+        margin: 0;
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    :focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition: none !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}

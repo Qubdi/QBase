@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -11,8 +11,8 @@ import {
     DialogHeader,
     DialogInternalContent,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Spinner } from '@/components/spinner/spinner';
+} from '@/platform/ui/dialog';
+import { Spinner } from '@/platform/ui/spinner';
 import {
     api,
     errorMessage,

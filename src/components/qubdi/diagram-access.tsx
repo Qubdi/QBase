@@ -7,9 +7,9 @@ import React, {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import { Logo } from '@/components/logo/logo';
-import { Spinner } from '@/components/spinner/spinner';
+import { Spinner } from '@/platform/ui/spinner';
 import { DiagramProvider } from '@/context/diagram-context/diagram-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useStorage } from '@/hooks/use-storage';

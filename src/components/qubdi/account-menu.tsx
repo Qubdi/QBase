@@ -13,7 +13,7 @@ import {
     UserRound,
     Users,
 } from 'lucide-react';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -21,7 +21,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/dropdown-menu/dropdown-menu';
+} from '@/platform/ui/dropdown-menu';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useMfaAvailable } from '@/hooks/use-mfa-available';
 import { useQubdi } from '@/hooks/use-qubdi';

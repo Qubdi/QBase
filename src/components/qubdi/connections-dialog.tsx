@@ -10,16 +10,16 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from '@/components/alert-dialog/alert-dialog';
-import { Button } from '@/components/button/button';
+} from '@/platform/ui/alert-dialog';
+import { Button } from '@/platform/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Input } from '@/components/input/input';
+} from '@/platform/ui/dialog';
+import { Input } from '@/platform/ui/input';
 import { OptionSelect } from '@/components/option-select/option-select';
 import {
     api,

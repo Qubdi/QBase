@@ -8,15 +8,15 @@ import React, {
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FolderPlus, Plus } from 'lucide-react';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import {
     Tabs,
     TabsContent,
     TabsList,
     TabsTrigger,
-} from '@/components/tabs/tabs';
-import { ToastAction } from '@/components/toast/toast';
-import { useToast } from '@/components/toast/use-toast';
+} from '@/platform/ui/tabs';
+import { ToastAction } from '@/platform/toast/toast';
+import { useToast } from '@/platform/toast/use-toast';
 import { ListPager } from '@/components/qubdi/list-pager';
 import { SearchInput } from '@/components/qubdi/search-input';
 import { usePagedList } from '@/hooks/use-paged-list';

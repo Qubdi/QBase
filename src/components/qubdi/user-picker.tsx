@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, X } from 'lucide-react';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import { usePagedList } from '@/hooks/use-paged-list';
 import { api, type AdminUser } from '@/lib/qubdi/api';
 import { SearchInput } from './search-input';

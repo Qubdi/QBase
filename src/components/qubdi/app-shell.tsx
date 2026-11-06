@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { KeyRound, LogOut, ShieldCheck, UserRound } from 'lucide-react';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,9 +10,9 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/dropdown-menu/dropdown-menu';
+} from '@/platform/ui/dropdown-menu';
 import { Logo } from '@/components/logo/logo';
-import { Spinner } from '@/components/spinner/spinner';
+import { Spinner } from '@/platform/ui/spinner';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { PageFooter } from './powered-by';

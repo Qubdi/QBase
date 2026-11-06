@@ -18,7 +18,7 @@ import {
 import { ProjectsPanel } from '../projects-panel';
 
 const toast = vi.fn();
-vi.mock('@/components/toast/use-toast', () => ({
+vi.mock('@/platform/toast/use-toast', () => ({
     useToast: () => ({ toast }),
 }));
 

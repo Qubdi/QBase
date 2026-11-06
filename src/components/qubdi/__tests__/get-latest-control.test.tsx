@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TooltipProvider } from '@/components/tooltip/tooltip';
+import { TooltipProvider } from '@/platform/ui/tooltip';
 import {
     qubdiContext,
     type QubdiContext,
@@ -26,7 +26,7 @@ vi.mock('@/hooks/use-diagram', () => ({
 }));
 
 const toast = vi.fn();
-vi.mock('@/components/toast/use-toast', () => ({
+vi.mock('@/platform/toast/use-toast', () => ({
     useToast: () => ({ toast }),
 }));
 

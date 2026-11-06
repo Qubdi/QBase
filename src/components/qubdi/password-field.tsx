@@ -1,7 +1,7 @@
 import React from 'react';
 import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/input/input';
+import { Input } from '@/platform/ui/input';
 import { cn } from '@/lib/utils';
 import {
     checkPassword,

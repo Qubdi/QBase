@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TooltipProvider } from '@/components/tooltip/tooltip';
+import { TooltipProvider } from '@/platform/ui/tooltip';
 import type { MyProject, RemoteDiagramSummary } from '@/lib/qubdi/api';
 import { ProjectOpenDialog } from '../project-open-dialog';
 

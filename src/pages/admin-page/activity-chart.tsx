@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import {
     busiestDay,
     compactNumber,

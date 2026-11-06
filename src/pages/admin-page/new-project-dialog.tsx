@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/button/button';
-import { Input } from '@/components/input/input';
+import { Button } from '@/platform/ui/button';
+import { Input } from '@/platform/ui/input';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
+} from '@/platform/ui/dialog';
 import { errorMessage } from '@/lib/qubdi/api';
 
 export interface NewProjectDialogProps {

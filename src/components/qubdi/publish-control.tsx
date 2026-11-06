@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Rocket } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Input } from '@/components/input/input';
-import { useToast } from '@/components/toast/use-toast';
+} from '@/platform/ui/dialog';
+import { Input } from '@/platform/ui/input';
+import { useToast } from '@/platform/toast/use-toast';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useDiagramAccess } from './diagram-access-context';

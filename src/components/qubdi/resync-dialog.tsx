@@ -6,10 +6,10 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Button } from '@/components/button/button';
-import { Input } from '@/components/input/input';
-import { useToast } from '@/components/toast/use-toast';
+} from '@/platform/ui/dialog';
+import { Button } from '@/platform/ui/button';
+import { Input } from '@/platform/ui/input';
+import { useToast } from '@/platform/toast/use-toast';
 import { useDiagram } from '@/hooks/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';

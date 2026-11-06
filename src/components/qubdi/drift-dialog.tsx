@@ -6,10 +6,10 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Button } from '@/components/button/button';
+} from '@/platform/ui/dialog';
+import { Button } from '@/platform/ui/button';
 import { OptionSelect } from '@/components/option-select/option-select';
-import { Input } from '@/components/input/input';
+import { Input } from '@/platform/ui/input';
 import { useDiagram } from '@/hooks/use-diagram';
 import { getProjectId } from '@/lib/qubdi/remote-map';
 import { flushPendingSave } from '@/lib/qubdi/save-status-store';

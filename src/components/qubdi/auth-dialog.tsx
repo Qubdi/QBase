@@ -6,9 +6,9 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Button } from '@/components/button/button';
-import { Input } from '@/components/input/input';
+} from '@/platform/ui/dialog';
+import { Button } from '@/platform/ui/button';
+import { Input } from '@/platform/ui/input';
 import { api, ApiError, errorMessage } from '@/lib/qubdi/api';
 import { codeDigits, isCode } from '@/lib/qubdi/second-factor';
 import { useQubdi } from '@/hooks/use-qubdi';

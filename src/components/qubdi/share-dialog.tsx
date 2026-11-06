@@ -7,8 +7,8 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Button } from '@/components/button/button';
+} from '@/platform/ui/dialog';
+import { Button } from '@/platform/ui/button';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { ShareLinkList } from './share-link-list';
 import {

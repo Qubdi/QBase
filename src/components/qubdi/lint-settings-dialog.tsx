@@ -7,10 +7,10 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Button } from '@/components/button/button';
-import { Checkbox } from '@/components/checkbox/checkbox';
-import { Label } from '@/components/label/label';
+} from '@/platform/ui/dialog';
+import { Button } from '@/platform/ui/button';
+import { Checkbox } from '@/platform/ui/checkbox';
+import { Label } from '@/platform/ui/label';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { cn } from '@/lib/utils';
 import {

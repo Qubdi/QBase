@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/button/button';
+import { Button } from '@/platform/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -8,8 +8,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { useToast } from '@/components/toast/use-toast';
+} from '@/platform/ui/dialog';
+import { useToast } from '@/platform/toast/use-toast';
 import { describeBrowser } from '@/lib/qubdi/browser';
 import { ago, exactTime } from '@/lib/qubdi/when';
 import {

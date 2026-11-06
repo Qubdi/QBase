@@ -18,8 +18,8 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { PoweredByMark } from '@/components/qubdi/powered-by';
-import { Input } from '@/components/input/input';
-import { Button } from '@/components/button/button';
+import { Input } from '@/platform/ui/input';
+import { Button } from '@/platform/ui/button';
 import { AuthDialog } from '@/components/qubdi/auth-dialog';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { api, type PublicShare } from '@/lib/qubdi/api';

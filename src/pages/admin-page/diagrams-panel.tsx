@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/badge/badge';
-import { Button } from '@/components/button/button';
+import { Badge } from '@/platform/ui/badge';
+import { Button } from '@/platform/ui/button';
 import { ListPager } from '@/components/qubdi/list-pager';
 import { SearchInput } from '@/components/qubdi/search-input';
 import {
@@ -12,7 +12,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from '@/components/table/table';
+} from '@/platform/ui/table';
 import { usePagedList } from '@/hooks/use-paged-list';
 import { api, type AdminDiagram } from '@/lib/qubdi/api';
 import { projectDiagramPath } from '@/lib/qubdi/project-path';

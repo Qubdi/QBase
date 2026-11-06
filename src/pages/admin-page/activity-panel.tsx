@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronsUpDown, Download, RefreshCw, X } from 'lucide-react';
-import { Button } from '@/components/button/button';
-import { Input } from '@/components/input/input';
+import { Button } from '@/platform/ui/button';
+import { Input } from '@/platform/ui/input';
 import { OptionSelect } from '@/components/option-select/option-select';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from '@/components/popover/popover';
+} from '@/platform/ui/popover';
 import { UserPicker } from '@/components/qubdi/user-picker';
 import { useCursorList } from '@/hooks/use-cursor-list';
 import {
@@ -24,7 +24,7 @@ import {
     type ActivityItem,
 } from '@/lib/qubdi/api';
 import { localDateStamp, saveBlob } from '@/lib/qubdi/save-blob';
-import { useToast } from '@/components/toast/use-toast';
+import { useToast } from '@/platform/toast/use-toast';
 import { cn } from '@/lib/utils';
 import { ActivitySentence, type Named } from './activity-sentence';
 

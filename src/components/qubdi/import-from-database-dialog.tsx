@@ -7,10 +7,10 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/dialog/dialog';
-import { Button } from '@/components/button/button';
+} from '@/platform/ui/dialog';
+import { Button } from '@/platform/ui/button';
 import { OptionSelect } from '@/components/option-select/option-select';
-import { Input } from '@/components/input/input';
+import { Input } from '@/platform/ui/input';
 import { useStorage } from '@/hooks/use-storage';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { projectDiagramPath } from '@/lib/qubdi/project-path';
