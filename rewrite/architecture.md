@@ -148,8 +148,10 @@ Compatibility rules:
    in a side bag and written back; known-bad values are repaired with a warning list shown
    once. Files with no version key are version 1. The exporter writes a version key
    (owner decision 5).
-4. Databases of type Oracle or ClickHouse open read-only as "generic" with a banner;
-   import and export are unavailable for them (owner decision 4).
+4. Designs whose database type is Oracle or ClickHouse open read-only with a banner and keep
+   their stored type, so the file round-trips unchanged; the model refuses every command on
+   them, and import and export are unavailable for them (owner decision 4). They are not
+   converted to "generic" (decided 2026-11-07 after the Phase 4 review).
 
 ## 6. Dialects
 
