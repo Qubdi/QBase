@@ -7,6 +7,7 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { CryptoBox } from '../introspect/crypto-box.js';
+import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { API_SECURITY_HEADERS } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
@@ -174,7 +175,12 @@ export const shareManagementRoutes =
                     })
                     .returning();
                 return created;
+            }).catch((err: unknown) => {
+                // the diagram was deleted since the writer check: its foreign key refuses the link
+                if (isForeignKeyViolation(err)) return 'gone' as const;
+                throw err;
             });
+            if (link === 'gone') return reply.code(404).send({ error: 'not_found' });
             if (!link) {
                 return reply.code(409).send({ error: 'too_many_links' });
             }

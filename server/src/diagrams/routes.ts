@@ -277,6 +277,21 @@ export const diagramRoutes =
                 );
         });
 
+        // the lock row points at the diagram: one deleted since the role check
+        // makes the insert fail on its foreign key, which is a 404, not a 500
+        const acquireLockIfThere = async (
+            id: string,
+            userId: string,
+            editorId: string
+        ) => {
+            try {
+                return await acquireLock(db, id, userId, editorId);
+            } catch (err) {
+                if (isForeignKeyViolation(err)) return null;
+                throw err;
+            }
+        };
+
         app.get('/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
@@ -285,6 +300,8 @@ export const diagramRoutes =
                 .select()
                 .from(diagrams)
                 .where(eq(diagrams.id, id));
+            // deleted since the role check above
+            if (!d) return reply.code(404).send({ error: 'not_found' });
             return presentDiagram(db, d, role);
         });
 
@@ -299,12 +316,12 @@ export const diagramRoutes =
                 req.body
             );
             // one editor at a time: saving needs the lock, and takes it when free
-            const lock = await acquireLock(
-                db,
+            const lock = await acquireLockIfThere(
                 id,
                 req.user!.id,
                 editorId ?? `api:${req.user!.id}`
             );
+            if (!lock) return reply.code(404).send({ error: 'not_found' });
             if (!lock.held) {
                 return reply.code(423).send({
                     error: 'locked',
@@ -366,11 +383,13 @@ export const diagramRoutes =
                     .select({ updatedAt: diagrams.updatedAt })
                     .from(diagrams)
                     .where(eq(diagrams.id, id));
+                // not stale, gone: deleted since the role check above
+                if (!current) return reply.code(404).send({ error: 'not_found' });
                 return reply.code(409).send({
                     error: 'conflict',
                     message:
                         'Someone else saved this diagram after the copy you started from.',
-                    updatedAt: current?.updatedAt ?? null,
+                    updatedAt: current.updatedAt,
                 });
             }
             await auditDiagramSave(
@@ -408,7 +427,8 @@ export const diagramRoutes =
                 return reply.code(403).send({ error: 'forbidden' });
             }
             const { editorId } = lockBody.parse(req.body);
-            const lock = await acquireLock(db, id, req.user!.id, editorId);
+            const lock = await acquireLockIfThere(id, req.user!.id, editorId);
+            if (!lock) return reply.code(404).send({ error: 'not_found' });
             return lock.held
                 ? { held: true }
                 : { held: false, holder: lock.holder };
