@@ -9,10 +9,10 @@
 | Security & secrets | 9 | 0 | 2 | 40 | 0 |
 | Repository | 4 | 0 | 1 | 62 | 1 |
 | Server | 4 | 0 | 0 | 48 | 0 |
-| Database | 5 | 0 | 0 | 24 | 3 |
+| Database | 4 | 0 | 0 | 25 | 3 |
 | Client | 6 | 0 | 1 | 64 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 29 | 0 | 4 | 245 | 4 |
+| **Total** | 28 | 0 | 4 | 246 | 4 |
 
 ## Act first
 
@@ -61,7 +61,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| DB-026 | Low | Connection edit updates `drift_settings` by unindexed `connection_id` | `server/src/introspect/routes.ts:450` · `server/src/db/schema.ts:428` | Index `drift_settings(connection_id)` |
 | DB-028 | Med | SQL Server introspection uses `STRING_SPLIT`; fails below compatibility level 130 | `server/src/introspect/sqlserver.ts:17` | Bind one parameter per schema instead of splitting |
 | DB-029 | Low | SQL Server schema filter splits on commas; comma names unselectable | `server/src/introspect/sqlserver.ts:232` | Bind one parameter per schema |
 | DB-031 | Low | User delete can cascade-delete a diagram the target creates mid-delete | `server/src/admin/routes.ts:147` | Lock target users `FOR UPDATE` before reassigning diagrams |
@@ -90,6 +89,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| DB-026 | Database | Connection edit updates `drift_settings` by unindexed `connection_id` |
 | SEC-041 | Security & secrets | Failed sign-in audit insert runs only for real emails; timing reveals accounts |
 | SEC-040 | Security & secrets | Heartbeat session check uses link access captured at stream open |
 | SEC-039 | Security & secrets | Link revoke within 2 s of a publish reuses cached check; streams stay open |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 52 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041 |
+| 25 | 2026-11-06 | 53 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026 |

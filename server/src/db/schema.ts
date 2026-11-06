@@ -421,29 +421,33 @@ export const savedConnections = pgTable(
     ]
 );
 
-export const driftSettings = pgTable('drift_settings', {
-    diagramId: uuid('diagram_id')
-        .primaryKey()
-        .references(() => diagrams.id, { onDelete: 'cascade' }),
-    // no index on connection_id or updated_by: deleting a connection or a user
-    // is rare and the table has one small row per diagram
-    connectionId: uuid('connection_id').references(() => savedConnections.id, {
-        onDelete: 'set null',
-    }),
-    schemas: jsonb('schemas').notNull().default([]),
-    tables: jsonb('tables').notNull().default([]),
-    // stored source identity sent by the editor, so renames do not look like drift
-    sourceKeys: jsonb('source_keys')
-        .notNull()
-        .default({ tables: {}, columns: {} }),
-    webhookUrl: text('webhook_url'),
-    updatedBy: uuid('updated_by').references(() => users.id, {
-        onDelete: 'set null',
-    }),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-        .notNull()
-        .defaultNow(),
-});
+export const driftSettings = pgTable(
+    'drift_settings',
+    {
+        diagramId: uuid('diagram_id')
+            .primaryKey()
+            .references(() => diagrams.id, { onDelete: 'cascade' }),
+        // connection_id is indexed: editing or deleting a connection finds the
+        // settings that use it. No index on updated_by: deleting a user is rare.
+        connectionId: uuid('connection_id').references(() => savedConnections.id, {
+            onDelete: 'set null',
+        }),
+        schemas: jsonb('schemas').notNull().default([]),
+        tables: jsonb('tables').notNull().default([]),
+        // stored source identity sent by the editor, so renames do not look like drift
+        sourceKeys: jsonb('source_keys')
+            .notNull()
+            .default({ tables: {}, columns: {} }),
+        webhookUrl: text('webhook_url'),
+        updatedBy: uuid('updated_by').references(() => users.id, {
+            onDelete: 'set null',
+        }),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (t) => [index('drift_settings_connection_idx').on(t.connectionId)]
+);
 
 export const driftReports = pgTable(
     'drift_reports',

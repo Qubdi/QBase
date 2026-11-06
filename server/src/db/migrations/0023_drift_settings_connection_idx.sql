@@ -1,0 +1,1 @@
+CREATE INDEX "drift_settings_connection_idx" ON "drift_settings" USING btree ("connection_id");
