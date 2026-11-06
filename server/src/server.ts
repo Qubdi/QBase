@@ -1,6 +1,7 @@
 import { buildApp } from './app.js';
 import { ConfigError, loadConfig } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
+import { resealPlaintextWebhooks } from './drift/reseal.js';
 import { startEventBridge } from './events.js';
 import { startMaintenance } from './maintenance.js';
 import { createShutdown } from './shutdown.js';
@@ -36,6 +37,20 @@ const { db, pool } = createDb(config.databaseUrl, {
     max: config.dbPoolMax,
     statementTimeoutMs: config.dbStatementTimeoutSeconds * 1000,
 });
+
+// webhook URLs saved before encryption existed are sealed now. A failure here
+// leaves them readable as before; it must not stop the server from starting.
+if (config.secretsKey) {
+    try {
+        const sealed = await resealPlaintextWebhooks(db, config.secretsKey);
+        if (sealed > 0) console.log(`Encrypted ${sealed} saved webhook URL(s)`);
+    } catch (err) {
+        console.error(
+            'Could not encrypt saved webhook URLs:',
+            err instanceof Error ? err.message : err
+        );
+    }
+}
 
 const app = buildApp({ config, db });
 await app.listen({ port: config.port, host: config.host });

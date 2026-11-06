@@ -6,13 +6,13 @@
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 6 | 0 | 2 | 43 | 0 |
+| Security & secrets | 5 | 0 | 2 | 44 | 0 |
 | Repository | 3 | 0 | 1 | 63 | 1 |
 | Server | 0 | 0 | 0 | 52 | 0 |
 | Database | 0 | 0 | 0 | 29 | 3 |
 | Client | 1 | 0 | 1 | 69 | 0 |
 | Dead code | 0 | 0 | 0 | 8 | 0 |
-| **Total** | 10 | 0 | 4 | 264 | 4 |
+| **Total** | 9 | 0 | 4 | 265 | 4 |
 
 ## Act first
 
@@ -31,7 +31,6 @@
 |----|-----|---------|-------|-----|
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD` reachable through 65 pre-rewrite remote PR refs | `git ls-remote origin 'refs/pull/*/head'` | Rotate all three; ask GitHub Support to purge PR refs |
 | SEC-032 | High | `.env.example` sets `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD`; copying it bypasses Compose `:?` guards | `.env.example:11` · `.env.example:25` · `.env.example:65` | Blank all three values again |
-| SEC-033 | Med | Webhook URLs saved before encryption stay plaintext at rest | `server/src/drift/webhook.ts:28` | Re-seal plaintext `webhook_url` rows at boot or in a migration |
 | SEC-038 | Med | Introspection results unbounded; a hostile DB server can exhaust process memory | `server/src/introspect/postgres.ts:148` · `server/src/introspect/sqlserver.ts:234` | Cap rows per query; abort over a byte budget |
 | SEC-047 | Low | UI image runs nginx master as root; no `USER` line | `Dockerfile:20` | Base on `nginx-unprivileged`; add a non-root `USER` |
 | SEC-049 | Low | Gitleaks allowlist stores the old SA password as a literal | `.gitleaks.toml:10` | Allowlist by fingerprint, not the literal password |
@@ -71,6 +70,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-033 | Security & secrets | Webhook URLs saved before encryption stay plaintext at rest |
 | DEAD-008 | Dead code | Constant `withExtras`/`withDefault` flags shipped dead query branches to the browser: inlined in the Postgres, MySQL and SQL Server scripts (generated queries byte-identical); the MariaDB and SQLite scripts keep the same pattern |
 | SRV-042 | Server | Drift check scans every catalog row once per table; quadratic on big schemas |
 | SEC-037 | Security & secrets | SQL export never escapes quote characters in identifiers; names inject DDL |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 71 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036, SEC-037, SRV-042, DEAD-008 |
+| 25 | 2026-11-06 | 72 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036, SEC-037, SRV-042, DEAD-008, SEC-033 |
