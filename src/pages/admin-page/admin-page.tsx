@@ -7,7 +7,7 @@ import { Spinner } from '@/platform/ui/spinner';
 import { Button } from '@/platform/ui/button';
 import { Toaster } from '@/platform/toast/toaster';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
-import { ThemeProvider } from '@/context/theme-context/theme-provider';
+import { ThemeProvider } from '@/platform/theme/theme-provider';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { PageFooter } from '@/components/qubdi/powered-by';
 import { AdminNav } from './admin-nav';

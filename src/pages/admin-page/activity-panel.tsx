@@ -4,11 +4,7 @@ import { ChevronsUpDown, Download, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
 import { OptionSelect } from '@/components/option-select/option-select';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/platform/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/platform/ui/popover';
 import { UserPicker } from '@/components/qubdi/user-picker';
 import { useCursorList } from '@/hooks/use-cursor-list';
 import {

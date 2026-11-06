@@ -23,11 +23,9 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
 - [ ] **Add a branch protection rule** for `rewrite/clean-room` (reviews and the similarity
       check required), because pull requests into `main` are not possible.
 
-- [ ] **Regenerate `src/platform/ui/*` and `src/platform/toast/toast.tsx` with the shadcn CLI**
-      (network needed). They were written by hand in that style and are allow-listed in
-      `similarity-allow.txt` until then. Add the shadcn/ui MIT notice to `NOTICE`.
-- [ ] Merge the duplicated backend-URL logic (`src/platform/config/backend.ts` and
-      `src/lib/qubdi/config.ts`); delete the unused `src/components/tooltip`.
+- [x] Regenerated `src/platform/ui/*` with the shadcn CLI 4.23.0 and added its MIT notice to `NOTICE`
+      (2026-11-07). `toast.tsx` stays hand-written (no Radix toast in the CLI); replace in Phase 6.
+- [x] Merged the duplicated backend-URL logic; removed the unused `src/components/tooltip`.
 
 ## Phases
 

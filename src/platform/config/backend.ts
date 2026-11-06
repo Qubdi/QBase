@@ -1,14 +1,6 @@
-/**
- * The one switch of the app: is a backend configured? The URL comes from
- * /config.js at run time (window.env), else from the build-time variable used
- * by `npm run dev`. A trailing slash is removed; empty means local mode.
- */
-export const readBackendUrl = (): string =>
-    (
-        window.env?.QUBDI_BACKEND_URL ||
-        import.meta.env.VITE_QUBDI_BACKEND_URL ||
-        ''
-    ).replace(/\/+$/, '');
-
-export const BACKEND_URL: string = readBackendUrl();
-export const BACKEND_ENABLED: boolean = BACKEND_URL !== '';
+// The one switch of the app (backend configured or not) is decided once, in the
+// QBase config module. This file is the platform-side name for it.
+export {
+    QUBDI_BACKEND_URL as BACKEND_URL,
+    QUBDI_BACKEND_ENABLED as BACKEND_ENABLED,
+} from '@/lib/qubdi/config';

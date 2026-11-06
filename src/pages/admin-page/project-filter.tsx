@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronsUpDown, X } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/platform/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/platform/ui/popover';
 import { SearchInput } from '@/components/qubdi/search-input';
 import { usePagedList } from '@/hooks/use-paged-list';
 import { api } from '@/lib/qubdi/api';

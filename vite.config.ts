@@ -13,7 +13,10 @@ if (process.env.ANALYZE) {
 
 // Third-party code changes less often than ours: separate chunks keep it cached.
 const vendorChunks = [
-    { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+    {
+        name: 'react',
+        test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+    },
     { name: 'xyflow', test: /node_modules[\\/]@xyflow[\\/]/ },
     { name: 'radix', test: /node_modules[\\/]@radix-ui[\\/]/ },
 ];

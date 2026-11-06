@@ -37,8 +37,24 @@ const FORBIDDEN_FENCES = new Set([
 const PLAIN_FENCES = new Set(['', 'json', 'sql', 'text', 'txt', 'plain']);
 const LONG_FENCE = 60;
 const TEXT_EXTENSIONS = new Set([
-    '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.css', '.json', '.html',
-    '.md', '.svg', '.txt', '.sql', '.dbml', '.yaml', '.yml', '.sh', '.toml',
+    '.ts',
+    '.tsx',
+    '.js',
+    '.jsx',
+    '.mjs',
+    '.cjs',
+    '.css',
+    '.json',
+    '.html',
+    '.md',
+    '.svg',
+    '.txt',
+    '.sql',
+    '.dbml',
+    '.yaml',
+    '.yml',
+    '.sh',
+    '.toml',
 ]);
 const SKIP_DIRECTORIES = new Set(['node_modules', 'dist', 'coverage', '.git']);
 
@@ -50,12 +66,18 @@ const SOURCE_PATTERNS = [
         'export declaration',
     ],
     [/=>/, null], // handled below: only when braces are present
-    [/\buse(State|Effect|Memo|Callback|Ref|Context|Reducer|LayoutEffect)\b/, 'React hook'],
+    [
+        /\buse(State|Effect|Memo|Callback|Ref|Context|Reducer|LayoutEffect)\b/,
+        'React hook',
+    ],
     [
         /^\s*(export\s+)?(declare\s+)?interface\s+\w+\s*(<[^>]*>)?\s*(extends\b[^{]*)?\{?\s*$/,
         'interface declaration',
     ],
-    [/^\s*(export\s+)?(declare\s+)?type\s+\w+\s*(<[^>]*>)?\s*=/, 'type declaration'],
+    [
+        /^\s*(export\s+)?(declare\s+)?type\s+\w+\s*(<[^>]*>)?\s*=/,
+        'type declaration',
+    ],
 ];
 
 function parseArguments(argv) {
@@ -110,7 +132,9 @@ function buildUpstreamIndex(root, size) {
         return TEXT_EXTENSIONS.has(path.extname(name));
     });
     for (const file of files) {
-        const lines = normalised(fs.readFileSync(file, 'utf8')).map((l) => l.text);
+        const lines = normalised(fs.readFileSync(file, 'utf8')).map(
+            (l) => l.text
+        );
         for (let start = 0; start + size <= lines.length; start++) {
             index.add(lines.slice(start, start + size).join('\n'));
         }
@@ -126,7 +150,12 @@ function checkStructure(file, text, problems, warnings) {
             const lineNumber = offset + 1;
             const open = /^\s*(```+|~~~+)\s*([\w+-]*)/.exec(raw);
             if (fence) {
-                if (open && open[1][0] === fence.marker[0] && open[1].length >= fence.marker.length && /^\s*(```+|~~~+)\s*$/.test(raw)) {
+                if (
+                    open &&
+                    open[1][0] === fence.marker[0] &&
+                    open[1].length >= fence.marker.length &&
+                    /^\s*(```+|~~~+)\s*$/.test(raw)
+                ) {
                     const length = lineNumber - fence.start - 1;
                     if (length > LONG_FENCE) {
                         warnings.push(
@@ -140,7 +169,9 @@ function checkStructure(file, text, problems, warnings) {
                 const language = open[2].toLowerCase();
                 fence = { marker: open[1], language, start: lineNumber };
                 if (FORBIDDEN_FENCES.has(language)) {
-                    problems.push(`${file}:${lineNumber}  code fence in language "${language}"`);
+                    problems.push(
+                        `${file}:${lineNumber}  code fence in language "${language}"`
+                    );
                 }
                 return;
             }
@@ -150,9 +181,13 @@ function checkStructure(file, text, problems, warnings) {
                 if (!pattern.test(raw)) continue;
                 if (reason === null) {
                     if (!/[{}]/.test(raw)) continue;
-                    problems.push(`${file}:${lineNumber}  looks like source: arrow function with braces`);
+                    problems.push(
+                        `${file}:${lineNumber}  looks like source: arrow function with braces`
+                    );
                 } else {
-                    problems.push(`${file}:${lineNumber}  looks like source: ${reason}`);
+                    problems.push(
+                        `${file}:${lineNumber}  looks like source: ${reason}`
+                    );
                 }
                 break;
             }
@@ -195,7 +230,9 @@ function main() {
         ? buildUpstreamIndex(options.upstream, options.run)
         : null;
     if (upstream) {
-        console.log(`Indexed ${upstream.fileCount} upstream files (runs of ${options.run} lines)`);
+        console.log(
+            `Indexed ${upstream.fileCount} upstream files (runs of ${options.run} lines)`
+        );
     }
     const problems = [];
     const warnings = [];
@@ -206,7 +243,8 @@ function main() {
             .split(path.sep)
             .join('/');
         checkStructure(shown, text, problems, warnings);
-        if (upstream) checkUpstream(shown, text, upstream, options.run, problems);
+        if (upstream)
+            checkUpstream(shown, text, upstream, options.run, problems);
     }
     console.log(`Checked ${files.length} spec files in ${options.dir}`);
     for (const warning of warnings) console.warn(`warning: ${warning}`);

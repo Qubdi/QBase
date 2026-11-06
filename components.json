@@ -10,10 +10,10 @@
         "config": "tailwind.config.js"
     },
     "aliases": {
-        "ui": "src/components",
+        "ui": "src/platform/ui",
         "components": "src/components",
         "hooks": "src/hooks",
         "lib": "src/lib",
-        "utils": "src/lib/utils"
+        "utils": "src/lib/utils/utils"
     }
 }
