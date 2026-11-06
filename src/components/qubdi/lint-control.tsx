@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ListChecks, Settings2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +67,27 @@ export const LintControl: React.FC = () => {
             .catch(() => undefined);
     }, [user, remoteId, currentDiagram.id]);
 
+    // the diagram on the server may have been given other settings (another
+    // browser, the API) since they were read: look again whenever the panel
+    // or the settings dialog opens
+    const configRef = useRef(config);
+    configRef.current = config;
+    const active = open || settingsOpen;
+    useEffect(() => {
+        if (!active || !user || !remoteId) return;
+        let cancelled = false;
+        api.getLintConfig(remoteId)
+            .then((c) => {
+                if (cancelled) return;
+                setLintConfig(currentDiagram.id, c);
+                setConfig(c);
+            })
+            .catch(() => undefined);
+        return () => {
+            cancelled = true;
+        };
+    }, [active, user, remoteId, currentDiagram.id]);
+
     const findings = useMemo(
         () =>
             lint(
@@ -78,11 +99,25 @@ export const LintControl: React.FC = () => {
     const summary = summarizeFindings(findings);
 
     const saveConfig = (next: LintConfig) => {
+        const previous = configRef.current;
         setConfig(next);
         setLintConfig(currentDiagram.id, next);
         // the API and CLI read the same settings when the diagram is on the server
-        if (remoteId)
-            void api.saveLintConfig(remoteId, next).catch(() => undefined);
+        if (remoteId) {
+            const diagramId = currentDiagram.id;
+            api.saveLintConfig(remoteId, next).catch(() => {
+                // the server kept the old settings: so does this browser, and says so
+                if (configRef.current === next) {
+                    setConfig(previous);
+                    setLintConfig(diagramId, previous);
+                }
+                toast({
+                    title: t('qubdi.database.lint.saveFailedTitle'),
+                    description: t('qubdi.database.lint.saveFailedBody'),
+                    variant: 'destructive',
+                });
+            });
+        }
     };
 
     const applyFix = async (finding: Finding) => {

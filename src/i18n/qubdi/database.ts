@@ -172,6 +172,8 @@ export const database = {
         fixStaleTitle: 'This fix no longer applies',
         fixStaleBody: 'The diagram changed since the check ran.',
         fixApplied: 'Fix applied',
+        saveFailedTitle: 'Lint settings were not saved to the server',
+        saveFailedBody: 'The previous settings are back. Try again.',
     },
     lintSettings: {
         title: 'Lint settings',
