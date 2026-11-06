@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     containsPattern,
     DEFAULT_PAGE_SIZE,
+    MAX_OFFSET,
     MAX_PAGE_SIZE,
     offsetOf,
     pageOf,
@@ -35,6 +36,27 @@ describe('pagingQuery', () => {
         expect(pagingQuery.safeParse({ limit: String(MAX_PAGE_SIZE + 1) }).success).toBe(false);
         expect(pagingQuery.safeParse({ page: '1.5' }).success).toBe(false);
         expect(pagingQuery.safeParse({ q: 'x'.repeat(101) }).success).toBe(false);
+    });
+});
+
+describe('pagingQuery offset cap', () => {
+    it('allows the last page that starts within the cap, and refuses the next', () => {
+        const limit = 20;
+        const last = MAX_OFFSET / limit + 1; // offset == MAX_OFFSET
+        expect(pagingQuery.safeParse({ page: String(last), limit: String(limit) }).success).toBe(true);
+        expect(pagingQuery.safeParse({ page: String(last + 1), limit: String(limit) }).success).toBe(false);
+    });
+
+    it('depends on the page size, not on the page number alone', () => {
+        expect(pagingQuery.safeParse({ page: '101', limit: '100' }).success).toBe(true);
+        expect(pagingQuery.safeParse({ page: '102', limit: '100' }).success).toBe(false);
+        expect(pagingQuery.safeParse({ page: '102', limit: '10' }).success).toBe(true);
+    });
+
+    it('refuses a huge page without reaching the database', () => {
+        const r = pagingQuery.safeParse({ page: '999999999999' });
+        expect(r.success).toBe(false);
+        if (!r.success) expect(r.error.issues[0].path).toEqual(['page']);
     });
 });
 

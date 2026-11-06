@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 24</b></div>
-  <h1>7 open: 0 Crit, 0 High.</h1>
+  <h1>6 open: 0 Crit, 0 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -31,12 +31,11 @@
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Database &amp; scale</h2></div>
-  <p class="section-note">7 open &middot; 22 fixed &middot; 3 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">6 open &middot; 23 fixed &middot; 3 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">DB-025</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Shared paging <code>page</code> has no upper bound; admin and project list offsets unbounded</td><td><code>server/src/lib/paging.ts:8</code></td><td class="wrap-cell">Cap <code>page</code> so the offset stays at most 10,000</td></tr>
         <tr><td class="svc-name">DB-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Connection edit updates <code>drift_settings</code> by unindexed <code>connection_id</code></td><td><code>server/src/introspect/routes.ts:450</code> · <code>server/src/db/schema.ts:428</code></td><td class="wrap-cell">Index <code>drift_settings(connection_id)</code></td></tr>
         <tr><td class="svc-name">DB-027</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unauthenticated <code>/auth/register</code> counts every user row per call</td><td><code>server/src/auth/routes.ts:138</code></td><td class="wrap-cell">Select one <code>id</code> with <code>LIMIT 1</code>, as <code>/setup-status</code> does</td></tr>
         <tr><td class="svc-name">DB-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL Server introspection uses <code>STRING_SPLIT</code>; fails below compatibility level 130</td><td><code>server/src/introspect/sqlserver.ts:17</code></td><td class="wrap-cell">Bind one parameter per schema instead of splitting</td></tr>
@@ -50,11 +49,12 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (22)</summary>
+  <details><summary>Fixed (23)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DB-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Shared paging <code>page</code> has no upper bound; admin and project list offsets unbounded</td></tr>
         <tr><td class="svc-name">DB-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Negative numeric scale (PG 15+) decoded as 2046</td></tr>
         <tr><td class="svc-name">DB-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Boot migrations set no <code>lock_timeout</code>; a queued DDL lock stalls table traffic</td></tr>
         <tr><td class="svc-name">DB-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">App pool sets no <code>idle_in_transaction_session_timeout</code></td></tr>

@@ -13,15 +13,18 @@ import {
     containsPattern,
     offsetOf,
     pageOf,
-    pagingQuery,
+    pagingFields,
+    withOffsetCap,
     type Page,
 } from '../lib/paging.js';
 import { activeLinkSql, linkStatus, type LinkStatus } from '../share/active.js';
 
 /** `?page=&limit=&q=` (matches the title) and `?projectId=`. */
-export const adminDiagramsQuery = pagingQuery.extend({
-    projectId: z.string().uuid().optional(),
-});
+export const adminDiagramsQuery = withOffsetCap(
+    pagingFields.extend({
+        projectId: z.string().uuid().optional(),
+    })
+);
 
 export interface AdminDiagram {
     id: string;
