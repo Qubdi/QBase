@@ -240,7 +240,10 @@ export const mfaRoutes =
             password: string
         ) {
             const userId = req.user!.id;
-            const key = `mfa:${userId}`;
+            // not the `mfa:` key that guards signing in: whoever holds a stolen
+            // session could otherwise lock the owner out of their own sign-in by
+            // guessing passwords here (change-password counts under this key too)
+            const key = `password:${userId}`;
             if (locked(reply, key)) return null;
             const [user] = await db.select().from(users).where(eq(users.id, userId));
             if (!(await verifyPassword(user.passwordHash, password))) {
@@ -250,6 +253,7 @@ export const mfaRoutes =
                 reply.code(403).send({ error: 'wrong_password' });
                 return null;
             }
+            failures.reset(key);
             return user;
         }
 

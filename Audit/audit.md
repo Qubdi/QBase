@@ -6,13 +6,13 @@
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 8 | 0 | 2 | 41 | 0 |
+| Security & secrets | 7 | 0 | 2 | 42 | 0 |
 | Repository | 3 | 0 | 1 | 63 | 1 |
 | Server | 1 | 0 | 0 | 51 | 0 |
 | Database | 0 | 0 | 0 | 29 | 3 |
 | Client | 1 | 0 | 1 | 69 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 14 | 0 | 4 | 260 | 4 |
+| **Total** | 13 | 0 | 4 | 261 | 4 |
 
 ## Act first
 
@@ -32,7 +32,6 @@
 | SEC-001 | High | Old `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD` reachable through 65 pre-rewrite remote PR refs | `git ls-remote origin 'refs/pull/*/head'` | Rotate all three; ask GitHub Support to purge PR refs |
 | SEC-032 | High | `.env.example` sets `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD`; copying it bypasses Compose `:?` guards | `.env.example:11` · `.env.example:25` · `.env.example:65` | Blank all three values again |
 | SEC-033 | Med | Webhook URLs saved before encryption stay plaintext at rest | `server/src/drift/webhook.ts:28` | Re-seal plaintext `webhook_url` rows at boot or in a migration |
-| SEC-036 | Med | In-session wrong passwords share the `mfa:` lock key; stolen session locks owner out | `server/src/auth/mfa-routes.ts:243` · `server/src/auth/mfa-routes.ts:98` · `server/src/auth/routes.ts:306` | Count in-session password failures under a separate key |
 | SEC-037 | Med | SQL export never escapes quote characters in identifiers; names inject DDL | `src/lib/data/sql-export/export-sql-script.ts:119` · `src/lib/data/sql-export/export-per-type/postgresql.ts:254` · `src/lib/data/sql-export/export-per-type/mssql.ts:108` | Double the dialect quote character, as `quoteName` does |
 | SEC-038 | Med | Introspection results unbounded; a hostile DB server can exhaust process memory | `server/src/introspect/postgres.ts:148` · `server/src/introspect/sqlserver.ts:234` | Cap rows per query; abort over a byte budget |
 | SEC-047 | Low | UI image runs nginx master as root; no `USER` line | `Dockerfile:20` | Base on `nginx-unprivileged`; add a non-root `USER` |
@@ -75,6 +74,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-036 | Security & secrets | In-session wrong passwords share the `mfa:` lock key; stolen session locks owner out |
 | SEC-034 | Security & secrets | `drift.configure` audit row omits webhook set, change or clear |
 | SRV-039 | Server | Undecryptable stored webhook skipped silently; no report note, UI shows none |
 | CLI-051 | Client | Drift Check now blanks server scope and sourceKeys without local sync state |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 67 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034 |
+| 25 | 2026-11-06 | 68 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036 |
