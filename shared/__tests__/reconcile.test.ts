@@ -923,3 +923,57 @@ describe('reconcile: output shape', () => {
         );
     });
 });
+
+describe('metadataToDesc on a big schema', () => {
+    it('converts thousands of tables without reading every row once per table', () => {
+        const tables = 4000;
+        const meta = {
+            tables: [] as Array<{ schema: string; table: string }>,
+            columns: [] as Array<{
+                schema: string;
+                table: string;
+                name: string;
+                type: string;
+                ordinal_position: number;
+                nullable: boolean;
+            }>,
+            pk_info: [] as Array<{ schema: string; table: string; column: string }>,
+            indexes: [] as Array<{
+                schema: string;
+                table: string;
+                name: string;
+                column: string;
+                unique: boolean;
+                column_position: number;
+            }>,
+            fk_info: [],
+        };
+        for (let t = 0; t < tables; t++) {
+            const table = `t${t}`;
+            meta.tables.push({ schema: 'public', table });
+            for (let c = 0; c < 5; c++) {
+                meta.columns.push({
+                    schema: 'public',
+                    table,
+                    name: `c${c}`,
+                    type: 'integer',
+                    ordinal_position: 5 - c, // out of order on purpose
+                    nullable: true,
+                });
+            }
+            meta.pk_info.push({ schema: 'public', table, column: 'c0' });
+            meta.indexes.push({ schema: 'public', table, name: `i${t}`, column: 'c1', unique: true, column_position: 1 });
+        }
+        const started = performance.now();
+        const desc = metadataToDesc(meta);
+        const ms = performance.now() - started;
+        expect(desc.tables).toHaveLength(tables);
+        const first = desc.tables[0];
+        expect(first.columns.map((c) => c.name)).toEqual(['c4', 'c3', 'c2', 'c1', 'c0']);
+        expect(first.columns.find((c) => c.name === 'c0')?.primaryKey).toBe(true);
+        expect(first.columns.find((c) => c.name === 'c1')?.unique).toBe(true);
+        expect(first.indexes).toEqual([{ name: 'i0', unique: true, columns: ['c1'] }]);
+        // 4000 tables x 20000 columns would be 80 million row reads the old way
+        expect(ms).toBeLessThan(1000);
+    });
+});

@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 6 | 0 | 2 | 43 | 0 |
 | Repository | 3 | 0 | 1 | 63 | 1 |
-| Server | 1 | 0 | 0 | 51 | 0 |
+| Server | 0 | 0 | 0 | 52 | 0 |
 | Database | 0 | 0 | 0 | 29 | 3 |
 | Client | 1 | 0 | 1 | 69 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 12 | 0 | 4 | 262 | 4 |
+| **Total** | 11 | 0 | 4 | 263 | 4 |
 
 ## Act first
 
@@ -48,7 +48,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SRV-042 | Med | Drift check scans every catalog row once per table; quadratic on big schemas | `shared/schema-desc.ts:168` | Group metadata rows by table once before mapping |
 
 ### Database
 
@@ -73,6 +72,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SRV-042 | Server | Drift check scans every catalog row once per table; quadratic on big schemas |
 | SEC-037 | Security & secrets | SQL export never escapes quote characters in identifiers; names inject DDL |
 | SEC-036 | Security & secrets | In-session wrong passwords share the `mfa:` lock key; stolen session locks owner out |
 | SEC-034 | Security & secrets | `drift.configure` audit row omits webhook set, change or clear |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 69 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036, SEC-037 |
+| 25 | 2026-11-06 | 70 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036, SEC-037, SRV-042 |

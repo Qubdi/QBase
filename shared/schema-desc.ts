@@ -163,20 +163,40 @@ export function metadataToDesc(meta: MetadataLike): SchemaDesc {
         }
     }
 
+    // Rows are grouped by table once. Filtering every list for every table
+    // would read each row once per table: quadratic on a big schema.
+    const rowKey = (schema: string, table: string) => `${schema}\u0000${table}`;
+    const groupByTable = <T extends { schema: string; table: string }>(
+        rows: T[]
+    ) => {
+        const groups = new Map<string, T[]>();
+        for (const row of rows) {
+            const k = rowKey(row.schema, row.table);
+            const group = groups.get(k);
+            if (group) group.push(row);
+            else groups.set(k, [row]);
+        }
+        return groups;
+    };
+    const pkRows = groupByTable(meta.pk_info);
+    const indexRows = groupByTable(meta.indexes);
+    const columnRows = groupByTable(meta.columns);
+
     const tables: TableDesc[] = tableInfos.map((info) => {
         const key = tableKey(info.schema, info.name);
-        const inTable = <T extends { schema: string; table: string }>(x: T) =>
-            x.schema === info.schema && x.table === info.name;
+        const mine = rowKey(info.schema, info.name);
 
-        const pk = new Set(meta.pk_info.filter(inTable).map((p) => p.column));
+        const pk = new Set((pkRows.get(mine) ?? []).map((p) => p.column));
 
         // group index rows by index name, ordered by position
         const byName = new Map<string, typeof meta.indexes>();
-        for (const row of meta.indexes.filter(inTable)) {
-            byName.set(row.name, [...(byName.get(row.name) ?? []), row]);
+        for (const row of indexRows.get(mine) ?? []) {
+            const group = byName.get(row.name);
+            if (group) group.push(row);
+            else byName.set(row.name, [row]);
         }
         const realColumns = new Set(
-            meta.columns.filter(inTable).map((c) => c.name)
+            (columnRows.get(mine) ?? []).map((c) => c.name)
         );
         const indexes: IndexDesc[] = [...byName.entries()]
             // expression indexes (lower(email)) cannot be drawn in QBase, so
@@ -198,8 +218,7 @@ export function metadataToDesc(meta: MetadataLike): SchemaDesc {
                 .map((i) => i.columns[0])
         );
 
-        const columns = meta.columns
-            .filter(inTable)
+        const columns = [...(columnRows.get(mine) ?? [])]
             .sort((a, b) => a.ordinal_position - b.ordinal_position)
             .map<ColumnDesc>((c) => ({
                 name: c.name,

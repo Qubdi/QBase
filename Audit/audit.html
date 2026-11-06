@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 24</b></div>
-  <h1>12 open across six lenses: 0 Crit, 4 High.</h1>
+  <h1>11 open across six lenses: 0 Crit, 4 High.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-06</span>
     <span><b>method</b> static analysis · whole-tree read · portable Node 24.22.2 on a clean <code>git archive</code> copy in a scratch dir (Docker socket not reachable): root eslint crashes on load, see REPO-056; <code>server/</code> eslint (0 problems), <code>tsc -b</code> (0 errors), server <code>tsc</code> typecheck and <code>--noUnusedLocals --noUnusedParameters</code> (0 errors), client vitest run (233 files, 2669 tests, all pass), <code>vite build</code> · npm audit root and <code>server/</code> (0 vulnerabilities) · server vitest and live DB checks not run: no throwaway Postgres reachable · schema vs migrations diffed by hand: no drift · SEC-001 PR refs not re-counted: GitHub unreachable from this host · dead code by grep fallback (no knip or depcheck installed) · scale table carried from the rev 13 seed, not re-seeded · deep pass: six file-by-file reviews (auth/admin, diagrams/share, introspect/drift/shared, client sync, fork client, infra/CI), each finding re-read at its anchor · portable Postgres for server tests blocked by local permission policy · no secret read</span>
@@ -37,11 +37,11 @@
       <tbody>
         <tr><td>Security &amp; secrets</td><td>6</td><td>0</td><td>2</td><td>43</td><td>0</td></tr>
         <tr><td>Repository</td><td>3</td><td>0</td><td>1</td><td>63</td><td>1</td></tr>
-        <tr><td>Server</td><td>1</td><td>0</td><td>0</td><td>51</td><td>0</td></tr>
+        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>52</td><td>0</td></tr>
         <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>29</td><td>3</td></tr>
         <tr><td>Client</td><td>1</td><td>0</td><td>1</td><td>69</td><td>0</td></tr>
         <tr><td>Dead code</td><td>1</td><td>0</td><td>0</td><td>7</td><td>0</td></tr>
-        <tr><td>Total</td><td>12</td><td>0</td><td>4</td><td>262</td><td>4</td></tr>
+        <tr><td>Total</td><td>11</td><td>0</td><td>4</td><td>263</td><td>4</td></tr>
       </tbody>
     </table>
   </div>
@@ -61,8 +61,8 @@
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
-    <p>Top: Drift check scans every catalog row once per table; quadratic on big schemas</p>
-    <p class="lbl">1 open &middot; 0 Crit &middot; 0 High &middot; 51 fixed &middot; 0 accepted</p>
+    <p>Top: none open</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 52 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-database.html">
     <h3>Database &amp; scale</h3>
@@ -111,7 +111,7 @@
         <tr><td>22</td><td>2026-11-05</td><td class="wrap-cell">6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055</td></tr>
         <tr><td>23</td><td>2026-11-06</td><td class="wrap-cell">Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes</td></tr>
         <tr><td>24</td><td>2026-11-06</td><td class="wrap-cell">Deep pass: 59 new, 0 fixed, 0 regressed</td></tr>
-        <tr><td>25</td><td>2026-11-06</td><td class="wrap-cell">69 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036, SEC-037</td></tr>
+        <tr><td>25</td><td>2026-11-06</td><td class="wrap-cell">70 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044, SRV-050, SRV-052, SRV-051, CLI-049, CLI-069, CLI-065, CLI-066, CLI-062, CLI-068, CLI-060, CLI-061, CLI-055, CLI-059, CLI-058, CLI-057, CLI-064, CLI-063, CLI-048, CLI-067, CLI-070, CLI-056, DB-030, DB-025, SRV-045, SRV-049, REPO-067, REPO-066, REPO-065, DB-027, SRV-041, SRV-047, SRV-040, SRV-046, SEC-039, SEC-040, SEC-041, DB-026, DB-029, DB-031, DB-032, SRV-048, CLI-047, DB-028, REPO-062, SRV-043, CLI-054, CLI-053, CLI-052, CLI-051, SRV-039, SEC-034, SEC-036, SEC-037, SRV-042</td></tr>
       </tbody>
     </table>
   </div>
