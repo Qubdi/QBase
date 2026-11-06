@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ShareDialog } from '../share-dialog';
+import { fromLocalInput, ShareDialog, toLocalInput } from '../share-dialog';
 
 const listShareLinks = vi.fn();
 const createShareLink = vi.fn();
@@ -120,5 +120,26 @@ describe('ShareDialog create link', () => {
         expect((create as HTMLButtonElement).disabled).toBe(false);
         fireEvent.click(create);
         expect(createShareLink).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('share link expiry field', () => {
+    it('shows the local time the link expires at, not its UTC time', () => {
+        // 9:30 on 15 January in whatever zone the tests run in
+        const iso = new Date(2026, 0, 15, 9, 30).toISOString();
+        expect(toLocalInput(iso)).toBe('2026-01-15T09:30');
+    });
+
+    it('reads what was typed as local time, so a saved value shows up unchanged', () => {
+        const iso = fromLocalInput('2026-07-01T23:15');
+        expect(iso).toBe(new Date(2026, 6, 1, 23, 15).toISOString());
+        expect(toLocalInput(iso)).toBe('2026-07-01T23:15');
+    });
+
+    it('treats empty and unreadable text as no expiry', () => {
+        expect(toLocalInput(null)).toBe('');
+        expect(toLocalInput('garbage')).toBe('');
+        expect(fromLocalInput('')).toBeNull();
+        expect(fromLocalInput('not a date')).toBeNull();
     });
 });
