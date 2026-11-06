@@ -57,6 +57,8 @@ export function createEventBus() {
         } catch {
             return;
         }
+        // valid JSON is not always an object: a NOTIFY of `null` or `7` parses fine
+        if (typeof msg !== 'object' || msg === null) return;
         if (msg.o === origin) return;
         if (msg.t === 'publish' && typeof msg.d === 'string') {
             bus.emit('publish', msg.d, msg.v);

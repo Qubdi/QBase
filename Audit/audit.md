@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 12 | 0 | 2 | 37 | 0 |
 | Repository | 7 | 0 | 1 | 59 | 1 |
-| Server | 14 | 0 | 0 | 38 | 0 |
+| Server | 13 | 0 | 0 | 39 | 0 |
 | Database | 8 | 0 | 0 | 21 | 3 |
 | Client | 24 | 0 | 1 | 46 | 0 |
 | Dead code | 1 | 0 | 0 | 7 | 0 |
-| **Total** | 66 | 0 | 4 | 208 | 4 |
+| **Total** | 65 | 0 | 4 | 209 | 4 |
 
 ## Act first
 
@@ -63,7 +63,6 @@
 | SRV-041 | Low | Diagram deleted mid-request makes lint routes throw TypeError; 500 | `server/src/lint/routes.ts:102` · `server/src/lint/routes.ts:109` · `server/src/lint/routes.ts:143` | Return 404 when the row select is empty |
 | SRV-042 | Med | Drift check scans every catalog row once per table; quadratic on big schemas | `shared/schema-desc.ts:168` | Group metadata rows by table once before mapping |
 | SRV-043 | Med | Share SSE sends no `X-Accel-Buffering: no`; proxied live events stall | `server/src/share/routes.ts:421` | Send `X-Accel-Buffering: no` on the event stream |
-| SRV-044 | Low | `NOTIFY qubdi_events, 'null'` throws in the listener; process exits | `server/src/events.ts:60` | Ignore payloads that are not objects |
 | SRV-045 | Low | `COOKIE_SECURE`, `MFA_WINDOW_STEPS`, `MFA_ENABLED` typos fall back silently | `server/src/config.ts:87` · `server/src/config.ts:92` · `server/src/config.ts:222` | Raise `ConfigError` on unrecognised values |
 | SRV-046 | Low | Diagram delete never closes its share links' live streams | `server/src/diagrams/routes.ts:436` | Emit link-changed for the diagram's links on delete |
 | SRV-047 | Low | Diagram deleted mid-request: GET, lock, save and link create return 500 | `server/src/diagrams/routes.ts:288` · `server/src/share/routes.ts:163` | Return 404 on empty select or FK violation |
@@ -127,6 +126,7 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SRV-044 | Server | `NOTIFY qubdi_events, 'null'` throws in the listener; process exits |
 | REPO-063 | Repository | Compose defaults unset `QUBDI_BACKEND_URL` to localhost; documented local-only mode unreachable |
 | REPO-064 | Repository | `.env.example` header names only `POSTGRES_PASSWORD` as required |
 | REPO-057 | Repository | CONTRIBUTING server test line omits the fixed test DB credentials |
@@ -415,4 +415,4 @@
 | 22 | 2026-11-05 | 6 fixed: SEC-031, REPO-027, REPO-030, REPO-049, REPO-050, REPO-055 |
 | 23 | 2026-11-06 | Full pass: 19 new, 0 fixed, 0 regressed; REPO-005 widened to direct pushes |
 | 24 | 2026-11-06 | Deep pass: 59 new, 0 fixed, 0 regressed |
-| 25 | 2026-11-06 | 15 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063 |
+| 25 | 2026-11-06 | 16 fixed: DEAD-007, SEC-035, SEC-044, SEC-045, SEC-042, SEC-043, SEC-048, SEC-046, REPO-059, REPO-058, REPO-060, REPO-061, REPO-057, REPO-064, REPO-063, SRV-044 |
