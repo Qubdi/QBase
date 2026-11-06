@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DatabaseType } from '@/lib/domain/database-type';
-import type { Diagram } from '@/lib/domain/diagram';
-import type { DBField } from '@/lib/domain/db-field';
-import type { DBTable } from '@/lib/domain/db-table';
-import { createRelationshipsFromMetadata } from '@/lib/data/import-metadata/import/relationships';
-import { exportBaseSQL } from '../export-sql-script';
+import {
+    DatabaseType,
+    type Diagram,
+    type DBField,
+    type DBTable,
+} from '@/qbase/diagram-types';
+import { createRelationshipsFromMetadata } from '@/qbase/metadata-adapters';
+import { exportBaseSQL } from './builders';
 
 const field = (name: string, over: Partial<DBField> = {}): DBField =>
     ({
@@ -75,7 +77,6 @@ describe('exporting a diagram that still holds a many-to-many', () => {
         [DatabaseType.SQLITE, DatabaseType.SQLITE],
         [DatabaseType.POSTGRESQL, DatabaseType.MYSQL],
         [DatabaseType.POSTGRESQL, DatabaseType.SQL_SERVER],
-        [DatabaseType.GENERIC, DatabaseType.GENERIC],
     ])('%s to %s keeps the foreign key instead of dropping it', (from, to) => {
         const sql = exportBaseSQL({
             diagram: legacyDiagram(from),

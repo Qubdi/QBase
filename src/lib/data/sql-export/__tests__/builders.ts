@@ -1,8 +1,16 @@
-import type { DatabaseType } from '@/lib/domain/database-type';
-import type { Diagram } from '@/lib/domain/diagram';
-import type { DBField } from '@/lib/domain/db-field';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
-import type { DBTable } from '@/lib/domain/db-table';
+import { exportDiagramSql } from '@/qbase/sql-adapters';
+import type {
+    DatabaseType,
+    DBField,
+    DBRelationship,
+    DBTable,
+    Diagram,
+} from '@/qbase/diagram-types';
+
+/** SQL text of a diagram for a target database (the writer's diagnostics are dropped). */
+export const exportBaseSQL = (
+    options: Parameters<typeof exportDiagramSql>[0]
+) => exportDiagramSql(options).text;
 
 let counter = 0;
 const next = (prefix: string) => `${prefix}-${++counter}`;

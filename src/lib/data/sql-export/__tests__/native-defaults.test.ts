@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DatabaseType } from '@/lib/domain/database-type';
-import {
-    diagram,
-    field,
-    pk,
-    table,
-} from '../cross-dialect/convert/__tests__/builders';
-import { exportBaseSQL } from '../export-sql-script';
+import { DatabaseType } from '@/qbase/diagram-types';
+import { diagram, field, pk, table } from './builders';
+import { exportBaseSQL } from './builders';
 
 const exportAs = (type: DatabaseType, ...fields: ReturnType<typeof field>[]) =>
     exportBaseSQL({

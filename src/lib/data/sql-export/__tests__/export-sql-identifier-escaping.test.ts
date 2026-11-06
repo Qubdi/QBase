@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { exportBaseSQL } from '../export-sql-script';
-import { DatabaseType } from '@/lib/domain/database-type';
-import type { Diagram } from '@/lib/domain/diagram';
-import type { DBTable } from '@/lib/domain/db-table';
-import type { DBField } from '@/lib/domain/db-field';
+import { diagramToDesign } from '@/qbase/diagram-convert';
+import { exportDbml } from '@/formats/dbml/export-dbml';
+import { exportBaseSQL } from './builders';
+import {
+    DatabaseType,
+    type Diagram,
+    type DBTable,
+    type DBField,
+} from '@/qbase/diagram-types';
 
 let n = 0;
 const field = (o: Partial<DBField>): DBField =>
@@ -97,46 +101,34 @@ describe('SQL export identifier escaping', () => {
         });
     }
 
-    it('does not trust a name that only looks like a quoted identifier', () => {
-        const hostile = '"a"; DROP TABLE users; --"';
-        const sql = exportBaseSQL({
-            diagram: diagram(DatabaseType.GENERIC, [
-                table({
-                    name: hostile,
-                    fields: [
-                        field({
-                            name: 'id',
-                            primaryKey: true,
-                            nullable: false,
-                        }),
-                    ],
-                }),
-            ]),
-            targetDatabaseType: DatabaseType.GENERIC,
-            isDBMLFlow: true,
-        });
-        expect(sql).not.toContain('"a"; DROP TABLE users');
-        expect(sql).toContain('"""a""; DROP TABLE users; --"""');
+    // DBML is no longer written through a generic SQL script: its own writer
+    // (src/formats/dbml) quotes every name, so these two checks run on it.
+    const dbmlOf = (name: string) =>
+        exportDbml(
+            diagramToDesign(
+                diagram(DatabaseType.GENERIC, [
+                    table({
+                        name,
+                        fields: [
+                            field({
+                                name: 'id',
+                                primaryKey: true,
+                                nullable: false,
+                            }),
+                        ],
+                    }),
+                ])
+            ).design
+        ).text;
+
+    it('does not trust a name that only looks like a quoted identifier in DBML', () => {
+        const text = dbmlOf('"a"; DROP TABLE users; --"');
+        expect(text).not.toContain('Table "a"; DROP TABLE users');
+        expect(text).toContain('Table "\\"a\\"; DROP TABLE users; --\\""');
     });
 
-    it('still passes a well formed quoted name through unchanged', () => {
-        const sql = exportBaseSQL({
-            diagram: diagram(DatabaseType.GENERIC, [
-                table({
-                    name: '"already quoted"',
-                    fields: [
-                        field({
-                            name: 'id',
-                            primaryKey: true,
-                            nullable: false,
-                        }),
-                    ],
-                }),
-            ]),
-            targetDatabaseType: DatabaseType.GENERIC,
-            isDBMLFlow: true,
-        });
-        expect(sql).toContain('CREATE TABLE "already quoted"');
+    it('still quotes an ordinary name in DBML', () => {
+        expect(dbmlOf('plain')).toContain('Table "plain"');
     });
 
     it('keeps the SQL Server schema script safe for a hostile schema name', () => {
