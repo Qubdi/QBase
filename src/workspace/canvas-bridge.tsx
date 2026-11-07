@@ -23,6 +23,8 @@ export const CanvasBridgeProvider: React.FC<React.PropsWithChildren> = ({
             captureTarget: () =>
                 handle.current?.captureTarget?.() ??
                 document.querySelector<HTMLElement>(CANVAS_SLOT_SELECTOR),
+            viewportOrigin: () =>
+                handle.current?.viewportOrigin?.() ?? { x: 0, y: 0 },
         }),
         []
     );

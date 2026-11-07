@@ -1,19 +1,20 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { SidePanel } from '@/pages/editor-page/side-panel/side-panel';
+import { useCanvasActions } from './canvas-bridge-context';
 
 /**
  * Where the side panel goes (the sections of the diagram: tables, DBML, refs,
- * custom types, visuals). The side-panel module replaces the body; the frame
- * only decides how wide the place is and when it is shown.
+ * custom types, visuals). The frame only decides how wide the place is and when
+ * it is shown; `onFocused` lets a phone close its drawer after the panel asked
+ * the canvas to show something (EDT-010).
  */
-export const SidePanelSlot: React.FC = () => {
-    const { t } = useTranslation();
+export const SidePanelSlot: React.FC<{ onFocused?: () => void }> = ({
+    onFocused,
+}) => {
+    const { viewportOrigin } = useCanvasActions();
     return (
-        <div
-            data-slot="side-panel"
-            className="h-full w-full overflow-auto p-3 text-sm text-muted-foreground"
-        >
-            {t('editor.workspace.frame.panelPlaceholder')}
+        <div data-slot="side-panel" className="h-full w-full overflow-auto">
+            <SidePanel viewportOrigin={viewportOrigin} onFocused={onFocused} />
         </div>
     );
 };

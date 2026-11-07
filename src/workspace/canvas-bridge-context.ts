@@ -8,6 +8,8 @@ export interface CanvasHandle {
     toggleFilter(): void;
     /** the element whose pixels make an image export; defaults to the canvas slot */
     captureTarget?(): HTMLElement | null;
+    /** the top-left corner of what the canvas shows, in canvas coordinates */
+    viewportOrigin?(): { x: number; y: number };
 }
 
 export interface Bridge {
@@ -15,6 +17,7 @@ export interface Bridge {
     fitAll(): void;
     toggleFilter(): void;
     captureTarget(): HTMLElement | null;
+    viewportOrigin(): { x: number; y: number };
 }
 
 const none: Bridge = {
@@ -22,6 +25,7 @@ const none: Bridge = {
     fitAll: () => undefined,
     toggleFilter: () => undefined,
     captureTarget: () => null,
+    viewportOrigin: () => ({ x: 0, y: 0 }),
 };
 
 export const CanvasBridgeContext = createContext<Bridge>(none);
@@ -44,6 +48,8 @@ export function useRegisterCanvas(handle: CanvasHandle): void {
                 fitAll: () => latest.current.fitAll(),
                 toggleFilter: () => latest.current.toggleFilter(),
                 captureTarget: () => latest.current.captureTarget?.() ?? null,
+                viewportOrigin: () =>
+                    latest.current.viewportOrigin?.() ?? { x: 0, y: 0 },
             }),
         [bridge]
     );
