@@ -63,9 +63,15 @@ export async function migrateLegacyLayout(
                 }
                 const children = (
                     table: Table<Record<string, unknown>, string>
-                ) => table.where('diagramId').equals(id).toArray();
+                ) =>
+                    // children carry the key as it was stored (a very old
+                    // auto-increment row has a number, not text)
+                    table
+                        .where('diagramId')
+                        .equals(row.id as string)
+                        .toArray();
                 const rows: LegacyRows = {
-                    diagram: row,
+                    diagram: { ...row, id },
                     tables: await children(db.db_tables),
                     relationships: await children(db.db_relationships),
                     dependencies: await children(db.db_dependencies),
