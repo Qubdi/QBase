@@ -21,6 +21,11 @@ export const canvas = {
         title: 'All tables are hidden',
         action: 'Show all',
     },
+    diff: {
+        added: 'New Table',
+        removed: 'Table Removed',
+        changed: 'Table Changed',
+    },
     entity: {
         view: 'view',
         materializedView: 'materialized view',

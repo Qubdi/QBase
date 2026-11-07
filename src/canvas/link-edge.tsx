@@ -2,16 +2,16 @@ import React, { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from '@xyflow/react';
 import type { EdgeProps } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
-import { useEditorStore } from '@/store/store-context';
 import { markerId, TONE_STROKE } from './line-style';
 import type { LinkEdge } from './flow-model';
+import { useShown } from './diff-marks';
 import { useSurface } from './surface-context';
 
 /** One relationship: a smooth line between two field rows with crow's-foot ends. */
 export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
     const { t } = useTranslation();
     const surface = useSurface();
-    const link = useEditorStore((s) => s.design.links.byId[props.id]);
+    const link = useShown((d) => d.links.byId[props.id]);
     if (!link) return null;
 
     const reach = props.data?.reach ?? 22;
@@ -25,13 +25,20 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
         borderRadius: 12,
         offset: reach,
     });
-    const tone = props.selected ? 'picked' : 'plain';
+    const mark = props.data?.mark;
+    const tone =
+        mark === 'added' || mark === 'removed'
+            ? mark
+            : props.selected
+              ? 'picked'
+              : 'plain';
     const showEnds = surface.prefs.showCardinality;
 
     return (
         <>
             <BaseEdge
                 id={props.id}
+                data-diff={mark}
                 path={path}
                 interactionWidth={18}
                 markerStart={
@@ -46,7 +53,7 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
                 }
                 style={{
                     stroke: TONE_STROKE[tone],
-                    strokeWidth: props.selected ? 2 : 1.4,
+                    strokeWidth: mark ? 3 : props.selected ? 2 : 1.4,
                 }}
             />
             {props.selected ? (

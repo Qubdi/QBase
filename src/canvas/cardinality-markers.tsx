@@ -48,13 +48,15 @@ export function MarkerDefs() {
         >
             <defs>
                 {(['one', 'many'] as const).flatMap((cardinality) =>
-                    (['plain', 'picked'] as const).map((tone) => (
-                        <End
-                            key={`${cardinality}-${tone}`}
-                            cardinality={cardinality}
-                            tone={tone}
-                        />
-                    ))
+                    (['plain', 'picked', 'added', 'removed'] as const).map(
+                        (tone) => (
+                            <End
+                                key={`${cardinality}-${tone}`}
+                                cardinality={cardinality}
+                                tone={tone}
+                            />
+                        )
+                    )
                 )}
             </defs>
         </svg>

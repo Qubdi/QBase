@@ -231,5 +231,17 @@ export const sidePanelStrings = {
         inlineRefs: 'Show inline refs',
         copied: 'Copied',
         failed: 'Could not write the DBML',
+        edit: 'Edit',
+        view: 'View',
+        accept: 'Accept Changes',
+        undo: 'Undo Changes',
+        editor: 'DBML text',
+        parseError:
+            'Failed to parse DBML. Please check the syntax. (1 error found - in line {{line}})',
+        parseErrorNoLine:
+            'Failed to parse DBML. Please check the syntax. (1 error found)',
+        summary:
+            '{{added}} new, {{removed}} removed, {{changed}} changed tables; {{linksAdded}} new, {{linksRemoved}} removed relationships',
+        rejected: 'The change could not be applied',
     },
 };

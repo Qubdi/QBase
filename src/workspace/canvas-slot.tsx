@@ -10,6 +10,7 @@ import { DiagramCanvas } from '@/canvas/diagram-canvas';
 import type { CanvasHooks, CanvasPrefs } from '@/canvas/hooks';
 import type { CanvasControls } from '@/canvas/use-viewport';
 import { LocalConfigContext } from '@/context/local-config-context/local-config-context';
+import { usePreviewStore } from '@/features/dbml-diff/preview-store';
 import { FilterPanel } from '@/features/filters/filter-panel';
 import { CreateLinkDialog } from '@/features/links/create-link-dialog';
 import { visibleSchemas } from '@/features/tables/table-list';
@@ -29,6 +30,7 @@ const Surface: React.FC = () => {
     const config = useContext(LocalConfigContext);
     const design = useEditorStore(selectDesign);
     const filter = useEditorStore(selectFilter);
+    const diff = usePreviewStore((s) => s.marks);
     const [filterOpen, setFilterOpen] = useState(false);
     const [linkDialog, setLinkDialog] = useState(false);
     // the canvas hands these over once it is mounted (fit, zoom to tables, view origin)
@@ -77,8 +79,9 @@ const Surface: React.FC = () => {
             toggleFilterPanel: toggleFilter,
             filterPanelOpen: filterOpen,
             visibleSchemas: schemas,
+            diff,
         }),
-        [store, toggleFilter, filterOpen, schemas]
+        [store, toggleFilter, filterOpen, schemas, diff]
     );
 
     return (

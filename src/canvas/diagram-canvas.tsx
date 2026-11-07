@@ -106,11 +106,14 @@ function Surface({
     const [measures] = useState(createMeasureBook);
     const sizes = useStore(measures, (s) => s.sizes);
 
-    const design = useEditorStore((s) => s.design);
+    const stored = useEditorStore((s) => s.design);
+    const diff = hooks?.diff;
+    const design = diff?.design ?? stored;
     const selection = useEditorStore((s) => s.ui.selection);
     const filter = useEditorStore((s) => s.ui.filter);
     const locked = useEditorStore(selectLocked);
-    const editable = !locked;
+    // a preview draws tables the store does not have: nothing moves meanwhile
+    const editable = !locked && !diff;
 
     const [live, setLive] = useState<LiveShapes>(NO_LIVE);
     const liveRef = useRef<LiveShapes>(NO_LIVE);
@@ -182,6 +185,7 @@ function Surface({
             sizes,
             outlineOverlaps: prefs.outlineOverlaps,
             editable,
+            diff,
         }),
         [
             design,
@@ -193,6 +197,7 @@ function Surface({
             sizes,
             prefs.outlineOverlaps,
             editable,
+            diff,
         ]
     );
     const nodes = useMemo(() => buildNodes(input), [input]);

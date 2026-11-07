@@ -374,16 +374,16 @@ owner signs off).
 | EDT-235 | Copy and paste | Paste shows Table pasted / <n> tables pasted | keep: feedback | [ ] | |
 | EDT-236 | Copy and paste | The clipboard lives in the page (works between diagrams in the same tab) and is lost on reload | change: consider the OS clipboard for cross-tab paste | [ ] | |
 | EDT-237 | Copy and paste | Paste is unavailable in read-only mode | keep: consistent | [ ] | |
-| EDT-238 | DBML preview and diff | The DBML section shows the diagram as read-only DBML with Show Standard/Inline Refs, Edit and copy buttons | keep: core | [ ] | |
-| EDT-239 | DBML preview and diff | Edit makes the DBML editable; after 1 s of no typing the DBML is parsed | keep: core | [ ] | |
-| EDT-240 | DBML preview and diff | A DBML syntax error marks the line and shows Failed to parse DBML... (1 error found - in line N) | keep: core | [ ] | |
-| EDT-241 | DBML preview and diff | A valid edit shows a summary diff on the canvas without changing the diagram | keep: core | [ ] | |
-| EDT-242 | DBML preview and diff | New tables get a green + badge and name; removed tables red; changed tables blue; renames show old then new | keep: core | [ ] | |
-| EDT-243 | DBML preview and diff | New and removed relationships are drawn green or red and thicker in a diff | keep: core | [ ] | |
-| EDT-244 | DBML preview and diff | While a diff exists Accept Changes (green) and Undo Changes (red) appear; with no diff the button is View | keep: core | [ ] | |
-| EDT-245 | DBML preview and diff | Accept Changes replaces tables, relationships and custom types, keeps areas and notes, and is one undo step | keep: core | [ ] | |
-| EDT-246 | DBML preview and diff | Undo Changes discards the preview and leaves edit mode | keep: core | [ ] | |
-| EDT-247 | DBML preview and diff | Leaving the DBML section discards an unaccepted preview | keep: safe | [ ] | |
+| EDT-238 | DBML preview and diff | The DBML section shows the diagram as read-only DBML with Show Standard/Inline Refs, Edit and copy buttons | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
+| EDT-239 | DBML preview and diff | Edit makes the DBML editable; after 1 s of no typing the DBML is parsed | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
+| EDT-240 | DBML preview and diff | A DBML syntax error marks the line and shows Failed to parse DBML... (1 error found - in line N) | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
+| EDT-241 | DBML preview and diff | A valid edit shows a summary diff on the canvas without changing the diagram | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
+| EDT-242 | DBML preview and diff | New tables get a green + badge and name; removed tables red; changed tables blue; renames show old then new | keep: core | [ ] | added/removed/changed badge, tooltips, name colour tested (`diff-marks.test.tsx`); renames show as removed + added, no old-to-new name |
+| EDT-243 | DBML preview and diff | New and removed relationships are drawn green or red and thicker in a diff | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
+| EDT-244 | DBML preview and diff | While a diff exists Accept Changes (green) and Undo Changes (red) appear; with no diff the button is View | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
+| EDT-245 | DBML preview and diff | Accept Changes replaces tables, relationships and custom types, keeps areas and notes, and is one undo step | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
+| EDT-246 | DBML preview and diff | Undo Changes discards the preview and leaves edit mode | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
+| EDT-247 | DBML preview and diff | Leaving the DBML section discards an unaccepted preview | keep: safe | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
 | EDT-248 | DBML preview and diff | Import into the current diagram lists counts of new tables, new relationships and overwritten tables | keep: core | [ ] | |
 | EDT-249 | DBML preview and diff | Imported tables land 150 px right of the right-most existing table and history is reset | keep: avoids overlap | [ ] | |
 | EDT-250 | DBML preview and diff | Re-sync from database lists changes with checkboxes (renames unchecked), Apply n selected, one undo step | keep: server feature; kept | [ ] | |

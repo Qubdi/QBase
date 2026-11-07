@@ -4,6 +4,7 @@ import { TABLE_WIDTH } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
 import { entityList } from '@/core/model/lookup';
 import type { Size } from '@/core/model/region-membership';
+import type { DiffMark, DiffMarks } from './diff-marks';
 
 export type Side = 'l' | 'r';
 
@@ -27,6 +28,8 @@ export type EntityNodeData = {
     flashing: boolean;
     /** carries the quiet overlap outline */
     outlined: boolean;
+    /** how a diff preview marks this table */
+    mark?: DiffMark;
 };
 export type RegionNodeData = Record<string, never>;
 export type MemoNodeData = Record<string, never>;
@@ -40,6 +43,8 @@ export type LinkEdgeData = {
     /** distance a parallel or looping line keeps from the table edge */
     reach: number;
     selfLoop: boolean;
+    /** how a diff preview marks this line */
+    mark?: DiffMark;
 };
 export type LinkEdge = Edge<LinkEdgeData, 'link'>;
 
@@ -65,6 +70,7 @@ export interface FlowInput {
     sizes: Readonly<Record<Id, Size>>;
     outlineOverlaps: boolean;
     editable: boolean;
+    diff?: DiffMarks;
 }
 
 /** Tables that stand back while others are selected (EDT-032). */
@@ -188,6 +194,7 @@ export function buildNodes(input: FlowInput): CanvasNode[] {
                 flashing: input.flashing.has(entity.id),
                 outlined:
                     input.outlineOverlaps && input.overlapping.has(entity.id),
+                mark: input.diff?.tables[entity.id],
             },
             selected: selection.has(entity.id),
             draggable: input.editable,
@@ -241,7 +248,11 @@ export function buildEdges(
             sourceHandle: handleId(link.sourceColumnId, a),
             targetHandle: handleId(link.targetColumnId, b),
             selected: input.selection.has(id),
-            data: { reach: (selfLoop ? 36 : 22) + n * 14, selfLoop },
+            data: {
+                reach: (selfLoop ? 36 : 22) + n * 14,
+                selfLoop,
+                mark: input.diff?.links[id],
+            },
         });
     }
     return edges;

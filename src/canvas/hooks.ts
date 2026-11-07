@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import type { Id } from '@/core/model/id';
+import type { DiffMarks } from './diff-marks';
 
 /** What the canvas hands to the form that edits one table in place. */
 export interface EntityEditorProps {
@@ -40,6 +41,8 @@ export interface CanvasHooks {
     highlight?: { label: string; clear(): void };
     /** which schemas new tables may take, for the default of a created table */
     visibleSchemas?: readonly string[];
+    /** a preview of changes to draw over the diagram (the DBML section's diff) */
+    diff?: DiffMarks;
 }
 
 /** Display choices the person made in the View menu. The workspace stores them. */
