@@ -19,6 +19,7 @@ import { TableRow } from './table-row';
 import { listTables, planReorderTables, visibleSchemas } from './table-list';
 import { newItemDragProps } from '@/canvas/drop-items';
 import { useAddTable } from './use-add-table';
+import { WindowedList } from './windowed-list';
 
 /** The Tables section (EDT-102 to EDT-111). */
 export const TablesSection: React.FC = () => {
@@ -118,20 +119,27 @@ export const TablesSection: React.FC = () => {
                 onMove={(a, b) => edit(planReorderTables(design, a, b))}
             >
                 <div className="space-y-1">
-                    {rows.map((entity) => (
-                        <TableRow
-                            key={entity.id}
-                            entity={entity}
-                            open={openId === entity.id}
-                            sortable
-                            showSchema={showSchema}
-                            onToggle={() =>
-                                setOpenId(
-                                    openId === entity.id ? undefined : entity.id
-                                )
-                            }
-                        />
-                    ))}
+                    <WindowedList
+                        items={rows}
+                        getId={(r) => r.id}
+                        keepIds={[openId]}
+                        scrollToId={openId}
+                        renderItem={(entity) => (
+                            <TableRow
+                                entity={entity}
+                                open={openId === entity.id}
+                                sortable
+                                showSchema={showSchema}
+                                onToggle={() =>
+                                    setOpenId(
+                                        openId === entity.id
+                                            ? undefined
+                                            : entity.id
+                                    )
+                                }
+                            />
+                        )}
+                    />
                 </div>
             </SortableList>
         );
@@ -149,7 +157,9 @@ export const TablesSection: React.FC = () => {
                 />
                 {addButton}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
+            <div data-window-root className="min-h-0 flex-1 overflow-y-auto">
+                {body}
+            </div>
             {dialog}
         </div>
     );

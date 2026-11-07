@@ -13,6 +13,7 @@ import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
+import { WindowedList } from '@/features/tables/windowed-list';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { CreateLinkDialog } from './create-link-dialog';
 import { cardinalityChoiceOf, listRefs } from './link-rules';
@@ -170,14 +171,18 @@ export const RefsSection: React.FC = () => {
                 <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {text('refs.relationships')}
                 </h3>
-                {links.map((link) => (
-                    <RefRow
-                        key={link.id}
-                        link={link}
-                        open={openIds.has(link.id)}
-                        onToggle={() => toggle(link.id)}
-                    />
-                ))}
+                <WindowedList
+                    items={links}
+                    getId={(l) => l.id}
+                    keepIds={[...openIds]}
+                    renderItem={(link) => (
+                        <RefRow
+                            link={link}
+                            open={openIds.has(link.id)}
+                            onToggle={() => toggle(link.id)}
+                        />
+                    )}
+                />
             </div>
         );
     }
@@ -212,7 +217,9 @@ export const RefsSection: React.FC = () => {
             >
                 {text('refs.collapseAll')}
             </Button>
-            <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
+            <div data-window-root className="min-h-0 flex-1 overflow-y-auto">
+                {body}
+            </div>
             {creating ? (
                 <CreateLinkDialog
                     onClose={() => setCreating(false)}

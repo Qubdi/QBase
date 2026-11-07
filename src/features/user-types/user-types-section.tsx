@@ -27,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from '@/platform/ui/dropdown-menu';
 import { Input } from '@/platform/ui/input';
+import { WindowedList } from '@/features/tables/windowed-list';
 import {
     listUserTypes,
     withEnumValue,
@@ -365,17 +366,24 @@ export const UserTypesSection: React.FC = () => {
     } else {
         body = (
             <div className="space-y-1">
-                {types.map((type) => (
-                    <TypeRow
-                        key={type.id}
-                        type={type}
-                        open={openId === type.id}
-                        showSchema={showSchema}
-                        onToggle={() =>
-                            setOpenId(openId === type.id ? undefined : type.id)
-                        }
-                    />
-                ))}
+                <WindowedList
+                    items={types}
+                    getId={(t) => t.id}
+                    keepIds={[openId]}
+                    scrollToId={openId}
+                    renderItem={(type) => (
+                        <TypeRow
+                            type={type}
+                            open={openId === type.id}
+                            showSchema={showSchema}
+                            onToggle={() =>
+                                setOpenId(
+                                    openId === type.id ? undefined : type.id
+                                )
+                            }
+                        />
+                    )}
+                />
             </div>
         );
     }
@@ -392,7 +400,9 @@ export const UserTypesSection: React.FC = () => {
                 />
                 {add}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
+            <div data-window-root className="min-h-0 flex-1 overflow-y-auto">
+                {body}
+            </div>
         </div>
     );
 };

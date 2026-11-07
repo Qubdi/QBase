@@ -20,6 +20,7 @@ import { newItemDragProps } from '@/canvas/drop-items';
 import { useHoldMenu } from '@/platform/panel/hold-menu';
 import { selectPanel } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
+import { WindowedList } from '@/features/tables/windowed-list';
 import { firstLine, listMemos, listRegions } from './visual-lists';
 import type { VisualsTab } from '@/store/editor-state';
 
@@ -126,65 +127,69 @@ const AreasList: React.FC = () => {
             ) : regions.length === 0 ? (
                 <Notice title={text('visuals.noAreasMatch')} />
             ) : (
-                regions.map((region) => (
-                    <ActionRow
-                        key={region.id}
-                        testId="area-row"
-                        label={text('visuals.areaActions')}
-                        items={
-                            locked
-                                ? null
-                                : [
-                                      {
-                                          label: text('visuals.deleteArea'),
-                                          onSelect: () =>
-                                              edit({
-                                                  type: 'item.remove',
-                                                  collection: 'regions',
-                                                  id: region.id,
-                                              }),
-                                      },
-                                  ]
-                        }
-                    >
-                        <InlineName
-                            value={region.label}
-                            readOnly={locked}
-                            editLabel={text('visuals.editName')}
-                            className="text-sm font-medium"
-                            onSave={(label) =>
-                                edit({
-                                    type: 'item.update',
-                                    collection: 'regions',
-                                    id: region.id,
-                                    patch: { label },
-                                })
+                <WindowedList
+                    items={regions}
+                    getId={(r) => r.id}
+                    gap={8}
+                    renderItem={(region) => (
+                        <ActionRow
+                            testId="area-row"
+                            label={text('visuals.areaActions')}
+                            items={
+                                locked
+                                    ? null
+                                    : [
+                                          {
+                                              label: text('visuals.deleteArea'),
+                                              onSelect: () =>
+                                                  edit({
+                                                      type: 'item.remove',
+                                                      collection: 'regions',
+                                                      id: region.id,
+                                                  }),
+                                          },
+                                      ]
                             }
-                        />
-                        <ColorPicker
-                            color={region.tint}
-                            disabled={locked}
-                            onChange={(tint) =>
-                                edit({
-                                    type: 'item.update',
-                                    collection: 'regions',
-                                    id: region.id,
-                                    patch: { tint },
-                                })
-                            }
-                        />
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className="size-7 shrink-0"
-                            aria-label={text('common.focus')}
-                            onClick={() => focus(region.id)}
                         >
-                            <Crosshair />
-                        </Button>
-                    </ActionRow>
-                ))
+                            <InlineName
+                                value={region.label}
+                                readOnly={locked}
+                                editLabel={text('visuals.editName')}
+                                className="text-sm font-medium"
+                                onSave={(label) =>
+                                    edit({
+                                        type: 'item.update',
+                                        collection: 'regions',
+                                        id: region.id,
+                                        patch: { label },
+                                    })
+                                }
+                            />
+                            <ColorPicker
+                                color={region.tint}
+                                disabled={locked}
+                                onChange={(tint) =>
+                                    edit({
+                                        type: 'item.update',
+                                        collection: 'regions',
+                                        id: region.id,
+                                        patch: { tint },
+                                    })
+                                }
+                            />
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="size-7 shrink-0"
+                                aria-label={text('common.focus')}
+                                onClick={() => focus(region.id)}
+                            >
+                                <Crosshair />
+                            </Button>
+                        </ActionRow>
+                    )}
+                />
             )}
         </div>
     );
@@ -214,63 +219,69 @@ const NotesList: React.FC = () => {
             ) : memos.length === 0 ? (
                 <Notice title={text('visuals.noNotesMatch')} />
             ) : (
-                memos.map((memo) => {
-                    const line = firstLine(memo.body);
-                    return (
-                        <ActionRow
-                            key={memo.id}
-                            testId="note-row"
-                            label={text('visuals.noteActions')}
-                            items={
-                                locked
-                                    ? null
-                                    : [
-                                          {
-                                              label: text('visuals.deleteNote'),
-                                              onSelect: () =>
-                                                  edit({
-                                                      type: 'item.remove',
-                                                      collection: 'memos',
-                                                      id: memo.id,
-                                                  }),
-                                          },
-                                      ]
-                            }
-                        >
-                            <span
-                                className={
-                                    line
-                                        ? 'min-w-0 flex-1 truncate text-sm'
-                                        : 'min-w-0 flex-1 truncate text-sm text-muted-foreground'
+                <WindowedList
+                    items={memos}
+                    getId={(m) => m.id}
+                    gap={8}
+                    renderItem={(memo) => {
+                        const line = firstLine(memo.body);
+                        return (
+                            <ActionRow
+                                testId="note-row"
+                                label={text('visuals.noteActions')}
+                                items={
+                                    locked
+                                        ? null
+                                        : [
+                                              {
+                                                  label: text(
+                                                      'visuals.deleteNote'
+                                                  ),
+                                                  onSelect: () =>
+                                                      edit({
+                                                          type: 'item.remove',
+                                                          collection: 'memos',
+                                                          id: memo.id,
+                                                      }),
+                                              },
+                                          ]
                                 }
                             >
-                                {line || text('visuals.emptyNote')}
-                            </span>
-                            <ColorPicker
-                                color={memo.tint}
-                                disabled={locked}
-                                onChange={(tint) =>
-                                    edit({
-                                        type: 'item.update',
-                                        collection: 'memos',
-                                        id: memo.id,
-                                        patch: { tint },
-                                    })
-                                }
-                            />
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className="size-7 shrink-0"
-                                aria-label={text('common.focus')}
-                                onClick={() => focus(memo.id)}
-                            >
-                                <Crosshair />
-                            </Button>
-                        </ActionRow>
-                    );
-                })
+                                <span
+                                    className={
+                                        line
+                                            ? 'min-w-0 flex-1 truncate text-sm'
+                                            : 'min-w-0 flex-1 truncate text-sm text-muted-foreground'
+                                    }
+                                >
+                                    {line || text('visuals.emptyNote')}
+                                </span>
+                                <ColorPicker
+                                    color={memo.tint}
+                                    disabled={locked}
+                                    onChange={(tint) =>
+                                        edit({
+                                            type: 'item.update',
+                                            collection: 'memos',
+                                            id: memo.id,
+                                            patch: { tint },
+                                        })
+                                    }
+                                />
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-7 shrink-0"
+                                    aria-label={text('common.focus')}
+                                    onClick={() => focus(memo.id)}
+                                >
+                                    <Crosshair />
+                                </Button>
+                            </ActionRow>
+                        );
+                    }}
+                />
             )}
         </div>
     );
@@ -295,12 +306,14 @@ export const VisualsSection: React.FC = () => {
             </TabsList>
             <TabsContent
                 value="areas"
+                data-window-root
                 className="min-h-0 flex-1 overflow-y-auto"
             >
                 <AreasList />
             </TabsContent>
             <TabsContent
                 value="notes"
+                data-window-root
                 className="min-h-0 flex-1 overflow-y-auto"
             >
                 <NotesList />

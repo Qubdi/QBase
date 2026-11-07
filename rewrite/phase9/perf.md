@@ -131,3 +131,50 @@ use of the lazily loaded code plus the dialog (the 50-table figure is the same
 - The SQL import lays tables out in columns by link distance; with an
   unrelated link structure (every table linked to one hub) it makes a single
   tall column at 10 % zoom. Not a speed problem, noted for the layout.
+
+## Windowed side-panel lists
+
+The Tables, Links, Types, Areas and Notes lists draw only the rows near the
+scroll position when they have more than 60 rows (`features/tables/windowed-list.tsx`,
+range maths in `window-range.ts`). Up to 60 rows the output is the same plain
+list as before (no wrapper, no roles).
+
+- Rows are measured (ResizeObserver), with a 44 px + gap guess for rows not yet
+  drawn, because an open table or type is far taller than a closed one. Spacer
+  divs stand in for the rest, so the scrollbar and the browser's own scroll
+  position are unchanged by edits. 320 px of overscan each way.
+- Kept drawn: the focused row (until focus is in no row and the list is
+  scrolled), the open row(s) (`keepIds`), and the row a keyboard move is going to.
+- Keyboard: Tab / Shift+Tab off the last / first drawn row scrolls the next row
+  in and focuses it; ArrowDown / ArrowUp on a row's toggle button moves to the
+  neighbouring row's toggle (also when it was not drawn).
+- A table opened from the canvas (`expandedEntityId`, mirrored in `openId`) is
+  scrolled into view through the spacer offsets even when its row is not drawn;
+  the row's own `scrollIntoView` then refines it.
+- Accessibility: the windowed list is `role="list"`, rows `role="listitem"` with
+  `aria-setsize` / `aria-posinset`; spacers are `aria-hidden`. The row toggles keep
+  their labels. Filter box, Add table button and the drag sources are untouched;
+  the sortable list still gets all ids, so drag reordering works for drawn rows.
+- Known limits: crossing 60 rows (adding the 61st or filtering back below it)
+  remounts the rows once, so an open editor's local state is lost at that moment;
+  dragging a table row to reorder auto-scrolls only over drawn rows.
+
+500 tables (run-perf.sh, SIZES=500, ms, sql / json import), before -> after:
+
+| metric | before | after |
+|---|---|---|
+| add table (click to paint) | 338 / 386 | 189 / 197 |
+| undo add table | 410 / 449 | 232 / 217 |
+| redo add table | 58 / 384 | 209 / 225 (the 58 was a missed sample) |
+| undo again | 369 / 384 | 195 / 234 |
+| delete 189 selected tables | -1 / 382 | 256 / 267 |
+| undo the delete of 189 | 939 / 798 | 475 / 477 |
+| select a table | 213 / 209 | 200 / 215 |
+| first table drawn after import | 2067 / 2056 | 1737 / 1776 |
+| interactive after import | 2329 / 2218 | 1973 / 1941 |
+
+Add / undo / redo are now within the 300 ms limit. Select is unchanged (it is
+the canvas, not the list) and sits at the 200 ms limit. Tests:
+`features/tables/__tests__/windowed-list.test.tsx` (window size and counts,
+scroll, total height, focused and kept rows stay, scroll to a requested row, Tab
+and arrow movement into undrawn rows, short list unchanged, Tables section).
