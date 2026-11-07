@@ -23,7 +23,7 @@ export function CornerTools(props: CornerToolsProps) {
     const shift = shortcutLabel(['Shift'], isMacPlatform());
     const snapLabel = t('canvas.snap.label', { key: shift });
     return (
-        <div className="absolute left-3 top-3 z-30 flex gap-2">
+        <div className="qb-corner">
             {props.editable ? (
                 <button
                     type="button"

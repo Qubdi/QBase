@@ -3,6 +3,7 @@ import type { Design } from '@/core/model/design';
 import { TABLE_WIDTH } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
 import { entityList } from '@/core/model/lookup';
+import { estimatedSize } from '@/core/model/region-membership';
 
 export type Side = 'l' | 'r';
 
@@ -176,6 +177,8 @@ export function buildNodes(input: FlowInput): CanvasNode[] {
                 live.sizes[entity.id]?.width ??
                 entity.width ??
                 TABLE_WIDTH.default,
+            // a stand-in until the table is measured, so the map can draw it
+            initialHeight: estimatedSize(entity).height,
             data: {
                 dimmed: dim.has(entity.id),
                 flashing: input.flashing.has(entity.id),

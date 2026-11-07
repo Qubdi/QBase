@@ -49,7 +49,7 @@ export function Toolbar(props: ToolbarProps) {
         <div
             role="toolbar"
             aria-label={t('canvas.toolbar.label')}
-            className="absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center rounded-full border bg-card p-1 shadow-md md:bottom-4 md:top-auto"
+            className="qb-toolbar flex items-center rounded-full border bg-card p-1 shadow-md"
         >
             <button
                 type="button"

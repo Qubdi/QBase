@@ -117,3 +117,14 @@ export function anyOnScreen(
         )
     );
 }
+
+/** A container size counts as changed once either side moves by 15% or more. */
+export function resizedEnough(
+    before: { w: number; h: number },
+    now: { w: number; h: number },
+    ratio = 0.15
+): boolean {
+    const far = (a: number, b: number) =>
+        Math.abs(a - b) >= Math.max(1, a) * ratio;
+    return far(before.w, now.w) || far(before.h, now.h);
+}

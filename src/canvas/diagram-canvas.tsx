@@ -36,6 +36,14 @@ import {
 } from './canvas-actions';
 import { ArrangeConfirm } from './arrange-confirm';
 import { dropNewItem, NEW_ITEM_TYPE } from './drop-items';
+import { ChromeStyle } from './chrome-style';
+import {
+    MINIMAP_BACKGROUND,
+    MINIMAP_MASK,
+    MINIMAP_WINDOW,
+    miniFill,
+    miniStroke,
+} from './minimap-colors';
 import { CornerTools } from './corner-tools';
 import { filterHidesSomething } from './filter-state';
 import { Toolbar } from './toolbar';
@@ -52,7 +60,12 @@ import { reportConnect, reportCopied, reportPasted } from './notify';
 import { commitShapes } from './commit-shapes';
 import { buildEdges, buildNodes, drawnEntityIds, NO_LIVE } from './flow-model';
 import type { LiveShapes, Point, Side } from './flow-model';
-import { anyOnScreen, overlappingIds, sizeFor } from './geometry';
+import {
+    anyOnScreen,
+    overlappingIds,
+    resizedEnough,
+    sizeFor,
+} from './geometry';
 import { interactionProps } from './interaction';
 import { DEFAULT_PREFS, HooksContext } from './hooks';
 import type { CanvasHooks, CanvasPrefs } from './hooks';
@@ -466,6 +479,39 @@ function Surface({
         });
     }, [visible, design.entities, sizes, view, hostEl]);
 
+    // First sight of the tables: fit once every drawn table has a measured size.
+    // Later, a container that changes size a lot refits, unless the person has
+    // panned or zoomed since the last fit.
+    const fittedOnce = useRef(false);
+    const touched = useRef(false);
+    const lastBox = useRef<{ w: number; h: number } | undefined>(undefined);
+    useEffect(() => {
+        if (fittedOnce.current || visible.size === 0) return;
+        if (![...visible].every((id) => sizes[id])) return;
+        fittedOnce.current = true;
+        controls.fit({ instant: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [visible, sizes]);
+    useEffect(() => {
+        if (!hostEl || typeof ResizeObserver === 'undefined') return;
+        const watcher = new ResizeObserver(() => {
+            const w = hostEl.offsetWidth;
+            const h = hostEl.offsetHeight;
+            const before = lastBox.current;
+            if (!before) {
+                lastBox.current = { w, h };
+                return;
+            }
+            if (!resizedEnough(before, { w, h })) return;
+            lastBox.current = { w, h };
+            if (!touched.current && fittedOnce.current)
+                controls.fit({ instant: true });
+        });
+        watcher.observe(hostEl);
+        return () => watcher.disconnect();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hostEl]);
+
     const everythingHidden =
         design.entities.order.length > 0 && visible.size === 0;
 
@@ -507,6 +553,7 @@ function Surface({
                         className
                     )}
                 >
+                    <ChromeStyle />
                     <MarkerDefs />
                     <ReactFlow
                         nodes={nodes}
@@ -560,6 +607,10 @@ function Surface({
                         })}
                         connectionMode={ConnectionMode.Loose}
                         onlyRenderVisibleElements
+                        onMoveStart={(event) => {
+                            // a null event is a camera move made by code, not by the person
+                            if (event) touched.current = true;
+                        }}
                         onMove={(_, viewport) =>
                             storeApi.getState().setZoom(viewport.zoom)
                         }
@@ -575,8 +626,19 @@ function Surface({
                             <MiniMap
                                 pannable
                                 zoomable
-                                style={{ marginBottom: 24 }}
-                                className="!bg-card"
+                                className="qb-minimap"
+                                style={{ background: MINIMAP_BACKGROUND }}
+                                maskColor={MINIMAP_MASK}
+                                maskStrokeColor={MINIMAP_WINDOW}
+                                maskStrokeWidth={2}
+                                nodeStrokeWidth={2}
+                                nodeBorderRadius={3}
+                                nodeColor={(node) =>
+                                    miniFill(design, node.id, node.type)
+                                }
+                                nodeStrokeColor={(node) =>
+                                    miniStroke(design, node.id, node.type)
+                                }
                             />
                         ) : null}
                     </ReactFlow>
@@ -591,7 +653,7 @@ function Surface({
                     {lost ? (
                         <button
                             type="button"
-                            className="absolute bottom-16 left-1/2 z-30 -translate-x-1/2 rounded-full border bg-card px-3 py-1 text-xs shadow-md hover:bg-muted max-md:bottom-auto max-md:top-16"
+                            className="qb-pill rounded-full border bg-card px-3 py-1 text-xs shadow-md hover:bg-muted"
                             onClick={() => controls.fit()}
                         >
                             {t('canvas.showAllPill')}
