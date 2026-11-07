@@ -32,6 +32,10 @@ export interface ScriptColumn {
     numbered: boolean;
     default?: string;
     comment?: string;
+    /** name of the CREATE DOMAIN the column was declared with; `typeName` is then the domain's base type */
+    domain?: string;
+    /** a computed column: its expression (without the outer parentheses) and whether it is stored */
+    generated?: { expression: string; stored: boolean };
 }
 
 export interface ScriptKey {
@@ -56,6 +60,10 @@ export interface ScriptIndex {
     name: string;
     unique: boolean;
     columns: string[];
+    /** names from `columns` that sort from high to low */
+    descending?: string[];
+    /** predicate of a partial (filtered) index, without the WHERE keyword */
+    where?: string;
     method?: KeyMethod;
     line: number;
 }

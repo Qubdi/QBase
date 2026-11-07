@@ -91,11 +91,43 @@ Wire format (backward compatible): column keys `domain`, `generatedExpression`, 
 
 ### Still open
 
-- SQL-file import (the readers in `src/dialects/*/read.ts`) does not read `DESC`, `WHERE` or `GENERATED ALWAYS AS` of a script, so a design exported and imported through SQL text loses them. Metadata and the saved file keep them.
+- (closed in the third pass below) SQL-file import did not read `DESC`, `WHERE` or `GENERATED ALWAYS AS`.
 - SQLite: a generated column's expression and check constraints are not in the pragma output; only the metadata for PostgreSQL, MySQL/MariaDB and the server has them.
-- Domain: only one level (a domain over a domain reports the inner domain's name as type); the domain's own CHECK and default are not read.
+- Domain: metadata/server path: only one level (a domain over a domain reports the inner domain's name as type); the domain's own CHECK and default are not read. (The SQL-file path follows a chain of domains to the innermost base type.)
 - CockroachDB script: no domains, no generated columns (its catalog differs), unchanged otherwise.
-- SQL Server writer ignores `descending`, `where` and `generated`; SQL Server was not run live. The SQL Server client script still has no `where` or computed-column fields.
+- (closed in the third pass below, but still not run on a server) SQL Server writer and client script now carry `descending`, `where` and `generated`.
 - PostgreSQL 11 and older: the script uses `attgenerated` (PostgreSQL 12+).
 - The spec sentence (import-export.md, PostgreSQL metadata) says "enum types (not composites)"; the script already listed composites, IMP-063 requires them, and the server now does too. The contract is kept as the shared JSON and IMP-063; the spec sentence is outdated.
 - Not driven in a browser: re-sync dialog (EDT-250).
+
+## Third pass: SQL-file import, SQL Server
+
+### Changed
+
+| Gap | Now |
+| --- | --- |
+| SQL-file import dropped `DESC`, partial predicates, generated columns and domains | The readers (shared `read-table.ts`, `read-script.ts`) keep them. `CREATE [UNIQUE] INDEX ... (a DESC, b ASC) WHERE pred` (PostgreSQL, SQLite, SQL Server filtered index; the predicate ends before `WITH (...)`/`ON filegroup`) sets `Key.descending` / `Key.where`; MySQL `KEY (a DESC)` inside `CREATE TABLE` too. A partial unique index no longer marks its column unique. Generated columns: PostgreSQL `GENERATED ALWAYS AS (e) STORED|VIRTUAL`; MySQL/MariaDB/SQLite `GENERATED ALWAYS AS (e) VIRTUAL|STORED` and the short `AS (e)`; SQL Server `col AS (e) [PERSISTED [NOT NULL]]`. Stored = `STORED` or `PERSISTED`, else virtual. PostgreSQL `CREATE DOMAIN d AS base`: a column of type `d` gets `Column.domain = d` and the base type, length and precision (a domain over a domain resolves to the innermost base). |
+| Diagnostics for what cannot be kept | Warnings: a domain's `DEFAULT`/`CHECK`/`COLLATE` (the column keeps name and base type only); `INCLUDE (...)` columns of an index; an expression index column such as `lower(name)` (dropped); a typeless computed column (`col AS (e)`, SQL Server and SQLite give no type): imported as the dialect's fallback type (`varchar` / `text`) with a warning. `CREATE DOMAIN` is no longer in the "skipped" count. |
+| Writers did not round-trip them | PostgreSQL writes `CREATE DOMAIN d AS <base type>;` (before the tables; not for CockroachDB, which has none) and the column uses `d`. SQL Server writes `[col] AS (expr) [PERSISTED [NOT NULL]]`, `([a] DESC, [b]) WHERE pred`. MySQL cannot keep a partial index: `exportSql` now returns a warning per such index for MySQL/MariaDB targets (before it dropped the predicate silently). PostgreSQL, SQLite, MySQL writers unchanged (they already wrote DESC/WHERE/generated). |
+| Converter (other family -> target) | Unchanged policy, now tested for SQL Server as target: `DESC` kept, a predicate is dropped and a computed column becomes an ordinary column, each with a conversion note (expressions are not translated between dialects). |
+| SQL Server client script had no `where`, no `generated` | Both variants (FOR JSON and the 2016-and-below FOR XML text) select `i.filter_definition AS where` and `LEFT JOIN sys.computed_columns cmp` giving `generated` = `{expression: cmp.definition, stored: is_persisted}` (nested via `generated.expression` / `generated.stored` in FOR JSON; null for an ordinary column). `direction` already came from `ic.is_descending_key`. The server introspection (`server/src/introspect/sqlserver.ts`) already returned `where` and `generated`. |
+
+Tests: `src/formats/sql/index-and-generated.test.ts` (per dialect: read, diagnostics, export-then-import gives the same columns/keys/DESC/WHERE/generated/domain, incl. SQL Server and MariaDB), `src/features/import/__tests__/sql-server-script.test.ts` (script text checks, hand-written result in the shape the script emits, load, write back, read back), the existing fake-pool test `server/test/introspect-sqlserver-unit.test.ts`. Parity row IMP-025 got a note (CREATE INDEX with DESC/WHERE); other rows untouched.
+
+### Verified
+
+- PostgreSQL 18 (throwaway container `qbtest-pg`, removed with its volume): the writer's output with `CREATE DOMAIN`, a `GENERATED ALWAYS AS (...) STORED` column, `"score" DESC` and `WHERE d IS NULL` runs without error.
+- SQLite (`node:sqlite`): the writer's output with `GENERATED ALWAYS AS ... STORED|VIRTUAL`, `DESC` and `WHERE` runs.
+
+### NOT run
+
+- SQL Server: no container was started (EULA). The SQL Server client scripts (both variants), the SQL Server writer output (computed columns, filtered index, DESC) and the server's `sys.computed_columns` / `filter_definition` queries were checked by reading and by hand-written fixtures and the fake pool only. First thing to do on a real server: run the script and compare `generated` and `where`.
+- MySQL/MariaDB writer output with `GENERATED` was not re-run in this pass (it was in the second pass).
+
+### Still open
+
+- SQL Server round trip loses the computed column's type: T-SQL has no type in `col AS (expr)`, so a design with a computed `varchar(101)` reads back as `varchar` with a warning (everything else, including the expression and PERSISTED, is kept). SQLite has the same only when the script omits the type (the writer writes it).
+- Index `INCLUDE` columns and expression index columns are still not in the model (warned, dropped). The `WITH (...)` options of an index are ignored.
+- The PostgreSQL writer writes `VIRTUAL` for a non-stored generated column; PostgreSQL 17 and older reject it (18 accepts it). Not changed.
+- A domain's own `CHECK`/`DEFAULT`/`NOT NULL` is dropped (warned); the writer's `CREATE DOMAIN` carries only the base type, and when two columns name the same domain with different base types the first one wins.
+- DBML export unchanged: DBML has no syntax for `DESC` per column, `WHERE` or generated columns (index settings are `type`, `name`, `unique`, `pk`, `note`), and the parser would reject invented syntax.

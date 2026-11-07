@@ -295,6 +295,19 @@ export interface ParsedColumn {
     line: number;
 }
 
+/**
+ * Reads `(expr) [STORED|VIRTUAL|PERSISTED]` of a computed column. A column
+ * is stored with STORED or PERSISTED; with VIRTUAL or no word it is not.
+ */
+function readGenerated(cur: Cursor, column: ScriptColumn): void {
+    if (!cur.isPunct('(')) return;
+    const expression = cur.textOf(cur.readGroup());
+    let stored = false;
+    if (cur.acceptWord('STORED') || cur.acceptWord('PERSISTED')) stored = true;
+    else cur.acceptWord('VIRTUAL');
+    if (expression !== '') column.generated = { expression, stored };
+}
+
 /** Reads one column definition (the tokens of one element of a table body). */
 export function readColumn(
     tokens: Token[],
@@ -304,7 +317,17 @@ export function readColumn(
     const nameToken = cur.next();
     if (!nameToken || (nameToken.kind !== 'word' && nameToken.kind !== 'ident'))
         return undefined;
-    const type = readType(cur, ctx);
+    // `col AS (expr)` (SQL Server, SQLite) has no type: the type cannot be known
+    const typeless = cur.isWord('AS') && cur.isPunct('(', 1);
+    const type: TypeRead = typeless
+        ? { typeName: ctx.profile.viewColumnType, isArray: false }
+        : readType(cur, ctx);
+    if (typeless)
+        ctx.diagnostics.push({
+            severity: 'warning',
+            message: `Computed column ${nameToken.value} has no type in the script: it was imported as ${ctx.profile.viewColumnType}.`,
+            line: nameToken.line,
+        });
     const column: ScriptColumn = {
         name: nameToken.value,
         typeName: type.typeName,
@@ -370,9 +393,7 @@ export function readColumn(
                 !cur.isWord('IDENTITY', 1)
             ) {
                 cur.next();
-                if (cur.isPunct('(')) cur.readGroup();
-                cur.acceptWord('STORED');
-                cur.acceptWord('VIRTUAL');
+                readGenerated(cur, column);
             } else {
                 cur.acceptWords('BY', 'DEFAULT');
                 if (cur.acceptWords('AS', 'IDENTITY')) {
@@ -382,8 +403,7 @@ export function readColumn(
             }
         } else if (cur.isWord('AS') && cur.isPunct('(', 1)) {
             cur.next();
-            cur.readGroup();
-            cur.acceptWord('PERSISTED');
+            readGenerated(cur, column);
         } else if (cur.acceptWord('COMMENT')) {
             cur.acceptPunct('=');
             const t = cur.next();
@@ -405,6 +425,42 @@ export function readColumn(
     return parsed;
 }
 
+export interface IndexColumns {
+    columns: string[];
+    descending: string[];
+    /** items that are expressions (`lower(name)`), not kept */
+    skipped: string[];
+}
+
+/** Reads the column list of an index: `a`, `b DESC`, `c(10) ASC`; expressions are skipped. */
+export function readIndexColumns(
+    cur: Cursor,
+    ctx: Pick<ReadContext, 'source'>
+): IndexColumns {
+    const out: IndexColumns = { columns: [], descending: [], skipped: [] };
+    for (const item of splitTop(cur.readGroup())) {
+        const first = item[0];
+        if (!first || (first.kind !== 'word' && first.kind !== 'ident'))
+            continue;
+        const second = item[1];
+        // `lower(name)` is an expression; `name(255)` is a prefix length
+        if (second?.text === '(' && item[2]?.kind !== 'number') {
+            out.skipped.push(
+                ctx.source.slice(first.start, item[item.length - 1].end).trim()
+            );
+            continue;
+        }
+        out.columns.push(first.value);
+        if (
+            item.some(
+                (t) => t.kind === 'word' && t.value.toUpperCase() === 'DESC'
+            )
+        )
+            out.descending.push(first.value);
+    }
+    return out;
+}
+
 export interface TableConstraint {
     kind: 'primary' | 'unique' | 'foreign' | 'check' | 'index';
     name?: string;
@@ -413,6 +469,7 @@ export interface TableConstraint {
     reference?: ReferenceRead;
     method?: KeyMethod;
     unique?: boolean;
+    descending?: string[];
     line: number;
 }
 
@@ -567,10 +624,12 @@ export function readConstraint(
         if (!cur.isPunct('(') && !cur.isWord('USING'))
             name = name ?? cur.readName()?.name;
         if (cur.acceptWord('USING')) cur.next();
+        const listed = readIndexColumns(cur, ctx);
         return {
             kind: 'index',
             name,
-            columns: cur.readNameList(),
+            columns: listed.columns,
+            descending: listed.descending,
             method,
             unique: false,
             line,

@@ -15,10 +15,11 @@ import {
     newTable,
     readColumn,
     readConstraint,
+    readIndexColumns,
     readType,
     startsConstraint,
 } from './read-table';
-import type { ReadContext } from './read-table';
+import type { ReadContext, TypeRead } from './read-table';
 import { blankCopyData, splitStatements } from './statements';
 import type { Statement } from './statements';
 import { lex } from './tokenizer';
@@ -67,7 +68,6 @@ const SKIPPED_KINDS: Record<string, string> = {
     TRIGGER: 'CREATE TRIGGER',
     POLICY: 'CREATE POLICY',
     SEQUENCE: 'CREATE SEQUENCE',
-    DOMAIN: 'CREATE DOMAIN',
 };
 
 /** The kinds a PostgreSQL validator already reports on its own. */
@@ -189,6 +189,9 @@ function readCreateTable(
                     name: c.name ?? `${name.name}_${c.columns.join('_')}_idx`,
                     unique: false,
                     columns: c.columns,
+                    ...(c.descending?.length
+                        ? { descending: c.descending }
+                        : {}),
                     method: c.method,
                     line: c.line,
                 });
@@ -333,10 +336,14 @@ function readCreateView(
     out.tables.push(table);
 }
 
+/** Words that end a filtered-index predicate in SQL Server (WITH (...), ON filegroup). */
+const PREDICATE_ENDERS = new Set(['WITH', 'ON', 'TABLESPACE']);
+
 function readCreateIndex(
     cur: Cursor,
     line: number,
     modifiers: Set<string>,
+    ctx: ReadContext,
     out: ScriptResult
 ): void {
     cur.acceptWord('CONCURRENTLY');
@@ -356,25 +363,117 @@ function readCreateIndex(
         }
     };
     readUsing();
-    const columns: string[] = [];
-    for (const item of splitTop(cur.readGroup())) {
-        const first = item[0];
-        if (!first || (first.kind !== 'word' && first.kind !== 'ident'))
-            continue;
-        const second = item[1];
-        // `lower(name)` is an expression; `name(255)` is a prefix length
-        if (second?.text === '(' && item[2]?.kind !== 'number') continue;
-        columns.push(first.value);
-    }
+    const listed = readIndexColumns(cur, ctx);
+    const { columns, descending } = listed;
     readUsing();
+    const indexName = name?.name ?? `${table.name}_${columns.join('_')}_idx`;
+    for (const expression of listed.skipped)
+        ctx.diagnostics.push({
+            severity: 'warning',
+            message: `Index ${indexName}: the expression ${expression} is not kept (only plain columns are).`,
+            line,
+        });
+    // INCLUDE (...), WITH (...) and the like, then WHERE predicate
+    let where: string | undefined;
+    while (!cur.done) {
+        if (cur.isWord('INCLUDE') && cur.isPunct('(', 1)) {
+            cur.next();
+            cur.readGroup();
+            ctx.diagnostics.push({
+                severity: 'warning',
+                message: `Index ${indexName}: its INCLUDE columns are not kept.`,
+                line,
+            });
+        } else if (cur.isWord('WHERE')) {
+            cur.next();
+            const start = cur.pos;
+            let depth = 0;
+            while (!cur.done) {
+                const t = cur.peek()!;
+                if (t.kind === 'punct' && t.text === '(') depth++;
+                else if (t.kind === 'punct' && t.text === ')') depth--;
+                else if (
+                    depth === 0 &&
+                    t.kind === 'word' &&
+                    PREDICATE_ENDERS.has(t.value.toUpperCase())
+                )
+                    break;
+                cur.next();
+            }
+            const text = cur.textOf(cur.tokens.slice(start, cur.pos));
+            if (text !== '') where = text;
+        } else if (cur.isPunct('(')) cur.readGroup();
+        else cur.next();
+    }
     out.indexes.push({
         table,
-        name: name?.name ?? `${table.name}_${columns.join('_')}_idx`,
+        name: indexName,
         unique: modifiers.has('UNIQUE'),
         columns,
+        ...(descending.length > 0 ? { descending } : {}),
+        ...(where !== undefined ? { where } : {}),
         method,
         line,
     });
+}
+
+/** `CREATE DOMAIN name AS type ...`: the base type a column of that domain gets. */
+interface DomainBase extends TableName {
+    base: TypeRead;
+}
+
+function readCreateDomain(
+    cur: Cursor,
+    line: number,
+    ctx: ReadContext,
+    domains: DomainBase[]
+): void {
+    const name = cur.readName();
+    if (!name) return;
+    cur.acceptWord('AS');
+    const base = readType(cur, ctx);
+    if (base.typeName === '') return;
+    domains.push({ ...name, base });
+    const rest = cur.tokens
+        .slice(cur.pos)
+        .filter((t) => t.kind === 'word')
+        .map((t) => t.value.toUpperCase());
+    const dropped = ['DEFAULT', 'CHECK', 'COLLATE', 'CONSTRAINT'].filter((w) =>
+        rest.includes(w)
+    );
+    if (dropped.length > 0)
+        ctx.diagnostics.push({
+            severity: 'warning',
+            message: `Domain ${name.name}: its ${dropped.join(', ')} ${dropped.length === 1 ? 'is' : 'are'} not kept (the column keeps the domain name and its base type).`,
+            line,
+        });
+}
+
+/** Columns declared with a domain get the base type and keep the domain's name. */
+function applyDomains(tables: ScriptTable[], domains: DomainBase[]): void {
+    if (domains.length === 0) return;
+    const find = (typeName: string): DomainBase | undefined =>
+        resolveTable(domains, (d) => d, { name: typeName }).found;
+    for (const table of tables) {
+        for (const column of table.columns) {
+            const first = find(column.typeName);
+            if (!first) continue;
+            let domain = first;
+            // a domain over a domain: the innermost base type
+            for (let depth = 0; depth < 10; depth++) {
+                const inner = find(domain.base.typeName);
+                if (!inner || inner === domain) break;
+                domain = inner;
+            }
+            const base = domain.base;
+            column.domain = first.name;
+            column.typeName = base.typeName;
+            column.isArray = column.isArray || base.isArray;
+            if (base.length !== undefined) column.length = base.length;
+            if (base.precision !== undefined) column.precision = base.precision;
+            if (base.scale !== undefined) column.scale = base.scale;
+        }
+    }
 }
 
 function readCreateType(
@@ -443,6 +542,9 @@ function applyAlter(
                             `${alter.table.name}_${c.columns.join('_')}_idx`,
                         unique: false,
                         columns: c.columns,
+                        ...(c.descending?.length
+                            ? { descending: c.descending }
+                            : {}),
                         method: c.method,
                         line: c.line,
                     });
@@ -538,6 +640,7 @@ export function readStatements(
     };
     const alters: PendingAlter[] = [];
     const comments: PendingComment[] = [];
+    const domains: DomainBase[] = [];
 
     const handle = (stmt: Statement): void => {
         const cur = new Cursor(stmt.tokens, source);
@@ -572,7 +675,9 @@ export function readStatements(
             else if (object === 'VIEW')
                 readCreateView(cur, stmt.line, modifiers, ctx, out);
             else if (object === 'INDEX')
-                readCreateIndex(cur, stmt.line, modifiers, out);
+                readCreateIndex(cur, stmt.line, modifiers, ctx, out);
+            else if (object === 'DOMAIN')
+                readCreateDomain(cur, stmt.line, ctx, domains);
             else if (object === 'TYPE') readCreateType(cur, out, skip);
             else if (SKIPPED_KINDS[object]) skip(SKIPPED_KINDS[object]);
         } else if (first === 'ALTER' && cur.isWord('TABLE', 1)) {
@@ -606,6 +711,7 @@ export function readStatements(
     };
     for (const stmt of statements) handle(stmt);
     for (const alter of alters) applyAlter(alter, out, ctx, skip);
+    applyDomains(out.tables, domains);
     for (const c of comments) {
         const tableName: TableName =
             c.target === 'table'

@@ -6,13 +6,13 @@
  * 2014. Both read the current database and return one cell.
  */
 
-type Kind = 'str' | 'num' | 'bool' | 'pair';
+type Kind = 'str' | 'num' | 'bool' | 'pair' | 'computed';
 
 interface Field {
     key: string;
     expr: string;
     kind: Kind;
-    /** the scale of a precision pair */
+    /** the scale of a precision pair; the is_persisted flag of a computed column */
     expr2?: string;
 }
 
@@ -72,7 +72,8 @@ const SECTIONS: Section[] = [
     JOIN sys.objects o ON o.object_id = c.object_id AND o.type IN ('U', 'V') AND o.${NOT_SYSTEM}
     JOIN sys.schemas s ON s.schema_id = o.schema_id
     JOIN sys.types ty ON ty.user_type_id = c.user_type_id
-    LEFT JOIN sys.default_constraints dc ON dc.object_id = c.default_object_id`,
+    LEFT JOIN sys.default_constraints dc ON dc.object_id = c.default_object_id
+    LEFT JOIN sys.computed_columns cmp ON cmp.object_id = c.object_id AND cmp.column_id = c.column_id`,
         fields: [
             str('schema', 's.name'),
             str('table', 'o.name'),
@@ -94,6 +95,13 @@ const SECTIONS: Section[] = [
             str('collation', 'c.collation_name'),
             str('comment', description('c.object_id', 'c.column_id')),
             bool('is_identity', 'c.is_identity'),
+            // a computed column: its expression and whether it is persisted (null for an ordinary column)
+            {
+                key: 'generated',
+                kind: 'computed',
+                expr: 'cmp.definition',
+                expr2: 'cmp.is_persisted',
+            },
         ],
     },
     {
@@ -153,6 +161,8 @@ const SECTIONS: Section[] = [
                 `CASE WHEN ic.is_descending_key = 1 THEN 'desc' ELSE 'asc' END`
             ),
             num('column_position', 'ic.key_ordinal'),
+            // the predicate of a filtered index (null for an ordinary one)
+            str('where', 'i.filter_definition'),
         ],
     },
     {
@@ -176,6 +186,8 @@ function forJsonSelect(f: Field): string {
             return `CAST(${f.expr} AS bit) AS [${f.key}]`;
         case 'pair':
             return `${f.expr} AS [${f.key}.precision], ${f.expr2} AS [${f.key}.scale]`;
+        case 'computed':
+            return `${f.expr} AS [${f.key}.expression], CAST(${f.expr2} AS bit) AS [${f.key}.stored]`;
         default:
             return `${f.expr} AS [${f.key}]`;
     }
@@ -209,6 +221,8 @@ function legacyValue(f: Field): string {
             return `CASE WHEN ${f.expr} = 1 THEN 'true' WHEN ${f.expr} = 0 THEN 'false' ELSE 'null' END`;
         case 'pair':
             return `CASE WHEN ${f.expr} IS NULL THEN 'null' ELSE '{"precision":' + CAST(${f.expr} AS varchar(10)) + ',"scale":' + ISNULL(CAST(${f.expr2} AS varchar(10)), 'null') + '}' END`;
+        case 'computed':
+            return `CASE WHEN ${f.expr} IS NULL THEN 'null' ELSE '{"expression":"' + ${escaped(f.expr)} + '","stored":' + CASE WHEN ${f.expr2} = 1 THEN 'true' ELSE 'false' END + '}' END`;
     }
 }
 

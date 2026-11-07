@@ -70,6 +70,8 @@ function tableSpec(
         name: i.name,
         unique: i.unique,
         columns: i.columns,
+        descending: i.descending,
+        where: i.where,
         method: i.method,
     }));
     const columns = table.columns.map((c) => ({
@@ -78,7 +80,9 @@ function tableSpec(
         unique: c.unique,
     }));
     for (const index of indexes) {
-        if (!index.unique || index.columns.length !== 1) continue;
+        // a partial unique index does not make the column unique
+        if (!index.unique || index.columns.length !== 1 || index.where)
+            continue;
         const col = columns.find((c) => sameName(c.name, index.columns[0]));
         if (col) col.unique = true;
     }

@@ -12,6 +12,7 @@ import {
 } from '../shared/defaults';
 import type { ExportForeignKey, ExportTable } from '../shared/export-model';
 import {
+    indexColumnText,
     indexKeys,
     prepareExport,
     sortedStatements,
@@ -93,6 +94,16 @@ function columnLine(column: Column): string {
         : '';
     const text = column.default?.trim() ?? '';
     const numbered = column.increment || isNumberingMarker(text);
+    if (column.generated) {
+        // a computed column has no type in T-SQL: the server infers it
+        let computed = `${quoteBracket(column.name)} AS (${column.generated.expression})`;
+        if (column.generated.stored) {
+            computed += ' PERSISTED';
+            if (!column.nullable) computed += ' NOT NULL';
+        }
+        if (!column.primaryKey && column.unique) computed += ' UNIQUE';
+        return `${notes}    ${computed}`;
+    }
     let line = `${quoteBracket(column.name)} ${sqlServerType(column)}`;
     if (!column.nullable) line += ' NOT NULL';
     if (numbered) line += ' IDENTITY(1,1)';
@@ -116,7 +127,9 @@ function indexStatements(table: ExportTable, qualified: string): string[] {
                     : key.label;
             return `${warning}CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${quoteBracket(
                 name
-            )} ON ${qualified} (${commaList(used.map((c) => quoteBracket(c.name)))});`;
+            )} ON ${qualified} (${commaList(used.map((c) => indexColumnText(key, c, quoteBracket)))})${
+                key.where ? ` WHERE ${key.where}` : ''
+            };`;
         }
     );
     return sortedStatements(out);

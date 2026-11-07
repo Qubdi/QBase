@@ -53,6 +53,25 @@ export function applyFilter(
 const family = (id: DatabaseType): DatabaseType =>
     dialectFor(id).variantOf ?? id;
 
+/** What the target's own writer cannot say: MySQL and MariaDB have no partial indexes. */
+function unkeptByWriter(
+    design: Design,
+    targetFamily: DatabaseType
+): Diagnostic[] {
+    if (targetFamily !== 'mysql') return [];
+    const out: Diagnostic[] = [];
+    for (const id of design.entities.order)
+        for (const keyId of design.entities.byId[id].keyIds) {
+            const key = design.keys[keyId];
+            if (!key?.where) continue;
+            out.push({
+                severity: 'warning',
+                message: `Index ${key.label || '(unnamed)'}: MySQL has no partial indexes, so its WHERE condition was left out.`,
+            });
+        }
+    return out;
+}
+
 /**
  * SQL for a design in the target's dialect (EXP-001 to EXP-012). The same
  * family writes with the target's own generator; another family goes
@@ -92,6 +111,9 @@ export function exportSql(
         design.databaseType !== 'generic' &&
         family(design.databaseType) === family(targetId)
     )
-        return { text: target.sql.write(filtered), diagnostics: [] };
+        return {
+            text: target.sql.write(filtered),
+            diagnostics: unkeptByWriter(filtered, family(targetId)),
+        };
     return convertDesign(filtered, source, target);
 }
