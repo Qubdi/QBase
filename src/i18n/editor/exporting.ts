@@ -29,5 +29,7 @@ export const exportingStrings = {
         working: 'Creating the image',
         empty: 'There is nothing to put in the picture yet',
         failed: 'The image could not be created',
+        lowered:
+            'The picture is very large, so it was made at {{scale}}x to fit the browser limit',
     },
 };

@@ -480,6 +480,8 @@ export const tr = {
                     working: 'Görüntü oluşturuluyor',
                     empty: 'Görüntüye konacak bir şey henüz yok',
                     failed: 'Görüntü oluşturulamadı',
+                    lowered:
+                        'Görsel çok büyük olduğundan tarayıcı sınırına sığması için {{scale}}x ölçeğinde oluşturuldu',
                 },
             },
             settings: {

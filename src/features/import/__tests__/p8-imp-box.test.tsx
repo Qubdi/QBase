@@ -112,6 +112,19 @@ describe('IMP-007 IMP-009 IMP-010 IMP-011 live checks', () => {
             'Found 1 table and 0 relationships.'
         );
     });
+    it('browser finding 5: the count is said once, not also as "Found 1 table to import."', () => {
+        render(
+            <ImportBox
+                databaseType="postgresql"
+                initialMethod="sql"
+                onChange={onChange}
+            />
+        );
+        type('CREATE TABLE a (id int PRIMARY KEY);');
+        settle();
+        expect(screen.getAllByText(/^Found \d+ tables?/)).toHaveLength(1);
+        expect(screen.queryByText(/to import\.$/)).toBeNull();
+    });
     it('an error blocks the import and is listed with its line; clicking it moves the cursor', () => {
         render(
             <ImportBox

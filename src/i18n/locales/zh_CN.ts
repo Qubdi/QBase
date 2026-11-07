@@ -441,6 +441,8 @@ export const zh_CN = {
                     working: '正在创建图片',
                     empty: '目前没有可放入图片的内容',
                     failed: '无法创建图片',
+                    lowered:
+                        '图片非常大，因此以 {{scale}}x 生成，以符合浏览器的限制',
                 },
             },
             settings: {

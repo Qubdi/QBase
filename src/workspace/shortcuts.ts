@@ -148,6 +148,9 @@ export function matchShortcut(
     const stray = options.mac ? input.ctrlKey : input.metaKey;
     if (stray || input.altKey) return undefined;
     const key = input.key.toLowerCase();
+    // Windows and Linux people also redo with Ctrl+Y (not listed: one entry per command)
+    if (!options.mac && mod && key === 'y' && !input.shiftKey)
+        return options.inTextBox ? undefined : shortcutById('redo');
     return SHORTCUTS.find((s) => {
         if (s.key !== key || s.mod !== mod) return false;
         if (s.shift !== undefined && s.shift !== input.shiftKey) return false;

@@ -39,6 +39,18 @@ const MARK_BADGE = {
     changed: 'bg-blue-600',
 } as const;
 
+/**
+ * The header buttons are always in the page so the keyboard reaches them; they
+ * are drawn only on hover, focus, selection and on touch screens.
+ */
+const ACTIONS_CLASS = [
+    'nodrag absolute right-2 flex items-center gap-0.5 opacity-0',
+    'group-hover:static group-hover:opacity-100',
+    'group-focus-within:static group-focus-within:opacity-100',
+    'group-data-[selected=true]:static group-data-[selected=true]:opacity-100',
+    'pointer-coarse:static pointer-coarse:opacity-100',
+].join(' ');
+
 const sameList = (a: readonly unknown[], b: readonly unknown[]) =>
     a.length === b.length && a.every((item, i) => item === b[i]);
 
@@ -81,7 +93,11 @@ export const EntityCard = memo(function EntityCard({
 
     if (surface.editingId === id && hooks.renderEntityEditor) {
         return (
-            <div className="nodrag nowheel nopan">
+            <div
+                data-edit-card
+                className="nodrag nowheel nopan w-max overflow-y-auto"
+                style={{ maxHeight: surface.editMaxHeight }}
+            >
                 {hooks.renderEntityEditor({
                     entityId: id,
                     close: surface.stopEditing,
@@ -224,20 +240,20 @@ export const EntityCard = memo(function EntityCard({
                     </span>
                 ) : null}
                 <span
-                    className="rounded bg-muted px-1.5 text-[11px] text-muted-foreground group-hover:hidden"
+                    className="rounded bg-muted px-1.5 text-[11px] text-muted-foreground group-hover:hidden group-focus-within:hidden group-data-[selected=true]:hidden pointer-coarse:hidden"
                     title={t('canvas.entity.fieldCount', {
                         count: columns.length,
                     })}
                 >
                     {columns.length}
                 </span>
-                <span className="nodrag hidden items-center gap-0.5 group-hover:flex">
+                <span className={ACTIONS_CLASS}>
                     {surface.editable ? (
                         <button
                             type="button"
                             aria-label={t('canvas.entity.openInPanel')}
                             title={t('canvas.entity.openInPanel')}
-                            className="rounded p-1 hover:bg-muted"
+                            className="rounded p-1 hover:bg-muted pointer-coarse:p-2"
                             onClick={() =>
                                 storeApi.getState().showEntityInPanel(id)
                             }
@@ -258,7 +274,7 @@ export const EntityCard = memo(function EntityCard({
                                     ? t('canvas.entity.narrow')
                                     : t('canvas.entity.widen')
                             }
-                            className="rounded p-1 hover:bg-muted"
+                            className="rounded p-1 hover:bg-muted pointer-coarse:p-2"
                             onClick={() =>
                                 storeApi.getState().edit({
                                     type: 'entity.update',

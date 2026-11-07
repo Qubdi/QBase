@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     act,
     fireEvent,
+    render,
     screen,
     waitFor,
     within,
@@ -19,6 +20,7 @@ import { dropNewItem } from './drop-items';
 import { buildMenu, menuTargets } from './menu-model';
 import type { MenuLine } from './menu-model';
 import { runMenuAction } from './menu-actions';
+import { PointerMenu } from './pointer-menu';
 import { pasteKeyLabel } from './notify';
 import { sizeFor } from './geometry';
 import { shop, withMemo, withRegion } from './test/fixtures';
@@ -690,5 +692,33 @@ describe('keyboard delete and drops', () => {
         expect(d.entities.order).toHaveLength(5);
         expect(d.regions.order).toHaveLength(1);
         expect(d.memos.order).toHaveLength(1);
+    });
+});
+
+describe('review ui 13: the pointer menu is keyboard operable', () => {
+    it('focuses the first item, moves with the arrows and gives the focus back on close', () => {
+        const button = document.createElement('button');
+        document.body.append(button);
+        button.focus();
+        const view = render(
+            <PointerMenu
+                at={{ x: 10, y: 10 }}
+                lines={[
+                    { kind: 'item', label: 'one', verbatim: 'One' },
+                    { kind: 'item', label: 'two', verbatim: 'Two' },
+                ]}
+                onPick={() => undefined}
+                onClose={() => undefined}
+            />
+        );
+        const items = screen.getAllByRole('menuitem');
+        expect(document.activeElement).toBe(items[0]);
+        fireEvent.keyDown(items[0], { key: 'ArrowDown' });
+        expect(document.activeElement).toBe(items[1]);
+        fireEvent.keyDown(items[1], { key: 'ArrowDown' });
+        expect(document.activeElement).toBe(items[0]);
+        view.unmount();
+        expect(document.activeElement).toBe(button);
+        button.remove();
     });
 });

@@ -69,7 +69,7 @@ describe('EDT-191 to EDT-194 kind, values and members', () => {
         const view = renderPanel(<UserTypesSection />, withTables([]));
         await userEvent.click(screen.getByRole('button', { name: 'New type' }));
         await userEvent.click(
-            screen.getByRole('button', { name: 'Show or hide the details' })
+            screen.getByRole('button', { name: /^Show or hide the details/ })
         );
         return view;
     }

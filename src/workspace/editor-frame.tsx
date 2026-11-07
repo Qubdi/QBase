@@ -33,10 +33,11 @@ const PanelHandle: React.FC<{
             aria-orientation="vertical"
             aria-label={t('editor.workspace.frame.resizePanel')}
             aria-valuenow={width}
+            aria-valuetext={`${width}px`}
             aria-valuemin={PANEL_MIN}
             aria-valuemax={Math.round(container() * 0.99)}
             tabIndex={0}
-            className="w-1.5 shrink-0 cursor-col-resize bg-border/60 transition-colors hover:bg-primary/60 focus-visible:bg-primary/60"
+            className="w-1.5 shrink-0 cursor-col-resize touch-none bg-border/60 transition-colors hover:bg-primary/60 focus-visible:bg-primary/60"
             onPointerDown={(e) => {
                 e.currentTarget.setPointerCapture(e.pointerId);
                 start.current = { x: e.clientX, width };

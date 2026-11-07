@@ -339,7 +339,7 @@ await flow(
                 `width ${b.width} -> ${wide.width}`
             );
             check(wide.width <= 460, `wider than the maximum: ${wide.width}`);
-            await pane().click({ position: { x: 640, y: 700 } });
+            await pane().click({ position: { x: 300, y: 600 } });
             await undo();
             await idle();
             const back = await box(tables().first());
@@ -464,7 +464,19 @@ await flow('F2', 'copy, paste, delete, undo, edit card', {}, async () => {
             });
             const name = page.getByRole('textbox', { name: 'Table name' });
             await name.waitFor();
+            await idle();
             await shot('edit-card');
+            // the card lies inside the window and above the toolbar (browser finding 1)
+            const card = await box(page.locator('[data-edit-card]'));
+            const bar = await box(page.locator('.qb-toolbar'));
+            check(
+                card.y >= 0 && card.y + card.height <= bar.y + 1,
+                `edit card ${Math.round(card.y)}..${Math.round(card.y + card.height)} reaches the toolbar at ${Math.round(bar.y)}`
+            );
+            check(
+                card.x >= 0 && card.x + card.width <= 1280,
+                'edit card leaves the window sideways'
+            );
             await name.fill('orders');
             await name.blur();
             await page
@@ -535,6 +547,16 @@ await flow('F2', 'copy, paste, delete, undo, edit card', {}, async () => {
             .evaluate((n) => getComputedStyle(n).backgroundColor + n.innerHTML);
         check(before !== after, 'the colour swatch did not change');
         await page.keyboard.press('Escape');
+        // Escape closes only the colour popover; the card stays (review ui 3)
+        await page
+            .locator('[data-radix-popper-content-wrapper]')
+            .waitFor({ state: 'detached' });
+        check(
+            (await page
+                .getByRole('textbox', { name: 'Table name' })
+                .count()) === 1,
+            'the edit card closed together with the colour popover'
+        );
     });
 
     await step('07 Escape closes the edit card', async () => {
@@ -547,6 +569,32 @@ await flow('F2', 'copy, paste, delete, undo, edit card', {}, async () => {
             'edit card still open'
         );
     });
+
+    await step(
+        '08 arrow keys move a table, one undo puts it back',
+        async () => {
+            const table = page.locator('.react-flow__node').filter({
+                hasText: 'customers',
+            });
+            await table.first().click({ position: { x: 100, y: 15 } });
+            const before = await box(table.first());
+            for (let i = 0; i < 5; i += 1)
+                await page.keyboard.press('ArrowRight');
+            await pause(700);
+            const moved = await box(table.first());
+            check(
+                moved.x > before.x + 10,
+                `the table did not move (${before.x} -> ${moved.x})`
+            );
+            await undo();
+            await idle();
+            const back = await box(table.first());
+            check(
+                Math.abs(back.x - before.x) < 1.5,
+                `one undo did not restore the position (${before.x} vs ${back.x})`
+            );
+        }
+    );
 });
 
 // ============================================================== flow 3
@@ -814,10 +862,25 @@ await flow('F5', 'DBML section: edit, diff, accept, undo', {}, async () => {
                 '\nTable "public"."warehouses" {\n  "id" integer [pk]\n  "city" varchar\n}\n'
         );
         await pause(1500);
+        // the view moves to show the new table (browser finding 3)
+        await pause(1000);
         await shot('dbml-diff');
         check(
             (await page.locator('[data-testid^="diff-badge-"]').count()) >= 1,
             'no diff badge on the canvas'
+        );
+        const fresh = await box(tableByName('warehouses'));
+        const paneBox = await box(pane());
+        check(
+            fresh.x >= paneBox.x &&
+                fresh.x + fresh.width <= paneBox.x + paneBox.width &&
+                fresh.y >= paneBox.y &&
+                fresh.y + fresh.height <= paneBox.y + paneBox.height,
+            `the preview table is not fully in view: ${JSON.stringify(fresh)}`
+        );
+        check(
+            (await page.locator('.react-flow__minimap-node').count()) >= 4,
+            'the minimap leaves the preview table out'
         );
         check(
             (await tables().count()) === 3 || (await tables().count()) === 4,
@@ -1082,6 +1145,30 @@ await flow('F8', 'export image/SQL, shortcuts, full screen', {}, async () => {
             `PNG too small: ${statSync(file).size}`
         );
         await page.keyboard.press('Escape');
+    });
+
+    await step('02b SVG export holds tables that are off screen', async () => {
+        for (let i = 0; i < 9; i += 1) {
+            await page.getByRole('button', { name: 'Zoom in' }).click();
+            await pause(250);
+        }
+        await mouseDrag({ x: 800, y: 500 }, { x: 800, y: 200 });
+        await idle();
+        // the canvas only draws what is on screen: the others are gone from the page
+        const drawn = await tables().count();
+        check(drawn < 3, `all ${drawn} tables are still in the page`);
+        const [dl] = await Promise.all([
+            page.waitForEvent('download', { timeout: 20000 }),
+            menu('Diagram', 'Save as', 'SVG image'),
+        ]);
+        const file = '/tmp/qbase-flows-export.svg';
+        await dl.saveAs(file);
+        const svg = readFileSync(file, 'utf8');
+        for (const name of ['customers', 'orders', 'items'])
+            check(svg.includes(name), `the SVG has no table "${name}"`);
+        await idle();
+        await page.keyboard.press('ControlOrMeta+0');
+        await idle();
     });
 
     await step('03 export SQL for MySQL', async () => {

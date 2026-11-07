@@ -13,6 +13,7 @@ import type { CanvasPrefs } from './hooks';
 
 export const ROW_HEIGHT = 32;
 const HOVER_DELAY_MS = 450;
+const TOUCH_MOUSE_MS = 1000;
 
 interface FieldRowProps {
     entityId: Id;
@@ -24,8 +25,15 @@ interface FieldRowProps {
     prefs: CanvasPrefs;
 }
 
-const dotClass =
-    '!h-2.5 !w-2.5 !border-primary !bg-background opacity-0 transition-opacity group-hover/row:opacity-100';
+// shown on hover, on focus inside the table, while the table is selected and on
+// touch screens; the ::after layer widens the target well past the 10 px dot
+const dotClass = [
+    '!h-2.5 !w-2.5 !border-primary !bg-background opacity-0 transition-opacity',
+    'group-hover/row:opacity-100 group-focus-within:opacity-100',
+    'group-data-[selected=true]:opacity-100 pointer-coarse:opacity-100',
+    'pointer-coarse:!h-3.5 pointer-coarse:!w-3.5',
+    "after:absolute after:-inset-2 after:content-['']",
+].join(' ');
 
 /** One field of a table: icon, name, badges, type chip, nullability dot. */
 export const FieldRow = memo(function FieldRow({
@@ -42,7 +50,11 @@ export const FieldRow = memo(function FieldRow({
     const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
     useEffect(() => () => clearTimeout(timer.current), []);
 
+    // a finger makes the browser send an emulated mouseenter that would keep the
+    // card open until the next tap: those are ignored
+    const touchedAt = useRef(0);
     const hoverStart = () => {
+        if (Date.now() - touchedAt.current < TOUCH_MOUSE_MS) return;
         clearTimeout(timer.current);
         timer.current = setTimeout(() => setCard(true), HOVER_DELAY_MS);
     };
@@ -59,6 +71,9 @@ export const FieldRow = memo(function FieldRow({
             data-testid={`field-${column.id}`}
             className="group/row relative flex items-center gap-1.5 px-3 text-xs"
             style={{ height: ROW_HEIGHT }}
+            onTouchStart={() => {
+                touchedAt.current = Date.now();
+            }}
             onMouseEnter={hoverStart}
             onMouseLeave={hoverEnd}
         >

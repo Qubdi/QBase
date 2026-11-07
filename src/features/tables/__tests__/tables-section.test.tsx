@@ -66,7 +66,7 @@ describe('EDT-103 EDT-109 the rows and the filter box', () => {
     it('opens one row at a time (EDT-103) and shows its parts (EDT-111)', async () => {
         renderPanel(<TablesSection />, withTables(['orders', 'users']));
         const toggles = screen.getAllByRole('button', {
-            name: 'Show or hide the details',
+            name: /^Show or hide the details/,
         });
         await userEvent.click(toggles[0]);
         expect(screen.getByText('Fields')).toBeTruthy();

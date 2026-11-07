@@ -75,7 +75,12 @@ export interface MobileNavbarProps extends TopNavbarProps {
     onToggleRail: () => void;
 }
 
-/** Phone bar: menu button, name, account and language, then the menus, then the diagram name. */
+/**
+ * Phone bar, two rows (about 100 px). In the page the order stays QBase,
+ * language, the menus, then the name (SHL-068); a grid draws the name between
+ * the logo and the language button, so the second row holds only the menus and
+ * the save, lint and publish controls, which scroll sideways (SHL-069).
+ */
 export const MobileNavbar: React.FC<MobileNavbarProps> = ({
     commands,
     railOpen,
@@ -83,37 +88,38 @@ export const MobileNavbar: React.FC<MobileNavbarProps> = ({
 }) => {
     const { t } = useTranslation();
     return (
-        <header className="relative z-10 shrink-0 border-b bg-background/80 backdrop-blur">
-            <div className="flex h-12 items-center justify-between px-2">
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-expanded={railOpen}
-                        aria-label={
-                            railOpen
-                                ? t('editor.workspace.navbar.hideTools')
-                                : t('editor.workspace.navbar.showTools')
-                        }
-                        onClick={onToggleRail}
-                    >
-                        <MenuIcon />
-                    </Button>
-                    <Logo />
-                </div>
-                <Slot name="navbar-right" className="flex items-center gap-1">
-                    <AccountMenu />
-                    <LanguageButton />
-                </Slot>
+        <header className="relative z-10 grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[3rem_auto] border-b bg-background/80 backdrop-blur">
+            <div className="col-start-1 row-start-1 flex items-center gap-1 pl-2">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-expanded={railOpen}
+                    aria-label={
+                        railOpen
+                            ? t('editor.workspace.navbar.hideTools')
+                            : t('editor.workspace.navbar.showTools')
+                    }
+                    onClick={onToggleRail}
+                >
+                    <MenuIcon />
+                </Button>
+                <Logo />
             </div>
-            <div className="overflow-x-auto px-2 pb-1">
+            <Slot
+                name="navbar-right"
+                className="col-start-3 row-start-1 flex items-center gap-1 pr-2"
+            >
+                <AccountMenu />
+                <LanguageButton />
+            </Slot>
+            <div className="col-span-3 row-start-2 flex items-center gap-2 overflow-x-auto px-2 pb-1">
                 <Menus commands={commands} />
-            </div>
-            {/* the phone layout shows these too (SHL-069) */}
-            <div className="flex items-center gap-2 overflow-x-auto px-2 pb-1">
                 <SaveAndPublishControls />
             </div>
-            <div className="flex justify-center px-2 pb-2">
+            <div
+                data-testid="phone-name-row"
+                className="col-start-2 row-start-1 flex min-w-0 items-center justify-center px-1"
+            >
                 <DiagramName />
             </div>
         </header>

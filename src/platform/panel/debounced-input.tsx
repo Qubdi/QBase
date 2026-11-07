@@ -44,11 +44,28 @@ function useDebounced({
         commit(now);
     };
 
+    // leaving the box: commit, and an empty name that was refused shows the saved one again
+    const leave = () => {
+        flush();
+        const { value: saved, required: need, text: now } = latest.current;
+        if (need && now.trim() === '') {
+            latest.current.text = saved;
+            setText(saved);
+        }
+    };
+
     useEffect(() => {
         setText(value);
     }, [value]);
 
-    useEffect(() => () => clearTimeout(timer.current), []);
+    // closing the form before the pause ends must not lose the typed text
+    useEffect(
+        () => () => {
+            if (timer.current !== undefined) flush();
+        },
+        // flush only reads refs
+        []
+    );
 
     const change = (next: string) => {
         setText(next);
@@ -56,7 +73,7 @@ function useDebounced({
         clearTimeout(timer.current);
         timer.current = setTimeout(flush, delay);
     };
-    return [text, change, flush];
+    return [text, change, leave];
 }
 
 export const DebouncedInput: React.FC<

@@ -24,6 +24,8 @@ export const DiagramName: React.FC = () => {
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(name);
     const input = useRef<HTMLInputElement>(null);
+    // Escape removes the box, and a browser may blur it on the way out: no save then
+    const cancelled = useRef(false);
 
     useEffect(() => {
         if (!editing) return;
@@ -37,9 +39,11 @@ export const DiagramName: React.FC = () => {
     const begin = () => {
         if (locked) return;
         setDraft(name);
+        cancelled.current = false;
         setEditing(true);
     };
     const save = () => {
+        if (cancelled.current) return;
         const next = draft.trim();
         if (next !== '' && next !== name)
             store.getState().edit({ type: 'design.rename', name: next });
@@ -61,13 +65,14 @@ export const DiagramName: React.FC = () => {
                         value={draft}
                         maxLength={200}
                         aria-label={t('editor.workspace.name.label')}
-                        className="h-8 w-56"
+                        className="h-8 w-40 min-w-0 sm:w-56"
                         onChange={(e) => setDraft(e.target.value)}
                         onBlur={save}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') save();
                             else if (e.key === 'Escape') {
                                 e.preventDefault();
+                                cancelled.current = true;
                                 setEditing(false);
                             }
                         }}

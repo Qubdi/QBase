@@ -24,6 +24,8 @@ export interface SurfaceApi {
     editingId?: Id;
     startEditing(id: Id): void;
     stopEditing(): void;
+    /** the tallest the edit form may be, in diagram pixels, so it fits the window */
+    editMaxHeight?: number;
     /** the area whose name is being typed over */
     renamingId?: Id;
     startRename(id: Id): void;

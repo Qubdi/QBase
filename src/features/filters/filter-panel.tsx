@@ -48,6 +48,14 @@ export const FilterPanel: React.FC<{
     const [groupBy, setGroupBy] = useState<GroupBy>('schema');
     const box = useRef<HTMLInputElement>(null);
     useEffect(() => box.current?.focus(), []);
+    // Escape closes the panel unless a list or popover inside it took the key
+    useEffect(() => {
+        const key = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !e.defaultPrevented) onClose();
+        };
+        document.addEventListener('keydown', key);
+        return () => document.removeEventListener('keydown', key);
+    }, [onClose]);
 
     const tree = buildTree({
         design,

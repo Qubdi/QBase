@@ -3,6 +3,7 @@ import {
     DEFAULT_IMAGE_OPTIONS,
     backgroundFill,
     diagramBounds,
+    exportRatio,
     dotPattern,
     hasLogo,
     imageFileName,
@@ -70,5 +71,22 @@ describe('EXP-060 to EXP-066 image export options', () => {
         expect(logoPlacement(4000).height).toBeCloseTo(96);
         expect(hasLogo('svg')).toBe(false);
         expect(hasLogo('png')).toBe(true);
+    });
+});
+
+describe('review ui 12: export ratio keeps the canvas within browser limits', () => {
+    it('keeps the asked scale for a small diagram', () => {
+        expect(exportRatio({ width: 800, height: 600 }, 4)).toBe(4);
+    });
+    it('lowers the scale until the area is under the iOS limit', () => {
+        const size = { width: 3000, height: 2000 };
+        const ratio = exportRatio(size, 4);
+        expect(ratio).toBeLessThan(4);
+        expect(size.width * ratio * (size.height * ratio)).toBeLessThanOrEqual(
+            16_777_216
+        );
+    });
+    it('still caps the longest side', () => {
+        expect(exportRatio({ width: 40000, height: 100 }, 1)).toBeLessThan(1);
     });
 });

@@ -121,3 +121,11 @@ describe('keyboard shortcuts (EDT-217, EDT-218, EDT-256, SHL-032)', () => {
         expect(isTextBox(null)).toBe(false);
     });
 });
+
+describe('review ui 13: Ctrl+Y redoes on Windows and Linux', () => {
+    it('matches redo without Shift, not on a Mac, not in a text box', () => {
+        expect(id(press('y', { ctrlKey: true }))).toBe('redo');
+        expect(id(press('y', { metaKey: true }), true)).toBeUndefined();
+        expect(id(press('y', { ctrlKey: true }), false, true)).toBeUndefined();
+    });
+});

@@ -36,6 +36,7 @@ import type {
     DiagramSummary,
 } from '@/persistence/storage-adapter';
 import type { EditorStore } from '@/store/editor-store';
+import { diagnosticText } from '@/lib/diagnostic-text';
 import { cn } from '@/lib/utils/utils';
 import { ConfirmDialog } from './confirm-dialog';
 import {
@@ -101,9 +102,17 @@ export const OpenDesignDialog: React.FC<OpenDesignDialogProps> = ({
 
     const rename = async (id: string, name: string) => {
         // the open diagram changes through the store so its autosave does not undo the rename
-        if (store && store.getState().design.id === id)
-            store.getState().edit({ type: 'design.rename', name });
-        else await renameStoredDesign(adapter, id, name);
+        if (store && store.getState().design.id === id) {
+            const result = store
+                .getState()
+                .edit({ type: 'design.rename', name });
+            // a locked diagram refuses the edit: say so, the name did not change
+            if (!result.ok)
+                toast({
+                    title: diagnosticText(result.message),
+                    variant: 'destructive',
+                });
+        } else await renameStoredDesign(adapter, id, name);
         await reload();
     };
 

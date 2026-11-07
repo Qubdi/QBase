@@ -95,7 +95,7 @@ export const EntityEditor: React.FC<{ entityId: Id; close(): void }> = ({
             aria-label={t('editor.workspace.canvas.editTable', {
                 name: entity.name,
             })}
-            className="w-[22rem] max-w-[90vw] space-y-3 rounded-lg border bg-card p-3 text-card-foreground shadow-lg"
+            className="w-[26rem] max-w-[90vw] space-y-3 rounded-lg border bg-card p-3 text-card-foreground shadow-lg"
         >
             {hasSchemas && entity.kind !== 'view' ? (
                 <SchemaBox

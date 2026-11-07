@@ -12,7 +12,7 @@ import {
 } from '@/platform/ui/dialog';
 import { diagramFile } from '@/formats/file/diagram-file';
 import { useEditorStore } from '@/store/store-context';
-import { downloadText } from './download-file';
+import { downloadText, safeFileName } from './download-file';
 
 export interface ExportJsonDialogProps {
     open: boolean;
@@ -63,7 +63,7 @@ export const ExportJsonDialog: React.FC<ExportJsonDialogProps> = ({
                             if (!file) return;
                             downloadText(
                                 file.text,
-                                file.fileName,
+                                safeFileName(file.fileName),
                                 'application/json'
                             );
                             onClose();

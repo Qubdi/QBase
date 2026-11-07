@@ -10,7 +10,7 @@ import { TablesSection } from '../tables-section';
 async function withIndexPopover(type: DatabaseType) {
     const view = renderPanel(<TablesSection />, withTables(['orders'], type));
     await userEvent.click(
-        screen.getByRole('button', { name: 'Show or hide the details' })
+        screen.getByRole('button', { name: /^Show or hide the details/ })
     );
     await userEvent.click(
         screen.getAllByRole('button', { name: 'Add index' }).at(-1)!

@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { columnsOf, entityOf } from '@/core/model/lookup';
 import { commitQuickLink, suggestTarget } from '@/canvas/link-draft';
 import type { TargetChoice } from '@/canvas/link-draft';
+import { useClampedPlacement } from '@/canvas/use-clamped';
+import { escapeIsFree } from '@/canvas/keyboard';
 import type { LinkCardProps } from '@/canvas/hooks';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
@@ -41,11 +43,13 @@ export const QuickLinkCard: React.FC<LinkCardProps> = ({
     );
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') done();
+            if (e.key === 'Escape' && escapeIsFree(e)) done();
         };
         document.addEventListener('keydown', onKey);
         return () => document.removeEventListener('keydown', onKey);
     }, [done]);
+    const card = useRef<HTMLDivElement>(null);
+    const place = useClampedPlacement(card, anchor);
     const [error, setError] = useState<'noKey' | 'noField' | 'noLink'>();
     if (!source || !target) return null;
     const key = suggestion
@@ -77,10 +81,11 @@ export const QuickLinkCard: React.FC<LinkCardProps> = ({
 
     return (
         <div
+            ref={card}
             role="dialog"
             aria-label={t('editor.workspace.canvas.link.title')}
-            className="fixed z-40 w-72 space-y-2 rounded-lg border bg-popover p-3 text-sm text-popover-foreground shadow-lg"
-            style={{ left: anchor.x, top: anchor.y }}
+            className="fixed z-40 w-72 max-w-[calc(100vw-1rem)] space-y-2 rounded-lg border bg-popover p-3 text-sm text-popover-foreground shadow-lg"
+            style={{ left: place.left, top: place.top }}
         >
             <h3 className="font-semibold">
                 {t('editor.workspace.canvas.link.title')}

@@ -495,6 +495,8 @@ export const hr = {
                     working: 'Izrada slike',
                     empty: 'Za sliku još nema ničega',
                     failed: 'Sliku nije moguće izraditi',
+                    lowered:
+                        'Slika je vrlo velika pa je izrađena u omjeru {{scale}}x kako bi stala u ograničenje preglednika',
                 },
             },
             settings: {

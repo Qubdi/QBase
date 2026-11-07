@@ -467,6 +467,8 @@ export const id_ID = {
                     working: 'Membuat gambar',
                     empty: 'Belum ada yang dapat dimasukkan ke gambar',
                     failed: 'Gambar tidak dapat dibuat',
+                    lowered:
+                        'Gambar sangat besar, jadi dibuat pada {{scale}}x agar sesuai dengan batas peramban',
                 },
             },
             settings: {

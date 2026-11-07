@@ -11,7 +11,7 @@ import { TablesSection } from '../tables-section';
 async function openFirst(design = withTables(['orders'])) {
     const view = renderPanel(<TablesSection />, design);
     await userEvent.click(
-        screen.getByRole('button', { name: 'Show or hide the details' })
+        screen.getByRole('button', { name: /^Show or hide the details/ })
     );
     return view;
 }
@@ -266,7 +266,7 @@ describe('EDT-140 to EDT-146 indexes', () => {
         }).design;
         renderPanel(<TablesSection />, design, { filter: {}, showViews: true });
         await userEvent.click(
-            screen.getByRole('button', { name: 'Show or hide the details' })
+            screen.getByRole('button', { name: /^Show or hide the details/ })
         );
         expect(screen.queryByText('Indexes')).toBeNull();
         expect(screen.queryByText('Check constraints')).toBeNull();
@@ -325,7 +325,7 @@ describe('EDT-150 check constraints where SQL export leaves them out', () => {
     it('hides the section when the table has none', async () => {
         renderPanel(<TablesSection />, openOnly(false));
         await userEvent.click(
-            screen.getByRole('button', { name: 'Show or hide the details' })
+            screen.getByRole('button', { name: /^Show or hide the details/ })
         );
         expect(screen.queryByText('Check constraints')).toBeNull();
     });
@@ -333,7 +333,7 @@ describe('EDT-150 check constraints where SQL export leaves them out', () => {
     it('warns and offers no Add button when the table has some', async () => {
         renderPanel(<TablesSection />, openOnly(true));
         await userEvent.click(
-            screen.getByRole('button', { name: 'Show or hide the details' })
+            screen.getByRole('button', { name: /^Show or hide the details/ })
         );
         expect(screen.getByText('Check constraints')).toBeTruthy();
         expect(screen.getByRole('note').textContent).toMatch(/leaves check/);
@@ -366,7 +366,7 @@ describe('EDT-139 deleting a field that has a relationship', () => {
         const { store } = renderPanel(<TablesSection />, design);
         await userEvent.click(
             screen.getAllByRole('button', {
-                name: 'Show or hide the details',
+                name: /^Show or hide the details/,
             })[0]
         );
         await userEvent.click(

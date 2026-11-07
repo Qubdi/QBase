@@ -18,6 +18,8 @@ export interface ImageExportRequest {
     getTarget: () => HTMLElement | null;
     /** called first: clears the selection so outlines are not drawn (EXP-067) */
     prepare?: () => void;
+    /** the picture was made smaller than asked, at this pixel ratio */
+    onLowered?: (ratio: number) => void;
     options?: Partial<Pick<ImageOptions, 'scale' | 'pattern' | 'transparent'>>;
 }
 
@@ -42,7 +44,9 @@ export async function runImageExport(
         format: request.format,
         theme: request.theme,
     };
-    const blob = await captureDiagram(request.getTarget(), options);
+    const blob = await captureDiagram(request.getTarget(), options, {
+        onLowered: request.onLowered,
+    });
     downloadBlob(
         blob,
         safeFileName(imageFileName(request.design.name, request.format))

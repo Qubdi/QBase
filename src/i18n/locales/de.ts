@@ -493,6 +493,8 @@ export const de = {
                     working: 'Bild wird erstellt',
                     empty: 'Es gibt noch nichts für das Bild',
                     failed: 'Das Bild konnte nicht erstellt werden',
+                    lowered:
+                        'Das Bild ist sehr groß und wurde daher mit {{scale}}x erstellt, damit es in die Browsergrenze passt',
                 },
             },
             settings: {

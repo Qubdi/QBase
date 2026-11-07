@@ -58,7 +58,7 @@ export const TableRow: React.FC<{
             <button
                 type="button"
                 aria-expanded={open}
-                aria-label={text('tables.toggle')}
+                aria-label={`${text('tables.toggle')}: ${entity.name}`}
                 onClick={onToggle}
                 className="flex size-7 shrink-0 items-center justify-center"
             >

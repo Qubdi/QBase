@@ -217,3 +217,29 @@ describe('EXP-051 EXP-057 left-out tables and export errors', () => {
         }
     });
 });
+
+describe('review ui 8: Accept applies the text on screen', () => {
+    it('is disabled while a newer edit waits for its parse, then applies that edit', () => {
+        const { store } = setup();
+        fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+        type(added);
+        const second = added.replace('"extra"', '"second"');
+        fireEvent.change(box(), { target: { value: second } });
+        const accept = screen.getByRole('button', {
+            name: 'Accept changes',
+        }) as HTMLButtonElement;
+        expect(accept.disabled).toBe(true);
+        fireEvent.click(accept);
+        act(() => void vi.advanceTimersByTime(APPLY_DELAY_MS));
+        expect(store.getState().design).toBe(design);
+        act(() => void vi.advanceTimersByTime(PARSE_DELAY_MS));
+        expect(accept.disabled).toBe(false);
+        fireEvent.click(accept);
+        act(() => void vi.advanceTimersByTime(APPLY_DELAY_MS));
+        const names = listOf(store.getState().design.entities).map(
+            (e) => e.name
+        );
+        expect(names).toContain('second');
+        expect(names).not.toContain('extra');
+    });
+});

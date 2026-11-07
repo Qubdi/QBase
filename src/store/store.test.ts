@@ -246,3 +246,22 @@ describe('autosave', () => {
         autosave.dispose();
     });
 });
+
+describe('review ui 9: replaceDesign honours the locks in every mode', () => {
+    it.each(['reset', 'keep', 'step'] as const)(
+        'a read-only session refuses mode %s and keeps the design',
+        (history) => {
+            const before = withTables(['a']);
+            const store = createEditorStore({
+                design: before,
+                readonly: true,
+                now: () => NOW,
+            });
+            const result = store
+                .getState()
+                .replaceDesign(withTables(['b']), { history });
+            expect(result.ok).toBe(false);
+            expect(store.getState().design).toBe(before);
+        }
+    );
+});

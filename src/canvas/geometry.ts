@@ -128,3 +128,36 @@ export function resizedEnough(
         Math.abs(a - b) >= Math.max(1, a) * ratio;
     return far(before.w, now.w) || far(before.h, now.h);
 }
+
+/** A rectangle in page pixels. */
+export interface PageRect {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
+/**
+ * How far to move the picture (in page pixels, positive is right and down) so
+ * that `card` lies inside `safe`. A card taller or wider than the safe area is
+ * lined up with its top or left edge.
+ */
+export function revealShift(
+    card: PageRect,
+    safe: PageRect
+): { dx: number; dy: number } {
+    const along = (
+        start: number,
+        end: number,
+        low: number,
+        high: number
+    ): number => {
+        if (end - start >= high - low || start < low) return low - start;
+        if (end > high) return high - end;
+        return 0;
+    };
+    return {
+        dx: along(card.left, card.right, safe.left, safe.right),
+        dy: along(card.top, card.bottom, safe.top, safe.bottom),
+    };
+}

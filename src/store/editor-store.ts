@@ -12,6 +12,7 @@ import {
 import type { DispatchOptions } from '@/core/history/history';
 import type { Design } from '@/core/model/design';
 import type { Id } from '@/core/model/id';
+import { isOpenOnly } from '@/core/model/database';
 import { initialFilter } from '@/core/model/visibility-filter';
 import type { VisibilityFilter } from '@/core/model/visibility-filter';
 import type { WireWarning } from '@/core/wire/warning';
@@ -199,13 +200,18 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                         { type: 'design.replace', design },
                         { separate: true }
                     );
+                // 'step' went through the guarded dispatch above; the others
+                // swap the design themselves and must honour the same locks
+                if (
+                    get().session.readonly ||
+                    isOpenOnly(get().design.databaseType)
+                )
+                    return {
+                        ok: false,
+                        reason: 'read-only',
+                        message: 'This diagram cannot be edited',
+                    };
                 if (mode === 'keep') {
-                    if (get().session.readonly)
-                        return {
-                            ok: false,
-                            reason: 'read-only',
-                            message: 'This diagram cannot be edited',
-                        };
                     set((s) => ({
                         design,
                         session: { ...s.session, dirty: true },

@@ -465,6 +465,8 @@ export const vi = {
                     working: 'Đang tạo ảnh',
                     empty: 'Chưa có gì để đưa vào ảnh',
                     failed: 'Không thể tạo ảnh',
+                    lowered:
+                        'Hình ảnh rất lớn nên đã được tạo ở tỷ lệ {{scale}}x để vừa giới hạn của trình duyệt',
                 },
             },
             settings: {

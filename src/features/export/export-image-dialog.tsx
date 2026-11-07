@@ -61,6 +61,12 @@ export const ExportImageDialog: React.FC<ExportImageDialogProps> = ({
                 theme: resolvedTheme,
                 getTarget,
                 prepare: () => store.getState().select([]),
+                onLowered: (ratio) =>
+                    toast({
+                        title: t('editor.exporting.image.lowered', {
+                            scale: Math.floor(ratio * 100) / 100,
+                        }),
+                    }),
                 options: { scale, pattern, transparent },
             });
             onClose();

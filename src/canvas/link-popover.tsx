@@ -10,6 +10,7 @@ import type { Id } from '@/core/model/id';
 import { cn } from '@/lib/utils/utils';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { useCanvasHooks } from './hooks';
+import { useClampedPlacement } from './use-clamped';
 import type { Point } from './flow-model';
 
 interface Props {
@@ -28,13 +29,14 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
     const hooks = useCanvasHooks();
     const link = useEditorStore((s) => s.design.links.byId[linkId]);
     const ref = useRef<HTMLDivElement>(null);
+    const place = useClampedPlacement(ref, at);
 
     useEffect(() => {
         const away = (event: MouseEvent) => {
             if (!ref.current?.contains(event.target as Node)) onClose();
         };
         const key = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') onClose();
+            if (event.key === 'Escape' && !event.defaultPrevented) onClose();
         };
         document.addEventListener('mousedown', away);
         document.addEventListener('keydown', key);
@@ -59,8 +61,12 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
             ref={ref}
             role="dialog"
             aria-label={t('canvas.link.label', { name: link.name })}
-            className="fixed z-50 flex items-center gap-1 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-            style={{ left: at.x, top: at.y }}
+            className="fixed z-50 flex flex-wrap items-center gap-1 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+            style={{
+                left: place.left,
+                top: place.top,
+                maxWidth: 'calc(100vw - 16px)',
+            }}
         >
             <button
                 type="button"

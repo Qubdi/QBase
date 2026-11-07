@@ -40,14 +40,24 @@ const RailButton: React.FC<{
     <button
         type="button"
         onClick={onClick}
+        title={label}
         aria-pressed={active}
         className={cn(
             'flex w-full flex-col items-center gap-1 rounded-md px-1 py-2 text-center text-[11px] leading-tight hover:bg-accent',
+            label.length > 9 && 'px-0',
             active && 'bg-primary/10 text-primary'
         )}
     >
         <Icon className="size-5" />
-        <span className="break-words">{label}</span>
+        <span
+            className={cn(
+                '[overflow-wrap:anywhere]',
+                // a long word (German "Beziehungen") must fit the rail
+                label.length > 9 && 'text-[10px] leading-[1.1] tracking-tight'
+            )}
+        >
+            {label}
+        </span>
     </button>
 );
 
@@ -66,7 +76,7 @@ export const Rail: React.FC<{ onAction?: () => void }> = ({ onAction }) => {
     return (
         <nav
             aria-label={t('editor.workspace.rail.label')}
-            className="flex h-full w-16 shrink-0 flex-col gap-1 overflow-y-auto border-r bg-background p-1"
+            className="flex h-full w-[4.5rem] shrink-0 flex-col gap-1 overflow-y-auto border-r bg-background p-1"
         >
             <RailButton
                 icon={Plus}

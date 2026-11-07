@@ -1,7 +1,8 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils/utils';
 import type { Point } from './flow-model';
+import { useClampedPlacement } from './use-clamped';
 import type { MenuAction, MenuLine } from './menu-model';
 
 interface Props {
@@ -12,9 +13,6 @@ interface Props {
     /** true while a press outside the menu must not close it (just after a long press) */
     ignoreOutside?(): boolean;
 }
-
-/** Space kept between the menu and the window edge. */
-const EDGE = 8;
 
 /** A right-click menu placed at the pointer. A line with a submenu opens it below itself. */
 export function PointerMenu({
@@ -27,20 +25,40 @@ export function PointerMenu({
     const { t } = useTranslation();
     const ref = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState<number>();
-    const [shift, setShift] = useState<Point>({ x: 0, y: 0 });
+    const place = useClampedPlacement(ref, at, [lines.length, open]);
 
-    // keep the menu inside the window: a finger near the right or bottom edge
-    // must not push half of it out of sight
-    useLayoutEffect(() => {
-        const rect = ref.current?.getBoundingClientRect();
-        if (!rect || rect.width === 0) return;
-        const x = Math.min(at.x, window.innerWidth - rect.width - EDGE);
-        const y = Math.min(at.y, window.innerHeight - rect.height - EDGE);
-        setShift({
-            x: Math.max(EDGE, x) - at.x,
-            y: Math.max(EDGE, y) - at.y,
-        });
-    }, [at.x, at.y, lines.length, open]);
+    // the keyboard works the menu: focus goes in, arrows move, Escape gives the focus back
+    useEffect(() => {
+        const before = document.activeElement as HTMLElement | null;
+        const first = ref.current?.querySelector<HTMLElement>(
+            '[role="menuitem"]:not(:disabled)'
+        );
+        (first ?? ref.current)?.focus();
+        return () => {
+            if (before && before.isConnected) before.focus();
+        };
+    }, []);
+
+    const arrows = (event: React.KeyboardEvent) => {
+        const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+        if (!keys.includes(event.key)) return;
+        const items = Array.from(
+            ref.current?.querySelectorAll<HTMLElement>(
+                '[role="menuitem"]:not(:disabled)'
+            ) ?? []
+        );
+        if (items.length === 0) return;
+        event.preventDefault();
+        const at = items.indexOf(document.activeElement as HTMLElement);
+        const next =
+            event.key === 'Home'
+                ? 0
+                : event.key === 'End'
+                  ? items.length - 1
+                  : (at + (event.key === 'ArrowDown' ? 1 : -1) + items.length) %
+                    items.length;
+        items[next].focus();
+    };
 
     useEffect(() => {
         const away = (event: MouseEvent) => {
@@ -48,7 +66,7 @@ export function PointerMenu({
             if (!ref.current?.contains(event.target as Node)) onClose();
         };
         const key = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') onClose();
+            if (event.key === 'Escape' && !event.defaultPrevented) onClose();
         };
         document.addEventListener('mousedown', away);
         document.addEventListener('keydown', key);
@@ -110,8 +128,13 @@ export function PointerMenu({
             data-testid="pointer-menu"
             tabIndex={-1}
             className="fixed z-50 min-w-44 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-            style={{ left: at.x + shift.x, top: at.y + shift.y }}
+            style={{
+                left: place.left,
+                top: place.top,
+                maxWidth: 'calc(100vw - 16px)',
+            }}
             onContextMenu={(event) => event.preventDefault()}
+            onKeyDown={arrows}
         >
             {draw(lines, false)}
         </div>

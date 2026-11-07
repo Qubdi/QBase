@@ -442,6 +442,8 @@ export const zh_TW = {
                     working: '正在建立圖片',
                     empty: '圖片中目前沒有任何內容',
                     failed: '無法建立圖片',
+                    lowered:
+                        '圖片非常大，因此以 {{scale}}x 產生，以符合瀏覽器的限制',
                 },
             },
             settings: {

@@ -103,7 +103,7 @@ describe('p8 EDT-129 EDT-130 length, precision and scale', () => {
             })
         );
         await userEvent.click(
-            screen.getByRole('button', { name: 'Show or hide the details' })
+            screen.getByRole('button', { name: /^Show or hide the details/ })
         );
         await userEvent.click(
             screen.getByRole('button', { name: 'Field attributes' })

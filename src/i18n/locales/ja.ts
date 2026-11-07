@@ -468,6 +468,8 @@ export const ja = {
                     working: '画像を作成中',
                     empty: '画像に含めるものがまだありません',
                     failed: '画像を作成できませんでした',
+                    lowered:
+                        '画像が非常に大きいため、ブラウザーの上限に収まるよう {{scale}}倍で作成しました',
                 },
             },
             settings: {

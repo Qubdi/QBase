@@ -512,6 +512,8 @@ export const fr = {
                     working: "Création de l'image",
                     empty: "Il n'y a encore rien à mettre dans l'image",
                     failed: "L'image n'a pas pu être créée",
+                    lowered:
+                        "L'image est très grande, elle a donc été créée à {{scale}}x pour respecter la limite du navigateur",
                 },
             },
             settings: {

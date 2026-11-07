@@ -2,12 +2,14 @@ import { toPng, toSvg } from 'html-to-image';
 import {
     backgroundFill,
     diagramBounds,
+    exportRatio,
     dotPattern,
     hasLogo,
     JPEG_QUALITY,
     logoPlacement,
 } from '@/formats/image/export-options';
 import type { ImageOptions, Rect } from '@/formats/image/export-options';
+import { holdFullRender } from '@/canvas/capture-mode';
 import logoDark from '@/assets/qubdi-logo-dark.svg';
 import logoLight from '@/assets/qubdi-logo-light.svg';
 
@@ -15,8 +17,11 @@ import logoLight from '@/assets/qubdi-logo-light.svg';
 const VIEWPORT = '.react-flow__viewport';
 const NODE = '.react-flow__node';
 
-/** Largest side of the picture in pixels; browsers refuse canvases beyond about this. */
-const MAX_SIDE = 16000;
+/** Things the person should hear about while the picture is made. */
+export interface CaptureNotes {
+    /** the size was lowered to a ratio that the browser's canvas can hold */
+    onLowered?(ratio: number): void;
+}
 
 export class CaptureError extends Error {
     constructor(readonly reason: 'no-canvas' | 'empty' | 'failed') {
@@ -63,6 +68,23 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 export const nextFrame = () =>
     new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+/**
+ * Waits until the surface has drawn everything: two frames at least, then until
+ * the number of nodes and lines stays the same for three frames.
+ */
+export async function settleRender(target: HTMLElement): Promise<void> {
+    const count = () =>
+        target.querySelectorAll(`${NODE}, .react-flow__edge`).length;
+    let last = -1;
+    let same = 0;
+    for (let frame = 0; frame < 60 && same < 3; frame++) {
+        await nextFrame();
+        const now = count();
+        same = now === last ? same + 1 : 0;
+        last = now;
+    }
+}
 
 /** Draws the dots, the picture and (for PNG and JPEG) the corner logo into one canvas. */
 async function compose(
@@ -134,20 +156,36 @@ const toBlob = (canvas: HTMLCanvasElement, type: string, quality?: number) =>
  */
 export async function captureDiagram(
     target: HTMLElement | null,
-    options: ImageOptions
+    options: ImageOptions,
+    notes?: CaptureNotes
 ): Promise<Blob> {
     const viewport = target?.querySelector<HTMLElement>(VIEWPORT);
     if (!target || !viewport) throw new CaptureError('no-canvas');
+    // the surface skips what is outside the window: draw all of it meanwhile
+    const release = holdFullRender();
+    try {
+        await settleRender(target);
+        return await capture(target, viewport, options, notes);
+    } finally {
+        release();
+    }
+}
+
+async function capture(
+    target: HTMLElement,
+    viewport: HTMLElement,
+    options: ImageOptions,
+    notes?: CaptureNotes
+): Promise<Blob> {
     const bounds = diagramBounds(measureNodes(target));
     if (!bounds) throw new CaptureError('empty');
     const size = {
         width: Math.ceil(bounds.width),
         height: Math.ceil(bounds.height),
     };
-    const ratio = Math.min(
-        options.scale,
-        MAX_SIDE / Math.max(size.width, size.height)
-    );
+    const ratio = exportRatio(size, options.scale);
+    if (options.format !== 'svg' && ratio < options.scale)
+        notes?.onLowered?.(ratio);
     const style = {
         width: `${size.width}px`,
         height: `${size.height}px`,

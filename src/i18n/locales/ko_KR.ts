@@ -461,6 +461,8 @@ export const ko_KR = {
                     working: '이미지를 만드는 중',
                     empty: '아직 이미지에 담을 항목이 없어요',
                     failed: '이미지를 만들 수 없었어요',
+                    lowered:
+                        '이미지가 매우 커서 브라우저 한도에 맞도록 {{scale}}배로 만들었습니다',
                 },
             },
             settings: {

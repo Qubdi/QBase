@@ -27,6 +27,24 @@ export const IMAGE_EXTENSION: Record<ImageFormat, string> = {
 
 export const JPEG_QUALITY = 1;
 
+/** Largest side of a picture in pixels; browsers refuse canvases beyond about this. */
+export const MAX_SIDE = 16000;
+/** Largest area in pixels; iOS Safari stops at 16,777,216, so stay a little under. */
+export const MAX_PIXELS = 16_000_000;
+
+/**
+ * The pixel ratio to draw at: the one asked for, lowered until the picture fits
+ * both the side limit and the area limit of the canvas.
+ */
+export function exportRatio(
+    size: { width: number; height: number },
+    scale: number
+): number {
+    const side = MAX_SIDE / Math.max(size.width, size.height, 1);
+    const area = Math.sqrt(MAX_PIXELS / Math.max(size.width * size.height, 1));
+    return Math.min(scale, side, area);
+}
+
 /** `<diagram name>.<ext>` (EXP-060). */
 export function imageFileName(
     diagramName: string,

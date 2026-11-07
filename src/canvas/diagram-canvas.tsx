@@ -64,12 +64,20 @@ import {
     anyOnScreen,
     overlappingIds,
     resizedEnough,
+    revealShift,
     sizeFor,
 } from './geometry';
 import { interactionProps } from './interaction';
 import { DEFAULT_PREFS, HooksContext } from './hooks';
 import type { CanvasHooks, CanvasPrefs } from './hooks';
-import { isMacPlatform, isTypingTarget, hasMod } from './keyboard';
+import {
+    canvasKeysAllowed,
+    escapeIsFree,
+    hasMod,
+    isMacPlatform,
+    isTypingTarget,
+} from './keyboard';
+import { useFullRender } from './capture-mode';
 import { createMeasureBook } from './measure-book';
 import { edgeTypes } from './edge-types';
 import { nodeTypes } from './node-types';
@@ -79,6 +87,30 @@ import { useViewportControls } from './use-viewport';
 import type { CanvasControls } from './use-viewport';
 
 const FLASH_MS = 600;
+const SAFE_MARGIN = 12;
+
+/**
+ * The part of the canvas a card may use: the whole of it, less a margin and less
+ * the toolbar, which sits at the bottom on a wide window and at the top on a phone.
+ */
+function safeArea(host: HTMLElement) {
+    const box = host.getBoundingClientRect();
+    const safe = {
+        left: box.left + SAFE_MARGIN,
+        top: box.top + SAFE_MARGIN,
+        right: box.right - SAFE_MARGIN,
+        bottom: box.bottom - SAFE_MARGIN,
+    };
+    const bar = host.querySelector('.qb-toolbar')?.getBoundingClientRect();
+    if (bar && bar.height > 0) {
+        if (bar.top + bar.height / 2 > box.top + box.height / 2)
+            safe.bottom = Math.min(safe.bottom, bar.top - SAFE_MARGIN);
+        else safe.top = Math.max(safe.top, bar.bottom + SAFE_MARGIN);
+    }
+    return safe;
+}
+/** After the last arrow key goes up, this long later the moves are saved. */
+export const ARROW_COMMIT_MS = 300;
 
 export interface DiagramCanvasProps {
     hooks?: CanvasHooks;
@@ -99,6 +131,7 @@ function Surface({
 }: DiagramCanvasProps) {
     const { t } = useTranslation();
     const storeApi = useEditorStoreApi();
+    const flow = useReactFlow();
     const prefs = useMemo(
         () => ({ ...DEFAULT_PREFS, ...prefsGiven }),
         [prefsGiven]
@@ -109,14 +142,21 @@ function Surface({
     const stored = useEditorStore((s) => s.design);
     const diff = hooks?.diff;
     const design = diff?.design ?? stored;
+    const diffRef = useRef(diff);
+    diffRef.current = diff;
     const selection = useEditorStore((s) => s.ui.selection);
     const filter = useEditorStore((s) => s.ui.filter);
     const locked = useEditorStore(selectLocked);
+    const fullRender = useFullRender();
     // a preview draws tables the store does not have: nothing moves meanwhile
     const editable = !locked && !diff;
 
     const [live, setLive] = useState<LiveShapes>(NO_LIVE);
     const liveRef = useRef<LiveShapes>(NO_LIVE);
+    const pointerGesture = useRef(false);
+    const markGesture = useCallback((on: boolean) => {
+        pointerGesture.current = on;
+    }, []);
     const changeLive = useCallback((next: LiveShapes) => {
         liveRef.current = next;
         setLive(next);
@@ -218,6 +258,40 @@ function Surface({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // A table that only the DBML preview has must come into view. The preview is
+    // drawn in full (see below) so that every table is measured, then the view
+    // fits once for each new set of added tables.
+    const addedKey = useMemo(
+        () =>
+            diff
+                ? Object.entries(diff.tables)
+                      .filter(([, mark]) => mark === 'added')
+                      .map(([id]) => id)
+                      .sort()
+                      .join('|')
+                : '',
+        [diff]
+    );
+    useEffect(() => {
+        if (!addedKey) return;
+        const ids = addedKey.split('|');
+        let frames = 0;
+        let raf = 0;
+        const tick = () => {
+            const measured = ids.every(
+                (id) => flow.getNode(id)?.measured?.width
+            );
+            if (measured || ++frames > 60) {
+                controls.fit();
+                return;
+            }
+            raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [addedKey]);
+
     // the view refits after the filter changes (EDT-073)
     const firstFilter = useRef(true);
     useEffect(() => {
@@ -240,7 +314,11 @@ function Surface({
                     positions = { ...positions, [change.id]: change.position };
                     moved = true;
                 } else if (change.type === 'dimensions' && change.dimensions) {
-                    if (storeApi.getState().design.entities.byId[change.id])
+                    // a table that only the DBML preview draws is measured too:
+                    // the minimap and the fit need its size
+                    const shown =
+                        diffRef.current?.design ?? storeApi.getState().design;
+                    if (shown.entities.byId[change.id])
                         measures
                             .getState()
                             .report(change.id, change.dimensions);
@@ -286,12 +364,42 @@ function Surface({
     );
 
     const finishGesture = useCallback(() => {
+        markGesture(false);
         const shapes = liveRef.current;
         changeLive(NO_LIVE);
         const state = storeApi.getState();
         const command = commitShapes(state.design, shapes, measure);
         if (command) state.edit(command);
-    }, [storeApi, measure, changeLive]);
+    }, [storeApi, measure, changeLive, markGesture]);
+
+    // xyflow moves a selected table on the arrow keys but never reports a drag
+    // end; once the key sequence is over the moves become one edit (one undo step)
+    useEffect(() => {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const arrow = (event: KeyboardEvent) =>
+            event.key.startsWith('Arrow') && !isTypingTarget(event.target);
+        const down = (event: KeyboardEvent) => {
+            if (arrow(event)) clearTimeout(timer);
+        };
+        const up = (event: KeyboardEvent) => {
+            if (!arrow(event)) return;
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                if (
+                    !pointerGesture.current &&
+                    Object.keys(liveRef.current.positions).length > 0
+                )
+                    finishGesture();
+            }, ARROW_COMMIT_MS);
+        };
+        window.addEventListener('keydown', down);
+        window.addEventListener('keyup', up);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('keydown', down);
+            window.removeEventListener('keyup', up);
+        };
+    }, [finishGesture]);
 
     const shiftHeld = useKeyPress('Shift');
 
@@ -305,7 +413,6 @@ function Surface({
         anchor: Point;
     }>();
     const [hostEl, setHostEl] = useState<HTMLDivElement | null>(null);
-    const flow = useReactFlow();
     const [menu, setMenu] = useState<{
         page: Point;
         at: Point;
@@ -413,6 +520,47 @@ function Surface({
         [draftFrom, hooks, storeApi]
     );
 
+    // The edit card must open inside the window and above the toolbar: it is
+    // limited in height, then the picture moves just far enough to show all of it.
+    const [editMaxHeight, setEditMaxHeight] = useState<number>();
+    useEffect(() => {
+        // no size, no layout (a test environment): nothing to fit
+        if (
+            !editingId ||
+            !hostEl ||
+            hostEl.getBoundingClientRect().width === 0
+        ) {
+            setEditMaxHeight(undefined);
+            return;
+        }
+        const safe = safeArea(hostEl);
+        setEditMaxHeight(
+            Math.max(160, (safe.bottom - safe.top) / flow.getZoom())
+        );
+        let frames = 0;
+        let raf = 0;
+        const tick = () => {
+            if (++frames < 3) {
+                raf = requestAnimationFrame(tick);
+                return;
+            }
+            const card = hostEl.querySelector('[data-edit-card]');
+            if (!card) return;
+            const { dx, dy } = revealShift(
+                card.getBoundingClientRect(),
+                safeArea(hostEl)
+            );
+            if (dx === 0 && dy === 0) return;
+            const view = flow.getViewport();
+            void flow.setViewport(
+                { x: view.x + dx, y: view.y + dy, zoom: view.zoom },
+                { duration: 200 }
+            );
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [editingId, hostEl, flow]);
+
     // keys that act on the canvas: fit, delete, escape
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
@@ -422,13 +570,14 @@ function Surface({
                 return;
             }
             if (event.key === 'Escape') {
+                if (!escapeIsFree(event)) return;
                 cancelDraft();
                 setPopover(undefined);
                 setEditingId(undefined);
                 setRenamingId(undefined);
                 return;
             }
-            if (isTypingTarget(event.target)) return;
+            if (!canvasKeysAllowed(event)) return;
             if (hasMod(event) && event.key.toLowerCase() === 'c') {
                 if (window.getSelection()?.toString()) return;
                 const count = copySelection(storeApi);
@@ -458,10 +607,12 @@ function Surface({
             editingId,
             startEditing: setEditingId,
             stopEditing: () => setEditingId(undefined),
+            editMaxHeight,
             renamingId,
             startRename: setRenamingId,
             stopRename: () => setRenamingId(undefined),
-            resizeLive: (id, box) =>
+            resizeLive: (id, box) => {
+                markGesture(true);
                 changeLive({
                     positions: {
                         ...liveRef.current.positions,
@@ -471,7 +622,8 @@ function Surface({
                         ...liveRef.current.sizes,
                         [id]: { width: box.width, height: box.height },
                     },
-                }),
+                });
+            },
             resizeEnd: finishGesture,
             openLinkPopover: (linkId, at) => setPopover({ linkId, at }),
             linkSourceId: draftFrom,
@@ -481,9 +633,11 @@ function Surface({
             prefs,
             editable,
             editingId,
+            editMaxHeight,
             renamingId,
             draftFrom,
             changeLive,
+            markGesture,
             finishGesture,
             beginLink,
         ]
@@ -633,13 +787,14 @@ function Surface({
                             setPopover(undefined);
                             setEditingId(undefined);
                         }}
+                        onNodeDragStart={() => markGesture(true)}
                         onNodeDragStop={finishGesture}
                         {...interactionProps(prefs, {
                             editable,
                             shiftHeld: shiftHeld || snapOn,
                         })}
                         connectionMode={ConnectionMode.Loose}
-                        onlyRenderVisibleElements
+                        onlyRenderVisibleElements={!fullRender && !diff}
                         onMoveStart={(event) => {
                             // a null event is a camera move made by code, not by the person
                             if (event) touched.current = true;

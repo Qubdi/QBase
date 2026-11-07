@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { blank, NOW, withTables } from '@/core/testing/helpers';
 import { CreateDiagramDialog } from '@/dialogs/create-diagram-dialog/create-diagram-dialog';
 import { OpenDesignDialog } from '@/features/designs/open-design-dialog';
+import { Toaster } from '@/platform/toast/toaster';
 import { MemoryStorageAdapter } from '@/persistence/memory-adapter';
 import { useStorageAdapter } from '@/qbase/storage-context';
 import { useOptionalEditorStoreApi } from '@/store/store-context';
@@ -202,6 +203,40 @@ describe('Open dialog, local mode (SHL-043 to SHL-049)', () => {
         await waitFor(async () =>
             expect((await adapter.load('two'))?.design.name).toBe('Journal')
         );
+    });
+});
+
+describe('review ui 10: renaming a locked open diagram', () => {
+    it('says the diagram cannot be edited instead of dropping the rename', async () => {
+        const adapter = new MemoryStorageAdapter();
+        const design = { ...withTables(['a']), id: 'one', name: 'Shop' };
+        await adapter.save(design);
+        const { store } = renderInEditor(
+            <>
+                <OpenHere />
+                <Toaster />
+            </>,
+            { design, readonly: true },
+            '/diagrams/one',
+            adapter
+        );
+        await screen.findByText('Shop');
+        fireEvent.keyDown(
+            screen.getByRole('button', { name: 'Actions for Shop' }),
+            { key: 'Enter' }
+        );
+        fireEvent.click(
+            await screen.findByRole('menuitem', { name: /Rename/ })
+        );
+        fireEvent.change(
+            await screen.findByRole('textbox', { name: 'Diagram name' }),
+            { target: { value: 'Journal' } }
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+        expect(
+            await screen.findByText('This diagram cannot be edited')
+        ).toBeInTheDocument();
+        expect(store.getState().design.name).toBe('Shop');
     });
 });
 

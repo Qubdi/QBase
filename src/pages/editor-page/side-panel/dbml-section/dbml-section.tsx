@@ -59,6 +59,8 @@ export const DbmlSection: React.FC = () => {
     const [errorLine, setErrorLine] = useState<number | null | undefined>();
     const [pending, setPending] = useState<Pending | undefined>();
     const [applying, setApplying] = useState(false);
+    // the text on screen is newer than the parse behind the preview
+    const [stale, setStale] = useState(false);
     const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const applyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const backdrop = useRef<HTMLDivElement>(null);
@@ -89,6 +91,7 @@ export const DbmlSection: React.FC = () => {
 
     const discard = useCallback(() => {
         clearTimeout(timer.current);
+        setStale(false);
         setPending(undefined);
         setErrorLine(undefined);
         clearMarks();
@@ -112,6 +115,7 @@ export const DbmlSection: React.FC = () => {
 
     const parse = useCallback(
         (source: string) => {
+            setStale(false);
             const current = store.getState().design;
             const imported = importDbml(source, current.databaseType, {
                 name: current.name,
@@ -147,6 +151,7 @@ export const DbmlSection: React.FC = () => {
 
     const type = (value: string) => {
         setDraft(value);
+        setStale(true);
         clearTimeout(timer.current);
         timer.current = setTimeout(() => parse(value), PARSE_DELAY_MS);
     };
@@ -162,7 +167,7 @@ export const DbmlSection: React.FC = () => {
 
     // the overlay shows while the change is applied (spec 16.1)
     const accept = () => {
-        if (!pending || applying) return;
+        if (!pending || applying || stale) return;
         const { parsed } = pending;
         setApplying(true);
         clearTimeout(timer.current);
@@ -228,6 +233,7 @@ export const DbmlSection: React.FC = () => {
                             type="button"
                             size="sm"
                             className="bg-green-600 text-white hover:bg-green-700"
+                            disabled={stale || applying}
                             onClick={accept}
                         >
                             {text('dbml.accept')}

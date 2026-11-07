@@ -506,6 +506,8 @@ export const es = {
                     working: 'Creando la imagen',
                     empty: 'Todavía no hay nada que poner en la imagen',
                     failed: 'No se pudo crear la imagen',
+                    lowered:
+                        'La imagen es muy grande, así que se creó a {{scale}}x para ajustarse al límite del navegador',
                 },
             },
             settings: {
