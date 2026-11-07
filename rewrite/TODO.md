@@ -63,10 +63,16 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
    `parity-checklist.md` (missing features being built, owner decisions EDT-047 and SHL-032/042,
    SHL-073/098/099 translations, SHL-103 old Safari, QBS-007/019/021 naming, manual checks that need
    a live database or server: DAT-077, EDT-250).
-10. [ ] **Phase 9: cleanup and verification.** Similarity check clean for every tracked file,
-    parity checklist fully ticked, dependency licences re-audited (`node tools/licences.mjs`),
-    `NOTICE` updated, Audit REPO-045, REPO-049 and REPO-069 updated, lawyer review of the
-    result.
+10. [~] **Phase 9: cleanup and verification** (in progress 2026-11-07). Done: similarity clean on every
+    checked file (859), licences re-audited and `NOTICE` updated (fonts), unused files and 23 unused
+    dependencies removed, old-layout migration tested with hand-built fixtures, relationship direction
+    and spec samples checked (`phase9/data-checks.md`), two read-only code reviews with fixes
+    (`review/*.md`), a real-browser smoke test (14 steps) and nine flows (60 steps), perf and
+    accessibility audits started (`phase9/perf.md`, `phase9/a11y.md`).
+    Waiting on the owner: Audit REPO-045, REPO-049 and REPO-069 (they close with the licence
+    decision), lawyer review of the result, a live-database run of the metadata queries (PostgreSQL,
+    CockroachDB, MySQL, MariaDB, SQL Server), a native-speaker review of the 20 machine translations,
+    and the decisions EDT-047 (credit mark) and SHL-032/042 (New dialog tabs).
 11. [ ] **Phase 10: release.** Fresh repository with new history, chosen licence applied,
     old Docker Hub tags replaced or removed, new image published.
 
