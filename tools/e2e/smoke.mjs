@@ -412,6 +412,33 @@ await step('10 CSP-style constraints', async () => {
     check(violations === 0, `${violations} CSP violation(s)`);
 });
 
+await step('10b an old browser gets a notice, not a blank page', async () => {
+    // pretend to be a browser from before Safari 16.4 by removing a function it lacks
+    const old = await browser.newContext();
+    await old.addInitScript(() => {
+        delete Object.hasOwn;
+    });
+    const oldPage = await old.newPage();
+    await oldPage.goto(`${BASE}/`);
+    const notice = oldPage.getByRole('alert');
+    await notice.waitFor({ timeout: 8000 });
+    check(
+        /Safari 16\.4/.test((await notice.textContent()) ?? ''),
+        'the notice does not name the minimum Safari'
+    );
+    await oldPage.waitForTimeout(1500);
+    check(
+        (await oldPage.getByRole('alert').count()) === 1,
+        'the app replaced the notice'
+    );
+    check(
+        (await oldPage.locator('.react-flow, [role=dialog]').count()) === 0,
+        'the app started in a browser that is too old'
+    );
+    await oldPage.screenshot({ path: `${SHOTS}/old-browser-notice.png` });
+    await old.close();
+});
+
 await step('11 no console errors, page errors or failed requests', async () => {
     check(problems.length === 0, `\n  ${[...new Set(problems)].join('\n  ')}`);
 });

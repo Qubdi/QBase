@@ -22,6 +22,8 @@ provideDialectTypes();
 void i18nReady
     .catch(() => undefined)
     .then(() => {
+        // public/browser-check.js already showed its notice in a browser that is too old
+        if (Reflect.get(window, '__qbaseUnsupported')) return;
         createRoot(document.getElementById('root')!).render(
             <React.StrictMode>
                 <App />

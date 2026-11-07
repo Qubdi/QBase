@@ -42,3 +42,11 @@ native-speaker review before release.
 One grid of every supported database (PostgreSQL, MySQL, SQL Server, SQLite, MariaDB,
 CockroachDB, Generic). No Transactional/Analytical tabs and no "More databases" toggle: the
 analytical tab only held ClickHouse, which was dropped, and seven choices fit on one screen.
+
+## Old Safari (owner, 2026-11-08; SHL-103)
+
+Supported: Safari 16.4 and newer, Chrome and Edge 111 and newer, Firefox 114 and newer (the
+build's default target). No stand-ins for older browsers. A browser that lacks a needed
+function gets a short notice in its own language (en, ru, ka, de, it, fr, zh) from
+`public/browser-check.js`, which runs before the app and uses no eval, so the page's script
+policy allows it. `src/main.tsx` does not start the app when the notice was shown.

@@ -384,6 +384,11 @@ and 21 KB of WAL on a laptop. To go further:
 
 QBase is licensed under the [Elastic License 2.0](LICENSE): free to use, modify and self-host, for personal and commercial use alike, including inside a company. The one thing it does not allow is offering QBase to others as a hosted or managed service (a SaaS) without a separate licence from Qubdi.
 
+## Supported browsers
+
+Safari 16.4 and newer, Chrome and Edge 111 and newer, Firefox 114 and newer. An older
+browser shows a short notice asking for an update instead of a blank page.
+
 ## Acknowledgements
 
 QBase is inspired by [ChartDB](https://github.com/chartdb/chartdb), the open source
