@@ -4,7 +4,7 @@ This Contributors License Agreement ("CLA") is entered into between the Contribu
 
 ## Background:
 
-QBase is a source-available database diagramming and visualization tool, licensed under the PolyForm Noncommercial License 1.0.0 (see LICENSE). This CLA governs the rights and contributions made by the Contributor to the QBase project.
+QBase is a source-available database diagramming and visualization tool, licensed under the Elastic License 2.0 (see LICENSE). This CLA governs the rights and contributions made by the Contributor to the QBase project.
 
 ## Agreement:
 

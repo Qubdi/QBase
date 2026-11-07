@@ -310,7 +310,7 @@ Done when:
 | 2 | Keep saved diagrams compatible | yes: you have users and a server | decided 2026-11-07: yes; export gets a version key |
 | 3 | Which features to drop | decide in Phase 1, fewer is faster | decided 2026-11-07: 15-row drop list accepted; Oracle and ClickHouse dropped; local-only mode kept (see `rewrite/spec/owner-decisions.md`) |
 | 4 | Templates and examples | drop all ChartDB ones (50 data files, 100 PNGs); add own later | decided 2026-11-07: drop all |
-| 5 | Final licence | BSL or PolyForm Shield blocks SaaS use but allows reading and self-hosting | open |
+| 5 | Final licence | BSL or PolyForm Shield blocks SaaS use but allows reading and self-hosting | decided 2026-11-08: Elastic License 2.0 (owner), applied in LICENSE |
 | 6 | Who writes the risky modules | a clean author, from the spec | open |
 
 ## 9. The similarity check, and its limits

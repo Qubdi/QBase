@@ -7,7 +7,7 @@ Order: 1 Auth → 2 Snapshots → 3 Share links → 4 Comments → 5 Direct impo
 ## Shared context (paste at the top of every task)
 
 ```
-Project: QBase, a PolyForm Noncommercial project ( React 19 + TypeScript + Vite, Tailwind, Radix, @xyflow/react, Dexie/IndexedDB, i18next). The editor is local-first with no backend; we are adding a small self-hosted backend.
+Project: QBase, an Elastic License 2.0 project ( React 19 + TypeScript + Vite, Tailwind, Radix, @xyflow/react, Dexie/IndexedDB, i18next). The editor is local-first with no backend; we are adding a small self-hosted backend.
 
 Backend stack: Node 24 + TypeScript + Fastify, PostgreSQL, Drizzle ORM, Docker Compose. Everything FOSS and self-hostable. Frontend keeps working offline with Dexie; the backend is optional and enabled by an env flag.
 

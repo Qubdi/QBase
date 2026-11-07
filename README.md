@@ -382,7 +382,7 @@ and 21 KB of WAL on a laptop. To go further:
   (add `--clean --if-exists` to replace what is already there). For point-in-time recovery use WAL archiving
   (`archive_mode`, `archive_command`) or a managed Postgres.
 
-QBase is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE): free for personal and other noncommercial use. Using it in or for a business needs a separate licence from Qubdi.
+QBase is licensed under the [Elastic License 2.0](LICENSE): free to use, modify and self-host, for personal and commercial use alike, including inside a company. The one thing it does not allow is offering QBase to others as a hosted or managed service (a SaaS) without a separate licence from Qubdi.
 
 ## Acknowledgements
 

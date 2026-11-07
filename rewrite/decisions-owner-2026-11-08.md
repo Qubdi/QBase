@@ -19,5 +19,11 @@ Action for the owner: ask the lawyer to confirm the answer by email and to answe
   This also answers the part of audit REPO-045 about naming the upstream.
 - EDT-047 (credit mark on the canvas) closed: the acknowledgement lives in README and NOTICE,
   not on the canvas. An About line in the app can be added if the owner wants it.
-- The licence is still to be chosen by the owner (the file today is PolyForm Noncommercial
-  1.0.0; BSL and PolyForm Shield are the candidates). Nothing was changed in `LICENSE`.
+- Licence chosen by the owner: **Elastic License 2.0** (wide use by developers and companies,
+  no hosting as a service for third parties). Applied the same day: `LICENSE` (official text,
+  fetched from Elastic's repository), `license` fields in both `package.json` files and both
+  lock files (`Elastic-2.0`), `NOTICE`, `README.md`, `CLA.md` and `QBase-build-tasks.md`.
+  The CLA's grant (section 1) does not depend on the licence, so earlier signatures stand;
+  only its description of the project licence changed.
+- Still to do: written confirmation from the lawyer that ELv2 suits the goal, and the audit
+  files (REPO-045, REPO-049, REPO-069).

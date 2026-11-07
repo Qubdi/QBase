@@ -72,15 +72,19 @@ code stays on `main` and is not to be published.
    be said or done about the past releases (notices, source offer, takedown)?
 5. Release plan: a fresh repository containing only the new code. Any problem with that (for
    example the old contributors' rights, the CLA, or the history of the new branch)?
-6. Which licence could carry the final project (BSL or PolyForm Shield are candidates), given
-   the dependencies are permissive (MIT, Apache-2.0, OFL fonts)? Notices to keep for them.
+6. The owner chose the Elastic License 2.0 (2026-11-08) because they want wide use by developers
+   and companies but no hosting of the product as a service by third parties. It is applied in
+   `LICENSE`. Does it fit that goal, and is it compatible with the dependencies (MIT, Apache-2.0,
+   OFL fonts, one ISC and one Unlicense) and the notices we keep for them? The old project
+   licence was PolyForm Noncommercial 1.0.0, and the contributor agreement (`CLA.md`) was
+   written for it; its grant does not depend on the licence, only its description does.
 7. Files that remain from the old project by design: the Contributor Covenant (CC BY 4.0),
    one-line config files, and the shadcn/ui-style components. Are the reasons recorded enough?
 8. With the result finished, what else should the final review look at? In particular the 13
    files still classed as derived and the 20 modified ones.
 9. Much of the code was written by AI assistants. Is the new code protectable and licensable
    by the owner as its own work (including the effect of AI authorship on a restrictive licence
-   such as BSL or PolyForm Shield), and what should the records and the licence text say?
+   such as the Elastic License 2.0), and what should the records and the licence text say?
 10. The behaviour spec records visible behaviour of a product whose code is AGPL-3.0 (menu
     names, shortcuts, defaults, error texts, layout rules). Is re-implementing that behaviour
     safe, and are any of those texts too close to the original to keep?

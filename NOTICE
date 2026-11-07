@@ -13,10 +13,13 @@ contain ChartDB's source code, apart from a few generic boilerplate files that
 come from the same upstream (see rewrite/similarity-allow.txt). Thank you to the
 ChartDB authors and contributors.
 
-QBase is licensed under the PolyForm Noncommercial License 1.0.0 (see the
-LICENSE file for the full text). You may use, copy and modify it for
-noncommercial purposes. Using it in or for a business, or for any other
-commercial purpose, needs a separate licence from Qubdi.
+QBase is licensed under the Elastic License 2.0 (see the LICENSE file for the
+full text). In short: you may use, copy, modify and redistribute it, including
+inside a company and in production, but you may not provide it to third parties
+as a hosted or managed service that gives them access to a substantial set of
+its features, and you must keep the licence and copyright notices. That short
+summary is not a substitute for the licence text. Any other use that the
+licence does not allow needs a separate licence from Qubdi.
 
 Third-party software
 --------------------
