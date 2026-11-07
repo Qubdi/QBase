@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { applyOk, rng, withTables } from '@/core/testing/helpers';
@@ -188,5 +188,15 @@ describe('EDT-163 to EDT-168 the Create Relationship dialog', () => {
     it('says No tables found when there are none (EDT-165)', async () => {
         const { dialog } = await openDialog(withTables([]));
         expect(within(dialog).getAllByText('No tables found')).toHaveLength(2);
+    });
+});
+
+describe('EDT-176 a line chosen on the canvas opens its row', () => {
+    it('shows the details of a link selected from outside', async () => {
+        const { design, link } = linked();
+        const { store } = renderPanel(<RefsSection />, design);
+        expect(screen.queryByText('Primary table')).toBeNull();
+        act(() => store.getState().select([link.id]));
+        expect(await screen.findByText('Primary table')).toBeTruthy();
     });
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import {
     planDeleteLink,
@@ -13,7 +13,7 @@ import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
-import { useEditorStoreApi } from '@/store/store-context';
+import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { CreateLinkDialog } from './create-link-dialog';
 import { cardinalityChoiceOf, listRefs } from './link-rules';
 
@@ -136,6 +136,17 @@ export const RefsSection: React.FC = () => {
     const text = useText();
     const [filterText, setFilterText] = useState('');
     const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set());
+    // a line chosen on the canvas ("Open in sidebar") opens its row
+    const chosen = useEditorStore((s) => s.ui.selection.join(' '));
+    useEffect(() => {
+        const ids = chosen.split(' ').filter((id) => design.links.byId[id]);
+        if (ids.length === 0) return;
+        setOpenIds((now) =>
+            ids.every((id) => now.has(id)) ? now : new Set([...now, ...ids])
+        );
+        // only a change of the selection opens rows; closing one stays closed
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [chosen]);
     const [creating, setCreating] = useState(false);
     const links = listRefs({ design, filter, showViews, text: filterText });
 
