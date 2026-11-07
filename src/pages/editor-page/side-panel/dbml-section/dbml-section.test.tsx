@@ -6,7 +6,7 @@ import { sampleS1 } from '@/dialects/testing/sample-designs';
 import { usePreviewStore } from '@/features/dbml-diff/preview-store';
 import { exportDbml } from '@/formats/dbml/export-dbml';
 import { renderPanel } from '@/features/testing/render-panel';
-import { DbmlSection, PARSE_DELAY_MS } from './dbml-section';
+import { APPLY_DELAY_MS, DbmlSection, PARSE_DELAY_MS } from './dbml-section';
 
 const design = sampleS1('postgresql');
 const original = exportDbml(design).text;
@@ -116,11 +116,16 @@ describe('EDT-241 EDT-244 a valid edit', () => {
 });
 
 describe('EDT-245 Accept Changes', () => {
-    it('replaces the tables as one undo step and leaves edit mode', () => {
+    it('replaces the tables as one undo step and leaves edit mode, with an overlay while it runs', () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
         type(added);
         fireEvent.click(screen.getByRole('button', { name: 'Accept Changes' }));
+        expect(screen.getByText('Applying changes...')).toBeTruthy();
+        // nothing changed yet: the overlay is painted first
+        expect(store.getState().design).toBe(design);
+        act(() => void vi.advanceTimersByTime(APPLY_DELAY_MS));
+        expect(screen.queryByText('Applying changes...')).toBeNull();
         const now = store.getState().design;
         expect(listOf(now.entities).map((e) => e.name)).toContain('extra');
         expect(usePreviewStore.getState().marks).toBeUndefined();

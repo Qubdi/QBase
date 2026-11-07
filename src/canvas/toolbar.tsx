@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     LayoutGrid,
+    Maximize,
+    Minimize,
     Minus,
     Plus,
     Redo2,
@@ -34,6 +36,31 @@ function Divider() {
     return <span aria-hidden className="mx-1 h-5 w-px bg-border" />;
 }
 
+/** Browser full screen for the whole page (EDT-048); null where it is not offered. */
+function useFullScreen() {
+    const supported =
+        typeof document !== 'undefined' && document.fullscreenEnabled === true;
+    const [on, setOn] = useState(
+        () => typeof document !== 'undefined' && !!document.fullscreenElement
+    );
+    useEffect(() => {
+        const sync = () => setOn(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', sync);
+        return () => document.removeEventListener('fullscreenchange', sync);
+    }, []);
+    if (!supported) return null;
+    return {
+        on,
+        toggle: () => {
+            const done = on
+                ? document.exitFullscreen()
+                : document.documentElement.requestFullscreen();
+            // a refused request (no user gesture, policy) leaves the page as it is
+            void Promise.resolve(done).catch(() => undefined);
+        },
+    };
+}
+
 /**
  * The floating bar: filter, show all, zoom, auto arrange, undo and redo
  * (EDT-040). Bottom-centre on a wide window, top-centre on a narrow one.
@@ -44,6 +71,7 @@ export function Toolbar(props: ToolbarProps) {
     const zoom = useEditorStore(selectZoom);
     const canUndo = useEditorStore(selectCanUndo);
     const canRedo = useEditorStore(selectCanRedo);
+    const full = useFullScreen();
 
     return (
         <div
@@ -156,6 +184,33 @@ export function Toolbar(props: ToolbarProps) {
             >
                 <Redo2 className="h-4 w-4" />
             </button>
+            {full ? (
+                <>
+                    <Divider />
+                    <button
+                        type="button"
+                        className={base}
+                        aria-pressed={full.on}
+                        aria-label={t(
+                            full.on
+                                ? 'canvas.toolbar.exitFullScreen'
+                                : 'canvas.toolbar.fullScreen'
+                        )}
+                        title={t(
+                            full.on
+                                ? 'canvas.toolbar.exitFullScreen'
+                                : 'canvas.toolbar.fullScreen'
+                        )}
+                        onClick={full.toggle}
+                    >
+                        {full.on ? (
+                            <Minimize className="h-4 w-4" />
+                        ) : (
+                            <Maximize className="h-4 w-4" />
+                        )}
+                    </button>
+                </>
+            ) : null}
         </div>
     );
 }

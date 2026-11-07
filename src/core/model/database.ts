@@ -76,6 +76,8 @@ export interface DatabaseTraits {
     hasUserTypes: boolean;
     /** true when an index may choose its method (btree, hash, gin) */
     hasIndexMethods: boolean;
+    /** true when SQL export writes check constraints (EDT-150) */
+    hasChecks: boolean;
     /** type given to a new key or column */
     defaultColumnType: string;
 }
@@ -102,6 +104,7 @@ export function traitsOf(type: DatabaseType): DatabaseTraits {
         hasArrays: type === 'postgresql' || type === 'cockroachdb',
         hasUserTypes: type === 'postgresql',
         hasIndexMethods: type === 'postgresql' || type === 'cockroachdb',
+        hasChecks: type !== 'oracle' && type !== 'clickhouse',
         defaultColumnType:
             type === 'sqlite'
                 ? 'integer'

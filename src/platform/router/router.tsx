@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom';
 import { adminRoute } from '@/pages/admin-page/admin-route';
 import { BACKEND_ENABLED } from '@/platform/config/backend';
+import { RouteFallback } from './route-fallback';
 
 type Loader<T> = () => Promise<T>;
 
@@ -16,6 +17,7 @@ const lazyPage = <M,>(
     pick: (module: M) => React.ReactElement
 ): RouteObject => ({
     path,
+    HydrateFallback: RouteFallback,
     async lazy() {
         return { element: pick(await load()) };
     },

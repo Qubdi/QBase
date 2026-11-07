@@ -31,4 +31,14 @@ describe('routes', () => {
             expect(all.at(-1)).toBe('*');
         }
     });
+
+    it('gives every route that loads its page a HydrateFallback, so react-router does not warn on start', () => {
+        const lacking = (routes: RouteObject[]): (string | undefined)[] =>
+            routes.flatMap((r) => [
+                ...(r.lazy && !r.HydrateFallback ? [r.path] : []),
+                ...lacking(r.children ?? []),
+            ]);
+        for (const enabled of [false, true])
+            expect(lacking(buildRoutes(enabled))).toEqual([]);
+    });
 });

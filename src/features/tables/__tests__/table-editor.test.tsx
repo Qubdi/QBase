@@ -2,7 +2,9 @@ import React from 'react';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { applyOk, withTables } from '@/core/testing/helpers';
+import { applyOk, rng, withTables } from '@/core/testing/helpers';
+import { planLink } from '@/core/commands/plan-link';
+import { planAddRule } from '@/core/commands/plan-column';
 import { renderPanel } from '@/features/testing/render-panel';
 import { TablesSection } from '../tables-section';
 
@@ -309,5 +311,75 @@ describe('EDT-098 the description of a table', () => {
         );
         await userEvent.tab();
         expect(first(store).entity.comments).toBe('orders placed');
+    });
+});
+
+describe('EDT-150 check constraints where SQL export leaves them out', () => {
+    const openOnly = (withCheck: boolean) => {
+        let design = withTables(['orders']);
+        const id = design.entities.order[0];
+        if (withCheck) design = applyOk(design, planAddRule(id)).design;
+        return { ...design, databaseType: 'oracle' as const };
+    };
+
+    it('hides the section when the table has none', async () => {
+        renderPanel(<TablesSection />, openOnly(false));
+        await userEvent.click(
+            screen.getByRole('button', { name: 'Show or hide the details' })
+        );
+        expect(screen.queryByText('Check constraints')).toBeNull();
+    });
+
+    it('warns and offers no Add button when the table has some', async () => {
+        renderPanel(<TablesSection />, openOnly(true));
+        await userEvent.click(
+            screen.getByRole('button', { name: 'Show or hide the details' })
+        );
+        expect(screen.getByText('Check constraints')).toBeTruthy();
+        expect(screen.getByRole('note').textContent).toMatch(/leaves check/);
+        expect(screen.queryByRole('button', { name: 'Add check' })).toBeNull();
+    });
+
+    it('stays as before for a database that writes checks', async () => {
+        const { store } = await openFirst();
+        expect(store.getState().design.databaseType).not.toBe('oracle');
+        expect(
+            screen.getAllByRole('button', { name: 'Add check' }).length
+        ).toBeGreaterThan(0);
+    });
+});
+
+describe('EDT-139 deleting a field that has a relationship', () => {
+    it('removes the relationship with it, says so, and undo brings both back', async () => {
+        const base = withTables(['users', 'orders']);
+        const [users, orders] = base.entities.order.map(
+            (id) => base.entities.byId[id]
+        );
+        const plan = planLink(
+            base,
+            { entityId: users.id, columnId: users.columnIds[0] },
+            { entityId: orders.id, columnId: orders.columnIds[0] },
+            { random: rng(4) }
+        );
+        if (plan.kind !== 'ok') throw new Error('no link');
+        const design = applyOk(base, plan.command).design;
+        const { store } = renderPanel(<TablesSection />, design);
+        await userEvent.click(
+            screen.getAllByRole('button', {
+                name: 'Show or hide the details',
+            })[0]
+        );
+        await userEvent.click(
+            screen.getByRole('button', { name: 'Field attributes' })
+        );
+        await userEvent.click(
+            await screen.findByRole('button', { name: 'Delete field' })
+        );
+        expect(store.getState().design.links.order).toHaveLength(0);
+        expect(
+            await screen.findByText(/Relationships removed with the field: 1/)
+        ).toBeTruthy();
+        store.getState().undo();
+        expect(store.getState().design.links.order).toHaveLength(1);
     });
 });

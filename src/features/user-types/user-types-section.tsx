@@ -14,6 +14,7 @@ import type { UserType, UserTypeKind } from '@/core/model/user-type';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { typeOptions } from '@/features/tables/fields/type-options';
 import { visibleSchemas } from '@/features/tables/table-list';
+import { useHoldMenu } from '@/platform/panel/hold-menu';
 import { InlineName } from '@/platform/panel/inline-name';
 import { Notice } from '@/platform/panel/notice';
 import { useEditorEnv } from '@/platform/panel/use-editor';
@@ -212,9 +213,10 @@ const TypeRow: React.FC<{
 }> = ({ type, open, onToggle, showSchema }) => {
     const { locked, edit } = useEditorEnv();
     const text = useText();
+    const { menu, hold } = useHoldMenu(!locked);
     return (
         <div className="rounded-md border" data-testid="user-type-row">
-            <div className="flex items-center gap-1 p-1">
+            <div className="flex items-center gap-1 p-1" {...hold}>
                 <button
                     type="button"
                     aria-expanded={open}
@@ -251,7 +253,7 @@ const TypeRow: React.FC<{
                     ) : null}
                 </InlineName>
                 {locked ? null : (
-                    <DropdownMenu>
+                    <DropdownMenu {...menu}>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 type="button"

@@ -1,7 +1,9 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 import { planAddColumn } from '@/core/commands/plan-column';
+import { traitsOf } from '@/core/model/database';
 import type { Entity } from '@/core/model/entity';
+import { rulesOf } from '@/core/model/lookup';
 import { DebouncedTextarea } from '@/platform/panel/debounced-input';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
@@ -63,7 +65,9 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
                     <IndexesEditor entity={entity} />
                 </Section>
             )}
-            {view ? null : (
+            {view ||
+            (!traitsOf(design.databaseType).hasChecks &&
+                rulesOf(design, entity).length === 0) ? null : (
                 <Section title={text('tables.checks')}>
                     <ChecksEditor entity={entity} />
                 </Section>

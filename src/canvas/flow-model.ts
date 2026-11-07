@@ -30,6 +30,8 @@ export type EntityNodeData = {
     outlined: boolean;
     /** how a diff preview marks this table */
     mark?: DiffMark;
+    /** the name before a renamed table's new one */
+    renamedFrom?: string;
 };
 export type RegionNodeData = Record<string, never>;
 export type MemoNodeData = Record<string, never>;
@@ -195,6 +197,7 @@ export function buildNodes(input: FlowInput): CanvasNode[] {
                 outlined:
                     input.outlineOverlaps && input.overlapping.has(entity.id),
                 mark: input.diff?.tables[entity.id],
+                renamedFrom: input.diff?.renames?.[entity.id],
             },
             selected: selection.has(entity.id),
             draggable: input.editable,

@@ -54,6 +54,8 @@ export const sidePanelStrings = {
     },
     fields: {
         add: 'Add field',
+        linksRemoved:
+            'Relationships removed with the field: {{count}}. Undo brings them back.',
         name: 'Field name',
         namePlaceholder: 'Field name',
         typePlaceholder: 'Type',
@@ -101,6 +103,8 @@ export const sidePanelStrings = {
     checks: {
         add: 'Add check',
         none: 'No check constraints',
+        unsupported:
+            'SQL export for this database leaves check constraints out',
         expression: 'Expression',
         expressionPlaceholder: 'e.g. price > 0',
         attributes: 'Check constraint',
@@ -243,5 +247,6 @@ export const sidePanelStrings = {
         summary:
             '{{added}} new, {{removed}} removed, {{changed}} changed tables; {{linksAdded}} new, {{linksRemoved}} removed relationships',
         rejected: 'The change could not be applied',
+        applying: 'Applying changes...',
     },
 };

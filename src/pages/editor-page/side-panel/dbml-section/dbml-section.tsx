@@ -17,10 +17,14 @@ import { cn } from '@/lib/utils/utils';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
+import { Spinner } from '@/platform/ui/spinner';
 import { toast } from '@/platform/toast/use-toast';
 import { importDbml } from '@/formats/dbml/import-dbml';
 import { selectPanel } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
+
+/** The overlay is painted this long before a large change is applied. */
+export const APPLY_DELAY_MS = 30;
 
 /** How long the person must stop typing before the text is parsed (EDT-239). */
 export const PARSE_DELAY_MS = 1000;
@@ -52,7 +56,9 @@ export const DbmlSection: React.FC = () => {
     const [draft, setDraft] = useState('');
     const [errorLine, setErrorLine] = useState<number | null | undefined>();
     const [pending, setPending] = useState<Pending | undefined>();
+    const [applying, setApplying] = useState(false);
     const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const applyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const backdrop = useRef<HTMLDivElement>(null);
     const result = useMemo(
         () => exportDbml(design, { inline }),
@@ -67,7 +73,13 @@ export const DbmlSection: React.FC = () => {
     }, [clearMarks]);
 
     // leaving the section, however it happens, drops an unaccepted preview (EDT-247)
-    useEffect(() => () => discard(), [discard]);
+    useEffect(
+        () => () => {
+            clearTimeout(applyTimer.current);
+            discard();
+        },
+        [discard]
+    );
     const away = !panel.open || panel.section !== 'dbml';
     useEffect(() => {
         if (away) {
@@ -103,6 +115,7 @@ export const DbmlSection: React.FC = () => {
                 design: proposal.preview,
                 tables: proposal.tables,
                 links: proposal.links,
+                renames: proposal.renames,
             };
             setPending({ parsed: imported.design, diff });
             showMarks(marks);
@@ -125,19 +138,29 @@ export const DbmlSection: React.FC = () => {
         setEditing(false);
     };
 
+    // the overlay shows while the change is applied (spec 16.1)
     const accept = () => {
-        if (!pending) return;
-        const current = store.getState().design;
-        const diff = diffDesigns(current, pending.parsed);
-        const proposal = buildProposal(current, pending.parsed, diff);
-        const done = store
-            .getState()
-            .replaceDesign(proposal.accepted, { history: 'step' });
-        if (!done.ok) {
-            toast({ title: text('dbml.rejected'), variant: 'destructive' });
-            return;
-        }
-        stopEditing();
+        if (!pending || applying) return;
+        const { parsed } = pending;
+        setApplying(true);
+        clearTimeout(timer.current);
+        applyTimer.current = setTimeout(() => {
+            const current = store.getState().design;
+            const proposal = buildProposal(
+                current,
+                parsed,
+                diffDesigns(current, parsed)
+            );
+            const done = store
+                .getState()
+                .replaceDesign(proposal.accepted, { history: 'step' });
+            setApplying(false);
+            if (!done.ok) {
+                toast({ title: text('dbml.rejected'), variant: 'destructive' });
+                return;
+            }
+            stopEditing();
+        }, APPLY_DELAY_MS);
     };
 
     const copy = async () => {
@@ -162,7 +185,17 @@ export const DbmlSection: React.FC = () => {
         : undefined;
 
     return (
-        <div className="flex h-full flex-col gap-2 p-2">
+        <div className="relative flex h-full flex-col gap-2 p-2">
+            {applying ? (
+                <div
+                    role="status"
+                    aria-live="polite"
+                    className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70"
+                >
+                    <Spinner />
+                    <span className="text-sm">{text('dbml.applying')}</span>
+                </div>
+            ) : null}
             <div className="flex flex-wrap items-center gap-2">
                 <h3 className="flex-1 text-sm font-semibold">
                     {text('dbml.title')}

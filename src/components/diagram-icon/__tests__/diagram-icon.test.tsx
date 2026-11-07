@@ -34,4 +34,14 @@ describe('DiagramIcon', () => {
         // the click, and the two keys that act as one
         expect(onClick).toHaveBeenCalledTimes(3);
     });
+
+    it('draws a database drum on the colour of the database, not letters', () => {
+        show();
+        const src = decodeURIComponent(
+            screen.getByRole('img').getAttribute('src') ?? ''
+        );
+        expect(src).toContain('#336791');
+        expect(src).toContain('<ellipse');
+        expect(src).not.toContain('<text');
+    });
 });

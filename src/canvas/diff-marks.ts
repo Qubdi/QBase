@@ -16,6 +16,8 @@ export interface DiffMarks {
     design: Design;
     tables: Readonly<Record<Id, DiffMark>>;
     links: Readonly<Record<Id, DiffMark>>;
+    /** old names of renamed tables, by table id: drawn struck through, an arrow, then the new name */
+    renames?: Readonly<Record<Id, string>>;
 }
 
 /**

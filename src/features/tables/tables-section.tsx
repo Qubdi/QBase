@@ -63,7 +63,10 @@ export const TablesSection: React.FC = () => {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => add('view')}>
+                        <DropdownMenuItem
+                            onSelect={() => add('view')}
+                            {...newItemDragProps('view')}
+                        >
                             {text('tables.addView')}
                         </DropdownMenuItem>
                     </DropdownMenuContent>

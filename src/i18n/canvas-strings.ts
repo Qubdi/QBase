@@ -15,6 +15,8 @@ export const canvas = {
         arrange: 'Auto Arrange Diagram',
         undo: 'Undo ({{shortcut}})',
         redo: 'Redo ({{shortcut}})',
+        fullScreen: 'Full Screen',
+        exitFullScreen: 'Exit Full Screen',
     },
     showAllPill: 'Show All',
     hiddenAll: {

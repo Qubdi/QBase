@@ -22,6 +22,7 @@ export const CHROME_CSS = `
 @media (max-width: 767px) {
   .qb-toolbar { bottom:auto; top:calc(var(--canvas-inset-top,0px) + 56px); }
   .qb-pill { bottom:auto; top:calc(var(--canvas-inset-top,0px) + 104px); }
+  .qb-minimap, .qb-minimap svg { height:60px !important; }
 }`;
 
 export function ChromeStyle() {

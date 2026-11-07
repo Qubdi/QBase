@@ -74,3 +74,24 @@ describe('EDT-242 EDT-243 diff marks on the canvas', () => {
         expect(store.getState().design).toBe(s.design);
     });
 });
+
+describe('EDT-242 a renamed table', () => {
+    it('shows the old name struck through, an arrow, then the new name', async () => {
+        const s = shop();
+        const diff: DiffMarks = {
+            design: s.design,
+            tables: { [s.users]: 'changed' },
+            links: {},
+            renames: { [s.users]: 'old_users' },
+        };
+        renderCanvas(s.design, { canvas: { hooks: { diff } } });
+        const old = await screen.findByTestId(`renamed-from-${s.users}`);
+        expect(old.tagName).toBe('S');
+        expect(old.textContent).toBe('old_users');
+        const name = old.closest('[data-diff-name]')!;
+        expect(name.textContent).toBe(
+            `old_users${s.design.entities.byId[s.users].name}`
+        );
+        expect(screen.queryByTestId(`renamed-from-${s.orders}`)).toBeNull();
+    });
+});

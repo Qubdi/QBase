@@ -17,8 +17,9 @@ export interface TablePair {
 
 /**
  * What would change if the parsed design replaced the current one, at summary
- * level (EDT-241). Tables are matched by schema and name; a renamed table is
- * therefore one removed and one added table.
+ * level (EDT-241). Tables are matched by schema and name. A removed and an added
+ * table in the same schema whose fields, indexes and checks are identical, and
+ * that have no other twin, are one renamed table (EDT-242).
  */
 export interface DesignDiff {
     tables: {
@@ -26,8 +27,11 @@ export interface DesignDiff {
         added: Id[];
         /** ids in the current design */
         removed: Id[];
+        /** includes the renamed tables */
         changed: TablePair[];
         same: TablePair[];
+        /** tables that kept everything but the name (also listed in `changed`) */
+        renamed: TablePair[];
     };
     links: {
         /** ids in the parsed design */
@@ -88,16 +92,21 @@ function tableSignature(design: Design, entity: Entity): string {
     ]);
 }
 
-function linkSignature(design: Design, link: Link): string | undefined {
+function linkSignature(
+    design: Design,
+    link: Link,
+    /** table keys of this side that are really another table under a new name */
+    renamed: ReadonlyMap<string, string> = new Map()
+): string | undefined {
     const from = design.entities.byId[link.sourceEntityId];
     const to = design.entities.byId[link.targetEntityId];
     const a = design.columns[link.sourceColumnId];
     const b = design.columns[link.targetColumnId];
     if (!from || !to || !a || !b) return undefined;
     return JSON.stringify([
-        tableKey(design, from),
+        renamed.get(tableKey(design, from)) ?? tableKey(design, from),
         a.name,
-        tableKey(design, to),
+        renamed.get(tableKey(design, to)) ?? tableKey(design, to),
         b.name,
         link.sourceCardinality,
         link.targetCardinality,
@@ -110,7 +119,7 @@ const typeSignature = (t: UserType) =>
 /** Compares the current design with the one parsed from edited DBML. */
 export function diffDesigns(current: Design, parsed: Design): DesignDiff {
     const diff: DesignDiff = {
-        tables: { added: [], removed: [], changed: [], same: [] },
+        tables: { added: [], removed: [], changed: [], same: [], renamed: [] },
         links: { added: [], removed: [] },
         types: { added: [], removed: [], changed: [] },
         empty: true,
@@ -134,8 +143,45 @@ export function diffDesigns(current: Design, parsed: Design): DesignDiff {
             diff.tables.same.push(pair);
         else diff.tables.changed.push(pair);
     }
+    // a table with no fields is not written as DBML, so its absence from the
+    // text is not a removal
     for (const [key, old] of now)
-        if (!seen.has(key)) diff.tables.removed.push(old.id);
+        if (!seen.has(key) && old.columnIds.length > 0)
+            diff.tables.removed.push(old.id);
+
+    // a rename: one removed and one added table that match on everything but the name
+    const schemaOf = (design: Design, e: Entity) =>
+        tableKey(design, e).split('\u0000')[0];
+    const shape = (design: Design, e: Entity) =>
+        `${schemaOf(design, e)}\u0001${tableSignature(design, e)}`;
+    const lost = new Map<string, Id[]>();
+    for (const id of diff.tables.removed) {
+        const key = shape(current, current.entities.byId[id]);
+        lost.set(key, [...(lost.get(key) ?? []), id]);
+    }
+    const gained = new Map<string, Id[]>();
+    for (const id of diff.tables.added) {
+        const key = shape(parsed, parsed.entities.byId[id]);
+        gained.set(key, [...(gained.get(key) ?? []), id]);
+    }
+    const newKeyToOld = new Map<string, string>();
+    for (const [key, olds] of lost) {
+        const news = gained.get(key);
+        if (olds.length !== 1 || news?.length !== 1) continue;
+        const pair = { current: olds[0], parsed: news[0] };
+        diff.tables.renamed.push(pair);
+        diff.tables.changed.push(pair);
+        newKeyToOld.set(
+            tableKey(parsed, parsed.entities.byId[pair.parsed]),
+            tableKey(current, current.entities.byId[pair.current])
+        );
+    }
+    const renamedOld = new Set(diff.tables.renamed.map((p) => p.current));
+    const renamedNew = new Set(diff.tables.renamed.map((p) => p.parsed));
+    diff.tables.removed = diff.tables.removed.filter(
+        (id) => !renamedOld.has(id)
+    );
+    diff.tables.added = diff.tables.added.filter((id) => !renamedNew.has(id));
 
     const before = new Map<string, Id>();
     for (const link of listOf(current.links)) {
@@ -144,7 +190,7 @@ export function diffDesigns(current: Design, parsed: Design): DesignDiff {
     }
     const kept = new Set<string>();
     for (const link of listOf(parsed.links)) {
-        const sig = linkSignature(parsed, link);
+        const sig = linkSignature(parsed, link, newKeyToOld);
         if (!sig) continue;
         if (before.has(sig)) kept.add(sig);
         else diff.links.added.push(link.id);

@@ -21,6 +21,8 @@ export interface Proposal {
     preview: Design;
     tables: Record<Id, Mark>;
     links: Record<Id, Mark>;
+    /** old names of renamed tables, by table id (EDT-242) */
+    renames: Record<Id, string>;
 }
 
 /** Space kept to the right of the existing tables and between new ones. */
@@ -107,9 +109,15 @@ export function buildProposal(
         entities.push(entity);
         take(parsed, next, records);
     }
-    // views are not part of DBML: they stay as they are
+    // views are not part of DBML, and neither is a table without fields: they
+    // stay as they are
+    const taken = new Set(idOf.values());
     for (const old of entityList(current)) {
-        if (old.kind !== 'view') continue;
+        if (
+            old.kind !== 'view' &&
+            (old.columnIds.length > 0 || taken.has(old.id))
+        )
+            continue;
         entities.push(old);
         take(current, old, records);
     }
@@ -190,8 +198,11 @@ export function buildProposal(
     for (const id of diff.tables.added) tables[id] = 'added';
     for (const id of diff.tables.removed) tables[id] = 'removed';
     for (const pair of diff.tables.changed) tables[pair.current] = 'changed';
+    const renames: Record<Id, string> = {};
+    for (const pair of diff.tables.renamed)
+        renames[pair.current] = current.entities.byId[pair.current].name;
     const marked: Record<Id, Mark> = {};
     for (const id of diff.links.added) marked[id] = 'added';
     for (const link of drawnRemoved) marked[link.id] = 'removed';
-    return { accepted, preview: drawn, tables, links: marked };
+    return { accepted, preview: drawn, tables, links: marked, renames };
 }

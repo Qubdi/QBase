@@ -1,6 +1,7 @@
 import React from 'react';
 import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 import { planAddRule } from '@/core/commands/plan-column';
+import { traitsOf } from '@/core/model/database';
 import type { Entity } from '@/core/model/entity';
 import { rulesOf } from '@/core/model/lookup';
 import { DebouncedTextarea } from '@/platform/panel/debounced-input';
@@ -11,15 +12,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/platform/ui/popover';
 
 /**
  * The check constraints of a table (EDT-147 to EDT-151). The expression is not
- * validated; it is shown for every database, as before (EDT-150 stays open for
- * the owner).
+ * validated. Where SQL export leaves checks out (`hasChecks` false) a table that
+ * has none does not show the section, and one that has some shows them with a
+ * warning and no Add button (EDT-150 change).
  */
 export const ChecksEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
     const { design, locked, edit } = useEditorEnv();
     const text = useText();
     const rules = rulesOf(design, entity);
+    const supported = traitsOf(design.databaseType).hasChecks;
     return (
         <div className="space-y-2">
+            {supported ? null : (
+                <p role="note" className="text-xs text-amber-600">
+                    {text('checks.unsupported')}
+                </p>
+            )}
             {rules.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                     {text('checks.none')}
@@ -83,7 +91,7 @@ export const ChecksEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
                     </Popover>
                 </div>
             ))}
-            {locked ? null : (
+            {locked || !supported ? null : (
                 <Button
                     type="button"
                     variant="outline"

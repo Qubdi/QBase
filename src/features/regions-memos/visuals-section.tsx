@@ -17,16 +17,40 @@ import {
 import { Input } from '@/platform/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/ui/tabs';
 import { newItemDragProps } from '@/canvas/drop-items';
+import { useHoldMenu } from '@/platform/panel/hold-menu';
 import { selectPanel } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { firstLine, listMemos, listRegions } from './visual-lists';
 import type { VisualsTab } from '@/store/editor-state';
 
+/** A list row with its actions menu; a touch hold on the row opens the menu (EDT-009). */
+const ActionRow: React.FC<{
+    testId: string;
+    label: string;
+    items: { label: string; onSelect: () => void }[] | null;
+    children: React.ReactNode;
+}> = ({ testId, label, items, children }) => {
+    const { menu, hold } = useHoldMenu(items !== null);
+    return (
+        <div
+            data-testid={testId}
+            className="flex items-center gap-1 rounded-md border p-1"
+            {...hold}
+        >
+            {children}
+            {items ? (
+                <ActionsMenu label={label} items={items} menu={menu} />
+            ) : null}
+        </div>
+    );
+};
+
 const ActionsMenu: React.FC<{
     label: string;
     items: { label: string; onSelect: () => void }[];
-}> = ({ label, items }) => (
-    <DropdownMenu>
+    menu: { open: boolean; onOpenChange: (open: boolean) => void };
+}> = ({ label, items, menu }) => (
+    <DropdownMenu {...menu}>
         <DropdownMenuTrigger asChild>
             <Button
                 type="button"
@@ -103,10 +127,25 @@ const AreasList: React.FC = () => {
                 <Notice title={text('visuals.noAreasMatch')} />
             ) : (
                 regions.map((region) => (
-                    <div
+                    <ActionRow
                         key={region.id}
-                        data-testid="area-row"
-                        className="flex items-center gap-1 rounded-md border p-1"
+                        testId="area-row"
+                        label={text('visuals.areaActions')}
+                        items={
+                            locked
+                                ? null
+                                : [
+                                      {
+                                          label: text('visuals.deleteArea'),
+                                          onSelect: () =>
+                                              edit({
+                                                  type: 'item.remove',
+                                                  collection: 'regions',
+                                                  id: region.id,
+                                              }),
+                                      },
+                                  ]
+                        }
                     >
                         <InlineName
                             value={region.label}
@@ -144,23 +183,7 @@ const AreasList: React.FC = () => {
                         >
                             <Crosshair />
                         </Button>
-                        {locked ? null : (
-                            <ActionsMenu
-                                label={text('visuals.areaActions')}
-                                items={[
-                                    {
-                                        label: text('visuals.deleteArea'),
-                                        onSelect: () =>
-                                            edit({
-                                                type: 'item.remove',
-                                                collection: 'regions',
-                                                id: region.id,
-                                            }),
-                                    },
-                                ]}
-                            />
-                        )}
-                    </div>
+                    </ActionRow>
                 ))
             )}
         </div>
@@ -194,10 +217,25 @@ const NotesList: React.FC = () => {
                 memos.map((memo) => {
                     const line = firstLine(memo.body);
                     return (
-                        <div
+                        <ActionRow
                             key={memo.id}
-                            data-testid="note-row"
-                            className="flex items-center gap-1 rounded-md border p-1"
+                            testId="note-row"
+                            label={text('visuals.noteActions')}
+                            items={
+                                locked
+                                    ? null
+                                    : [
+                                          {
+                                              label: text('visuals.deleteNote'),
+                                              onSelect: () =>
+                                                  edit({
+                                                      type: 'item.remove',
+                                                      collection: 'memos',
+                                                      id: memo.id,
+                                                  }),
+                                          },
+                                      ]
+                            }
                         >
                             <span
                                 className={
@@ -230,23 +268,7 @@ const NotesList: React.FC = () => {
                             >
                                 <Crosshair />
                             </Button>
-                            {locked ? null : (
-                                <ActionsMenu
-                                    label={text('visuals.noteActions')}
-                                    items={[
-                                        {
-                                            label: text('visuals.deleteNote'),
-                                            onSelect: () =>
-                                                edit({
-                                                    type: 'item.remove',
-                                                    collection: 'memos',
-                                                    id: memo.id,
-                                                }),
-                                        },
-                                    ]}
-                                />
-                            )}
-                        </div>
+                        </ActionRow>
                     );
                 })
             )}

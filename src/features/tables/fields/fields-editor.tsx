@@ -9,12 +9,13 @@ import {
 import { isSerialType } from '@/core/commands/settle-column';
 import { listOf } from '@/core/model/collection';
 import type { Entity } from '@/core/model/entity';
-import { columnsOf } from '@/core/model/lookup';
+import { columnsOf, linksOfColumn } from '@/core/model/lookup';
 import { cn } from '@/lib/utils/utils';
 import { DebouncedInput } from '@/platform/panel/debounced-input';
 import { SortableList, SortableRow } from '@/platform/panel/sortable-list';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
+import { toast } from '@/platform/toast/use-toast';
 import { Button } from '@/platform/ui/button';
 import { AttributesPopover } from './attributes-popover';
 import { planPickType, reorderedIds } from './field-rules';
@@ -158,9 +159,21 @@ export const FieldsEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
                                 onChange={(patch) => update(column.id, patch)}
                                 onDelete={() => {
                                     setPopoverFor(undefined);
+                                    // relationships on the field go with it (EDT-139)
+                                    const lost = linksOfColumn(
+                                        design,
+                                        entity.id,
+                                        column.id
+                                    ).length;
                                     edit(
                                         planDeleteColumn(entity.id, column.id)
                                     );
+                                    if (lost > 0)
+                                        toast({
+                                            title: text('fields.linksRemoved', {
+                                                count: lost,
+                                            }),
+                                        });
                                 }}
                             />
                         </div>

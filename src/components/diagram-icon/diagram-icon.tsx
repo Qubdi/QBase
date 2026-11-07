@@ -6,27 +6,30 @@ import {
     type DatabaseType,
 } from '@/qbase/diagram-types';
 
-/** A colour and a short mark for each database, drawn as a small picture. */
-const LOOKS: Record<string, { colour: string; mark: string }> = {
-    postgresql: { colour: '#336791', mark: 'Pg' },
-    mysql: { colour: '#00758f', mark: 'My' },
-    sql_server: { colour: '#a91d22', mark: 'Ms' },
-    mariadb: { colour: '#003545', mark: 'Mr' },
-    sqlite: { colour: '#0f80cc', mark: 'Sq' },
-    clickhouse: { colour: '#c28a00', mark: 'Ch' },
-    cockroachdb: { colour: '#6933ff', mark: 'Cr' },
-    oracle: { colour: '#c74634', mark: 'Or' },
-    generic: { colour: '#64748b', mark: 'Db' },
+/** The colour of each database's tile. */
+const COLOURS: Record<string, string> = {
+    postgresql: '#336791',
+    mysql: '#00758f',
+    sql_server: '#a91d22',
+    mariadb: '#003545',
+    sqlite: '#0f80cc',
+    clickhouse: '#c28a00',
+    cockroachdb: '#6933ff',
+    oracle: '#c74634',
+    generic: '#64748b',
 };
 
-/** The picture of a database as a data address; unknown databases get the generic one. */
+/** The picture of a database as a data address: a database drum on its colour. */
 function databaseIconSrc(type: string | null | undefined): string {
-    const { colour, mark } = LOOKS[type ?? ''] ?? LOOKS.generic;
+    const colour = COLOURS[type ?? ''] ?? COLOURS.generic;
     const svg =
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">` +
         `<rect width="32" height="32" rx="7" fill="${colour}"/>` +
-        `<text x="16" y="21" font-family="sans-serif" font-size="14" font-weight="700" ` +
-        `text-anchor="middle" fill="#fff">${mark}</text></svg>`;
+        `<g transform="translate(4 4)" fill="none" stroke="#fff" stroke-width="2" ` +
+        `stroke-linecap="round" stroke-linejoin="round">` +
+        `<ellipse cx="12" cy="5" rx="9" ry="3"/>` +
+        `<path d="M3 5v14a9 3 0 0 0 18 0V5"/>` +
+        `<path d="M3 12a9 3 0 0 0 18 0"/></g></svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 

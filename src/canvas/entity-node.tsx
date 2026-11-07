@@ -2,6 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 import { NodeResizeControl, ResizeControlVariant } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import {
+    ArrowRight,
     ChevronDown,
     ChevronUp,
     Minus,
@@ -166,6 +167,20 @@ export const EntityCard = memo(function EntityCard({
                         )}
                         data-diff-name={data.mark}
                     >
+                        {data.renamedFrom !== undefined ? (
+                            <>
+                                <s
+                                    data-testid={`renamed-from-${id}`}
+                                    className="font-normal text-red-600 opacity-80"
+                                >
+                                    {data.renamedFrom}
+                                </s>
+                                <ArrowRight
+                                    aria-hidden
+                                    className="mx-1 inline h-3 w-3"
+                                />
+                            </>
+                        ) : null}
                         {entity.name}
                     </div>
                     {subtitle.length > 0 ? (

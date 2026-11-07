@@ -144,8 +144,8 @@ owner signs off).
 | EDT-005 | Layout | The panel is visible when the editor first opens on desktop | keep: discoverability | [ ] | |
 | EDT-006 | Layout | On a narrow window the side panel becomes a bottom drawer titled Manage Diagram, opened by a round pencil button at the bottom-left of the canvas | keep: needed for phones | [ ] | |
 | EDT-007 | Layout | In the drawer a drop-down picks the section (Tables, Refs, Areas, Visuals, Custom Types where supported) | keep: needed for phones | [ ] | |
-| EDT-008 | Layout | On a narrow window the toolbar moves to the top-centre and the minimap shrinks to 60 px | keep: avoids overlap with the drawer button | [ ] | |
-| EDT-009 | Layout | On a narrow window right-click menus are not available | change: offer long-press menus on touch | [ ] | |
+| EDT-008 | Layout | On a narrow window the toolbar moves to the top-centre and the minimap shrinks to 60 px | keep: avoids overlap with the drawer button | [x] | tests: `phone.test.tsx`, `fullscreen.test.tsx` (minimap 60 px under 768 px) |
+| EDT-009 | Layout | On a narrow window right-click menus are not available | change: offer long-press menus on touch | [x] | tests: `menus.test.tsx` (canvas), `hold-menu.test.tsx` (side panel rows: a hold opens the row's actions menu) |
 | EDT-010 | Layout | Focusing an item from the panel on mobile closes the drawer | keep: otherwise the item is hidden | [ ] | |
 | EDT-011 | Layout | While loading, a spinner shows and then a Loading diagram badge until tables are drawn | keep: feedback | [ ] | |
 | EDT-012 | Layout | After first load the view fits all tables with a zoom cap of 80% | keep: good first view | [ ] | |
@@ -184,7 +184,7 @@ owner signs off).
 | EDT-045 | Canvas: toolbar and chrome | A Type colours legend at the top-right (desktop only) explains the six field-type tints | drop: low value; replace by tooltips | [ ] | |
 | EDT-046 | Canvas: toolbar and chrome | Field-type chips are tinted by kind: text, number, date and time, identifier, boolean, JSON/XML | keep: quick scanning | [ ] | |
 | EDT-047 | Canvas: toolbar and chrome | A credit mark sits at the bottom-right | change: keep only if the product owner wants branding | [ ] | |
-| EDT-048 | Canvas: toolbar and chrome | There is no full-screen mode; the browser's own works | change: owner to decide (open question 1) | [ ] | |
+| EDT-048 | Canvas: toolbar and chrome | There is no full-screen mode; the browser's own works | change: owner to decide (open question 1) | [x] | tests: `fullscreen.test.tsx`; decision in `decisions-phase6f.md` (owner to confirm) |
 | EDT-049 | Canvas: toolbar and chrome | A yellow highlighter button appears while a custom type is highlighted; clicking clears it | keep: needed to clear highlight | [ ] | |
 | EDT-050 | Auto Arrange | Auto Arrange asks for confirmation with title Auto Arrange Diagram and buttons Auto Arrange and Cancel | keep: destructive layout change | [ ] | |
 | EDT-051 | Auto Arrange | Confirming lays out the visible tables so related ones are near each other and unrelated ones form a grid | keep: core | [ ] | |
@@ -273,9 +273,9 @@ owner signs off).
 | EDT-134 | Fields | Setting a field as PK makes it not null and, if first PK, unique; a table may have several PKs | keep: composite keys | [ ] | |
 | EDT-135 | Fields | A PK that is also nullable in old data is silently corrected to not null | keep: data repair | [ ] | |
 | EDT-136 | Fields | Fields are re-ordered by dragging in the side panel and the canvas follows | keep: core | [ ] | |
-| EDT-137 | Fields | Fields cannot be re-ordered from the canvas edit card | change: add reordering to the edit card | [ ] | |
+| EDT-137 | Fields | Fields cannot be re-ordered from the canvas edit card | change: add reordering to the edit card | [x] | tests: `workspace/__tests__/entity-editor.test.tsx` (same form as the side panel, handles present) |
 | EDT-138 | Fields | Deleting a field has no confirmation and is undoable | keep: undoable | [ ] | |
-| EDT-139 | Fields | Deleting a field used in a relationship leaves the relationship dangling | change: remove or warn (open question 6) | [ ] | |
+| EDT-139 | Fields | Deleting a field used in a relationship leaves the relationship dangling | change: remove or warn (open question 6) | [x] | tests: `table-editor.test.tsx` (links removed with the field, toast, undo restores); owner to confirm |
 | EDT-140 | Indexes | Indexes are listed in an accordion under the table (not for views) with an Add Index button | keep: core | [ ] | |
 | EDT-141 | Indexes | A new index is index_N with no fields, not unique, default type (btree on PostgreSQL/CockroachDB) | keep: core | [ ] | |
 | EDT-142 | Indexes | Each index row has a field multi-select (Select fields), a Unique toggle and an Index Attributes popover (Name, Unique, Index Type, description, Delete Index) | keep: core | [ ] | |
@@ -286,7 +286,7 @@ owner signs off).
 | EDT-147 | Check constraints | Check Constraints accordion appears under a table (not for views) with an Add Check button | keep: core | [ ] | |
 | EDT-148 | Check constraints | A new check has an empty Expression text area (placeholder e.g., price > 0) and a popover with Delete Check Constraint | keep: core | [ ] | |
 | EDT-149 | Check constraints | Check expressions are not validated by the editor | keep: SQL rules differ by dialect | [ ] | |
-| EDT-150 | Check constraints | Check constraints are shown for every database even where export ignores them | change: hide or warn where unsupported (open question 15) | [ ] | |
+| EDT-150 | Check constraints | Check constraints are shown for every database even where export ignores them | change: hide or warn where unsupported (open question 15) | [x] | tests: `table-editor.test.tsx` (hidden or warned where export writes no checks); owner to confirm |
 | EDT-151 | Check constraints | Check add, edit and delete are undoable | keep: consistent | [ ] | |
 | EDT-152 | Relationships: create | Hovering a field shows connection dots at its left and right in an editable diagram | keep: core | [ ] | |
 | EDT-153 | Relationships: create | Dragging from one field's dot to another table's field dot creates a relationship, first field as source | keep: core | [ ] | |
@@ -378,7 +378,7 @@ owner signs off).
 | EDT-239 | DBML preview and diff | Edit makes the DBML editable; after 1 s of no typing the DBML is parsed | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
 | EDT-240 | DBML preview and diff | A DBML syntax error marks the line and shows Failed to parse DBML... (1 error found - in line N) | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
 | EDT-241 | DBML preview and diff | A valid edit shows a summary diff on the canvas without changing the diagram | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
-| EDT-242 | DBML preview and diff | New tables get a green + badge and name; removed tables red; changed tables blue; renames show old then new | keep: core | [ ] | added/removed/changed badge, tooltips, name colour tested (`diff-marks.test.tsx`); renames show as removed + added, no old-to-new name |
+| EDT-242 | DBML preview and diff | New tables get a green + badge and name; removed tables red; changed tables blue; renames show old then new | keep: core | [x] | tests: `diff-marks.test.tsx`, `dbml-diff.test.ts` (rename detected, old name struck through, arrow, new name) |
 | EDT-243 | DBML preview and diff | New and removed relationships are drawn green or red and thicker in a diff | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
 | EDT-244 | DBML preview and diff | While a diff exists Accept Changes (green) and Undo Changes (red) appear; with no diff the button is View | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
 | EDT-245 | DBML preview and diff | Accept Changes replaces tables, relationships and custom types, keeps areas and notes, and is one undo step | keep: core | [x] | tests: `dbml-section.test.tsx`, `dbml-diff.test.ts`, `diff-marks.test.tsx` |
@@ -417,7 +417,7 @@ owner signs off).
 | EDT-278 | Errors and empty states | Per-database: each database offers its own type list with common types first | keep: core | [ ] | |
 | IMP-001 | Dialects | Diagrams can be Generic, PostgreSQL, MySQL, SQL Server, MariaDB, SQLite, CockroachDB (and Oracle, ClickHouse for old files) | keep PG, MySQL, MSSQL, SQLite, MariaDB, Cockroach, Generic; drop Oracle and ClickHouse import/export (rarely used, hand written) | [ ] | |
 | IMP-002 | Dialects | MariaDB imports and exports through the MySQL code; CockroachDB through the PostgreSQL code | keep, nearly free | [ ] | |
-| IMP-003 | Editions | Edition picker (Supabase, Timescale, MySQL 5.7, SQL Server 2016, Cloudflare D1 with Wrangler) changes the offered metadata script | keep only if the metadata script flow is kept (Q2) | [ ] | |
+| IMP-003 | Editions | Edition picker (Supabase, Timescale, MySQL 5.7, SQL Server 2016, Cloudflare D1 with Wrangler) changes the offered metadata script | keep only if the metadata script flow is kept (Q2) | [~] | scripts per edition chosen by `metadataScriptFor(type, edition)`; tests: `server-scripts.test.ts`, `metadata-scripts.test.ts` (D1 run on real SQLite); Supabase, Timescale, 5.7 and 2016 queries not run on a live server; no Wrangler command variant |
 | IMP-004 | New diagram | Step 1 choose a database type (default Generic) or create an empty diagram | keep | [ ] | |
 | IMP-005 | New diagram | Import box has three tabs: Smart Query (default), DDL, DBML | keep | [ ] | |
 | IMP-006 | New diagram | Pasting text switches to the tab that fits (DBML, DDL, or JSON) and pretty prints JSON under 2 MB | keep, small and helpful | [ ] | |
@@ -470,10 +470,10 @@ owner signs off).
 | IMP-053 | DBML import | Accented letters are replaced by plain letters before parsing | change: stop doing it (Q9) | [ ] | |
 | IMP-054 | DBML import | Default values lose their quotes (e.g. 'abc' stored as abc) | change: keep the quotes | [ ] | |
 | IMP-055 | DBML import | DBML tables are placed on a simple grid without the layout pass | change: run the same layout as SQL import | [ ] | |
-| IMP-056 | Metadata JSON | User gets a script per dialect and edition to run in their own client, then pastes one JSON cell | keep for the four main dialects (Q2) | [ ] | |
+| IMP-056 | Metadata JSON | User gets a script per dialect and edition to run in their own client, then pastes one JSON cell | keep for the four main dialects (Q2) | [~] | queries for PostgreSQL, CockroachDB, MySQL, MariaDB, SQL Server, SQLite in `src/features/import/scripts` and `metadata-scripts.ts`; tests: `server-scripts.test.ts` (token checks, hand-written results import); only SQLite was run on a real database; no psql variant |
 | IMP-057 | Metadata JSON | Pasted text is checked; 'Check JSON' repairs terminal decoration, CSV doubling, wrapper object, escaped quotes (two tries) | keep | [ ] | |
 | IMP-058 | Metadata JSON | SSMS truncation at 65 535 characters opens an information dialog | keep if SQL Server scripts are kept | [ ] | |
-| IMP-059 | Metadata JSON | JSON contract: tables, views (base64 definition), columns, pk_info, fk_info, indexes, check_constraints, custom_types, database_name, version | keep, it is shared with the server | [ ] | |
+| IMP-059 | Metadata JSON | JSON contract: tables, views (base64 definition), columns, pk_info, fk_info, indexes, check_constraints, custom_types, database_name, version | keep, it is shared with the server | [~] | each query lists every contract key; hand-written PostgreSQL, MySQL/MariaDB and SQL Server results import to the expected tables, columns, keys, links, checks, enums, UTF-16 views; tests: `server-scripts.test.ts` |
 | IMP-060 | Metadata JSON | Columns ordered by ordinal position; duplicate column names collapsed | keep | [ ] | |
 | IMP-061 | Metadata JSON | Indexes aggregated per name with column order; an index equal to the primary key becomes the primary key index | keep | [ ] | |
 | IMP-062 | Metadata JSON | Views become view tables; 'materialized' in the definition marks a materialized view; view dependencies found by parsing the definition | keep | [ ] | |

@@ -16,6 +16,7 @@ import { traitsOf } from '@/core/model/database';
 import type { Entity } from '@/core/model/entity';
 import { cn } from '@/lib/utils/utils';
 import { InlineName } from '@/platform/panel/inline-name';
+import { useHoldMenu } from '@/platform/panel/hold-menu';
 import { useFocus } from '@/platform/panel/panel-context';
 import { SortableRow } from '@/platform/panel/sortable-list';
 import { useEditorEnv } from '@/platform/panel/use-editor';
@@ -44,6 +45,7 @@ export const TableRow: React.FC<{
     const focus = useFocus();
     const [changing, setChanging] = useState(false);
     const root = useRef<HTMLDivElement>(null);
+    const { menu, hold } = useHoldMenu();
     const view = entity.kind === 'view';
     const hasSchemas = traitsOf(design.databaseType).hasSchemas;
 
@@ -108,82 +110,89 @@ export const TableRow: React.FC<{
 
     return (
         <div ref={root} className="rounded-md border" data-testid="table-row">
-            <SortableRow
-                id={entity.id}
-                disabled={!sortable || locked}
-                handleLabel={text('common.dragHandle')}
-                className="p-1"
-            >
-                {header}
-                <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="size-7 shrink-0"
-                    aria-label={text('common.focus')}
-                    onClick={() => focus(entity.id)}
+            <div {...hold}>
+                <SortableRow
+                    id={entity.id}
+                    disabled={!sortable || locked}
+                    handleLabel={text('common.dragHandle')}
+                    className="p-1"
                 >
-                    <Crosshair />
-                </Button>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className="size-7 shrink-0"
-                            aria-label={text('tables.actions')}
-                        >
-                            <MoreHorizontal />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {hasSchemas && !locked ? (
-                            <DropdownMenuItem
-                                onSelect={() => setChanging(true)}
+                    {header}
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-7 shrink-0"
+                        aria-label={text('common.focus')}
+                        onClick={() => focus(entity.id)}
+                    >
+                        <Crosshair />
+                    </Button>
+                    <DropdownMenu {...menu}>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="size-7 shrink-0"
+                                aria-label={text('tables.actions')}
                             >
-                                {text('tables.changeSchema')}
-                            </DropdownMenuItem>
-                        ) : null}
-                        {locked ? null : (
-                            <DropdownMenuItem
-                                onSelect={() =>
-                                    edit(planAddColumn(design, entity.id))
-                                }
-                            >
-                                {text('tables.addField')}
-                            </DropdownMenuItem>
-                        )}
-                        {locked || view ? null : (
-                            <DropdownMenuItem
-                                onSelect={() =>
-                                    edit(planAddKey(design, entity.id))
-                                }
-                            >
-                                {text('tables.addIndex')}
-                            </DropdownMenuItem>
-                        )}
-                        {locked ? null : (
-                            <DropdownMenuItem
-                                onSelect={() =>
-                                    edit(planDuplicateEntity(design, entity.id))
-                                }
-                            >
-                                {text('tables.duplicate')}
-                            </DropdownMenuItem>
-                        )}
-                        {locked ? null : (
-                            <DropdownMenuItem
-                                onSelect={() =>
-                                    edit(planDeleteEntities([entity.id]))
-                                }
-                            >
-                                {text('tables.delete')}
-                            </DropdownMenuItem>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </SortableRow>
+                                <MoreHorizontal />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {hasSchemas && !locked ? (
+                                <DropdownMenuItem
+                                    onSelect={() => setChanging(true)}
+                                >
+                                    {text('tables.changeSchema')}
+                                </DropdownMenuItem>
+                            ) : null}
+                            {locked ? null : (
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        edit(planAddColumn(design, entity.id))
+                                    }
+                                >
+                                    {text('tables.addField')}
+                                </DropdownMenuItem>
+                            )}
+                            {locked || view ? null : (
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        edit(planAddKey(design, entity.id))
+                                    }
+                                >
+                                    {text('tables.addIndex')}
+                                </DropdownMenuItem>
+                            )}
+                            {locked ? null : (
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        edit(
+                                            planDuplicateEntity(
+                                                design,
+                                                entity.id
+                                            )
+                                        )
+                                    }
+                                >
+                                    {text('tables.duplicate')}
+                                </DropdownMenuItem>
+                            )}
+                            {locked ? null : (
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        edit(planDeleteEntities([entity.id]))
+                                    }
+                                >
+                                    {text('tables.delete')}
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </SortableRow>
+            </div>
             {open ? (
                 <div className="border-t p-2">
                     <EntityForm entity={entity} />

@@ -9,6 +9,8 @@ import {
 import { exportDbml } from '@/formats/dbml/export-dbml';
 import { importDbml } from '@/formats/dbml/import-dbml';
 import { apply } from '@/core/commands/apply';
+import { createEntityParts } from '@/core/model/defaults';
+import { NOW, rng } from '@/core/testing/helpers';
 import { buildProposal } from './build-proposal';
 import { diffDesigns } from './diff-designs';
 
@@ -68,7 +70,7 @@ describe('EDT-241 diffDesigns', () => {
         expect(diff.links.added).toEqual([]);
     });
 
-    it('a changed field makes the table changed; a rename is removed plus added', () => {
+    it('a changed field makes the table changed; a rename is one renamed table', () => {
         const changed = edited(s1, (t) =>
             t.replace('"email" varchar(120)', '"email" varchar(200)')
         );
@@ -80,12 +82,28 @@ describe('EDT-241 diffDesigns', () => {
             t.replace(/"customers"/g, '"clients"')
         );
         const again = diffDesigns(s1, renamed);
-        expect(again.tables.removed.map((id) => nameOf(s1, id))).toEqual([
-            'customers',
-        ]);
-        expect(again.tables.added.map((id) => nameOf(renamed, id))).toEqual([
-            'clients',
-        ]);
+        expect(again.tables.removed).toEqual([]);
+        expect(again.tables.added).toEqual([]);
+        expect(
+            again.tables.renamed.map((p) => [
+                nameOf(s1, p.current),
+                nameOf(renamed, p.parsed),
+            ])
+        ).toEqual([['customers', 'clients']]);
+        expect(again.tables.changed).toHaveLength(1);
+        // the lines to it follow the new name
+        expect(again.links.added).toEqual([]);
+        expect(again.links.removed).toEqual([]);
+        // a rename together with a changed field is not a rename
+        const both = edited(s1, (t) =>
+            t
+                .replace(/"customers"/g, '"clients"')
+                .replace('"email" varchar(120)', '"email" varchar(200)')
+        );
+        const split = diffDesigns(s1, both);
+        expect(split.tables.renamed).toEqual([]);
+        expect(split.tables.removed).toHaveLength(1);
+        expect(split.tables.added).toHaveLength(1);
     });
 
     it('a dropped Ref line is a removed link', () => {
@@ -181,5 +199,61 @@ describe('EDT-245 buildProposal', () => {
             ...s1,
             updatedAt: 0,
         });
+    });
+});
+
+describe('EDT-242 a renamed table keeps its place and says so', () => {
+    it('keeps id and position, and gives the old name for the canvas', () => {
+        const renamed = edited(s1, (t) =>
+            t.replace(/"customers"/g, '"clients"')
+        );
+        const p = buildProposal(s1, renamed, diffDesigns(s1, renamed));
+        const old = listOf(s1.entities).find((e) => e.name === 'customers')!;
+        expect(p.accepted.entities.byId[old.id]).toMatchObject({
+            name: 'clients',
+            x: old.x,
+            y: old.y,
+        });
+        expect(p.tables[old.id]).toBe('changed');
+        expect(p.renames).toEqual({ [old.id]: 'customers' });
+        // the line to it is neither added nor removed
+        expect(p.links).toEqual({});
+        expect(p.accepted.links.order).toHaveLength(1);
+    });
+});
+
+describe('a table without fields survives an accepted DBML edit', () => {
+    it('is not removed and keeps its place', () => {
+        const parts = createEntityParts(s1, {
+            name: 'bare',
+            x: 5,
+            y: 7,
+            now: NOW,
+            random: rng(987654),
+        });
+        const added = apply(s1, { type: 'entity.insert', parts });
+        if (!added.ok) throw new Error(added.message);
+        const empty = apply(added.design, {
+            type: 'part.remove',
+            entityId: parts.entity.id,
+            part: 'columns',
+            id: parts.entity.columnIds[0],
+        });
+        if (!empty.ok) throw new Error(empty.message);
+        const base = empty.design;
+        expect(base.entities.byId[parts.entity.id].columnIds).toHaveLength(0);
+        const text = exportDbml(base).text.replace('integer', 'bigint');
+        const parsed = importDbml(text, base.databaseType).design!;
+        const diff = diffDesigns(base, parsed);
+        expect(diff.tables.removed).not.toContain(parts.entity.id);
+        const p = buildProposal(base, parsed, diff);
+        expect(p.accepted.entities.byId[parts.entity.id]).toMatchObject({
+            name: 'bare',
+            x: 5,
+            y: 7,
+        });
+        // unedited text: nothing to do
+        const same = importDbml(exportDbml(base).text, base.databaseType);
+        expect(diffDesigns(base, same.design!).empty).toBe(true);
     });
 });

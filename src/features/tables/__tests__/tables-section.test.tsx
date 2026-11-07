@@ -281,6 +281,21 @@ describe('dragging Add table onto the canvas', () => {
         expect(names(store)).toEqual(['table_1']);
     });
 
+    it('the Add view entry of the menu is a drag source for a view', async () => {
+        const { store } = renderPanel(<TablesSection />, withTables([]), {
+            showViews: true,
+        });
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'More ways to add' })[0]
+        );
+        const entry = await screen.findByRole('menuitem', { name: 'Add view' });
+        const setData = vi.fn();
+        expect(entry.getAttribute('draggable')).toBe('true');
+        fireEvent.dragStart(entry, { dataTransfer: { setData } });
+        expect(setData).toHaveBeenCalledWith(NEW_ITEM_TYPE, 'view');
+        expect(names(store)).toEqual([]);
+    });
+
     it('has no drag source in a read-only diagram', () => {
         renderPanel(<TablesSection />, withTables([]), { readonly: true });
         expect(screen.queryByRole('button', { name: 'Add table' })).toBeNull();
