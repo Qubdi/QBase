@@ -40,14 +40,14 @@ describe('import box: which method a paste belongs to (IMP-006)', () => {
 
 describe('import box: reading the text (IMP-007, IMP-009 to IMP-012, IMP-015)', () => {
     const options = { databaseType: 'postgresql' as const };
-    it('empty text says nothing and blocks nothing', () => {
-        const a = analyzeImport('   ', { ...options, method: 'sql' });
+    it('empty text says nothing and blocks nothing', async () => {
+        const a = await analyzeImport('   ', { ...options, method: 'sql' });
         expect(a.diagnostics).toEqual([]);
         expect(a.blocked).toBe(false);
         expect(a.design).toBeUndefined();
     });
-    it('SQL gives a design with counts', () => {
-        const a = analyzeImport(
+    it('SQL gives a design with counts', async () => {
+        const a = await analyzeImport(
             'CREATE TABLE a (id int primary key);\nCREATE TABLE b (id int primary key, a_id int references a(id));',
             { ...options, method: 'sql' }
         );
@@ -56,28 +56,34 @@ describe('import box: reading the text (IMP-007, IMP-009 to IMP-012, IMP-015)', 
         expect(a.counts.relationships).toBe(1);
         expect(a.design?.entities.order).toHaveLength(2);
     });
-    it('a broken parenthesis blocks the import', () => {
-        const a = analyzeImport('CREATE TABLE a (id int;', {
+    it('a broken parenthesis blocks the import', async () => {
+        const a = await analyzeImport('CREATE TABLE a (id int;', {
             ...options,
             method: 'sql',
         });
         expect(a.blocked).toBe(true);
         expect(a.design).toBeUndefined();
     });
-    it('DBML gives tables and a relationship', () => {
-        const a = analyzeImport(
+    it('DBML gives tables and a relationship', async () => {
+        const a = await analyzeImport(
             'Table a {\n id int [pk]\n}\nTable b {\n id int [pk]\n a_id int\n}\nRef: b.a_id > a.id',
             { ...options, method: 'dbml' }
         );
         expect(a.blocked).toBe(false);
         expect(a.counts).toMatchObject({ tables: 2, relationships: 1 });
     });
-    it('a DBML syntax error blocks and names no design', () => {
-        const a = analyzeImport('Table {', { ...options, method: 'dbml' });
+    it('a DBML syntax error blocks and names no design', async () => {
+        const a = await analyzeImport('Table {', {
+            ...options,
+            method: 'dbml',
+        });
         expect(a.blocked).toBe(true);
     });
-    it('text that is not the metadata document is refused with one message', () => {
-        const a = analyzeImport('hello', { ...options, method: 'metadata' });
+    it('text that is not the metadata document is refused with one message', async () => {
+        const a = await analyzeImport('hello', {
+            ...options,
+            method: 'metadata',
+        });
         expect(a.blocked).toBe(true);
         expect(a.diagnostics).toHaveLength(1);
     });

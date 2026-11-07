@@ -2,7 +2,6 @@ import type { DatabaseEdition, DatabaseType } from '@/core/model/database';
 import type { Design } from '@/core/model/design';
 import { dialectFor } from '@/dialects/registry';
 import type { Diagnostic } from '@/dialects/script-model';
-import { importDbml } from '@/formats/dbml/import-dbml';
 import { loadFromDatabaseMetadata } from '@/formats/metadata/load';
 import {
     parseMetadataText,
@@ -53,7 +52,10 @@ const finish = (
 });
 
 /** Reads the text the way the import button would, without changing anything. */
-export function analyzeImport(text: string, options: AnalyzeOptions): Analysis {
+export function analyzeImport(
+    text: string,
+    options: AnalyzeOptions
+): Analysis | Promise<Analysis> {
     if (text.trim() === '') return finish([]);
     const { method, databaseType } = options;
     if (method === 'sql') {
@@ -66,16 +68,19 @@ export function analyzeImport(text: string, options: AnalyzeOptions): Analysis {
         });
     }
     if (method === 'dbml') {
-        const result = importDbml(text, databaseType, {
-            name: options.diagramName,
-        });
-        return finish(result.diagnostics, {
-            design: result.design,
-            counts: {
-                ...EMPTY_COUNTS,
-                tables: result.counts.tables,
-                relationships: result.counts.relationships,
-            },
+        // the DBML parser is large: it loads the first time DBML is read
+        return import('@/formats/dbml/import-dbml').then(({ importDbml }) => {
+            const result = importDbml(text, databaseType, {
+                name: options.diagramName,
+            });
+            return finish(result.diagnostics, {
+                design: result.design,
+                counts: {
+                    ...EMPTY_COUNTS,
+                    tables: result.counts.tables,
+                    relationships: result.counts.relationships,
+                },
+            });
         });
     }
     const parsed = parseMetadataText(text);

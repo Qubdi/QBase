@@ -12,6 +12,7 @@ import { toast } from '@/platform/toast/use-toast';
 import {
     analyzeImport,
     buildMetadata,
+    EMPTY_COUNTS,
     listProblems,
     repairText,
 } from './analyze-import';
@@ -87,6 +88,13 @@ const DiagnosticLine: React.FC<{ item: Diagnostic; onJump: () => void }> = ({
     );
 };
 
+const NOT_READ: Analysis = {
+    diagnostics: [],
+    counts: EMPTY_COUNTS,
+    blocked: false,
+    fixable: false,
+};
+
 /**
  * The paste box of every import: a method switch, the text, live checks 500 ms
  * after typing stops, a repair button, and for a large metadata document a
@@ -120,7 +128,9 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
     const quiet = useDebounced(text, QUIET_MS);
     const editions = editionsFor(databaseType);
 
-    const base = useMemo(
+    // SQL and metadata are read at once; DBML waits for its parser to load,
+    // and until it answers the box counts as pending
+    const result = useMemo(
         () =>
             analyzeImport(quiet, {
                 method,
@@ -130,6 +140,27 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
             }),
         [quiet, method, databaseType, edition, diagramName]
     );
+    const [late, setLate] = useState<{
+        result: Promise<Analysis>;
+        analysis: Analysis;
+    } | null>(null);
+    useEffect(() => {
+        if (!(result instanceof Promise)) return;
+        let live = true;
+        void result.then((analysis) => {
+            if (live) setLate({ result, analysis });
+        });
+        return () => {
+            live = false;
+        };
+    }, [result]);
+    const waiting = result instanceof Promise && late?.result !== result;
+    const base =
+        result instanceof Promise
+            ? late?.result === result
+                ? late.analysis
+                : NOT_READ
+            : result;
     const rows = useMemo(
         () => (base.metadata ? pickerRows(base.metadata) : []),
         [base.metadata]
@@ -156,7 +187,7 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
         };
     }, [base, picked, databaseType, edition, diagramName]);
 
-    const pending = text !== quiet || repairing;
+    const pending = text !== quiet || repairing || waiting;
     useEffect(() => {
         onChange({
             method,
