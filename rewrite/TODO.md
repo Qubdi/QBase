@@ -43,9 +43,13 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
    redo, migration of existing local data.
 6. [x] **Phase 5: import and export** (clean author; done 2026-11-07, commits ffb0448..73c0a74; not done: import into an open diagram, re-sync and DBML apply, rows IMP-075 to IMP-083, which need the store: Phase 6; open points in `decisions-phase5.md`). SQL import per dialect, SQL, DBML, JSON
    and image export; round-trip tests with our own sample schemas.
-7. [ ] **Phase 6: editor** (canvas by a clean author). Canvas, sidebar, table and field editors,
-   relationship dialogs, filters, diff view, shortcuts, clipboard; end-to-end check of the
-   QBase server features.
+7. [ ] **Phase 6: editor** (canvas by a clean author). Done 2026-11-07: store and QBase adapter (6a),
+   workspace frame, menus, dialogs, import, export, settings (6c, decisions-phase6c.md), side panel,
+   forms and clipboard (6d, decisions-phase6d.md). Open: the canvas (clean author running in
+   `~/clean-room/qbase-phase6`), connecting it to the frame (`useRegisterCanvas`, filter panel,
+   `ui.focus` for regions and memos), DBML editing with diff (EDT-239 to 247), re-sync and import
+   into an open diagram (IMP-075 to IMP-083), long-press menus on phones (EDT-009), a real-browser
+   run of everything, the metadata queries for PostgreSQL, MySQL and SQL Server.
 8. [ ] **Phase 7: data and content.** New translations, templates and examples (or none),
    fixtures and images. No `identical` or `derived` row left in the inventory.
 9. [ ] **Phase 8: tests**, in every phase, written from the spec.
