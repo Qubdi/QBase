@@ -3,8 +3,11 @@ import pg from 'pg';
 export const SAMPLE_DB = 'qbase_sample';
 // TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
 export const PG_PORT = Number(process.env.TEST_PG_PORT ?? 5433);
-export const SAMPLE_ADMIN_URL = `postgres://qbase:qbase@localhost:${PG_PORT}/postgres`;
-export const SAMPLE_URL = `postgres://qbase:qbase@localhost:${PG_PORT}/${SAMPLE_DB}`;
+export const PG_USER = process.env.TEST_PG_USER ?? 'qbase';
+export const PG_PASSWORD = process.env.TEST_PG_PASSWORD ?? 'qbase';
+const LOGIN = `${encodeURIComponent(PG_USER)}:${encodeURIComponent(PG_PASSWORD)}`;
+export const SAMPLE_ADMIN_URL = `postgres://${LOGIN}@localhost:${PG_PORT}/postgres`;
+export const SAMPLE_URL = `postgres://${LOGIN}@localhost:${PG_PORT}/${SAMPLE_DB}`;
 
 export const SAMPLE_DDL = `
 CREATE SCHEMA shop;

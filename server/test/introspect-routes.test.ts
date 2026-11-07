@@ -11,7 +11,9 @@ import type {
     IntrospectorFactory,
 } from '../src/introspect/types.js';
 import {
+    PG_PASSWORD,
     PG_PORT,
+    PG_USER,
     resetSampleDatabase,
     SAMPLE_DB,
 } from './introspect-pg-fixture.js';
@@ -754,8 +756,8 @@ describe('introspect end to end against the real sample database', () => {
         host: '127.0.0.1',
         port: PG_PORT,
         database: SAMPLE_DB,
-        user: 'qbase',
-        password: 'qbase',
+        user: PG_USER,
+        password: PG_PASSWORD,
         ...over,
     });
 

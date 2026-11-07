@@ -16,8 +16,10 @@ COPY . .
 # The backend URL is not baked in: the server answers /config.js itself, pointing
 # the editor at its own /api.
 RUN printf 'VITE_HOST_URL=%s\nVITE_APP_URL=%s\n' "${VITE_HOST_URL}" "${VITE_APP_URL}" > .env
-# typecheck and bundle; no lint here: CI lints every change before an image is made
-RUN npx tsc -b && npx vite build
+# typecheck and bundle; no lint here: CI lints every change before an image is made.
+# .dockerignore leaves the tests out of the build, so the check skips them too
+# (tsconfig.image.json); CI checks them with `tsc -b`.
+RUN npx tsc -p tsconfig.image.json && npx vite build
 # a .br and .gz beside each large file; the server sends those (see server/src/web.ts)
 RUN node server/scripts/precompress-web.mjs dist
 

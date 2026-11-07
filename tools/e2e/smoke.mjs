@@ -14,7 +14,9 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 const { chromium } = createRequire('/tmp/pw/')('playwright');
 const SHOTS = process.env.SHOTS || '/tmp/qbase-e2e';
 const PORT = 4173;
-const BASE = `http://localhost:${PORT}`;
+// BASE_URL: test a running server (the Docker image) instead of building and serving dist
+const EXTERNAL = process.env.BASE_URL?.replace(/\/$/, '');
+const BASE = EXTERNAL || `http://localhost:${PORT}`;
 mkdirSync(SHOTS, { recursive: true });
 
 // Appendix sample of rewrite/spec/import-export.md (10.5, PostgreSQL A1).
@@ -85,19 +87,22 @@ const designText = () => page.locator('.react-flow__node').allInnerTexts();
 const waitIdle = () => pause(600);
 
 // 1 build and serve
-console.log('building...');
-execSync('npx vite build', {
-    stdio: 'ignore',
-    env: { ...process.env, VITE_QUBDI_BACKEND_URL: '' },
-});
-const server = spawn(
-    'npx',
-    ['vite', 'preview', '--port', String(PORT), '--strictPort'],
-    {
+console.log(EXTERNAL ? `testing ${EXTERNAL}` : 'building...');
+let server;
+if (!EXTERNAL) {
+    execSync('npx vite build', {
         stdio: 'ignore',
-    }
-);
-const stop = () => server.kill();
+        env: { ...process.env, VITE_QUBDI_BACKEND_URL: '' },
+    });
+    server = spawn(
+        'npx',
+        ['vite', 'preview', '--port', String(PORT), '--strictPort'],
+        {
+            stdio: 'ignore',
+        }
+    );
+}
+const stop = () => server?.kill();
 process.on('exit', stop);
 for (let i = 0; i < 40; i += 1) {
     const up = await fetch(BASE)

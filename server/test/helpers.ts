@@ -7,8 +7,10 @@ import { createDb } from '../src/db/client.js';
 export const TEST_DB = 'qbase_test';
 // TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
 const PG_PORT = process.env.TEST_PG_PORT ?? '5433';
-export const ADMIN_URL = `postgres://qbase:qbase@localhost:${PG_PORT}/postgres`;
-export const TEST_URL = `postgres://qbase:qbase@localhost:${PG_PORT}/${TEST_DB}`;
+// TEST_PG_USER and TEST_PG_PASSWORD replace the default login of that Postgres
+const PG_LOGIN = `${encodeURIComponent(process.env.TEST_PG_USER ?? 'qbase')}:${encodeURIComponent(process.env.TEST_PG_PASSWORD ?? 'qbase')}`;
+export const ADMIN_URL = `postgres://${PG_LOGIN}@localhost:${PG_PORT}/postgres`;
+export const TEST_URL = `postgres://${PG_LOGIN}@localhost:${PG_PORT}/${TEST_DB}`;
 
 // the first user on a fresh database is the admin; they create everyone else
 let adminCookie: string | null = null;

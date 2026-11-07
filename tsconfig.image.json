@@ -1,0 +1,16 @@
+{
+    "extends": "./tsconfig.app.json",
+    "compilerOptions": {
+        "composite": false,
+        "incremental": false,
+        "tsBuildInfoFile": null
+    },
+    "include": ["src", "shared"],
+    "exclude": [
+        "**/__tests__/**",
+        "**/test/**",
+        "**/tests/**",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+    ]
+}

@@ -75,6 +75,9 @@ export function postgresScript(options: PostgresOptions = {}): string {
       JOIN pg_class tc ON tc.oid = t.typrelid AND tc.relkind = 'c'
       WHERE t.typtype = 'c' AND ${F}`;
 
+    // an index column is the plain column name (pg_get_indexdef would quote
+    // "Mixed Col"), or the expression text; 'unique' in the indexes is false for a partial unique index: it does not
+    // make its column unique, and the import would otherwise say so
     return `SELECT json_build_object(
   'database_name', current_database(),
   'version', version(),
@@ -150,8 +153,12 @@ export function postgresScript(options: PostgresOptions = {}): string {
     WHERE con.contype = 'f' AND ${notChild} AND ${F}), '[]'::json),
   'indexes', COALESCE((SELECT json_agg(json_build_object(
       'schema', n.nspname, 'table', c.relname, 'name', ic.relname,
-      'column', pg_get_indexdef(i.indexrelid, g.k, true),
-      'index_type', am.amname, 'unique', i.indisunique,
+      'column', CASE WHEN i.indkey[g.k - 1] <> 0
+          THEN (SELECT ia.attname FROM pg_attribute ia
+              WHERE ia.attrelid = i.indrelid AND ia.attnum = i.indkey[g.k - 1])
+          ELSE pg_get_indexdef(i.indexrelid, g.k, true) END,
+      'index_type', am.amname,
+      'unique', i.indisunique AND i.indpred IS NULL,
       'direction', ${direction}, 'column_position', g.k)
       ORDER BY n.nspname, c.relname, ic.relname, g.k)
     FROM pg_index i

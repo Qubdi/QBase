@@ -506,3 +506,105 @@ describe('hand-written results import (IMP-059)', () => {
         expect(design.entities.order).toHaveLength(0);
     });
 });
+
+// Found by running the scripts on live servers (PostgreSQL 16 and 18, MySQL
+// 8.4 and 5.7, MariaDB 11, CockroachDB); see rewrite/phase9/live-checks.md.
+describe('fixes found on live databases', () => {
+    it('PostgreSQL reads an index column by attribute number, not through pg_get_indexdef', () => {
+        // pg_get_indexdef quotes "Mixed Col"; the column list has the bare name
+        for (const edition of [undefined, 'supabase', 'timescale'] as const) {
+            const script = metadataScriptFor('postgresql', edition)!;
+            expect(script).toContain('i.indkey[g.k - 1]');
+        }
+        expect(metadataScriptFor('cockroachdb')).toContain('i.indkey[g.k - 1]');
+    });
+
+    it('PostgreSQL does not call a partial unique index unique', () => {
+        expect(metadataScriptFor('postgresql')).toContain(
+            'i.indisunique AND i.indpred IS NULL'
+        );
+        const { design } = run('postgresql', {
+            database_name: 'd',
+            version: 'PostgreSQL 16',
+            tables: [
+                { schema: 'public', table: 't', rows: 0, type: 'BASE TABLE' },
+            ],
+            views: [],
+            columns: [column('public', 't', 'email', 'text', 1)],
+            pk_info: [],
+            fk_info: [],
+            indexes: [
+                {
+                    schema: 'public',
+                    table: 't',
+                    name: 't_active_email',
+                    column: 'email',
+                    index_type: 'btree',
+                    unique: false,
+                    direction: 'asc',
+                    column_position: 1,
+                },
+            ],
+        });
+        const col = Object.values(design.columns).find(
+            (c) => c.name === 'email'
+        )!;
+        expect(col.unique).toBe(false);
+    });
+
+    it('an index on an expression is reported, not dropped silently', () => {
+        const { diagnostics, design } = run('postgresql', {
+            database_name: 'd',
+            version: 'PostgreSQL 16',
+            tables: [
+                { schema: 'public', table: 't', rows: 0, type: 'BASE TABLE' },
+            ],
+            views: [],
+            columns: [column('public', 't', 'email', 'text', 1)],
+            pk_info: [],
+            fk_info: [],
+            indexes: [
+                {
+                    schema: 'public',
+                    table: 't',
+                    name: 't_lower',
+                    column: 'lower(email::text)',
+                    index_type: 'btree',
+                    unique: false,
+                    direction: 'asc',
+                    column_position: 1,
+                },
+            ],
+        });
+        expect(Object.keys(design.keys)).toHaveLength(0);
+        expect(diagnostics.some((d) => d.message.includes('t_lower'))).toBe(
+            true
+        );
+    });
+
+    it('MySQL joins every piece as utf8mb4_bin so any client character set works', () => {
+        for (const edition of [undefined, 'mysql_5_7'] as const) {
+            const script = metadataScriptFor('mysql', edition)!;
+            expect(script).toContain(
+                'CONVERT(CAST(c.ORDINAL_POSITION AS CHAR) USING utf8mb4) COLLATE utf8mb4_bin'
+            );
+            expect(script).toContain(
+                "CONVERT(IF(c.IS_NULLABLE = 'YES', 'true', 'false') USING utf8mb4) COLLATE utf8mb4_bin"
+            );
+        }
+    });
+
+    it('MySQL quotes a string default, keeps numbers and expressions, drops view defaults', () => {
+        const script = metadataScriptFor('mysql')!;
+        expect(script).toContain('QUOTE(c.COLUMN_DEFAULT)');
+        expect(script).toContain('DEFAULT\\_GENERATED');
+        expect(script).toContain("LIKE '%MariaDB%'");
+        expect(script).toContain('FROM information_schema.VIEWS w');
+    });
+
+    it('MySQL strips the escaped quotes and character set introducers of a check clause', () => {
+        const script = metadataScriptFor('mysql')!;
+        expect(script).toContain('CONCAT(CHAR(92), CHAR(39))');
+        expect(script).toContain("CONCAT('_utf8mb4', CHAR(39))");
+    });
+});

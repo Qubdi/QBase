@@ -5,10 +5,15 @@
  * JSON_ARRAYAGG function does not exist. Only the current database is read.
  */
 
+// Every piece that is not a plain literal is made utf8mb4_bin, whatever the
+// client's character set is: with a latin1 or utf8 connection, MySQL refuses to
+// join a CAST(.. AS CHAR) with JSON_QUOTE's utf8mb4_bin ("Illegal mix of
+// collations for operation 'concat'").
+const bin = (e: string) => `CONVERT(${e} USING utf8mb4) COLLATE utf8mb4_bin`;
 const q = (e: string) =>
     `IFNULL(JSON_QUOTE(CONVERT(${e} USING utf8mb4)), 'null')`;
-const n = (e: string) => `IFNULL(CAST(${e} AS CHAR), 'null')`;
-const b = (cond: string) => `IF(${cond}, 'true', 'false')`;
+const n = (e: string) => `IFNULL(${bin(`CAST(${e} AS CHAR)`)}, 'null')`;
+const b = (cond: string) => bin(`IF(${cond}, 'true', 'false')`);
 const EMPTY = `'""'`;
 
 type Pair = [key: string, value: string];
@@ -23,6 +28,32 @@ const array = (key: string, pairs: Pair[], from: string) =>
     FROM ${from}), ']'), '[]')`;
 
 const IS = 'information_schema';
+
+// MySQL stores a check clause with escaped quotes (\') and a character set
+// introducer before each string (_utf8mb4'..'); neither belongs in the rule text.
+// CHAR(92) and CHAR(39) are the backslash and the quote, whatever sql_mode says.
+const CHARSETS = ['utf8mb4', 'utf8mb3', 'utf8', 'latin1', 'ascii', 'binary'];
+const cleanClause = (e: string) =>
+    CHARSETS.reduce(
+        (acc, cs) => `REPLACE(${acc}, CONCAT('_${cs}', CHAR(39)), CHAR(39))`,
+        `REPLACE(${e}, CONCAT(CHAR(92), CHAR(39)), CHAR(39))`
+    );
+
+const NUMERIC_TYPES = `'tinyint', 'smallint', 'mediumint', 'int', 'integer', 'bigint', 'decimal', 'numeric', 'float', 'double', 'real', 'bit'`;
+
+/**
+ * The default as SQL text. MariaDB already gives it quoted ('new', and the
+ * word NULL for none). MySQL gives a string without its quotes, so one is quoted
+ * here unless it is a number or an expression (CURRENT_TIMESTAMP, DEFAULT_GENERATED).
+ * A view column reports a made-up default (0, say): none is kept.
+ */
+const defaultOf = (c: string) => {
+    const maria = `VERSION() LIKE '%MariaDB%'`;
+    const raw = `${maria} OR ${c}.EXTRA LIKE '%DEFAULT\\_GENERATED%' OR ${c}.DATA_TYPE IN (${NUMERIC_TYPES}) OR ${c}.COLUMN_DEFAULT LIKE 'CURRENT\\_TIMESTAMP%'`;
+    return `IF(${c}.TABLE_NAME IN (SELECT w.TABLE_NAME FROM ${IS}.VIEWS w WHERE w.TABLE_SCHEMA = DATABASE())
+      OR ${c}.COLUMN_DEFAULT IS NULL OR (${maria} AND ${c}.COLUMN_DEFAULT = 'NULL'), NULL,
+      IF(${raw}, ${bin(`${c}.COLUMN_DEFAULT`)}, ${bin(`QUOTE(${c}.COLUMN_DEFAULT)`)}))`;
+};
 
 function mysqlScript(withChecks: boolean): string {
     const sections = [
@@ -71,9 +102,9 @@ function mysqlScript(withChecks: boolean): string {
                 ],
                 [
                     'precision',
-                    `IF(c.DATA_TYPE IN ('decimal', 'numeric'), CONCAT('{"precision":', c.NUMERIC_PRECISION, ',"scale":', IFNULL(c.NUMERIC_SCALE, 0), '}'), 'null')`,
+                    `IF(c.DATA_TYPE IN ('decimal', 'numeric'), ${bin(`CONCAT('{"precision":', c.NUMERIC_PRECISION, ',"scale":', IFNULL(c.NUMERIC_SCALE, 0), '}')`)}, 'null')`,
                 ],
-                ['default', q(`NULLIF(c.COLUMN_DEFAULT, 'NULL')`)],
+                ['default', q(defaultOf('c'))],
                 ['collation', q('c.COLLATION_NAME')],
                 ['comment', q(`NULLIF(c.COLUMN_COMMENT, '')`)],
                 ['is_identity', b(`c.EXTRA LIKE '%auto_increment%'`)],
@@ -130,7 +161,7 @@ function mysqlScript(withChecks: boolean): string {
                 [
                     ['schema', EMPTY],
                     ['table', q('tc.TABLE_NAME')],
-                    ['expression', q('cc.CHECK_CLAUSE')],
+                    ['expression', q(cleanClause('cc.CHECK_CLAUSE'))],
                 ],
                 `${IS}.CHECK_CONSTRAINTS cc
     JOIN ${IS}.TABLE_CONSTRAINTS tc

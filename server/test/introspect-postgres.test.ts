@@ -11,7 +11,9 @@ import { assertReadOnlySql } from '../src/introspect/readonly-guard.js';
 import { decodeTypmod, splitArrayType } from '../src/introspect/typmod.js';
 import type { DatabaseMetadata } from '../src/introspect/types.js';
 import {
+    PG_PASSWORD,
     PG_PORT,
+    PG_USER,
     resetSampleDatabase,
     SAMPLE_DB,
     SAMPLE_URL,
@@ -22,8 +24,8 @@ const params = {
     host: 'localhost',
     port: PG_PORT,
     database: SAMPLE_DB,
-    user: 'qbase',
-    password: 'qbase',
+    user: PG_USER,
+    password: PG_PASSWORD,
     ssl: false,
     trustServerCertificate: false,
 };

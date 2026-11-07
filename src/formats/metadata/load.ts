@@ -249,5 +249,7 @@ export function loadFromDatabaseMetadata(
             message: `${meta.fk_info.length - links.length} foreign key row(s) dropped: a table or column is not in the import.`,
         });
     for (const link of links) builder.addLink(link);
+    // what the builder had to leave out (an index on an expression, say)
+    diagnostics.push(...builder.diagnostics);
     return { design: builder.build(), diagnostics };
 }
