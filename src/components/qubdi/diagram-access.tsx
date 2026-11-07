@@ -38,6 +38,11 @@ import {
 } from './diagram-access-context';
 import { WorkspaceContext, type Workspace } from './workspace-context';
 
+/** What the gates take: the editor, and what to show when no diagram can be opened. */
+interface GateProps extends React.PropsWithChildren {
+    fallback?: React.ReactNode;
+}
+
 const Centered: React.FC<React.PropsWithChildren> = ({ children }) => (
     <div className="flex h-dvh w-dvw flex-col items-center justify-center gap-4 bg-background px-4 text-center">
         {children}
@@ -180,7 +185,7 @@ function useWorkspaceResolution(
     return state;
 }
 
-const WorkspaceGate: React.FC<React.PropsWithChildren> = ({ children }) => {
+const WorkspaceGate: React.FC<GateProps> = ({ children, fallback }) => {
     const { t } = useTranslation();
     const { projectSlug, remoteDiagramId } = useParams<{
         projectSlug: string;
@@ -239,7 +244,10 @@ const WorkspaceGate: React.FC<React.PropsWithChildren> = ({ children }) => {
     return (
         <WorkspaceContext.Provider value={resolution.workspace}>
             <DiagramAccessContext.Provider value={value}>
-                <DiagramProvider readonly={isLocked(value.access) || undefined}>
+                <DiagramProvider
+                    readonly={isLocked(value.access) || undefined}
+                    fallback={fallback}
+                >
                     {children}
                 </DiagramProvider>
             </DiagramAccessContext.Provider>
@@ -303,7 +311,7 @@ function useLegacyAccess(localId: string | undefined): DiagramAccessValue {
  * moves to its project URL; one that is not stays read-only here so it can be
  * moved into a project from the banner.
  */
-const LegacyGate: React.FC<React.PropsWithChildren> = ({ children }) => {
+const LegacyGate: React.FC<GateProps> = ({ children, fallback }) => {
     const { diagramId } = useParams<{ diagramId: string }>();
     const value = useLegacyAccess(diagramId);
     const { status } = value.access;
@@ -340,7 +348,10 @@ const LegacyGate: React.FC<React.PropsWithChildren> = ({ children }) => {
 
     return (
         <DiagramAccessContext.Provider value={value}>
-            <DiagramProvider readonly={isLocked(value.access) || undefined}>
+            <DiagramProvider
+                readonly={isLocked(value.access) || undefined}
+                fallback={fallback}
+            >
                 {children}
             </DiagramProvider>
         </DiagramAccessContext.Provider>
@@ -352,13 +363,18 @@ const LegacyGate: React.FC<React.PropsWithChildren> = ({ children }) => {
  * user, and a diagram is editable only through a project role; every other
  * case opens read-only (the editor stops changing or storing anything).
  */
-export const DiagramAccessGate: React.FC<React.PropsWithChildren> = ({
+export const DiagramAccessGate: React.FC<GateProps> = ({
     children,
+    fallback,
 }) => {
     const { enabled } = useQubdi();
     const { projectSlug } = useParams<{ projectSlug: string }>();
 
-    if (!enabled) return <DiagramProvider>{children}</DiagramProvider>;
-    if (projectSlug) return <WorkspaceGate>{children}</WorkspaceGate>;
-    return <LegacyGate>{children}</LegacyGate>;
+    if (!enabled)
+        return (
+            <DiagramProvider fallback={fallback}>{children}</DiagramProvider>
+        );
+    if (projectSlug)
+        return <WorkspaceGate fallback={fallback}>{children}</WorkspaceGate>;
+    return <LegacyGate fallback={fallback}>{children}</LegacyGate>;
 };

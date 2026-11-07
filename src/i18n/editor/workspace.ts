@@ -1,0 +1,118 @@
+// English text for the editor frame: navbar, menus, rail, drawer, shortcuts and
+// small shared words. Written for the rewritten editor; the owner merges the
+// two objects below into locales/en.ts under `editor`.
+export const workspaceStrings = {
+    common: {
+        cancel: 'Cancel',
+        close: 'Close',
+        back: 'Back',
+        continue: 'Continue',
+    },
+    workspace: {
+        frame: {
+            canvasPlaceholder: 'The diagram surface appears here',
+            panelPlaceholder: 'The side panel appears here',
+            resizePanel: 'Resize the side panel',
+            openPanel: 'Open the editing panel',
+        },
+        navbar: {
+            home: 'QBase home',
+            language: 'Change language',
+            showTools: 'Show the tool strip',
+            hideTools: 'Hide the tool strip',
+        },
+        name: {
+            label: 'Diagram name',
+            confirm: 'Keep this name',
+            rename: 'Rename the diagram',
+            hint: 'Double-click to rename',
+        },
+        banner: {
+            openOnly:
+                '{{database}} diagrams can be opened and viewed but not changed in this version of the editor.',
+        },
+        menu: {
+            label: 'Editor menus',
+            diagram: {
+                label: 'Diagram',
+                import: 'Import from',
+                importFile: 'Diagram file (.json)',
+                importSql: 'SQL script',
+                importDbml: 'DBML text',
+                exportSql: 'Export SQL for',
+                saveAs: 'Save as',
+                png: 'PNG image',
+                jpeg: 'JPEG image',
+                svg: 'SVG image',
+                json: 'Diagram file (.json)',
+                delete: 'Delete this diagram',
+            },
+            edit: {
+                label: 'Edit',
+                undo: 'Undo',
+                redo: 'Redo',
+                clear: 'Empty the diagram',
+            },
+            view: {
+                label: 'View',
+                sidePanel: 'Side panel',
+                cardinality: 'Relationship cardinality',
+                fieldAttributes: 'Field attributes',
+                compactTables: 'Compact tables',
+                minimap: 'Minimap',
+                views: 'Database views',
+                wheel: 'Mouse wheel',
+                wheelPan: 'Moves the view',
+                wheelZoom: 'Zooms the view',
+                theme: 'Colour theme',
+                themes: {
+                    system: 'Match system',
+                    light: 'Light',
+                    dark: 'Dark',
+                },
+                themeKey: 'Switch light and dark',
+                preferences: 'Preferences',
+            },
+        },
+        rail: {
+            label: 'Editor sections',
+            new: 'New',
+            browse: 'Open',
+            tables: 'Tables',
+            dbml: 'DBML',
+            refs: 'Links',
+            customTypes: 'Types',
+            visuals: 'Extras',
+        },
+        drawer: {
+            title: 'Diagram contents',
+            description: 'Browse and change the parts of this diagram',
+            sections: 'Section',
+            entries: {
+                tables: 'Tables',
+                dbml: 'DBML',
+                refs: 'Links',
+                customTypes: 'Custom types',
+                areas: 'Areas',
+                notes: 'Notes',
+            },
+        },
+        toasts: {
+            saved: 'Everything is saved',
+            saving: 'Saving your latest changes',
+        },
+        shortcuts: {
+            undo: 'Undo',
+            redo: 'Redo',
+            openDiagram: 'Open a diagram',
+            save: 'Confirm that changes are saved',
+            togglePanel: 'Show or hide the side panel',
+            fitAll: 'Fit every table in view',
+            toggleTheme: 'Switch light and dark',
+            toggleFilter: 'Show or hide the table filter',
+            copyTables: 'Copy the selected tables',
+            pasteTables: 'Paste copied tables',
+            removeSelection: 'Delete the selection',
+        },
+    },
+};
