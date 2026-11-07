@@ -36,3 +36,9 @@ files, their list entries, their "time ago" wording and their translation notes 
 Georgian and Italian were translated new. Right-to-left support in `i18n.ts` stays (it costs
 nothing and a language can be added later). Translations remain machine-made and need a
 native-speaker review before release.
+
+## New diagram dialog (owner, 2026-11-08; SHL-032, SHL-042)
+
+One grid of every supported database (PostgreSQL, MySQL, SQL Server, SQLite, MariaDB,
+CockroachDB, Generic). No Transactional/Analytical tabs and no "More databases" toggle: the
+analytical tab only held ClickHouse, which was dropped, and seven choices fit on one screen.
