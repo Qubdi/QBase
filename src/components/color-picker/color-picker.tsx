@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/ui/popover';
 import { Button } from '@/platform/ui/button';
@@ -21,19 +22,22 @@ const Swatch: React.FC<{
     color: string;
     current: string | null;
     onPick: (c: string) => void;
-}> = ({ color, current, onPick }) => (
-    <button
-        type="button"
-        aria-label={`Use ${color}`}
-        aria-pressed={current === color}
-        className={cn(
-            'size-6 rounded-full border border-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            current === color && 'ring-2 ring-ring ring-offset-1'
-        )}
-        style={{ backgroundColor: color }}
-        onClick={() => onPick(color)}
-    />
-);
+}> = ({ color, current, onPick }) => {
+    const { t } = useTranslation();
+    return (
+        <button
+            type="button"
+            aria-label={t('editor.common.colorPicker.useColor', { color })}
+            aria-pressed={current === color}
+            className={cn(
+                'size-6 rounded-full border border-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                current === color && 'ring-2 ring-ring ring-offset-1'
+            )}
+            style={{ backgroundColor: color }}
+            onClick={() => onPick(color)}
+        />
+    );
+};
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({
     color,
@@ -42,6 +46,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     className,
     popoverOnMouseDown,
 }) => {
+    const { t } = useTranslation();
     const [text, setText] = useState('');
     const { colors: saved, add, remove } = useCustomColors();
     const current = normalizeHex(color);
@@ -60,7 +65,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             <PopoverTrigger asChild disabled={disabled}>
                 <button
                     type="button"
-                    aria-label="Change color"
+                    aria-label={t('editor.common.colorPicker.change')}
                     disabled={disabled}
                     className={cn(
                         'size-6 rounded-md border border-black/10 disabled:opacity-50',
@@ -86,7 +91,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 {saved.length > 0 ? (
                     <div
                         role="group"
-                        aria-label="Your colors"
+                        aria-label={t('editor.common.colorPicker.yourColors')}
                         className="flex flex-wrap gap-2"
                     >
                         {saved.map((c) => (
@@ -98,7 +103,12 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                                 />
                                 <button
                                     type="button"
-                                    aria-label={`Remove ${c}`}
+                                    aria-label={t(
+                                        'editor.common.colorPicker.remove',
+                                        {
+                                            color: c,
+                                        }
+                                    )}
                                     className="absolute -right-1 -top-1 hidden size-3.5 items-center justify-center rounded-full bg-background shadow group-hover:flex group-focus-within:flex"
                                     onClick={() => remove(c)}
                                 >
@@ -118,26 +128,30 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                     <div className="flex items-center gap-2">
                         <input
                             type="color"
-                            aria-label="Pick a custom color"
+                            aria-label={t(
+                                'editor.common.colorPicker.pickCustom'
+                            )}
                             className="size-8 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
                             value={typed ?? current ?? '#000000'}
                             onChange={(e) => setText(e.target.value)}
                         />
                         <Input
-                            aria-label="Hex color"
+                            aria-label={t('editor.common.colorPicker.hex')}
                             aria-invalid={invalid}
-                            placeholder="#rrggbb"
+                            placeholder={t(
+                                'editor.common.colorPicker.hexPlaceholder'
+                            )}
                             className="h-8"
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
                         <Button type="submit" size="sm" disabled={!typed}>
-                            Use
+                            {t('editor.common.colorPicker.use')}
                         </Button>
                     </div>
                     {invalid ? (
                         <p role="alert" className="text-xs text-destructive">
-                            Enter a hex color such as #8eb7ff.
+                            {t('editor.common.colorPicker.invalid')}
                         </p>
                     ) : null}
                 </form>

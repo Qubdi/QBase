@@ -18,6 +18,7 @@ import type { ImportBoxState } from '@/features/import/import-box';
 import { mergeImported } from '@/features/import/merge-into-design';
 import { useDialog } from '@/hooks/use-dialog';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
+import { diagnosticText } from '@/lib/diagnostic-text';
 
 export interface ImportDatabaseDialogProps {
     dialog: { open: boolean } & ImportIntoOpenOptions;
@@ -66,7 +67,7 @@ export const ImportDatabaseDialog: React.FC<ImportDatabaseDialogProps> = ({
         if (!result.ok) {
             toast({
                 title: t('editor.importing.into.failed'),
-                description: result.message,
+                description: diagnosticText(result.message),
                 variant: 'destructive',
             });
             return;

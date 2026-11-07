@@ -2,6 +2,7 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
+import { i18n } from '@/i18n/i18n';
 
 const spinnerVariants = cva('animate-spin', {
     variants: {
@@ -23,7 +24,7 @@ function Spinner({ size, className, ...props }: SpinnerProps) {
     return (
         <Loader2
             role="status"
-            aria-label="Loading"
+            aria-label={i18n.t('editor.common.loading')}
             className={cn(spinnerVariants({ size }), className)}
             {...props}
         />

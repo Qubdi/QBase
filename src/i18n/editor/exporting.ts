@@ -20,11 +20,11 @@ export const exportingStrings = {
     image: {
         title: 'Save as {{format}}',
         description:
-            'The picture shows the whole diagram, in the colours you are using now.',
+            'The picture shows the whole diagram, in the colors you are using now.',
         scale: 'Size',
         pattern: 'Draw the dotted background',
         transparent: 'Transparent background',
-        jpegNote: 'JPEG cannot be transparent, so the page colour is used.',
+        jpegNote: 'JPEG cannot be transparent, so the page color is used.',
         action: 'Save image',
         working: 'Creating the image',
         empty: 'There is nothing to put in the picture yet',

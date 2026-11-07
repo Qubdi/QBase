@@ -3,6 +3,7 @@ import * as ToastPrimitives from '@radix-ui/react-toast';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
+import { i18n } from '@/i18n/i18n';
 
 const ToastProvider = ToastPrimitives.Provider;
 
@@ -82,7 +83,7 @@ const ToastClose = React.forwardRef<
             className
         )}
         toast-close=""
-        aria-label="Close"
+        aria-label={i18n.t('editor.common.close')}
         {...props}
     >
         <X className="size-4" />

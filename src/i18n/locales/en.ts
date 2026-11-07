@@ -5,6 +5,7 @@ import { adminUsers } from '../qubdi/admin-users';
 import { database } from '../qubdi/database';
 import { sidePanel } from '../qubdi/side-panel';
 import { workspace } from '../qubdi/workspace';
+import { diagnosticsStrings } from '../editor/diagnostics';
 import { designsStrings } from '../editor/designs';
 import { exportingStrings } from '../editor/exporting';
 import { importingStrings } from '../editor/importing';
@@ -25,6 +26,7 @@ export const en = {
             common: workspaceStrings.common,
             workspace: workspaceStrings.workspace,
             designs: designsStrings,
+            diagnostics: diagnosticsStrings,
             importing: importingStrings,
             exporting: exportingStrings,
             settings: settingsStrings,

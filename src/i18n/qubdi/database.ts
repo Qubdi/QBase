@@ -83,7 +83,7 @@ export const database = {
     resync: {
         title: 'Re-sync from database',
         description:
-            'Pull changes from the live database. Layout, colours, areas, notes and descriptions are kept.',
+            'Pull changes from the live database. Layout, colors, areas, notes and descriptions are kept.',
         noSource:
             'This diagram was not imported from a database in this browser, so there is no source to re-sync from. Use Import from database to create one.',
         lastSynced: 'Last synced {{date}}.',

@@ -1,15 +1,18 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 
-const DESCRIPTION =
-    'Database schema diagrams: import a live database, publish versions, share read-only links, re-sync and detect drift.';
-
-export const HelmetData: React.FC = () => (
-    <Helmet>
-        <meta name="description" content={DESCRIPTION} />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="QBase - Database schema diagrams" />
-        <meta property="og:description" content={DESCRIPTION} />
-        <title>QBase - Database schema diagrams</title>
-    </Helmet>
-);
+export const HelmetData: React.FC = () => {
+    const { t } = useTranslation();
+    const title = t('editor.common.app.title');
+    const description = t('editor.common.app.description');
+    return (
+        <Helmet>
+            <meta name="description" content={description} />
+            <meta property="og:type" content="website" />
+            <meta property="og:title" content={title} />
+            <meta property="og:description" content={description} />
+            <title>{title}</title>
+        </Helmet>
+    );
+};

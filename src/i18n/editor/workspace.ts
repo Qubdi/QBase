@@ -7,6 +7,27 @@ export const workspaceStrings = {
         close: 'Close',
         back: 'Back',
         continue: 'Continue',
+        loading: 'Loading',
+        app: {
+            title: 'QBase - Database schema diagrams',
+            description:
+                'Database schema diagrams: import a live database, publish versions, share read-only links, re-sync and detect drift.',
+        },
+        notFound: {
+            title: "Something's missing.",
+            body: 'We could not find the page you are looking for. It may have moved, or the link may be wrong.',
+        },
+        colorPicker: {
+            change: 'Change color',
+            use: 'Use',
+            useColor: 'Use {{color}}',
+            remove: 'Remove {{color}}',
+            yourColors: 'Your colors',
+            pickCustom: 'Pick a custom color',
+            hex: 'Hex color',
+            hexPlaceholder: '#rrggbb',
+            invalid: 'Enter a hex color such as #8eb7ff.',
+        },
     },
     workspace: {
         frame: {
@@ -36,6 +57,7 @@ export const workspaceStrings = {
         navbar: {
             home: 'QBase home',
             language: 'Change language',
+            searchLanguage: 'Search languages',
             showTools: 'Show the tool strip',
             hideTools: 'Hide the tool strip',
         },
@@ -82,7 +104,7 @@ export const workspaceStrings = {
                 wheel: 'Mouse wheel',
                 wheelPan: 'Moves the view',
                 wheelZoom: 'Zooms the view',
-                theme: 'Colour theme',
+                theme: 'Color theme',
                 themes: {
                     system: 'Match system',
                     light: 'Light',

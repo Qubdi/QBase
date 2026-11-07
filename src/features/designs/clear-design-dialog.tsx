@@ -4,6 +4,7 @@ import { toast } from '@/platform/toast/use-toast';
 import { createDesign } from '@/core/model/defaults';
 import { useEditorStoreApi } from '@/store/store-context';
 import { ConfirmDialog } from './confirm-dialog';
+import { diagnosticText } from '@/lib/diagnostic-text';
 
 export interface ClearDesignDialogProps {
     open: boolean;
@@ -41,7 +42,7 @@ export const ClearDesignDialog: React.FC<ClearDesignDialogProps> = ({
         else
             toast({
                 title: t('editor.designs.clear.failed'),
-                description: result.message,
+                description: diagnosticText(result.message),
                 variant: 'destructive',
             });
         onClose();

@@ -18,6 +18,7 @@ import { dialectFor } from '@/dialects/registry';
 import { exportSql } from '@/formats/sql/export-sql';
 import { useEditorStore } from '@/store/store-context';
 import { downloadText, safeFileName } from './download-file';
+import { diagnosticText } from '@/lib/diagnostic-text';
 
 export interface ExportSqlDialogProps {
     /** the target database; undefined keeps the dialog closed */
@@ -86,7 +87,7 @@ export const ExportSqlDialog: React.FC<ExportSqlDialogProps> = ({
                     >
                         {problem.message === 'Nothing to export'
                             ? t('editor.exporting.sql.nothing')
-                            : problem.message}
+                            : diagnosticText(problem.message)}
                     </p>
                 ) : (
                     <Textarea

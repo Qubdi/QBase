@@ -186,6 +186,7 @@ export const workspace = {
             'Anyone using this link loses access at once, including people watching it live. This cannot be undone.',
     },
     viewerPage: {
+        pageTitle: 'QBase - Shared diagram',
         loading: 'Loading…',
         notPublishedTitle: 'Not published yet',
         notPublishedDetail:
@@ -212,7 +213,7 @@ export const workspace = {
         noFields: 'No fields',
     },
     typeLegend: {
-        button: 'Type colours',
+        button: 'Type colors',
         text: 'Text / other',
         number: 'Number',
         time: 'Date & time',

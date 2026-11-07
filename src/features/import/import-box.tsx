@@ -22,6 +22,7 @@ import { metadataScriptFor } from './metadata-scripts';
 import { defaultSelection, PICKER_THRESHOLD, pickerRows } from './picker-rows';
 import { TablePicker } from './table-picker';
 import { useDebounced } from './use-debounced';
+import { diagnosticText } from '@/lib/diagnostic-text';
 
 /** What the box reports to the dialog around it. */
 export interface ImportBoxState {
@@ -74,10 +75,10 @@ const DiagnosticLine: React.FC<{ item: Diagnostic; onJump: () => void }> = ({
                 <Icon className="mt-0.5 size-4 shrink-0" />
                 <span>
                     {item.line ? `${item.line}: ` : ''}
-                    {item.message}
+                    {diagnosticText(item.message)}
                     {item.suggestion ? (
                         <span className="block text-xs opacity-80">
-                            {item.suggestion}
+                            {diagnosticText(item.suggestion)}
                         </span>
                     ) : null}
                 </span>
@@ -366,8 +367,12 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
                     data-testid="import-counts"
                 >
                     {t('editor.importing.box.found', {
-                        tables: analysis.counts.tables,
-                        links: analysis.counts.relationships,
+                        tables: t('editor.importing.box.foundTables', {
+                            count: analysis.counts.tables,
+                        }),
+                        links: t('editor.importing.box.foundLinks', {
+                            count: analysis.counts.relationships,
+                        }),
                     })}
                 </p>
             ) : null}

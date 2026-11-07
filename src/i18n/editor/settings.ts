@@ -2,7 +2,7 @@
 export const settingsStrings = {
     title: 'Preferences',
     description: 'These choices belong to this browser, not to the diagram.',
-    theme: 'Colour theme',
+    theme: 'Color theme',
     themes: { system: 'Match system', light: 'Light', dark: 'Dark' },
     language: 'Language',
     wheel: 'Mouse wheel',

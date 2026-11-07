@@ -46,7 +46,7 @@ export const sidePanelStrings = {
         },
         changeSchemaDialog: {
             title: 'Change schema',
-            text: "Update the schema of table '{{name}}'.",
+            text: 'Update the schema of table "{{name}}".',
             createNew: 'Create new schema',
             newPlaceholder: 'New schema name, for example public',
             change: 'Change',
@@ -189,7 +189,7 @@ export const sidePanelStrings = {
         emptyNote: 'Empty note',
         noteActions: 'Note actions',
         deleteNote: 'Delete note',
-        colour: 'Colour',
+        colour: 'Color',
     },
     filters: {
         title: 'Filter tables',
@@ -237,8 +237,8 @@ export const sidePanelStrings = {
         failed: 'Could not write the DBML',
         edit: 'Edit',
         view: 'View',
-        accept: 'Accept Changes',
-        undo: 'Undo Changes',
+        accept: 'Accept changes',
+        undo: 'Undo changes',
         editor: 'DBML text',
         parseError:
             'Failed to parse DBML. Please check the syntax. (1 error found - in line {{line}})',

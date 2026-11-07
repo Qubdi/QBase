@@ -56,7 +56,7 @@ export const designsStrings = {
     clear: {
         title: 'Empty the diagram?',
         description:
-            'Every table, link and note will be removed and the history will be lost. The diagram itself stays. This cannot be undone.',
+            'Every table, relationship and note will be removed and the history will be lost. The diagram itself stays. This cannot be undone.',
         confirm: 'Empty it',
         failed: 'The diagram could not be emptied',
     },

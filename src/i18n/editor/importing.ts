@@ -45,7 +45,11 @@ export const importingStrings = {
         repaired: 'The text was repaired.',
         moreProblems_one: '{{count}} more problem',
         moreProblems_other: '{{count}} more problems',
-        found: 'Found {{tables}} tables and {{links}} links.',
+        found: 'Found {{tables}} and {{links}}.',
+        foundTables_one: '{{count}} table',
+        foundTables_other: '{{count}} tables',
+        foundLinks_one: '{{count}} relationship',
+        foundLinks_other: '{{count}} relationships',
         nothing: 'There is nothing to import in this text.',
     },
     picker: {
@@ -70,8 +74,8 @@ export const importingStrings = {
             'New tables are placed to the right of what is already here. The history is cleared afterwards.',
         newTables_one: '{{count}} table will be added.',
         newTables_other: '{{count}} tables will be added.',
-        newLinks_one: '{{count}} link will be added.',
-        newLinks_other: '{{count}} links will be added.',
+        newLinks_one: '{{count}} relationship will be added.',
+        newLinks_other: '{{count}} relationships will be added.',
         newTypes_one: '{{count}} custom type will be added.',
         newTypes_other: '{{count}} custom types will be added.',
         duplicates:
