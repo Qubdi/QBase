@@ -1,7 +1,8 @@
 import React from 'react';
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { NEW_ITEM_TYPE } from '@/canvas/drop-items';
 import { applyOk, withTables } from '@/core/testing/helpers';
 import { renderPanel } from '@/features/testing/render-panel';
 import { TablesSection } from '../tables-section';
@@ -264,5 +265,24 @@ describe('EDT-076 EDT-101 schemas', () => {
         const { entities } = store.getState().design;
         expect(entities.byId[entities.order[0]].schema).toBe('sales');
         expect(entities.byId[entities.order[1]].schema).toBe('public');
+    });
+});
+
+describe('dragging Add table onto the canvas', () => {
+    it('the button is a drag source for a table and click still adds', async () => {
+        const { store } = renderPanel(<TablesSection />, withTables([]));
+        const button = screen.getAllByRole('button', { name: 'Add table' })[0];
+        const setData = vi.fn();
+        expect(button.getAttribute('draggable')).toBe('true');
+        fireEvent.dragStart(button, { dataTransfer: { setData } });
+        expect(setData).toHaveBeenCalledWith(NEW_ITEM_TYPE, 'table');
+        expect(names(store)).toEqual([]);
+        await userEvent.click(button);
+        expect(names(store)).toEqual(['table_1']);
+    });
+
+    it('has no drag source in a read-only diagram', () => {
+        renderPanel(<TablesSection />, withTables([]), { readonly: true });
+        expect(screen.queryByRole('button', { name: 'Add table' })).toBeNull();
     });
 });

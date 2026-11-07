@@ -16,6 +16,7 @@ import {
 } from '@/platform/ui/dropdown-menu';
 import { Input } from '@/platform/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/ui/tabs';
+import { newItemDragProps } from '@/canvas/drop-items';
 import { selectPanel } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { firstLine, listMemos, listRegions } from './visual-lists';
@@ -51,9 +52,10 @@ const Header: React.FC<{
     value: string;
     onChange: (value: string) => void;
     onAdd?: () => void;
+    dragKind: 'area' | 'note';
     addLabel: string;
     filterLabel: string;
-}> = ({ value, onChange, onAdd, addLabel, filterLabel }) => (
+}> = ({ value, onChange, onAdd, dragKind, addLabel, filterLabel }) => (
     <div className="flex items-center gap-2">
         <Input
             aria-label={filterLabel}
@@ -63,7 +65,12 @@ const Header: React.FC<{
             onChange={(e) => onChange(e.target.value)}
         />
         {onAdd ? (
-            <Button type="button" size="sm" onClick={onAdd}>
+            <Button
+                type="button"
+                size="sm"
+                onClick={onAdd}
+                {...newItemDragProps(dragKind)}
+            >
                 <Plus />
                 {addLabel}
             </Button>
@@ -83,6 +90,7 @@ const AreasList: React.FC = () => {
                 value={filterText}
                 onChange={setFilterText}
                 filterLabel={text('visuals.areaFilter')}
+                dragKind="area"
                 addLabel={text('visuals.addArea')}
                 onAdd={locked ? undefined : () => edit(planAddRegion(design))}
             />
@@ -171,6 +179,7 @@ const NotesList: React.FC = () => {
                 value={filterText}
                 onChange={setFilterText}
                 filterLabel={text('common.filter')}
+                dragKind="note"
                 addLabel={text('visuals.addNote')}
                 onAdd={locked ? undefined : () => edit(planAddMemo())}
             />

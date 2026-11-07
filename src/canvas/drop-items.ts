@@ -28,3 +28,26 @@ export function dropNewItem(
     if (kind === 'note') return addMemoAt(store, at) !== undefined;
     return addEntityAt(store, kind, at, visibleSchemas, measure) !== undefined;
 }
+
+/**
+ * Props that make an element a drag source for a new item. Nothing is
+ * draggable when `enabled` is false (read-only diagrams).
+ */
+export function newItemDragProps(
+    kind: NewItemKind,
+    enabled = true
+): {
+    draggable: boolean;
+    onDragStart?: (event: {
+        dataTransfer: Pick<DataTransfer, 'setData' | 'effectAllowed'>;
+    }) => void;
+} {
+    if (!enabled) return { draggable: false };
+    return {
+        draggable: true,
+        onDragStart: (event) => {
+            event.dataTransfer.setData(NEW_ITEM_TYPE, kind);
+            event.dataTransfer.effectAllowed = 'copy';
+        },
+    };
+}

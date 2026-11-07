@@ -17,6 +17,7 @@ import { selectPanel } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { TableRow } from './table-row';
 import { listTables, planReorderTables, visibleSchemas } from './table-list';
+import { newItemDragProps } from '@/canvas/drop-items';
 import { useAddTable } from './use-add-table';
 
 /** The Tables section (EDT-102 to EDT-111). */
@@ -44,6 +45,7 @@ export const TablesSection: React.FC = () => {
                 size="sm"
                 className={showViews ? 'rounded-r-none' : undefined}
                 onClick={() => add('table')}
+                {...newItemDragProps('table')}
             >
                 <Plus />
                 {text('tables.add')}

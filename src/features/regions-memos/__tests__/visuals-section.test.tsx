@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { applyOk, withTables } from '@/core/testing/helpers';
 import { renderPanel } from '@/features/testing/render-panel';
 import { VisualsSection } from '../visuals-section';
@@ -127,5 +127,23 @@ describe('EDT-211 EDT-214 to EDT-216 the Notes tab', () => {
     it('firstLine takes the first line only', () => {
         expect(firstLine('  a  \nb')).toBe('a');
         expect(firstLine('')).toBe('');
+    });
+});
+
+describe('dragging from the Visuals tabs', () => {
+    it('the add buttons are drag sources for areas and notes', async () => {
+        const { NEW_ITEM_TYPE } = await import('@/canvas/drop-items');
+        const { fireEvent } = await import('@testing-library/react');
+        renderPanel(<VisualsSection />, withTables([]));
+        const setData = vi.fn();
+        const area = screen.getByRole('button', { name: 'Add area' });
+        expect(area.getAttribute('draggable')).toBe('true');
+        fireEvent.dragStart(area, { dataTransfer: { setData } });
+        expect(setData).toHaveBeenCalledWith(NEW_ITEM_TYPE, 'area');
+    });
+
+    it('are not draggable in a read-only diagram (no add button)', () => {
+        renderPanel(<VisualsSection />, withTables([]), { readonly: true });
+        expect(screen.queryByRole('button', { name: 'Add area' })).toBeNull();
     });
 });
