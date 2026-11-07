@@ -277,7 +277,11 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
                 >
                     <TabsList>
                         {available.map((m) => (
-                            <TabsTrigger key={m} value={m}>
+                            <TabsTrigger
+                                key={m}
+                                value={m}
+                                aria-controls={undefined}
+                            >
                                 {t(`editor.importing.box.method.${m}`)}
                             </TabsTrigger>
                         ))}

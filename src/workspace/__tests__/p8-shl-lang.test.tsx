@@ -16,16 +16,14 @@ afterEach(async () => {
 
 const open = async () => {
     renderInEditor(<LanguageButton />, null, '/');
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Change language' }), {
-        key: 'Enter',
-    });
-    return screen.findByRole('menu');
+    fireEvent.click(screen.getByRole('button', { name: 'Change language' }));
+    return screen.findByRole('dialog', { name: 'Change language' });
 };
 
 describe('language button (SHL-093, SHL-096)', () => {
     it('SHL-093: lists 22 languages, English first, each with its native name and its English name', async () => {
         const menu = await open();
-        const items = within(menu).getAllByRole('menuitemradio');
+        const items = within(menu).getAllByRole('radio');
         expect(items).toHaveLength(22);
         expect(items[0].textContent).toBe('English');
         const french = items.find((i) => i.textContent?.includes('Français'))!;
@@ -40,25 +38,23 @@ describe('language button (SHL-093, SHL-096)', () => {
         fireEvent.change(search, { target: { value: 'germ' } });
         expect(
             within(menu)
-                .getAllByRole('menuitemradio')
+                .getAllByRole('radio')
                 .map((i) => i.textContent)
         ).toEqual(['Deutsch (German)']);
         fireEvent.change(search, { target: { value: 'Españ' } });
         expect(
             within(menu)
-                .getAllByRole('menuitemradio')
+                .getAllByRole('radio')
                 .map((i) => i.textContent)
         ).toEqual(['Español (Spanish)']);
     });
 
     it('SHL-096: a choice applies at once, with no reload, closes the list and is remembered', async () => {
         const menu = await open();
-        fireEvent.click(
-            within(menu).getByRole('menuitemradio', { name: /Deutsch/ })
-        );
+        fireEvent.click(within(menu).getByRole('radio', { name: /Deutsch/ }));
         await waitFor(() => expect(i18n.language).toBe('de'));
         expect(document.documentElement.lang).toBe('de');
-        await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
         expect(localStorage.getItem('i18nextLng')).toBe('de');
     });
 });

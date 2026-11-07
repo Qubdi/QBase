@@ -77,6 +77,7 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
     const store = useEditorStoreApi();
     const panelOpen = useEditorStore((s) => s.ui.panel.open);
     const locked = useEditorStore(selectLocked);
+    const designName = useEditorStore((s) => s.design.name);
     const row = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(() =>
         defaultPanelWidth(
@@ -103,6 +104,7 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
                     : 'flex h-dvh w-dvw flex-col'
             }
         >
+            <h1 className="sr-only">{designName || 'QBase'}</h1>
             {desktop ? (
                 <TopNavbar commands={commands} />
             ) : (
@@ -146,7 +148,7 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
                         <Rail onAction={() => setRailOpen(false)} />
                     </div>
                 ) : null}
-                <main className="relative min-w-0 flex-1">
+                <div data-region="content" className="relative min-w-0 flex-1">
                     <CanvasSlot />
                     {!desktop && !locked ? (
                         <Button
@@ -158,7 +160,7 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
                             <Pencil />
                         </Button>
                     ) : null}
-                </main>
+                </div>
             </div>
             {desktop ? null : <MobilePanel />}
         </div>

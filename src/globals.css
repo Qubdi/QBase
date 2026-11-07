@@ -50,7 +50,7 @@
     --secondary: 215 18% 18%;
     --secondary-foreground: 210 20% 90%;
     --muted: 215 18% 18%;
-    --muted-foreground: 214 14% 66%;
+    --muted-foreground: 214 14% 71%;
     --accent: 174 30% 20%;
     --accent-foreground: 172 50% 88%;
     --destructive: 0 68% 52%;
@@ -105,3 +105,18 @@
         }
     }
 }
+
+/* Outside the base layer so they win over utility classes and library css. */
+/* red text on the dark surfaces needs a lighter red than the fill colour */
+.dark .text-destructive {
+    color: hsl(0 84% 68%);
+}
+
+/* the canvas library's credit link: keep it, but readable on both themes */
+.react-flow .react-flow__attribution {
+    background: hsl(var(--background) / 0.8);
+}
+.react-flow .react-flow__attribution a {
+    color: hsl(var(--muted-foreground));
+}
+

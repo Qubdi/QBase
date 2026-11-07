@@ -195,8 +195,7 @@ export const OpenDesignDialog: React.FC<OpenDesignDialogProps> = ({
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-10" />
-                                        <TableHead>
+                                        <TableHead colSpan={2}>
                                             {t(
                                                 'editor.designs.open.columns.name'
                                             )}

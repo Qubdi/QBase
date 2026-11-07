@@ -21,9 +21,9 @@ export const Section: React.FC<{
 }> = ({ title, action, children }) => (
     <section className="space-y-2">
         <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {title}
-            </h4>
+            </h3>
             {action}
         </div>
         {children}

@@ -35,7 +35,7 @@ describe('QBS-025 a full-width banner row sits between the navbar and the conten
     const check = (container: HTMLElement) => {
         const header = container.querySelector('header')!;
         const slot = container.querySelector('[data-slot="below-navbar"]')!;
-        const main = container.querySelector('main')!;
+        const main = container.querySelector('[data-region="content"]')!;
         expect(slot).toBeTruthy();
         expect(before(header, slot)).toBe(true);
         expect(before(slot, main)).toBe(true);

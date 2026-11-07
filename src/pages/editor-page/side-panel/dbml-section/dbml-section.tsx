@@ -329,7 +329,16 @@ export const DbmlSection: React.FC = () => {
                     />
                 </div>
             ) : (
-                <pre className="min-h-0 flex-1 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-xs">
+                // a read-only code view: focusable so the keyboard can scroll it
+                <pre
+                    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
+                    role="textbox"
+                    aria-readonly="true"
+                    aria-multiline="true"
+                    tabIndex={0}
+                    aria-label={text('dbml.title')}
+                    className="min-h-0 flex-1 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-xs"
+                >
                     {result.text || text('dbml.empty')}
                 </pre>
             )}

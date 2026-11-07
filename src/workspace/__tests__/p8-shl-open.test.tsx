@@ -105,7 +105,7 @@ describe('Open dialog (SHL-043 to SHL-048)', () => {
         const heads = screen
             .getAllByRole('columnheader')
             .map((h) => h.textContent);
-        expect(heads.slice(1, 5)).toEqual([
+        expect(heads.slice(0, 4)).toEqual([
             'Name',
             'Created',
             'Changed',

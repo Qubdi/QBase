@@ -86,6 +86,7 @@ export const MobilePanel: React.FC = () => {
                     </div>
                     <div className="min-h-0 flex-1 overflow-auto">
                         <SidePanelSlot
+                            heading={false}
                             onFocused={() => store.getState().hidePanel()}
                         />
                     </div>

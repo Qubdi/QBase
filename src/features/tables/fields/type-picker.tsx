@@ -94,6 +94,9 @@ export const TypePicker: React.FC<{
                     size="sm"
                     role="combobox"
                     aria-expanded={open}
+                    aria-label={`${text('fields.typePlaceholder')}: ${
+                        column.type.name ? typeLabel(column, databaseType) : '-'
+                    }`}
                     className="h-8 w-36 shrink-0 justify-between px-2 font-mono text-xs"
                 >
                     <span className="truncate">
