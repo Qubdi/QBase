@@ -11,6 +11,7 @@ export const settingsStrings = {
     fieldAttributes: 'Show field attributes',
     compactTables: 'Use compact tables',
     minimap: 'Show the minimap',
+    outlineOverlaps: 'Outline overlapping tables',
     views: 'Show database views',
     shortcuts: 'Keyboard shortcuts',
 };

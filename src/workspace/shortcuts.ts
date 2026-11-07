@@ -2,7 +2,8 @@
  * The keyboard shortcuts of the editor, as data (architecture section 7).
  * `Mod` is Cmd on a Mac and Ctrl elsewhere. The workspace answers the shortcuts
  * whose `owner` is 'workspace'; the others are listed so the reference and the
- * tooltips stay in one place, and are answered by the canvas or clipboard code.
+ * tooltips stay in one place, and each is answered in one place only: the canvas
+ * listens for Mod+0, Mod+C, Mod+V and Delete itself, so no other code binds them.
  */
 export type ShortcutId =
     | 'undo'
@@ -29,7 +30,7 @@ export interface Shortcut {
     inTextBox: boolean;
     /** the browser's own action is cancelled when the shortcut fires */
     cancelsBrowser: boolean;
-    owner: 'workspace' | 'canvas' | 'clipboard';
+    owner: 'workspace' | 'canvas';
 }
 
 export const SHORTCUTS: readonly Shortcut[] = [
@@ -81,7 +82,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
         mod: true,
         inTextBox: false,
         cancelsBrowser: true,
-        owner: 'workspace',
+        owner: 'canvas',
     },
     {
         id: 'toggleTheme',
@@ -105,7 +106,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
         mod: true,
         inTextBox: false,
         cancelsBrowser: false,
-        owner: 'clipboard',
+        owner: 'canvas',
     },
     {
         id: 'pasteTables',
@@ -113,7 +114,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
         mod: true,
         inTextBox: false,
         cancelsBrowser: false,
-        owner: 'clipboard',
+        owner: 'canvas',
     },
     {
         id: 'removeSelection',

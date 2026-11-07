@@ -73,6 +73,12 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             set: config.setShowMinimap,
         },
         {
+            id: 'overlaps',
+            label: t('editor.settings.outlineOverlaps'),
+            checked: config.outlineOverlaps,
+            set: config.setOutlineOverlaps,
+        },
+        {
             id: 'views',
             label: t('editor.settings.views'),
             checked: config.showDbViews,

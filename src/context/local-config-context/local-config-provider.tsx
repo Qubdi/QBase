@@ -14,6 +14,7 @@ const KEYS = {
     showFieldAttributes: 'show_field_attributes',
     compactTables: 'compact_tables',
     showMinimap: 'show_minimap_on_canvas',
+    outlineOverlaps: 'outline_overlapping_tables',
 } as const;
 
 const readBool = (key: string, fallback: boolean): boolean => {
@@ -74,6 +75,10 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
         false
     );
     const [showMinimap, setShowMinimap] = useStoredBool(KEYS.showMinimap, true);
+    const [outlineOverlaps, setOutlineOverlaps] = useStoredBool(
+        KEYS.outlineOverlaps,
+        false
+    );
 
     const value = useMemo(
         () => ({
@@ -91,6 +96,8 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
             setCompactTables,
             showMinimap,
             setShowMinimap,
+            outlineOverlaps,
+            setOutlineOverlaps,
         }),
         [
             theme,
@@ -107,6 +114,8 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
             setCompactTables,
             showMinimap,
             setShowMinimap,
+            outlineOverlaps,
+            setOutlineOverlaps,
         ]
     );
 

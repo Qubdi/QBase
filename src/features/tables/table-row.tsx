@@ -4,7 +4,6 @@ import {
     ChevronRight,
     Crosshair,
     MoreHorizontal,
-    Plus,
 } from 'lucide-react';
 import {
     planChangeSchema,
@@ -16,7 +15,6 @@ import { planAddKey } from '@/core/commands/plan-column';
 import { traitsOf } from '@/core/model/database';
 import type { Entity } from '@/core/model/entity';
 import { cn } from '@/lib/utils/utils';
-import { DebouncedTextarea } from '@/platform/panel/debounced-input';
 import { InlineName } from '@/platform/panel/inline-name';
 import { useFocus } from '@/platform/panel/panel-context';
 import { SortableRow } from '@/platform/panel/sortable-list';
@@ -29,27 +27,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/platform/ui/dropdown-menu';
-import { ChecksEditor } from './checks-editor';
-import { FieldsEditor } from './fields/fields-editor';
-import { IndexesEditor } from './indexes-editor';
+import { EntityForm } from './entity-form';
 import { ChangeSchemaDialog } from './schema-dialogs';
 import { knownSchemas } from './table-list';
-
-const Section: React.FC<{
-    title: string;
-    action?: React.ReactNode;
-    children: React.ReactNode;
-}> = ({ title, action, children }) => (
-    <section className="space-y-2">
-        <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {title}
-            </h4>
-            {action}
-        </div>
-        {children}
-    </section>
-);
 
 /** One row of the Tables list: its header, and the editor when it is open (EDT-103 to EDT-111). */
 export const TableRow: React.FC<{
@@ -205,58 +185,8 @@ export const TableRow: React.FC<{
                 </DropdownMenu>
             </SortableRow>
             {open ? (
-                <div className="space-y-4 border-t p-2">
-                    <Section
-                        title={text('tables.fields')}
-                        action={
-                            locked ? null : (
-                                <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    className="size-6"
-                                    aria-label={text('tables.addField')}
-                                    onClick={() =>
-                                        edit(planAddColumn(design, entity.id))
-                                    }
-                                >
-                                    <Plus />
-                                </Button>
-                            )
-                        }
-                    >
-                        <FieldsEditor entity={entity} />
-                    </Section>
-                    {view ? null : (
-                        <Section title={text('tables.indexes')}>
-                            <IndexesEditor entity={entity} />
-                        </Section>
-                    )}
-                    {view ? null : (
-                        <Section title={text('tables.checks')}>
-                            <ChecksEditor entity={entity} />
-                        </Section>
-                    )}
-                    <Section title={text('tables.description')}>
-                        <DebouncedTextarea
-                            aria-label={text('tables.description')}
-                            value={entity.comments ?? ''}
-                            readOnly={locked}
-                            placeholder={text('tables.noDescription')}
-                            onCommit={(comments) =>
-                                edit({
-                                    type: 'entity.update',
-                                    id: entity.id,
-                                    patch: {
-                                        comments:
-                                            comments === ''
-                                                ? undefined
-                                                : comments,
-                                    },
-                                })
-                            }
-                        />
-                    </Section>
+                <div className="border-t p-2">
+                    <EntityForm entity={entity} />
                 </div>
             ) : null}
             {changing ? (

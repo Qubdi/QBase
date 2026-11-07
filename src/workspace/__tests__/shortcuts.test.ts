@@ -42,6 +42,27 @@ describe('keyboard shortcuts (EDT-217, EDT-218, EDT-256, SHL-032)', () => {
         );
     });
 
+    it('SHL-050: each key has one listener: the canvas owns fit, copy, paste and delete', () => {
+        const owner = (shortcutId: string) =>
+            SHORTCUTS.find((s) => s.id === shortcutId)?.owner;
+        for (const shortcutId of [
+            'fitAll',
+            'copyTables',
+            'pasteTables',
+            'removeSelection',
+        ])
+            expect(owner(shortcutId), shortcutId).toBe('canvas');
+        for (const shortcutId of [
+            'undo',
+            'redo',
+            'save',
+            'togglePanel',
+            'toggleTheme',
+            'toggleFilter',
+        ])
+            expect(owner(shortcutId), shortcutId).toBe('workspace');
+    });
+
     it('Ctrl does the work on Windows and Linux, Cmd on a Mac', () => {
         expect(id(press('z', { ctrlKey: true }))).toBe('undo');
         expect(id(press('z', { metaKey: true }))).toBeUndefined();

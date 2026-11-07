@@ -16,7 +16,6 @@ import { Rail } from './rail';
 import { RememberDefault } from './remember-default';
 import { SidePanelSlot } from './side-panel-slot';
 import { useIsDesktop } from './use-is-desktop';
-import { useEditorClipboard } from '@/features/clipboard/use-editor-clipboard';
 import { useWorkspaceCommands } from './use-workspace-commands';
 import { useWorkspaceShortcuts } from './use-workspace-shortcuts';
 
@@ -87,7 +86,6 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
     const [railOpen, setRailOpen] = useState(false);
     const commands = useWorkspaceCommands();
     useWorkspaceShortcuts(commands);
-    useEditorClipboard();
 
     // the panel starts hidden on a phone and shown on a desktop (spec A7)
     useEffect(() => {

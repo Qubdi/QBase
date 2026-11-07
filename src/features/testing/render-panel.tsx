@@ -37,6 +37,8 @@ export function renderPanel(
         setCompactTables: noop,
         showMinimap: true,
         setShowMinimap: noop,
+        outlineOverlaps: false,
+        setOutlineOverlaps: noop,
     };
     const store = createEditorStore({ design, ...storeOptions });
     const result = render(

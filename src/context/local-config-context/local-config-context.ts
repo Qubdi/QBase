@@ -18,6 +18,8 @@ export interface LocalConfig {
     setCompactTables: (value: boolean) => void;
     showMinimap: boolean;
     setShowMinimap: (value: boolean) => void;
+    outlineOverlaps: boolean;
+    setOutlineOverlaps: (value: boolean) => void;
 }
 
 const noop = () => undefined;
@@ -38,4 +40,6 @@ export const LocalConfigContext = createContext<LocalConfig>({
     setCompactTables: noop,
     showMinimap: true,
     setShowMinimap: noop,
+    outlineOverlaps: false,
+    setOutlineOverlaps: noop,
 });
