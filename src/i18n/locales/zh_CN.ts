@@ -7,6 +7,11 @@ export const zh_CN = {
         },
         editor: {
             common: {
+                copyFailed: {
+                    title: '复制失败',
+                    unsupported: '不支持剪贴板。',
+                    generic: '出了点问题，请重试。',
+                },
                 cancel: '取消',
                 close: '关闭',
                 back: '返回',
@@ -370,7 +375,6 @@ export const zh_CN = {
                     copyScript: '复制查询',
                     noScript: '此数据库尚未提供现成的查询。',
                     scriptCopied: '查询已复制',
-                    copyFailed: '此浏览器不支持复制',
                     truncated:
                         '粘贴的文本恰好为 65,535 个字符，通常说明客户端已将其截断。请将该单元格导出为文件，而不要从表格中复制。',
                     repair: '修复文本',
@@ -419,7 +423,6 @@ export const zh_CN = {
                     script: '生成的脚本',
                     copy: '复制',
                     copied: '脚本已复制',
-                    copyFailed: '此浏览器不支持复制',
                     download: '下载 .sql',
                     nothing: '还没有可导出的表。',
                 },
@@ -699,7 +702,6 @@ export const zh_CN = {
                     standardRefs: '显示标准引用',
                     inlineRefs: '显示内联引用',
                     copied: '已复制',
-                    failed: '无法生成 DBML',
                     edit: '编辑',
                     view: '查看',
                     accept: '接受更改',

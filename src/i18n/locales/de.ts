@@ -7,6 +7,12 @@ export const de = {
         },
         editor: {
             common: {
+                copyFailed: {
+                    title: 'Kopieren fehlgeschlagen',
+                    unsupported: 'Zwischenablage wird nicht unterstützt.',
+                    generic:
+                        'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+                },
                 cancel: 'Abbrechen',
                 close: 'Schließen',
                 back: 'Zurück',
@@ -407,8 +413,6 @@ export const de = {
                     noScript:
                         'Für diese Datenbank wird noch keine fertige Abfrage mitgeliefert.',
                     scriptCopied: 'Abfrage kopiert',
-                    copyFailed:
-                        'Kopieren ist in diesem Browser nicht verfügbar',
                     truncated:
                         'Der eingefügte Text ist genau 65.535 Zeichen lang, was meist bedeutet, dass Ihr Client ihn abgeschnitten hat. Exportieren Sie die Zelle in eine Datei, statt sie aus dem Raster zu kopieren.',
                     repair: 'Text reparieren',
@@ -468,8 +472,6 @@ export const de = {
                     script: 'Erzeugtes Skript',
                     copy: 'Kopieren',
                     copied: 'Skript kopiert',
-                    copyFailed:
-                        'Kopieren ist in diesem Browser nicht verfügbar',
                     download: '.sql herunterladen',
                     nothing: 'Es gibt noch keine Tabellen zum Exportieren.',
                 },
@@ -761,7 +763,6 @@ export const de = {
                     standardRefs: 'Standard-Refs anzeigen',
                     inlineRefs: 'Inline-Refs anzeigen',
                     copied: 'Kopiert',
-                    failed: 'Das DBML konnte nicht erzeugt werden',
                     edit: 'Bearbeiten',
                     view: 'Ansehen',
                     accept: 'Änderungen übernehmen',

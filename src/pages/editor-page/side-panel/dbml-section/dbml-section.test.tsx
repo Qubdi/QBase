@@ -6,7 +6,12 @@ import { sampleS1 } from '@/dialects/testing/sample-designs';
 import { usePreviewStore } from '@/features/dbml-diff/preview-store';
 import { exportDbml } from '@/formats/dbml/export-dbml';
 import { renderPanel } from '@/features/testing/render-panel';
+import { copyText } from '@/platform/clipboard/copy-text';
 import { APPLY_DELAY_MS, DbmlSection, PARSE_DELAY_MS } from './dbml-section';
+
+vi.mock('@/platform/clipboard/copy-text', () => ({
+    copyText: vi.fn().mockResolvedValue(true),
+}));
 
 const design = sampleS1('postgresql');
 const original = exportDbml(design).text;
@@ -241,5 +246,15 @@ describe('review ui 8: Accept applies the text on screen', () => {
         );
         expect(names).toContain('second');
         expect(names).not.toContain('extra');
+    });
+});
+
+describe('EDT-272 copying the DBML', () => {
+    it('copies the text on screen through the shared helper', async () => {
+        setup();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+        });
+        expect(copyText).toHaveBeenCalledWith(original);
     });
 });

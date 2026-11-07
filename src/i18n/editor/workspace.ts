@@ -3,6 +3,11 @@
 // two objects below into locales/en.ts under `editor`.
 export const workspaceStrings = {
     common: {
+        copyFailed: {
+            title: 'Copy failed',
+            unsupported: 'Clipboard not supported.',
+            generic: 'Something went wrong. Please try again.',
+        },
         cancel: 'Cancel',
         close: 'Close',
         back: 'Back',

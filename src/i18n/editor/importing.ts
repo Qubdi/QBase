@@ -37,7 +37,6 @@ export const importingStrings = {
         copyScript: 'Copy the query',
         noScript: 'No ready-made query is shipped for this database yet.',
         scriptCopied: 'Query copied',
-        copyFailed: 'Copying is not available in this browser',
         truncated:
             'The pasted text is exactly 65,535 characters long, which usually means your client cut it off. Export the cell to a file instead of copying it from the grid.',
         repair: 'Repair the text',

@@ -7,6 +7,11 @@ export const fr = {
         },
         editor: {
             common: {
+                copyFailed: {
+                    title: 'Échec de la copie',
+                    unsupported: 'Presse-papiers non pris en charge.',
+                    generic: 'Une erreur s’est produite. Veuillez réessayer.',
+                },
                 cancel: 'Annuler',
                 close: 'Fermer',
                 back: 'Retour',
@@ -419,8 +424,6 @@ export const fr = {
                     noScript:
                         "Aucune requête prête à l'emploi n'est encore fournie pour cette base de données.",
                     scriptCopied: 'Requête copiée',
-                    copyFailed:
-                        "La copie n'est pas disponible dans ce navigateur",
                     truncated:
                         "Le texte collé fait exactement 65 535 caractères, ce qui signifie généralement que votre client l'a tronqué. Exportez la cellule dans un fichier au lieu de la copier depuis la grille.",
                     repair: 'Réparer le texte',
@@ -487,8 +490,6 @@ export const fr = {
                     script: 'Script généré',
                     copy: 'Copier',
                     copied: 'Script copié',
-                    copyFailed:
-                        "La copie n'est pas disponible dans ce navigateur",
                     download: 'Télécharger le .sql',
                     nothing: "Il n'y a pas encore de table à exporter.",
                 },
@@ -782,7 +783,6 @@ export const fr = {
                     standardRefs: 'Afficher les refs standard',
                     inlineRefs: 'Afficher les refs en ligne',
                     copied: 'Copié',
-                    failed: 'Impossible de générer le DBML',
                     edit: 'Modifier',
                     view: 'Afficher',
                     accept: 'Accepter les modifications',

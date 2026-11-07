@@ -7,6 +7,11 @@ export const zh_TW = {
         },
         editor: {
             common: {
+                copyFailed: {
+                    title: '複製失敗',
+                    unsupported: '不支援剪貼簿。',
+                    generic: '發生錯誤，請再試一次。',
+                },
                 cancel: '取消',
                 close: '關閉',
                 back: '返回',
@@ -371,7 +376,6 @@ export const zh_TW = {
                     copyScript: '複製查詢',
                     noScript: '此資料庫尚未提供現成的查詢。',
                     scriptCopied: '已複製查詢',
-                    copyFailed: '此瀏覽器無法使用複製功能',
                     truncated:
                         '貼上的文字長度剛好是 65,535 個字元，這通常表示您的用戶端已將其截斷。請將儲存格匯出為檔案，不要從表格中複製。',
                     repair: '修復文字',
@@ -420,7 +424,6 @@ export const zh_TW = {
                     script: '產生的指令碼',
                     copy: '複製',
                     copied: '已複製指令碼',
-                    copyFailed: '此瀏覽器無法使用複製功能',
                     download: '下載 .sql',
                     nothing: '目前沒有可匯出的資料表。',
                 },
@@ -701,7 +704,6 @@ export const zh_TW = {
                     standardRefs: '顯示標準 ref',
                     inlineRefs: '顯示內嵌 ref',
                     copied: '已複製',
-                    failed: '無法產生 DBML',
                     edit: '編輯',
                     view: '檢視',
                     accept: '接受變更',

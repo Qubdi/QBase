@@ -12,6 +12,7 @@ import {
 } from '@/platform/ui/dialog';
 import { Spinner } from '@/platform/ui/spinner';
 import { Textarea } from '@/platform/ui/textarea';
+import { copyText } from '@/platform/clipboard/copy-text';
 import { toast } from '@/platform/toast/use-toast';
 import type { DatabaseType } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
@@ -54,14 +55,8 @@ export const ExportSqlDialog: React.FC<ExportSqlDialogProps> = ({
 
     const copy = async () => {
         if (!result) return;
-        try {
-            await navigator.clipboard.writeText(result.text);
+        if (await copyText(result.text)) {
             toast({ title: t('editor.exporting.sql.copied') });
-        } catch {
-            toast({
-                title: t('editor.exporting.sql.copyFailed'),
-                variant: 'destructive',
-            });
         }
     };
 

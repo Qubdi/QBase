@@ -237,7 +237,6 @@ export const sidePanelStrings = {
         standardRefs: 'Show standard refs',
         inlineRefs: 'Show inline refs',
         copied: 'Copied',
-        failed: 'Could not write the DBML',
         edit: 'Edit',
         view: 'View',
         accept: 'Accept changes',

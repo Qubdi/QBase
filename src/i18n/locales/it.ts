@@ -7,6 +7,11 @@ export const it = {
         },
         editor: {
             common: {
+                copyFailed: {
+                    title: 'Copia non riuscita',
+                    unsupported: 'Appunti non supportati.',
+                    generic: 'Qualcosa è andato storto. Riprovare.',
+                },
                 cancel: 'Annulla',
                 close: 'Chiudi',
                 back: 'Indietro',
@@ -416,7 +421,6 @@ export const it = {
                     noScript:
                         'Per questo database non è ancora disponibile una query pronta.',
                     scriptCopied: 'Query copiata',
-                    copyFailed: 'La copia non è disponibile in questo browser',
                     truncated:
                         'Il testo incollato è lungo esattamente 65.535 caratteri, il che di solito indica che il client lo ha troncato. Esportare la cella in un file invece di copiarla dalla griglia.',
                     repair: 'Ripara il testo',
@@ -484,7 +488,6 @@ export const it = {
                     script: 'Script generato',
                     copy: 'Copia',
                     copied: 'Script copiato',
-                    copyFailed: 'La copia non è disponibile in questo browser',
                     download: 'Scarica .sql',
                     nothing: 'Non ci sono ancora tabelle da esportare.',
                 },
@@ -779,7 +782,6 @@ export const it = {
                     standardRefs: 'Mostra ref standard',
                     inlineRefs: 'Mostra ref inline',
                     copied: 'Copiato',
-                    failed: 'Non è stato possibile scrivere il DBML',
                     edit: 'Modifica',
                     view: 'Visualizza',
                     accept: 'Accetta le modifiche',

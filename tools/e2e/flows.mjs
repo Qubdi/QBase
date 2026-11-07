@@ -1205,6 +1205,49 @@ await flow('F7', 'settings persist across reload; language', {}, async () => {
         }
     );
 
+    await step(
+        '04b switching through every language in one session translates the menus each time',
+        async () => {
+            // [name in the list, a word the menu bar must contain, html lang]
+            const languages = [
+                ['Italiano (Italian)', 'Diagramma', 'it'],
+                ['ქართული (Georgian)', 'დიაგრამა', 'ka'],
+                ['Русский (Russian)', 'Диаграмма', 'ru'],
+                ['Français (French)', 'Diagramme', 'fr'],
+                ['简体中文 (Chinese (Simplified))', '图表', 'zh'],
+                ['繁體中文 (Chinese (Traditional))', '圖表', 'zh'],
+                ['Deutsch (German)', 'Diagramm', 'de'],
+            ];
+            for (const [name, word, lang] of languages) {
+                // the button's name is translated too: find it by its globe icon
+                await page
+                    .locator('button:has(svg.lucide-globe)')
+                    .first()
+                    .click();
+                await page.getByText(name, { exact: true }).first().click();
+                await idle();
+                await page
+                    .getByRole('menubar')
+                    .getByText(word, { exact: false })
+                    .first()
+                    .waitFor({ timeout: 8000 })
+                    .catch(() => undefined);
+                const bar = await page.getByRole('menubar').innerText();
+                check(
+                    bar.includes(word),
+                    `${name}: the menu bar says "${bar.replace(/\s+/g, ' ')}", expected "${word}"`
+                );
+                check(
+                    (
+                        await page.evaluate(() => document.documentElement.lang)
+                    ).startsWith(lang),
+                    `${name}: html lang is not ${lang}`
+                );
+            }
+            await shot('every-language');
+        }
+    );
+
     await step('05 switch back to English', async () => {
         await page.locator('button:has(svg.lucide-globe)').first().click();
         await page.getByText('English', { exact: true }).first().click();

@@ -20,6 +20,7 @@ import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
 import { Spinner } from '@/platform/ui/spinner';
+import { copyText } from '@/platform/clipboard/copy-text';
 import { toast } from '@/platform/toast/use-toast';
 import { importDbml } from '@/formats/dbml/import-dbml';
 import { selectPanel } from '@/store/selectors';
@@ -191,11 +192,8 @@ export const DbmlSection: React.FC = () => {
     };
 
     const copy = async () => {
-        try {
-            await navigator.clipboard.writeText(editing ? draft : result.text);
+        if (await copyText(editing ? draft : result.text)) {
             toast({ title: text('dbml.copied') });
-        } catch {
-            toast({ title: text('dbml.failed'), variant: 'destructive' });
         }
     };
 

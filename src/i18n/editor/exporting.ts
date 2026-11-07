@@ -6,7 +6,6 @@ export const exportingStrings = {
         script: 'Generated script',
         copy: 'Copy',
         copied: 'Script copied',
-        copyFailed: 'Copying is not available in this browser',
         download: 'Download .sql',
         nothing: 'There are no tables to export yet.',
     },

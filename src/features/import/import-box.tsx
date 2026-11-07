@@ -8,6 +8,7 @@ import { OptionSelect } from '@/components/option-select/option-select';
 import { editionsFor } from '@/core/model/database';
 import type { DatabaseEdition, DatabaseType } from '@/core/model/database';
 import type { Diagnostic } from '@/dialects/script-model';
+import { copyText } from '@/platform/clipboard/copy-text';
 import { toast } from '@/platform/toast/use-toast';
 import {
     analyzeImport,
@@ -241,14 +242,8 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
     const script = metadataScriptFor(databaseType, edition);
     const copyScript = async () => {
         if (!script) return;
-        try {
-            await navigator.clipboard.writeText(script);
+        if (await copyText(script)) {
             toast({ title: t('editor.importing.box.scriptCopied') });
-        } catch {
-            toast({
-                title: t('editor.importing.box.copyFailed'),
-                variant: 'destructive',
-            });
         }
     };
 
