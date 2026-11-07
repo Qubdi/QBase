@@ -4,26 +4,20 @@ import { buildRoutes } from '../router';
 
 const paths = (routes: RouteObject[]) => routes.map((r) => r.path);
 
-const LOCAL_ONLY = [
-    'examples',
-    'templates',
-    'templates/featured',
-    'templates/tags/:tag',
-    'templates/:templateSlug',
-    'templates/clone/:templateSlug',
-];
+// the example and template pages were dropped by the owner (SHL-018, SHL-091, SHL-092)
+const DROPPED = ['examples', 'templates', 'templates/featured'];
 
 describe('routes', () => {
-    it('offers the example and template pages in the local editor', () => {
+    it('offers the editor and a diagram by id in the local editor, without example or template pages', () => {
         const local = paths(buildRoutes(false));
-        for (const path of LOCAL_ONLY) expect(local, path).toContain(path);
+        for (const path of DROPPED) expect(local, path).not.toContain(path);
         expect(local).toContain('');
         expect(local).toContain('diagrams/:diagramId');
     });
 
-    it('leaves them out when there is a server, where nothing exists outside a project', () => {
+    it('has only project routes when there is a server, where nothing exists outside a project', () => {
         const server = paths(buildRoutes(true));
-        for (const path of LOCAL_ONLY) expect(server, path).not.toContain(path);
+        for (const path of DROPPED) expect(server, path).not.toContain(path);
         expect(server).toContain(':projectSlug/diagrams/:remoteDiagramId');
         expect(server).toContain('s/:token');
         // everything else still resolves to the not-found page

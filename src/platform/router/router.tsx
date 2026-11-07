@@ -28,13 +28,6 @@ const editor = (path: string) =>
         (m) => <m.EditorPage />
     );
 
-const templates = (path: string) =>
-    lazyPage(
-        path,
-        () => import('./templates-placeholder-page'),
-        (m) => <m.TemplatesPlaceholderPage />
-    );
-
 const shareViewer = lazyPage(
     's/:token',
     () => import('@/pages/share-viewer-page/share-viewer-page'),
@@ -70,12 +63,6 @@ export const buildRoutes = (backendEnabled: boolean): RouteObject[] =>
         : [
               editor(''),
               editor('diagrams/:diagramId'),
-              templates('examples'),
-              templates('templates'),
-              templates('templates/featured'),
-              templates('templates/tags/:tag'),
-              templates('templates/:templateSlug'),
-              templates('templates/clone/:templateSlug'),
               adminRoute,
               shareViewer,
               notFound,
