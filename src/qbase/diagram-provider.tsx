@@ -50,10 +50,14 @@ export const DiagramProvider: React.FC<
         let cancelled = false;
         setLoaded({ status: 'loading' });
         void (async () => {
+            // inside a project workspace with no local copy there is nothing to
+            // open: the browser's own default diagram is not that project's
             const id =
                 routeId ??
-                ((await adapter.readSettings()).defaultDiagramId ||
-                    (await adapter.list())[0]?.id);
+                (workspace
+                    ? undefined
+                    : (await adapter.readSettings()).defaultDiagramId ||
+                      (await adapter.list())[0]?.id);
             const found = id ? await adapter.load(id) : undefined;
             if (cancelled) return;
             if (!id || !found) return setLoaded({ status: 'missing' });
@@ -70,7 +74,7 @@ export const DiagramProvider: React.FC<
         return () => {
             cancelled = true;
         };
-    }, [adapter, routeId]);
+    }, [adapter, routeId, workspace]);
 
     if (loaded.status === 'loading')
         return (

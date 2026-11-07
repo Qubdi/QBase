@@ -149,6 +149,13 @@ describe('editor store: view state', () => {
         });
     });
 
+    it('forgets the expanded table so asking again reopens it (EDT-107)', () => {
+        const store = createEditorStore({ design: blank() });
+        store.getState().showEntityInPanel('t1');
+        store.getState().clearExpandedEntity();
+        expect(store.getState().ui.panel.expandedEntityId).toBeUndefined();
+    });
+
     it('asking to focus the same entity twice is two requests', () => {
         const store = createEditorStore({ design: blank() });
         store.getState().focusEntity('t1');

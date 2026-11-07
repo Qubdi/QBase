@@ -63,6 +63,8 @@ export interface EditorActions {
     hidePanel(): void;
     /** shows the panel on Tables with that entity expanded (a lint finding, a canvas click) */
     showEntityInPanel(entityId: Id): void;
+    /** forgets which table the panel asked to keep open, so asking again reopens it */
+    clearExpandedEntity(): void;
     focusEntity(entityId: Id): void;
 }
 
@@ -309,6 +311,15 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                             section: 'tables',
                             expandedEntityId: entityId,
                         },
+                    },
+                }));
+            },
+
+            clearExpandedEntity() {
+                set((s) => ({
+                    ui: {
+                        ...s.ui,
+                        panel: { ...s.ui.panel, expandedEntityId: undefined },
                     },
                 }));
             },
