@@ -10,7 +10,8 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
 
 ## Now (decisions and open Phase 0 items)
 
-- [x] **Interim compliance (plan section 2)** decided 2026-11-07: take it down; owner removes the image.
+- [x] **Interim compliance (plan section 2)** decided 2026-11-07: take it down; owner removed the image from Docker Hub on 2026-11-08
+      (still to do in Phase 10: publish the new image under the new licence).
       (Original item:) The Docker Hub image `qubdi/qbase` is public
       and ships the ChartDB-derived editor. Take it down until release, or comply with the
       AGPL now. Also confirm the GitHub repository is private.
