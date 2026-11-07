@@ -16,12 +16,62 @@ import { REGION_SIZE } from '@/core/model/region';
 import type { Size } from '@/core/model/region-membership';
 import type { EditorStore } from '@/store/editor-store';
 import { planArrange, planMoveToArea } from './auto-arrange';
+import { findFreeShift } from './placement';
+import { sizeFor } from './geometry';
 import type { ArrangeScope } from './auto-arrange';
 import { countPaste, recall, remember } from './clipboard';
 import { parseHandle } from './flow-model';
 import type { Point } from './flow-model';
 
 type Measure = (entity: Entity) => Size;
+
+const PLACE_GAP = 24;
+
+const estimate: Measure = (entity) => sizeFor(entity, {});
+
+/** Boxes of every table in the design, as drawn. */
+function tableBoxes(design: Design, measure: Measure) {
+    return design.entities.order.map((id) => {
+        const e = design.entities.byId[id];
+        return { x: e.x, y: e.y, ...measure(e) };
+    });
+}
+
+/** Slides the inserts of a command clear of the existing tables (EDT-038 stays for hand drags). */
+function clearOfTables(
+    design: Design,
+    command: Command,
+    measure: Measure
+): Command {
+    const inserts = command.type === 'group' ? command.commands : [command];
+    const entities = inserts.flatMap((c) =>
+        c.type === 'entity.insert' ? [c.parts.entity] : []
+    );
+    const group = entities.map((e) => ({ x: e.x, y: e.y, ...measure(e) }));
+    const { dx, dy } = findFreeShift(
+        group,
+        tableBoxes(design, measure),
+        PLACE_GAP
+    );
+    if (dx === 0 && dy === 0) return command;
+    const shifted = (c: Command): Command =>
+        c.type === 'entity.insert'
+            ? {
+                  ...c,
+                  parts: {
+                      ...c.parts,
+                      entity: {
+                          ...c.parts.entity,
+                          x: c.parts.entity.x + dx,
+                          y: c.parts.entity.y + dy,
+                      },
+                  },
+              }
+            : c;
+    return command.type === 'group'
+        ? { ...command, commands: command.commands.map(shifted) }
+        : shifted(command);
+}
 
 /**
  * Removes everything selected as one step (EDT-031). Links that go with a
@@ -62,15 +112,17 @@ export function addEntityAt(
     store: EditorStore,
     kind: EntityKind,
     at: Point,
-    visibleSchemas?: readonly string[]
+    visibleSchemas?: readonly string[],
+    measure: Measure = estimate
 ): Id | undefined {
     const state = store.getState();
-    const command = planAddEntity(state.design, {
+    const planned = planAddEntity(state.design, {
         kind,
         x: Math.round(at.x),
         y: Math.round(at.y),
         visibleSchemas,
     });
+    const command = clearOfTables(state.design, planned, measure);
     if (command.type !== 'entity.insert') return undefined;
     const result = state.edit(command);
     if (!result.ok) return undefined;
@@ -102,10 +154,16 @@ export function addMemoAt(store: EditorStore, at: Point): Id | undefined {
     return command.item.id;
 }
 
-export function duplicateEntity(store: EditorStore, id: Id): Id | undefined {
+export function duplicateEntity(
+    store: EditorStore,
+    id: Id,
+    measure: Measure = estimate
+): Id | undefined {
     const state = store.getState();
-    const command = planDuplicateEntity(state.design, id);
-    if (!command || command.type !== 'entity.insert') return undefined;
+    const planned = planDuplicateEntity(state.design, id);
+    if (!planned) return undefined;
+    const command = clearOfTables(state.design, planned, measure);
+    if (command.type !== 'entity.insert') return undefined;
     if (!state.edit(command).ok) return undefined;
     state.select([command.parts.entity.id]);
     return command.parts.entity.id;
@@ -155,12 +213,17 @@ export function copySelection(store: EditorStore): number {
 }
 
 /** Mod+V: pastes what was copied; returns the number of tables added (EDT-230). */
-export function pasteClipboard(store: EditorStore): number {
+export function pasteClipboard(
+    store: EditorStore,
+    measure: Measure = estimate
+): number {
     const held = recall();
     const state = store.getState();
     if (!held || state.session.readonly) return 0;
-    const command = planPaste(state.design, held.clip, held.pastes);
-    if (!command || command.type !== 'group') return 0;
+    const planned = planPaste(state.design, held.clip, held.pastes);
+    if (!planned) return 0;
+    const command = clearOfTables(state.design, planned, measure);
+    if (command.type !== 'group') return 0;
     if (!state.edit(command).ok) return 0;
     countPaste();
     state.select(

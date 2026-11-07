@@ -97,15 +97,34 @@ export function drawnEntityIds(
     );
 }
 
-/** Which sides a link joins, so the line leaves the edges that face each other. */
+/** How far past facing, in pixels, a link keeps the sides it already has. */
+export const SIDE_MARGIN = 48;
+
+/**
+ * Which sides a link joins, so the line leaves the edges that face each other.
+ * With `previous` the old sides are kept while they are still acceptable
+ * within `SIDE_MARGIN`, so a table that wobbles does not make the line flip.
+ */
 export function chooseSides(
     source: { x: number; width: number },
     target: { x: number; width: number },
-    selfLoop: boolean
+    selfLoop: boolean,
+    previous?: readonly [Side, Side]
 ): [Side, Side] {
     if (selfLoop) return ['r', 'r'];
-    if (source.x + source.width <= target.x) return ['r', 'l'];
-    if (target.x + target.width <= source.x) return ['l', 'r'];
+    const gapRight = target.x - (source.x + source.width); // > 0: target is right of source
+    const gapLeft = source.x - (target.x + target.width);
+    if (previous) {
+        const [a, b] = previous;
+        if (a === 'r' && b === 'l' && gapRight >= -SIDE_MARGIN)
+            return ['r', 'l'];
+        if (a === 'l' && b === 'r' && gapLeft >= -SIDE_MARGIN)
+            return ['l', 'r'];
+        if (a === b && gapRight < SIDE_MARGIN && gapLeft < SIDE_MARGIN)
+            return [a, b];
+    }
+    if (gapRight >= 0) return ['r', 'l'];
+    if (gapLeft >= 0) return ['l', 'r'];
     return ['r', 'r'];
 }
 
@@ -171,7 +190,14 @@ export function buildNodes(input: FlowInput): CanvasNode[] {
     return nodes;
 }
 
-export function buildEdges(input: FlowInput): LinkEdge[] {
+/**
+ * `memory` holds the sides each link had last time; it is read for the
+ * hysteresis and updated with the sides chosen now.
+ */
+export function buildEdges(
+    input: FlowInput,
+    memory?: Map<Id, [Side, Side]>
+): LinkEdge[] {
     const { design, live } = input;
     const rank = new Map<string, number>();
     const edges: LinkEdge[] = [];
@@ -190,7 +216,13 @@ export function buildEdges(input: FlowInput): LinkEdge[] {
             x: live.positions[e.id]?.x ?? e.x,
             width: live.sizes[e.id]?.width ?? e.width ?? TABLE_WIDTH.default,
         });
-        const [a, b] = chooseSides(place(from), place(to), selfLoop);
+        const [a, b] = chooseSides(
+            place(from),
+            place(to),
+            selfLoop,
+            memory?.get(id)
+        );
+        memory?.set(id, [a, b]);
         const pair = [from.id, to.id].sort().join('|');
         const n = rank.get(pair) ?? 0;
         rank.set(pair, n + 1);

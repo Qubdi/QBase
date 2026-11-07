@@ -73,7 +73,8 @@ export function runMenuAction(action: MenuAction, deps: MenuDeps): void {
                 store,
                 action.kind,
                 action.at,
-                deps.visibleSchemas
+                deps.visibleSchemas,
+                deps.measure
             );
             if (id) deps.startEditing(id);
             return;
@@ -100,7 +101,7 @@ export function runMenuAction(action: MenuAction, deps: MenuDeps): void {
             deps.startEditing(action.id);
             return;
         case 'duplicate-entity':
-            duplicateEntity(store, action.id);
+            duplicateEntity(store, action.id, deps.measure);
             return;
         case 'draw-link':
             deps.beginLink(action.id);

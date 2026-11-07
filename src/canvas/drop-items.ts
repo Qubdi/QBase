@@ -20,10 +20,11 @@ export function dropNewItem(
     store: EditorStore,
     kind: string,
     at: Point,
-    visibleSchemas?: readonly string[]
+    visibleSchemas?: readonly string[],
+    measure?: Parameters<typeof addEntityAt>[4]
 ): boolean {
     if (!isNewItemKind(kind)) return false;
     if (kind === 'area') return addRegionAt(store, at) !== undefined;
     if (kind === 'note') return addMemoAt(store, at) !== undefined;
-    return addEntityAt(store, kind, at, visibleSchemas) !== undefined;
+    return addEntityAt(store, kind, at, visibleSchemas, measure) !== undefined;
 }

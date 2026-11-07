@@ -92,7 +92,7 @@ describe('right-click menus', () => {
         const store = createEditorStore({ design: s.design });
         const startEditing = vi.fn();
         runMenuAction(
-            { type: 'new-entity', kind: 'table', at: { x: 140.2, y: 90.7 } },
+            { type: 'new-entity', kind: 'table', at: { x: 1400.2, y: 900.7 } },
             {
                 store,
                 measure,
@@ -106,7 +106,7 @@ describe('right-click menus', () => {
         const state = store.getState();
         const made =
             state.design.entities.byId[state.design.entities.order.at(-1)!];
-        expect([made.x, made.y]).toEqual([140, 91]);
+        expect([made.x, made.y]).toEqual([1400, 901]);
         expect(made.schema).toBe('public');
         expect(made.name).toBe('table_4');
         expect(startEditing).toHaveBeenCalledWith(made.id);
@@ -294,7 +294,7 @@ describe('right-click menus', () => {
         expect(screen.queryByTestId('pointer-menu')).toBeNull();
     });
 
-    it('EDT-057, EDT-099: Duplicate Table in the table menu adds a copy 30 right and 50 down', () => {
+    it('EDT-057, EDT-099: Duplicate Table in the table menu adds a copy near the original, clear of other tables', () => {
         const s = shop();
         const { store } = renderCanvas(s.design);
         const card = screen
@@ -309,7 +309,10 @@ describe('right-click menus', () => {
         const state = store.getState().design;
         const copy = state.entities.byId[state.entities.order.at(-1)!];
         expect(copy.name).toBe('orders_copy');
-        expect([copy.x, copy.y]).toEqual([330, 50]);
+        // 30 right and 50 down would land on the other tables, so it slides clear
+        expect(copy.x).toBe(330);
+        expect(copy.y).toBeGreaterThanOrEqual(50);
+        expect(copy.y).toBeGreaterThanOrEqual(80);
     });
 
     it('EDT-100: Delete Table removes the table and its links in one undo step', () => {

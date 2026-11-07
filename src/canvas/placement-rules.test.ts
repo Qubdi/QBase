@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Box } from '@/core/model/region';
-import { findFreeShift } from './free-shift';
+import { findFreeShift } from './placement';
 
 const rect = (x: number, y: number, width = 100, height = 100): Box => ({
     x,
@@ -27,7 +27,7 @@ describe('findFreeShift', () => {
     });
 
     it('does not count tables that only touch as overlapping', () => {
-        expect(findFreeShift([rect(0, 0)], [rect(100, 0)])).toEqual({
+        expect(findFreeShift([rect(0, 0)], [rect(100, 0)], 0)).toEqual({
             dx: 0,
             dy: 0,
         });

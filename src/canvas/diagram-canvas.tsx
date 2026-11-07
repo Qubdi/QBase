@@ -51,7 +51,7 @@ import { LinkPopover } from './link-popover';
 import { reportConnect, reportCopied, reportPasted } from './notify';
 import { commitShapes } from './commit-shapes';
 import { buildEdges, buildNodes, drawnEntityIds, NO_LIVE } from './flow-model';
-import type { LiveShapes, Point } from './flow-model';
+import type { LiveShapes, Point, Side } from './flow-model';
 import { anyOnScreen, overlappingIds, sizeFor } from './geometry';
 import { interactionProps } from './interaction';
 import { DEFAULT_PREFS, HooksContext } from './hooks';
@@ -63,6 +63,7 @@ import { nodeTypes } from './node-types';
 import { SurfaceContext } from './surface-context';
 import type { SurfaceApi } from './surface-context';
 import { useViewportControls } from './use-viewport';
+import type { CanvasControls } from './use-viewport';
 
 const FLASH_MS = 600;
 
@@ -72,6 +73,8 @@ export interface DiagramCanvasProps {
     /** true while the design is still being read: a badge shows */
     loading?: boolean;
     className?: string;
+    /** called once, inside the flow provider, with stable camera functions */
+    onReady?(controls: CanvasControls): void;
 }
 
 function Surface({
@@ -79,6 +82,7 @@ function Surface({
     prefs: prefsGiven,
     loading,
     className,
+    onReady,
 }: DiagramCanvasProps) {
     const { t } = useTranslation();
     const storeApi = useEditorStoreApi();
@@ -170,9 +174,22 @@ function Surface({
         ]
     );
     const nodes = useMemo(() => buildNodes(input), [input]);
-    const edges = useMemo(() => buildEdges(input), [input]);
+    const sideMemory = useRef(new Map<Id, [Side, Side]>());
+    const edges = useMemo(() => buildEdges(input, sideMemory.current), [input]);
 
     const controls = useViewportControls([...visible], storeApi);
+
+    // hand the camera to the frame once; the functions never change
+    const readyRef = useRef(onReady);
+    readyRef.current = onReady;
+    useEffect(() => {
+        readyRef.current?.({
+            fit: () => controls.fit(),
+            zoomToIds: (ids) => controls.zoomToIds(ids),
+            viewportOrigin: () => controls.viewportOrigin(),
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // the view refits after the filter changes (EDT-073)
     const firstFilter = useRef(true);
@@ -373,7 +390,7 @@ function Surface({
                 return;
             }
             if (hasMod(event) && event.key.toLowerCase() === 'v' && editable) {
-                const count = pasteClipboard(storeApi);
+                const count = pasteClipboard(storeApi, measure);
                 if (count > 0) reportPasted(count);
                 return;
             }
@@ -386,7 +403,7 @@ function Surface({
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [controls, editable, storeApi, cancelDraft]);
+    }, [controls, editable, storeApi, cancelDraft, measure]);
 
     const surface = useMemo<SurfaceApi>(
         () => ({
@@ -479,7 +496,8 @@ function Surface({
                                 x: event.clientX,
                                 y: event.clientY,
                             }),
-                            hooks?.visibleSchemas
+                            hooks?.visibleSchemas,
+                            measure
                         );
                     }}
                     data-multiselect={shiftHeld}

@@ -9,7 +9,15 @@ export const ZOOM_STEP_MS = 200;
 export const FIT_MS = 500;
 const FOCUS_MS = 400;
 
-export interface ViewportControls {
+/** What the frame around the canvas may call (see `onReady`). */
+export interface CanvasControls {
+    fit(): void;
+    zoomToIds(ids: string[]): void;
+    /** the diagram point at the top-left corner of what is shown */
+    viewportOrigin(): { x: number; y: number };
+}
+
+export interface ViewportControls extends CanvasControls {
     /** fit the drawn tables in view, 10% padding, at most 80% zoom */
     fit(options?: { instant?: boolean }): void;
     zoomIn(): void;
@@ -78,14 +86,34 @@ export function useViewportControls(
         [store, focusOn]
     );
 
+    const zoomToIds = useCallback(
+        (ids: Id[]) => {
+            if (ids.length === 0) return;
+            void flow.fitView({
+                nodes: ids.map((id) => ({ id })),
+                padding: FIT_PADDING,
+                maxZoom: FIT_MAX_ZOOM,
+                minZoom: ZOOM_MIN,
+                duration: FIT_MS,
+            });
+        },
+        [flow]
+    );
+    const viewportOrigin = useCallback(() => {
+        const { x, y, zoom } = flow.getViewport();
+        return { x: -x / zoom, y: -y / zoom };
+    }, [flow]);
+
     return useMemo(
         () => ({
             fit,
+            zoomToIds,
+            viewportOrigin,
             zoomIn: () => void flow.zoomIn({ duration: ZOOM_STEP_MS }),
             zoomOut: () => void flow.zoomOut({ duration: ZOOM_STEP_MS }),
             resetZoom: () => void flow.zoomTo(1, { duration: ZOOM_STEP_MS }),
             focusOn,
         }),
-        [flow, fit, focusOn]
+        [flow, fit, focusOn, zoomToIds, viewportOrigin]
     );
 }
