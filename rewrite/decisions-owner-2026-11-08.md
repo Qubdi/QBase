@@ -65,3 +65,32 @@ orchestrating session could and could not verify is stated for each.
 | Declarations of the peer sessions `qbase-e4` and `qbase-91` | done | the text is not in the repository; attach it to `provenance.md` |
 | Native-speaker review of the translations (ru, ka, de, it, fr, zh_CN, zh_TW) | done | any changes the reviewers made are not in the repository; if there were any, they must be committed |
 | Docker Hub release secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`) | set | not verifiable here |
+
+## Restore the old UI/UX (owner, 2026-11-08)
+
+The owner looked at the new editor next to the old one and decided: "keep all old UI/UX and just
+change the code and the structure; the old UI was perfect". This replaces earlier decisions
+that made the new editor look or behave differently.
+
+**Comes back (measured from the running old editor, black-box; see `spec/visual-*.md`):**
+the look of everything (colours, sizes, radii, spacing, fonts, shadows, animations: shell, panels,
+dialogs, tables, relationship lines and markers, areas, notes, minimap, toolbar, menus), the old
+English wording and its capitalisation, the Backup menu (SHL-064), the dependencies feature
+(EDT-183 to EDT-186), Highlight Fields (EDT-196), the Type colours legend (EDT-045),
+Oracle and ClickHouse import and export (EXP-008), and the Transactional and Analytical tabs with
+the More/Primary Databases toggle in the New dialog (SHL-032, SHL-042). Accessibility fixes stay:
+where an old colour or control fails the contrast or keyboard checks, it is changed by the smallest
+amount needed and the change is listed.
+
+**Stays out (owner, same day):** the examples and templates pages and their content, the Check
+Examples card (SHL-018, SHL-041, SHL-091, SHL-092, SHL-104), because that content was written by
+the ChartDB authors; the database logos in the New dialog (neutral icons take their place), for the
+same reason; the stray `diagramId` key (DAT-089) and the unused build variables (SHL-008).
+
+**Not yet decided:** the "change" rows of the parity checklist that improved behaviour (for example
+undo shortcuts inside text boxes, warning on duplicate table names, the copy toast naming the
+platform's key). They stay as built until the owner says otherwise.
+
+Method: two black-box observers measure the old editor (no source, bundles or `main` read);
+implementers who have not seen the old code apply the measurements and a pixel comparison
+(`tools/e2e/visual/compare.mjs`) shows what still differs.
