@@ -17,9 +17,7 @@ describe('EDT-110 EDT-102 an empty diagram', () => {
     it('says so and offers Add Table, which creates table_1 with an id field (EDT-075)', async () => {
         const { store } = renderPanel(<TablesSection />, withTables([]));
         expect(screen.getByText('No tables')).toBeTruthy();
-        expect(
-            screen.getByText('Create a table to get started')
-        ).toBeTruthy();
+        expect(screen.getByText('Create a table to get started')).toBeTruthy();
         await userEvent.click(
             screen.getAllByRole('button', { name: 'Add table' })[0]
         );
