@@ -758,6 +758,14 @@ export const ja = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} を移動しました',
+                selected: '{{name}} を選択しました',
+                nodeHint:
+                    'Enter で編集します。矢印キーで移動し、Shift を押すと大きく移動します。Shift+F10 でメニューを開きます。',
+                edgeHint:
+                    'Enter でリレーションを選択、Delete で削除、Escape で取り消します。',
+            },
             surface: {
                 label: 'ダイアグラムキャンバス',
                 loading: 'ダイアグラムを読み込み中...',

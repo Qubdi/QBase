@@ -765,6 +765,14 @@ export const gu = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} ખસેડાયું',
+                selected: '{{name}} પસંદ કર્યું',
+                nodeHint:
+                    'સંપાદન માટે Enter દબાવો. એરો કીથી ખસેડો, Shift સાથે વધુ દૂર. Shift+F10 મેનુ ખોલે છે.',
+                edgeHint:
+                    'સંબંધ પસંદ કરવા Enter, દૂર કરવા Delete, રદ કરવા Escape દબાવો.',
+            },
             surface: {
                 label: 'આકૃતિ કેનવાસ',
                 loading: 'આકૃતિ લોડ થઈ રહી છે...',

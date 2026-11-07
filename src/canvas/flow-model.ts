@@ -180,6 +180,34 @@ function remembered<T extends CanvasNode>(
     return fresh;
 }
 
+/** Ids in reading order: top-left to bottom-right, rows being bands of 80 px. */
+export function readingOrder(nodes: readonly CanvasNode[]): Id[] {
+    const band = (n: CanvasNode) => Math.round(n.position.y / 80);
+    return [...nodes]
+        .sort(
+            (a, b) =>
+                band(a) - band(b) ||
+                a.position.x - b.position.x ||
+                a.position.y - b.position.y
+        )
+        .map((n) => n.id);
+}
+
+/**
+ * `nodes` listed in the order of `ids` (the order Tab walks through them);
+ * a node that is not in `ids` goes last.
+ */
+export function inOrder(
+    nodes: readonly CanvasNode[],
+    ids: readonly Id[]
+): CanvasNode[] {
+    const rank = new Map(ids.map((id, i) => [id, i]));
+    return [...nodes].sort(
+        (a, b) =>
+            (rank.get(a.id) ?? ids.length) - (rank.get(b.id) ?? ids.length)
+    );
+}
+
 export function buildNodes(
     input: FlowInput,
     memory?: NodeMemory
@@ -199,6 +227,7 @@ export function buildNodes(
                 width: size.width,
                 height: size.height ?? region.box.height,
                 data: {},
+                ariaLabel: region.label,
                 selected: selection.has(id),
                 draggable: input.editable,
                 zIndex: -1,
@@ -217,6 +246,7 @@ export function buildNodes(
                 width: size.width,
                 height: size.height ?? memo.box.height,
                 data: {},
+                ariaLabel: memo.body.trim().slice(0, 60) || undefined,
                 selected: selection.has(id),
                 draggable: input.editable,
                 zIndex: 0,
@@ -248,6 +278,7 @@ export function buildNodes(
                     mark: input.diff?.tables[entity.id],
                     renamedFrom: input.diff?.renames?.[entity.id],
                 },
+                ariaLabel: entity.name,
                 selected: selection.has(entity.id),
                 draggable: input.editable,
                 zIndex: 1,
@@ -307,6 +338,7 @@ export function buildEdges(
             target: to.id,
             sourceHandle: handleId(link.sourceColumnId, a),
             targetHandle: handleId(link.targetColumnId, b),
+            ariaLabel: `${from.name} - ${to.name}`,
             selected: input.selection.has(id),
             data: {
                 reach: (selfLoop ? 36 : 22) + n * 14,

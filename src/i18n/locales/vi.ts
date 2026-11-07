@@ -754,6 +754,14 @@ export const vi = {
             },
         },
         canvas: {
+            a11y: {
+                moved: 'Đã di chuyển {{name}}',
+                selected: 'Đã chọn {{name}}',
+                nodeHint:
+                    'Nhấn Enter để sửa. Phím mũi tên để di chuyển, giữ Shift để di chuyển xa hơn. Shift+F10 mở menu.',
+                edgeHint:
+                    'Nhấn Enter để chọn mối quan hệ, Delete để xóa, Escape để hủy.',
+            },
             surface: {
                 label: 'Canvas sơ đồ',
                 loading: 'Đang tải sơ đồ...',

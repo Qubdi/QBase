@@ -817,6 +817,14 @@ export const ar = {
             },
         },
         canvas: {
+            a11y: {
+                moved: 'تم نقل {{name}}',
+                selected: 'تم تحديد {{name}}',
+                nodeHint:
+                    'اضغط Enter للتحرير. مفاتيح الأسهم تحركه، ومع Shift تحركه أبعد. Shift+F10 يفتح القائمة.',
+                edgeHint:
+                    'اضغط Enter لتحديد العلاقة، وDelete لإزالتها، وEscape للإلغاء.',
+            },
             surface: {
                 label: 'لوحة رسم المخطط',
                 loading: 'جارٍ تحميل المخطط...',

@@ -764,6 +764,14 @@ export const mr = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} हलवले',
+                selected: '{{name}} निवडले',
+                nodeHint:
+                    'संपादित करण्यासाठी Enter दाबा. बाण कीने हलवा, Shift सह अधिक दूर. Shift+F10 मेनू उघडतो.',
+                edgeHint:
+                    'संबंध निवडण्यासाठी Enter, काढण्यासाठी Delete, रद्द करण्यासाठी Escape दाबा.',
+            },
             surface: {
                 label: 'आकृती कॅनव्हास',
                 loading: 'आकृती लोड होत आहे...',

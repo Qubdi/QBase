@@ -720,6 +720,13 @@ export const zh_CN = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '已移动 {{name}}',
+                selected: '已选中 {{name}}',
+                nodeHint:
+                    '按 Enter 编辑。方向键移动，Shift 加方向键移动更远。Shift+F10 打开菜单。',
+                edgeHint: '按 Enter 选中关系，Delete 删除，Escape 取消。',
+            },
             surface: {
                 label: '图表画布',
                 loading: '正在加载图表...',

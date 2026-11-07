@@ -60,7 +60,14 @@ import { HANDLES_MIN_ZOOM } from './field-row';
 import { LinkPopover } from './link-popover';
 import { reportConnect, reportCopied, reportPasted } from './notify';
 import { commitShapes } from './commit-shapes';
-import { buildEdges, buildNodes, drawnEntityIds, NO_LIVE } from './flow-model';
+import {
+    buildEdges,
+    buildNodes,
+    drawnEntityIds,
+    inOrder,
+    NO_LIVE,
+    readingOrder,
+} from './flow-model';
 import type {
     LinkEdge,
     LiveShapes,
@@ -249,7 +256,25 @@ function Surface({
         ]
     );
     const nodeMemory = useRef<NodeMemory>(new Map());
-    const nodes = useMemo(() => buildNodes(input, nodeMemory.current), [input]);
+    // Tab walks the tables in reading order (top-left to bottom-right). The order
+    // is held while a node has the focus: moving the element that holds the focus
+    // in the page would drop the focus.
+    const tabOrder = useRef<Id[]>([]);
+    const nodes = useMemo(() => {
+        const built = buildNodes(input, nodeMemory.current);
+        const held = tabOrder.current;
+        const known = new Set(held);
+        const focusedNode =
+            typeof document !== 'undefined' &&
+            document.activeElement?.closest?.('.react-flow__node');
+        if (!(
+            focusedNode &&
+            held.length === built.length &&
+            built.every((n) => known.has(n.id))
+        ))
+            tabOrder.current = readingOrder(built);
+        return inOrder(built, tabOrder.current);
+    }, [input]);
     const sideMemory = useRef(new Map<Id, [Side, Side]>());
     const edgeMemory = useRef(new Map<Id, LinkEdge>());
     const edges = useMemo(
@@ -399,8 +424,27 @@ function Surface({
         if (command) state.edit(command);
     }, [storeApi, measure, changeLive, markGesture]);
 
-    // xyflow moves a selected table on the arrow keys but never reports a drag
-    // end; once the key sequence is over the moves become one edit (one undo step)
+    // what a screen reader is told: "<name> moved", "<name> selected"
+    const [announcement, setAnnouncement] = useState('');
+    const announce = useCallback((text: string) => {
+        // the same words twice in a row must still be read: alternate an invisible mark
+        setAnnouncement((before) => (before === text ? `${text}\u200b` : text));
+    }, []);
+    const nameOf = useCallback(
+        (id: Id): string | undefined => {
+            const d = storeApi.getState().design;
+            return (
+                d.entities.byId[id]?.name ??
+                d.regions.byId[id]?.label ??
+                (d.memos.byId[id]?.body.trim().slice(0, 60) || undefined)
+            );
+        },
+        [storeApi]
+    );
+
+    // xyflow moves a selected table on the arrow keys (5 px, 20 px with Shift)
+    // but never reports a drag end; once the key sequence is over the moves
+    // become one edit (one undo step)
     useEffect(() => {
         let timer: ReturnType<typeof setTimeout> | undefined;
         const arrow = (event: KeyboardEvent) =>
@@ -415,8 +459,16 @@ function Surface({
                 if (
                     !pointerGesture.current &&
                     Object.keys(liveRef.current.positions).length > 0
-                )
+                ) {
+                    const moved = Object.keys(liveRef.current.positions)
+                        .map(nameOf)
+                        .filter(Boolean);
                     finishGesture();
+                    if (moved.length > 0)
+                        announce(
+                            t('canvas.a11y.moved', { name: moved.join(', ') })
+                        );
+                }
             }, ARROW_COMMIT_MS);
         };
         window.addEventListener('keydown', down);
@@ -426,7 +478,7 @@ function Surface({
             window.removeEventListener('keydown', down);
             window.removeEventListener('keyup', up);
         };
-    }, [finishGesture]);
+    }, [finishGesture, nameOf, announce, t]);
 
     const shiftHeld = useKeyPress('Shift');
 
@@ -545,6 +597,118 @@ function Surface({
             setDraftFrom(undefined);
         },
         [draftFrom, hooks, storeApi]
+    );
+
+    // Keyboard on a table, area or note that holds the focus itself: Enter opens
+    // the edit card (or picks the target while a relationship is drawn),
+    // Shift+F10 or the Menu key opens the pointer menu, Escape gives the focus
+    // back to the canvas. Arrows and Shift+arrows move it (xyflow, see above).
+    const onHostKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        const el = event.target;
+        if (!(el instanceof HTMLElement) || event.defaultPrevented) return;
+        const onNode = el.classList.contains('react-flow__node');
+        const onHost = el === hostEl;
+        if (!onNode && !onHost) return;
+        const rect = el.getBoundingClientRect();
+        const target: MenuTarget = onNode
+            ? targetOfElement(el)
+            : { kind: 'pane' };
+        const menuKey =
+            event.key === 'ContextMenu' ||
+            (event.key === 'F10' && event.shiftKey);
+        if (menuKey) {
+            event.preventDefault();
+            openMenu(
+                {
+                    x: rect.left + (onNode ? 24 : rect.width / 2),
+                    y: rect.top + (onNode ? 24 : rect.height / 2),
+                },
+                target
+            );
+        } else if (
+            event.key === 'Enter' &&
+            onNode &&
+            target.kind === 'entity'
+        ) {
+            if (draftFrom) {
+                event.preventDefault();
+                pickTarget(target.id, {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2,
+                });
+            } else if (editable && hooks?.renderEntityEditor) {
+                event.preventDefault();
+                setEditingId(target.id);
+            }
+        } else if (
+            event.key === 'Escape' &&
+            onNode &&
+            !draftFrom &&
+            !editingId
+        ) {
+            // the card or menu that is open takes its own Escape; none: back to the canvas
+            hostEl?.focus({ preventScroll: true });
+        }
+    };
+    // Focusing a node with the keyboard selects it, so the arrows move it and
+    // the screen reader says which one it is.
+    const onHostFocus = (event: React.FocusEvent<HTMLDivElement>) => {
+        const el = event.target;
+        if (!(el instanceof HTMLElement)) return;
+        if (!el.classList.contains('react-flow__node')) return;
+        try {
+            if (!el.matches(':focus-visible')) return;
+        } catch {
+            // no :focus-visible here: treat the focus as the keyboard's
+        }
+        const id = el.getAttribute('data-id');
+        if (!id || storeApi.getState().ui.selection.includes(id)) return;
+        storeApi.getState().select([id]);
+        const name = nameOf(id);
+        if (name) announce(t('canvas.a11y.selected', { name }));
+    };
+
+    // the edit card closed from the keyboard: the focus goes back to its table
+    const viaKeyboard = useRef(false);
+    useEffect(() => {
+        const key = () => (viaKeyboard.current = true);
+        const pointer = () => (viaKeyboard.current = false);
+        window.addEventListener('keydown', key, true);
+        window.addEventListener('pointerdown', pointer, true);
+        return () => {
+            window.removeEventListener('keydown', key, true);
+            window.removeEventListener('pointerdown', pointer, true);
+        };
+    }, []);
+    const wasEditing = useRef<Id>(undefined);
+    useEffect(() => {
+        const before = wasEditing.current;
+        wasEditing.current = editingId;
+        if (!before || editingId || !viaKeyboard.current) return;
+        // xyflow blurs the table one frame after an Escape on it: look again then
+        const give = () => {
+            const active = document.activeElement;
+            if (active && active !== document.body) return;
+            hostEl
+                ?.querySelector<HTMLElement>(
+                    `.react-flow__node[data-id="${before}"]`
+                )
+                ?.focus({ preventScroll: true });
+        };
+        give();
+        const frame = requestAnimationFrame(() => requestAnimationFrame(give));
+        return () => cancelAnimationFrame(frame);
+    }, [editingId, hostEl]);
+
+    const ariaLabels = useMemo(
+        () => ({
+            'node.a11yDescription.default': t('canvas.a11y.nodeHint'),
+            'node.a11yDescription.keyboardDisabled': t('canvas.a11y.nodeHint'),
+            // announced by this canvas ("<name> moved") in the page's language
+            'node.a11yDescription.ariaLiveMessage': () => '',
+            'edge.a11yDescription.default': t('canvas.a11y.edgeHint'),
+        }),
+        [t]
     );
 
     // The edit card must open inside the window and above the toolbar: it is
@@ -732,9 +896,16 @@ function Surface({
     return (
         <HooksContext.Provider value={hooks ?? {}}>
             <SurfaceContext.Provider value={surface}>
+                {/* The keys come from the focusable nodes inside and bubble to here;
+                    the group itself only takes the focus after Escape. */}
+                {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
                 <div
                     data-testid="diagram-canvas"
+                    role="group"
                     aria-label={t('canvas.surface.label')}
+                    tabIndex={-1}
+                    onKeyDown={onHostKeyDown}
+                    onFocus={onHostFocus}
                     ref={setHostEl}
                     onDragOver={(event) => {
                         if (
@@ -762,13 +933,21 @@ function Surface({
                     }}
                     data-multiselect={shiftHeld}
                     className={cn(
-                        'relative h-full w-full',
+                        'relative h-full w-full outline-none',
                         shiftHeld && '[&_.react-flow__pane]:!cursor-crosshair',
                         className
                     )}
                 >
                     <ChromeStyle />
                     <MarkerDefs />
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        data-testid="canvas-announcer"
+                        className="sr-only"
+                    >
+                        {announcement}
+                    </div>
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -829,6 +1008,7 @@ function Surface({
                         onMove={(_, viewport) =>
                             storeApi.getState().setZoom(viewport.zoom)
                         }
+                        ariaLabelConfig={ariaLabels}
                         attributionPosition="bottom-right"
                         className={isMacPlatform() ? 'mac' : undefined}
                     >

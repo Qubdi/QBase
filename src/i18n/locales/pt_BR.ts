@@ -799,6 +799,14 @@ export const pt_BR = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} movido',
+                selected: '{{name}} selecionado',
+                nodeHint:
+                    'Pressione Enter para editar. As setas o movem; com Shift move mais longe. Shift+F10 abre o menu.',
+                edgeHint:
+                    'Pressione Enter para selecionar o relacionamento, Delete para removê-lo e Esc para cancelar.',
+            },
             surface: {
                 label: 'Canvas do diagrama',
                 loading: 'Carregando o diagrama...',

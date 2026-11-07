@@ -722,6 +722,13 @@ export const zh_TW = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '已移動 {{name}}',
+                selected: '已選取 {{name}}',
+                nodeHint:
+                    '按 Enter 編輯。方向鍵移動，Shift 加方向鍵移動更遠。Shift+F10 開啟選單。',
+                edgeHint: '按 Enter 選取關聯，Delete 刪除，Escape 取消。',
+            },
             surface: {
                 label: '圖表畫布',
                 loading: '正在載入圖表...',

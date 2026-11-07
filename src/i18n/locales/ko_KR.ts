@@ -747,6 +747,14 @@ export const ko_KR = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} 이동됨',
+                selected: '{{name}} 선택됨',
+                nodeHint:
+                    'Enter로 편집합니다. 화살표 키로 이동하고 Shift와 함께 누르면 더 멀리 이동합니다. Shift+F10으로 메뉴를 엽니다.',
+                edgeHint:
+                    'Enter로 관계를 선택하고, Delete로 삭제하고, Escape로 취소합니다.',
+            },
             surface: {
                 label: '다이어그램 캔버스',
                 loading: '다이어그램 불러오는 중...',

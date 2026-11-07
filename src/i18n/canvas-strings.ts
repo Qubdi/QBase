@@ -1,6 +1,14 @@
 // Text on the diagram surface. The keys sit under `canvas` in the English file;
 // the other languages fall back to English until they are translated.
 export const canvas = {
+    a11y: {
+        moved: '{{name}} moved',
+        selected: '{{name}} selected',
+        nodeHint:
+            'Press Enter to edit. Arrow keys move it, Shift with arrow keys moves it further. Shift+F10 opens the menu.',
+        edgeHint:
+            'Press Enter to select the relationship, Delete to remove it, Escape to cancel.',
+    },
     surface: { label: 'Diagram canvas', loading: 'Loading diagram...' },
     snap: { label: 'Snap to grid (hold {{key}})' },
     overlap: { label: 'Highlight overlapping tables' },

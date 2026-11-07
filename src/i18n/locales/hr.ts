@@ -783,6 +783,14 @@ export const hr = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} premješteno',
+                selected: '{{name}} odabrano',
+                nodeHint:
+                    'Pritisnite Enter za uređivanje. Strelice ga pomiču, Shift sa strelicama pomiče dalje. Shift+F10 otvara izbornik.',
+                edgeHint:
+                    'Pritisnite Enter za odabir veze, Delete za uklanjanje, Esc za odustajanje.',
+            },
             surface: {
                 label: 'Platno dijagrama',
                 loading: 'Učitavanje dijagrama...',

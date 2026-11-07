@@ -804,6 +804,14 @@ export const fr = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} déplacé',
+                selected: '{{name}} sélectionné',
+                nodeHint:
+                    'Appuyez sur Entrée pour modifier. Les flèches le déplacent, Maj avec les flèches le déplace plus loin. Maj+F10 ouvre le menu.',
+                edgeHint:
+                    'Appuyez sur Entrée pour sélectionner la relation, Suppr pour la supprimer, Échap pour annuler.',
+            },
             surface: {
                 label: 'Canevas du diagramme',
                 loading: 'Chargement du diagramme...',

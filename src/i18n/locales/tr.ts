@@ -766,6 +766,14 @@ export const tr = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} taşındı',
+                selected: '{{name}} seçildi',
+                nodeHint:
+                    "Düzenlemek için Enter'a basın. Ok tuşları taşır, Shift ile ok tuşları daha uzağa taşır. Shift+F10 menüyü açar.",
+                edgeHint:
+                    'İlişkiyi seçmek için Enter, kaldırmak için Delete, iptal için Escape tuşuna basın.',
+            },
             surface: {
                 label: 'Diyagram tuvali',
                 loading: 'Diyagram yükleniyor...',

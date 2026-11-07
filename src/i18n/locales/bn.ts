@@ -768,6 +768,14 @@ export const bn = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} সরানো হয়েছে',
+                selected: '{{name}} নির্বাচিত',
+                nodeHint:
+                    'সম্পাদনা করতে Enter চাপুন। তীর কী দিয়ে সরান, Shift সহ আরও বেশি সরবে। Shift+F10 মেনু খোলে।',
+                edgeHint:
+                    'সম্পর্ক নির্বাচন করতে Enter, মুছতে Delete, বাতিল করতে Escape চাপুন।',
+            },
             surface: {
                 label: 'ডায়াগ্রাম ক্যানভাস',
                 loading: 'ডায়াগ্রাম লোড হচ্ছে...',

@@ -782,6 +782,14 @@ export const de = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} verschoben',
+                selected: '{{name}} ausgewählt',
+                nodeHint:
+                    'Eingabetaste zum Bearbeiten. Pfeiltasten verschieben, mit Umschalt weiter. Umschalt+F10 öffnet das Menü.',
+                edgeHint:
+                    'Eingabetaste wählt die Beziehung aus, Entf löscht sie, Esc bricht ab.',
+            },
             surface: {
                 label: 'Diagrammfläche',
                 loading: 'Diagramm wird geladen ...',

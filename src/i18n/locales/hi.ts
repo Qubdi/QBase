@@ -765,6 +765,14 @@ export const hi = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} ले जाया गया',
+                selected: '{{name}} चुना गया',
+                nodeHint:
+                    'संपादित करने के लिए Enter दबाएँ। तीर कुंजियों से इसे हिलाएँ, Shift के साथ अधिक दूर। Shift+F10 मेनू खोलता है।',
+                edgeHint:
+                    'संबंध चुनने के लिए Enter, हटाने के लिए Delete और रद्द करने के लिए Escape दबाएँ।',
+            },
             surface: {
                 label: 'डायग्राम कैनवास',
                 loading: 'डायग्राम लोड हो रहा है...',

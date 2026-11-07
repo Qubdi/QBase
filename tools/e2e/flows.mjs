@@ -595,6 +595,96 @@ await flow('F2', 'copy, paste, delete, undo, edit card', {}, async () => {
             );
         }
     );
+
+    const focusedTable = () =>
+        page.evaluate(() => {
+            const a = document.activeElement;
+            return a?.classList.contains('react-flow__node-entity')
+                ? (a.querySelector('[data-testid^="entity-"]')?.textContent ??
+                      '')
+                : null;
+        });
+    const tabToTable = async (name) => {
+        for (let i = 0; i < 250; i += 1) {
+            await page.keyboard.press('Tab');
+            if ((await focusedTable())?.includes(name)) return;
+        }
+        check(false, `Tab never reached ${name}`);
+    };
+
+    await step(
+        '09 keyboard only: Tab to a table, arrows move it, Enter opens the card, Escape closes it and focus returns',
+        async () => {
+            await page.locator('[data-testid="diagram-canvas"]').focus();
+            await page.keyboard.press('Shift');
+            await tabToTable('customers');
+            const table = page.locator('.react-flow__node:focus');
+            check((await table.count()) === 1, 'table has no focus');
+            await shot('f2-keyboard-focus-ring');
+            const before = await box(table);
+            await page.keyboard.press('ArrowRight');
+            await page.keyboard.press('Shift+ArrowRight');
+            await pause(900);
+            const moved = await box(table);
+            check(
+                moved.x > before.x + 15,
+                `arrows did not move it (${before.x} -> ${moved.x})`
+            );
+            check(
+                /customers moved/.test(
+                    (await page
+                        .locator('[data-testid="canvas-announcer"]')
+                        .textContent()) ?? ''
+                ),
+                'the move was not announced'
+            );
+            await page.keyboard.press('Enter');
+            await page
+                .getByRole('textbox', { name: 'Table name' })
+                .waitFor({ timeout: 3000 });
+            await page.keyboard.press('Escape');
+            await idle();
+            check(
+                (await page
+                    .getByRole('textbox', { name: 'Table name' })
+                    .count()) === 0,
+                'edit card still open after Escape'
+            );
+            check(
+                (await focusedTable())?.includes('customers'),
+                'focus did not return to the table'
+            );
+            await page.keyboard.press('Escape');
+            check(
+                await page.evaluate(
+                    () =>
+                        document.activeElement?.getAttribute('data-testid') ===
+                        'diagram-canvas'
+                ),
+                'second Escape did not move the focus to the canvas'
+            );
+        }
+    );
+
+    await step(
+        '10 keyboard only: Shift+F10 menu, draw a relationship with Enter on the target',
+        async () => {
+            await page.locator('[data-testid="diagram-canvas"]').focus();
+            await page.keyboard.press('Shift');
+            await tabToTable('orders');
+            await page.keyboard.press('Shift+F10');
+            await page
+                .getByRole('menuitem', { name: /relationship/i })
+                .first()
+                .click();
+            await page.getByTestId('link-draft').waitFor();
+            await page.keyboard.press('Escape');
+            check(
+                (await page.getByTestId('link-draft').count()) === 0,
+                'Escape did not cancel the relationship draft'
+            );
+        }
+    );
 });
 
 // ============================================================== flow 3

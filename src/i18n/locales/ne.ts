@@ -764,6 +764,14 @@ export const ne = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} सारियो',
+                selected: '{{name}} चयन गरियो',
+                nodeHint:
+                    'सम्पादन गर्न Enter थिच्नुहोस्। एरो कुञ्जीले सार्नुहोस्, Shift सँगै थप टाढा। Shift+F10 ले मेनु खोल्छ।',
+                edgeHint:
+                    'सम्बन्ध चयन गर्न Enter, हटाउन Delete, रद्द गर्न Escape थिच्नुहोस्।',
+            },
             surface: {
                 label: 'रेखाचित्र क्यानभास',
                 loading: 'रेखाचित्र लोड हुँदैछ...',

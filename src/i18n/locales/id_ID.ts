@@ -756,6 +756,14 @@ export const id_ID = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} dipindahkan',
+                selected: '{{name}} dipilih',
+                nodeHint:
+                    'Tekan Enter untuk mengedit. Tombol panah memindahkannya, Shift dengan panah memindahkan lebih jauh. Shift+F10 membuka menu.',
+                edgeHint:
+                    'Tekan Enter untuk memilih relasi, Delete untuk menghapus, Escape untuk membatalkan.',
+            },
             surface: {
                 label: 'Kanvas diagram',
                 loading: 'Memuat diagram...',

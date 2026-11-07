@@ -19,6 +19,12 @@ export const CHROME_CSS = `
   bottom:calc(var(--canvas-inset-bottom,0px) + 64px); }
 .qb-minimap { margin-bottom:calc(var(--canvas-inset-bottom,0px) + 24px) !important;
   margin-right:calc(var(--canvas-inset-right,0px) + 15px) !important; }
+/* keyboard focus on a table, area, note or line: xyflow removes its outline */
+.react-flow .react-flow__node.react-flow__node:focus-visible { outline:3px solid hsl(var(--ring)); outline-offset:4px;
+  border-radius:12px; box-shadow:0 0 0 7px hsl(var(--background)); }
+.react-flow__edge:focus-visible .react-flow__edge-path:not(.react-flow__edge-interaction) {
+  stroke:hsl(var(--ring)) !important; stroke-width:4px !important;
+  filter:drop-shadow(0 0 3px hsl(var(--background))); }
 @media (max-width: 767px) {
   .qb-toolbar { bottom:auto; top:calc(var(--canvas-inset-top,0px) + 56px); }
   .qb-pill { bottom:auto; top:calc(var(--canvas-inset-top,0px) + 104px); }

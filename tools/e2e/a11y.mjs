@@ -172,6 +172,11 @@ async function attempt(name, fn) {
         console.log(
             `SKIP ${name}: ${String(error.message || error).split('\n')[0]}`
         );
+        await page
+            .screenshot({
+                path: `${SHOTS}/SKIP-${name.replace(/\W+/g, '-')}.png`,
+            })
+            .catch(() => undefined);
         await page.keyboard.press('Escape').catch(() => undefined);
     }
 }
@@ -332,7 +337,7 @@ await attempt('dialog-clear', async () => {
 });
 await attempt('toast', async () => {
     await page.keyboard.press('ControlOrMeta+s');
-    await page.getByText('Everything is saved').waitFor();
+    await page.getByText('Everything is saved').first().waitFor();
     const live = await page.evaluate(() => {
         const t = [...document.querySelectorAll('[role=status],[aria-live]')];
         return t.some((e) => /Everything is saved/.test(e.textContent ?? ''));
@@ -614,6 +619,191 @@ for (const r of rings) {
     for (const b of r.bad.slice(0, 12)) console.log(`   ${b}`);
 }
 
+// ------------------------------------------------------------ canvas keyboard
+const NODE = '.react-flow__node-entity';
+const activeNode = () =>
+    page.evaluate((sel) => {
+        const a = document.activeElement;
+        return a && a.matches(sel) ? a.getAttribute('data-id') : null;
+    }, NODE);
+const nodeX = (id) =>
+    page.evaluate(
+        (id) =>
+            document
+                .querySelector(`.react-flow__node[data-id="${id}"]`)
+                .getBoundingClientRect().x,
+        id
+    );
+const contrastOf = (a, b) => {
+    const lum = ([r, g, bl]) => {
+        const f = (v) => {
+            v /= 255;
+            return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(bl);
+    };
+    const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m);
+    return (x + 0.05) / (y + 0.05);
+};
+const rgbOf = (css) =>
+    css
+        .match(/[\d.]+/g)
+        .slice(0, 3)
+        .map(Number);
+for (const scheme of ['light', 'dark']) {
+    await newPage({ colorScheme: scheme });
+    await seeded();
+    const tag = `canvas ${scheme}`;
+    await page.locator('[data-testid="diagram-canvas"]').focus();
+    await page.keyboard.press('Shift');
+    let first = '';
+    await kbCheck(`${tag}: Tab reaches a table`, async () => {
+        const n = await tabUntil(
+            () => !!document.activeElement?.matches('.react-flow__node-entity'),
+            250
+        );
+        first = (await activeNode()) ?? '';
+        return n && first ? '' : 'no table reachable with Tab';
+    });
+    await kbCheck(`${tag}: focused table has a visible ring`, async () => {
+        const ring = await page.evaluate((id) => {
+            const el = document.querySelector(
+                `.react-flow__node[data-id="${id}"]`
+            );
+            const c = getComputedStyle(el);
+            return {
+                style: c.outlineStyle,
+                width: parseFloat(c.outlineWidth),
+                color: c.outlineColor,
+                bg: getComputedStyle(document.body).backgroundColor,
+            };
+        }, first);
+        const ratio = contrastOf(rgbOf(ring.color), rgbOf(ring.bg));
+        if (ring.style === 'none' || ring.width < 2) return 'no outline';
+        return ratio >= 3 ? '' : `ring contrast ${ratio.toFixed(2)}:1 < 3:1`;
+    });
+    await kbCheck(`${tag}: focusing selects the table`, async () => {
+        const sel = await page.evaluate(
+            (id) =>
+                document
+                    .querySelector(`.react-flow__node[data-id="${id}"]`)
+                    .classList.contains('selected'),
+            first
+        );
+        return sel ? '' : 'focused table is not selected';
+    });
+    await kbCheck(
+        `${tag}: arrow keys move it, Shift+arrow moves further, announced`,
+        async () => {
+            const x0 = await nodeX(first);
+            for (let i = 0; i < 3; i += 1)
+                await page.keyboard.press('ArrowRight');
+            await pause(900);
+            const x1 = await nodeX(first);
+            await page.keyboard.press('Shift+ArrowRight');
+            await pause(900);
+            const x2 = await nodeX(first);
+            const said = await page
+                .locator('[data-testid="canvas-announcer"]')
+                .textContent();
+            if (!(x1 > x0)) return `arrows did not move it (${x0} -> ${x1})`;
+            if (!(x2 - x1 > (x1 - x0) / 3)) return 'Shift did not move further';
+            if (!/ moved/.test(said ?? '')) return `no announcement (${said})`;
+            const stillThere = await activeNode();
+            return stillThere === first
+                ? ''
+                : 'focus left the table after moving';
+        }
+    );
+    await kbCheck(
+        `${tag}: Enter opens the edit card, Escape closes it and focus returns`,
+        async () => {
+            await page.keyboard.press('Enter');
+            await page.locator('[data-edit-card]').waitFor({ timeout: 2000 });
+            await page.keyboard.press('Escape');
+            await pause(400);
+            const gone = (await page.locator('[data-edit-card]').count()) === 0;
+            if (!gone) return 'edit card still open after Escape';
+            return (await activeNode()) === first
+                ? ''
+                : 'focus did not return to the table';
+        }
+    );
+    await kbCheck(
+        `${tag}: Shift+F10 opens the menu, Escape returns to the table`,
+        async () => {
+            await page.keyboard.press('Shift+F10');
+            await page.getByRole('menu').waitFor({ timeout: 2000 });
+            const hasDraw = await page
+                .getByRole('menuitem', { name: /relationship/i })
+                .count();
+            await page.keyboard.press('Escape');
+            await pause(300);
+            if (!hasDraw) return 'no relationship item in the menu';
+            return (await activeNode()) === first
+                ? ''
+                : 'focus lost after the menu';
+        }
+    );
+    await kbCheck(
+        `${tag}: Escape on a table returns focus to the canvas`,
+        async () => {
+            await page.keyboard.press('Escape');
+            const onCanvas = await page.evaluate(
+                () =>
+                    document.activeElement?.getAttribute('data-testid') ===
+                    'diagram-canvas'
+            );
+            return onCanvas ? '' : 'focus is not on the canvas';
+        }
+    );
+    await page.locator('.react-flow__node-entity').first().focus();
+    await page.keyboard.press('Shift');
+    await pause(300);
+    if (scheme === 'light')
+        await page
+            .locator(`.react-flow__node[data-id="${first}"]`)
+            .screenshot({ path: `${SHOTS}/canvas-focus-ring-node.png` })
+            .catch(() => undefined);
+    await page.screenshot({
+        path: `${SHOTS}/canvas-focus-ring-${scheme}.png`,
+    });
+    await kbCheck(`${tag}: Tab order follows the reading order`, async () => {
+        const order = await page.evaluate(() =>
+            [...document.querySelectorAll('.react-flow__node-entity')].map(
+                (el) => {
+                    const m = el.style.transform.match(
+                        /(-?[\d.]+)px,\s*(-?[\d.]+)px/
+                    );
+                    return { x: +m[1], y: +m[2] };
+                }
+            )
+        );
+        for (let i = 1; i < order.length; i += 1) {
+            const a = order[i - 1];
+            const b = order[i];
+            const ba = Math.round(a.y / 80);
+            const bb = Math.round(b.y / 80);
+            if (ba > bb || (ba === bb && a.x > b.x))
+                return `node ${i} comes before an earlier one in reading order`;
+        }
+        return '';
+    });
+    if (scheme === 'light')
+        await kbCheck(`${tag}: a focused line has a visible ring`, async () => {
+            const has = await page.evaluate(() => {
+                const edge = document.querySelector('.react-flow__edge');
+                if (!edge) return 'no line in the seed';
+                edge.focus({ focusVisible: true });
+                const p = edge.querySelector('.react-flow__edge-path');
+                const w = parseFloat(getComputedStyle(p).strokeWidth);
+                return w >= 3 ? '' : `stroke ${w}px`;
+            });
+            return has;
+        });
+    await scan(`canvas-keyboard-${scheme}`);
+}
+
 // ------------------------------------------------------------ languages
 for (const [loc, lang, dir, button] of [
     ['en-US', 'de', 'ltr', 'Deutsch (German)'],
@@ -697,7 +887,8 @@ for (const s of scans)
                 screens: new Set(),
                 samples: new Set(),
             });
-            if (n.canvas || n.accepted) {
+            // canvas nodes count like app nodes now; only the accepted menu portals are exempt
+            if (n.accepted) {
                 r.canvas += 1;
                 canvasNodes += 1;
             } else {

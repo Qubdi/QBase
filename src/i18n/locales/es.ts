@@ -799,6 +799,14 @@ export const es = {
             },
         },
         canvas: {
+            a11y: {
+                moved: '{{name}} movido',
+                selected: '{{name}} seleccionado',
+                nodeHint:
+                    'Pulse Intro para editar. Las flechas lo mueven; con Mayús se mueve más. Mayús+F10 abre el menú.',
+                edgeHint:
+                    'Pulse Intro para seleccionar la relación, Supr para quitarla y Esc para cancelar.',
+            },
             surface: {
                 label: 'Lienzo del diagrama',
                 loading: 'Cargando el diagrama...',
