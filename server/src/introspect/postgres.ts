@@ -31,7 +31,7 @@ export const POSTGRES_QUERIES = {
                obj_description(c.oid, 'pg_class') AS comment
         FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relkind IN ('r', 'p') AND ${USER_SCHEMA('n')}
+        WHERE c.relkind IN ('r', 'p') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname`,
 
     views: `
@@ -44,11 +44,18 @@ export const POSTGRES_QUERIES = {
 
     columns: `
         SELECT n.nspname AS schema, c.relname AS "table", a.attname AS name,
-               pg_catalog.format_type(a.atttypid, NULL) AS type,
-               a.atttypmod AS typmod,
+               pg_catalog.format_type(
+                   CASE WHEN t.typtype = 'd' THEN t.typbasetype ELSE a.atttypid END, NULL) AS type,
+               CASE WHEN t.typtype = 'd' AND a.atttypmod = -1
+                    THEN t.typtypmod ELSE a.atttypmod END AS typmod,
+               CASE WHEN t.typtype = 'd' THEN t.typname END AS domain,
                a.attnum AS ordinal_position,
                NOT a.attnotnull AS nullable,
-               pg_get_expr(d.adbin, d.adrelid) AS "default",
+               CASE WHEN a.attgenerated IN ('s', 'v') THEN NULL
+                    ELSE pg_get_expr(d.adbin, d.adrelid) END AS "default",
+               CASE WHEN a.attgenerated IN ('s', 'v')
+                    THEN pg_get_expr(d.adbin, d.adrelid) END AS generated_expression,
+               a.attgenerated = 's' AS generated_stored,
                col_description(c.oid, a.attnum) AS comment,
                (a.attidentity <> '' OR pg_get_expr(d.adbin, d.adrelid) LIKE 'nextval(%') AS is_identity,
                co.collname AS collation
@@ -59,7 +66,7 @@ export const POSTGRES_QUERIES = {
         LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
         LEFT JOIN pg_collation co ON co.oid = a.attcollation AND a.attcollation <> t.typcollation
         WHERE a.attnum > 0 AND NOT a.attisdropped
-          AND c.relkind IN ('r', 'p', 'v', 'm') AND ${USER_SCHEMA('n')}
+          AND c.relkind IN ('r', 'p', 'v', 'm') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname, a.attnum`,
 
     primaryKeys: `
@@ -70,7 +77,7 @@ export const POSTGRES_QUERIES = {
         JOIN pg_namespace n ON n.oid = c.relnamespace
         CROSS JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS k(attnum, ord)
         JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = k.attnum
-        WHERE con.contype = 'p' AND ${USER_SCHEMA('n')}
+        WHERE con.contype = 'p' AND NOT c.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname, k.ord`,
 
     foreignKeys: `
@@ -87,13 +94,14 @@ export const POSTGRES_QUERIES = {
         CROSS JOIN LATERAL unnest(con.conkey, con.confkey) WITH ORDINALITY AS k(attnum, fattnum, ord)
         JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = k.attnum
         JOIN pg_attribute fa ON fa.attrelid = fc.oid AND fa.attnum = k.fattnum
-        WHERE con.contype = 'f' AND ${USER_SCHEMA('n')}
+        WHERE con.contype = 'f' AND NOT c.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname, con.conname, k.ord`,
 
     indexes: `
         SELECT n.nspname AS schema, t.relname AS "table", i.relname AS name,
                COALESCE(a.attname, pg_get_indexdef(ix.indexrelid, k.pos::int, true)) AS "column",
                am.amname AS index_type, ix.indisunique AS "unique",
+               pg_get_expr(ix.indpred, ix.indrelid) AS "where",
                CASE WHEN (ix.indoption[k.pos - 1] & 1) = 1 THEN 'DESC' ELSE 'ASC' END AS direction,
                k.pos AS column_position
         FROM pg_index ix
@@ -103,8 +111,31 @@ export const POSTGRES_QUERIES = {
         JOIN pg_am am ON am.oid = i.relam
         CROSS JOIN LATERAL generate_series(1, ix.indnkeyatts) AS k(pos)
         LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ix.indkey[k.pos - 1]
-        WHERE t.relkind IN ('r', 'p', 'm') AND ${USER_SCHEMA('n')}
+        WHERE t.relkind IN ('r', 'p', 'm') AND NOT t.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, t.relname, i.relname, k.pos`,
+
+    checks: `
+        SELECT n.nspname AS schema, c.relname AS "table",
+               regexp_replace(pg_get_constraintdef(con.oid),
+                   '^CHECK \\((.*)\\)( NOT VALID)?$', '\\1') AS expression
+        FROM pg_constraint con
+        JOIN pg_class c ON c.oid = con.conrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE con.contype = 'c' AND NOT c.relispartition AND ${USER_SCHEMA('n')}
+        ORDER BY n.nspname, c.relname, con.conname`,
+
+    composites: `
+        SELECT n.nspname AS schema, t.typname AS type,
+               json_agg(json_build_object('field', a.attname,
+                   'type', format_type(a.atttypid, a.atttypmod))
+                   ORDER BY a.attnum) AS fields
+        FROM pg_type t
+        JOIN pg_class tc ON tc.oid = t.typrelid AND tc.relkind = 'c'
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        JOIN pg_attribute a ON a.attrelid = t.typrelid AND a.attnum > 0 AND NOT a.attisdropped
+        WHERE t.typtype = 'c' AND ${USER_SCHEMA('n')}
+        GROUP BY n.nspname, t.typname
+        ORDER BY n.nspname, t.typname`,
 
     enums: `
         SELECT n.nspname AS schema, t.typname AS type,
@@ -183,6 +214,11 @@ export class PostgresIntrospector implements Introspector {
             const fks = await this.query(POSTGRES_QUERIES.foreignKeys, schemas);
             const indexes = await this.query(POSTGRES_QUERIES.indexes, schemas);
             const enums = await this.query(POSTGRES_QUERIES.enums, schemas);
+            const composites = await this.query(
+                POSTGRES_QUERIES.composites,
+                schemas
+            );
+            const checks = await this.query(POSTGRES_QUERIES.checks, schemas);
 
             return {
                 database_name: String(server.database_name),
@@ -236,6 +272,13 @@ export class PostgresIntrospector implements Introspector {
                         comment: c.comment ? String(c.comment) : null,
                         is_identity: Boolean(c.is_identity),
                         is_array: isArray,
+                        domain: c.domain ? String(c.domain) : null,
+                        generated: c.generated_expression
+                            ? {
+                                  expression: String(c.generated_expression),
+                                  stored: Boolean(c.generated_stored),
+                              }
+                            : null,
                     };
                 }),
                 pk_info: pks.map((p) => ({
@@ -263,15 +306,34 @@ export class PostgresIntrospector implements Introspector {
                     unique: Boolean(i.unique),
                     direction: String(i.direction),
                     column_position: Number(i.column_position),
+                    where: i.where ? String(i.where) : null,
                 })),
-                custom_types: enums.map((e) => ({
-                    schema: String(e.schema),
-                    type: String(e.type),
-                    kind: 'enum' as const,
-                    values: Array.isArray(e.values)
-                        ? e.values.map(String)
-                        : [],
+                check_constraints: checks.map((c) => ({
+                    schema: String(c.schema),
+                    table: String(c.table),
+                    expression: String(c.expression),
                 })),
+                custom_types: [
+                    ...enums.map((e) => ({
+                        schema: String(e.schema),
+                        type: String(e.type),
+                        kind: 'enum' as const,
+                        values: Array.isArray(e.values)
+                            ? e.values.map(String)
+                            : [],
+                    })),
+                    ...composites.map((t) => ({
+                        schema: String(t.schema),
+                        type: String(t.type),
+                        kind: 'composite' as const,
+                        fields: Array.isArray(t.fields)
+                            ? t.fields.map((f: Record<string, unknown>) => ({
+                                  field: String(f.field),
+                                  type: String(f.type),
+                              }))
+                            : [],
+                    })),
+                ],
             };
         });
     }

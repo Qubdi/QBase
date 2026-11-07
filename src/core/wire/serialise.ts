@@ -67,6 +67,9 @@ function wireColumn(column: Column): RawRecord {
         collation: column.collation,
         comments: column.comments,
         check: column.check,
+        domain: column.domain,
+        generatedExpression: column.generated?.expression,
+        generatedStored: column.generated ? column.generated.stored : undefined,
     });
 }
 
@@ -79,6 +82,11 @@ function wireKey(key: Key): RawRecord {
         createdAt: key.madeAt,
         type: key.algorithm,
         isPrimaryKey: key.pk,
+        descendingFieldIds:
+            key.descending && key.descending.length > 0
+                ? key.descending
+                : undefined,
+        where: key.where,
         comments: key.note,
     });
 }

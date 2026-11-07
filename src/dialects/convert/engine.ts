@@ -174,6 +174,12 @@ export function convertDesign(
     for (const t of exported)
         for (const column of t.columns) {
             const read = readNeutral(column, src.flavour, userTypes);
+            if (column.generated)
+                notes.add(
+                    'Constraints',
+                    `${t.entity.name}.${column.name}`,
+                    'computed column created as an ordinary column (its expression is not converted between databases)'
+                );
             prepared.set(column.id, { column, read, neutral: read.neutral });
         }
     // a foreign key column follows the integer it references (EXP-041)
@@ -537,8 +543,14 @@ export function convertDesign(
                     `${t.entity.name}.${stored}`,
                     `${method} index created as a regular index`
                 );
+            if (key.where)
+                notes.add(
+                    'Indexes',
+                    `${t.entity.name}.${stored}`,
+                    'partial index created without its WHERE condition (conditions are not converted between databases)'
+                );
             statements.push(
-                `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${q(name)} ON ${qualifiedName(t.entity)} (${commaList(columns.map((c) => q(c.name)))});`
+                `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${q(name)} ON ${qualifiedName(t.entity)} (${commaList(columns.map((c) => `${q(c.name)}${key.descending?.includes(c.id) ? ' DESC' : ''}`))});`
             );
         }
         if (statements.length)

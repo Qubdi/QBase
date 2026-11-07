@@ -16,6 +16,9 @@ import {
  * `pragma_*` table functions, as one JSON cell (spec 5.2). Written for this
  * project and checked against a real SQLite in the tests. Views carry no
  * definition, because SQLite has no base64 function; checks are not listed.
+ * An index keeps its sort direction and the WHERE text of a partial index. A
+ * generated column is listed with its type but without its expression (the
+ * pragma does not give it).
  */
 const SQLITE_SCRIPT = `SELECT json_object(
   'database_name', 'main',
@@ -47,7 +50,7 @@ const SQLITE_SCRIPT = `SELECT json_object(
           THEN 'true' ELSE 'false' END)))
     FROM sqlite_master m, pragma_table_xinfo(m.name) p
     WHERE m.type IN ('table', 'view') AND m.name NOT LIKE 'sqlite\\_%' ESCAPE '\\'
-      AND p.hidden = 0)),
+      AND p.hidden IN (0, 2, 3))),
   'pk_info', json((SELECT json_group_array(json_object(
       'schema', '', 'table', m.name, 'column', p.name,
       'pk_def', 'PRIMARY KEY'))
@@ -67,10 +70,14 @@ const SQLITE_SCRIPT = `SELECT json_object(
       'schema', '', 'table', m.name, 'name', i.name, 'column', c.name,
       'index_type', 'btree', 'unique', json(CASE WHEN i."unique" = 1
           THEN 'true' ELSE 'false' END),
-      'direction', 'asc', 'column_position', c.seqno + 1))
+      'direction', CASE WHEN c."desc" = 1 THEN 'desc' ELSE 'asc' END,
+      'column_position', c.seqno + 1,
+      'where', CASE WHEN i.partial = 1 THEN (
+          SELECT trim(substr(x.sql, instr(upper(x.sql), ' WHERE ') + 7))
+          FROM sqlite_master x WHERE x.type = 'index' AND x.name = i.name) END))
     FROM sqlite_master m, pragma_index_list(m.name) i,
-      pragma_index_info(i.name) c
-    WHERE m.type = 'table' AND c.name IS NOT NULL))
+      pragma_index_xinfo(i.name) c
+    WHERE m.type = 'table' AND c."key" = 1 AND c.name IS NOT NULL))
 ) AS metadata_json_to_import;`;
 
 /**

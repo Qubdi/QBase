@@ -150,7 +150,7 @@ const SECTIONS: Section[] = [
             bool('unique', 'i.is_unique'),
             str(
                 'direction',
-                `CASE WHEN ic.is_descending = 1 THEN 'desc' ELSE 'asc' END`
+                `CASE WHEN ic.is_descending_key = 1 THEN 'desc' ELSE 'asc' END`
             ),
             num('column_position', 'ic.key_ordinal'),
         ],

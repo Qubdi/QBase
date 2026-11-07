@@ -339,6 +339,15 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
             }
             const primary = krd.bool('isPrimaryKey');
             if (primary !== undefined) key.pk = primary;
+            const desc = krd.strings('descendingFieldIds');
+            if (desc) {
+                const ids = desc
+                    .map((ref) => local.get(ref))
+                    .filter((x): x is Id => x !== undefined);
+                if (ids.length > 0) key.descending = ids;
+            }
+            const where = krd.str('where');
+            if (where !== undefined && where.trim() !== '') key.where = where;
             const keyComments = krd.str('comments');
             if (keyComments !== undefined) key.note = keyComments;
             let extra = extrasOf(krd);
@@ -663,6 +672,15 @@ function readColumn(
     text('collation');
     text('comments');
     text('check');
+    const domain = rd.str('domain');
+    if (domain) column.domain = domain;
+    const generatedExpression = rd.str('generatedExpression');
+    const generatedStored = rd.bool('generatedStored');
+    if (generatedExpression !== undefined && generatedExpression.trim() !== '')
+        column.generated = {
+            expression: generatedExpression,
+            stored: generatedStored ?? true,
+        };
     const extra = keep ? rd.extras() : undefined;
     return extra ? { ...column, extra } : column;
 }

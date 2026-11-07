@@ -45,6 +45,10 @@ export interface Key {
     /** true for the index that stands in for the primary key */
     pk?: boolean;
     algorithm?: KeyMethod;
+    /** members (ids from `members`) sorted from high to low; the others sort ascending */
+    descending?: Id[];
+    /** predicate of a partial index, as SQL text without the WHERE keyword */
+    where?: string;
     note?: string;
     madeAt: number;
     extra?: ExtraKeys;

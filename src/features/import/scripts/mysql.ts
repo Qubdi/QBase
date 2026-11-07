@@ -55,6 +55,14 @@ const defaultOf = (c: string) => {
       IF(${raw}, ${bin(`${c}.COLUMN_DEFAULT`)}, ${bin(`QUOTE(${c}.COLUMN_DEFAULT)`)}))`;
 };
 
+/**
+ * A computed column as {"expression", "stored"}, or null. MySQL 8 and 5.7 and
+ * MariaDB keep the expression in GENERATION_EXPRESSION and say VIRTUAL or
+ * STORED (MariaDB also PERSISTENT) in EXTRA.
+ */
+const generatedOf = (c: string) =>
+    `IF(IFNULL(${c}.GENERATION_EXPRESSION, '') <> '', CONCAT('{"expression":', JSON_QUOTE(CONVERT(${cleanClause(`${c}.GENERATION_EXPRESSION`)} USING utf8mb4)), ',"stored":', ${b(`${c}.EXTRA LIKE '%STORED%' OR ${c}.EXTRA LIKE '%PERSISTENT%'`)}, '}'), 'null')`;
+
 function mysqlScript(withChecks: boolean): string {
     const sections = [
         array(
@@ -108,6 +116,7 @@ function mysqlScript(withChecks: boolean): string {
                 ['collation', q('c.COLLATION_NAME')],
                 ['comment', q(`NULLIF(c.COLUMN_COMMENT, '')`)],
                 ['is_identity', b(`c.EXTRA LIKE '%auto_increment%'`)],
+                ['generated', generatedOf('c')],
             ],
             `${IS}.COLUMNS c WHERE c.TABLE_SCHEMA = DATABASE()`
         ),

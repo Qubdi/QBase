@@ -63,3 +63,39 @@ PostgreSQL 16 and 18 (same output apart from the version): all tables with schem
 ## Not verified
 
 SQL Server (all editions); the Wrangler command variant for D1; a psql variant; a browser run of server mode; the re-sync dialog against a live database through a browser (EDT-250); CockroachDB with a multi-node cluster or secure mode.
+
+## Introspection and import fidelity (second pass)
+
+Run on 2026-11-08 against throwaway containers `qbtest-pg18` (PostgreSQL 18.6), `qbtest-pg16` (16.15), `qbtest-mysql8` (MySQL 8.4.13), `qbtest-maria11` (MariaDB 11.8.9): random password, bound to 127.0.0.1, no volumes; all removed afterwards. SQL Server was **not** run (EULA not accepted); its changes are covered by unit tests with a fake pool only. The server has no MySQL, MariaDB or SQLite path: `POST /api/introspect` serves PostgreSQL and SQL Server only.
+
+### Gaps closed
+
+| Gap from the first pass | Now |
+| ----------------------- | --- |
+| `POST /api/introspect` returned no `check_constraints` and no composite types | PostgreSQL: check constraints (bare expression, partition children hidden like the script), enum and composite types. SQL Server: `check_constraints` (`sys.check_constraints`); `custom_types` is `[]` (it has none). |
+| Index `DESC` lost on import | New `Key.descending` (ids of the members sorted high to low). Read from the `direction` field of every script and of the server (case-insensitive: the server says `DESC`). Writers: PostgreSQL, SQLite and MySQL emit `col DESC`; the cross-database converter emits it too. |
+| Partial-index predicate lost | New `Key.where` (SQL text without `WHERE`). Metadata `indexes[].where` (PostgreSQL `pg_get_expr(indpred)`, SQLite from the index SQL, SQL Server server `filter_definition`). PostgreSQL and SQLite writers emit `WHERE ...`. A partial unique index is now reported as unique with its predicate; the import does not let it mark its column unique. The converter drops the predicate and says so in its notes. |
+| Domain-typed column imported with the domain name as type | `Column.domain` keeps the name; `type`, length and precision are the domain's base type (script and server). The domain itself is not listed and no writer creates it (a custom-type list entry would need a new kind). |
+| Generated column imported as an ordinary column with the expression as default | New `Column.generated = { expression, stored }`; the column has no default then. PostgreSQL (`attgenerated`, 12+; 18 `VIRTUAL` too), MySQL/MariaDB (`GENERATION_EXPRESSION`, `EXTRA`), server PostgreSQL, SQL Server server (`sys.computed_columns`). Writers: PostgreSQL `GENERATED ALWAYS AS (expr) STORED|VIRTUAL`, MySQL/MariaDB `GENERATED ALWAYS AS (expr) VIRTUAL|STORED`, SQLite `GENERATED ALWAYS AS (expr) STORED|VIRTUAL`. The converter writes an ordinary column and says so. |
+| SQLite script dropped generated columns altogether and always said `asc` | Generated columns are listed (type only: the pragma gives no expression), `DESC` and the partial predicate are read from `pragma_index_xinfo` and the index SQL. Checked on `node:sqlite`. |
+| SQL Server client script used `ic.is_descending` (no such column; the script would fail) | `ic.is_descending_key`. Not run on a server; the name is the one the server code already uses. |
+
+Wire format (backward compatible): column keys `domain`, `generatedExpression`, `generatedStored`; index keys `descendingFieldIds` (list of field ids), `where`. All optional and omitted when empty; old files load unchanged and unknown keys are still kept. DBML export is unchanged: DBML has no syntax for `DESC`, partial predicates or generated columns, and the DBML diff (Accept Changes) must not see them as edits, so it does not compare them.
+
+### Verified live
+
+- PostgreSQL 18 and 16: the client script, run with `psql -At`, and `POST /api/introspect` (in-process app, real PostgreSQL, `server/test/introspect-extras.test.ts`) give the same design through the real importer: `DESC` on `(score DESC, id)`, two partial indexes (one unique) with `(deleted_at IS NULL)`, `sales.email` (varchar(120)) and `public.pos_int` domains, a stored generated column, two checks, one enum, one composite.
+- MySQL 8.4 and MariaDB 11.8: `DESC`, a `STORED` and a `VIRTUAL` generated column, two checks (MySQL's `(`x` >= 0)` form and MariaDB's `` `x` >= 0``).
+- Hand-written JSON fixtures taken from those results: `src/formats/metadata/fixtures/live-*.json`; test `src/formats/metadata/index-details.test.ts` (import, the three writers, wire round trip, old files, unknown keys, DBML, converter notes).
+- Server tests: `server/test/introspect-extras.test.ts` (own database `qbase_extras`, partitioned table included), SQL Server fake-pool tests in `introspect-sqlserver-unit.test.ts`.
+
+### Still open
+
+- SQL-file import (the readers in `src/dialects/*/read.ts`) does not read `DESC`, `WHERE` or `GENERATED ALWAYS AS` of a script, so a design exported and imported through SQL text loses them. Metadata and the saved file keep them.
+- SQLite: a generated column's expression and check constraints are not in the pragma output; only the metadata for PostgreSQL, MySQL/MariaDB and the server has them.
+- Domain: only one level (a domain over a domain reports the inner domain's name as type); the domain's own CHECK and default are not read.
+- CockroachDB script: no domains, no generated columns (its catalog differs), unchanged otherwise.
+- SQL Server writer ignores `descending`, `where` and `generated`; SQL Server was not run live. The SQL Server client script still has no `where` or computed-column fields.
+- PostgreSQL 11 and older: the script uses `attgenerated` (PostgreSQL 12+).
+- The spec sentence (import-export.md, PostgreSQL metadata) says "enum types (not composites)"; the script already listed composites, IMP-063 requires them, and the server now does too. The contract is kept as the shared JSON and IMP-063; the spec sentence is outdated.
+- Not driven in a browser: re-sync dialog (EDT-250).

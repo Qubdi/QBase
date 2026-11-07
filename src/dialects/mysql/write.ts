@@ -11,6 +11,7 @@ import {
 } from '../shared/defaults';
 import type { ExportForeignKey, ExportTable } from '../shared/export-model';
 import {
+    indexColumnText,
     indexKeys,
     prepareExport,
     sortedStatements,
@@ -120,6 +121,16 @@ function columnLine(column: Column): string {
     const numbered =
         column.increment || (column.primaryKey && isNumberingMarker(text));
     let line = `${quoteBacktick(column.name)} ${mysqlType(column)}`;
+    if (column.generated) {
+        line += ` GENERATED ALWAYS AS (${column.generated.expression}) ${
+            column.generated.stored ? 'STORED' : 'VIRTUAL'
+        }`;
+        if (!column.nullable) line += ' NOT NULL';
+        if (!column.primaryKey && column.unique) line += ' UNIQUE';
+        if (column.comments)
+            line += ` COMMENT ${asStringLiteral(column.comments.replace(/\s+/g, ' ').trim())}`;
+        return `${notes}    ${line}`;
+    }
     if (!column.nullable) line += ' NOT NULL';
     if (numbered) line += ' AUTO_INCREMENT';
     if (!column.primaryKey && column.unique) line += ' UNIQUE';
@@ -143,12 +154,16 @@ function indexStatements(table: ExportTable, qualified: string): string[] {
                 }`,
                 64
             );
-            const cols = columns.map((c) => {
-                const quoted = quoteBacktick(c.name);
-                return TEXTUAL_FOR_INDEX.has(c.type.name.toLowerCase())
-                    ? `${quoted}(255)`
-                    : quoted;
-            });
+            const cols = columns.map((c) =>
+                indexColumnText(
+                    key,
+                    c,
+                    quoteBacktick,
+                    TEXTUAL_FOR_INDEX.has(c.type.name.toLowerCase())
+                        ? '(255)'
+                        : ''
+                )
+            );
             return `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${quoteBacktick(
                 name
             )} ON ${qualified} (${commaList(cols)});`;

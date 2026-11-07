@@ -90,4 +90,54 @@ describe('metadata script for SQLite (IMP-056)', () => {
             nullable: false,
         });
     });
+
+    it.skipIf(!sqlite)(
+        'keeps DESC columns, partial index predicates and generated columns',
+        () => {
+            const db = new sqlite!.DatabaseSync(':memory:');
+            db.exec(`
+            CREATE TABLE people (
+                id INTEGER PRIMARY KEY,
+                first TEXT NOT NULL,
+                last TEXT NOT NULL,
+                score INTEGER NOT NULL DEFAULT 0,
+                deleted_at TEXT,
+                full_name TEXT GENERATED ALWAYS AS (first || ' ' || last) STORED,
+                initials TEXT AS (substr(first, 1, 1)) VIRTUAL
+            );
+            CREATE INDEX people_score ON people(score DESC, id);
+            CREATE UNIQUE INDEX people_live ON people(last) WHERE deleted_at IS NULL;
+            CREATE INDEX people_full ON people(full_name);
+        `);
+            const row = db.prepare(metadataScriptFor('sqlite')!).get() as {
+                metadata_json_to_import: string;
+            };
+            const parsed = parseMetadataText(
+                repairMetadataText(row.metadata_json_to_import)
+            );
+            expect(parsed.ok).toBe(true);
+            if (!parsed.ok) return;
+            const { design, diagnostics } = loadFromDatabaseMetadata({
+                databaseType: 'sqlite',
+                databaseMetadata: parsed.metadata,
+            });
+            expect(diagnostics).toEqual([]);
+            const people = Object.values(design.entities.byId).find(
+                (e) => e.name === 'people'
+            )!;
+            const name = (id: string) => design.columns[id].name;
+            expect(people.columnIds.map(name)).toContain('full_name');
+            const keys = people.keyIds.map((id) => design.keys[id]);
+            const score = keys.find((k) => k.label === 'people_score')!;
+            expect(score.members.map(name)).toEqual(['score', 'id']);
+            expect(score.descending?.map(name)).toEqual(['score']);
+            const live = keys.find((k) => k.label === 'people_live')!;
+            expect(live).toMatchObject({
+                distinct: true,
+                where: 'deleted_at IS NULL',
+            });
+            expect(design.columns[live.members[0]].unique).toBe(false);
+            expect(keys.find((k) => k.label === 'people_full')).toBeDefined();
+        }
+    );
 });

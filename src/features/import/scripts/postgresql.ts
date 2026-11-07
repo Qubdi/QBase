@@ -59,6 +59,23 @@ export function postgresScript(options: PostgresOptions = {}): string {
     const direction = cockroach
         ? `'asc'`
         : `CASE WHEN pg_index_column_has_property(i.indexrelid, g.k, 'desc') THEN 'desc' ELSE 'asc' END`;
+    // a domain column is reported with the domain's base type; the domain's name goes in 'domain'
+    const typeOid = cockroach
+        ? 'a.atttypid'
+        : `CASE WHEN t.typtype = 'd' THEN t.typbasetype ELSE a.atttypid END`;
+    const typeMod = cockroach
+        ? 'a.atttypmod'
+        : `CASE WHEN t.typtype = 'd' AND a.atttypmod = -1 THEN t.typtypmod ELSE a.atttypmod END`;
+    const domain = cockroach
+        ? 'NULL'
+        : `CASE WHEN t.typtype = 'd' THEN t.typname END`;
+    const generated = cockroach
+        ? 'NULL'
+        : `CASE WHEN a.attgenerated IN ('s', 'v') THEN json_build_object(
+              'expression', ${defaultText}, 'stored', a.attgenerated = 's') END`;
+    const columnDefault = cockroach
+        ? defaultText
+        : `CASE WHEN a.attgenerated IN ('s', 'v') THEN NULL ELSE ${defaultText} END`;
     const keyColumns = cockroach ? 'i.indnatts' : 'i.indnkeyatts';
     const composites = cockroach
         ? ''
@@ -76,8 +93,8 @@ export function postgresScript(options: PostgresOptions = {}): string {
       WHERE t.typtype = 'c' AND ${F}`;
 
     // an index column is the plain column name (pg_get_indexdef would quote
-    // "Mixed Col"), or the expression text; 'unique' in the indexes is false for a partial unique index: it does not
-    // make its column unique, and the import would otherwise say so
+    // "Mixed Col"), or the expression text; a partial index carries its predicate in 'where' (the import then
+    // does not take a partial unique index to make its column unique)
     return `SELECT json_build_object(
   'database_name', current_database(),
   'version', version(),
@@ -101,18 +118,20 @@ export function postgresScript(options: PostgresOptions = {}): string {
     WHERE c.relkind IN ('v', 'm') AND ${F}), '[]'::json),
   'columns', COALESCE((SELECT json_agg(json_build_object(
       'schema', n.nspname, 'table', c.relname, 'name', a.attname,
-      'type', replace(format_type(a.atttypid, NULL), '[]', ''),
-      'is_array', right(format_type(a.atttypid, NULL), 2) = '[]',
+      'type', replace(format_type(${typeOid}, NULL), '[]', ''),
+      'is_array', right(format_type(${typeOid}, NULL), 2) = '[]',
       'ordinal_position', a.attnum,
       'nullable', NOT a.attnotnull,
       'character_maximum_length', CASE
-          WHEN a.atttypid IN (1042, 1043) AND a.atttypmod > 4
-          THEN (a.atttypmod - 4)::text END,
-      'precision', CASE WHEN a.atttypid = 1700 AND a.atttypmod >= 4
+          WHEN ${typeOid} IN (1042, 1043) AND ${typeMod} > 4
+          THEN (${typeMod} - 4)::text END,
+      'precision', CASE WHEN ${typeOid} = 1700 AND ${typeMod} >= 4
           THEN json_build_object(
-              'precision', ((a.atttypmod - 4) >> 16) & 65535,
-              'scale', (a.atttypmod - 4) & 65535) END,
-      'default', ${defaultText},
+              'precision', ((${typeMod} - 4) >> 16) & 65535,
+              'scale', (${typeMod} - 4) & 65535) END,
+      'default', ${columnDefault},
+      'domain', ${domain},
+      'generated', ${generated},
       'collation', ${collation},
       'comment', col_description(c.oid, a.attnum),
       'is_identity', ${isIdentity})
@@ -158,7 +177,8 @@ export function postgresScript(options: PostgresOptions = {}): string {
               WHERE ia.attrelid = i.indrelid AND ia.attnum = i.indkey[g.k - 1])
           ELSE pg_get_indexdef(i.indexrelid, g.k, true) END,
       'index_type', am.amname,
-      'unique', i.indisunique AND i.indpred IS NULL,
+      'unique', i.indisunique,
+      'where', pg_get_expr(i.indpred, i.indrelid),
       'direction', ${direction}, 'column_position', g.k)
       ORDER BY n.nspname, c.relname, ic.relname, g.k)
     FROM pg_index i

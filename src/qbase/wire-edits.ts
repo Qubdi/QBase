@@ -22,6 +22,10 @@ export function keyFromIndex(index: DBIndex): Key {
             ? { algorithm: index.type }
             : {}),
         ...(index.isPrimaryKey ? { pk: true } : {}),
+        ...(index.descendingFieldIds && index.descendingFieldIds.length > 0
+            ? { descending: [...index.descendingFieldIds] }
+            : {}),
+        ...(index.where ? { where: index.where } : {}),
         ...(index.comments ? { note: index.comments } : {}),
     };
 }
@@ -47,6 +51,13 @@ export function columnPatchFromWire(patch: Partial<DBField>): Patch<Column> {
     if ('collation' in patch) out.collation = unset(patch.collation);
     if ('comments' in patch) out.comments = unset(patch.comments);
     if ('check' in patch) out.check = unset(patch.check);
+    if ('domain' in patch) out.domain = unset(patch.domain);
+    if ('generatedExpression' in patch || 'generatedStored' in patch) {
+        const expression = unset(patch.generatedExpression);
+        out.generated = expression
+            ? { expression, stored: patch.generatedStored ?? true }
+            : undefined;
+    }
     return out;
 }
 

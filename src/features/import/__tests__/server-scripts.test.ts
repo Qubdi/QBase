@@ -520,8 +520,9 @@ describe('fixes found on live databases', () => {
     });
 
     it('PostgreSQL does not call a partial unique index unique', () => {
+        // the index is unique and carries its predicate: the import decides
         expect(metadataScriptFor('postgresql')).toContain(
-            'i.indisunique AND i.indpred IS NULL'
+            `'where', pg_get_expr(i.indpred, i.indrelid)`
         );
         const { design } = run('postgresql', {
             database_name: 'd',
@@ -550,6 +551,42 @@ describe('fixes found on live databases', () => {
             (c) => c.name === 'email'
         )!;
         expect(col.unique).toBe(false);
+    });
+
+    it('PostgreSQL and MySQL scripts report generated columns, domains and partial indexes', () => {
+        const pg = metadataScriptFor('postgresql')!;
+        expect(pg).toContain(
+            `'generated', CASE WHEN a.attgenerated IN ('s', 'v')`
+        );
+        expect(pg).toContain(
+            `'domain', CASE WHEN t.typtype = 'd' THEN t.typname END`
+        );
+        expect(pg).toContain(
+            `format_type(CASE WHEN t.typtype = 'd' THEN t.typbasetype`
+        );
+        // a generated column keeps no default of its own
+        expect(pg).toContain(
+            `CASE WHEN a.attgenerated IN ('s', 'v') THEN NULL ELSE`
+        );
+        // CockroachDB has no domains and no attgenerated
+        const crdb = metadataScriptFor('cockroachdb')!;
+        expect(crdb).not.toContain('attgenerated');
+        expect(crdb).toContain(`'domain', NULL`);
+        for (const type of ['mysql', 'mariadb'] as const) {
+            const my = metadataScriptFor(type)!;
+            expect(my).toContain('"generated":');
+            expect(my).toContain('GENERATION_EXPRESSION');
+            expect(my).toContain(`EXTRA LIKE '%STORED%'`);
+        }
+        expect(metadataScriptFor('mysql', 'mysql_5_7')).toContain(
+            'GENERATION_EXPRESSION'
+        );
+    });
+
+    it('the SQL Server script reads the descending flag from its real column name', () => {
+        const ms = metadataScriptFor('sql_server')!;
+        expect(ms).toContain('ic.is_descending_key');
+        expect(ms).not.toMatch(/ic\.is_descending\b(?!_)/);
     });
 
     it('an index on an expression is reported, not dropped silently', () => {

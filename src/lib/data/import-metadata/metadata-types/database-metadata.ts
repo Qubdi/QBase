@@ -43,6 +43,12 @@ const columnRow = z.object({
     comment: z.string().nullish(),
     is_identity: z.boolean().nullish(),
     is_array: z.boolean().nullish(),
+    /** the domain the column was declared with; `type` is then the domain's base type */
+    domain: z.string().nullish(),
+    /** a computed column: its expression, and whether it is stored (else virtual) */
+    generated: z
+        .object({ expression: z.string(), stored: z.boolean() })
+        .nullish(),
 });
 
 const primaryKeyRow = z.object({
@@ -74,6 +80,8 @@ const indexRow = z.object({
     unique: flag,
     direction: z.string(),
     column_position: z.number(),
+    /** predicate of a partial index, without the WHERE keyword (same on every row of the index) */
+    where: z.string().nullish(),
 });
 
 const checkRow = z.object({

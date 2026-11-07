@@ -50,12 +50,14 @@ export const SQLSERVER_QUERIES = {
                ty.name AS type, c.max_length AS max_length, c.precision AS [precision], c.scale AS scale,
                c.column_id AS ordinal_position, c.is_nullable AS nullable,
                dc.definition AS [default], CAST(ep.value AS nvarchar(4000)) AS comment,
-               c.is_identity AS is_identity, c.collation_name AS collation
+               c.is_identity AS is_identity, c.collation_name AS collation,
+               cmp.definition AS generated_expression, cmp.is_persisted AS generated_stored
         FROM sys.columns c
         JOIN sys.objects o ON o.object_id = c.object_id AND o.type IN ('U', 'V')
         JOIN sys.schemas s ON s.schema_id = o.schema_id
         JOIN sys.types ty ON ty.user_type_id = c.user_type_id
         LEFT JOIN sys.default_constraints dc ON dc.object_id = c.default_object_id
+        LEFT JOIN sys.computed_columns cmp ON cmp.object_id = c.object_id AND cmp.column_id = c.column_id
         LEFT JOIN sys.extended_properties ep
                ON ep.class = 1 AND ep.major_id = c.object_id AND ep.minor_id = c.column_id AND ep.name = 'MS_Description'
         WHERE o.is_ms_shipped = 0 AND ${SCHEMA_FILTER('s')}
@@ -92,6 +94,7 @@ export const SQLSERVER_QUERIES = {
     indexes: `
         SELECT s.name AS [schema], t.name AS [table], i.name AS name, c.name AS [column],
                i.type_desc AS index_type, i.is_unique AS [unique],
+               i.filter_definition AS [where],
                CASE WHEN ic.is_descending_key = 1 THEN 'DESC' ELSE 'ASC' END AS direction,
                ic.key_ordinal AS column_position
         FROM sys.indexes i
@@ -102,6 +105,14 @@ export const SQLSERVER_QUERIES = {
         WHERE i.type > 0 AND i.is_hypothetical = 0 AND ic.is_included_column = 0 AND ic.key_ordinal > 0
           AND t.is_ms_shipped = 0 AND ${SCHEMA_FILTER('s')}
         ORDER BY s.name, t.name, i.name, ic.key_ordinal`,
+
+    checks: `
+        SELECT s.name AS [schema], t.name AS [table], cc.definition AS expression
+        FROM sys.check_constraints cc
+        JOIN sys.tables t ON t.object_id = cc.parent_object_id
+        JOIN sys.schemas s ON s.schema_id = t.schema_id
+        WHERE t.is_ms_shipped = 0 AND ${SCHEMA_FILTER('s')}
+        ORDER BY s.name, t.name, cc.name`,
 } as const;
 
 // --- pure conversion helpers (unit tested without a server) -----------------
@@ -266,6 +277,7 @@ export class SqlServerIntrospector implements Introspector {
         const pks = await this.query(SQLSERVER_QUERIES.primaryKeys, schemas);
         const fks = await this.query(SQLSERVER_QUERIES.foreignKeys, schemas);
         const indexes = await this.query(SQLSERVER_QUERIES.indexes, schemas);
+        const checks = await this.query(SQLSERVER_QUERIES.checks, schemas);
 
         return {
             database_name: String(server.database_name),
@@ -317,6 +329,13 @@ export class SqlServerIntrospector implements Introspector {
                     comment: c.comment ? String(c.comment) : null,
                     is_identity: Boolean(c.is_identity),
                     is_array: false,
+                    domain: null,
+                    generated: c.generated_expression
+                        ? {
+                              expression: String(c.generated_expression),
+                              stored: Boolean(c.generated_stored),
+                          }
+                        : null,
                 };
             }),
             pk_info: buildPkDefs(
@@ -350,7 +369,15 @@ export class SqlServerIntrospector implements Introspector {
                 unique: Boolean(i.unique),
                 direction: String(i.direction),
                 column_position: Number(i.column_position),
+                where: i.where ? String(i.where) : null,
             })),
+            check_constraints: checks.map((c) => ({
+                schema: String(c.schema),
+                table: String(c.table),
+                expression: String(c.expression),
+            })),
+            // SQL Server has no enum or composite types to list
+            custom_types: [],
         };
     }
 

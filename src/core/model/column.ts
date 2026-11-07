@@ -14,6 +14,12 @@ export type ColumnLength = number | 'max';
 /** Keys that were present in a saved file but are not known to this editor. */
 export type ExtraKeys = Readonly<Record<string, unknown>>;
 
+/** A computed column: the expression as SQL text, and whether it is stored (else virtual). */
+export interface GeneratedColumn {
+    expression: string;
+    stored: boolean;
+}
+
 export interface Column {
     id: Id;
     name: string;
@@ -31,6 +37,10 @@ export interface Column {
     default?: string;
     collation?: string;
     comments?: string;
+    /** name of the domain this column was declared with; `type` is the domain's base type */
+    domain?: string;
+    /** the column is computed from this expression instead of stored from input */
+    generated?: GeneratedColumn;
     /** legacy single column-level check; kept so nothing is lost on a round trip */
     check?: string;
     extra?: ExtraKeys;

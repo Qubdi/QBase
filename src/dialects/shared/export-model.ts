@@ -206,6 +206,18 @@ export function indexKeys(
     );
 }
 
+/** An index column as written in CREATE INDEX: the quoted name, then DESC when sorted high to low. */
+export function indexColumnText(
+    key: Key,
+    column: Column,
+    quote: (name: string) => string,
+    suffix = ''
+): string {
+    return `${quote(column.name)}${suffix}${
+        key.descending?.includes(column.id) ? ' DESC' : ''
+    }`;
+}
+
 /** Statements sorted as text, one per line later. */
 export function sortedStatements(statements: string[]): string[] {
     return statements.slice().sort(byText);

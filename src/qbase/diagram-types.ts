@@ -80,6 +80,10 @@ const field = z.object({
     collation: text,
     comments: text,
     check: text,
+    // a domain-typed column keeps the domain's name; a computed column its expression
+    domain: text,
+    generatedExpression: text,
+    generatedStored: flag,
     createdAt: stamp,
 });
 export type DBField = z.infer<typeof field>;
@@ -91,6 +95,9 @@ const index = z.object({
     unique: z.boolean(),
     type: z.string().optional(),
     isPrimaryKey: flag,
+    // columns sorted high to low, and the predicate of a partial index
+    descendingFieldIds: maybe(z.array(id)),
+    where: text,
     comments: text,
     createdAt: stamp,
 });

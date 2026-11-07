@@ -42,6 +42,9 @@ const SHAPES: Record<string, Shape> = {
         collation: ['string', 'n'],
         comments: ['string', 'n'],
         check: ['string', 'n'],
+        domain: ['string', 'n'],
+        generatedExpression: ['string', 'n'],
+        generatedStored: ['boolean', 'n'],
     },
     index: {
         id: ['string'],
@@ -51,6 +54,8 @@ const SHAPES: Record<string, Shape> = {
         createdAt: ['number'],
         type: [KEY_METHODS, 'o'],
         isPrimaryKey: ['boolean', 'n'],
+        descendingFieldIds: ['strings', 'n'],
+        where: ['string', 'n'],
         comments: ['string', 'n'],
     },
     check: {

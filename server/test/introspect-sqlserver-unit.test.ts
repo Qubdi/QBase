@@ -191,3 +191,58 @@ describe('pinnedConnector', () => {
         ).rejects.toThrow('timed out');
     });
 });
+
+describe('SQL Server metadata: checks, computed columns, index predicates (fake pool)', () => {
+    const rows: Record<keyof typeof SQLSERVER_QUERIES, object[]> = {
+        server: [{ database_name: 'shop', version: 'Microsoft SQL Server 2022\n(X64)' }],
+        tables: [{ schema: 'dbo', table: 'people', type: 'BASE TABLE', rows: 3 }],
+        views: [],
+        columns: [
+            { schema: 'dbo', table: 'people', name: 'first', type: 'nvarchar', max_length: 40, precision: 0, scale: 0, ordinal_position: 1, nullable: false },
+            { schema: 'dbo', table: 'people', name: 'upper_first', type: 'nvarchar', max_length: 40, precision: 0, scale: 0, ordinal_position: 2, nullable: true, generated_expression: '(upper([first]))', generated_stored: true },
+            { schema: 'dbo', table: 'people', name: 'age', type: 'int', max_length: 4, precision: 10, scale: 0, ordinal_position: 3, nullable: true, generated_expression: null, generated_stored: null },
+        ],
+        primaryKeys: [],
+        foreignKeys: [],
+        indexes: [
+            { schema: 'dbo', table: 'people', name: 'ix_age', column: 'age', index_type: 'NONCLUSTERED', unique: false, where: '([age] IS NOT NULL)', direction: 'DESC', column_position: 1 },
+            { schema: 'dbo', table: 'people', name: 'ix_first', column: 'first', index_type: 'NONCLUSTERED', unique: true, where: null, direction: 'ASC', column_position: 1 },
+        ],
+        checks: [{ schema: 'dbo', table: 'people', expression: '([age]>=(0))' }],
+    };
+    const pool = {
+        request: () => ({
+            input: () => undefined,
+            query: async (text: string) => {
+                const key = (Object.keys(SQLSERVER_QUERIES) as (keyof typeof SQLSERVER_QUERIES)[]).find(
+                    (k) => SQLSERVER_QUERIES[k] === text
+                )!;
+                return { recordset: rows[key] };
+            },
+        }),
+        close: async () => undefined,
+    };
+
+    it('lists check constraints, computed columns and filter predicates', async () => {
+        const { SqlServerIntrospector } = await import('../src/introspect/sqlserver.js');
+        const meta = await new SqlServerIntrospector(pool as never).introspect({ schemas: [] });
+        expect(meta.check_constraints).toEqual([{ schema: 'dbo', table: 'people', expression: '([age]>=(0))' }]);
+        expect(meta.custom_types).toEqual([]);
+        expect(meta.columns.map((c) => c.generated)).toEqual([
+            null,
+            { expression: '(upper([first]))', stored: true },
+            null,
+        ]);
+        expect(meta.indexes.map((i) => [i.direction, i.where])).toEqual([
+            ['DESC', '([age] IS NOT NULL)'],
+            ['ASC', null],
+        ]);
+    });
+
+    it('the queries ask the catalog for them', () => {
+        expect(SQLSERVER_QUERIES.checks).toContain('sys.check_constraints');
+        expect(SQLSERVER_QUERIES.columns).toContain('sys.computed_columns');
+        expect(SQLSERVER_QUERIES.indexes).toContain('filter_definition');
+        expect(SQLSERVER_QUERIES.indexes).toContain('is_descending_key');
+    });
+});

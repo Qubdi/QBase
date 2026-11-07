@@ -85,7 +85,8 @@ export function loadFromDatabaseMetadata(
         name: string;
         unique: boolean;
         type: string;
-        columns: { name: string; position: number }[];
+        columns: { name: string; position: number; descending: boolean }[];
+        where?: string;
     }
     const rawIndexes = new Map<string, Map<string, Raw>>();
     for (const i of meta.indexes) {
@@ -97,7 +98,12 @@ export function loadFromDatabaseMetadata(
             type: i.index_type,
             columns: [],
         };
-        found.columns.push({ name: i.column, position: i.column_position });
+        found.columns.push({
+            name: i.column,
+            position: i.column_position,
+            descending: i.direction.toLowerCase() === 'desc',
+        });
+        if (i.where?.trim()) found.where = i.where.trim();
         group.set(i.name, found);
         rawIndexes.set(tk, group);
     }
@@ -126,7 +132,13 @@ export function loadFromDatabaseMetadata(
             default: c.default ?? undefined,
             collation: c.collation ?? undefined,
             comment: c.comment ?? undefined,
+            domain: c.domain ?? undefined,
         };
+        if (c.generated && c.generated.expression.trim() !== '') {
+            spec.generated = c.generated;
+            // a computed column has no default of its own
+            spec.default = undefined;
+        }
         const length = lengthOf(c.character_maximum_length);
         if (length !== undefined) spec.length = length;
         if (c.precision?.precision) spec.precision = c.precision.precision;
@@ -147,10 +159,10 @@ export function loadFromDatabaseMetadata(
         let primaryKeyName: string | undefined;
         const pk = columns.filter((c) => c.primary).map((c) => c.name);
         for (const raw of rawIndexes.get(k)?.values() ?? []) {
-            const names = raw.columns
-                .sort((a, b) => a.position - b.position)
-                .map((c) => c.name);
+            const ordered = raw.columns.sort((a, b) => a.position - b.position);
+            const names = ordered.map((c) => c.name);
             const samePk =
+                raw.where === undefined &&
                 pk.length > 0 &&
                 names.length === pk.length &&
                 names.every((n) => pk.includes(n));
@@ -167,8 +179,12 @@ export function loadFromDatabaseMetadata(
                 unique: raw.unique,
                 columns: names,
                 method,
+                descending: ordered
+                    .filter((c) => c.descending)
+                    .map((c) => c.name),
+                where: raw.where,
             });
-            if (raw.unique && names.length === 1) {
+            if (raw.unique && names.length === 1 && raw.where === undefined) {
                 const col = columns.find((c) => c.name === names[0]);
                 if (col) col.unique = true;
             }

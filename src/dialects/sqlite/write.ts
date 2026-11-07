@@ -12,6 +12,7 @@ import {
 import type { ExportForeignKey, ExportTable } from '../shared/export-model';
 import {
     foreignKeysHeldBy,
+    indexColumnText,
     indexKeys,
     prepareExport,
     sortedStatements,
@@ -133,6 +134,12 @@ function columnLine(column: Column, inlineKey: Column | undefined): string {
     }
     if (!column.nullable) line += ' NOT NULL';
     if (!column.primaryKey && column.unique) line += ' UNIQUE';
+    if (column.generated) {
+        line += ` GENERATED ALWAYS AS (${column.generated.expression}) ${
+            column.generated.stored ? 'STORED' : 'VIRTUAL'
+        }`;
+        return `${notes}    ${line}`;
+    }
     if (text !== '' && !isNumberingMarker(text))
         line += ` DEFAULT ${sqliteDefault(text)}`;
     return `${notes}    ${line}`;
@@ -155,8 +162,8 @@ function indexStatements(table: ExportTable, used: Set<string>): string[] {
             return `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX IF NOT EXISTS ${quoteDouble(
                 name
             )}\nON ${quoteDouble(entity.name)} (${commaList(
-                columns.map((c) => quoteDouble(c.name))
-            )});`;
+                columns.map((c) => indexColumnText(key, c, quoteDouble))
+            )})${key.where ? ` WHERE ${key.where}` : ''};`;
         }
     );
     return sortedStatements(out);

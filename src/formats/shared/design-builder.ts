@@ -33,12 +33,18 @@ export interface ColumnSpec {
     default?: string;
     collation?: string;
     comment?: string;
+    domain?: string;
+    generated?: { expression: string; stored: boolean };
 }
 
 export interface IndexSpec {
     name: string;
     unique: boolean;
     columns: string[];
+    /** names from `columns` that sort from high to low */
+    descending?: string[];
+    /** predicate of a partial index (no WHERE keyword) */
+    where?: string;
     method?: KeyMethod;
     comment?: string;
 }
@@ -194,6 +200,9 @@ export class DesignBuilder {
                 column.default = c.default;
             if (c.collation) column.collation = c.collation;
             if (c.comment) column.comments = c.comment;
+            if (c.domain) column.domain = c.domain;
+            if (c.generated && c.generated.expression.trim() !== '')
+                column.generated = { ...c.generated };
             columns.push(column);
             byName.set(c.name, column);
         }
@@ -228,6 +237,13 @@ export class DesignBuilder {
                 madeAt: this.now,
             };
             if (index.method) key.algorithm = index.method;
+            const descending = members
+                .filter((m) =>
+                    (index.descending ?? []).some((n) => sameName(n, m.name))
+                )
+                .map((m) => m.id);
+            if (descending.length > 0) key.descending = descending;
+            if (index.where?.trim()) key.where = index.where.trim();
             if (index.comment) key.note = index.comment;
             keys.push(key);
         }
