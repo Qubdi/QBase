@@ -46,7 +46,7 @@ code stays on `main` and is not to be published.
 - The data-format migration from the old browser database was tested with fixtures built from
   the spec, not with a real old database.
 - Translations into 6 languages (Russian, Georgian, German, Italian, French, Chinese) are machine-made from our own English text (the old
-  translations were not used). A native-speaker review is pending.
+  translations were not used). The owner states that native speakers reviewed them (2026-11-08).
 - Dependency licences re-audited: 118 direct dependencies, 99 MIT, 13 Apache-2.0, 3 OFL fonts,
   1 ISC, 1 Unlicense; `NOTICE` lists the fonts and shadcn/ui.
 - The public Docker Hub image `qubdi/qbase` was taken down by the owner on 2026-11-08.
@@ -61,7 +61,7 @@ code stays on `main` and is not to be published.
   for the risky modules; the rest told not to read `main` or ChartDB). A scan of every tool call
   of the 56 sessions the orchestrator started found no session opening `main` or ChartDB material
   except the four spec writers, who did so by design (`rewrite/provenance-audit/README.md`).
-  Two peer sessions are not covered by the scan and still need declarations.
+  Two peer sessions are not covered by the scan; the owner states their declarations were made (the text is not in this repository).
 - Code review, accessibility, performance and live-database checks were done by further AI
   sessions; their reports are in `rewrite/review/` and `rewrite/phase9/`.
 

@@ -25,8 +25,8 @@ Action for the owner: ask the lawyer to confirm the answer by email and to answe
   lock files (`Elastic-2.0`), `NOTICE`, `README.md`, `CLA.md` and `QBase-build-tasks.md`.
   The CLA's grant (section 1) does not depend on the licence, so earlier signatures stand;
   only its description of the project licence changed.
-- Still to do: written confirmation from the lawyer that ELv2 suits the goal, and the audit
-  files (REPO-045, REPO-049, REPO-069).
+- Written confirmation from the lawyer that ELv2 suits the goal: see the next section. Audit
+  files: rev 28 (REPO-045, REPO-049 fixed, REPO-069 narrowed), rev 29 below.
 
 ## Languages (owner, 2026-11-08)
 
@@ -50,3 +50,18 @@ build's default target). No stand-ins for older browsers. A browser that lacks a
 function gets a short notice in its own language (en, ru, ka, de, it, fr, zh) from
 `public/browser-check.js`, which runs before the app and uses no eval, so the page's script
 policy allows it. `src/main.tsx` does not start the app when the notice was shown.
+
+## Owner items closed on the owner's word (2026-11-08)
+
+The owner marked these as done. They cannot be checked from this repository; what the
+orchestrating session could and could not verify is stated for each.
+
+| Item | Status | What was checked |
+| --- | --- | --- |
+| Lawyer's written confirmation (ELv2 suits the goal; questions 4, 5, 9, 10 of the brief) | done | the document is not in the repository; keep a copy with the records |
+| SEC-001: rotate the old `POSTGRES_PASSWORD`, `CONNECTION_KEY`, `MSSQL_SA_PASSWORD` | rotation done | not verifiable here |
+| SEC-001: GitHub Support purges the old pull-request refs | **not confirmed** | `git ls-remote origin 'refs/pull/*/head'` still lists 71 refs on 2026-11-08; re-run it after Support answers |
+| REPO-005: branch protection | done | not verifiable here (GitHub CLI not installed) |
+| Declarations of the peer sessions `qbase-e4` and `qbase-91` | done | the text is not in the repository; attach it to `provenance.md` |
+| Native-speaker review of the translations (ru, ka, de, it, fr, zh_CN, zh_TW) | done | any changes the reviewers made are not in the repository; if there were any, they must be committed |
+| Docker Hub release secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`) | set | not verifiable here |

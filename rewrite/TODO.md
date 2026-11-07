@@ -21,8 +21,9 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
       written by hand, not with the CLI, and now shares 0 lines.
 - [ ] **Decide the open questions** in plan section 8: saved-diagram compatibility,
       templates and examples, final licence, who writes the risky modules.
-- [ ] **Add a branch protection rule** for `rewrite/clean-room` (reviews and the similarity
-      check required), because pull requests into `main` are not possible.
+- [x] **Add a branch protection rule** (owner states it is set, 2026-11-08; not verifiable from the
+      repository, the GitHub CLI is not installed here). Originally: for `rewrite/clean-room` (reviews and
+      the similarity check required), because pull requests into `main` are not possible.
 
 - [x] Regenerated `src/platform/ui/*` with the shadcn CLI 4.23.0 and added its MIT notice to `NOTICE`
       (2026-11-07). `toast.tsx` stays hand-written (no Radix toast in the CLI); replace in Phase 6.
@@ -57,25 +58,27 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
    examples, fixtures or thumbnails are left; all UI text and engine messages go through i18n; wording
    unified; a test fails on hard-coded UI text (`src/i18n/__tests__/hard-coded-text.test.ts`).
    Seven languages ship (owner decision 2026-11-08): English, Russian, Georgian, German, Italian, French and
-   Chinese (Simplified and Traditional); translated by model (notes in `phase7/`; wording needs a native-speaker
-   review before release). The other 16 locales were removed.
+   Chinese (Simplified and Traditional); translated by model (notes in `phase7/`) and reviewed by native
+   speakers (owner states, 2026-11-08; the reviewers' changes, if any, are not in this repository). The other
+   16 locales were removed.
    Open for the owner: `src/lib/data/**` keeps its old folder layout (rename is optional).
-9. [~] **Phase 8: tests**, written from the spec (2026-11-07, commit 5c500c8): 665 of 684 parity rows
-   ticked with a named test; results per slice in `phase8/`. Open rows are listed in
-   `parity-checklist.md` (missing features being built, owner decisions EDT-047 and SHL-032/042,
-   SHL-073/098/099 translations, SHL-103 old Safari, QBS-007/019/021 naming, manual checks that need
-   a live database or server: DAT-077, EDT-250).
-10. [~] **Phase 9: cleanup and verification** (in progress 2026-11-07). Done: similarity clean on every
-    checked file (859), licences re-audited and `NOTICE` updated (fonts), unused files and 23 unused
+9. [x] **Phase 8: tests**, written from the spec (2026-11-07): 683 of 687 parity rows ticked with a named
+   test, 3 partly (IMP-003, IMP-056, IMP-059: SQL Server scripts not run on a live server), 1 open (EDT-250,
+   the re-sync dialog in a browser, being run). Results per slice in `phase8/`.
+10. [~] **Phase 9: cleanup and verification** (2026-11-07 to 2026-11-08). Done: similarity clean on every
+    checked file (867), licences re-audited and `NOTICE` updated (fonts), unused files and 23 unused
     dependencies removed, old-layout migration tested with hand-built fixtures, relationship direction
-    and spec samples checked (`phase9/data-checks.md`), two read-only code reviews with fixes
-    (`review/*.md`), a real-browser smoke test (14 steps) and nine flows (60 steps), perf and
-    accessibility audits started (`phase9/perf.md`, `phase9/a11y.md`).
-    Licence chosen 2026-11-08: Elastic License 2.0, applied. Audit rev 28: REPO-045 and REPO-049
-    fixed, REPO-069 narrowed (open until the fresh-repository release and the lawyer's written
-    confirmation). Waiting on the owner: the lawyer's written confirmation, a live-database run of the metadata queries (PostgreSQL,
-    CockroachDB, MySQL, MariaDB, SQL Server), a native-speaker review of the machine translations (ru, ka, de, it, fr, zh_CN, zh_TW),
-    and the decisions EDT-047 (credit mark) and SHL-032/042 (New dialog tabs).
+    and spec samples checked (`phase9/data-checks.md`), two code reviews with fixes (`review/*.md`),
+    a real-browser smoke test (15 steps), browser flows (63 steps), performance, accessibility and
+    live-database checks (`phase9/*.md`), provenance record and transcript audit
+    (`provenance.md`, `provenance-audit/`). Licence chosen 2026-11-08: Elastic License 2.0, applied.
+    Owner items closed on the owner's word, 2026-11-08 (see `decisions-owner-2026-11-08.md`): the lawyer's
+    written confirmation, SEC-001 secrets rotation, branch protection (REPO-005), the peer sessions'
+    declarations, the native-speaker review of the translations, the Docker Hub release secrets.
+    Still open: GitHub still lists 71 old pull-request refs (`git ls-remote origin 'refs/pull/*/head'`,
+    2026-11-08), so the purge part of SEC-001 is not confirmed; "run the similarity workflow once on
+    GitHub"; the re-sync dialog in a real browser (EDT-250); SQL Server on a live server (needs a licence
+    acceptance); the fresh-repository release (Phase 10, which also closes REPO-069).
 11. [ ] **Phase 10: release.** Fresh repository with new history, chosen licence applied,
     old Docker Hub tags replaced or removed, new image published.
 
