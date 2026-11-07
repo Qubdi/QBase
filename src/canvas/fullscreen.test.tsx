@@ -55,22 +55,22 @@ describe('full screen', () => {
     it('EDT-048: the toolbar button enters and leaves full screen and follows the browser', () => {
         const api = offer(true);
         renderCanvas(shop().design);
-        fireEvent.click(screen.getByLabelText('Full Screen'));
+        fireEvent.click(screen.getByLabelText('Full screen'));
         expect(api.request).toHaveBeenCalledTimes(1);
         act(() => api.set(document.documentElement));
-        const leave = screen.getByLabelText('Exit Full Screen');
+        const leave = screen.getByLabelText('Exit full screen');
         expect(leave).toHaveAttribute('aria-pressed', 'true');
         fireEvent.click(leave);
         expect(api.exit).toHaveBeenCalledTimes(1);
         // the person pressed Escape: the button follows
         act(() => api.set(null));
-        expect(screen.getByLabelText('Full Screen')).toBeInTheDocument();
+        expect(screen.getByLabelText('Full screen')).toBeInTheDocument();
     });
 
     it('EDT-048: the button is not offered where the browser has no full screen', () => {
         offer(false);
         renderCanvas(shop().design);
-        expect(screen.queryByLabelText('Full Screen')).toBeNull();
+        expect(screen.queryByLabelText('Full screen')).toBeNull();
     });
 
     it('EDT-008: on a phone the minimap is 60 px high', () => {

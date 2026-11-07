@@ -33,7 +33,8 @@ export interface DiagramProviderProps {
  * Loads the diagram of the page from local storage and holds it in an editor
  * store for everything below. Another diagram id starts a fresh store, so no
  * edit or history leaks across diagrams. With no id in the address it opens
- * the browser's default (or newest) diagram.
+ * the browser's default diagram; with no usable default it opens nothing and the
+ * fallback (the start flow) asks which to open.
  */
 export const DiagramProvider: React.FC<
     React.PropsWithChildren<DiagramProviderProps>
@@ -51,13 +52,14 @@ export const DiagramProvider: React.FC<
         setLoaded({ status: 'loading' });
         void (async () => {
             // inside a project workspace with no local copy there is nothing to
-            // open: the browser's own default diagram is not that project's
+            // open: the browser's own default diagram is not that project's.
+            // With no usable default the start flow asks which to open (spec A3)
             const id =
                 routeId ??
                 (workspace
                     ? undefined
                     : (await adapter.readSettings()).defaultDiagramId ||
-                      (await adapter.list())[0]?.id);
+                      undefined);
             const found = id ? await adapter.load(id) : undefined;
             if (cancelled) return;
             if (!id || !found) return setLoaded({ status: 'missing' });

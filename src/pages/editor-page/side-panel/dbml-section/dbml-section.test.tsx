@@ -52,7 +52,7 @@ describe('EDT-238 EDT-239 the DBML section', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
         expect(box().value).toBe(original);
         expect(
-            screen.queryByRole('button', { name: 'Accept Changes' })
+            screen.queryByRole('button', { name: 'Accept changes' })
         ).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'View' }));
         expect(screen.queryByLabelText('DBML text')).toBeNull();
@@ -97,10 +97,10 @@ describe('EDT-241 EDT-244 a valid edit', () => {
         expect(Object.values(marks.tables)).toEqual(['added']);
         expect(store.getState().design).toBe(design);
         expect(
-            screen.getByRole('button', { name: 'Accept Changes' })
+            screen.getByRole('button', { name: 'Accept changes' })
         ).toBeTruthy();
         expect(
-            screen.getByRole('button', { name: 'Undo Changes' })
+            screen.getByRole('button', { name: 'Undo changes' })
         ).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'View' })).toBeNull();
     });
@@ -115,12 +115,12 @@ describe('EDT-241 EDT-244 a valid edit', () => {
     });
 });
 
-describe('EDT-245 Accept Changes', () => {
+describe('EDT-245 Accept changes', () => {
     it('replaces the tables as one undo step and leaves edit mode, with an overlay while it runs', () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
         type(added);
-        fireEvent.click(screen.getByRole('button', { name: 'Accept Changes' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Accept changes' }));
         expect(screen.getByText('Applying changes...')).toBeTruthy();
         // nothing changed yet: the overlay is painted first
         expect(store.getState().design).toBe(design);
@@ -140,12 +140,12 @@ describe('EDT-245 Accept Changes', () => {
     });
 });
 
-describe('EDT-246 Undo Changes', () => {
+describe('EDT-246 Undo changes', () => {
     it('discards the preview, keeps the design, leaves edit mode', () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
         type(added);
-        fireEvent.click(screen.getByRole('button', { name: 'Undo Changes' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Undo changes' }));
         expect(usePreviewStore.getState().marks).toBeUndefined();
         expect(store.getState().design).toBe(design);
         expect(screen.queryByLabelText('DBML text')).toBeNull();

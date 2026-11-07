@@ -36,13 +36,13 @@ describe('EDT-242 EDT-243 diff marks on the canvas', () => {
         renderCanvas(s.design, { canvas: { hooks: { diff } } });
         const added = await screen.findByTestId(`diff-badge-${fresh}`);
         expect(added.getAttribute('data-diff')).toBe('added');
-        expect(added.getAttribute('title')).toBe('New Table');
+        expect(added.getAttribute('title')).toBe('New table');
         expect(
             screen.getByTestId(`diff-badge-${s.users}`).getAttribute('title')
-        ).toBe('Table Removed');
+        ).toBe('Table removed');
         expect(
             screen.getByTestId(`diff-badge-${s.orders}`).getAttribute('title')
-        ).toBe('Table Changed');
+        ).toBe('Table changed');
         expect(screen.queryByTestId(`diff-badge-${s.items}`)).toBeNull();
         const name = document.querySelector(
             `[data-testid="entity-${fresh}"] [data-diff-name]`

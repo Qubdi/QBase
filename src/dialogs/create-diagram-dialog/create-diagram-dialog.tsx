@@ -47,7 +47,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     const { items } = useDesignList(adapter, dialog.open);
 
     const [step, setStep] = useState<'type' | 'import'>('type');
-    const [type, setType] = useState<DatabaseType | undefined>();
+    const [type, setType] = useState<DatabaseType | undefined>('generic');
     const [box, setBox] = useState<ImportBoxState | undefined>();
     const [busy, setBusy] = useState(false);
     const [problem, setProblem] = useState<string | undefined>();
@@ -56,7 +56,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     useEffect(() => {
         if (!dialog.open) return;
         setStep('type');
-        setType(undefined);
+        setType('generic');
         setBox(undefined);
         setProblem(undefined);
     }, [dialog.open]);
@@ -187,7 +187,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                                 {t('editor.common.cancel')}
                             </Button>
                         ) : null}
-                        {step === 'type' ? (
+                        {step === 'type' && !canClose ? (
                             <Button
                                 variant="ghost"
                                 onClick={openImportDiagramDialog}

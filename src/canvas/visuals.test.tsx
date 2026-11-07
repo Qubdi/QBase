@@ -160,7 +160,7 @@ describe('notes', () => {
         renderCanvas(added.design);
         const card = screen.getByTestId(`memo-${added.memoId}`);
         expect(within(card).getByText('Empty note')).toBeInTheDocument();
-        expect(within(card).getByLabelText('Note colour')).toHaveValue(
+        expect(within(card).getByLabelText('Note color')).toHaveValue(
             '#ffe374'
         );
         expect(memoPale('#ffe374')).toContain('hsl(var(--card))');
@@ -169,7 +169,7 @@ describe('notes', () => {
     it('EDT-212: the header colour picker changes the colour, undoably', () => {
         const added = withMemo(shop().design);
         const { store } = renderCanvas(added.design);
-        fireEvent.change(screen.getByLabelText('Note colour'), {
+        fireEvent.change(screen.getByLabelText('Note color'), {
             target: { value: '#43d9ad' },
         });
         expect(store.getState().design.memos.byId[added.memoId].tint).toBe(
@@ -224,7 +224,7 @@ describe('notes', () => {
     it('EDT-212: a read-only note has no colour picker and cannot be edited', () => {
         const added = withMemo(shop().design, 'locked');
         renderCanvas(added.design, { store: { readonly: true } });
-        expect(screen.queryByLabelText('Note colour')).toBeNull();
+        expect(screen.queryByLabelText('Note color')).toBeNull();
         fireEvent.doubleClick(screen.getByText('locked'));
         expect(screen.queryByLabelText('Note text')).toBeNull();
     });

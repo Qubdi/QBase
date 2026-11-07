@@ -67,10 +67,10 @@ describe('the canvas in the editor frame (EDT-011, EDT-012)', () => {
         expect(columns()).toBe(before);
     });
 
-    it('EDT-042: the Filter button opens the Filter Tables panel, and Ctrl+F toggles it', async () => {
+    it('EDT-042: the Filter button opens the Filter tables panel, and Ctrl+F toggles it', async () => {
         mount();
         const button = await screen.findByRole('button', {
-            name: /Filter Tables/,
+            name: /Filter tables/,
         });
         fireEvent.click(button);
         expect(
@@ -84,11 +84,11 @@ describe('the canvas in the editor frame (EDT-011, EDT-012)', () => {
         );
     });
 
-    it('EDT-023: Show All moves the camera, from the toolbar and from the workspace', async () => {
+    it('EDT-023: Show all moves the camera, from the toolbar and from the workspace', async () => {
         const { container } = mount();
-        await screen.findByRole('button', { name: /Show All/ });
+        await screen.findByRole('button', { name: /Show all/ });
         const start = transformOf(container);
-        fireEvent.click(screen.getAllByRole('button', { name: /Show All/ })[0]);
+        fireEvent.click(screen.getAllByRole('button', { name: /Show all/ })[0]);
         await waitFor(() => expect(transformOf(container)).not.toBe(start), {
             timeout: 3000,
         });

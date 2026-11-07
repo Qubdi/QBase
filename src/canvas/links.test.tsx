@@ -432,7 +432,7 @@ describe('the line popover', () => {
         );
         for (const name of [
             'Switch tables',
-            'Open in sidebar',
+            'Open in side panel',
             'Delete relationship',
         ])
             expect(within(box).getByLabelText(name)).toBeInTheDocument();
@@ -471,10 +471,10 @@ describe('the line popover', () => {
         );
     });
 
-    it('EDT-175: Open in sidebar shows the Refs section and tells the workspace', async () => {
+    it('EDT-175: Open in side panel shows the Refs section and tells the workspace', async () => {
         const showLinkInPanel = vi.fn();
         const { s, store, box } = await openPopover({ showLinkInPanel });
-        fireEvent.click(within(box).getByLabelText('Open in sidebar'));
+        fireEvent.click(within(box).getByLabelText('Open in side panel'));
         expect(store.getState().ui.panel.section).toBe('refs');
         expect(showLinkInPanel).toHaveBeenCalledWith(s.link);
         expect(screen.queryByRole('dialog')).toBeNull();

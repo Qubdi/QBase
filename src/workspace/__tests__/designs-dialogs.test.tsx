@@ -280,7 +280,7 @@ describe('New diagram dialog, local mode (SHL-036 to SHL-041)', () => {
             timeout: 3000,
         });
         expect(screen.getByTestId('import-counts').textContent).toContain(
-            '1 tables'
+            '1 table'
         );
         fireEvent.click(build);
         await waitFor(async () =>

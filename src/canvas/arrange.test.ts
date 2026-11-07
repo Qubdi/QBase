@@ -219,7 +219,7 @@ describe('move to area', () => {
         ).toBe(false);
     });
 
-    it('EDT-205: No Area moves a table to just outside the rectangle', () => {
+    it('EDT-205: No area moves a table to just outside the rectangle', () => {
         const s = shop();
         const placed = withRegion(s.design, {
             x: 1000,

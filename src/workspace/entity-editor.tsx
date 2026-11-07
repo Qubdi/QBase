@@ -34,6 +34,7 @@ export const EntityEditor: React.FC<{ entityId: Id; close(): void }> = ({
                     aria-label={t('editor.workspace.canvas.tableName')}
                     value={entity.name}
                     readOnly={locked}
+                    delay={1000}
                     className="h-8 flex-1 font-semibold"
                     onCommit={(name) =>
                         edit({

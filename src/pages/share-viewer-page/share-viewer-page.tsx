@@ -17,6 +17,7 @@ import {
     type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { Helmet } from 'react-helmet-async';
 import { PoweredByMark } from '@/components/qubdi/powered-by';
 import { Input } from '@/platform/ui/input';
 import { Button } from '@/platform/ui/button';
@@ -49,7 +50,7 @@ const RECONNECT_MAX_MS = 60_000;
  * Read-only view of a published diagram. It deliberately renders no editing UI
  * and uses none of the editor's providers.
  */
-export const ShareViewerPage: React.FC = () => {
+const ViewerBody: React.FC = () => {
     const { t: tr } = useTranslation();
     const { token = '' } = useParams<{ token: string }>();
     const { user } = useQubdi();
@@ -332,3 +333,16 @@ const Centered: React.FC<React.PropsWithChildren> = ({ children }) => (
         {children}
     </div>
 );
+
+/** The shared diagram's page: its own translated title over the viewer. */
+export const ShareViewerPage: React.FC = () => {
+    const { t } = useTranslation();
+    return (
+        <>
+            <Helmet>
+                <title>{t('qubdi.viewerPage.pageTitle')}</title>
+            </Helmet>
+            <ViewerBody />
+        </>
+    );
+};

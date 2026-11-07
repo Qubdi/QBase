@@ -275,7 +275,7 @@ await step('05 build a diagram from the pasted PostgreSQL sample', async () => {
         .click();
     await page.getByRole('textbox', { name: 'SQL script' }).fill(PG_SAMPLE);
     await page
-        .getByText(/Found 2 tables and 1 links/)
+        .getByText(/Found 2 tables and 1 relationship/)
         .waitFor({ timeout: 10000 });
     await shot('import-dialog');
     await page.getByRole('button', { name: 'Build from text' }).click();
@@ -341,6 +341,7 @@ await step('06c export the diagram file and import it again', async () => {
         timeout: 10000,
     });
     await page.locator('.react-flow__node').first().waitFor();
+    await waitIdle();
     const text = (await designText()).join(' ');
     check(/pets/.test(text) && /vets/.test(text), `reimported: ${text}`);
     await shot('json-reimported');
@@ -365,14 +366,14 @@ await step('07 reload keeps the diagram (IndexedDB)', async () => {
 });
 
 await step('08 dark theme', async () => {
-    await menu('View', 'Colour theme', 'Dark');
+    await menu('View', 'Color theme', 'Dark');
     await waitIdle();
     const dark = await page.evaluate(() =>
         document.documentElement.classList.contains('dark')
     );
     check(dark, 'html has no dark class');
     await shot('dark');
-    await menu('View', 'Colour theme', 'Light');
+    await menu('View', 'Color theme', 'Light');
 });
 
 await step('09 phone width: drawer opens', async () => {

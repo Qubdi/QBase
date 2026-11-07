@@ -16,9 +16,9 @@ export interface ToastItem extends ToastOptions {
     open: boolean;
 }
 
-// How many toasts are shown at once, and how long a closed one stays mounted
+// How many toasts are shown at once (one: a new toast replaces the old, spec A11), and how long a closed one stays mounted
 // so that its exit animation can play.
-const MAX_VISIBLE = 3;
+const MAX_VISIBLE = 1;
 const REMOVE_DELAY_MS = 1000;
 
 // The list lives outside React so that `toast()` works from any code and every

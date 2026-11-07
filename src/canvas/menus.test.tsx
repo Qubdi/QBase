@@ -71,7 +71,7 @@ describe('right-click menus', () => {
         expect(lines.some((l) => l.kind === 'separator')).toBe(true);
     });
 
-    it('EDT-054: New View is offered only while views are drawn; New Relationship only if the workspace can open its dialog', () => {
+    it('EDT-054: New view is offered only while views are drawn; New relationship only if the workspace can open its dialog', () => {
         const lines = buildMenu(
             context({
                 design: shop().design,
@@ -112,7 +112,7 @@ describe('right-click menus', () => {
         expect(startEditing).toHaveBeenCalledWith(made.id);
     });
 
-    it('EDT-056: with tables selected the background menu adds Move to Area (n) with the areas and New Area', () => {
+    it('EDT-056: with tables selected the background menu adds Move to area (n) with the areas and New area', () => {
         const s = shop();
         const placed = withRegion(
             s.design,
@@ -204,7 +204,7 @@ describe('right-click menus', () => {
         });
     });
 
-    it('EDT-059: No Area is disabled when none of the tables has an area', () => {
+    it('EDT-059: No area is disabled when none of the tables has an area', () => {
         const s = shop();
         const placed = withRegion(
             s.design,
@@ -278,23 +278,23 @@ describe('right-click menus', () => {
         expect(screen.queryByTestId('pointer-menu')).toBeNull();
     });
 
-    it('EDT-054: right-clicking the background shows the menu and New Table creates a table', () => {
+    it('EDT-054: right-clicking the background shows the menu and New table creates a table', () => {
         const { container, store } = renderCanvas(shop().design);
         fireEvent.contextMenu(container.querySelector('.react-flow__pane')!, {
             clientX: 50,
             clientY: 60,
         });
         const menu = screen.getByTestId('pointer-menu');
-        expect(within(menu).getByText('New Table')).toBeInTheDocument();
+        expect(within(menu).getByText('New table')).toBeInTheDocument();
         expect(
-            within(menu).getByText('Auto Arrange Diagram')
+            within(menu).getByText('Auto arrange diagram')
         ).toBeInTheDocument();
-        fireEvent.click(within(menu).getByText('New Table'));
+        fireEvent.click(within(menu).getByText('New table'));
         expect(store.getState().design.entities.order).toHaveLength(4);
         expect(screen.queryByTestId('pointer-menu')).toBeNull();
     });
 
-    it('EDT-057, EDT-099: Duplicate Table in the table menu adds a copy near the original, clear of other tables', () => {
+    it('EDT-057, EDT-099: Duplicate table in the table menu adds a copy near the original, clear of other tables', () => {
         const s = shop();
         const { store } = renderCanvas(s.design);
         const card = screen
@@ -303,7 +303,7 @@ describe('right-click menus', () => {
         fireEvent.contextMenu(card);
         fireEvent.click(
             within(screen.getByTestId('pointer-menu')).getByText(
-                'Duplicate Table'
+                'Duplicate table'
             )
         );
         const state = store.getState().design;
@@ -315,7 +315,7 @@ describe('right-click menus', () => {
         expect(copy.y).toBeGreaterThanOrEqual(80);
     });
 
-    it('EDT-100: Delete Table removes the table and its links in one undo step', () => {
+    it('EDT-100: Delete table removes the table and its links in one undo step', () => {
         const s = shop();
         const { store } = renderCanvas(s.design);
         fireEvent.contextMenu(
@@ -324,7 +324,7 @@ describe('right-click menus', () => {
                 .closest('.react-flow__node')!
         );
         fireEvent.click(
-            within(screen.getByTestId('pointer-menu')).getByText('Delete Table')
+            within(screen.getByTestId('pointer-menu')).getByText('Delete table')
         );
         expect(store.getState().design.entities.order).toHaveLength(2);
         expect(store.getState().design.links.order).toHaveLength(0);
@@ -333,7 +333,7 @@ describe('right-click menus', () => {
         expect(store.getState().design.links.order).toEqual([s.link]);
     });
 
-    it('EDT-056: Move to Area (n) opens its list and New Area creates an area holding the tables, as one step', () => {
+    it('EDT-056: Move to area (n) opens its list and New area creates an area holding the tables, as one step', () => {
         const s = shop();
         const { container, store } = renderCanvas(s.design);
         act(() => store.getState().select([s.users, s.items]));
@@ -341,10 +341,10 @@ describe('right-click menus', () => {
             clientX: 700,
             clientY: 700,
         });
-        fireEvent.click(screen.getByText('Move to Area (2)'));
+        fireEvent.click(screen.getByText('Move to area (2)'));
         fireEvent.click(
             within(screen.getByTestId('pointer-menu'))
-                .getAllByText('New Area')
+                .getAllByText('New area')
                 .pop()!
         );
         const state = store.getState().design;
@@ -358,19 +358,19 @@ describe('right-click menus', () => {
         expect(store.getState().history.undo).toHaveLength(1);
     });
 
-    it('EDT-050: Auto Arrange asks first, with Auto Arrange and Cancel; Cancel changes nothing, confirming rearranges', async () => {
+    it('EDT-050: Auto arrange asks first, with Auto arrange and Cancel; Cancel changes nothing, confirming rearranges', async () => {
         const s = shop();
         const { container, store } = renderCanvas(s.design);
         const open = () => {
             fireEvent.contextMenu(
                 container.querySelector('.react-flow__pane')!
             );
-            fireEvent.click(screen.getByText('Auto Arrange Diagram'));
+            fireEvent.click(screen.getByText('Auto arrange diagram'));
         };
         open();
         const dialog = await screen.findByRole('alertdialog');
         expect(
-            within(dialog).getByText('Auto Arrange Diagram')
+            within(dialog).getByText('Auto arrange diagram')
         ).toBeInTheDocument();
         expect(
             within(dialog).getByText(/rearrange all tables/)
@@ -384,7 +384,7 @@ describe('right-click menus', () => {
         open();
         fireEvent.click(
             within(await screen.findByRole('alertdialog')).getByRole('button', {
-                name: 'Auto Arrange',
+                name: 'Auto arrange',
             })
         );
         await waitFor(() =>
@@ -412,7 +412,7 @@ describe('right-click menus', () => {
 });
 
 describe('drawing a relationship from a table', () => {
-    it('EDT-158, EDT-162: Add Relationship draws a line; Escape cancels it', async () => {
+    it('EDT-158, EDT-162: Add relationship draws a line; Escape cancels it', async () => {
         const s = shop();
         const { store } = renderCanvas(s.design);
         fireEvent.contextMenu(
@@ -422,7 +422,7 @@ describe('drawing a relationship from a table', () => {
         );
         fireEvent.click(
             within(screen.getByTestId('pointer-menu')).getByText(
-                'Add Relationship'
+                'Add relationship'
             )
         );
         expect(screen.getByTestId('link-draft')).toBeInTheDocument();
@@ -441,7 +441,7 @@ describe('drawing a relationship from a table', () => {
         );
         fireEvent.click(
             within(screen.getByTestId('pointer-menu')).getByText(
-                'Add Relationship'
+                'Add relationship'
             )
         );
         fireEvent.click(container.querySelector('.react-flow__pane')!);
@@ -459,7 +459,7 @@ describe('drawing a relationship from a table', () => {
         );
         fireEvent.click(
             within(screen.getByTestId('pointer-menu')).getByText(
-                'Add Relationship'
+                'Add relationship'
             )
         );
         fireEvent.click(
@@ -489,7 +489,7 @@ describe('drawing a relationship from a table', () => {
         );
         fireEvent.click(
             within(screen.getByTestId('pointer-menu')).getByText(
-                'Add Relationship'
+                'Add relationship'
             )
         );
         fireEvent.click(

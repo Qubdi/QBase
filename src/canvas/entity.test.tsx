@@ -268,7 +268,7 @@ describe('entity card', () => {
         ).toBeInTheDocument();
     });
 
-    it('EDT-083: Show More expands a long table and the state is saved on the entity', () => {
+    it('EDT-083: Show more expands a long table and the state is saved on the entity', () => {
         const { design, users } = shop();
         const long = withColumns(design, users, 14);
         const { store } = renderCanvas(long);
@@ -276,14 +276,14 @@ describe('entity card', () => {
         expect(card.querySelectorAll('[data-testid^="field-"]')).toHaveLength(
             10
         );
-        fireEvent.click(within(card).getByText('Show More'));
+        fireEvent.click(within(card).getByText('Show more'));
         expect(store.getState().design.entities.byId[users].expanded).toBe(
             true
         );
         expect(card.querySelectorAll('[data-testid^="field-"]')).toHaveLength(
             15
         );
-        expect(within(card).getByText('Show Less')).toBeInTheDocument();
+        expect(within(card).getByText('Show less')).toBeInTheDocument();
         // the expansion is a view setting, not an undo step
         expect(store.getState().history.undo).toHaveLength(0);
     });
