@@ -70,8 +70,9 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
     and spec samples checked (`phase9/data-checks.md`), two read-only code reviews with fixes
     (`review/*.md`), a real-browser smoke test (14 steps) and nine flows (60 steps), perf and
     accessibility audits started (`phase9/perf.md`, `phase9/a11y.md`).
-    Waiting on the owner: Audit REPO-045, REPO-049 and REPO-069 (they close with the licence
-    decision), lawyer review of the result, a live-database run of the metadata queries (PostgreSQL,
+    Licence chosen 2026-11-08: Elastic License 2.0, applied. Audit rev 28: REPO-045 and REPO-049
+    fixed, REPO-069 narrowed (open until the fresh-repository release and the lawyer's written
+    confirmation). Waiting on the owner: the lawyer's written confirmation, a live-database run of the metadata queries (PostgreSQL,
     CockroachDB, MySQL, MariaDB, SQL Server), a native-speaker review of the 20 machine translations,
     and the decisions EDT-047 (credit mark) and SHL-032/042 (New dialog tabs).
 11. [ ] **Phase 10: release.** Fresh repository with new history, chosen licence applied,
