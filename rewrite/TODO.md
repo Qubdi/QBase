@@ -52,9 +52,16 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
    database (IMP-077 to IMP-080, needs the server side), loading `@dbml/core` only when the DBML
    method is picked in the import dialog, removing the unused `code-snippet` / Monaco dependency,
    owner confirmations in `decisions-phase6e.md` and `decisions-phase6f.md`.
-8. [ ] **Phase 7: data and content.** New translations, templates and examples (or none),
-   fixtures and images. No `identical` or `derived` row left in the inventory.
-9. [ ] **Phase 8: tests**, in every phase, written from the spec.
+8. [x] **Phase 7: data and content** (English only; done 2026-11-07, commit c04551d). No templates,
+   examples, fixtures or thumbnails are left; all UI text and engine messages go through i18n; wording
+   unified; a test fails on hard-coded UI text (`src/i18n/__tests__/hard-coded-text.test.ts`).
+   Open for the owner: which of the 20 empty non-English locales to translate (they fall back to
+   English); `src/lib/data/**` keeps its old folder layout (rename is optional).
+9. [~] **Phase 8: tests**, written from the spec (2026-11-07, commit 5c500c8): 665 of 684 parity rows
+   ticked with a named test; results per slice in `phase8/`. Open rows are listed in
+   `parity-checklist.md` (missing features being built, owner decisions EDT-047 and SHL-032/042,
+   SHL-073/098/099 translations, SHL-103 old Safari, QBS-007/019/021 naming, manual checks that need
+   a live database or server: DAT-077, EDT-250).
 10. [ ] **Phase 9: cleanup and verification.** Similarity check clean for every tracked file,
     parity checklist fully ticked, dependency licences re-audited (`node tools/licences.mjs`),
     `NOTICE` updated, Audit REPO-045, REPO-049 and REPO-069 updated, lawyer review of the
