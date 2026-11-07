@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { en } from './locales/en';
 import { languages } from './languages';
+import { localeTag } from './locale-tag';
 
 export { languages };
 
@@ -46,7 +47,7 @@ async function ensureLocale(lng: string | undefined): Promise<boolean> {
 
 /** Tells the browser which way the page reads (Arabic is right to left) and in what language. */
 function setDocumentLanguage(lng: string) {
-    document.documentElement.lang = lng.replace('_', '-');
+    document.documentElement.lang = localeTag(lng) ?? 'en';
     document.documentElement.dir = i18n.dir(lng);
 }
 

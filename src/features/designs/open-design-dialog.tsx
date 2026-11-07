@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { localeTag } from '@/i18n/locale-tag';
 import { Copy, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
 import {
@@ -90,7 +91,7 @@ export const OpenDesignDialog: React.FC<OpenDesignDialogProps> = ({
         [items, search]
     );
     const format = (ms: number) =>
-        new Date(ms).toLocaleString(i18n.language.replace('_', '-'));
+        new Date(ms).toLocaleString(localeTag(i18n.language));
 
     const openDesign = async (id: string) => {
         await rememberDefault(adapter, id);
