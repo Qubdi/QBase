@@ -26,33 +26,23 @@ describe('time ago in the save hover text (SHL-030)', () => {
         expect(text('en')).toBe('Saved 5 minutes ago');
     });
 
-    it.each([
-        'es',
-        'fr',
-        'de',
-        'hi',
-        'ja',
-        'ko',
-        'ru',
-        'zh-CN',
-        'zh-TW',
-        'pt-BR',
-        'bn',
-    ])('%s: the "time ago" words are in that language', (lang) => {
-        const label = text(lang);
-        expect(label, lang).not.toContain('minutes ago');
-    });
+    it.each(['fr', 'de', 'it', 'ka', 'ru', 'zh-CN', 'zh-TW'])(
+        '%s: the "time ago" words are in that language',
+        (lang) => {
+            const label = text(lang);
+            expect(label, lang).not.toContain('minutes ago');
+        }
+    );
 });
 
 describe('which languages have the wording (SHL-030)', () => {
-    it('a regional code uses its base language; Korean as ko_KR, German as de-AT', () => {
-        expect(text('ko_KR')).not.toContain('minutes ago');
+    it('a regional code uses its base language; German as de-AT, Italian as it_CH', () => {
         expect(text('de-AT')).not.toContain('minutes ago');
-        expect(text('pt_BR')).not.toContain('minutes ago');
+        expect(text('it_CH')).not.toContain('minutes ago');
     });
 
     it('a language without wording reads English', () => {
-        for (const lang of ['tr', 'uk', 'ar', 'vi'])
+        for (const lang of ['tr', 'uk', 'es', 'ja'])
             expect(text(lang), lang).toContain('5 minutes ago');
     });
 });

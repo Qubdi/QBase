@@ -13,7 +13,7 @@ const FALLBACK = 'en';
 
 /**
  * The other languages are separate chunks, fetched the first time they are
- * wanted, so the bundle holds one language instead of twenty-two.
+ * wanted, so the bundle holds one language instead of all of them.
  */
 const loaders = import.meta.glob<Record<string, { translation: object }>>([
     './locales/*.ts',

@@ -27,3 +27,12 @@ Action for the owner: ask the lawyer to confirm the answer by email and to answe
   only its description of the project licence changed.
 - Still to do: written confirmation from the lawyer that ELv2 suits the goal, and the audit
   files (REPO-045, REPO-049, REPO-069).
+
+## Languages (owner, 2026-11-08)
+
+Only these languages ship: English, Russian, Georgian, German, Italian, French and Chinese
+(both Simplified and Traditional, kept because "Chinese" covers both). The other 16 locale
+files, their list entries, their "time ago" wording and their translation notes were removed;
+Georgian and Italian were translated new. Right-to-left support in `i18n.ts` stays (it costs
+nothing and a language can be added later). Translations remain machine-made and need a
+native-speaker review before release.

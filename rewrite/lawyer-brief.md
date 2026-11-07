@@ -45,7 +45,7 @@ code stays on `main` and is not to be published.
   pass. Tests were written from the spec, not by copying ChartDB's tests.
 - The data-format migration from the old browser database was tested with fixtures built from
   the spec, not with a real old database.
-- Translations into 20 languages are machine-made from our own English text (the old
+- Translations into 6 languages (Russian, Georgian, German, Italian, French, Chinese) are machine-made from our own English text (the old
   translations were not used). A native-speaker review is pending.
 - Dependency licences re-audited: 118 direct dependencies, 99 MIT, 13 Apache-2.0, 3 OFL fonts,
   1 ISC, 1 Unlicense; `NOTICE` lists the fonts and shadcn/ui.

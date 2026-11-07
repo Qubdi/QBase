@@ -11,24 +11,9 @@ export const languages: LanguageMetadata[] = [
         code: 'en',
     },
     {
-        name: 'French',
-        nativeName: 'Français',
-        code: 'fr',
-    },
-    {
-        name: 'German',
-        nativeName: 'Deutsch',
-        code: 'de',
-    },
-    {
-        name: 'Spanish',
-        nativeName: 'Español',
-        code: 'es',
-    },
-    {
-        name: 'Ukrainian',
-        nativeName: 'Українська',
-        code: 'uk',
+        name: 'Georgian',
+        nativeName: 'ქართული',
+        code: 'ka',
     },
     {
         name: 'Russian',
@@ -36,34 +21,19 @@ export const languages: LanguageMetadata[] = [
         code: 'ru',
     },
     {
-        name: 'Turkish',
-        nativeName: 'Türkçe',
-        code: 'tr',
+        name: 'German',
+        nativeName: 'Deutsch',
+        code: 'de',
     },
     {
-        name: 'Croatian',
-        nativeName: 'Hrvatski',
-        code: 'hr',
+        name: 'Italian',
+        nativeName: 'Italiano',
+        code: 'it',
     },
     {
-        name: 'Portuguese',
-        nativeName: 'Português',
-        code: 'pt_BR',
-    },
-    {
-        name: 'Hindi',
-        nativeName: 'हिन्दी',
-        code: 'hi',
-    },
-    {
-        name: 'Japanese',
-        nativeName: '日本語',
-        code: 'ja',
-    },
-    {
-        name: 'Korean',
-        nativeName: '한국어',
-        code: 'ko_KR',
+        name: 'French',
+        nativeName: 'Français',
+        code: 'fr',
     },
     {
         name: 'Chinese (Simplified)',
@@ -74,45 +44,5 @@ export const languages: LanguageMetadata[] = [
         name: 'Chinese (Traditional)',
         nativeName: '繁體中文',
         code: 'zh_TW',
-    },
-    {
-        name: 'Nepali',
-        nativeName: 'नेपाली',
-        code: 'ne',
-    },
-    {
-        name: 'Marathi',
-        nativeName: 'मराठी',
-        code: 'mr',
-    },
-    {
-        name: 'Indonesian',
-        nativeName: 'Indonesia',
-        code: 'id_ID',
-    },
-    {
-        name: 'Telugu',
-        nativeName: 'తెలుగు',
-        code: 'te',
-    },
-    {
-        name: 'Bengali',
-        nativeName: 'বাংলা',
-        code: 'bn',
-    },
-    {
-        name: 'Gujarati',
-        nativeName: 'ગુજરાતી',
-        code: 'gu',
-    },
-    {
-        name: 'Vietnamese',
-        nativeName: 'Tiếng Việt',
-        code: 'vi',
-    },
-    {
-        name: 'Arabic',
-        nativeName: 'العربية',
-        code: 'ar',
     },
 ];

@@ -1,0 +1,946 @@
+export const it = {
+    translation: {
+        menu: {
+            actions: {
+                save: 'Salva',
+            },
+        },
+        editor: {
+            common: {
+                cancel: 'Annulla',
+                close: 'Chiudi',
+                back: 'Indietro',
+                continue: 'Continua',
+                loading: 'Caricamento',
+                app: {
+                    title: 'QBase - Diagrammi di schemi di database',
+                    description:
+                        'Diagrammi di schemi di database: importazione da un database attivo, pubblicazione di versioni, link di sola lettura, risincronizzazione e rilevamento delle differenze.',
+                },
+                notFound: {
+                    title: 'Manca qualcosa.',
+                    body: 'Non è stato possibile trovare la pagina cercata. Potrebbe essere stata spostata oppure il link potrebbe essere errato.',
+                },
+                colorPicker: {
+                    change: 'Cambia colore',
+                    use: 'Usa',
+                    useColor: 'Usa {{color}}',
+                    remove: 'Rimuovi {{color}}',
+                    yourColors: 'Colori personali',
+                    pickCustom: 'Scegli un colore personalizzato',
+                    hex: 'Colore esadecimale',
+                    hexPlaceholder: '#rrggbb',
+                    invalid:
+                        'Inserire un colore esadecimale, ad esempio #8eb7ff.',
+                },
+            },
+            workspace: {
+                frame: {
+                    canvasPlaceholder:
+                        'Qui compare la superficie del diagramma',
+                    panelPlaceholder: 'Qui compare il pannello laterale',
+                    resizePanel: 'Ridimensiona il pannello laterale',
+                    openPanel: 'Apri il pannello di modifica',
+                },
+                canvas: {
+                    editTable: 'Modifica la tabella {{name}}',
+                    tableName: 'Nome della tabella',
+                    done: 'Fatto',
+                    schema: 'Schema',
+                    createSchema: 'Crea nuovo schema',
+                    newSchemaName: 'Nome del nuovo schema',
+                    openInPanel: 'Apri nel pannello laterale',
+                    fieldCount_one: '{{count}} campo',
+                    fieldCount_many: '{{count}} di campi',
+                    fieldCount_other: '{{count}} campi',
+                    loading: 'Caricamento del diagramma...',
+                    link: {
+                        title: 'Nuova relazione',
+                        from: 'Da {{table}}.{{field}}',
+                        target: 'Campo in {{table}}',
+                        newField: 'Nuovo campo',
+                        newFieldName: 'Nome del nuovo campo',
+                        create: 'Crea',
+                        cancel: 'Annulla',
+                        noKey: 'La prima tabella non ha una chiave primaria da cui partire.',
+                        noField:
+                            'Scegliere un campo oppure assegnare un nome al nuovo campo.',
+                        noLink: 'Questi campi non possono essere collegati.',
+                    },
+                },
+                navbar: {
+                    home: 'Home di QBase',
+                    language: 'Cambia lingua',
+                    searchLanguage: 'Cerca lingue',
+                    showTools: 'Mostra la barra degli strumenti',
+                    hideTools: 'Nascondi la barra degli strumenti',
+                },
+                name: {
+                    label: 'Nome del diagramma',
+                    confirm: 'Mantieni questo nome',
+                    rename: 'Rinomina il diagramma',
+                    hint: 'Doppio clic per rinominare',
+                },
+                banner: {
+                    openOnly:
+                        "I diagrammi {{database}} possono essere aperti e visualizzati, ma non modificati in questa versione dell'editor.",
+                },
+                menu: {
+                    label: "Menu dell'editor",
+                    diagram: {
+                        label: 'Diagramma',
+                        import: 'Importa da',
+                        importFile: 'File di diagramma (.json)',
+                        importSql: 'Script SQL',
+                        importDbml: 'Testo DBML',
+                        exportSql: 'Esporta SQL per',
+                        saveAs: 'Salva come',
+                        png: 'Immagine PNG',
+                        jpeg: 'Immagine JPEG',
+                        svg: 'Immagine SVG',
+                        json: 'File di diagramma (.json)',
+                        delete: 'Elimina questo diagramma',
+                    },
+                    edit: {
+                        label: 'Modifica',
+                        undo: 'Annulla',
+                        redo: 'Ripeti',
+                        clear: 'Svuota il diagramma',
+                    },
+                    view: {
+                        label: 'Visualizza',
+                        sidePanel: 'Pannello laterale',
+                        cardinality: 'Cardinalità delle relazioni',
+                        fieldAttributes: 'Attributi dei campi',
+                        compactTables: 'Tabelle compatte',
+                        minimap: 'Minimappa',
+                        views: 'Viste del database',
+                        wheel: 'Rotellina del mouse',
+                        wheelPan: 'Sposta la vista',
+                        wheelZoom: 'Ingrandisce la vista',
+                        theme: 'Tema colore',
+                        themes: {
+                            system: 'Come il sistema',
+                            light: 'Chiaro',
+                            dark: 'Scuro',
+                        },
+                        themeKey: 'Passa da chiaro a scuro',
+                        preferences: 'Preferenze',
+                    },
+                },
+                rail: {
+                    label: "Sezioni dell'editor",
+                    new: 'Nuovo',
+                    browse: 'Apri',
+                    tables: 'Tabelle',
+                    dbml: 'DBML',
+                    refs: 'Relazioni',
+                    customTypes: 'Tipi',
+                    visuals: 'Extra',
+                },
+                drawer: {
+                    title: 'Contenuto del diagramma',
+                    description:
+                        'Sfoglia e modifica le parti di questo diagramma',
+                    sections: 'Sezione',
+                    entries: {
+                        tables: 'Tabelle',
+                        dbml: 'DBML',
+                        refs: 'Relazioni',
+                        customTypes: 'Tipi personalizzati',
+                        areas: 'Aree',
+                        notes: 'Note',
+                    },
+                },
+                toasts: {
+                    saved: 'Tutto salvato',
+                    saving: 'Salvataggio delle ultime modifiche',
+                },
+                shortcuts: {
+                    undo: 'Annulla',
+                    redo: 'Ripeti',
+                    openDiagram: 'Apri un diagramma',
+                    save: 'Conferma che le modifiche sono salvate',
+                    togglePanel: 'Mostra o nascondi il pannello laterale',
+                    fitAll: 'Adatta tutte le tabelle alla vista',
+                    toggleTheme: 'Passa da chiaro a scuro',
+                    toggleFilter: 'Mostra o nascondi il filtro delle tabelle',
+                    copyTables: 'Copia le tabelle selezionate',
+                    pasteTables: 'Incolla le tabelle copiate',
+                    removeSelection: 'Elimina la selezione',
+                },
+            },
+            designs: {
+                defaultName: 'Diagramma {{number}}',
+                create: {
+                    titleType: 'Per quale database è questo diagramma?',
+                    descriptionType:
+                        'La scelta resta associata al diagramma. Sceglierne uno per continuare.',
+                    titleImport: 'Parti da un lavoro esistente',
+                    descriptionImport:
+                        'Incolla uno schema per generare il diagramma, oppure inizia con uno vuoto.',
+                    fromFile: 'Apri un file salvato',
+                    empty: 'Diagramma vuoto',
+                    emptyFromImport: 'Meglio un diagramma vuoto',
+                    import: 'Genera dal testo',
+                    failed: 'Non è stato possibile creare il diagramma. Riprovare.',
+                },
+                open: {
+                    title: 'Diagrammi salvati',
+                    description:
+                        'Tutto ciò che è salvato in questo browser, dalle modifiche più recenti.',
+                    search: 'Cerca per nome',
+                    empty: 'Non ci sono ancora diagrammi salvati qui.',
+                    noMatch: 'Nessun diagramma ha questo nome.',
+                    columns: {
+                        name: 'Nome',
+                        created: 'Creato',
+                        changed: 'Modificato',
+                        tables: 'Tabelle',
+                        actions: 'Azioni',
+                    },
+                    actionsFor: 'Azioni per {{name}}',
+                    rowOpen: 'Apri',
+                    rowRename: 'Rinomina',
+                    rowDuplicate: 'Crea una copia',
+                    rowDelete: 'Elimina',
+                    newDatabase: 'Nuovo diagramma',
+                    open: 'Apri diagramma',
+                    copySuffix: '(Copia)',
+                    duplicated: 'Creato {{name}}',
+                },
+                rename: {
+                    title: 'Rinomina diagramma',
+                    description:
+                        'Scegliere un nuovo nome. Lasciare vuoto per mantenere quello attuale.',
+                    label: 'Nome del diagramma',
+                    save: 'Rinomina',
+                },
+                delete: {
+                    title: 'Eliminare questo diagramma?',
+                    description:
+                        '"{{name}}" verrà rimosso definitivamente. Questa operazione non può essere annullata.',
+                    confirm: 'Elimina',
+                    failed: 'Non è stato possibile eliminare il diagramma',
+                },
+                clear: {
+                    title: 'Svuotare il diagramma?',
+                    description:
+                        'Tutte le tabelle, le relazioni e le note verranno rimosse e la cronologia andrà persa. Il diagramma in sé resta. Questa operazione non può essere annullata.',
+                    confirm: 'Svuota',
+                    failed: 'Non è stato possibile svuotare il diagramma',
+                },
+            },
+            diagnostics: {
+                withLine: 'Riga {{line}}: {{text}}',
+                found_one: 'Trovata {{count}} tabella',
+                found_many: 'Trovate {{count}} di tabelle',
+                found_other: 'Trovate {{count}} tabelle',
+                foundViews_one: '{{count}} vista',
+                foundViews_many: '{{count}} di viste',
+                foundViews_other: '{{count}} viste',
+                foundWithViews: '{{tables}} e {{views}} da importare.',
+                foundOnly: '{{tables}} da importare.',
+                nothingToImport: 'Niente da importare',
+                nothingToExport: 'Niente da esportare',
+                emptyScript: 'Lo script SQL è vuoto',
+                noStatements: 'Nessuna istruzione SQL valida trovata',
+                addCreateTable:
+                    'Aggiungere istruzioni CREATE TABLE da importare',
+                noSemicolon:
+                    'Le istruzioni SQL devono terminare con un punto e virgola (;)',
+                unterminatedComment: 'Commento a blocco non terminato',
+                closeComment: 'Chiudere il commento con */',
+                unterminatedText: 'Testo tra virgolette non terminato',
+                closeText: 'Chiudere il testo con {{quote}}',
+                unmatchedParen: 'Parentesi chiusa senza corrispondente',
+                unclosedParen: 'Parentesi non chiusa',
+                dialectSyntax: {
+                    serialMysql:
+                        'SERIAL non è valido in MySQL, usare AUTO_INCREMENT',
+                    identityMysql:
+                        'GENERATED ... AS IDENTITY non è valido in MySQL, usare AUTO_INCREMENT',
+                    sqlServerIdentityMysql:
+                        'IDENTITY(a,b) è una sintassi di SQL Server, usare AUTO_INCREMENT',
+                    autoIncrementSqlServer:
+                        'AUTO_INCREMENT è una sintassi di MySQL, usare IDENTITY(1,1)',
+                    serialSqlServer:
+                        'SERIAL è una sintassi di PostgreSQL, usare IDENTITY(1,1)',
+                    identitySqlServer:
+                        'GENERATED ... AS IDENTITY non è valido in SQL Server, usare IDENTITY(1,1)',
+                    ifNotExistsSqlServer:
+                        'CREATE TABLE IF NOT EXISTS non è valido in T-SQL',
+                    schemaSqlite: 'CREATE SCHEMA non è supportato in SQLite',
+                    removeSchemaSqlite:
+                        'Rimuovere le istruzioni di creazione degli schemi per SQLite',
+                    enumSqlite:
+                        'ENUM non è supportato in SQLite, usare un vincolo CHECK',
+                    autoIncrementSqlite:
+                        'AUTO_INCREMENT è una sintassi di MySQL, usare AUTOINCREMENT',
+                    serialSqlite:
+                        'SERIAL è una sintassi di PostgreSQL, usare INTEGER PRIMARY KEY AUTOINCREMENT',
+                    identitySqlite:
+                        'GENERATED ... AS IDENTITY non è valido in SQLite, usare AUTOINCREMENT',
+                    sqlServerIdentitySqlite:
+                        'IDENTITY(a,b) è una sintassi di SQL Server, usare AUTOINCREMENT',
+                    inlineReferencesMysql:
+                        'MySQL non supporta REFERENCES inline nelle definizioni di colonna (riga {{line}}). Usare invece vincoli FOREIGN KEY:',
+                },
+                postgres: {
+                    brokenCast:
+                        'Operatore di cast non valido ": :". PostgreSQL usa "::" per la conversione di tipo.',
+                    fixCast: 'Sostituire ": :" con "::"',
+                    splitDecimal:
+                        'Il tipo DECIMAL è spezzato su più righe. Ciò può causare errori di analisi.',
+                    fixDecimal: 'Mettere precisione e scala sulla stessa riga',
+                    extension:
+                        "Trovato CREATE EXTENSION. Verrà ignorato durante l'importazione.",
+                    functions:
+                        "Trovate definizioni di funzioni. Verranno ignorate durante l'importazione.",
+                    triggers:
+                        'Trovate definizioni di trigger. Non verranno importate.',
+                    large: "Rilevato un file SQL di grandi dimensioni ({{count}} istruzioni). L'importazione potrebbe richiedere del tempo.",
+                    postgis:
+                        'Rilevati tipi geografici PostGIS. Verranno importati, ma i dati geometrici potrebbero non essere visualizzati.',
+                },
+                import: {
+                    viewNoColumns:
+                        'La vista {{name}} non ha colonne leggibili dalla sua definizione.',
+                    skipped_one:
+                        '{{count}} istruzione {{kind}} ignorata: non importata.',
+                    skipped_many:
+                        '{{count}} di istruzioni {{kind}} ignorate: non importate.',
+                    skipped_other:
+                        '{{count}} istruzioni {{kind}} ignorate: non importate.',
+                    linkTableMissing:
+                        'Chiave esterna su {{table}} scartata: la tabella {{ref}} non è nello script.',
+                    linkColumnsMismatch:
+                        'Chiave esterna su {{table}} scartata: le colonne non corrispondono.',
+                    linkNamedMissing:
+                        'Chiave esterna {{name}} scartata: manca una tabella o una colonna.',
+                    rowsDropped_one:
+                        "{{count}} riga di chiave esterna scartata: una tabella o una colonna non è nell'importazione.",
+                    rowsDropped_many:
+                        "{{count}} di righe di chiave esterna scartate: una tabella o una colonna non è nell'importazione.",
+                    rowsDropped_other:
+                        "{{count}} righe di chiave esterna scartate: una tabella o una colonna non è nell'importazione.",
+                    unsupportedType: 'Tipo di database non supportato',
+                    invalidDbml: 'DBML non valido',
+                    invalidRelationship:
+                        'Relazione non valida: tabelle o campi non trovati',
+                    manyToMany:
+                        'I riferimenti molti a molti (<>) non sono supportati: "{{left}}" e "{{right}}". Aggiungere una tabella di giunzione che faccia riferimento a entrambe.',
+                    missingIndexColumn:
+                        "L'indice fa riferimento a una colonna inesistente: {{name}}",
+                    invalidCheck:
+                        'Vincolo check non valido su {{name}}: {{problem}}',
+                    arrayType:
+                        'I tipi array non sono supportati per i database {{dialect}}. Il campo "{{field}}" ha il tipo array "{{type}}", che non è consentito.',
+                },
+                export: {
+                    lostFields_one:
+                        'La tabella {{name}} ha perso {{count}} campo senza nome.',
+                    lostFields_many:
+                        'La tabella {{name}} ha perso {{count}} di campi senza nome.',
+                    lostFields_other:
+                        'La tabella {{name}} ha perso {{count}} campi senza nome.',
+                    leftOutDuplicate:
+                        "La tabella {{name}} è stata esclusa: un'altra tabella ha lo stesso nome.",
+                    leftOutEmpty:
+                        'La tabella {{name}} è stata esclusa: non ha campi.',
+                    notSupportedFor:
+                        "L'esportazione SQL non è supportata per {{label}}",
+                    notSupportedForDiagrams:
+                        "L'esportazione SQL non è supportata per i diagrammi {{label}}",
+                    conversion: 'La conversione in {{label}} non è supportata',
+                },
+                check: {
+                    empty: "L'espressione è vuota",
+                    subQuery:
+                        'Le sottoquery non sono consentite in un vincolo check',
+                    keyword:
+                        'La parola chiave {{word}} non è consentita in un vincolo check',
+                    extraParen: 'Parentesi non bilanciate: ) in eccesso',
+                    openParen: 'Parentesi non bilanciate: ( non è chiusa',
+                    statements:
+                        'Le istruzioni non sono consentite in un vincolo check',
+                    comments:
+                        'I commenti non sono consentiti in un vincolo check',
+                },
+                refusal: {
+                    readOnly: 'Questo diagramma non può essere modificato',
+                    nothingToUndo: 'Niente da annullare',
+                    nothingToRedo: 'Niente da ripetere',
+                },
+            },
+            importing: {
+                file: {
+                    title: 'Apri un diagramma salvato',
+                    description:
+                        'Scegliere un file .json salvato da QBase. Verrà aggiunto come nuovo diagramma.',
+                    drop: 'Trascinare qui un file oppure fare clic per sceglierne uno',
+                    action: 'Importa',
+                    invalid:
+                        'Questo file non è un diagramma salvato da QBase, quindi non è stato importato nulla.',
+                    failed: 'Non è stato possibile importare il file. Riprovare.',
+                },
+                box: {
+                    method: {
+                        metadata: 'Query sul database',
+                        sql: 'Script SQL',
+                        dbml: 'DBML',
+                    },
+                    field: {
+                        metadata: 'Risultato della query',
+                        sql: 'Script SQL',
+                        dbml: 'Testo DBML',
+                    },
+                    placeholder: {
+                        metadata: 'Incollare qui il risultato della query',
+                        sql: 'Incollare qui le istruzioni CREATE TABLE',
+                        dbml: 'Incollare qui il DBML',
+                    },
+                    edition: 'Edizione',
+                    editionStandard: 'Standard',
+                    editions: {
+                        supabase: 'Supabase',
+                        timescale: 'Timescale',
+                        mysql_5_7: 'MySQL 5.7',
+                        sql_server_2016_and_below:
+                            'SQL Server 2016 e precedenti',
+                        cloudflare_d1: 'Cloudflare D1',
+                    },
+                    scriptIntro:
+                        'Eseguire la query nel proprio client di database, quindi incollare qui sotto la singola cella del risultato.',
+                    copyScript: 'Copia la query',
+                    noScript:
+                        'Per questo database non è ancora disponibile una query pronta.',
+                    scriptCopied: 'Query copiata',
+                    copyFailed: 'La copia non è disponibile in questo browser',
+                    truncated:
+                        'Il testo incollato è lungo esattamente 65.535 caratteri, il che di solito indica che il client lo ha troncato. Esportare la cella in un file invece di copiarla dalla griglia.',
+                    repair: 'Ripara il testo',
+                    repairing: 'Riparazione del testo...',
+                    repaired: 'Il testo è stato riparato.',
+                    moreProblems_one: '{{count}} altro problema',
+                    moreProblems_many: '{{count}} di altri problemi',
+                    moreProblems_other: '{{count}} altri problemi',
+                    found: 'Trovati: {{tables}} e {{links}}.',
+                    foundTables_one: '{{count}} tabella',
+                    foundTables_many: '{{count}} di tabelle',
+                    foundTables_other: '{{count}} tabelle',
+                    foundLinks_one: '{{count}} relazione',
+                    foundLinks_many: '{{count}} di relazioni',
+                    foundLinks_other: '{{count}} relazioni',
+                    nothing: "In questo testo non c'è nulla da importare.",
+                },
+                picker: {
+                    title: 'Scegli cosa importare',
+                    summary:
+                        '{{selected}} di {{total}} selezionati (al massimo {{limit}})',
+                    search: 'Cerca per nome',
+                    kind: 'Tipo',
+                    kindAll: 'Tabelle e viste',
+                    kindTables: 'Solo tabelle',
+                    kindViews: 'Solo viste',
+                    schema: 'Schema',
+                    schemaAll: 'Tutti gli schemi',
+                    selectPage: 'Seleziona tutto in questa pagina',
+                    viewTag: 'vista',
+                    previous: 'Precedente',
+                    next: 'Successiva',
+                    page: 'Pagina {{page}} di {{pages}}',
+                },
+                into: {
+                    title: 'Aggiungi a questo diagramma',
+                    description:
+                        'Le nuove tabelle vengono collocate a destra di quelle già presenti. Al termine la cronologia viene cancellata.',
+                    newTables_one: 'Verrà aggiunta {{count}} tabella.',
+                    newTables_many: 'Verranno aggiunte {{count}} di tabelle.',
+                    newTables_other: 'Verranno aggiunte {{count}} tabelle.',
+                    newLinks_one: 'Verrà aggiunta {{count}} relazione.',
+                    newLinks_many: 'Verranno aggiunte {{count}} di relazioni.',
+                    newLinks_other: 'Verranno aggiunte {{count}} relazioni.',
+                    newTypes_one:
+                        'Verrà aggiunto {{count}} tipo personalizzato.',
+                    newTypes_many:
+                        'Verranno aggiunti {{count}} di tipi personalizzati.',
+                    newTypes_other:
+                        'Verranno aggiunti {{count}} tipi personalizzati.',
+                    duplicates:
+                        'Queste tabelle esistono già e compariranno due volte: {{names}}',
+                    apply: 'Aggiungi al diagramma',
+                    done_one: 'Aggiunta {{count}} tabella',
+                    done_many: 'Aggiunte {{count}} di tabelle',
+                    done_other: 'Aggiunte {{count}} tabelle',
+                    failed: 'Non è stato importato nulla',
+                },
+            },
+            exporting: {
+                sql: {
+                    title: 'SQL per {{database}}',
+                    description:
+                        'Lo script comprende le tabelle attualmente visibili.',
+                    script: 'Script generato',
+                    copy: 'Copia',
+                    copied: 'Script copiato',
+                    copyFailed: 'La copia non è disponibile in questo browser',
+                    download: 'Scarica .sql',
+                    nothing: 'Non ci sono ancora tabelle da esportare.',
+                },
+                json: {
+                    title: 'Salva come file di diagramma',
+                    description:
+                        "Il file conserva l'intero diagramma e può essere riaperto dalla schermata del nuovo diagramma.",
+                    summary: '{{name}} (circa {{size}} KB)',
+                    download: 'Scarica',
+                },
+                image: {
+                    title: 'Salva come {{format}}',
+                    description:
+                        "L'immagine mostra l'intero diagramma, con i colori in uso.",
+                    scale: 'Dimensione',
+                    pattern: 'Disegna lo sfondo a punti',
+                    transparent: 'Sfondo trasparente',
+                    jpegNote:
+                        'JPEG non supporta la trasparenza, quindi viene usato il colore della pagina.',
+                    action: 'Salva immagine',
+                    working: "Creazione dell'immagine",
+                    empty: "Non c'è ancora nulla da inserire nell'immagine",
+                    failed: "Non è stato possibile creare l'immagine",
+                    lowered:
+                        "L'immagine è molto grande, quindi è stata creata a {{scale}}x per rispettare il limite del browser",
+                },
+            },
+            settings: {
+                title: 'Preferenze',
+                description:
+                    'Queste scelte appartengono a questo browser, non al diagramma.',
+                theme: 'Tema colore',
+                themes: {
+                    system: 'Come il sistema',
+                    light: 'Chiaro',
+                    dark: 'Scuro',
+                },
+                language: 'Lingua',
+                wheel: 'Rotellina del mouse',
+                wheelModes: {
+                    pan: 'Sposta la vista',
+                    zoom: 'Ingrandisce la vista',
+                },
+                cardinality: 'Mostra la cardinalità delle relazioni',
+                fieldAttributes: 'Mostra gli attributi dei campi',
+                compactTables: 'Usa tabelle compatte',
+                minimap: 'Mostra la minimappa',
+                outlineOverlaps:
+                    'Evidenzia il contorno delle tabelle sovrapposte',
+                views: 'Mostra le viste del database',
+                shortcuts: 'Scorciatoie da tastiera',
+            },
+            sidePanel: {
+                common: {
+                    filter: 'Filtra',
+                    clearFilter: 'Cancella filtro',
+                    focus: 'Metti a fuoco sul canvas',
+                    more: 'Altre azioni',
+                    rename: 'Rinomina',
+                    saveName: 'Salva nome',
+                    dragHandle: 'Trascina per riordinare',
+                    cancel: 'Annulla',
+                    confirm: 'Conferma',
+                    close: 'Chiudi',
+                },
+                tables: {
+                    add: 'Aggiungi tabella',
+                    addView: 'Aggiungi vista',
+                    addMenu: 'Altri modi per aggiungere',
+                    empty: 'Nessuna tabella',
+                    emptyHint: 'Creare una tabella per iniziare',
+                    noMatch: 'Nessuna tabella corrisponde al filtro.',
+                    allHidden: 'Tutte le tabelle sono nascoste',
+                    showAll: 'Mostra tutto',
+                    actions: 'Azioni della tabella',
+                    changeSchema: 'Cambia schema',
+                    addField: 'Aggiungi campo',
+                    addIndex: 'Aggiungi indice',
+                    duplicate: 'Duplica tabella',
+                    delete: 'Elimina tabella',
+                    renameTable: 'Rinomina tabella',
+                    toggle: 'Mostra o nascondi i dettagli',
+                    doubleClickToEdit: 'Doppio clic per modificare',
+                    viewTag: 'Vista',
+                    fields: 'Campi',
+                    indexes: 'Indici',
+                    checks: 'Vincoli check',
+                    description: 'Descrizione',
+                    noDescription: 'Nessuna descrizione',
+                    color: 'Colore della tabella',
+                    duplicateName:
+                        'In questo schema esiste già un\'altra tabella chiamata "{{name}}".',
+                    selectSchema: {
+                        title: 'Seleziona schema',
+                        text: 'Sono mostrati più schemi. Sceglierne uno per la nuova tabella.',
+                        schema: 'Schema',
+                    },
+                    changeSchemaDialog: {
+                        title: 'Cambia schema',
+                        text: 'Aggiorna lo schema della tabella "{{name}}".',
+                        createNew: 'Crea nuovo schema',
+                        newPlaceholder:
+                            'Nome del nuovo schema, ad esempio public',
+                        change: 'Cambia',
+                    },
+                },
+                fields: {
+                    add: 'Aggiungi campo',
+                    linksRemoved:
+                        'Relazioni rimosse insieme al campo: {{count}}. Annullando si ripristinano.',
+                    name: 'Nome del campo',
+                    namePlaceholder: 'Nome del campo',
+                    typePlaceholder: 'Tipo',
+                    typeSearch: 'Cerca tipi',
+                    noTypes: 'Nessun tipo trovato',
+                    standardTypes: 'Tipi standard',
+                    customTypes: 'Tipi personalizzati',
+                    nullable: 'Consenti null',
+                    nullableShort: 'N',
+                    primaryKey: 'Chiave primaria',
+                    attributes: 'Attributi del campo',
+                    unique: 'Univoco',
+                    autoIncrement: 'Auto increment',
+                    array: 'Array',
+                    maxLength: 'Lunghezza massima',
+                    lengthNone: 'Nessuna',
+                    lengthMax: 'Max',
+                    lengthCustom: 'Personalizzata',
+                    precision: 'Precisione',
+                    scale: 'Scala',
+                    default: 'Valore predefinito',
+                    noDefault: 'Nessun valore predefinito',
+                    description: 'Descrizione',
+                    noDescription: 'Nessuna descrizione',
+                    delete: 'Elimina campo',
+                    showComment: 'Mostra la descrizione del campo',
+                    foreignKey: 'Chiave esterna',
+                    none: 'Questa tabella non ha campi',
+                },
+                indexes: {
+                    add: 'Aggiungi indice',
+                    none: 'Nessun indice',
+                    selectFields: 'Seleziona campi',
+                    noFields: 'Nessun campo trovato',
+                    unique: 'Univoco',
+                    attributes: "Attributi dell'indice",
+                    name: 'Nome',
+                    type: 'Tipo di indice',
+                    description: 'Descrizione',
+                    noDescription: 'Nessuna descrizione',
+                    delete: 'Elimina indice',
+                    primaryKey: 'Chiave primaria',
+                    ginNeedsFields:
+                        'Richiede campi array, json, jsonb, tsvector o hstore',
+                },
+                checks: {
+                    add: 'Aggiungi vincolo check',
+                    none: 'Nessun vincolo check',
+                    unsupported:
+                        "L'esportazione SQL per questo database omette i vincoli check",
+                    expression: 'Espressione',
+                    expressionPlaceholder: 'ad es. price > 0',
+                    attributes: 'Vincolo check',
+                    delete: 'Elimina vincolo check',
+                },
+                refs: {
+                    filter: 'Filtra',
+                    add: 'Aggiungi relazione',
+                    collapseAll: 'Comprimi tutto',
+                    relationships: 'Relazioni',
+                    empty: 'Nessuna relazione',
+                    emptyHint: 'Creare una relazione per iniziare',
+                    noMatch: 'Nessuna relazione corrisponde al filtro.',
+                    primaryTable: 'Tabella primaria',
+                    primaryField: 'Campo primario',
+                    referencedTable: 'Tabella referenziata',
+                    referencedField: 'Campo referenziato',
+                    relatedTable: 'Tabella correlata',
+                    relatedField: 'Campo correlato',
+                    cardinality: 'Cardinalità',
+                    oneToOne: 'Uno a uno',
+                    oneToMany: 'Uno a molti',
+                    manyToOne: 'Molti a uno',
+                    switchTables: 'Scambia le tabelle',
+                    delete: 'Elimina',
+                    dialog: {
+                        title: 'Crea relazione',
+                        selectTable: 'Seleziona tabella',
+                        selectField: 'Seleziona campo',
+                        noTables: 'Nessuna tabella trovata',
+                        noFields: 'Nessun campo trovato',
+                        create: 'Crea',
+                    },
+                    toast: {
+                        incompatibleTitle:
+                            'I tipi dei campi non sono compatibili',
+                        incompatibleText:
+                            'Le relazioni possono essere create solo tra campi di tipo compatibile',
+                        existsTitle: 'Già collegati',
+                        existsText:
+                            'Questi due campi hanno già una relazione tra loro',
+                        failedTitle:
+                            'Non è stato possibile creare la relazione',
+                        failedText:
+                            'Scegliere due campi di due tabelle diverse.',
+                    },
+                },
+                userTypes: {
+                    add: 'Nuovo tipo',
+                    empty: 'Nessun tipo personalizzato',
+                    emptyHint:
+                        'I tipi personalizzati compariranno qui quando sono disponibili nel database',
+                    noMatch:
+                        'Nessun tipo personalizzato corrisponde al filtro.',
+                    actions: 'Azioni',
+                    delete: 'Elimina',
+                    rename: 'Rinomina tipo',
+                    kind: 'Genere',
+                    enum: 'Enum',
+                    composite: 'Composto',
+                    valuePlaceholder: 'Aggiungi valore enum...',
+                    addValue: 'Aggiungi valore',
+                    removeValue: 'Rimuovi {{value}}',
+                    noValues: 'Nessun valore enum definito',
+                    memberName: 'Nome del campo',
+                    memberType: 'Seleziona tipo',
+                    addMember: 'Aggiungi campo',
+                    removeMember: 'Rimuovi campo',
+                    noMembers: 'Nessun campo definito',
+                },
+                visuals: {
+                    areas: 'Aree',
+                    notes: 'Note',
+                    areaFilter: 'Filtra',
+                    addArea: 'Aggiungi area',
+                    noAreas: 'Nessuna area',
+                    noAreasHint: "Creare un'area per iniziare",
+                    noAreasMatch: 'Nessuna area corrisponde al filtro.',
+                    areaActions: "Azioni dell'area",
+                    editName: 'Modifica nome',
+                    deleteArea: 'Elimina area',
+                    addNote: 'Aggiungi nota',
+                    noNotes: 'Nessuna nota',
+                    noNotesHint:
+                        'Creare una nota per aggiungere annotazioni di testo sul canvas',
+                    noNotesMatch: 'Nessuna nota trovata',
+                    emptyNote: 'Nota vuota',
+                    noteActions: 'Azioni della nota',
+                    deleteNote: 'Elimina nota',
+                    colour: 'Colore',
+                },
+                filters: {
+                    title: 'Filtra tabelle',
+                    search: 'Cerca tabelle...',
+                    groupBySchema: 'Raggruppa per schema',
+                    groupByArea: 'Raggruppa per area',
+                    show: 'Mostra',
+                    hide: 'Nascondi',
+                    zoomTo: 'Ingrandisci su {{name}}',
+                    noTables: 'Nessuna tabella trovata',
+                    tryAdjusting: 'Provare a modificare la ricerca o il filtro',
+                    createToStart: 'Creare una tabella per iniziare',
+                    noSchema: 'Nessuno schema',
+                    noArea: 'Nessuna area',
+                    showAllShort: 'Mostra tutte le tabelle',
+                },
+                hover: {
+                    type: 'tipo',
+                    nullability: 'null',
+                    nullable: 'ammette null',
+                    notNull: 'NOT NULL',
+                    key: 'chiave',
+                    primaryKey: 'chiave primaria',
+                    unique: 'univoco',
+                    autoIncrement: 'auto increment',
+                    default: 'predefinito',
+                    check: 'check',
+                    references: 'fa riferimento a',
+                    referencedBy: 'referenziato da',
+                },
+                clipboard: {
+                    copied: 'Tabella copiata',
+                    copiedMany: '{{count}} tabelle copiate',
+                    pasteHint: 'Premere {{key}} per incollarla.',
+                    pasted: 'Tabella incollata',
+                    pastedMany: '{{count}} tabelle incollate',
+                },
+                dbml: {
+                    title: 'DBML',
+                    empty: 'Ancora nulla da mostrare',
+                    copy: 'Copia',
+                    standardRefs: 'Mostra ref standard',
+                    inlineRefs: 'Mostra ref inline',
+                    copied: 'Copiato',
+                    failed: 'Non è stato possibile scrivere il DBML',
+                    edit: 'Modifica',
+                    view: 'Visualizza',
+                    accept: 'Accetta le modifiche',
+                    undo: 'Annulla le modifiche',
+                    editor: 'Testo DBML',
+                    parseError:
+                        'Analisi del DBML non riuscita. Controllare la sintassi. (1 errore trovato - alla riga {{line}})',
+                    parseErrorNoLine:
+                        'Analisi del DBML non riuscita. Controllare la sintassi. (1 errore trovato)',
+                    summary:
+                        'Tabelle: {{added}} nuove, {{removed}} rimosse, {{changed}} modificate; relazioni: {{linksAdded}} nuove, {{linksRemoved}} rimosse',
+                    rejected: 'Non è stato possibile applicare la modifica',
+                    applying: 'Applicazione delle modifiche...',
+                    leftOut: "Escluso dall'esportazione",
+                    errorText:
+                        '// Errore nella generazione del DBML: {{message}}',
+                    errorToast: 'Errore di esportazione DBML',
+                },
+            },
+        },
+        canvas: {
+            a11y: {
+                moved: '{{name}} spostato',
+                selected: '{{name}} selezionato',
+                nodeHint:
+                    'Premere Invio per modificare. I tasti freccia lo spostano, Maiusc con i tasti freccia lo sposta di più. Maiusc+F10 apre il menu.',
+                edgeHint:
+                    'Premere Invio per selezionare la relazione, Canc per rimuoverla, Esc per annullare.',
+            },
+            surface: {
+                label: 'Canvas del diagramma',
+                loading: 'Caricamento del diagramma...',
+            },
+            snap: {
+                label: 'Aggancia alla griglia (tenere premuto {{key}})',
+            },
+            overlap: {
+                label: 'Evidenzia le tabelle sovrapposte',
+            },
+            highlight: {
+                label: 'Evidenziazione di "{{name}}" - fare clic per annullare',
+            },
+            toolbar: {
+                label: 'Strumenti del canvas',
+                filter: 'Filtra tabelle ({{shortcut}})',
+                showAll: 'Mostra tutto ({{shortcut}})',
+                zoomOut: 'Riduci',
+                zoomIn: 'Ingrandisci',
+                zoomReset: 'Ripristina zoom al 100%',
+                arrange: 'Disponi automaticamente il diagramma',
+                undo: 'Annulla ({{shortcut}})',
+                redo: 'Ripeti ({{shortcut}})',
+                fullScreen: 'Schermo intero',
+                exitFullScreen: 'Esci da schermo intero',
+            },
+            showAllPill: 'Mostra tutto',
+            hiddenAll: {
+                title: 'Tutte le tabelle sono nascoste',
+                action: 'Mostra tutto',
+            },
+            diff: {
+                added: 'Nuova tabella',
+                removed: 'Tabella rimossa',
+                changed: 'Tabella modificata',
+            },
+            entity: {
+                view: 'vista',
+                materializedView: 'vista materializzata',
+                fieldCount_one: '{{count}} campo',
+                fieldCount_many: '{{count}} di campi',
+                fieldCount_other: '{{count}} campi',
+                openInPanel: 'Apri nel pannello laterale',
+                widen: 'Allarga',
+                narrow: 'Restringi',
+                showMore: 'Mostra di più',
+                showLess: 'Mostra meno',
+                edit: 'Modifica tabella',
+                unique: 'UQ',
+                nullable: 'Può essere vuoto',
+                required: 'Obbligatorio',
+                primaryKey: 'Chiave primaria',
+                foreignKey: 'Chiave esterna',
+            },
+            fieldCard: {
+                type: 'Tipo',
+                nullable: 'Ammette null',
+                notNull: 'Non null',
+                unique: 'Univoco',
+                primaryKey: 'Chiave primaria',
+                default: 'Predefinito',
+                references: 'fa riferimento a {{table}}.{{field}}',
+                referencedBy: 'referenziato da {{table}}.{{field}}',
+            },
+            link: {
+                label: 'Relazione {{name}}',
+                select: 'Relazione selezionata',
+                popover: {
+                    oneToOne: '1:1',
+                    oneToMany: '1:N',
+                    switch: 'Scambia le tabelle',
+                    openInPanel: 'Apri nel pannello laterale',
+                    remove: 'Elimina relazione',
+                },
+                incompatible: {
+                    title: 'I tipi dei campi non sono compatibili',
+                    text: 'Le relazioni possono essere create solo tra campi di tipo compatibile',
+                },
+                exists: {
+                    title: 'Già collegati',
+                    text: 'Questi due campi hanno già una relazione tra loro',
+                },
+            },
+            region: {
+                rename: "Nome dell'area",
+                colour: "Colore dell'area",
+            },
+            memo: {
+                placeholder: 'Nota vuota',
+                edit: 'Testo della nota',
+                colour: 'Colore della nota',
+            },
+            menu: {
+                newTable: 'Nuova tabella',
+                newView: 'Nuova vista',
+                newRelationship: 'Nuova relazione',
+                newArea: 'Nuova area',
+                newNote: 'Nuova nota',
+                arrange: 'Disponi automaticamente il diagramma',
+                moveToArea: "Sposta nell'area",
+                moveToAreaCount: "Sposta nell'area ({{count}})",
+                noArea: 'Nessuna area',
+                editTable: 'Modifica tabella',
+                duplicateTable: 'Duplica tabella',
+                addRelationship: 'Aggiungi relazione',
+                deleteTable: 'Elimina tabella',
+                deleteTables: 'Elimina tabelle ({{count}})',
+                editAreaName: "Modifica nome dell'area",
+                arrangeArea: 'Disponi automaticamente',
+                deleteArea: 'Elimina area',
+            },
+            arrange: {
+                title: 'Disponi automaticamente il diagramma',
+                text: 'Questa azione riorganizzerà tutte le tabelle del diagramma. Continuare?',
+                confirm: 'Disponi automaticamente',
+                cancel: 'Annulla',
+            },
+            clipboard: {
+                copiedOne: 'Tabella copiata',
+                copiedMany: '{{count}} tabelle copiate',
+                hint: 'Premere {{key}} per incollarla.',
+                pastedOne: 'Tabella incollata',
+                pastedMany: '{{count}} tabelle incollate',
+                failed: 'Copia non riuscita',
+            },
+            drawing: {
+                hint: 'Fare clic sulla tabella che contiene la chiave esterna',
+            },
+            keys: {
+                mod: 'Ctrl',
+                modMac: '⌘',
+            },
+        },
+    },
+};

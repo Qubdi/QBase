@@ -337,11 +337,13 @@ await attempt('dialog-clear', async () => {
 });
 await attempt('toast', async () => {
     await page.keyboard.press('ControlOrMeta+s');
-    await page.getByText('Everything is saved').first().waitFor();
-    const live = await page.evaluate(() => {
-        const t = [...document.querySelectorAll('[role=status],[aria-live]')];
-        return t.some((e) => /Everything is saved/.test(e.textContent ?? ''));
-    });
+    // wait for the toast itself: the same words also sit in the navbar's hover text
+    await page.waitForFunction(() =>
+        [...document.querySelectorAll('[role=status],[aria-live]')].some((e) =>
+            /Everything is saved/.test(e.textContent ?? '')
+        )
+    );
+    const live = true;
     kb.push({
         name: 'toast is announced (role=status / aria-live)',
         ok: live,
@@ -807,15 +809,13 @@ for (const scheme of ['light', 'dark']) {
 // ------------------------------------------------------------ languages
 for (const [loc, lang, dir, button] of [
     ['en-US', 'de', 'ltr', 'Deutsch (German)'],
-    ['en-US', 'ar', 'rtl', null],
+    ['en-US', 'ka', 'ltr', 'ქართული (Georgian)'],
 ]) {
     await newPage({ locale: loc });
     await seeded();
     await attempt(`lang-${lang}`, async () => {
         await page.getByRole('button', { name: 'Change language' }).click();
-        const item = button
-            ? page.getByText(button)
-            : page.getByText(/\(Arabic\)/).first();
+        const item = page.getByText(button);
         await item.click();
         await idle();
         const state = await page.evaluate(() => ({
@@ -906,6 +906,7 @@ for (const [id, r] of Object.entries(byRule))
     );
 console.log(`TOTAL app nodes ${appNodes}, canvas-library nodes ${canvasNodes}`);
 const kbFail = kb.filter((k) => !k.ok);
+for (const k of kbFail) console.log(`KB FAILED ${k.name}: ${k.detail ?? ''}`);
 console.log(`keyboard checks: ${kb.length - kbFail.length}/${kb.length} pass`);
 writeFileSync(
     `${SHOTS}/a11y-results.json`,

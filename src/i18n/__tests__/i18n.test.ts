@@ -6,7 +6,7 @@ import { fr } from '../locales/fr';
 describe('languages', () => {
     it('lists the 22 languages the editor offers, English first, each once', () => {
         expect(languages).toBe(listed);
-        expect(languages).toHaveLength(22);
+        expect(languages).toHaveLength(8);
         expect(languages[0]).toEqual({
             name: 'English',
             nativeName: 'English',

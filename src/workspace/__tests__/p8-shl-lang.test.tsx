@@ -21,10 +21,10 @@ const open = async () => {
 };
 
 describe('language button (SHL-093, SHL-096)', () => {
-    it('SHL-093: lists 22 languages, English first, each with its native name and its English name', async () => {
+    it('SHL-093: lists 8 languages, English first, each with its native name and its English name', async () => {
         const menu = await open();
         const items = within(menu).getAllByRole('radio');
-        expect(items).toHaveLength(22);
+        expect(items).toHaveLength(8);
         expect(items[0].textContent).toBe('English');
         const french = items.find((i) => i.textContent?.includes('Français'))!;
         expect(french.textContent).toBe('Français (French)');
@@ -41,12 +41,12 @@ describe('language button (SHL-093, SHL-096)', () => {
                 .getAllByRole('radio')
                 .map((i) => i.textContent)
         ).toEqual(['Deutsch (German)']);
-        fireEvent.change(search, { target: { value: 'Españ' } });
+        fireEvent.change(search, { target: { value: 'Italia' } });
         expect(
             within(menu)
                 .getAllByRole('radio')
                 .map((i) => i.textContent)
-        ).toEqual(['Español (Spanish)']);
+        ).toEqual(['Italiano (Italian)']);
     });
 
     it('SHL-096: a choice applies at once, with no reload, closes the list and is remembered', async () => {
