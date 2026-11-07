@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { findFreeShift, type PlacedRect } from '../canvas-utils';
+import type { Box } from '@/core/model/region';
+import { findFreeShift } from './free-shift';
 
-const rect = (x: number, y: number, width = 100, height = 100): PlacedRect => ({
+const rect = (x: number, y: number, width = 100, height = 100): Box => ({
     x,
     y,
     width,
     height,
 });
 
-const apart = (a: PlacedRect, b: PlacedRect) =>
+const apart = (a: Box, b: Box) =>
     a.x + a.width <= b.x ||
     a.x >= b.x + b.width ||
     a.y + a.height <= b.y ||
     a.y >= b.y + b.height;
 
-const shifted = (r: PlacedRect, s: { dx: number; dy: number }) =>
+const shifted = (r: Box, s: { dx: number; dy: number }) =>
     rect(r.x + s.dx, r.y + s.dy, r.width, r.height);
 
 describe('findFreeShift', () => {
@@ -33,7 +34,6 @@ describe('findFreeShift', () => {
     });
 
     it('moves a dropped table just clear of the one it landed on', () => {
-        // landed mostly to the right of the other: pushed out to its right
         expect(findFreeShift([rect(60, 0)], [rect(0, 0)], 20)).toEqual({
             dx: 60,
             dy: 0,

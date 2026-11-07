@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
     FIELD_TYPE_KIND_CLASS,
     fieldTypeKind,
-} from '@/pages/editor-page/canvas/table-node/field-type-kind';
+} from '@/features/tables/field-type-kind';
 import { cn } from '@/lib/utils';
 import type { ViewerTable } from '@/lib/qubdi/viewer-model';
 

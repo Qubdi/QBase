@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { i18n } from '@/i18n/i18n';
 import { workspace } from '@/i18n/qubdi/workspace';
@@ -69,21 +69,19 @@ describe('editor toasts', () => {
     });
 
     it('are looked up, not written out, in the canvas and the menu', () => {
-        for (const file of [
-            'src/pages/editor-page/canvas/canvas.tsx',
-            'src/pages/editor-page/top-navbar/menu/menu.tsx',
-        ]) {
+        const canvasFiles = readdirSync('src/canvas', { recursive: true })
+            .map(String)
+            .filter((f) => /\.tsx?$/.test(f) && !/\.test\./.test(f))
+            .map((f) => `src/canvas/${f}`);
+        expect(canvasFiles.length).toBeGreaterThan(10);
+        for (const file of [...canvasFiles, 'src/workspace/navbar/menus.tsx']) {
             const source = readFileSync(file, 'utf8');
             for (const text of Object.values(english)) {
                 expect(source, `${file}: ${text}`).not.toContain(`'${text}'`);
             }
         }
-        const canvas = readFileSync(
-            'src/pages/editor-page/canvas/canvas.tsx',
-            'utf8'
-        );
-        expect(canvas).toContain(
-            'qubdi.workspace.editorToasts.alreadyConnectedBody'
-        );
+        const notify = readFileSync('src/canvas/notify.ts', 'utf8');
+        expect(notify).toContain("i18n.t('canvas.link.exists.text')");
+        expect(notify).toContain("i18n.t('canvas.link.incompatible.text')");
     });
 });

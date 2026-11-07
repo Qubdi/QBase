@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { applyOk, rng, withTables } from '@/core/testing/helpers';
 import { planLink } from '@/core/commands/plan-link';
-import { FieldHoverCard } from '../table-node-field-hover-card';
+import { FieldHoverCard } from '../field-hover-card';
 
 const anchor = {
     left: 10,
