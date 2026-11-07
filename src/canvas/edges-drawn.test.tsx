@@ -108,4 +108,21 @@ describe('lines are drawn', () => {
         });
         await waitFor(() => expectDrawn(container));
     });
+
+    it('EDT-245: the line is still drawn when a design swaps the field ids but keeps the table sizes (DBML accept)', async () => {
+        const s = shop();
+        const { container, store } = renderCanvas(s.design);
+        await waitFor(() => expectDrawn(container));
+        // like accepting a DBML change: same tables and fields, new field ids
+        const renamed = JSON.parse(
+            JSON.stringify(s.design)
+                .replaceAll(s.userKey, 'new-user-key')
+                .replaceAll(s.orderUser, 'new-order-user')
+        );
+        act(() => store.getState().replaceDesign(renamed, { history: 'step' }));
+        await waitFor(() => expectDrawn(container));
+        expect(
+            container.querySelector('[data-testid="field-new-user-key"]')
+        ).not.toBeNull();
+    });
 });

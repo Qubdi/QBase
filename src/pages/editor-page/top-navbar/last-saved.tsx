@@ -15,6 +15,7 @@ import ru from 'timeago.js/lib/lang/ru';
 import zhCN from 'timeago.js/lib/lang/zh_CN';
 import zhTW from 'timeago.js/lib/lang/zh_TW';
 import { useDiagram } from '@/qbase/use-diagram';
+import { wordsFunction } from './words-function';
 
 // The 12 languages that have "time ago" wording (spec A4); the rest read English.
 const WORDS = {
@@ -30,7 +31,8 @@ const WORDS = {
     zh_CN: zhCN,
     zh_TW: zhTW,
 };
-for (const [code, words] of Object.entries(WORDS)) register(code, words);
+for (const [code, words] of Object.entries(WORDS))
+    register(code, wordsFunction(words));
 
 /** The wording set for a language code such as `de`, `pt_BR` or `zh-TW`; English when there is none. */
 const wordsFor = (language: string): string => {

@@ -352,12 +352,31 @@ function Surface({
         },
         [storeApi]
     );
+    // Lifting the finger after a long press makes the browser send a mouse
+    // press and a click at the same spot; they must not close the menu that the
+    // hold just opened. Nothing outside closes it while the finger is down and
+    // for a moment after it is lifted.
+    const quietUntil = useRef(0);
+    const outsideIsQuiet = useCallback(
+        () => Date.now() < quietUntil.current,
+        []
+    );
     useLongPress(
         hostEl,
         editable,
         useCallback(
-            (page: Point, element: Element) =>
-                openMenu(page, targetOfElement(element)),
+            (page: Point, element: Element) => {
+                quietUntil.current = Number.POSITIVE_INFINITY;
+                const release = () => {
+                    quietUntil.current = Date.now() + 600;
+                };
+                for (const type of ['touchend', 'touchcancel'])
+                    document.addEventListener(type, release, {
+                        once: true,
+                        capture: true,
+                    });
+                openMenu(page, targetOfElement(element));
+            },
             [openMenu, targetOfElement]
         )
     );
@@ -609,7 +628,7 @@ function Surface({
                             );
                         }}
                         onPaneClick={() => {
-                            setMenu(undefined);
+                            if (!outsideIsQuiet()) setMenu(undefined);
                             cancelDraft();
                             setPopover(undefined);
                             setEditingId(undefined);
@@ -717,6 +736,7 @@ function Surface({
                                 canEditEntity: !!hooks?.renderEntityEditor,
                             })}
                             onClose={() => setMenu(undefined)}
+                            ignoreOutside={outsideIsQuiet}
                             onPick={(action) =>
                                 runMenuAction(action, {
                                     store: storeApi,

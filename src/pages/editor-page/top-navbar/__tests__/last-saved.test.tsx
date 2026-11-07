@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LastSaved } from '../last-saved';
+import { wordsFunction } from '../words-function';
 
 const updatedAt = new Date(Date.now() - 5 * 60 * 1000);
 
@@ -21,5 +22,12 @@ describe('LastSaved', () => {
         expect(icon.getAttribute('title')).toBe(
             `Saved 5 minutes ago\n${updatedAt.toLocaleString()}`
         );
+    });
+
+    it('takes the words function out of a bundled module object too (German crashed the built app)', () => {
+        const words = () => ['a', 'b'];
+        expect(wordsFunction(words)).toBe(words);
+        expect(wordsFunction({ default: words })).toBe(words);
+        expect(wordsFunction({ default: { default: words } })).toBe(words);
     });
 });

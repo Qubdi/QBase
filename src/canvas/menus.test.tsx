@@ -400,13 +400,53 @@ describe('right-click menus', () => {
             touch(pane, 'touchstart', 30, 40);
             act(() => void vi.advanceTimersByTime(700));
             expect(screen.getByTestId('pointer-menu')).toBeInTheDocument();
+            // the press and click the browser sends when the finger is lifted
+            // must not close the menu the hold opened (found on a phone)
             fireEvent.mouseDown(document.body);
+            expect(screen.getByTestId('pointer-menu')).toBeInTheDocument();
+            touch(pane, 'touchend', 30, 40);
+            fireEvent.mouseDown(document.body);
+            fireEvent.click(pane);
+            expect(screen.getByTestId('pointer-menu')).toBeInTheDocument();
+            act(() => void vi.advanceTimersByTime(700));
+            fireEvent.mouseDown(document.body);
+            expect(screen.queryByTestId('pointer-menu')).toBeNull();
             touch(pane, 'touchstart', 30, 40);
             touch(pane, 'touchmove', 90, 40);
             act(() => void vi.advanceTimersByTime(700));
             expect(screen.queryByTestId('pointer-menu')).toBeNull();
         } finally {
             vi.useRealTimers();
+        }
+    });
+});
+
+describe('the menu stays inside the window', () => {
+    it('is moved left when the pointer is near the right edge', () => {
+        const rect = vi
+            .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+            .mockReturnValue({
+                width: 180,
+                height: 100,
+                x: 0,
+                y: 0,
+                top: 0,
+                left: 0,
+                right: 180,
+                bottom: 100,
+                toJSON: () => ({}),
+            });
+        const wide = window.innerWidth;
+        window.innerWidth = 390;
+        try {
+            const { container } = renderCanvas(shop().design);
+            const pane = container.querySelector('.react-flow__pane')!;
+            fireEvent.contextMenu(pane, { clientX: 350, clientY: 40 });
+            const menu = screen.getByTestId('pointer-menu');
+            expect(menu.style.left).toBe('202px');
+        } finally {
+            window.innerWidth = wide;
+            rect.mockRestore();
         }
     });
 });

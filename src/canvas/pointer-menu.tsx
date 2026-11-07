@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils/utils';
 import type { Point } from './flow-model';
@@ -9,16 +9,42 @@ interface Props {
     lines: MenuLine[];
     onPick(action: MenuAction): void;
     onClose(): void;
+    /** true while a press outside the menu must not close it (just after a long press) */
+    ignoreOutside?(): boolean;
 }
 
+/** Space kept between the menu and the window edge. */
+const EDGE = 8;
+
 /** A right-click menu placed at the pointer. A line with a submenu opens it below itself. */
-export function PointerMenu({ at, lines, onPick, onClose }: Props) {
+export function PointerMenu({
+    at,
+    lines,
+    onPick,
+    onClose,
+    ignoreOutside,
+}: Props) {
     const { t } = useTranslation();
     const ref = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState<number>();
+    const [shift, setShift] = useState<Point>({ x: 0, y: 0 });
+
+    // keep the menu inside the window: a finger near the right or bottom edge
+    // must not push half of it out of sight
+    useLayoutEffect(() => {
+        const rect = ref.current?.getBoundingClientRect();
+        if (!rect || rect.width === 0) return;
+        const x = Math.min(at.x, window.innerWidth - rect.width - EDGE);
+        const y = Math.min(at.y, window.innerHeight - rect.height - EDGE);
+        setShift({
+            x: Math.max(EDGE, x) - at.x,
+            y: Math.max(EDGE, y) - at.y,
+        });
+    }, [at.x, at.y, lines.length, open]);
 
     useEffect(() => {
         const away = (event: MouseEvent) => {
+            if (ignoreOutside?.()) return;
             if (!ref.current?.contains(event.target as Node)) onClose();
         };
         const key = (event: KeyboardEvent) => {
@@ -30,7 +56,7 @@ export function PointerMenu({ at, lines, onPick, onClose }: Props) {
             document.removeEventListener('mousedown', away);
             document.removeEventListener('keydown', key);
         };
-    }, [onClose]);
+    }, [onClose, ignoreOutside]);
 
     const draw = (list: MenuLine[], nested: boolean) =>
         list.map((line, i) => {
@@ -84,7 +110,7 @@ export function PointerMenu({ at, lines, onPick, onClose }: Props) {
             data-testid="pointer-menu"
             tabIndex={-1}
             className="fixed z-50 min-w-44 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-            style={{ left: at.x, top: at.y }}
+            style={{ left: at.x + shift.x, top: at.y + shift.y }}
             onContextMenu={(event) => event.preventDefault()}
         >
             {draw(lines, false)}

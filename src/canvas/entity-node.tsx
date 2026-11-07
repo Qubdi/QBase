@@ -1,5 +1,9 @@
-import React, { memo, useMemo, useState } from 'react';
-import { NodeResizeControl, ResizeControlVariant } from '@xyflow/react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
+import {
+    NodeResizeControl,
+    ResizeControlVariant,
+    useUpdateNodeInternals,
+} from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import {
     ArrowRight,
@@ -58,6 +62,14 @@ export const EntityCard = memo(function EntityCard({
     const [localExpanded, setLocalExpanded] = useState(false);
 
     const roles = useMemo(() => linkRoles({ links }, id), [links, id]);
+    // xyflow measures a node's field handles when its size changes; when the
+    // fields get new ids at the same size (accepting a DBML change, undoing it)
+    // the old handles would stay and the lines would vanish
+    const updateInternals = useUpdateNodeInternals();
+    const columnKey = columns.map((c) => c?.id).join('|');
+    useEffect(() => {
+        updateInternals(id);
+    }, [updateInternals, id, columnKey]);
     if (!entity) return null;
 
     const expanded = surface.editable ? !!entity.expanded : localExpanded;
