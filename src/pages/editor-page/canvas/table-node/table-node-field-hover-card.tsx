@@ -1,96 +1,79 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { generateDBFieldSuffix, type DBField } from '@/lib/domain/db-field';
-import type { DatabaseType } from '@/lib/domain/database-type';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
-import type { DBTable } from '@/lib/domain/db-table';
+import type { Column } from '@/core/model/column';
+import type { Design } from '@/core/model/design';
+import type { Id } from '@/core/model/id';
+import { linksOfColumn } from '@/core/model/lookup';
+import { typeLabel } from '@/core/model/type-suffix';
+import { useText } from '@/platform/panel/use-text';
 
 const CARD_WIDTH = 248;
 const GAP = 12;
 
 export interface FieldHoverCardProps {
+    /** the row the mouse rests on, in screen coordinates */
     anchor: DOMRect;
-    field: DBField;
-    tableId: string;
-    relationships: DBRelationship[];
-    getTable: (id: string) => DBTable | null;
-    getField: (tableId: string, fieldId: string) => DBField | null;
-    databaseType: DatabaseType;
+    design: Design;
+    entityId: Id;
+    column: Column;
 }
-
-interface Link {
-    label: string;
-    text: string;
-}
-
-// The same rule the row uses to mark a foreign key: it lives on the "many"
-// side, or on the target when both sides match.
-const holdsForeignKey = (rel: DBRelationship, onSource: boolean) => {
-    const fkOnSource =
-        rel.sourceCardinality === 'many' && rel.targetCardinality === 'one';
-    return onSource ? fkOnSource : !fkOnSource;
-};
-
-const linksOf = ({
-    field,
-    tableId,
-    relationships,
-    getTable,
-    getField,
-}: FieldHoverCardProps): Link[] => {
-    const links: Link[] = [];
-    for (const rel of relationships) {
-        const onSource =
-            rel.sourceTableId === tableId && rel.sourceFieldId === field.id;
-        const onTarget =
-            rel.targetTableId === tableId && rel.targetFieldId === field.id;
-        if (!onSource && !onTarget) continue;
-        const otherTableId = onSource ? rel.targetTableId : rel.sourceTableId;
-        const otherFieldId = onSource ? rel.targetFieldId : rel.sourceFieldId;
-        const table = getTable(otherTableId);
-        const other = getField(otherTableId, otherFieldId);
-        if (!table || !other) continue;
-        links.push({
-            label: holdsForeignKey(rel, onSource)
-                ? 'references'
-                : 'referenced by',
-            text: `${table.name}.${other.name}`,
-        });
-    }
-    return links;
-};
 
 /**
  * Details of a column, shown beside the table while the mouse rests on its
- * row. It is drawn on the page, not inside the table, so the table's clipping
- * and the canvas zoom do not cut or shrink it.
+ * row (EDT-116): type with size, nullability, key flags, default, check and
+ * the columns it references or is referenced by. It is drawn on the page, not
+ * inside the table, so the table's clipping and the canvas zoom do not cut or
+ * shrink it.
  */
-export const FieldHoverCard: React.FC<FieldHoverCardProps> = (props) => {
-    const { anchor, field, databaseType } = props;
+export const FieldHoverCard: React.FC<FieldHoverCardProps> = ({
+    anchor,
+    design,
+    entityId,
+    column,
+}) => {
+    const text = useText();
     const fitsRight = anchor.right + GAP + CARD_WIDTH <= window.innerWidth;
     const left = fitsRight
         ? anchor.right + GAP
         : Math.max(GAP, anchor.left - GAP - CARD_WIDTH);
     const top = anchor.top + anchor.height / 2;
 
-    const type = `${field.type.name}${generateDBFieldSuffix(field, {
-        databaseType,
-    })}`;
-    const links = linksOf(props);
     const flags = [
-        field.primaryKey ? 'primary key' : null,
-        field.unique && !field.primaryKey ? 'unique' : null,
-        field.increment ? 'auto increment' : null,
+        column.primaryKey ? text('hover.primaryKey') : null,
+        column.unique && !column.primaryKey ? text('hover.unique') : null,
+        column.increment ? text('hover.autoIncrement') : null,
     ].filter((f): f is string => f !== null);
 
     const rows: [string, string][] = [
-        ['type', type],
-        ['null', field.nullable ? 'nullable' : 'NOT NULL'],
+        [text('hover.type'), typeLabel(column, design.databaseType)],
+        [
+            text('hover.nullability'),
+            column.nullable ? text('hover.nullable') : text('hover.notNull'),
+        ],
     ];
-    if (flags.length > 0) rows.push(['key', flags.join(', ')]);
-    if (field.default) rows.push(['default', field.default]);
-    if (field.check) rows.push(['check', field.check]);
-    for (const link of links) rows.push([link.label, link.text]);
+    if (flags.length > 0) rows.push([text('hover.key'), flags.join(', ')]);
+    if (column.default) rows.push([text('hover.default'), column.default]);
+    if (column.check) rows.push([text('hover.check'), column.check]);
+
+    // the target of a link holds the foreign key, the source is the referenced side
+    for (const link of linksOfColumn(design, entityId, column.id)) {
+        const holdsKey =
+            link.targetEntityId === entityId &&
+            link.targetColumnId === column.id;
+        const otherEntity =
+            design.entities.byId[
+                holdsKey ? link.sourceEntityId : link.targetEntityId
+            ];
+        const other =
+            design.columns[
+                holdsKey ? link.sourceColumnId : link.targetColumnId
+            ];
+        if (!otherEntity || !other) continue;
+        rows.push([
+            holdsKey ? text('hover.references') : text('hover.referencedBy'),
+            `${otherEntity.name}.${other.name}`,
+        ]);
+    }
 
     return createPortal(
         <div
@@ -99,11 +82,11 @@ export const FieldHoverCard: React.FC<FieldHoverCardProps> = (props) => {
             className="pointer-events-none fixed z-50 -translate-y-1/2 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95"
         >
             <div className="mb-2 truncate text-[13px] font-semibold">
-                {field.name}
+                {column.name}
             </div>
             <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[11.5px]">
-                {rows.map(([label, value]) => (
-                    <React.Fragment key={`${label}:${value}`}>
+                {rows.map(([label, value], i) => (
+                    <React.Fragment key={`${i}:${label}:${value}`}>
                         <dt className="text-muted-foreground">{label}</dt>
                         <dd className="font-mono text-[11px] [overflow-wrap:anywhere]">
                             {value}
@@ -111,9 +94,9 @@ export const FieldHoverCard: React.FC<FieldHoverCardProps> = (props) => {
                     </React.Fragment>
                 ))}
             </dl>
-            {field.comments ? (
+            {column.comments ? (
                 <p className="mt-2 whitespace-pre-wrap [overflow-wrap:anywhere] border-t pt-2 text-[11.5px] text-muted-foreground">
-                    {field.comments}
+                    {column.comments}
                 </p>
             ) : null}
         </div>,
