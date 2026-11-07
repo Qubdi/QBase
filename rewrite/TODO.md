@@ -55,8 +55,9 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
 8. [x] **Phase 7: data and content** (English only; done 2026-11-07, commit c04551d). No templates,
    examples, fixtures or thumbnails are left; all UI text and engine messages go through i18n; wording
    unified; a test fails on hard-coded UI text (`src/i18n/__tests__/hard-coded-text.test.ts`).
-   Open for the owner: which of the 20 empty non-English locales to translate (they fall back to
-   English); `src/lib/data/**` keeps its old folder layout (rename is optional).
+   Ten languages translated by model on 2026-11-07 (de, es, fr, ja, ko_KR, pt_BR, ru, tr, uk, zh_CN; notes in
+   `phase7/`; wording needs a native-speaker review before release); the other ten locales fall back to English.
+   Open for the owner: `src/lib/data/**` keeps its old folder layout (rename is optional).
 9. [~] **Phase 8: tests**, written from the spec (2026-11-07, commit 5c500c8): 665 of 684 parity rows
    ticked with a named test; results per slice in `phase8/`. Open rows are listed in
    `parity-checklist.md` (missing features being built, owner decisions EDT-047 and SHL-032/042,
