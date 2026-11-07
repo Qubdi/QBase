@@ -383,3 +383,11 @@ and 21 KB of WAL on a laptop. To go further:
   (`archive_mode`, `archive_command`) or a managed Postgres.
 
 QBase is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE): free for personal and other noncommercial use. Using it in or for a business needs a separate licence from Qubdi.
+
+## Acknowledgements
+
+QBase is inspired by [ChartDB](https://github.com/chartdb/chartdb), the open source
+database diagram editor. The QBase editor was written from scratch and shares no
+meaningful code with it; the idea of a quick, friendly diagram editor for SQL
+databases is theirs, and we are grateful for it. Other credits (shadcn/ui, the
+fonts and the dependencies) are in [NOTICE](NOTICE).
