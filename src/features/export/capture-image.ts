@@ -25,12 +25,21 @@ export class CaptureError extends Error {
     }
 }
 
+/** The zoom in a CSS transform: `matrix(a, ...)` as browsers report it, or `scale(n)`. */
+export function zoomOf(transform: string): number {
+    const matrix = /matrix\(\s*(-?[\d.e+-]+)/.exec(transform);
+    const scale = /scale\(\s*(-?[\d.e+-]+)/.exec(transform);
+    const value = Number(matrix?.[1] ?? scale?.[1]);
+    return Number.isFinite(value) && value > 0 ? value : 1;
+}
+
 /** The boxes of every node in diagram space, read from the page (zoom and pan undone). */
 export function measureNodes(target: HTMLElement): Rect[] {
     const viewport = target.querySelector<HTMLElement>(VIEWPORT);
     if (!viewport) return [];
-    const zoom =
-        new DOMMatrixReadOnly(getComputedStyle(viewport).transform).a || 1;
+    const zoom = zoomOf(
+        getComputedStyle(viewport).transform || viewport.style.transform
+    );
     const origin = viewport.getBoundingClientRect();
     return Array.from(target.querySelectorAll<HTMLElement>(NODE)).map((el) => {
         const r = el.getBoundingClientRect();

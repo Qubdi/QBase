@@ -5,10 +5,6 @@ import { useWorkspace } from '@/components/qubdi/workspace-context';
 import type { DatabaseType } from '@/core/model/database';
 import type { ImageFormat } from '@/formats/image/export-options';
 import { useTranslation } from 'react-i18next';
-import {
-    CaptureError,
-    runImageExport,
-} from '@/features/export/run-image-export';
 import { useCanvasActions } from '@/workspace/canvas-bridge-context';
 import { SHORTCUTS, shortcutLabel } from '@/workspace/shortcuts';
 import { getOperatingSystem } from '@/lib/utils/utils';
@@ -153,22 +149,26 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                 if (format !== 'svg') return set({ exportImage: format });
                 // SVG goes out at once, with fixed options (spec A6)
                 if (!store) return;
-                runImageExport({
-                    format,
-                    design: store.getState().design,
-                    theme: resolvedTheme,
-                    getTarget: canvas.captureTarget,
-                    prepare: () => store.getState().select([]),
-                }).catch((error: unknown) =>
-                    toast({
-                        title: t(
-                            error instanceof CaptureError &&
-                                error.reason === 'empty'
-                                ? 'editor.exporting.image.empty'
-                                : 'editor.exporting.image.failed'
-                        ),
-                        variant: 'destructive',
-                    })
+                // the picture code is only fetched when an image is made
+                void import('@/features/export/run-image-export').then(
+                    ({ CaptureError, runImageExport }) =>
+                        runImageExport({
+                            format,
+                            design: store.getState().design,
+                            theme: resolvedTheme,
+                            getTarget: canvas.captureTarget,
+                            prepare: () => store.getState().select([]),
+                        }).catch((error: unknown) =>
+                            toast({
+                                title: t(
+                                    error instanceof CaptureError &&
+                                        error.reason === 'empty'
+                                        ? 'editor.exporting.image.empty'
+                                        : 'editor.exporting.image.failed'
+                                ),
+                                variant: 'destructive',
+                            })
+                        )
                 );
             },
             closeExportImageDialog: () => set({ exportImage: undefined }),

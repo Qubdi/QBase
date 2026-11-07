@@ -213,6 +213,8 @@ export const sidePanelStrings = {
         title: 'DBML',
         empty: 'Nothing to show yet',
         copy: 'Copy',
+        standardRefs: 'Show standard refs',
+        inlineRefs: 'Show inline refs',
         copied: 'Copied',
         failed: 'Could not write the DBML',
     },

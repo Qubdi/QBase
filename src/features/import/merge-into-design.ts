@@ -1,4 +1,5 @@
 import type { Design } from '@/core/model/design';
+import { traitsOf } from '@/core/model/database';
 import { TABLE_WIDTH } from '@/core/model/entity';
 import { listOf } from '@/core/model/collection';
 
@@ -14,8 +15,11 @@ export interface MergeResult {
     duplicates: string[];
 }
 
-const nameKey = (schema: string | undefined, name: string): string =>
-    `${(schema ?? '').toLowerCase()}\u0000${name.toLowerCase()}`;
+/** A table without a schema counts as being in the database's default one. */
+const keyIn =
+    (defaultSchema: string | undefined) =>
+    (schema: string | undefined, name: string): string =>
+        `${(schema || defaultSchema || '').toLowerCase()}\u0000${name.toLowerCase()}`;
 
 /**
  * Adds what an import built to an open design. Imported tables are moved so
@@ -29,6 +33,7 @@ export function mergeImported(
     imported: Design,
     now: number
 ): MergeResult {
+    const nameKey = keyIn(traitsOf(current.databaseType).defaultSchema);
     const existing = listOf(current.entities);
     const incoming = listOf(imported.entities);
     const right = existing.length
