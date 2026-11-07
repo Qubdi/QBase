@@ -1,3 +1,4 @@
+import { canvas } from '../canvas-strings';
 import { account } from '../qubdi/account';
 import { adminProjects } from '../qubdi/admin-projects';
 import { adminUsers } from '../qubdi/admin-users';
@@ -29,6 +30,7 @@ export const en = {
             settings: settingsStrings,
             sidePanel: sidePanelStrings,
         },
+        canvas,
         qubdi: {
             account,
             sidePanel,
