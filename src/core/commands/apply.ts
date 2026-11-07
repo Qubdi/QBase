@@ -150,11 +150,38 @@ function renameDesign(design: Design, name: string): Step {
 function runGroup(design: Design, commands: Command[], label?: string): Step {
     let current = design;
     const inverses: Command[] = [];
-    for (const command of commands) {
-        const step = run(current, command);
+    let i = 0;
+    while (i < commands.length) {
+        const first = commands[i];
+        const kind =
+            first.type === 'entity.remove' || first.type === 'entity.insert'
+                ? first.type
+                : undefined;
+        let end = i + 1;
+        while (kind && end < commands.length && commands[end].type === kind)
+            end += 1;
+        const count = end - i;
+        let step: Step;
+        if (kind === 'entity.remove' && count > 1) {
+            // a run of removals or inserts is done in one pass (deleting,
+            // undoing the delete and pasting many tables)
+            const ids = commands.slice(i, end).map((c) => (c as { id: Id }).id);
+            step = removeEntities(current, ids);
+        } else if (kind === 'entity.insert' && count > 1) {
+            step = insertEntities(
+                current,
+                commands.slice(i, end) as InsertCommand[]
+            );
+        } else {
+            step = run(current, first);
+        }
+        i = count > 1 ? end : i + 1;
         if (!step.changed) continue;
         current = step.design;
-        inverses.unshift(step.inverse);
+        // a batch undoes as its own list, last one first
+        if (count > 1 && step.inverse.type === 'group')
+            inverses.unshift(...step.inverse.commands);
+        else inverses.unshift(step.inverse);
     }
     if (inverses.length === 0) return unchanged(design);
     return {
@@ -177,39 +204,50 @@ function partsFor(design: Design, entityId: Id): EntityParts {
     return partsOf(design, entity);
 }
 
+/**
+ * One kind of own record (columns, indexes or checks) of an entity, written
+ * in place of the old ones. A list that did not change keeps the very same
+ * map, so renaming or moving a table does not copy every column of the design.
+ */
+function rewriteRecords<T extends { id: Id }>(
+    all: Readonly<Record<Id, T>>,
+    before: readonly T[],
+    after: readonly T[],
+    used: string
+): Record<Id, T> {
+    if (samePartsList(before, after)) return all;
+    const next = { ...all };
+    for (const record of before) delete next[record.id];
+    for (const record of after) {
+        if (Object.hasOwn(next, record.id))
+            fail('invalid', `${used} ${record.id} is already used`);
+        next[record.id] = record;
+    }
+    return next;
+}
+
 /** Writes `after` in place of `before` (the same entity's own records). */
 function writeParts(
     design: Design,
     before: EntityParts,
     after: EntityParts
 ): Design {
-    const columns = { ...design.columns };
-    const keys = { ...design.keys };
-    const rules = { ...design.rules };
-    for (const c of before.columns) delete columns[c.id];
-    for (const k of before.keys) delete keys[k.id];
-    for (const r of before.rules) delete rules[r.id];
-    for (const c of after.columns) {
-        if (Object.hasOwn(columns, c.id))
-            fail('invalid', `Column id ${c.id} is already used`);
-        columns[c.id] = c;
-    }
-    for (const k of after.keys) {
-        if (Object.hasOwn(keys, k.id))
-            fail('invalid', `Index id ${k.id} is already used`);
-        keys[k.id] = k;
-    }
-    for (const r of after.rules) {
-        if (Object.hasOwn(rules, r.id))
-            fail('invalid', `Check constraint id ${r.id} is already used`);
-        rules[r.id] = r;
-    }
     return {
         ...design,
         entities: replaceItem(design.entities, after.entity),
-        columns,
-        keys,
-        rules,
+        columns: rewriteRecords(
+            design.columns,
+            before.columns,
+            after.columns,
+            'Column id'
+        ),
+        keys: rewriteRecords(design.keys, before.keys, after.keys, 'Index id'),
+        rules: rewriteRecords(
+            design.rules,
+            before.rules,
+            after.rules,
+            'Check constraint id'
+        ),
     };
 }
 
@@ -275,6 +313,96 @@ function editParts(
     return {
         design: writeParts(design, before, after),
         inverse: { type: 'entity.restore', parts: before },
+        changed: true,
+    };
+}
+
+type InsertCommand = Extract<Command, { type: 'entity.insert' }>;
+
+/**
+ * Inserts several tables in one pass, with the same result and the same
+ * inverses (a removal each, last first) as inserting them one by one.
+ */
+function insertEntities(design: Design, commands: InsertCommand[]): Step {
+    const columns = { ...design.columns };
+    const keys = { ...design.keys };
+    const rules = { ...design.rules };
+    const entities = {
+        byId: { ...design.entities.byId },
+        order: design.entities.order.slice(),
+    };
+    const links = {
+        byId: { ...design.links.byId },
+        order: design.links.order.slice(),
+    };
+    const dependencies = design.dependencies.slice();
+    // the maps above are shared with this view and grow as tables go in
+    const working: Design = {
+        ...design,
+        entities,
+        columns,
+        keys,
+        rules,
+        links,
+    };
+    const inverses: Command[] = [];
+    const place = (order: Id[], id: Id, at: number | undefined) =>
+        order.splice(
+            at === undefined
+                ? order.length
+                : Math.max(0, Math.min(at, order.length)),
+            0,
+            id
+        );
+    for (const command of commands) {
+        const { parts } = command;
+        if (hasItem(entities, parts.entity.id))
+            fail(
+                'duplicate',
+                `A table with id ${parts.entity.id} already exists`
+            );
+        checkParts(parts);
+        for (const c of parts.columns) {
+            if (Object.hasOwn(columns, c.id))
+                fail('duplicate', `Column id ${c.id} is already used`);
+            columns[c.id] = c;
+        }
+        for (const k of parts.keys) {
+            if (Object.hasOwn(keys, k.id))
+                fail('duplicate', `Index id ${k.id} is already used`);
+            keys[k.id] = k;
+        }
+        for (const r of parts.rules) {
+            if (Object.hasOwn(rules, r.id))
+                fail(
+                    'duplicate',
+                    `Check constraint id ${r.id} is already used`
+                );
+            rules[r.id] = r;
+        }
+        entities.byId[parts.entity.id] = parts.entity;
+        place(entities.order, parts.entity.id, command.at);
+        const placedLinks = [...(command.links ?? [])].sort(
+            (a, b) => a.index - b.index
+        );
+        for (const placed of placedLinks) {
+            checkLink(working, placed.item);
+            links.byId[placed.item.id] = placed.item;
+            place(links.order, placed.item.id, placed.index);
+        }
+        for (const placed of [...(command.dependencies ?? [])].sort(
+            (a, b) => a.index - b.index
+        ))
+            dependencies.splice(
+                Math.min(placed.index, dependencies.length),
+                0,
+                placed.item
+            );
+        inverses.unshift({ type: 'entity.remove', id: parts.entity.id });
+    }
+    return {
+        design: { ...working, dependencies },
+        inverse: { type: 'group', commands: inverses },
         changed: true,
     };
 }
@@ -368,6 +496,96 @@ function removeEntity(design: Design, id: Id): Step {
             dependencies: design.dependencies.filter((d) => !dropped.has(d.id)),
         },
         inverse: { type: 'entity.insert', parts, at, links, dependencies },
+        changed: true,
+    };
+}
+
+/**
+ * Removes several tables in one pass, with the same result and the same
+ * inverses as removing them one by one: every part map and list is copied once
+ * instead of once per table.
+ */
+function removeEntities(design: Design, ids: readonly Id[]): Step {
+    const gone = new Set<Id>();
+    for (const id of ids) {
+        if (gone.has(id) || !hasItem(design.entities, id))
+            fail('not-found', `No table or view with id ${id}`);
+        gone.add(id);
+    }
+    // positions are those of the moment each table is removed, so the
+    // inverses (run last to first) put everything back where it was
+    const entityOrder = design.entities.order.slice();
+    const linkOrder = design.links.order.slice();
+    const linkEnds = new Map<Id, Id[]>();
+    for (const linkId of linkOrder) {
+        const link = design.links.byId[linkId];
+        for (const end of new Set([link.sourceEntityId, link.targetEntityId])) {
+            const list = linkEnds.get(end);
+            if (list) list.push(linkId);
+            else linkEnds.set(end, [linkId]);
+        }
+    }
+    let dependencies = design.dependencies.slice();
+    const droppedLinks = new Set<Id>();
+    const inverses: Command[] = [];
+    for (const id of ids) {
+        const parts = partsFor(design, id);
+        const at = entityOrder.indexOf(id);
+        entityOrder.splice(at, 1);
+        const links: Placed<Link>[] = [];
+        const here = (linkEnds.get(id) ?? []).filter(
+            (linkId) => !droppedLinks.has(linkId)
+        );
+        for (const linkId of here)
+            links.push({
+                item: design.links.byId[linkId],
+                index: linkOrder.indexOf(linkId),
+            });
+        for (const linkId of here) {
+            linkOrder.splice(linkOrder.indexOf(linkId), 1);
+            droppedLinks.add(linkId);
+        }
+        const placed: Placed<(typeof design.dependencies)[number]>[] = [];
+        dependencies.forEach((dep, index) => {
+            if (dep.tableId === id || dep.dependentTableId === id)
+                placed.push({ item: dep, index });
+        });
+        if (placed.length > 0) {
+            const dropped = new Set(placed.map((d) => d.item));
+            dependencies = dependencies.filter((d) => !dropped.has(d));
+        }
+        inverses.unshift({
+            type: 'entity.insert',
+            parts,
+            at,
+            links,
+            dependencies: placed,
+        });
+    }
+    const columns = { ...design.columns };
+    const keys = { ...design.keys };
+    const rules = { ...design.rules };
+    const byId = { ...design.entities.byId };
+    for (const id of ids) {
+        const entity = design.entities.byId[id];
+        for (const c of entity.columnIds) delete columns[c];
+        for (const k of entity.keyIds) delete keys[k];
+        for (const r of entity.ruleIds) delete rules[r];
+        delete byId[id];
+    }
+    const linkById = { ...design.links.byId };
+    for (const linkId of droppedLinks) delete linkById[linkId];
+    return {
+        design: {
+            ...design,
+            entities: { byId, order: entityOrder },
+            columns,
+            keys,
+            rules,
+            links: { byId: linkById, order: linkOrder },
+            dependencies,
+        },
+        inverse: { type: 'group', commands: inverses },
         changed: true,
     };
 }

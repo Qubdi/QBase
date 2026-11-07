@@ -80,15 +80,15 @@ export function dimmedEntities(
     design: Design,
     selection: ReadonlySet<Id>
 ): Set<Id> {
-    const picked = entityList(design)
-        .filter((e) => selection.has(e.id))
-        .map((e) => e.id);
-    if (picked.length === 0) return new Set();
+    const picked = new Set<Id>(
+        design.entities.order.filter((id) => selection.has(id))
+    );
+    if (picked.size === 0) return new Set();
     const near = new Set<Id>(picked);
     for (const id of design.links.order) {
         const link = design.links.byId[id];
-        if (picked.includes(link.sourceEntityId)) near.add(link.targetEntityId);
-        if (picked.includes(link.targetEntityId)) near.add(link.sourceEntityId);
+        if (picked.has(link.sourceEntityId)) near.add(link.targetEntityId);
+        if (picked.has(link.targetEntityId)) near.add(link.sourceEntityId);
     }
     return new Set(design.entities.order.filter((id) => !near.has(id)));
 }
@@ -139,70 +139,125 @@ export function chooseSides(
     return ['r', 'r'];
 }
 
-export function buildNodes(input: FlowInput): CanvasNode[] {
+/**
+ * The object handed to xyflow for a node: the one built last time when
+ * nothing about it changed, so xyflow can skip the nodes that did not move
+ * (a drag changes one table, not two hundred).
+ */
+export type NodeMemory = Map<Id, CanvasNode>;
+
+const sameValues = (a: object, b: object): boolean => {
+    const x = a as Record<string, unknown>;
+    const y = b as Record<string, unknown>;
+    const keys = Object.keys(x);
+    return (
+        keys.length === Object.keys(y).length &&
+        keys.every((key) => Object.is(x[key], y[key]))
+    );
+};
+
+function sameNode(a: CanvasNode, b: CanvasNode): boolean {
+    const { data: dataA, position: posA, measured: mA, ...restA } = a;
+    const { data: dataB, position: posB, measured: mB, ...restB } = b;
+    return (
+        sameValues(restA, restB) &&
+        sameValues(dataA, dataB) &&
+        sameValues(posA, posB) &&
+        (mA === mB ||
+            (mA !== undefined && mB !== undefined && sameValues(mA, mB)))
+    );
+}
+
+/** `fresh` unless `memory` holds an equal node, which is then kept. */
+function remembered<T extends CanvasNode>(
+    memory: NodeMemory | undefined,
+    fresh: T
+): T {
+    if (!memory) return fresh;
+    const before = memory.get(fresh.id);
+    if (before && sameNode(before, fresh)) return before as T;
+    memory.set(fresh.id, fresh);
+    return fresh;
+}
+
+export function buildNodes(
+    input: FlowInput,
+    memory?: NodeMemory
+): CanvasNode[] {
     const { design, selection, live } = input;
     const dim = dimmedEntities(design, selection);
     const nodes: CanvasNode[] = [];
-
     for (const id of design.regions.order) {
         const region = design.regions.byId[id];
         const at = live.positions[id] ?? region.box;
         const size = live.sizes[id] ?? region.box;
-        nodes.push({
-            id,
-            type: 'region',
-            position: { x: at.x, y: at.y },
-            width: size.width,
-            height: size.height ?? region.box.height,
-            data: {},
-            selected: selection.has(id),
-            draggable: input.editable,
-            zIndex: -1,
-        });
+        nodes.push(
+            remembered<RegionNode>(memory, {
+                id,
+                type: 'region',
+                position: { x: at.x, y: at.y },
+                width: size.width,
+                height: size.height ?? region.box.height,
+                data: {},
+                selected: selection.has(id),
+                draggable: input.editable,
+                zIndex: -1,
+            })
+        );
     }
     for (const id of design.memos.order) {
         const memo = design.memos.byId[id];
         const at = live.positions[id] ?? memo.box;
         const size = live.sizes[id] ?? memo.box;
-        nodes.push({
-            id,
-            type: 'memo',
-            position: { x: at.x, y: at.y },
-            width: size.width,
-            height: size.height ?? memo.box.height,
-            data: {},
-            selected: selection.has(id),
-            draggable: input.editable,
-            zIndex: 0,
-        });
+        nodes.push(
+            remembered<MemoNode>(memory, {
+                id,
+                type: 'memo',
+                position: { x: at.x, y: at.y },
+                width: size.width,
+                height: size.height ?? memo.box.height,
+                data: {},
+                selected: selection.has(id),
+                draggable: input.editable,
+                zIndex: 0,
+            })
+        );
     }
     for (const entity of entityList(design)) {
         if (!input.visible.has(entity.id)) continue;
         const at = live.positions[entity.id] ?? entity;
-        nodes.push({
-            id: entity.id,
-            type: 'entity',
-            position: { x: at.x, y: at.y },
-            width:
-                live.sizes[entity.id]?.width ??
-                entity.width ??
-                TABLE_WIDTH.default,
-            // what the browser measured, handed back on every rebuild: without it
-            // xyflow forgets the field handles of a table each time the nodes are
-            // rebuilt, and no line can attach until the next measurement
-            measured: input.sizes[entity.id],
-            data: {
-                dimmed: dim.has(entity.id),
-                flashing: input.flashing.has(entity.id),
-                outlined:
-                    input.outlineOverlaps && input.overlapping.has(entity.id),
-                mark: input.diff?.tables[entity.id],
-                renamedFrom: input.diff?.renames?.[entity.id],
-            },
-            selected: selection.has(entity.id),
-            draggable: input.editable,
-            zIndex: 1,
-        });
+        nodes.push(
+            remembered<EntityNode>(memory, {
+                id: entity.id,
+                type: 'entity',
+                position: { x: at.x, y: at.y },
+                width:
+                    live.sizes[entity.id]?.width ??
+                    entity.width ??
+                    TABLE_WIDTH.default,
+                // what the browser measured, handed back on every rebuild: without it
+                // xyflow forgets the field handles of a table each time the nodes are
+                // rebuilt, and no line can attach until the next measurement
+                measured: input.sizes[entity.id],
+                data: {
+                    dimmed: dim.has(entity.id),
+                    flashing: input.flashing.has(entity.id),
+                    outlined:
+                        input.outlineOverlaps &&
+                        input.overlapping.has(entity.id),
+                    mark: input.diff?.tables[entity.id],
+                    renamedFrom: input.diff?.renames?.[entity.id],
+                },
+                selected: selection.has(entity.id),
+                draggable: input.editable,
+                zIndex: 1,
+            })
+        );
+    }
+    // forget what is no longer drawn
+    if (memory && memory.size > nodes.length) {
+        const drawn = new Set(nodes.map((n) => n.id));
+        for (const id of memory.keys()) if (!drawn.has(id)) memory.delete(id);
     }
     return nodes;
 }
@@ -213,9 +268,11 @@ export function buildNodes(input: FlowInput): CanvasNode[] {
  */
 export function buildEdges(
     input: FlowInput,
-    memory?: Map<Id, [Side, Side]>
+    memory?: Map<Id, [Side, Side]>,
+    kept?: Map<Id, LinkEdge>
 ): LinkEdge[] {
     const { design, live } = input;
+    const alive = kept ? new Set<Id>() : undefined;
     const rank = new Map<string, number>();
     const edges: LinkEdge[] = [];
     for (const id of design.links.order) {
@@ -243,7 +300,7 @@ export function buildEdges(
         const pair = [from.id, to.id].sort().join('|');
         const n = rank.get(pair) ?? 0;
         rank.set(pair, n + 1);
-        edges.push({
+        const edge: LinkEdge = {
             id,
             type: 'link',
             source: from.id,
@@ -256,7 +313,19 @@ export function buildEdges(
                 selfLoop,
                 mark: input.diff?.links[id],
             },
-        });
+        };
+        // the edge of last time when nothing about it changed
+        const before = kept?.get(id);
+        const same =
+            before !== undefined &&
+            sameValues({ ...before, data: 0 }, { ...edge, data: 0 }) &&
+            before.data !== undefined &&
+            sameValues(before.data, edge.data!);
+        if (!same) kept?.set(id, edge);
+        alive?.add(id);
+        edges.push(same ? before : edge);
     }
+    if (kept && alive)
+        for (const id of kept.keys()) if (!alive.has(id)) kept.delete(id);
     return edges;
 }

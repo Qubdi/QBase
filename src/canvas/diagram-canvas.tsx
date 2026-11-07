@@ -14,6 +14,7 @@ import {
     ReactFlowProvider,
     useKeyPress,
     useReactFlow,
+    useUpdateNodeInternals,
     useViewport,
 } from '@xyflow/react';
 import type { Connection, EdgeChange, NodeChange } from '@xyflow/react';
@@ -55,11 +56,18 @@ import { useLongPress } from './use-long-press';
 import { MarkerDefs } from './cardinality-markers';
 import { commitQuickLink, suggestTarget } from './link-draft';
 import { LinkDraftLayer } from './link-draft-layer';
+import { HANDLES_MIN_ZOOM } from './field-row';
 import { LinkPopover } from './link-popover';
 import { reportConnect, reportCopied, reportPasted } from './notify';
 import { commitShapes } from './commit-shapes';
 import { buildEdges, buildNodes, drawnEntityIds, NO_LIVE } from './flow-model';
-import type { LiveShapes, Point, Side } from './flow-model';
+import type {
+    LinkEdge,
+    LiveShapes,
+    NodeMemory,
+    Point,
+    Side,
+} from './flow-model';
 import {
     anyOnScreen,
     overlappingIds,
@@ -240,11 +248,30 @@ function Surface({
             diff,
         ]
     );
-    const nodes = useMemo(() => buildNodes(input), [input]);
+    const nodeMemory = useRef<NodeMemory>(new Map());
+    const nodes = useMemo(() => buildNodes(input, nodeMemory.current), [input]);
     const sideMemory = useRef(new Map<Id, [Side, Side]>());
-    const edges = useMemo(() => buildEdges(input, sideMemory.current), [input]);
+    const edgeMemory = useRef(new Map<Id, LinkEdge>());
+    const edges = useMemo(
+        () => buildEdges(input, sideMemory.current, edgeMemory.current),
+        [input]
+    );
 
     const controls = useViewportControls([...visible], storeApi);
+
+    // the unused connection dots come and go with the zoom (field-row.tsx);
+    // xyflow measures them again, once for every table
+    const detailed = useEditorStore((s) => s.ui.zoom >= HANDLES_MIN_ZOOM);
+    const updateInternals = useUpdateNodeInternals();
+    const firstDetail = useRef(true);
+    useEffect(() => {
+        if (firstDetail.current) {
+            firstDetail.current = false;
+            return;
+        }
+        updateInternals([...visible]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [detailed]);
 
     // hand the camera to the frame once; the functions never change
     const readyRef = useRef(onReady);

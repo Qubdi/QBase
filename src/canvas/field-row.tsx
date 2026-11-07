@@ -12,16 +12,34 @@ import { handleId } from './flow-model';
 import type { CanvasPrefs } from './hooks';
 
 export const ROW_HEIGHT = 32;
+/**
+ * Below this zoom a row keeps its connection dots only when a line ends on it
+ * (the dots are far too small to use, and thousands of them make a large
+ * diagram slow to draw).
+ */
+export const HANDLES_MIN_ZOOM = 0.4;
 const HOVER_DELAY_MS = 450;
 const TOUCH_MOUSE_MS = 1000;
 
+/** The words a row needs, translated once per table instead of once per row. */
+export interface FieldLabels {
+    primaryKey: string;
+    foreignKey: string;
+    unique: string;
+    nullable: string;
+    required: string;
+}
+
 interface FieldRowProps {
+    labels: FieldLabels;
     entityId: Id;
     column: Column;
     databaseType: DatabaseType;
     foreign: boolean;
     /** the dots for drawing a relationship are offered */
     connectable: boolean;
+    /** the row has its connection dots in the page (see `HANDLES_MIN_ZOOM`) */
+    handles: boolean;
     prefs: CanvasPrefs;
 }
 
@@ -37,14 +55,15 @@ const dotClass = [
 
 /** One field of a table: icon, name, badges, type chip, nullability dot. */
 export const FieldRow = memo(function FieldRow({
+    labels,
     entityId,
     column,
     databaseType,
     foreign,
     connectable,
+    handles,
     prefs,
 }: FieldRowProps) {
-    const { t } = useTranslation();
     const storeApi = useEditorStoreApi();
     const [card, setCard] = useState(false);
     const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -77,7 +96,7 @@ export const FieldRow = memo(function FieldRow({
             onMouseEnter={hoverStart}
             onMouseLeave={hoverEnd}
         >
-            {(['l', 'r'] as const).map((side) => (
+            {(handles ? (['l', 'r'] as const) : []).map((side) => (
                 <Handle
                     key={side}
                     id={handleId(column.id, side)}
@@ -89,12 +108,12 @@ export const FieldRow = memo(function FieldRow({
             ))}
             {column.primaryKey ? (
                 <KeyRound
-                    aria-label={t('canvas.entity.primaryKey')}
+                    aria-label={labels.primaryKey}
                     className="h-3.5 w-3.5 shrink-0 text-amber-500"
                 />
             ) : foreign ? (
                 <Link2
-                    aria-label={t('canvas.entity.foreignKey')}
+                    aria-label={labels.foreignKey}
                     className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
                 />
             ) : null}
@@ -109,7 +128,7 @@ export const FieldRow = memo(function FieldRow({
             </span>
             {column.unique && !column.primaryKey ? (
                 <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
-                    {t('canvas.entity.unique')}
+                    {labels.unique}
                 </span>
             ) : null}
             {prefs.compact ? null : (
@@ -130,9 +149,7 @@ export const FieldRow = memo(function FieldRow({
                     <span
                         role="img"
                         aria-label={
-                            column.nullable
-                                ? t('canvas.entity.nullable')
-                                : t('canvas.entity.required')
+                            column.nullable ? labels.nullable : labels.required
                         }
                         data-nullable={column.nullable}
                         className={cn(

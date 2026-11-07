@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
     NodeResizeControl,
     ResizeControlVariant,
@@ -18,8 +18,8 @@ import { useTranslation } from 'react-i18next';
 import { TABLE_WIDTH } from '@/core/model/entity';
 import type { Column } from '@/core/model/column';
 import { cn } from '@/lib/utils/utils';
-import { useEditorStoreApi } from '@/store/store-context';
-import { FieldRow } from './field-row';
+import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
+import { FieldRow, HANDLES_MIN_ZOOM } from './field-row';
 import { linkRoles, shownColumns, subtitleParts } from './field-view';
 import { useShown } from './diff-marks';
 import type { EntityNode } from './flow-model';
@@ -72,14 +72,29 @@ export const EntityCard = memo(function EntityCard({
     const links = useShown((d) => d.links);
     const databaseType = useShown((d) => d.databaseType);
     const [localExpanded, setLocalExpanded] = useState(false);
+    const detailed = useEditorStore((s) => s.ui.zoom >= HANDLES_MIN_ZOOM);
 
+    const labels = useMemo(
+        () => ({
+            primaryKey: t('canvas.entity.primaryKey'),
+            foreignKey: t('canvas.entity.foreignKey'),
+            unique: t('canvas.entity.unique'),
+            nullable: t('canvas.entity.nullable'),
+            required: t('canvas.entity.required'),
+        }),
+        [t]
+    );
     const roles = useMemo(() => linkRoles({ links }, id), [links, id]);
     // xyflow measures a node's field handles when its size changes; when the
     // fields get new ids at the same size (accepting a DBML change, undoing it)
     // the old handles would stay and the lines would vanish
     const updateInternals = useUpdateNodeInternals();
     const columnKey = columns.map((c) => c?.id).join('|');
+    // not on the first draw: xyflow measures a new node itself
+    const seenKey = useRef(columnKey);
     useEffect(() => {
+        if (seenKey.current === columnKey) return;
+        seenKey.current = columnKey;
         updateInternals(id);
     }, [updateInternals, id, columnKey]);
     if (!entity) return null;
@@ -295,6 +310,8 @@ export const EntityCard = memo(function EntityCard({
                 {visibleColumns.map((column) => (
                     <FieldRow
                         key={column.id}
+                        labels={labels}
+                        handles={detailed || roles.linked.has(column.id)}
                         entityId={id}
                         column={column}
                         databaseType={databaseType}
