@@ -10,11 +10,35 @@ import { metadataScriptFor } from '../metadata-scripts';
 const sqlite = await import('node:sqlite').catch(() => undefined);
 
 describe('metadata script for SQLite (IMP-056)', () => {
-    it('is offered for SQLite only so far', () => {
+    it('is offered, and none for the open-only types', () => {
         expect(metadataScriptFor('sqlite')).toContain(
             'metadata_json_to_import'
         );
         expect(metadataScriptFor('oracle')).toBeUndefined();
+        expect(metadataScriptFor('clickhouse')).toBeUndefined();
+        expect(metadataScriptFor('generic')).toBeUndefined();
+    });
+
+    it.skipIf(!sqlite)('Cloudflare D1 variant hides its _cf_ tables', () => {
+        const d1 = metadataScriptFor('sqlite', 'cloudflare_d1')!;
+        expect(d1).not.toBe(metadataScriptFor('sqlite'));
+        const db = new sqlite!.DatabaseSync(':memory:');
+        db.exec(`
+            CREATE TABLE _cf_KV (key TEXT PRIMARY KEY, value BLOB);
+            CREATE TABLE notes (id INTEGER PRIMARY KEY, body TEXT);
+        `);
+        const row = db.prepare(d1).get() as { metadata_json_to_import: string };
+        const parsed = JSON.parse(row.metadata_json_to_import);
+        expect(parsed.tables.map((t: { table: string }) => t.table)).toEqual([
+            'notes',
+        ]);
+        expect(parsed.columns.map((c: { table: string }) => c.table)).toEqual([
+            'notes',
+            'notes',
+        ]);
+        expect(parsed.pk_info.map((c: { table: string }) => c.table)).toEqual([
+            'notes',
+        ]);
     });
 
     it.skipIf(!sqlite)('runs on a real SQLite and its result imports', () => {

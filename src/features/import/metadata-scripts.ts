@@ -1,4 +1,15 @@
-import type { DatabaseType } from '@/core/model/database';
+import type { DatabaseEdition, DatabaseType } from '@/core/model/database';
+import { MYSQL_57_SCRIPT, MYSQL_SCRIPT } from './scripts/mysql';
+import {
+    COCKROACH_SCRIPT,
+    POSTGRES_SCRIPT,
+    SUPABASE_SCRIPT,
+    TIMESCALE_SCRIPT,
+} from './scripts/postgresql';
+import {
+    SQL_SERVER_2016_SCRIPT,
+    SQL_SERVER_SCRIPT,
+} from './scripts/sql-server';
 
 /**
  * SQLite: tables, views, columns, keys, foreign keys and indexes from the
@@ -62,11 +73,41 @@ const SQLITE_SCRIPT = `SELECT json_object(
     WHERE m.type = 'table' AND c.name IS NOT NULL))
 ) AS metadata_json_to_import;`;
 
+/**
+ * Cloudflare D1 keeps its own bookkeeping tables (`_cf_*`) next to the user's
+ * tables; the same query, with those left out.
+ */
+const D1_HIDDEN = `m.name NOT LIKE '\\_cf\\_%' ESCAPE '\\'`;
+const SQLITE_D1_SCRIPT = SQLITE_SCRIPT.replaceAll(
+    `m.name NOT LIKE 'sqlite\\_%' ESCAPE '\\'`,
+    `m.name NOT LIKE 'sqlite\\_%' ESCAPE '\\' AND ${D1_HIDDEN}`
+).replaceAll(`m.type = 'table'`, `m.type = 'table' AND ${D1_HIDDEN}`);
+
 const SCRIPTS: Partial<Record<DatabaseType, string>> = {
     sqlite: SQLITE_SCRIPT,
+    postgresql: POSTGRES_SCRIPT,
+    cockroachdb: COCKROACH_SCRIPT,
+    mysql: MYSQL_SCRIPT,
+    mariadb: MYSQL_SCRIPT,
+    sql_server: SQL_SERVER_SCRIPT,
 };
 
-/** The script for a database, or undefined when none is shipped yet. */
-export function metadataScriptFor(type: DatabaseType): string | undefined {
-    return SCRIPTS[type];
+const EDITION_SCRIPTS: Partial<
+    Record<DatabaseType, Partial<Record<DatabaseEdition, string>>>
+> = {
+    postgresql: { supabase: SUPABASE_SCRIPT, timescale: TIMESCALE_SCRIPT },
+    mysql: { mysql_5_7: MYSQL_57_SCRIPT },
+    sql_server: { sql_server_2016_and_below: SQL_SERVER_2016_SCRIPT },
+    sqlite: { cloudflare_d1: SQLITE_D1_SCRIPT },
+};
+
+/**
+ * The script for a database and edition, or undefined when none is shipped.
+ * An edition without its own script falls back to the standard one.
+ */
+export function metadataScriptFor(
+    type: DatabaseType,
+    edition?: DatabaseEdition
+): string | undefined {
+    return (edition && EDITION_SCRIPTS[type]?.[edition]) || SCRIPTS[type];
 }

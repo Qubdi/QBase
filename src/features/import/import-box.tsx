@@ -203,7 +203,7 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
         el.setSelectionRange(at, at);
     };
 
-    const script = metadataScriptFor(databaseType);
+    const script = metadataScriptFor(databaseType, edition);
     const copyScript = async () => {
         if (!script) return;
         try {
