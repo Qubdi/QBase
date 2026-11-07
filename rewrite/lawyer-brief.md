@@ -50,9 +50,18 @@ code stays on `main` and is not to be published.
 - Dependency licences re-audited: 118 direct dependencies, 99 MIT, 13 Apache-2.0, 3 OFL fonts,
   1 ISC, 1 Unlicense; `NOTICE` lists the fonts and shadcn/ui.
 - The public Docker Hub image `qubdi/qbase` was taken down by the owner on 2026-11-08.
-- The new branch's first commit is a snapshot of the old tree (about 560 files, including the
-  ChartDB-derived code), which was then deleted file by file. The branch history therefore still
-  contains derived code; this is why the release must be a fresh repository with new history.
+- The new branch has one root commit (561 files). Its `src/` held only original QBase code (277
+  files, none identical or derived), so no session worked in a tree with ChartDB-derived source.
+  The ChartDB-derived or identical files in that commit were 16 small root files (editor and
+  build configs, workflows, `.dockerignore`, `CODE_OF_CONDUCT.md`, a few tiny dotfiles) and one
+  GIF; they were replaced or deleted in the next commits. The old history, which does hold the
+  derived code, stays on `main` and is not published. The release is still planned as a fresh
+  repository (`rewrite/provenance.md`, section "What the branch's first commit holds").
+- The sessions that wrote code worked under written rules (clean authors in isolated checkouts
+  for the risky modules; the rest told not to read `main` or ChartDB). A scan of every tool call
+  of the 56 sessions the orchestrator started found no session opening `main` or ChartDB material
+  except the four spec writers, who did so by design (`rewrite/provenance-audit/README.md`).
+  Two peer sessions are not covered by the scan and still need declarations.
 - Code review, accessibility, performance and live-database checks were done by further AI
   sessions; their reports are in `rewrite/review/` and `rewrite/phase9/`.
 
@@ -92,7 +101,7 @@ code stays on `main` and is not to be published.
 ## Documents to attach
 
 `rewrite/PLAN.md` (sections 1, 2, 6, 9, 11), `rewrite/architecture.md`,
-`rewrite/provenance.md`, `rewrite/log.md`, `rewrite/spec/owner-decisions.md`,
+`rewrite/provenance.md`, `rewrite/provenance-audit/README.md`, `rewrite/log.md`, `rewrite/spec/owner-decisions.md`,
 `rewrite/similarity-allow.txt`, `rewrite/inventory/src.csv` (the measured overlap per file), a
 sample of the spec (`rewrite/spec/data-format.md`), `rewrite/parity-checklist.md`,
 `rewrite/phase8/` (test results per row), `rewrite/review/` and `rewrite/phase9/` (reviews and
