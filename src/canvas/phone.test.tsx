@@ -52,20 +52,25 @@ describe('minimap', () => {
         expect(MINIMAP_MASK).toContain('--muted-foreground');
     });
 
-    it('EDT-044: a table has a size before it is measured, so the map can draw it', () => {
+    it('EDT-044: a measured table keeps its size in the node, so the map and the lines survive rebuilds', () => {
         const s = shop();
-        const nodes = buildNodes({
+        const input = {
             design: s.design,
-            selection: new Set(),
-            visible: new Set([s.users]),
+            selection: new Set<string>(),
+            visible: new Set([s.users, s.orders]),
             live: NO_LIVE,
-            flashing: new Set(),
-            overlapping: new Set(),
+            flashing: new Set<string>(),
+            overlapping: new Set<string>(),
+            sizes: { [s.users]: { width: 224, height: 112 } },
             outlineOverlaps: false,
             editable: true,
-        });
-        expect(nodes[0].initialHeight).toBe(48 + 32);
-        expect(nodes[0].width).toBe(224);
+        };
+        const nodes = buildNodes(input);
+        const users = nodes.find((n) => n.id === s.users)!;
+        const orders = nodes.find((n) => n.id === s.orders)!;
+        expect(users.measured).toEqual({ width: 224, height: 112 });
+        expect(users.initialHeight).toBeUndefined();
+        expect(orders.measured).toBeUndefined();
     });
 
     it('EDT-044: the map is drawn with the canvas classes', () => {

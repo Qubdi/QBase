@@ -129,6 +129,7 @@ describe('canvas shell', () => {
             live: NO_LIVE,
             flashing: new Set<string>(),
             overlapping: new Set<string>(),
+            sizes: {},
             outlineOverlaps: false,
             editable: true,
         });

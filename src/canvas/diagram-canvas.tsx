@@ -138,7 +138,7 @@ function Surface({
     const none = useMemo(() => new Set<Id>(), []);
 
     // tables whose boxes touch (EDT-038, EDT-039); the toolbar flashes them
-    const overlapping = useMemo(
+    const overlapNow = useMemo(
         () =>
             overlappingIds(
                 [...visible].map((id) => {
@@ -154,6 +154,13 @@ function Surface({
                 })
             ),
         [design.entities, visible, sizes]
+    );
+    // the same members give the same set, so a new measurement alone does not
+    // rebuild every node
+    const overlapKey = [...overlapNow].sort().join('|');
+    const overlapping = useMemo(
+        () => new Set(overlapKey ? overlapKey.split('|') : []),
+        [overlapKey]
     );
     const [flashing, setFlashing] = useState<ReadonlySet<Id>>(none);
     const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -172,6 +179,7 @@ function Surface({
             live,
             flashing,
             overlapping,
+            sizes,
             outlineOverlaps: prefs.outlineOverlaps,
             editable,
         }),
@@ -182,6 +190,7 @@ function Surface({
             live,
             flashing,
             overlapping,
+            sizes,
             prefs.outlineOverlaps,
             editable,
         ]

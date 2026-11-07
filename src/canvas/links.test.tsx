@@ -38,6 +38,7 @@ const edgeInput = (s: ReturnType<typeof shop>, selection: string[] = []) => ({
     live: NO_LIVE,
     flashing: new Set<string>(),
     overlapping: new Set<string>(),
+    sizes: {},
     outlineOverlaps: false,
     editable: true,
 });

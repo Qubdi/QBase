@@ -3,7 +3,7 @@ import type { Design } from '@/core/model/design';
 import { TABLE_WIDTH } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
 import { entityList } from '@/core/model/lookup';
-import { estimatedSize } from '@/core/model/region-membership';
+import type { Size } from '@/core/model/region-membership';
 
 export type Side = 'l' | 'r';
 
@@ -61,6 +61,8 @@ export interface FlowInput {
     live: LiveShapes;
     flashing: ReadonlySet<Id>;
     overlapping: ReadonlySet<Id>;
+    /** the measured size of each drawn table, as reported by the canvas */
+    sizes: Readonly<Record<Id, Size>>;
     outlineOverlaps: boolean;
     editable: boolean;
 }
@@ -177,8 +179,10 @@ export function buildNodes(input: FlowInput): CanvasNode[] {
                 live.sizes[entity.id]?.width ??
                 entity.width ??
                 TABLE_WIDTH.default,
-            // a stand-in until the table is measured, so the map can draw it
-            initialHeight: estimatedSize(entity).height,
+            // what the browser measured, handed back on every rebuild: without it
+            // xyflow forgets the field handles of a table each time the nodes are
+            // rebuilt, and no line can attach until the next measurement
+            measured: input.sizes[entity.id],
             data: {
                 dimmed: dim.has(entity.id),
                 flashing: input.flashing.has(entity.id),
