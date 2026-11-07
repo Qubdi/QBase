@@ -146,6 +146,22 @@ page.on('response', (r) => {
 });
 
 // inline scripts would break a strict CSP: list them after the first load
+
+/** Lines that are really drawn: an edge path with geometry and a size on the page. */
+const drawnEdges = (page) =>
+    page.evaluate(
+        () =>
+            [...document.querySelectorAll('.react-flow__edge-path')].filter(
+                (p) => {
+                    const box = p.getBoundingClientRect();
+                    return (
+                        (p.getAttribute('d') ?? '').length > 4 &&
+                        box.width + box.height > 8
+                    );
+                }
+            ).length
+    );
+
 await step('01 open / and see the new-diagram dialog', async () => {
     const first = await page.goto(`${BASE}/`);
     policySeen = first.headers()['content-security-policy'];
@@ -233,10 +249,7 @@ await step('03b second table and a relationship', async () => {
         (await page.getByTestId('ref-row').count()) === 1,
         'no relationship row'
     );
-    check(
-        (await page.locator('.react-flow__edge').count()) >= 1,
-        'no line on the canvas'
-    );
+    check((await drawnEdges(page)) >= 1, 'no line is drawn on the canvas');
     await shot('relationship');
 });
 
@@ -246,17 +259,11 @@ await step('04 undo and redo with the keyboard', async () => {
         .click({ position: { x: 600, y: 120 } });
     await page.keyboard.press('ControlOrMeta+z');
     await waitIdle();
-    check(
-        (await page.locator('.react-flow__edge').count()) === 0,
-        'undo kept the line'
-    );
+    check((await drawnEdges(page)) === 0, 'undo kept the line');
     await shot('after-undo');
     await page.keyboard.press('ControlOrMeta+Shift+z');
     await waitIdle();
-    check(
-        (await page.locator('.react-flow__edge').count()) >= 1,
-        'redo did not bring the line back'
-    );
+    check((await drawnEdges(page)) >= 1, 'redo did not bring the line back');
 });
 
 await step('05 build a diagram from the pasted PostgreSQL sample', async () => {
@@ -278,8 +285,8 @@ await step('05 build a diagram from the pasted PostgreSQL sample', async () => {
     const text = (await designText()).join(' ');
     check(/pets/.test(text) && /vets/.test(text), `tables: ${text}`);
     check(
-        (await page.locator('.react-flow__edge').count()) >= 1,
-        'no line for the imported link'
+        (await drawnEdges(page)) >= 1,
+        'no line is drawn for the imported link'
     );
     await shot('imported');
 });
