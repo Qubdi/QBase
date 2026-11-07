@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { sidePanelStrings } from '@/i18n/editor/side-panel';
-import '@/i18n/editor/side-panel-register';
 
 type Leaves<T, P extends string = ''> = {
     [K in keyof T & string]: T[K] extends string

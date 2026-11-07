@@ -18,7 +18,6 @@ import { DEFAULT_IMAGE_OPTIONS } from '@/formats/image/export-options';
 import type { ImageFormat } from '@/formats/image/export-options';
 import { useEditorStoreApi } from '@/store/store-context';
 import { CaptureError, runImageExport } from './run-image-export';
-import '@/i18n/editor/register';
 
 export interface ExportImageDialogProps {
     /** PNG or JPEG; undefined keeps the dialog closed */

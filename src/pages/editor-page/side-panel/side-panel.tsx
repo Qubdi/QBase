@@ -9,7 +9,6 @@ import { RefsSection } from '@/features/links/refs-section';
 import { VisualsSection } from '@/features/regions-memos/visuals-section';
 import { TablesSection } from '@/features/tables/tables-section';
 import { UserTypesSection } from '@/features/user-types/user-types-section';
-import '@/i18n/editor/side-panel-register';
 
 // The DBML library is heavy and few visits use it: load it when the section opens.
 const DbmlSection = React.lazy(() =>

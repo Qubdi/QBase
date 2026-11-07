@@ -6,7 +6,6 @@ import { traitsOf } from '@/core/model/database';
 import type { PanelSection, VisualsTab } from '@/store/editor-state';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { SidePanelSlot } from './side-panel-slot';
-import '@/i18n/editor/register';
 
 /** The entries of the phone's section list: Areas and Notes are the two Visuals tabs. */
 type Entry = 'tables' | 'dbml' | 'refs' | 'customTypes' | 'areas' | 'notes';

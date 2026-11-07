@@ -10,7 +10,6 @@ import {
     DropdownMenuTrigger,
 } from '@/platform/ui/dropdown-menu';
 import { languages } from '@/i18n/languages';
-import '@/i18n/editor/register';
 
 /** The language picker at the right end of the navbar. */
 export const LanguageButton: React.FC = () => {

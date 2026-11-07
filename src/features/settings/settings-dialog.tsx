@@ -16,7 +16,6 @@ import { LocalConfigContext } from '@/context/local-config-context/local-config-
 import type { ScrollAction } from '@/context/local-config-context/local-config-context';
 import { languages } from '@/i18n/languages';
 import type { Theme } from '@/platform/theme/theme-utils';
-import '@/i18n/editor/register';
 
 export interface ShortcutRow {
     label: string;

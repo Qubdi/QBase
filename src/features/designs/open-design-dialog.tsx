@@ -46,7 +46,6 @@ import {
 import { matchesSearch } from './design-search';
 import { RenameDesignDialog } from './rename-design-dialog';
 import { useDesignList } from './use-design-list';
-import '@/i18n/editor/register';
 
 export interface OpenDesignDialogProps {
     open: boolean;

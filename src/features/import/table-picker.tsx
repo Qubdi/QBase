@@ -4,7 +4,6 @@ import { Checkbox } from '@/platform/ui/checkbox';
 import { Input } from '@/platform/ui/input';
 import { PICKER_LIMIT } from './picker-rows';
 import type { PickerRow } from './picker-rows';
-import '@/i18n/editor/register';
 
 const PAGE = 50;
 

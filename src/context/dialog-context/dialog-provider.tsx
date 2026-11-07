@@ -16,7 +16,6 @@ import type {
     ImportIntoOpenOptions,
     OpenDiagramOptions,
 } from './dialog-context';
-import '@/i18n/editor/register';
 
 // The dialogs are separate chunks. The create and import dialogs reach the
 // DBML parser, the heaviest part of the editor, so they may only be loaded

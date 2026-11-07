@@ -10,7 +10,6 @@ import {
     DialogTitle,
 } from '@/platform/ui/dialog';
 import { Input } from '@/platform/ui/input';
-import '@/i18n/editor/register';
 
 export interface RenameDesignDialogProps {
     /** the design being renamed; undefined keeps the dialog closed */

@@ -18,7 +18,6 @@ import { SidePanelSlot } from './side-panel-slot';
 import { useIsDesktop } from './use-is-desktop';
 import { useWorkspaceCommands } from './use-workspace-commands';
 import { useWorkspaceShortcuts } from './use-workspace-shortcuts';
-import '@/i18n/editor/register';
 
 /** The drag handle between the side panel and the canvas. */
 const PanelHandle: React.FC<{

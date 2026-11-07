@@ -18,7 +18,6 @@ import { dialectFor } from '@/dialects/registry';
 import { exportSql } from '@/formats/sql/export-sql';
 import { useEditorStore } from '@/store/store-context';
 import { downloadText, safeFileName } from './download-file';
-import '@/i18n/editor/register';
 
 export interface ExportSqlDialogProps {
     /** the target database; undefined keeps the dialog closed */

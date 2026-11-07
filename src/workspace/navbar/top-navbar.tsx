@@ -15,7 +15,6 @@ import type { WorkspaceCommands } from '../use-workspace-commands';
 import { DiagramName } from './diagram-name';
 import { LanguageButton } from './language-button';
 import { Menus } from './menus';
-import '@/i18n/editor/register';
 
 /** A named place in the frame where a QBase part is mounted (spec B2). */
 export const Slot: React.FC<

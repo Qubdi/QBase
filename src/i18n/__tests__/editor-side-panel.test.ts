@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { i18n } from '@/i18n/i18n';
 import { sidePanelStrings } from '@/i18n/editor/side-panel';
-import '@/i18n/editor/side-panel-register';
 
 const leaves = (obj: object, prefix = ''): string[] =>
     Object.entries(obj).flatMap(([key, value]) =>

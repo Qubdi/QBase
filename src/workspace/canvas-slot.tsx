@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import '@/i18n/editor/register';
 
 /**
  * Where the canvas goes. The canvas module replaces the body of this

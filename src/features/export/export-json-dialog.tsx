@@ -13,7 +13,6 @@ import {
 import { diagramFile } from '@/formats/file/diagram-file';
 import { useEditorStore } from '@/store/store-context';
 import { downloadText } from './download-file';
-import '@/i18n/editor/register';
 
 export interface ExportJsonDialogProps {
     open: boolean;

@@ -15,7 +15,6 @@ import { useDialog } from '@/hooks/use-dialog';
 import { cn } from '@/lib/utils/utils';
 import type { PanelSection } from '@/store/editor-state';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
-import '@/i18n/editor/register';
 
 interface SectionItem {
     section: PanelSection;

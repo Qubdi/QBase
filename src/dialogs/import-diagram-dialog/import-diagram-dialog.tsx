@@ -20,7 +20,6 @@ import { errorMessage } from '@/lib/qubdi/api';
 import { projectDiagramPath } from '@/lib/qubdi/project-path';
 import { designToDiagram } from '@/qbase/diagram-convert';
 import { useStorage } from '@/qbase/use-storage';
-import '@/i18n/editor/register';
 
 export interface ImportDiagramDialogProps {
     dialog: { open: boolean };

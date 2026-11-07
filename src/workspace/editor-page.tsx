@@ -7,7 +7,6 @@ import { ThemeProvider } from '@/platform/theme/theme-provider';
 import { CanvasBridgeProvider } from './canvas-bridge';
 import { EditorFrame } from './editor-frame';
 import { StartFlow } from './start-flow';
-import '@/i18n/editor/register';
 
 /**
  * The editor page. Wrapper order (spec C23): local config, theme, storage,

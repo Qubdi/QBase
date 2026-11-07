@@ -10,7 +10,6 @@ import { useStorageAdapter } from '@/qbase/storage-context';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { ConfirmDialog } from './confirm-dialog';
 import { removeStoredDesign } from './design-service';
-import '@/i18n/editor/register';
 
 export interface DeleteOpenDesignDialogProps {
     open: boolean;

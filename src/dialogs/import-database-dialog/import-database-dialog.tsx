@@ -18,7 +18,6 @@ import type { ImportBoxState } from '@/features/import/import-box';
 import { mergeImported } from '@/features/import/merge-into-design';
 import { useDialog } from '@/hooks/use-dialog';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
-import '@/i18n/editor/register';
 
 export interface ImportDatabaseDialogProps {
     dialog: { open: boolean } & ImportIntoOpenOptions;

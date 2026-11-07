@@ -34,7 +34,6 @@ import {
     MenubarTrigger,
 } from './menubar-parts';
 import { exportTargets } from './export-targets';
-import '@/i18n/editor/register';
 
 const Keys: React.FC<{ id: ShortcutId }> = ({ id }) => (
     <MenubarShortcut>

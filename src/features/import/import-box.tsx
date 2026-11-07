@@ -22,7 +22,6 @@ import { metadataScriptFor } from './metadata-scripts';
 import { defaultSelection, PICKER_THRESHOLD, pickerRows } from './picker-rows';
 import { TablePicker } from './table-picker';
 import { useDebounced } from './use-debounced';
-import '@/i18n/editor/register';
 
 /** What the box reports to the dialog around it. */
 export interface ImportBoxState {

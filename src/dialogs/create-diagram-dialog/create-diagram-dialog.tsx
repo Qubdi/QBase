@@ -25,7 +25,6 @@ import { useDialog } from '@/hooks/use-dialog';
 import { cn } from '@/lib/utils/utils';
 import { useStorageAdapter } from '@/qbase/storage-context';
 import { useOptionalEditorStoreApi } from '@/store/store-context';
-import '@/i18n/editor/register';
 
 export interface CreateDiagramDialogProps {
     dialog: { open: boolean };

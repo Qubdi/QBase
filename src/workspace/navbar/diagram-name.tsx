@@ -8,7 +8,6 @@ import { DiagramIcon } from '@/components/diagram-icon/diagram-icon';
 import { useDialog } from '@/hooks/use-dialog';
 import { selectLocked } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
-import '@/i18n/editor/register';
 
 /**
  * The diagram's database icon and name in the top bar. Double-click the name

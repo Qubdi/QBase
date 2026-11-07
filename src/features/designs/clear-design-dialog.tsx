@@ -4,7 +4,6 @@ import { toast } from '@/platform/toast/use-toast';
 import { createDesign } from '@/core/model/defaults';
 import { useEditorStoreApi } from '@/store/store-context';
 import { ConfirmDialog } from './confirm-dialog';
-import '@/i18n/editor/register';
 
 export interface ClearDesignDialogProps {
     open: boolean;

@@ -4,7 +4,6 @@ import { Lock } from 'lucide-react';
 import { isOpenOnly } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
 import { useEditorStore } from '@/store/store-context';
-import '@/i18n/editor/register';
 
 /** Says why a diagram of a dropped database (Oracle, ClickHouse) cannot be changed (owner decision 4). */
 export const OpenOnlyBanner: React.FC = () => {

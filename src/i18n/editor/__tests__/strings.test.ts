@@ -2,7 +2,9 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { i18n } from '@/i18n/i18n';
-import { editorStrings } from '../register';
+import { en } from '@/i18n/locales/en';
+
+const editorStrings = { editor: en.translation.editor };
 
 const walk = (dir: string): string[] =>
     readdirSync(dir).flatMap((name) => {

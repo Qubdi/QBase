@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import '@/i18n/editor/register';
 
 /**
  * Where the side panel goes (the sections of the diagram: tables, DBML, refs,
