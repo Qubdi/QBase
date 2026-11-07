@@ -24,3 +24,10 @@ Verify: a script that loads your file and en, and checks (1) every English key e
 differences above), (2) the same placeholders per key, (3) no value equal to English except brand/technical words;
 then run `npx vitest run src/i18n` and `npx tsc -p tsconfig.app.json --noEmit` (0 errors).
 Report: files, any strings you were unsure about.
+
+## Second batch (languages with other plural rules)
+Use the CLDR plural categories of the target language for every plural key (`_zero`, `_one`, `_two`, `_few`, `_many`,
+`_other` as the language needs): ar needs all six; hi, bn, gu, mr, ne, te need `_one` and `_other`; hr needs `_one`, `_few`,
+`_other`; id_ID, vi and zh_TW need `_other` only. Arabic and Hebrew-style right-to-left text needs no markup changes.
+zh_TW is Traditional Chinese (Taiwan): translate from English, do not convert zh_CN.
+If you are unsure of a plural rule, `Intl.PluralRules` (run in the node:24 image) gives the categories for a locale.
