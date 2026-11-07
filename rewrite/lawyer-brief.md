@@ -1,7 +1,8 @@
 # Brief for the lawyer review
 
 For the project owner to send, with the documents listed at the end. Not legal advice; this
-file only collects the facts and the questions. Prepared 2026-11-07.
+file only collects the facts and the questions. Prepared 2026-11-07, updated 2026-11-08
+after the rewrite was finished (the review asked for in Phase 9).
 
 ## Situation
 
@@ -13,7 +14,7 @@ code or removing its notices, the editor is being rewritten so that no ChartDB-d
 remains. The rewrite is done on a branch with its own history (`rewrite/clean-room`); the old
 code stays on `main` and is not to be published.
 
-## What was done so far
+## What was done
 
 - A similarity tool measures every file against ChartDB at one pinned commit (`ee95448`) and is
   a CI gate (identical, 30% or more shared lines, or a run of more than 25 shared lines fails).
@@ -22,13 +23,38 @@ code stays on `main` and is not to be published.
   values, storage names) is recorded as facts so existing users' data keeps opening.
 - An architecture was chosen that differs from ChartDB's in structure, naming and state
   management.
-- Risky modules (data model, SQL import and export, canvas) are to be written by a clean author:
-  a person or a fresh AI session working only from the spec, in a checkout with no access to
-  ChartDB or the old branch. Others (dialogs, settings, admin screens, styling) are written by
-  people or AI sessions that have read the old code.
-- Records: `rewrite/provenance.md` (who read what), `rewrite/log.md` (one row per module).
-- Some UI primitives are written in the style of shadcn/ui (MIT); ChartDB's copies come from the
-  same upstream, so they share lines and are allow-listed with that reason.
+- The risky modules (data model and commands, storage, SQL/DBML import and export, the canvas)
+  were written by "clean authors": fresh AI sessions working in a checkout of the new branch
+  only, with no access to `main`, ChartDB or a remote, from the spec alone. Their transcripts
+  were parsed afterwards to confirm no access outside that directory. The other modules
+  (workspace, dialogs, settings, forms, store adapter) were written by AI sessions briefed by an
+  orchestrating session that had read the old code while the spec was written; later sessions
+  were instructed not to read `main` or ChartDB. `rewrite/provenance.md` records who read what.
+- Records: `rewrite/provenance.md`, `rewrite/log.md` (one row per module), `rewrite/decisions-*.md`.
+
+## State on 2026-11-08
+
+- All of `src/` is rewritten. Similarity run over the whole tree (862 files measured, 876
+  checked): 0 files identical, 13 files (753 lines, 0.6%) still classed as derived, 20 files
+  (2245 lines, 1.7%) modified but under the limits, 829 files (97.8% of lines) original. The
+  derived files are the shadcn/ui-style components, the toast and a few tiny config files; each
+  is in `rewrite/similarity-allow.txt` with the reason (shadcn/ui is MIT and ChartDB's copies
+  come from the same upstream).
+- Behaviour parity: 675 of 687 rows of `rewrite/parity-checklist.md` have a named test; the open
+  rows are listed there. About 3,176 tests, a headless-browser smoke test and 62 browser flows
+  pass. Tests were written from the spec, not by copying ChartDB's tests.
+- The data-format migration from the old browser database was tested with fixtures built from
+  the spec, not with a real old database.
+- Translations into 20 languages are machine-made from our own English text (the old
+  translations were not used). A native-speaker review is pending.
+- Dependency licences re-audited: 118 direct dependencies, 99 MIT, 13 Apache-2.0, 3 OFL fonts,
+  1 ISC, 1 Unlicense; `NOTICE` lists the fonts and shadcn/ui.
+- The public Docker Hub image `qubdi/qbase` was taken down by the owner on 2026-11-08.
+- The new branch's first commit is a snapshot of the old tree (about 560 files, including the
+  ChartDB-derived code), which was then deleted file by file. The branch history therefore still
+  contains derived code; this is why the release must be a fresh repository with new history.
+- Code review, accessibility, performance and live-database checks were done by further AI
+  sessions; their reports are in `rewrite/review/` and `rewrite/phase9/`.
 
 ## Questions
 
@@ -50,11 +76,20 @@ code stays on `main` and is not to be published.
    the dependencies are permissive (MIT, Apache-2.0, OFL fonts)? Notices to keep for them.
 7. Files that remain from the old project by design: the Contributor Covenant (CC BY 4.0),
    one-line config files, and the shadcn/ui-style components. Are the reasons recorded enough?
-8. After the result is finished, what should the final review look at (Phase 9)?
+8. With the result finished, what else should the final review look at? In particular the 13
+   files still classed as derived and the 20 modified ones.
+9. Much of the code was written by AI assistants. Is the new code protectable and licensable
+   by the owner as its own work (including the effect of AI authorship on a restrictive licence
+   such as BSL or PolyForm Shield), and what should the records and the licence text say?
+10. The behaviour spec records visible behaviour of a product whose code is AGPL-3.0 (menu
+    names, shortcuts, defaults, error texts, layout rules). Is re-implementing that behaviour
+    safe, and are any of those texts too close to the original to keep?
 
 ## Documents to attach
 
 `rewrite/PLAN.md` (sections 1, 2, 6, 9, 11), `rewrite/architecture.md`,
 `rewrite/provenance.md`, `rewrite/log.md`, `rewrite/spec/owner-decisions.md`,
-`rewrite/similarity-allow.txt`, `rewrite/inventory/src.csv` (the measured overlap per file), and a
-sample of the spec (`rewrite/spec/data-format.md`).
+`rewrite/similarity-allow.txt`, `rewrite/inventory/src.csv` (the measured overlap per file), a
+sample of the spec (`rewrite/spec/data-format.md`), `rewrite/parity-checklist.md`,
+`rewrite/phase8/` (test results per row), `rewrite/review/` and `rewrite/phase9/` (reviews and
+checks), and the output of `node tools/similarity.mjs --check --all` on the final tree.
