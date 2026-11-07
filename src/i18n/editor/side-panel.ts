@@ -31,6 +31,7 @@ export const sidePanelStrings = {
         duplicate: 'Duplicate table',
         delete: 'Delete table',
         renameTable: 'Rename table',
+        toggle: 'Show or hide the details',
         doubleClickToEdit: 'Double-click to edit',
         viewTag: 'View',
         fields: 'Fields',
