@@ -19,6 +19,7 @@ import {
 } from '../shared/export-model';
 import {
     byText,
+    claimName,
     clip,
     commaList,
     firstSeen,
@@ -26,6 +27,7 @@ import {
     oneLine,
     qualify,
     quoteDouble,
+    scopes,
     sqlString,
     toIdentifier,
 } from '../shared/text';
@@ -64,10 +66,27 @@ const WITH_LENGTH = new Set([
     'character',
 ]);
 
-function typeText(column: Column, userTypes: Set<string>): string {
+type UserTypes = Map<string, UserType>;
+
+/**
+ * How a column names a user type. A plain lower-case name in the search
+ * path stays bare (as the specified samples show); anything PostgreSQL would
+ * fold, split or not find is quoted and qualified like CREATE TYPE writes it.
+ */
+function userTypeReference(type: UserType): string {
+    const plain = /^[a-z_][a-z0-9_]*$/.test(type.name);
+    const inPath = !type.schema || type.schema === 'public';
+    return plain && inPath
+        ? type.name
+        : qualify(quoteDouble, type.schema, type.name);
+}
+
+function typeText(column: Column, userTypes: UserTypes): string {
     const raw = column.type.name;
     const lower = raw.toLowerCase();
-    let base = userTypes.has(raw) ? raw : lower;
+    const user = userTypes.get(raw);
+    // quoted and qualified exactly as CREATE TYPE writes it
+    let base = user ? userTypeReference(user) : lower;
     if (lower === 'user-defined') base = 'jsonb';
     else if (lower === 'array') base = 'text[]';
     const bare = base.replace(/\[\]$/, '');
@@ -87,7 +106,7 @@ function typeText(column: Column, userTypes: Set<string>): string {
     return base;
 }
 
-function columnLine(column: Column, userTypes: Set<string>): string {
+function columnLine(column: Column, userTypes: UserTypes): string {
     const comment = column.comments
         ? linesOf(column.comments)
               .map((l) => `    -- ${l}\n`)
@@ -121,9 +140,28 @@ function indexName(table: string, key: string): string {
     return full.length > 60 ? clip(toIdentifier(key), 60) : full;
 }
 
-function indexStatements(table: ExportTable, qualified: string): string[] {
+/** One name per key, unique inside its schema (clipped to 60 characters). */
+function indexNames(
+    table: ExportTable,
+    used: Set<string>
+): Map<string, string> {
+    const out = new Map<string, string>();
+    for (const { key } of indexKeys(table, { byColumns: true }))
+        out.set(
+            key.id,
+            claimName(used, indexName(table.entity.name, key.label), 60)
+        );
+    return out;
+}
+
+function indexStatements(
+    table: ExportTable,
+    qualified: string,
+    names: Map<string, string>
+): string[] {
     const out: string[] = [];
     for (const { key, columns } of indexKeys(table, { byColumns: true })) {
+        const name = names.get(key.id)!;
         if (
             key.distinct &&
             columns.length === 1 &&
@@ -137,7 +175,7 @@ function indexStatements(table: ExportTable, qualified: string): string[] {
                 : '';
         out.push(
             `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${quoteDouble(
-                indexName(table.entity.name, key.label)
+                name
             )} ON ${qualified}${method} (${commaList(
                 columns.map((c) => quoteDouble(c.name))
             )});`
@@ -146,18 +184,25 @@ function indexStatements(table: ExportTable, qualified: string): string[] {
     return sortedStatements(out);
 }
 
-function indexComments(table: ExportTable): string[] {
+function indexComments(
+    table: ExportTable,
+    names: Map<string, string>
+): string[] {
     return indexKeys(table, { byColumns: true })
         .filter(({ key }) => key.note)
         .map(
             ({ key }) =>
                 `COMMENT ON INDEX ${quoteDouble(
-                    indexName(table.entity.name, key.label)
+                    names.get(key.id)!
                 )} IS ${sqlString(oneLine(key.note ?? ''))};`
         );
 }
 
-function tableText(table: ExportTable, userTypes: Set<string>): string {
+function tableText(
+    table: ExportTable,
+    userTypes: UserTypes,
+    names: Map<string, string>
+): string {
     const { entity } = table;
     const qualified = qualify(quoteDouble, entity.schema, entity.name);
     const parts = table.columns.map((c) => columnLine(c, userTypes));
@@ -186,9 +231,9 @@ function tableText(table: ExportTable, userTypes: Set<string>): string {
             text += `\nCOMMENT ON COLUMN ${qualified}.${quoteDouble(
                 c.name
             )} IS ${sqlString(oneLine(c.comments))};`;
-    const indexes = indexStatements(table, qualified);
+    const indexes = indexStatements(table, qualified, names);
     if (indexes.length > 0) text += `\n-- Indexes\n${indexes.join('\n')}`;
-    const comments = indexComments(table);
+    const comments = indexComments(table, names);
     if (comments.length > 0) text += `\n${comments.join('\n')}`;
     return `${text}\n`;
 }
@@ -216,6 +261,8 @@ function foreignKeyName(fk: ExportForeignKey): string {
 }
 
 function foreignKeyBlock(keys: ExportForeignKey[]): string {
+    // constraint names are unique per holding table
+    const used = scopes();
     const bySchema = new Map<string, ExportForeignKey[]>();
     for (const fk of keys) {
         const schema = fk.holder.schema || 'public';
@@ -231,7 +278,13 @@ function foreignKeyBlock(keys: ExportForeignKey[]): string {
                         fk.holder.schema,
                         fk.holder.name
                     )} ADD CONSTRAINT ${quoteDouble(
-                        foreignKeyName(fk)
+                        claimName(
+                            used(
+                                `${fk.holder.schema ?? ''}\u0000${fk.holder.name}`
+                            ),
+                            foreignKeyName(fk),
+                            60
+                        )
                     )} FOREIGN KEY(${commaList(
                         fk.columns.map((c) => quoteDouble(c.name))
                     )}) REFERENCES ${qualify(
@@ -242,7 +295,7 @@ function foreignKeyBlock(keys: ExportForeignKey[]): string {
                         fk.referencedColumns.map((c) => quoteDouble(c.name))
                     )});`
             );
-        return `-- Schema: ${schema}\n${statements.join('\n')}`;
+        return `-- Schema: ${oneLine(schema)}\n${statements.join('\n')}`;
     });
     return `\n-- Foreign key constraints\n${groups.join('\n\n')}`;
 }
@@ -258,7 +311,8 @@ export function writePostgres(design: Design): string {
     const composites = types
         .filter((t) => t.kind === 'composite')
         .sort((a, b) => byText(a.name, b.name));
-    const userTypeNames = new Set(types.map((t) => t.name));
+    const userTypeNames: UserTypes = new Map(types.map((t) => [t.name, t]));
+    const usedIndexNames = scopes();
 
     const schemas = firstSeen(
         [
@@ -286,7 +340,15 @@ export function writePostgres(design: Design): string {
         out += `${sequences
             .map((s) => `CREATE SEQUENCE IF NOT EXISTS ${s};`)
             .join('\n')}\n\n`;
-    out += model.tables.map((t) => tableText(t, userTypeNames)).join('\n');
+    out += model.tables
+        .map((t) =>
+            tableText(
+                t,
+                userTypeNames,
+                indexNames(t, usedIndexNames(t.entity.schema ?? ''))
+            )
+        )
+        .join('\n');
     if (model.foreignKeys.length > 0) out += foreignKeyBlock(model.foreignKeys);
     return out;
 }

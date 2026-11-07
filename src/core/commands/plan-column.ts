@@ -20,7 +20,10 @@ export function planAddColumn(
         type: 'part.insert',
         entityId,
         part: 'columns',
-        item: createColumn(design, entity.columnIds.length, options),
+        item: createColumn(design, entity.columnIds.length, {
+            taken: entity.columnIds.map((id) => design.columns[id]?.name ?? ''),
+            ...options,
+        }),
     };
 }
 
@@ -118,6 +121,7 @@ export function planAddKey(
         entityId,
         part: 'keys',
         item: createKey(entity.keyIds.length, {
+            taken: entity.keyIds.map((id) => design.keys[id]?.label ?? ''),
             ...(method ? { algorithm: method } : {}),
             ...options,
         }),

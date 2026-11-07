@@ -43,6 +43,8 @@ export interface StorageAdapter {
     save(design: Design): Promise<void>;
     /** removes the design, its saved filter and any old-layout rows it still has */
     remove(id: string): Promise<void>;
+    /** true when this adapter removed the design in this session (autosave then leaves it deleted) */
+    wasRemoved?(id: string): boolean;
     readSettings(): Promise<LocalSettings>;
     writeSettings(patch: Partial<LocalSettings>): Promise<void>;
     /** the saved visibility filter of a design, if any */

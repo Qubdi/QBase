@@ -12,6 +12,8 @@ import type { Cardinality, Link } from '@/core/model/link';
 import { syncPrimaryKey } from '@/core/model/primary-key';
 import type { Rule } from '@/core/model/rule';
 import type { UserType } from '@/core/model/user-type';
+import { resolveTable, sameName } from '@/dialects/shared/names';
+import type { Diagnostic } from '@/dialects/script-model';
 import { cardinalityOf } from './cardinality';
 import { layoutTables } from './layout';
 
@@ -93,6 +95,8 @@ export class DesignBuilder {
     private readonly pendingDependencies: { reads: Built; view: Built }[] = [];
     private readonly pendingLinks: { link: LinkSpec; id: string }[] = [];
     private readonly now: number;
+    /** problems met while collecting (an index that does not resolve, ...) */
+    readonly diagnostics: Diagnostic[] = [];
 
     constructor(private readonly options: BuilderOptions) {
         this.now = options.now ?? Date.now();
@@ -106,20 +110,38 @@ export class DesignBuilder {
         this.types.push({ id: this.id(), ...type });
     }
 
+    /** True when a table with this name exists in exactly this schema. */
     hasTable(schema: string | undefined, name: string): boolean {
+        const ws = (schema ?? '').toLowerCase();
+        return this.tables.some(
+            (t) =>
+                sameName(t.entity.name, name) &&
+                (t.entity.schema ?? '').toLowerCase() === ws
+        );
+    }
+
+    /** True when the name resolves (an unqualified name matches any schema). */
+    resolves(schema: string | undefined, name: string): boolean {
         return this.find(schema, name) !== undefined;
     }
 
+    /** True when a name without a schema matches tables of several schemas. */
+    isAmbiguous(schema: string | undefined, name: string): boolean {
+        return this.resolve(schema, name).ambiguous;
+    }
+
+    private resolve(schema: string | undefined, name: string) {
+        return resolveTable(this.tables, (t) => t.entity, { schema, name });
+    }
+
     private find(schema: string | undefined, name: string): Built | undefined {
+        return this.resolve(schema, name).found;
+    }
+
+    private column(t: Built, name: string): Column | undefined {
         return (
-            this.tables.find(
-                (t) =>
-                    t.entity.name === name &&
-                    (t.entity.schema ?? '') === (schema ?? '')
-            ) ??
-            (schema === undefined
-                ? this.tables.find((t) => t.entity.name === name)
-                : undefined)
+            t.byName.get(name) ??
+            [...t.byName.values()].find((c) => sameName(c.name, name))
         );
     }
 
@@ -132,7 +154,8 @@ export class DesignBuilder {
         table: string,
         column: string
     ): boolean {
-        return this.find(schema, table)?.byName.has(column) ?? false;
+        const t = this.find(schema, table);
+        return t ? this.column(t, column) !== undefined : false;
     }
 
     /** Names of the primary key columns of a table, in column order. */
@@ -177,9 +200,26 @@ export class DesignBuilder {
         const keys: Key[] = [];
         for (const index of spec.indexes) {
             const members = index.columns
-                .map((n) => byName.get(n))
+                .map(
+                    (n) =>
+                        byName.get(n) ??
+                        columns.find((c) => sameName(c.name, n))
+                )
                 .filter((c): c is Column => c !== undefined);
-            if (members.length === 0) continue;
+            if (
+                members.length === 0 ||
+                members.length !== index.columns.length
+            ) {
+                this.diagnostics.push({
+                    severity: 'warning',
+                    message: `Index ${index.name} on ${spec.name} dropped: ${
+                        members.length === 0
+                            ? 'none of its columns'
+                            : 'some of its columns'
+                    } could not be found.`,
+                });
+                continue;
+            }
             const key: Key = {
                 id: this.id(),
                 label: index.name,
@@ -225,8 +265,17 @@ export class DesignBuilder {
         const a = this.find(spec.from.schema, spec.from.table);
         const b = this.find(spec.to.schema, spec.to.table);
         if (!a || !b) return false;
-        if (!a.byName.has(spec.from.column) || !b.byName.has(spec.to.column))
+        if (
+            !this.column(a, spec.from.column) ||
+            !this.column(b, spec.to.column)
+        )
             return false;
+        for (const end of [spec.from, spec.to])
+            if (this.isAmbiguous(end.schema, end.table))
+                this.diagnostics.push({
+                    severity: 'warning',
+                    message: `Foreign key ${spec.name} names table ${end.table} without a schema and several schemas have it: the first was used.`,
+                });
         this.pendingLinks.push({ link: spec, id: this.id() });
         return true;
     }
@@ -302,8 +351,8 @@ export class DesignBuilder {
         const links: Link[] = this.pendingLinks.flatMap(({ link, id }) => {
             const a = this.find(link.from.schema, link.from.table)!;
             const b = this.find(link.to.schema, link.to.table)!;
-            const from = a.byName.get(link.from.column)!;
-            const to = b.byName.get(link.to.column)!;
+            const from = this.column(a, link.from.column)!;
+            const to = this.column(b, link.to.column)!;
             const facts = (t: Built, c: Column) => ({
                 identifiesRow:
                     c.unique ||

@@ -56,3 +56,38 @@ export function qualify(
 export function firstSeen<T>(items: Iterable<T>): T[] {
     return [...new Set(items)];
 }
+
+/**
+ * Claims a name no other claim in the same scope took (compared ignoring
+ * case). The name is clipped to `limit` first; on a clash a `_2`, `_3`, ...
+ * suffix is added and the base is clipped to leave room for it.
+ */
+export function claimName(
+    used: Set<string>,
+    base: string,
+    limit = Number.POSITIVE_INFINITY
+): string {
+    const first = clip(base, limit);
+    if (!used.has(first.toLowerCase())) {
+        used.add(first.toLowerCase());
+        return first;
+    }
+    for (let n = 2; ; n++) {
+        const suffix = `_${n}`;
+        const candidate = clip(base, limit - suffix.length) + suffix;
+        if (!used.has(candidate.toLowerCase())) {
+            used.add(candidate.toLowerCase());
+            return candidate;
+        }
+    }
+}
+
+/** Scoped name sets: `scope('schema').` gives the set for that scope. */
+export function scopes(): (key: string) => Set<string> {
+    const map = new Map<string, Set<string>>();
+    return (key) => {
+        let set = map.get(key);
+        if (!set) map.set(key, (set = new Set()));
+        return set;
+    };
+}

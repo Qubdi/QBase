@@ -6,7 +6,7 @@ import { serialise } from '../core/wire/serialise';
 import { QBaseDatabase } from './database';
 import { LEGACY_CHILD_STORES } from './legacy-schema';
 import { mergePreviousDatabase } from './merge-previous';
-import { migrateLegacyLayout } from './migrate-legacy';
+import { MIGRATION_MARKER, migrateLegacyLayout } from './migrate-legacy';
 import type { MigrationReport } from './migrate-legacy';
 import { summaryOf } from './storage-adapter';
 import type {
@@ -63,6 +63,7 @@ export class DexieStorageAdapter implements StorageAdapter {
     }
 
     async save(design: Design): Promise<void> {
+        this.removed.delete(design.id);
         await this.db.transaction(
             'rw',
             [this.db.designs, this.db.design_index],
@@ -77,7 +78,14 @@ export class DexieStorageAdapter implements StorageAdapter {
         this.announce();
     }
 
+    private readonly removed = new Set<string>();
+
+    wasRemoved(id: string): boolean {
+        return this.removed.has(id);
+    }
+
     async remove(id: string): Promise<void> {
+        this.removed.add(id);
         const db = this.db;
         await db.transaction(
             'rw',
@@ -185,7 +193,10 @@ export async function openDexieStorage(
     const { name, warn, now, ...dexieOptions } = options;
     const db = new QBaseDatabase(name, dexieOptions);
     await db.open();
-    await mergePreviousDatabase(db, dexieOptions, warn);
+    const merged = await mergePreviousDatabase(db, dexieOptions, warn);
+    // rows the merge just copied are in the old layout even when the marker
+    // says the migration ran earlier: run it again (it skips what is there)
+    if (merged === 'merged') await db.meta.delete(MIGRATION_MARKER);
     const migration = await migrateLegacyLayout(db, now);
     if ((await db.config.get(CONFIG_ID)) === undefined) {
         const first = await db.design_index.orderBy('id').first();

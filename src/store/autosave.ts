@@ -2,12 +2,17 @@ import type { StorageAdapter } from '@/persistence/storage-adapter';
 import type { EditorStore } from './editor-store';
 
 export const AUTOSAVE_DELAY_MS = 1000;
+/** the longest a change waits when edits never pause for the quiet time */
+export const AUTOSAVE_MAX_WAIT_MS = 10_000;
 
 export interface AutosaveOptions {
     store: EditorStore;
-    adapter: Pick<StorageAdapter, 'save'>;
+    adapter: Pick<StorageAdapter, 'save'> &
+        Partial<Pick<StorageAdapter, 'wasRemoved'>>;
     /** quiet time after the last change before saving (default 1000 ms) */
     delayMs?: number;
+    /** longest wait from the first unsaved change, however busy the editing (default 10 s) */
+    maxWaitMs?: number;
     /** called when a save fails; the dirty flag stays so the next change retries */
     onError?: (error: unknown) => void;
 }
@@ -27,13 +32,17 @@ export interface Autosave {
 export function startAutosave(options: AutosaveOptions): Autosave {
     const { store, adapter, onError } = options;
     const delay = options.delayMs ?? AUTOSAVE_DELAY_MS;
+    const maxWait = Math.max(delay, options.maxWaitMs ?? AUTOSAVE_MAX_WAIT_MS);
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let maxTimer: ReturnType<typeof setTimeout> | undefined;
     let running: Promise<void> | undefined;
     let disposed = false;
 
     const write = async (): Promise<void> => {
         const { design, session } = store.getState();
         if (session.readonly || !session.dirty) return;
+        // a design deleted while it was open must not be written back
+        if (adapter.wasRemoved?.(design.id)) return;
         try {
             await adapter.save(design);
             // a change made while writing leaves the flag set
@@ -45,6 +54,9 @@ export function startAutosave(options: AutosaveOptions): Autosave {
     };
 
     const run = (): Promise<void> => {
+        clearTimeout(timer);
+        clearTimeout(maxTimer);
+        maxTimer = undefined;
         // writes never overlap: each waits for the one before it
         running = (running ?? Promise.resolve()).then(write);
         return running;
@@ -54,6 +66,8 @@ export function startAutosave(options: AutosaveOptions): Autosave {
         if (disposed) return;
         clearTimeout(timer);
         timer = setTimeout(() => void run(), delay);
+        // continuous editing never pauses: save anyway after the longest wait
+        maxTimer ??= setTimeout(() => void run(), maxWait);
     };
 
     const unsubscribe = store.subscribe((state, previous) => {
@@ -64,12 +78,12 @@ export function startAutosave(options: AutosaveOptions): Autosave {
 
     return {
         async flush() {
-            clearTimeout(timer);
             await run();
         },
         dispose() {
             disposed = true;
             clearTimeout(timer);
+            clearTimeout(maxTimer);
             unsubscribe();
         },
     };

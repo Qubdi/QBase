@@ -1,5 +1,5 @@
 import { collectionOf } from '../model/collection';
-import type { Column, ColumnLength, ExtraKeys } from '../model/column';
+import type { Column, ColumnLength, ExtraKeys, TypeRef } from '../model/column';
 import {
     isDatabaseEdition,
     isDatabaseType,
@@ -224,6 +224,8 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
     const ruleIds = new Set<Id>();
     /** raw entity id -> (raw column id -> final column id) */
     const columnMaps = new Map<Id, Map<Id, Id>>();
+    /** raw entity id -> final entity id (the first table that used it) */
+    const entityByRaw = new Map<Id, Id>();
     const entityRows: Ranked<Entity>[] = [];
 
     (json.tables as unknown[]).forEach((raw, i) => {
@@ -297,7 +299,10 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
             if (original !== undefined && !local.has(original))
                 local.set(original, final);
         });
-        if (rawId !== undefined) columnMaps.set(rawId, local);
+        // the first table with a raw id owns it; links resolve against that one
+        columnMaps.set(id, local);
+        if (rawId !== undefined && !entityByRaw.has(rawId))
+            entityByRaw.set(rawId, id);
 
         // keys
         const indexList = Array.isArray(raw.indexes) ? raw.indexes : [];
@@ -384,8 +389,8 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
         const path = `relationships[${i}]`;
         if (!isRecord(raw)) return warn(path, 'not an object; skipped');
         const rd = new RecordReader(raw, path, warn);
-        const sourceEntity = rd.str('sourceTableId');
-        const targetEntity = rd.str('targetTableId');
+        const sourceEntity = entityByRaw.get(rd.str('sourceTableId') ?? '');
+        const targetEntity = entityByRaw.get(rd.str('targetTableId') ?? '');
         const sourceRaw = rd.str('sourceFieldId');
         const targetRaw = rd.str('targetFieldId');
         const sourceColumn =
@@ -504,6 +509,8 @@ function orderEntities(rows: Ranked<Entity>[]): Entity[] {
         .map((row) => row.item);
 }
 
+const UNSAFE_IDS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function uniqueId(
     given: string | undefined,
     used: Set<Id>,
@@ -514,6 +521,10 @@ function uniqueId(
     let id = given;
     if (id === undefined || id === '') {
         warn?.(path, 'missing id; a new one was made');
+        id = undefined;
+    } else if (UNSAFE_IDS.has(id)) {
+        // these names would change the prototype of the id-keyed maps
+        warn?.(path, `id "${id}" is not allowed; a new one was made`);
         id = undefined;
     } else if (used.has(id)) {
         warn?.(path, `id "${id}" is used twice; a new one was made`);
@@ -589,7 +600,7 @@ function readColumn(
     const rd = new RecordReader(raw, path, warn);
     rd.any('id');
     const typeRaw = rd.any('type');
-    let type: { id: string; name: string };
+    let type: TypeRef;
     if (
         isRecord(typeRaw) &&
         (typeof typeRaw.id === 'string' || typeof typeRaw.name === 'string')
@@ -603,6 +614,11 @@ function readColumn(
                 ? typeRaw.id
                 : name.replace(/ /g, '_');
         type = { id, name };
+        const typeExtra = Object.entries(typeRaw).filter(
+            ([key]) => key !== 'id' && key !== 'name'
+        );
+        if (keep && typeExtra.length > 0)
+            type.extra = Object.fromEntries(typeExtra);
     } else {
         const fallback = traitsOf(databaseType).defaultColumnType;
         warn(`${path}.type`, `missing or unreadable type; set to ${fallback}`);

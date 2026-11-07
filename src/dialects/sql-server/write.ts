@@ -18,11 +18,14 @@ import {
 } from '../shared/export-model';
 import {
     byText,
+    claimName,
     commaList,
     firstSeen,
     linesOf,
+    oneLine,
     qualify,
     quoteBracket,
+    scopes,
     toIdentifier,
 } from '../shared/text';
 
@@ -148,6 +151,8 @@ function schemaStatement(schema: string): string {
 }
 
 function foreignKeyBlock(keys: ExportForeignKey[]): string {
+    // constraint names are unique per schema
+    const used = scopes();
     const bySchema = new Map<string, ExportForeignKey[]>();
     for (const fk of keys) {
         const schema = fk.holder.schema || 'dbo';
@@ -155,11 +160,14 @@ function foreignKeyBlock(keys: ExportForeignKey[]): string {
     }
     const groups = [...bySchema.keys()].sort(byText).map((schema) => {
         const statements = bySchema.get(schema)!.map((fk) => {
-            const name =
+            const name = claimName(
+                used(schema),
                 fk.name ||
-                toIdentifier(
-                    `fk_${fk.holder.name}_${fk.columns.map((c) => c.name).join('_')}`
-                );
+                    toIdentifier(
+                        `fk_${fk.holder.name}_${fk.columns.map((c) => c.name).join('_')}`
+                    ),
+                128
+            );
             return `ALTER TABLE ${qualify(
                 quoteBracket,
                 fk.holder.schema,
@@ -172,7 +180,7 @@ function foreignKeyBlock(keys: ExportForeignKey[]): string {
                 fk.referenced.name
             )}(${commaList(fk.referencedColumns.map((c) => quoteBracket(c.name)))});`;
         });
-        return `-- Schema: ${schema}\n${statements.join('\n')}`;
+        return `-- Schema: ${oneLine(schema)}\n${statements.join('\n')}`;
     });
     return `\n-- Foreign key constraints\n${groups.join('\n\n')}`;
 }

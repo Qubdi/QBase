@@ -12,6 +12,7 @@ import type { Collection } from '../model/collection';
 import type { Column } from '../model/column';
 import { isOpenOnly } from '../model/database';
 import type { Design } from '../model/design';
+import { TABLE_WIDTH } from '../model/entity';
 import type { EntityParts } from '../model/entity-parts';
 import type { Id } from '../model/id';
 import {
@@ -383,6 +384,12 @@ function updateEntity(design: Design, id: Id, rawPatch: EntityPatch): Step {
         if (v !== undefined && !(typeof v === 'number' && Number.isFinite(v)))
             fail('invalid', `${key} must be a number`);
     }
+    // a table is never narrower or wider than the editor allows
+    if (typeof patch.width === 'number')
+        patch.width = Math.min(
+            TABLE_WIDTH.max,
+            Math.max(TABLE_WIDTH.min, patch.width)
+        );
     const before = partsFor(design, id);
     const nextEntity = applyPatch(before.entity, patch);
     if (nextEntity === before.entity) return unchanged(design);
@@ -684,6 +691,8 @@ function insertItemCommand(
     if (hasItem(collection, item.id))
         fail('duplicate', `Id ${item.id} is already used`);
     let record = item;
+    if (name === 'regions' || name === 'memos')
+        checkBox((item as { box?: unknown }).box);
     if (name === 'links') {
         record = normaliseCardinality(item as Link);
         checkLink(design, record as Link);
@@ -743,6 +752,24 @@ function removeItemCommand(
     };
 }
 
+/** A box needs finite numbers and a positive size. */
+function checkBox(box: unknown): void {
+    const b = box as Record<string, unknown> | null;
+    const finite = (v: unknown): v is number =>
+        typeof v === 'number' && Number.isFinite(v);
+    if (
+        !b ||
+        typeof b !== 'object' ||
+        !finite(b.x) ||
+        !finite(b.y) ||
+        !finite(b.width) ||
+        !finite(b.height)
+    )
+        fail('invalid', 'box must hold finite x, y, width and height');
+    if ((b.width as number) <= 0 || (b.height as number) <= 0)
+        fail('invalid', 'box width and height must be positive');
+}
+
 function updateItemCommand(
     design: Design,
     command: Extract<Command, { type: 'item.update' }>
@@ -761,6 +788,7 @@ function updateItemCommand(
         if (v !== undefined && !(typeof v === 'number' && Number.isFinite(v)))
             fail('invalid', `${key} must be a number`);
     }
+    if (patch.box !== undefined) checkBox(patch.box);
     const collection = collectionOfDesign(design, name);
     const item = getItem(collection, id);
     if (!item) return fail('not-found', `No such ${name} entry ${id}`);
@@ -769,6 +797,10 @@ function updateItemCommand(
     if (name === 'links') {
         updated = normaliseCardinality(updated as Link);
         checkLink(design, updated as Link);
+        // normalising can change a field the patch did not name: undo it too
+        for (const key of ['sourceCardinality', 'targetCardinality'] as const)
+            if (updated[key as keyof typeof updated] !== (item as Link)[key])
+                patch[key] = (updated as Link)[key];
     }
     return {
         design: withCollection(design, name, replaceItem(collection, updated)),

@@ -202,6 +202,26 @@ describe('EDT-245 buildProposal', () => {
     });
 });
 
+describe('EDT-245 relationship names survive accepted DBML edits', () => {
+    it('does not grow an fk_<n>_ prefix on every round trip', () => {
+        const name = listOf(s1.links)[0].name;
+        let design = s1;
+        for (let i = 0; i < 3; i += 1) {
+            const next = edited(
+                design,
+                (t) => `${t}\nTable "x${i}" {\n  "id" integer [pk]\n}\n`
+            );
+            const proposal = buildProposal(
+                design,
+                next,
+                diffDesigns(design, next)
+            );
+            design = proposal.accepted;
+        }
+        expect(listOf(design.links)[0].name).toBe(name);
+    });
+});
+
 describe('EDT-242 a renamed table keeps its place and says so', () => {
     it('keeps id and position, and gives the old name for the canvas', () => {
         const renamed = edited(s1, (t) =>

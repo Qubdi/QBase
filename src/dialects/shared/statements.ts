@@ -8,6 +8,8 @@ export interface Statement {
 
 const BLOCK_OWNERS = new Set(['procedure', 'function', 'trigger']);
 
+const END_QUALIFIERS = new Set(['IF', 'LOOP', 'WHILE', 'REPEAT']);
+
 const upper = (t: Token | undefined): string =>
     t && t.kind === 'word' ? t.value.toUpperCase() : '';
 
@@ -35,6 +37,7 @@ export function splitStatements(
     let parens = 0;
     let blocks = 0;
     let inBlockStatement = false;
+    let skipCase = false;
 
     const flush = (): void => {
         if (current.length > 0)
@@ -43,6 +46,7 @@ export function splitStatements(
         parens = 0;
         blocks = 0;
         inBlockStatement = false;
+        skipCase = false;
     };
 
     for (let i = 0; i < tokens.length; i++) {
@@ -69,8 +73,16 @@ export function splitStatements(
             }
         } else if (inBlockStatement && t.kind === 'word') {
             const word = t.value.toUpperCase();
-            if (word === 'BEGIN' || word === 'CASE') blocks++;
-            else if (word === 'END' && blocks > 0) blocks--;
+            if (word === 'CASE' && skipCase) skipCase = false;
+            else if (word === 'BEGIN' || word === 'CASE') blocks++;
+            else if (word === 'END') {
+                const next = upper(tokens[i + 1]);
+                // END IF / LOOP / WHILE / REPEAT close a statement, not a block
+                if (END_QUALIFIERS.has(next)) continue;
+                if (blocks > 0) blocks--;
+                // END CASE: the CASE after END is not a new block
+                if (next === 'CASE') skipCase = true;
+            }
         }
     }
     flush();

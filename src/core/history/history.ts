@@ -104,6 +104,11 @@ export type StepResult =
           ok: false;
           reason: FailureReason | 'empty';
           message: string;
+          /**
+           * set when the step can never be applied (its target is gone): the
+           * stacks without it, so the next undo is not stuck on it
+           */
+          history?: History;
       };
 
 function move(
@@ -121,7 +126,18 @@ function move(
             message: from === 'undo' ? 'Nothing to undo' : 'Nothing to redo',
         };
     const result = apply(design, step.command, options);
-    if (!result.ok) return result;
+    if (!result.ok) {
+        if (result.reason !== 'not-found' && result.reason !== 'invalid')
+            return result;
+        const rest = source.slice(0, -1);
+        return {
+            ...result,
+            history:
+                from === 'undo'
+                    ? { ...history, undo: rest }
+                    : { ...history, redo: rest },
+        };
+    }
     const back: HistoryStep = { command: result.inverse, at: step.at };
     const rest = source.slice(0, -1);
     return {

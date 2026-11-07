@@ -1,7 +1,7 @@
 import type { Column } from '@/core/model/column';
 import type { Design } from '@/core/model/design';
 import {
-    asStringLiteral,
+    asStringLiteral as plainStringLiteral,
     isFunctionCall,
     isKeywordDefault,
     isKnownForm,
@@ -16,14 +16,20 @@ import {
     sortedStatements,
 } from '../shared/export-model';
 import {
-    clip,
+    claimName,
     commaList,
     firstSeen,
     linesOf,
     qualify,
     quoteBacktick,
+    scopes,
     toIdentifier,
 } from '../shared/text';
+
+/** MySQL reads a backslash in a string as an escape, so it is doubled too. */
+export function asStringLiteral(text: string): string {
+    return plainStringLiteral(text.replace(/\\/g, '\\\\'));
+}
 
 const DIRECT: Record<string, string> = {
     int: 'INT',
@@ -126,11 +132,17 @@ function columnLine(column: Column): string {
 
 function indexStatements(table: ExportTable, qualified: string): string[] {
     const { entity } = table;
+    // index names are unique per table
+    const usedNames = new Set<string>();
     const out = indexKeys(table, { byColumns: true }).map(
         ({ key, columns }) => {
-            const name = `idx_${entity.name}_${columns
-                .map((c) => c.name)
-                .join('_')}${key.distinct ? '_unique' : ''}`;
+            const name = claimName(
+                usedNames,
+                `idx_${entity.name}_${columns.map((c) => c.name).join('_')}${
+                    key.distinct ? '_unique' : ''
+                }`,
+                64
+            );
             const cols = columns.map((c) => {
                 const quoted = quoteBacktick(c.name);
                 return TEXTUAL_FOR_INDEX.has(c.type.name.toLowerCase())
@@ -173,8 +185,13 @@ function tableText(table: ExportTable): string {
     return `${text}\n`;
 }
 
-function foreignKeyStatement(fk: ExportForeignKey): string {
-    const name = clip(
+function foreignKeyStatement(
+    fk: ExportForeignKey,
+    used: (key: string) => Set<string>
+): string {
+    // constraint names are unique per database
+    const name = claimName(
+        used(fk.holder.schema ?? ''),
         toIdentifier(
             `fk_${fk.holder.name}_${fk.columns.map((c) => c.name).join('_')}`
         ),
@@ -206,9 +223,11 @@ export function writeMysql(design: Design): string {
             .map((s) => `CREATE DATABASE IF NOT EXISTS ${quoteBacktick(s)};`)
             .join('\n')}\n\n`;
     out += model.tables.map(tableText).join('\n');
-    if (model.foreignKeys.length > 0)
+    if (model.foreignKeys.length > 0) {
+        const used = scopes();
         out += `\n-- Foreign key constraints\n${model.foreignKeys
-            .map(foreignKeyStatement)
+            .map((fk) => foreignKeyStatement(fk, used))
             .join('\n')}`;
+    }
     return `${out}\n\nCOMMIT;\n`;
 }

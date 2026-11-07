@@ -17,9 +17,10 @@ import {
     sortedStatements,
 } from '../shared/export-model';
 import {
-    clip,
+    claimName,
     commaList,
     linesOf,
+    oneLine,
     quoteDouble,
     toIdentifier,
 } from '../shared/text';
@@ -137,11 +138,13 @@ function columnLine(column: Column, inlineKey: Column | undefined): string {
     return `${notes}    ${line}`;
 }
 
-function indexStatements(table: ExportTable): string[] {
+function indexStatements(table: ExportTable, used: Set<string>): string[] {
     const { entity } = table;
     const out = indexKeys(table, { byColumns: true }).map(
         ({ key, columns }) => {
-            const name = clip(
+            // index names are unique per database: a clash gets a suffix
+            const name = claimName(
+                used,
                 toIdentifier(
                     key.label.startsWith(`${entity.name}_`)
                         ? key.label
@@ -167,10 +170,14 @@ function foreignKeyLine(fk: ExportForeignKey): string {
     )})`;
 }
 
-function tableText(table: ExportTable, held: ExportForeignKey[]): string {
+function tableText(
+    table: ExportTable,
+    held: ExportForeignKey[],
+    usedIndexNames: Set<string>
+): string {
     const { entity } = table;
     if (SYSTEM_TABLES.has(entity.name.toLowerCase()))
-        return `-- Skipping SQLite system table: ${quoteDouble(entity.name)}\n`;
+        return `-- Skipping SQLite system table: ${oneLine(quoteDouble(entity.name))}\n`;
     const single =
         table.primary.length === 1 &&
         ['int', 'integer'].includes(table.primary[0].type.name.toLowerCase())
@@ -189,7 +196,8 @@ function tableText(table: ExportTable, held: ExportForeignKey[]): string {
     for (const fk of held) parts.push(foreignKeyLine(fk));
 
     let head = '';
-    if (entity.schema) head += `-- Original schema: ${entity.schema}\n`;
+    if (entity.schema)
+        head += `-- Original schema: ${oneLine(entity.schema)}\n`;
     if (entity.comments)
         head += linesOf(entity.comments)
             .map((l) => `-- ${l}\n`)
@@ -197,7 +205,7 @@ function tableText(table: ExportTable, held: ExportForeignKey[]): string {
     let text = `${head}CREATE TABLE IF NOT EXISTS ${quoteDouble(
         entity.name
     )} (\n${parts.join(',\n')}\n);\n`;
-    const indexes = indexStatements(table);
+    const indexes = indexStatements(table, usedIndexNames);
     if (indexes.length > 0) text += `\n-- Indexes\n${indexes.join('\n')}`;
     return `${text}\n`;
 }
@@ -209,8 +217,11 @@ export function writeSqlite(design: Design): string {
     let out = '-- SQLite database export\n';
     if (model.linkCount > 0) out += 'PRAGMA foreign_keys = ON;\n\n';
     out += 'BEGIN TRANSACTION;\n';
+    const usedIndexNames = new Set<string>();
     out += model.tables
-        .map((t) => tableText(t, foreignKeysHeldBy(model, t.entity)))
+        .map((t) =>
+            tableText(t, foreignKeysHeldBy(model, t.entity), usedIndexNames)
+        )
         .join('\n');
     return `${out}\nCOMMIT;\n`;
 }

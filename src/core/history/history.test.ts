@@ -308,3 +308,27 @@ describe('EDT-014 / EDT-274 refusals leave design and history alone', () => {
         ).toMatchObject({ ok: false, reason: 'not-found' });
     });
 });
+
+describe('review core-store 18: a step that can never apply is dropped', () => {
+    it('does not leave the failing step on top of the stack', () => {
+        const d = withTables(['a']);
+        const history = {
+            undo: [
+                {
+                    command: { type: 'design.rename' as const, name: 'x' },
+                    at: 0,
+                },
+                {
+                    command: { type: 'entity.remove' as const, id: 'gone' },
+                    at: 1,
+                },
+            ],
+            redo: [],
+        };
+        const r = undo(d, history);
+        expect(r).toMatchObject({ ok: false, reason: 'not-found' });
+        if (r.ok) return;
+        expect(r.history?.undo).toHaveLength(1);
+        expect(undo(d, r.history!)).toMatchObject({ ok: true });
+    });
+});

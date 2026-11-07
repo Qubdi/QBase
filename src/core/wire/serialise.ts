@@ -20,16 +20,39 @@ function clean(record: RawRecord): RawRecord {
     return out;
 }
 
+/** Unknown values nested deeper than this are cut: JSON.stringify and structured clone overflow the stack. */
+export const MAX_EXTRA_DEPTH = 100;
+
+/** A copy of `value` with anything nested deeper than `limit` replaced by null. */
+function shallowEnough(value: unknown, limit: number): unknown {
+    if (typeof value !== 'object' || value === null) return value;
+    if (limit <= 0) return null;
+    if (Array.isArray(value))
+        return value.map((item) => shallowEnough(item, limit - 1));
+    return Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [
+            key,
+            shallowEnough(item, limit - 1),
+        ])
+    );
+}
+
 /** Unknown keys come first so a known key can never be overridden by them. */
 function withExtra(extra: object | undefined, known: RawRecord): RawRecord {
-    return { ...extra, ...clean(known) };
+    const safe = extra
+        ? (shallowEnough(extra, MAX_EXTRA_DEPTH) as object)
+        : extra;
+    return { ...safe, ...clean(known) };
 }
 
 function wireColumn(column: Column): RawRecord {
     return withExtra(column.extra, {
         id: column.id,
         name: column.name,
-        type: { id: column.type.id, name: column.type.name },
+        type: withExtra(column.type.extra, {
+            id: column.type.id,
+            name: column.type.name,
+        }),
         primaryKey: column.primaryKey,
         unique: column.unique,
         nullable: column.nullable,

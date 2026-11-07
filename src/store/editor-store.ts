@@ -162,7 +162,11 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                     ...applyOptions(),
                     now: now(),
                 });
-                if (!result.ok) return failed(result);
+                if (!result.ok) {
+                    // a step that can never apply is dropped, not left on top
+                    if (result.history) set({ history: result.history });
+                    return failed(result);
+                }
                 set((s) => ({
                     design: result.design,
                     history: result.history,
@@ -176,7 +180,10 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                     ...applyOptions(),
                     now: now(),
                 });
-                if (!result.ok) return failed(result);
+                if (!result.ok) {
+                    if (result.history) set({ history: result.history });
+                    return failed(result);
+                }
                 set((s) => ({
                     design: result.design,
                     history: result.history,

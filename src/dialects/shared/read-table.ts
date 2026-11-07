@@ -416,28 +416,107 @@ export interface TableConstraint {
     line: number;
 }
 
-const CONSTRAINT_STARTERS = new Set([
+/** Words that always open a table constraint (reserved in every dialect). */
+const RESERVED_STARTERS = new Set([
     'CONSTRAINT',
     'PRIMARY',
     'UNIQUE',
     'FOREIGN',
     'CHECK',
-    'KEY',
-    'INDEX',
-    'FULLTEXT',
-    'SPATIAL',
-    'EXCLUDE',
-    'LIKE',
-    'PERIOD',
 ]);
 
+/** Type words that tell `like text` (a column) from `LIKE other_table`. */
+const COMMON_TYPE_WORDS = new Set([
+    'TEXT',
+    'INT',
+    'INTEGER',
+    'BIGINT',
+    'SMALLINT',
+    'TINYINT',
+    'VARCHAR',
+    'CHAR',
+    'CHARACTER',
+    'NVARCHAR',
+    'NCHAR',
+    'BOOL',
+    'BOOLEAN',
+    'NUMERIC',
+    'DECIMAL',
+    'DATE',
+    'TIME',
+    'TIMESTAMP',
+    'DATETIME',
+    'UUID',
+    'JSON',
+    'JSONB',
+    'FLOAT',
+    'REAL',
+    'DOUBLE',
+    'SERIAL',
+    'BIGSERIAL',
+    'BIT',
+    'BLOB',
+    'BYTEA',
+    'MONEY',
+    'INTERVAL',
+    'VARBINARY',
+    'BINARY',
+    'MEDIUMINT',
+    'XML',
+    'ENUM',
+]);
+
+const isName = (t: Token | undefined): boolean =>
+    !!t && (t.kind === 'word' || t.kind === 'ident');
+
+/**
+ * True when the element is a table constraint. `KEY`, `INDEX`, `PERIOD`,
+ * `EXCLUDE`, `LIKE`, `FULLTEXT` and `SPATIAL` are legal column names, so they
+ * count only when followed by their constraint syntax.
+ */
 export function startsConstraint(tokens: Token[]): boolean {
     const t = tokens[0];
-    return (
-        !!t &&
-        t.kind === 'word' &&
-        CONSTRAINT_STARTERS.has(t.value.toUpperCase())
-    );
+    if (!t || t.kind !== 'word') return false;
+    const word = t.value.toUpperCase();
+    if (RESERVED_STARTERS.has(word)) return true;
+    const second = tokens[1];
+    const secondWord =
+        second && second.kind === 'word' ? second.value.toUpperCase() : '';
+    const isOpen = (x: Token | undefined): boolean =>
+        !!x && x.kind === 'punct' && x.text === '(';
+    switch (word) {
+        case 'KEY':
+        case 'INDEX': {
+            if (isOpen(second) || secondWord === 'USING') return true;
+            if (!isName(second)) return false;
+            // `KEY name (cols)` has names inside; `key varchar(10)` a number
+            const third = tokens[2];
+            if (
+                third &&
+                third.kind === 'word' &&
+                third.value.toUpperCase() === 'USING'
+            )
+                return true;
+            return isOpen(third) && isName(tokens[3]);
+        }
+        case 'FULLTEXT':
+        case 'SPATIAL':
+            return (
+                secondWord === 'KEY' || secondWord === 'INDEX' || isOpen(second)
+            );
+        case 'PERIOD':
+            return secondWord === 'FOR';
+        case 'EXCLUDE':
+            return secondWord === 'USING' || isOpen(second);
+        case 'LIKE': {
+            if (!isName(second)) return false;
+            if (second.kind === 'word' && COMMON_TYPE_WORDS.has(secondWord))
+                return false;
+            return true;
+        }
+        default:
+            return false;
+    }
 }
 
 const CLUSTER_WORDS = ['CLUSTERED', 'NONCLUSTERED', 'HASH'];

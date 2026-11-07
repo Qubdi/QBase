@@ -125,6 +125,9 @@ export function buildProposal(
 
     const links: Link[] = listOf(parsed.links).map((link) => ({
         ...link,
+        // the DBML export numbers each Ref ("fk_0_<name>"); take that away so
+        // the name does not grow by one prefix on every accepted edit
+        name: link.name.replace(/^fk_\d+_(?=.)/, ''),
         sourceEntityId: idOf.get(link.sourceEntityId) ?? link.sourceEntityId,
         targetEntityId: idOf.get(link.targetEntityId) ?? link.targetEntityId,
     }));

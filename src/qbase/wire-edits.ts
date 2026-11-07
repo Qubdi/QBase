@@ -29,12 +29,12 @@ export function keyFromIndex(index: DBIndex): Key {
 /** A change to a saved column, as a change to the model's column. */
 export function columnPatchFromWire(patch: Partial<DBField>): Patch<Column> {
     const out: Patch<Column> = {};
-    if ('name' in patch) out.name = patch.name;
+    if (patch.name !== undefined) out.name = patch.name;
     if ('type' in patch && patch.type)
         out.type = { id: patch.type.id, name: patch.type.name };
-    if ('primaryKey' in patch) out.primaryKey = patch.primaryKey;
-    if ('unique' in patch) out.unique = patch.unique;
-    if ('nullable' in patch) out.nullable = patch.nullable;
+    if (patch.primaryKey !== undefined) out.primaryKey = patch.primaryKey;
+    if (patch.unique !== undefined) out.unique = patch.unique;
+    if (patch.nullable !== undefined) out.nullable = patch.nullable;
     if ('increment' in patch) out.increment = unset(patch.increment);
     if ('isArray' in patch) out.isArray = unset(patch.isArray);
     if ('characterMaximumLength' in patch) {
@@ -65,15 +65,15 @@ export function entityPatchFromWire(
     for (const key of OWNED_BY_OTHER_OPERATIONS)
         if (key in patch) throw new Error(`updateTable cannot change "${key}"`);
     const out: Patch<Omit<Entity, 'columnIds' | 'keyIds' | 'ruleIds'>> = {};
-    if ('name' in patch) out.name = patch.name;
+    if (patch.name !== undefined) out.name = patch.name;
     if ('schema' in patch) out.schema = unset(patch.schema);
-    if ('x' in patch) out.x = patch.x;
-    if ('y' in patch) out.y = patch.y;
-    if ('color' in patch) out.color = patch.color;
-    if ('isView' in patch) out.kind = patch.isView ? 'view' : 'table';
+    if (patch.x !== undefined) out.x = patch.x;
+    if (patch.y !== undefined) out.y = patch.y;
+    if (patch.color !== undefined) out.color = patch.color;
+    if (patch.isView !== undefined) out.kind = patch.isView ? 'view' : 'table';
     if ('isMaterializedView' in patch)
         out.materialized = unset(patch.isMaterializedView);
-    if ('createdAt' in patch) out.createdAt = patch.createdAt;
+    if (patch.createdAt !== undefined) out.createdAt = patch.createdAt;
     if ('width' in patch) out.width = unset(patch.width);
     if ('comments' in patch) out.comments = unset(patch.comments);
     if ('expanded' in patch) out.expanded = unset(patch.expanded);

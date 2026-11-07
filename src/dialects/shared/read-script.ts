@@ -8,6 +8,7 @@ import type {
     TableName,
 } from '../script-model';
 import { Cursor, splitTop } from './cursor';
+import { resolveTable, sameName } from './names';
 import type { ReaderProfile } from './profile';
 import {
     keyOf,
@@ -86,24 +87,39 @@ interface PendingComment {
     target: 'table' | 'column';
     parts: string[];
     text: string;
+    line: number;
 }
 
 function findTable(
     tables: ScriptTable[],
-    name: TableName
+    name: TableName,
+    ctx?: ReadContext,
+    what?: string,
+    line?: number
 ): ScriptTable | undefined {
-    return (
-        tables.find(
-            (t) =>
-                t.name === name.name && (t.schema ?? '') === (name.schema ?? '')
-        ) ?? tables.find((t) => t.name === name.name && !name.schema)
-    );
+    const { found, ambiguous } = resolveTable(tables, (t) => t, name);
+    if (ctx && what) {
+        const shown = name.schema ? `${name.schema}.${name.name}` : name.name;
+        if (!found)
+            ctx.diagnostics.push({
+                severity: 'warning',
+                message: `${what} ignored: table ${shown} is not in the script.`,
+                line,
+            });
+        else if (ambiguous)
+            ctx.diagnostics.push({
+                severity: 'warning',
+                message: `${what} names ${shown} without a schema and several schemas have it: the first was used.`,
+                line,
+            });
+    }
+    return found;
 }
 
 function applyPrimary(table: ScriptTable): void {
     if (!table.primaryKey) return;
     for (const col of table.columns) {
-        if (table.primaryKey.columns.includes(col.name)) {
+        if (table.primaryKey.columns.some((n) => sameName(n, col.name))) {
             col.primary = true;
             col.nullable = false;
         }
@@ -137,7 +153,22 @@ function readCreateTable(
         if (element.length === 0) continue;
         if (startsConstraint(element)) {
             const c = readConstraint(element, ctx);
-            if (!c) continue;
+            if (!c) {
+                ctx.diagnostics.push({
+                    severity: 'warning',
+                    message: `A constraint of table ${name.name} was ignored: ${ctx.source
+                        .slice(
+                            element[0].start,
+                            element[element.length - 1].end
+                        )
+                        .trim()
+                        .split(/\s+/)
+                        .slice(0, 3)
+                        .join(' ')} ...`,
+                    line: element[0].line,
+                });
+                continue;
+            }
             if (c.kind === 'primary')
                 table.primaryKey = keyOf(c.columns, c.name);
             else if (c.kind === 'unique')
@@ -166,7 +197,14 @@ function readCreateTable(
         const parsed = readColumn(element, ctx);
         if (!parsed) continue;
         const { column } = parsed;
-        if (table.columns.some((c) => c.name === column.name)) continue;
+        if (table.columns.some((c) => c.name === column.name)) {
+            ctx.diagnostics.push({
+                severity: 'warning',
+                message: `Column ${column.name} is defined twice in table ${name.name}: the second definition was ignored.`,
+                line: parsed.line,
+            });
+            continue;
+        }
         table.columns.push(column);
         if (parsed.inlinePrimary) inlinePrimary.push(column.name);
         table.checks.push(...parsed.checks);
@@ -364,7 +402,13 @@ function applyAlter(
     ctx: ReadContext,
     skip: (kind: string) => void
 ): void {
-    const table = findTable(out.tables, alter.table);
+    const table = findTable(
+        out.tables,
+        alter.table,
+        ctx,
+        'ALTER TABLE',
+        alter.line
+    );
     for (const action of alter.actions) {
         const cur = new Cursor(action, ctx.source);
         cur.acceptWords('WITH', 'CHECK');
@@ -373,15 +417,8 @@ function applyAlter(
             const rest = action.slice(cur.pos);
             if (startsConstraint(rest) && !cur.isWord('COLUMN')) {
                 const c = readConstraint(rest, ctx);
-                if (!c || !table) continue;
-                if (c.kind === 'primary') {
-                    table.primaryKey = keyOf(c.columns, c.name);
-                    applyPrimary(table);
-                } else if (c.kind === 'unique')
-                    table.uniqueKeys.push(keyOf(c.columns, c.name));
-                else if (c.kind === 'check' && c.check)
-                    table.checks.push(c.check);
-                else if (c.kind === 'foreign' && c.reference)
+                if (!c) continue;
+                if (c.kind === 'foreign' && c.reference)
                     out.foreignKeys.push({
                         name: c.name,
                         table: alter.table,
@@ -390,6 +427,14 @@ function applyAlter(
                         refColumns: c.reference.columns,
                         line: c.line,
                     });
+                if (!table || c.kind === 'foreign') continue;
+                if (c.kind === 'primary') {
+                    table.primaryKey = keyOf(c.columns, c.name);
+                    applyPrimary(table);
+                } else if (c.kind === 'unique')
+                    table.uniqueKeys.push(keyOf(c.columns, c.name));
+                else if (c.kind === 'check' && c.check)
+                    table.checks.push(c.check);
                 else if (c.kind === 'index')
                     out.indexes.push({
                         table: alter.table,
@@ -431,7 +476,9 @@ function applyAlter(
         } else if (cur.acceptWord('ALTER')) {
             cur.acceptWord('COLUMN');
             const colName = cur.next()?.value;
-            const column = table?.columns.find((c) => c.name === colName);
+            const column = table?.columns.find((c) =>
+                sameName(c.name, colName ?? '')
+            );
             if (!column) continue;
             if (
                 cur.acceptWords('SET', 'DATA', 'TYPE') ||
@@ -552,6 +599,7 @@ export function readStatements(
                     target: target === 'TABLE' ? 'table' : 'column',
                     parts,
                     text: t.value,
+                    line: stmt.line,
                 });
         }
         // every other statement kind is not a data definition: ignored
@@ -569,14 +617,27 @@ export function readStatements(
                       schema: c.parts[c.parts.length - 3],
                       name: c.parts[c.parts.length - 2],
                   };
-        const table = findTable(out.tables, tableName);
+        const table = findTable(
+            out.tables,
+            tableName,
+            ctx,
+            'COMMENT ON',
+            c.line
+        );
         if (!table) continue;
         if (c.target === 'table') table.comment = c.text;
         else {
-            const column = table.columns.find(
-                (col) => col.name === c.parts[c.parts.length - 1]
+            const wanted = c.parts[c.parts.length - 1];
+            const column = table.columns.find((col) =>
+                sameName(col.name, wanted)
             );
             if (column) column.comment = c.text;
+            else
+                ctx.diagnostics.push({
+                    severity: 'warning',
+                    message: `COMMENT ON COLUMN ignored: column ${wanted} is not in table ${table.name}.`,
+                    line: c.line,
+                });
         }
     }
 

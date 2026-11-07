@@ -8,6 +8,7 @@ import type {
     ScriptResult,
     ScriptTable,
 } from '@/dialects/script-model';
+import { resolveTable, sameName } from '@/dialects/shared/names';
 import { DesignBuilder } from '../shared/design-builder';
 import type { IndexSpec, TableSpec } from '../shared/design-builder';
 import { error, hasErrors, warning } from './diagnostics';
@@ -27,19 +28,50 @@ export interface SqlImportResult {
 
 const NONE = { tables: 0, views: 0, relationships: 0 };
 
-function tableSpec(table: ScriptTable, script: ScriptResult): TableSpec {
-    const indexes: IndexSpec[] = script.indexes
-        .filter(
-            (i) =>
-                i.table.name === table.name &&
-                (i.table.schema ?? '') === (table.schema ?? '')
-        )
-        .map((i) => ({
-            name: i.name,
-            unique: i.unique,
-            columns: i.columns,
-            method: i.method,
-        }));
+/** Which table each standalone index belongs to (a miss is reported once). */
+function indexesByTable(
+    script: ScriptResult,
+    diagnostics: Diagnostic[]
+): Map<ScriptTable, ScriptResult['indexes']> {
+    const out = new Map<ScriptTable, ScriptResult['indexes']>();
+    for (const index of script.indexes) {
+        const { found, ambiguous } = resolveTable(
+            script.tables,
+            (t) => t,
+            index.table
+        );
+        const shown = index.table.schema
+            ? `${index.table.schema}.${index.table.name}`
+            : index.table.name;
+        if (!found) {
+            diagnostics.push(
+                warning(
+                    `Index ${index.name} ignored: table ${shown} is not in the script.`
+                )
+            );
+            continue;
+        }
+        if (ambiguous)
+            diagnostics.push(
+                warning(
+                    `Index ${index.name} names ${shown} without a schema and several schemas have it: the first was used.`
+                )
+            );
+        out.set(found, [...(out.get(found) ?? []), index]);
+    }
+    return out;
+}
+
+function tableSpec(
+    table: ScriptTable,
+    mine: ScriptResult['indexes']
+): TableSpec {
+    const indexes: IndexSpec[] = mine.map((i) => ({
+        name: i.name,
+        unique: i.unique,
+        columns: i.columns,
+        method: i.method,
+    }));
     const columns = table.columns.map((c) => ({
         ...c,
         nullable: c.nullable,
@@ -47,12 +79,12 @@ function tableSpec(table: ScriptTable, script: ScriptResult): TableSpec {
     }));
     for (const index of indexes) {
         if (!index.unique || index.columns.length !== 1) continue;
-        const col = columns.find((c) => c.name === index.columns[0]);
+        const col = columns.find((c) => sameName(c.name, index.columns[0]));
         if (col) col.unique = true;
     }
     for (const key of table.uniqueKeys) {
         if (key.columns.length === 1) {
-            const col = columns.find((c) => c.name === key.columns[0]);
+            const col = columns.find((c) => sameName(c.name, key.columns[0]));
             if (col) col.unique = true;
         } else if (key.columns.length > 1) {
             indexes.push({
@@ -95,14 +127,27 @@ export function designFromScript(
             kind: 'enum',
             values: e.values,
         });
+    const mineByTable = indexesByTable(script, diagnostics);
     for (const table of script.tables) {
-        if (builder.hasTable(table.schema, table.name)) continue;
-        builder.addTable(tableSpec(table, script));
+        if (builder.hasTable(table.schema, table.name)) {
+            diagnostics.push(
+                warning(
+                    `Table ${table.name} is defined twice: the second definition was ignored.`
+                )
+            );
+            continue;
+        }
+        builder.addTable(tableSpec(table, mineByTable.get(table) ?? []));
     }
     for (const fk of script.foreignKeys) {
         const holderSchema = fk.table.schema;
-        const refSchema = fk.refTable.schema;
-        if (!builder.hasTable(refSchema, fk.refTable.name)) {
+        // an unqualified target prefers the schema of the holding table
+        const refSchema =
+            fk.refTable.schema ??
+            (builder.hasTable(holderSchema, fk.refTable.name)
+                ? holderSchema
+                : undefined);
+        if (!builder.resolves(refSchema, fk.refTable.name)) {
             diagnostics.push(
                 warning(
                     `Foreign key on ${fk.table.name} dropped: table ${fk.refTable.name} is not in the script.`
@@ -140,7 +185,8 @@ export function designFromScript(
                 );
         });
     }
-    return { design: builder.build(), diagnostics };
+    const design = builder.build();
+    return { design, diagnostics: [...diagnostics, ...builder.diagnostics] };
 }
 
 /** Reads SQL text for a dialect and builds a design (IMP-008 to IMP-044). */

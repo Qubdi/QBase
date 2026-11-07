@@ -21,6 +21,7 @@ export class MemoryStorageAdapter implements StorageAdapter {
     private readonly filters = new Map<string, VisibilityFilter>();
     private settings: LocalSettings = { defaultDiagramId: '' };
     private readonly listeners = new Set<() => void>();
+    private readonly removed = new Set<string>();
 
     private changed(): void {
         for (const listener of [...this.listeners]) listener();
@@ -38,12 +39,18 @@ export class MemoryStorageAdapter implements StorageAdapter {
     }
 
     async save(design: Design): Promise<void> {
+        this.removed.delete(design.id);
         this.docs.set(design.id, JSON.parse(JSON.stringify(serialise(design))));
         this.index.set(design.id, summaryOf(design));
         this.changed();
     }
 
+    wasRemoved(id: string): boolean {
+        return this.removed.has(id);
+    }
+
     async remove(id: string): Promise<void> {
+        this.removed.add(id);
         this.docs.delete(id);
         this.index.delete(id);
         this.filters.delete(id);

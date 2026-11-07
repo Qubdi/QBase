@@ -19,6 +19,42 @@ const FIELD_LINE =
 const unquote = (s: string): string => s.replace(/^"|"$/g, '');
 
 /**
+ * The change in brace depth over one line, ignoring braces inside strings,
+ * backtick expressions, `'''` notes (which can span lines) and `//` comments.
+ */
+function countBraces(
+    line: string,
+    startsInTriple: boolean
+): { delta: number; inTriple: boolean } {
+    let delta = 0;
+    let inTriple = startsInTriple;
+    let quote = '';
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inTriple) {
+            if (line.startsWith("'''", i)) {
+                inTriple = false;
+                i += 2;
+            }
+            continue;
+        }
+        if (quote) {
+            if (ch === '\\') i++;
+            else if (ch === quote) quote = '';
+            continue;
+        }
+        if (line.startsWith("'''", i)) {
+            inTriple = true;
+            i += 2;
+        } else if (ch === "'" || ch === '"' || ch === '`') quote = ch;
+        else if (ch === '/' && line[i + 1] === '/') break;
+        else if (ch === '{') delta++;
+        else if (ch === '}') delta--;
+    }
+    return { delta, inTriple };
+}
+
+/**
  * Removes `[]` from array types and `check:` settings from fields, and
  * remembers both. Line numbers are kept: nothing is removed across lines.
  */
@@ -27,6 +63,7 @@ export function prepareDbml(source: string): Prepared {
     const fieldChecks: Prepared['fieldChecks'] = new Map();
     let table = '';
     let depth = 0;
+    let inTriple = false;
     const lines = source.split('\n').map((line, index) => {
         const header = TABLE_LINE.exec(line);
         if (header && depth === 0) {
@@ -70,10 +107,9 @@ export function prepareDbml(source: string): Prepared {
                 }
             }
         }
-        for (const ch of line) {
-            if (ch === '{') depth++;
-            else if (ch === '}') depth = Math.max(0, depth - 1);
-        }
+        const scanned = countBraces(line, inTriple);
+        inTriple = scanned.inTriple;
+        depth = Math.max(0, depth + scanned.delta);
         return out;
     });
     return { text: lines.join('\n'), arrayFields, fieldChecks };

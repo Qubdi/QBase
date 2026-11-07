@@ -26,7 +26,6 @@ const RULES: Rule[] = [
         test: (t) =>
             any(t, [
                 /\bSET\s+(?:ANSI_NULLS|QUOTED_IDENTIFIER|ANSI_PADDING)\s+ON\b/i,
-                /\bCREATE\s+PROCEDURE\b/i,
                 /\bEXEC\s+sys\.sp_/i,
                 /\[dbo\]\./i,
                 /\bIDENTITY\s*\(\s*\d+/i,
@@ -85,6 +84,11 @@ const RULES: Rule[] = [
                 /\bENGINE\s*=\s*InnoDB\b/i,
                 /\bDEFINER\s*=/i,
             ]),
+    },
+    {
+        // a procedure alone is a weak signal: every stronger rule goes first
+        dialect: 'sql_server',
+        test: (t) => /\bCREATE\s+PROCEDURE\b/i.test(t),
     },
 ];
 

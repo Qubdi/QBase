@@ -12,10 +12,11 @@ import {
     sortedStatements,
 } from '../shared/export-model';
 import {
-    clip,
+    claimName,
     commaList,
     linesOf,
     oneLine,
+    scopes,
     toIdentifier,
 } from '../shared/text';
 import { convertCheck } from './convert-check';
@@ -201,6 +202,7 @@ export function convertDesign(
         });
 
     const usedIndexNames = new Set<string>();
+    const usedForeignNames = scopes();
     const blocks: string[] = [];
     const foreignStatements: string[] = [];
     const sourceIsMysql = src.flavour === 'mysql';
@@ -358,7 +360,7 @@ export function convertDesign(
                 text: `${above}    ${line}`,
                 was:
                     p.read.approximate || type.approximate
-                        ? ` -- Was: ${column.type.name}`
+                        ? ` -- Was: ${oneLine(column.type.name)}`
                         : '',
             };
         });
@@ -394,7 +396,9 @@ export function convertDesign(
                     `CHECK (${rule.expression}) not created: it uses ${r.reason}`
                 );
                 afterTable.push(
-                    `-- not created (uses ${r.reason}): CHECK (${rule.expression})`
+                    oneLine(
+                        `-- not created (uses ${r.reason}): CHECK (${rule.expression})`
+                    )
                 );
             }
         }
@@ -432,7 +436,9 @@ export function convertDesign(
                     fk.holder.name,
                     `FOREIGN KEY (${cols}) -> ${fk.referenced.name} not created: ${bad}`
                 );
-                foreignStatements.push(`-- not created (${bad}): ${list}`);
+                foreignStatements.push(
+                    oneLine(`-- not created (${bad}): ${list}`)
+                );
                 continue;
             }
             const ref = `${qualifiedName(fk.referenced)} (${commaList(fk.referencedColumns.map((c) => q(c.name)))})`;
@@ -446,8 +452,15 @@ export function convertDesign(
                     toIdentifier(
                         `fk_${fk.holder.name}_${fk.columns.map((c) => c.name).join('_')}`
                     );
-                const name = clip(base, tgt.identifierLimit);
-                if (name !== base)
+                // constraint names are unique per schema (per database in MySQL)
+                const name = claimName(
+                    usedForeignNames(
+                        flavour === 'mysql' ? '' : (fk.holder.schema ?? '')
+                    ),
+                    base,
+                    tgt.identifierLimit
+                );
+                if (base.length > tgt.identifierLimit)
                     notes.add(
                         'Names',
                         base,
@@ -500,7 +513,7 @@ export function convertDesign(
                 key.label ||
                 `idx_${t.entity.name}_${columns.map((c) => c.name).join('_')}`;
             let name = stored;
-            for (let n = 2; usedIndexNames.has(name); n++)
+            for (let n = 2; usedIndexNames.has(name.toLowerCase()); n++)
                 name = `${stored}_${t.entity.name}_${n}`;
             if (name.length > tgt.identifierLimit) {
                 notes.add(
@@ -508,9 +521,8 @@ export function convertDesign(
                     stored,
                     `index name shortened to ${tgt.identifierLimit} characters`
                 );
-                name = name.slice(0, tgt.identifierLimit);
             }
-            usedIndexNames.add(name);
+            name = claimName(usedIndexNames, name, tgt.identifierLimit);
             const method = key.algorithm;
             if (
                 method &&

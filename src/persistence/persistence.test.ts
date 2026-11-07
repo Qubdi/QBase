@@ -793,3 +793,35 @@ describe('DAT-091 the custom colour list', () => {
         expect(readCustomColours(store)).toEqual([]);
     });
 });
+
+describe('review core-store 3: a late QubdiDB merge is migrated even after the marker', () => {
+    it('migrates rows the merge copied when the marker was already set', async () => {
+        const options = freshIndexedDb();
+        // first start: no QubdiDB, the marker gets set
+        const first = await openDexieStorage({ ...options, now });
+        expect(first.migration.ran).toBe(true);
+        first.adapter.close();
+        // the earlier database appears afterwards
+        await writeOldDatabase(options, 'QubdiDB', 14, {
+            diagrams: [
+                {
+                    id: 'late',
+                    name: 'Late',
+                    databaseType: 'mysql',
+                    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+                    updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+                },
+            ],
+            db_tables: [],
+        });
+        const second = await openDexieStorage({ ...options, now });
+        expect(second.migration.ran).toBe(true);
+        expect(second.migration.migrated).toEqual(['late']);
+        expect((await second.adapter.list()).map((s) => s.id)).toEqual([
+            'late',
+        ]);
+        expect(await databaseExists(PREVIOUS_DATABASE_NAME, options)).toBe(
+            false
+        );
+    });
+});

@@ -73,17 +73,40 @@ export function createDesign(options: NewDesignOptions): Design {
     return edition ? { ...design, databaseEdition: edition } : design;
 }
 
-/** A new column named `field_N`, nullable, not a key, default type (DAT-035). */
+/**
+ * `<prefix><n>` for the first `n` from `start` that `taken` does not hold
+ * (compared ignoring case), so a default name never repeats an existing one.
+ */
+export function firstFreeName(
+    prefix: string,
+    start: number,
+    taken: Iterable<string> = []
+): string {
+    const used = new Set([...taken].map((name) => name.toLowerCase()));
+    let n = start;
+    while (used.has(`${prefix}${n}`.toLowerCase())) n++;
+    return `${prefix}${n}`;
+}
+
+/**
+ * A new column named `field_N`, nullable, not a key, default type (DAT-035).
+ * N is the column count plus one, or the next number whose name is not in
+ * `taken` (the names the table already has).
+ */
 export function createColumn(
     design: Pick<Design, 'databaseType'>,
     columnCount: number,
-    options: Partial<Column> & { now?: number; random?: RandomInt } = {}
+    options: Partial<Column> & {
+        now?: number;
+        random?: RandomInt;
+        taken?: readonly string[];
+    } = {}
 ): Column {
-    const { now, random, ...given } = options;
+    const { now, random, taken, ...given } = options;
     const typeName = traitsOf(design.databaseType).defaultColumnType;
     return {
         id: newId(random),
-        name: `field_${columnCount + 1}`,
+        name: firstFreeName('field_', columnCount + 1, taken),
         type: { id: typeName, name: typeName },
         primaryKey: false,
         unique: false,
@@ -96,12 +119,16 @@ export function createColumn(
 /** A new index named `index_N`: no columns, not unique (DAT-043). */
 export function createKey(
     keyCount: number,
-    options: Partial<Key> & { now?: number; random?: RandomInt } = {}
+    options: Partial<Key> & {
+        now?: number;
+        random?: RandomInt;
+        taken?: readonly string[];
+    } = {}
 ): Key {
-    const { now, random, ...given } = options;
+    const { now, random, taken, ...given } = options;
     return {
         id: newId(random),
-        label: `index_${keyCount + 1}`,
+        label: firstFreeName('index_', keyCount + 1, taken),
         distinct: false,
         members: [],
         madeAt: now ?? Date.now(),
@@ -165,6 +192,15 @@ export function createEntityParts(
         (id) => design.entities.byId[id].kind === kind
     ).length;
     const traits = traitsOf(design.databaseType);
+    const entitySchema = options.schema ?? traits.defaultSchema;
+    const sameSchema = design.entities.order
+        .map((id) => design.entities.byId[id])
+        .filter(
+            (e) =>
+                (traits.hasSchemas ? (e.schema ?? '') : '') ===
+                (traits.hasSchemas ? (entitySchema ?? '') : '')
+        )
+        .map((e) => e.name);
     const column: Column = createColumn(design, 0, {
         name: 'id',
         primaryKey: true,
@@ -188,7 +224,8 @@ export function createEntityParts(
               ];
     const entity: Entity = {
         id: newId(options.random),
-        name: options.name ?? `${kind}_${sameKind + 1}`,
+        name:
+            options.name ?? firstFreeName(`${kind}_`, sameKind + 1, sameSchema),
         kind,
         x: options.x ?? 0,
         y: options.y ?? 0,
@@ -214,9 +251,20 @@ export function createLink(
     const sourceEntity = design.entities.byId[source.entityId];
     const targetEntity = design.entities.byId[target.entityId];
     const sourceColumn = design.columns[source.columnId];
+    const targetColumn = design.columns[target.columnId];
+    const plain = `${sourceEntity?.name ?? ''}_${sourceColumn?.name ?? ''}_fk`;
+    const taken = new Set(
+        design.links.order.map((id) => design.links.byId[id].name.toLowerCase())
+    );
+    // the spec name first; a second link to the same column also names its holder
+    let name = plain;
+    if (taken.has(name.toLowerCase()))
+        name = `${plain.slice(0, -3)}_${targetEntity?.name ?? ''}_${targetColumn?.name ?? ''}_fk`;
+    for (let n = 2; taken.has(name.toLowerCase()); n++)
+        name = `${plain.slice(0, -3)}_${targetEntity?.name ?? ''}_${targetColumn?.name ?? ''}_${n}_fk`;
     const link: Link = {
         id: newId(random),
-        name: `${sourceEntity?.name ?? ''}_${sourceColumn?.name ?? ''}_fk`,
+        name,
         sourceEntityId: source.entityId,
         sourceColumnId: source.columnId,
         targetEntityId: target.entityId,
@@ -238,10 +286,31 @@ export function createUserType(
     const { random, ...given } = options;
     return {
         id: newId(random),
-        name: `type_${design.userTypes.order.length + 1}`,
+        name: firstFreeName(
+            'type_',
+            design.userTypes.order.length + 1,
+            design.userTypes.order.map((id) => design.userTypes.byId[id].name)
+        ),
         kind: 'enum',
         values: [],
         ...given,
+    };
+}
+
+/** A box from a caller: a position that is not a number becomes 0, a bad size the default. */
+function usableBox(
+    box: Region['box'] | undefined,
+    size: { width: number; height: number }
+): Region['box'] | undefined {
+    if (!box) return undefined;
+    const pos = (v: number): number => (Number.isFinite(v) ? v : 0);
+    const dim = (v: number, fallback: number): number =>
+        Number.isFinite(v) && v > 0 ? v : fallback;
+    return {
+        x: pos(box.x),
+        y: pos(box.y),
+        width: dim(box.width, size.width),
+        height: dim(box.height, size.height),
     };
 }
 
@@ -256,10 +325,15 @@ export function createRegion(
         : Math.floor(Math.random() * REGION_COLORS.length);
     return {
         id: newId(random),
-        label: `Area ${design.regions.order.length + 1}`,
+        label: firstFreeName(
+            'Area ',
+            design.regions.order.length + 1,
+            design.regions.order.map((id) => design.regions.byId[id].label)
+        ),
         tint: REGION_COLORS[pick],
         box: { x: 0, y: 0, ...REGION_SIZE },
         ...given,
+        ...(given.box ? { box: usableBox(given.box, REGION_SIZE)! } : {}),
     };
 }
 
@@ -274,5 +348,6 @@ export function createMemo(
         tint: MEMO_TINT,
         box: { x: 0, y: 0, ...MEMO_SIZE },
         ...given,
+        ...(given.box ? { box: usableBox(given.box, MEMO_SIZE)! } : {}),
     };
 }

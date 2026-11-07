@@ -81,7 +81,7 @@ export function exportSql(
                 ),
             ],
         };
-    const filtered = applyFilter(design, options.filter, target.defaultSchema);
+    const filtered = applyFilter(design, options.filter, source.defaultSchema);
     if (
         !filtered.entities.order.some(
             (id) => filtered.entities.byId[id].kind === 'table'

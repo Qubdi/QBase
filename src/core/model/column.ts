@@ -4,6 +4,8 @@ import type { Id } from './id';
 export interface TypeRef {
     id: string;
     name: string;
+    /** keys of the saved type object this editor does not know, written back as they were */
+    extra?: ExtraKeys;
 }
 
 /** Character length of a column: a number, or `max` where a database allows it. */
