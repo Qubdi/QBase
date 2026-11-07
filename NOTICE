@@ -44,3 +44,10 @@ shadcn/ui (MIT)
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
   DEALINGS IN THE SOFTWARE.
+
+Fonts (SIL Open Font License 1.1)
+  The Inter, JetBrains Mono and Manrope typefaces are bundled through the
+  @fontsource packages. Each is distributed under the SIL Open Font License
+  1.1 (https://openfontlicense.org); the licence text ships with each
+  package (node_modules/@fontsource/<name>/LICENSE). The fonts are used
+  unmodified and are not sold by themselves.
