@@ -40,6 +40,12 @@ export const workspaceStrings = {
             editTable: 'Edit table {{name}}',
             tableName: 'Table name',
             done: 'Done',
+            schema: 'Schema',
+            createSchema: 'Create new schema',
+            newSchemaName: 'New schema name',
+            openInPanel: 'Open in the side panel',
+            fieldCount_one: '{{count}} field',
+            fieldCount_other: '{{count}} fields',
             loading: 'Loading the diagram...',
             link: {
                 title: 'New relationship',

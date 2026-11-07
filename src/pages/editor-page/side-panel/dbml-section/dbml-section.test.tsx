@@ -177,3 +177,43 @@ describe('EDT-247 leaving the section', () => {
         expect(usePreviewStore.getState().marks).toBeUndefined();
     });
 });
+
+describe('EXP-051 EXP-057 left-out tables and export errors', () => {
+    it('EXP-051: lists the tables left out of the export', () => {
+        const [first] = listOf(design.entities);
+        const bare = {
+            ...design,
+            entities: {
+                ...design.entities,
+                byId: {
+                    ...design.entities.byId,
+                    [first.id]: { ...first, columnIds: [] },
+                },
+            },
+        };
+        const view = renderPanel(<DbmlSection />, bare);
+        act(() => view.store.getState().showPanel('dbml'));
+        expect(screen.getByText('Left out of the export')).toBeTruthy();
+        expect(
+            screen.getByText(
+                `Table ${first.name} was left out: it has no fields.`
+            )
+        ).toBeTruthy();
+    });
+
+    it('EXP-057: an export exception shows the error text and a toast', async () => {
+        const mod = await import('@/formats/dbml/export-dbml');
+        const spy = vi.spyOn(mod, 'exportDbml').mockImplementation(() => {
+            throw new Error('boom');
+        });
+        try {
+            setup();
+            expect(
+                screen.getByText('// Error generating DBML: boom')
+            ).toBeTruthy();
+            expect(screen.getByText('DBML export error')).toBeTruthy();
+        } finally {
+            spy.mockRestore();
+        }
+    });
+});

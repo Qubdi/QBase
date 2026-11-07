@@ -39,6 +39,9 @@ export const sidePanelStrings = {
         checks: 'Check constraints',
         description: 'Description',
         noDescription: 'No description',
+        color: 'Table color',
+        duplicateName:
+            'Another table in this schema is already named "{{name}}".',
         selectSchema: {
             title: 'Select schema',
             text: 'Several schemas are shown. Pick one for the new table.',
@@ -248,5 +251,8 @@ export const sidePanelStrings = {
             '{{added}} new, {{removed}} removed, {{changed}} changed tables; {{linksAdded}} new, {{linksRemoved}} removed relationships',
         rejected: 'The change could not be applied',
         applying: 'Applying changes...',
+        leftOut: 'Left out of the export',
+        errorText: '// Error generating DBML: {{message}}',
+        errorToast: 'DBML export error',
     },
 };

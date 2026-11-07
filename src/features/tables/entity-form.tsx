@@ -8,6 +8,8 @@ import { DebouncedTextarea } from '@/platform/panel/debounced-input';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
+import { ColorPicker } from '@/components/color-picker/color-picker';
+import { hasDuplicateName } from './table-list';
 import { ChecksEditor } from './checks-editor';
 import { FieldsEditor } from './fields/fields-editor';
 import { IndexesEditor } from './indexes-editor';
@@ -39,6 +41,29 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
     const view = entity.kind === 'view';
     return (
         <div className="space-y-4">
+            {view ? null : (
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {text('tables.color')}
+                    </span>
+                    <ColorPicker
+                        color={entity.color}
+                        disabled={locked}
+                        onChange={(color) =>
+                            edit({
+                                type: 'entity.update',
+                                id: entity.id,
+                                patch: { color },
+                            })
+                        }
+                    />
+                </div>
+            )}
+            {hasDuplicateName(design, entity) ? (
+                <p role="alert" className="text-xs text-amber-600">
+                    {text('tables.duplicateName', { name: entity.name })}
+                </p>
+            ) : null}
             <Section
                 title={text('tables.fields')}
                 action={

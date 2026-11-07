@@ -83,7 +83,13 @@ export function exportDbml(
     for (const entity of listOf(design.entities)) {
         if (entity.kind === 'view') continue;
         const id = `${entity.schema ?? ''}.${entity.name}`;
-        if (seen.has(id)) continue;
+        if (seen.has(id)) {
+            diagnostics.push({
+                severity: 'warning',
+                message: `Table ${entity.name} was left out: another table has the same name.`,
+            });
+            continue;
+        }
         const own = entity.columnIds
             .map((cid) => design.columns[cid])
             .filter(Boolean);
@@ -93,7 +99,13 @@ export function exportDbml(
                 severity: 'warning',
                 message: `Table ${entity.name} lost ${own.length - named.length} field(s) without a name.`,
             });
-        if (named.length === 0) continue;
+        if (named.length === 0) {
+            diagnostics.push({
+                severity: 'warning',
+                message: `Table ${entity.name} was left out: it has no fields.`,
+            });
+            continue;
+        }
         seen.add(id);
         const used = new Map<string, number>();
         const fields = named.map((column) => {

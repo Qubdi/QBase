@@ -93,6 +93,9 @@ export const diagnosticsStrings = {
         lostFields_one: 'Table {{name}} lost {{count}} field without a name.',
         lostFields_other:
             'Table {{name}} lost {{count}} fields without a name.',
+        leftOutDuplicate:
+            'Table {{name}} was left out: another table has the same name.',
+        leftOutEmpty: 'Table {{name}} was left out: it has no fields.',
         notSupportedFor: 'SQL export is not supported for {{label}}',
         notSupportedForDiagrams:
             'SQL export is not supported for {{label}} diagrams',

@@ -180,6 +180,16 @@ const RULES: Rule[] = [
         (m) => ({ name: m[1], count: Number(m[2]) }),
     ],
     [
+        /^Table (.+) was left out: another table has the same name\.$/,
+        'export.leftOutDuplicate',
+        (m) => ({ name: m[1] }),
+    ],
+    [
+        /^Table (.+) was left out: it has no fields\.$/,
+        'export.leftOutEmpty',
+        (m) => ({ name: m[1] }),
+    ],
+    [
         /^SQL export is not supported for (.+) diagrams$/,
         'export.notSupportedForDiagrams',
         (m) => ({ label: m[1] }),

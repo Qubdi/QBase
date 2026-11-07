@@ -88,3 +88,24 @@ export function planReorderTables(
     const ids = reorderedIds(design.entities.order, activeId, overId);
     return ids ? { type: 'entity.reorder', ids } : undefined;
 }
+
+/**
+ * True when another table in the same schema has this name, ignoring case
+ * (EDT-097). It only warns; nothing is blocked.
+ */
+export function hasDuplicateName(design: Design, entity: Entity): boolean {
+    const traits = traitsOf(design.databaseType);
+    const schemaOf = (e: Entity) =>
+        (e.schema?.trim()
+            ? e.schema
+            : (traits.defaultSchema ?? '')
+        ).toLowerCase();
+    const name = entity.name.trim().toLowerCase();
+    const schema = schemaOf(entity);
+    return entityList(design).some(
+        (other) =>
+            other.id !== entity.id &&
+            other.name.trim().toLowerCase() === name &&
+            schemaOf(other) === schema
+    );
+}

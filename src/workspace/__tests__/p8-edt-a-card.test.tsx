@@ -45,7 +45,7 @@ describe('p8 EDT-088 to EDT-095, EDT-118 the edit card', () => {
         const { users } = mount();
         const card = await openCard(users, 'users');
         expect(within(card).getByLabelText('Field name')).toBeTruthy();
-        expect(within(card).getByRole('combobox')).toBeTruthy();
+        expect(within(card).getAllByRole('combobox').length).toBeGreaterThan(0);
         expect(
             within(card).getByRole('button', { name: 'Allow null' })
         ).toBeTruthy();

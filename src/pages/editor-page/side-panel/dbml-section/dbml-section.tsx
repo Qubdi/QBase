@@ -12,6 +12,8 @@ import { buildProposal } from '@/features/dbml-diff/build-proposal';
 import { diffDesigns } from '@/features/dbml-diff/diff-designs';
 import type { DesignDiff } from '@/features/dbml-diff/diff-designs';
 import { usePreviewStore } from '@/features/dbml-diff/preview-store';
+import type { Diagnostic } from '@/dialects/script-model';
+import { diagnosticText } from '@/lib/diagnostic-text';
 import { exportDbml } from '@/formats/dbml/export-dbml';
 import { cn } from '@/lib/utils/utils';
 import { useEditorEnv } from '@/platform/panel/use-editor';
@@ -60,10 +62,30 @@ export const DbmlSection: React.FC = () => {
     const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const applyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const backdrop = useRef<HTMLDivElement>(null);
-    const result = useMemo(
-        () => exportDbml(design, { inline }),
-        [design, inline]
-    );
+    const result = useMemo((): {
+        text: string;
+        diagnostics: Diagnostic[];
+        error?: string;
+    } => {
+        try {
+            return exportDbml(design, { inline });
+        } catch (e) {
+            const error = e instanceof Error ? e.message : String(e);
+            return {
+                text: text('dbml.errorText', { message: error }),
+                diagnostics: [],
+                error,
+            };
+        }
+    }, [design, inline, text]);
+    useEffect(() => {
+        if (result.error !== undefined)
+            toast({
+                title: text('dbml.errorToast'),
+                description: result.error,
+                variant: 'destructive',
+            });
+    }, [result.error, text]);
 
     const discard = useCallback(() => {
         clearTimeout(timer.current);
@@ -305,6 +327,16 @@ export const DbmlSection: React.FC = () => {
                     {result.text || text('dbml.empty')}
                 </pre>
             )}
+            {!editing && result.diagnostics.length > 0 ? (
+                <div className="text-xs text-muted-foreground">
+                    <p className="font-semibold">{text('dbml.leftOut')}</p>
+                    <ul className="list-disc pl-4">
+                        {result.diagnostics.map((d, i) => (
+                            <li key={i}>{diagnosticText(d.message)}</li>
+                        ))}
+                    </ul>
+                </div>
+            ) : null}
             {errorLine !== undefined ? (
                 <p role="alert" className="text-xs text-red-600">
                     {errorLine === null
