@@ -16,10 +16,10 @@ describe('EDT-061 EDT-062 the panel opens ready to search', () => {
             screen.getByLabelText('Search tables...')
         );
         expect(
-            screen.getByRole('button', { name: 'Group by schema' })
+            screen.getByRole('button', { name: 'Group by Schema' })
         ).toBeTruthy();
         expect(
-            screen.getByRole('button', { name: 'Group by area' })
+            screen.getByRole('button', { name: 'Group by Area' })
         ).toBeTruthy();
     });
 
@@ -120,7 +120,7 @@ describe('EDT-066 EDT-067 EDT-068 searching', () => {
             screen.getByText('Try adjusting your search or filter')
         ).toBeTruthy();
         await userEvent.click(
-            screen.getByRole('button', { name: 'Clear filter' })
+            screen.getByRole('button', { name: 'Clear Filter' })
         );
         expect(screen.getAllByTestId('filter-table')).toHaveLength(1);
     });

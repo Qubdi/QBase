@@ -17,8 +17,8 @@ describe('EDT-195 the More actions menu of a custom type', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Actions' }));
         const items = await screen.findAllByRole('menuitem');
         expect(items.map((i) => i.textContent)).toEqual([
-            'Highlight fields',
-            'Delete',
+            'Highlight Fields',
+            'Delete Type',
         ]);
     });
 });

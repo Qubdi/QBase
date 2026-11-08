@@ -1,10 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-    ChevronDown,
-    ChevronRight,
-    Crosshair,
-    MoreHorizontal,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, Crosshair, MoreVertical } from 'lucide-react';
 import {
     planChangeSchema,
     planDeleteEntities,
@@ -26,6 +21,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
     DropdownMenuTrigger,
 } from '@/platform/ui/dropdown-menu';
 import { EntityForm } from './entity-form';
@@ -53,32 +49,33 @@ export const TableRow: React.FC<{
         if (open) root.current?.scrollIntoView?.({ block: 'nearest' });
     }, [open]);
 
+    const reveal =
+        'size-8 shrink-0 text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100';
+
+    const chevron = (
+        <button
+            type="button"
+            aria-expanded={open}
+            aria-label={`${text('tables.toggle')}: ${entity.name}`}
+            onClick={onToggle}
+            className="flex size-8 shrink-0 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+            {open ? (
+                <ChevronUp className="size-4" />
+            ) : (
+                <ChevronDown className="size-4" />
+            )}
+        </button>
+    );
+
     const header = (
         <div className="flex min-w-0 flex-1 items-center gap-1">
-            <button
-                type="button"
-                aria-expanded={open}
-                aria-label={`${text('tables.toggle')}: ${entity.name}`}
-                onClick={onToggle}
-                className="flex size-7 shrink-0 items-center justify-center"
-            >
-                {open ? (
-                    <ChevronDown className="size-4" />
-                ) : (
-                    <ChevronRight className="size-4" />
-                )}
-            </button>
-            <span
-                className={cn(
-                    'size-2.5 shrink-0 rounded-full border',
-                    view && 'bg-transparent'
-                )}
-                style={
-                    view
-                        ? { borderColor: entity.color }
-                        : { backgroundColor: entity.color }
-                }
-            />
+            {view ? (
+                <span
+                    className="size-2.5 shrink-0 rounded-full border bg-transparent"
+                    style={{ borderColor: entity.color }}
+                />
+            ) : null}
             <InlineName
                 value={entity.name}
                 readOnly={locked}
@@ -92,6 +89,18 @@ export const TableRow: React.FC<{
                         id: entity.id,
                         patch: { name },
                     })
+                }
+                actions={
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className={reveal}
+                        aria-label={text('common.focus')}
+                        onClick={() => focus(entity.id)}
+                    >
+                        <Crosshair />
+                    </Button>
                 }
             >
                 {showSchema && entity.schema ? (
@@ -109,38 +118,44 @@ export const TableRow: React.FC<{
     );
 
     return (
-        <div ref={root} className="rounded-md border" data-testid="table-row">
+        <div
+            ref={root}
+            className="relative overflow-hidden rounded-[10px] border bg-card"
+            data-testid="table-row"
+        >
+            <span
+                aria-hidden="true"
+                className="absolute inset-y-0 left-0 w-1"
+                style={{ backgroundColor: entity.color }}
+            />
             <div {...hold}>
                 <SortableRow
                     id={entity.id}
                     disabled={!sortable || locked}
                     handleLabel={text('common.dragHandle')}
-                    className="p-1"
+                    leading={chevron}
+                    className={cn(
+                        'group h-11 gap-1 pl-3 pr-1 hover:bg-accent/70',
+                        open && 'bg-accent/70'
+                    )}
                 >
                     {header}
-                    <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="size-7 shrink-0"
-                        aria-label={text('common.focus')}
-                        onClick={() => focus(entity.id)}
-                    >
-                        <Crosshair />
-                    </Button>
                     <DropdownMenu {...menu}>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 type="button"
                                 size="icon"
                                 variant="ghost"
-                                className="size-7 shrink-0"
+                                className="size-8 shrink-0"
                                 aria-label={text('tables.actions')}
                             >
-                                <MoreHorizontal />
+                                <MoreVertical />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                {text('tables.actions')}
+                            </DropdownMenuLabel>
                             {hasSchemas && !locked ? (
                                 <DropdownMenuItem
                                     onSelect={() => setChanging(true)}
@@ -194,7 +209,7 @@ export const TableRow: React.FC<{
                 </SortableRow>
             </div>
             {open ? (
-                <div className="border-t p-2">
+                <div className="pl-1">
                     <EntityForm entity={entity} />
                 </div>
             ) : null}

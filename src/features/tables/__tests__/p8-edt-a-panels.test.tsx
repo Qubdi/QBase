@@ -49,7 +49,7 @@ describe('p8 EDT-077 the Add Table split button', () => {
             screen.getByRole('button', { name: 'More ways to add' })
         );
         await userEvent.click(
-            await screen.findByRole('menuitem', { name: 'Add view' })
+            await screen.findByRole('menuitem', { name: 'Add View' })
         );
         const d = store.getState().design;
         const added = d.entities.byId[d.entities.order.at(-1)!];
@@ -106,7 +106,7 @@ describe('p8 EDT-129 EDT-130 length, precision and scale', () => {
             screen.getByRole('button', { name: /^Show or hide the details/ })
         );
         await userEvent.click(
-            screen.getByRole('button', { name: 'Field attributes' })
+            screen.getByRole('button', { name: 'Field Attributes' })
         );
         return { ...view, pop: await screen.findByRole('dialog') };
     };

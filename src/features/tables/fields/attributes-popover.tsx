@@ -61,7 +61,7 @@ export const AttributesPopover: React.FC<{
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-7 shrink-0"
+                    className="size-7 shrink-0 text-slate-600 dark:text-slate-400"
                     aria-label={text('fields.attributes')}
                 >
                     <MoreHorizontal />
@@ -69,13 +69,14 @@ export const AttributesPopover: React.FC<{
             </PopoverTrigger>
             <PopoverContent
                 align="end"
-                className="w-72 space-y-3"
+                className="w-52 space-y-3 rounded-[10px]"
                 aria-label={text('fields.attributes')}
             >
-                <h4 className="text-sm font-semibold">
+                <h4 className="border-b pb-2 text-sm font-semibold">
                     {text('fields.attributes')}
                 </h4>
-                <Label className="flex items-center gap-2 text-sm">
+                <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    {text('fields.unique')}
                     <Checkbox
                         checked={column.unique}
                         disabled={readOnly || state.uniqueLocked}
@@ -83,10 +84,10 @@ export const AttributesPopover: React.FC<{
                             onChange({ unique: v === true })
                         }
                     />
-                    {text('fields.unique')}
                 </Label>
                 {state.showIncrement ? (
-                    <Label className="flex items-center gap-2 text-sm">
+                    <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                        {text('fields.autoIncrement')}
                         <Checkbox
                             checked={column.increment === true}
                             disabled={readOnly || state.incrementLocked}
@@ -94,11 +95,11 @@ export const AttributesPopover: React.FC<{
                                 onChange({ increment: v === true })
                             }
                         />
-                        {text('fields.autoIncrement')}
                     </Label>
                 ) : null}
                 {state.showArray ? (
-                    <Label className="flex items-center gap-2 text-sm">
+                    <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                        {text('fields.array')}
                         <Checkbox
                             checked={column.isArray === true}
                             disabled={readOnly}
@@ -108,7 +109,6 @@ export const AttributesPopover: React.FC<{
                                 })
                             }
                         />
-                        {text('fields.array')}
                     </Label>
                 ) : null}
                 {state.showLength ? (
@@ -207,9 +207,10 @@ export const AttributesPopover: React.FC<{
                         </Label>
                     </div>
                 ) : null}
-                <Label className="block space-y-1 text-sm">
+                <Label className="block space-y-1 text-sm font-medium text-slate-600 dark:text-slate-300">
                     <span>{text('fields.default')}</span>
                     <DebouncedInput
+                        className="h-9 bg-secondary font-normal text-foreground"
                         value={column.default ?? ''}
                         readOnly={readOnly}
                         placeholder={text('fields.noDefault')}
@@ -218,9 +219,10 @@ export const AttributesPopover: React.FC<{
                         }
                     />
                 </Label>
-                <Label className="block space-y-1 text-sm">
+                <Label className="block space-y-1 text-sm font-medium text-slate-600 dark:text-slate-300">
                     <span>{text('fields.description')}</span>
                     <DebouncedTextarea
+                        className="min-h-[60px] bg-secondary font-normal text-foreground"
                         value={column.comments ?? ''}
                         readOnly={readOnly}
                         placeholder={text('fields.noDescription')}
@@ -230,16 +232,17 @@ export const AttributesPopover: React.FC<{
                     />
                 </Label>
                 {readOnly ? null : (
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="w-full"
-                        onClick={onDelete}
-                    >
-                        <Trash2 />
-                        {text('fields.delete')}
-                    </Button>
+                    <div className="border-t pt-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full text-destructive hover:text-destructive"
+                            onClick={onDelete}
+                        >
+                            <Trash2 />
+                            {text('fields.delete')}
+                        </Button>
+                    </div>
                 )}
             </PopoverContent>
         </Popover>

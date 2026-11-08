@@ -29,9 +29,10 @@ const Swatch: React.FC<{
             type="button"
             aria-label={t('editor.common.colorPicker.useColor', { color })}
             aria-pressed={current === color}
+            title={color}
             className={cn(
-                'size-6 rounded-full border border-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                current === color && 'ring-2 ring-ring ring-offset-1'
+                'size-8 rounded-[10px] border-2 border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                current === color && 'border-foreground'
             )}
             style={{ backgroundColor: color }}
             onClick={() => onPick(color)}
@@ -68,17 +69,17 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                     aria-label={t('editor.common.colorPicker.change')}
                     disabled={disabled}
                     className={cn(
-                        'size-6 rounded-md border border-black/10 disabled:opacity-50',
+                        'h-6 w-8 rounded-[10px] border-2 border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
                         className
                     )}
                     style={{ backgroundColor: color }}
                 />
             </PopoverTrigger>
             <PopoverContent
-                className="w-60 space-y-3 p-3"
+                className="w-64 space-y-3 rounded-[10px] p-4"
                 onMouseDown={popoverOnMouseDown}
             >
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-6 gap-1.5">
                     {colorOptions.map((c) => (
                         <Swatch
                             key={c}
@@ -125,27 +126,36 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                         applyTyped();
                     }}
                 >
-                    <div className="flex items-center gap-2">
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">
+                        {t('editor.sidePanel.common.customColor')}
+                    </p>
+                    <div className="flex items-center gap-1.5">
                         <input
                             type="color"
                             aria-label={t(
                                 'editor.common.colorPicker.pickCustom'
                             )}
-                            className="size-8 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
+                            className="size-8 shrink-0 cursor-pointer rounded-md border-0 bg-transparent p-0"
                             value={typed ?? current ?? '#000000'}
                             onChange={(e) => setText(e.target.value)}
                         />
                         <Input
                             aria-label={t('editor.common.colorPicker.hex')}
                             aria-invalid={invalid}
-                            placeholder={t(
-                                'editor.common.colorPicker.hexPlaceholder'
-                            )}
-                            className="h-8"
+                            placeholder={
+                                current ??
+                                t('editor.common.colorPicker.hexPlaceholder')
+                            }
+                            className="h-8 min-w-0 flex-1"
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
-                        <Button type="submit" size="sm" disabled={!typed}>
+                        <Button
+                            type="submit"
+                            size="sm"
+                            className="px-3"
+                            disabled={!typed}
+                        >
                             {t('editor.common.colorPicker.use')}
                         </Button>
                     </div>

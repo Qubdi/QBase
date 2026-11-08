@@ -1,5 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Eye, EyeOff, Search, X, ZoomIn } from 'lucide-react';
+import {
+    Box,
+    ChevronDown,
+    ChevronRight,
+    Database,
+    Eye,
+    EyeOff,
+    Search,
+    Table2,
+    X,
+    ZoomIn,
+} from 'lucide-react';
+import { shortcutLabel } from '@/canvas/keyboard';
 import { cn } from '@/lib/utils/utils';
 import { Notice } from '@/platform/panel/notice';
 import { useFocus } from '@/platform/panel/panel-context';
@@ -21,7 +33,7 @@ const ToggleEye: React.FC<{
         type="button"
         size="icon"
         variant="ghost"
-        className="size-6 shrink-0"
+        className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
         aria-label={label}
         aria-pressed={shown}
         onClick={onClick}
@@ -46,6 +58,7 @@ export const FilterPanel: React.FC<{
     const focus = useFocus();
     const [search, setSearch] = useState('');
     const [groupBy, setGroupBy] = useState<GroupBy>('schema');
+    const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
     const box = useRef<HTMLInputElement>(null);
     useEffect(() => box.current?.focus(), []);
     // Escape closes the panel unless a list or popover inside it took the key
@@ -71,11 +84,15 @@ export const FilterPanel: React.FC<{
         <div
             role="dialog"
             aria-label={text('filters.title')}
-            className="flex max-h-[70vh] w-72 flex-col gap-2 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
+            className="flex h-full max-h-[calc(100vh-8rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col rounded-[10px] border bg-popover text-popover-foreground shadow-md"
         >
-            <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">
-                    {text('filters.title')}
+            <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+                <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+                    <Search className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{text('filters.title')}</span>
+                    <span className="text-xs font-normal text-primary">
+                        ({shortcutLabel(['Mod', 'F'])})
+                    </span>
                 </h3>
                 <Button
                     type="button"
@@ -88,28 +105,35 @@ export const FilterPanel: React.FC<{
                     <X />
                 </Button>
             </div>
-            <div className="relative">
-                <Search className="absolute left-2 top-2 size-4 text-muted-foreground" />
-                <Input
-                    ref={box}
-                    aria-label={text('filters.search')}
-                    placeholder={text('filters.search')}
-                    className="h-8 pl-8"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
+            <div className="p-2">
+                <div className="relative">
+                    <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                    <Input
+                        ref={box}
+                        aria-label={text('filters.search')}
+                        placeholder={text('filters.search')}
+                        className="h-9 border-2 pl-9"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
             </div>
-            <div className="flex gap-1" role="group">
+            <div className="flex gap-1 border-y px-2 py-2" role="group">
                 {(['schema', 'area'] as const).map((mode) => (
                     <Button
                         key={mode}
                         type="button"
                         size="sm"
-                        variant={groupBy === mode ? 'default' : 'outline'}
+                        variant="ghost"
                         aria-pressed={groupBy === mode}
-                        className="h-7 flex-1 text-xs"
+                        className={cn(
+                            'h-9 flex-1 text-xs',
+                            groupBy === mode &&
+                                'bg-accent text-accent-foreground'
+                        )}
                         onClick={() => setGroupBy(mode)}
                     >
+                        {mode === 'schema' ? <Database /> : <Box />}
                         {text(
                             mode === 'schema'
                                 ? 'filters.groupBySchema'
@@ -118,7 +142,7 @@ export const FilterPanel: React.FC<{
                     </Button>
                 ))}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto p-2">
                 {tree.length === 0 ? (
                     design.entities.order.length === 0 ? (
                         <Notice
@@ -141,114 +165,157 @@ export const FilterPanel: React.FC<{
                         </Notice>
                     )
                 ) : (
-                    tree.map((group) => (
-                        <div key={group.key} data-testid="filter-group">
-                            {group.named || tree.length > 1 ? (
-                                <div className="flex items-center gap-1 py-1">
-                                    <ToggleEye
-                                        shown={group.shown !== 'none'}
-                                        label={`${group.shown === 'none' ? text('filters.show') : text('filters.hide')} ${
-                                            group.label ||
-                                            text(
-                                                groupBy === 'schema'
-                                                    ? 'filters.noSchema'
-                                                    : 'filters.noArea'
-                                            )
-                                        }`}
-                                        onClick={() =>
-                                            set(
-                                                setTablesShown(
-                                                    design,
-                                                    filter,
-                                                    group.tables.map(
-                                                        (t) => t.entity.id
-                                                    ),
-                                                    group.shown === 'none'
-                                                )
-                                            )
-                                        }
-                                    />
-                                    <span
-                                        className={cn(
-                                            'flex-1 truncate text-xs font-semibold',
-                                            group.shown === 'none' &&
-                                                'text-muted-foreground'
-                                        )}
-                                    >
-                                        {group.label ||
-                                            text(
-                                                groupBy === 'schema'
-                                                    ? 'filters.noSchema'
-                                                    : 'filters.noArea'
-                                            )}
-                                    </span>
-                                    {onZoomToGroup ? (
+                    tree.map((group) => {
+                        const groupName =
+                            group.label ||
+                            text(
+                                groupBy === 'schema'
+                                    ? 'filters.noSchema'
+                                    : 'filters.noArea'
+                            );
+                        const framed = group.named || tree.length > 1;
+                        const isOpen = !framed || !collapsed.has(group.key);
+                        const shownCount = group.tables.filter(
+                            (t) => t.shown
+                        ).length;
+                        return (
+                            <div key={group.key} data-testid="filter-group">
+                                {framed ? (
+                                    <div className="flex items-center gap-1 py-1">
                                         <Button
                                             type="button"
                                             size="icon"
                                             variant="ghost"
-                                            className="size-6"
-                                            aria-label={text('filters.zoomTo', {
-                                                name: group.label,
-                                            })}
+                                            className="size-6 shrink-0"
+                                            aria-expanded={isOpen}
+                                            aria-label={groupName}
                                             onClick={() =>
-                                                onZoomToGroup(
-                                                    group.tables.map(
-                                                        (t) => t.entity.id
+                                                setCollapsed((now) => {
+                                                    const next = new Set(now);
+                                                    if (!next.delete(group.key))
+                                                        next.add(group.key);
+                                                    return next;
+                                                })
+                                            }
+                                        >
+                                            {isOpen ? (
+                                                <ChevronDown />
+                                            ) : (
+                                                <ChevronRight />
+                                            )}
+                                        </Button>
+                                        {groupBy === 'schema' ? (
+                                            <Database className="size-3.5 shrink-0 text-muted-foreground" />
+                                        ) : (
+                                            <Box className="size-3.5 shrink-0 text-muted-foreground" />
+                                        )}
+                                        <span
+                                            className={cn(
+                                                'truncate text-xs',
+                                                group.shown === 'none' &&
+                                                    'text-muted-foreground'
+                                            )}
+                                        >
+                                            {groupName}
+                                        </span>
+                                        <span className="shrink-0 rounded-full bg-muted px-1.5 text-[11px] text-muted-foreground">
+                                            {shownCount}/{group.tables.length}
+                                        </span>
+                                        <span className="flex-1" />
+                                        {onZoomToGroup ? (
+                                            <Button
+                                                type="button"
+                                                size="icon"
+                                                variant="ghost"
+                                                className="size-6"
+                                                aria-label={text(
+                                                    'filters.zoomTo',
+                                                    {
+                                                        name: group.label,
+                                                    }
+                                                )}
+                                                onClick={() =>
+                                                    onZoomToGroup(
+                                                        group.tables.map(
+                                                            (t) => t.entity.id
+                                                        )
+                                                    )
+                                                }
+                                            >
+                                                <ZoomIn />
+                                            </Button>
+                                        ) : null}
+                                        <ToggleEye
+                                            shown={group.shown !== 'none'}
+                                            label={`${group.shown === 'none' ? text('filters.show') : text('filters.hide')} ${groupName}`}
+                                            onClick={() =>
+                                                set(
+                                                    setTablesShown(
+                                                        design,
+                                                        filter,
+                                                        group.tables.map(
+                                                            (t) => t.entity.id
+                                                        ),
+                                                        group.shown === 'none'
                                                     )
                                                 )
                                             }
-                                        >
-                                            <ZoomIn />
-                                        </Button>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                            {group.tables.map(({ entity, shown }) => (
-                                <div
-                                    key={entity.id}
-                                    data-testid="filter-table"
-                                    className="flex items-center gap-1 pl-3"
-                                >
-                                    <ToggleEye
-                                        shown={shown}
-                                        label={`${shown ? text('filters.hide') : text('filters.show')} ${entity.name}`}
-                                        onClick={() =>
-                                            set(
-                                                setTableShown(
-                                                    design,
-                                                    filter,
-                                                    entity.id,
-                                                    !shown
-                                                )
-                                            )
-                                        }
-                                    />
-                                    <button
-                                        type="button"
-                                        className={cn(
-                                            'flex-1 truncate py-1 text-left text-sm hover:underline',
-                                            !shown && 'text-muted-foreground'
-                                        )}
-                                        onClick={() => {
-                                            if (!shown)
-                                                set(
-                                                    setTableShown(
-                                                        design,
-                                                        filter,
-                                                        entity.id,
-                                                        true
-                                                    )
-                                                );
-                                            focus(entity.id);
-                                        }}
-                                    >
-                                        {entity.name}
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    ))
+                                        />
+                                    </div>
+                                ) : null}
+                                {isOpen
+                                    ? group.tables.map(({ entity, shown }) => (
+                                          <div
+                                              key={entity.id}
+                                              data-testid="filter-table"
+                                              className={cn(
+                                                  'flex items-center gap-1',
+                                                  framed ? 'pl-8' : 'pl-1'
+                                              )}
+                                          >
+                                              <Table2 className="size-3.5 shrink-0 text-muted-foreground" />
+                                              <button
+                                                  type="button"
+                                                  className={cn(
+                                                      'flex-1 truncate rounded-sm py-1 text-left text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                                      !shown &&
+                                                          'text-muted-foreground'
+                                                  )}
+                                                  onClick={() => {
+                                                      if (!shown)
+                                                          set(
+                                                              setTableShown(
+                                                                  design,
+                                                                  filter,
+                                                                  entity.id,
+                                                                  true
+                                                              )
+                                                          );
+                                                      focus(entity.id);
+                                                  }}
+                                              >
+                                                  {entity.name}
+                                              </button>
+                                              <ToggleEye
+                                                  shown={shown}
+                                                  label={`${shown ? text('filters.hide') : text('filters.show')} ${entity.name}`}
+                                                  onClick={() =>
+                                                      set(
+                                                          setTableShown(
+                                                              design,
+                                                              filter,
+                                                              entity.id,
+                                                              !shown
+                                                          )
+                                                      )
+                                                  }
+                                              />
+                                          </div>
+                                      ))
+                                    : null}
+                            </div>
+                        );
+                    })
                 )}
             </div>
         </div>

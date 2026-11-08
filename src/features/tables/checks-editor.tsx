@@ -94,9 +94,9 @@ export const ChecksEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
             {locked || !supported ? null : (
                 <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="w-full"
+                    className="h-7 px-2"
                     onClick={() => edit(planAddRule(entity.id))}
                 >
                     <Plus />

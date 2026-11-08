@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import {
+    Brackets,
     ChevronDown,
     ChevronRight,
-    MoreHorizontal,
+    Columns2,
+    Eraser,
+    MoreVertical,
     Plus,
+    Trash2,
     X,
 } from 'lucide-react';
+import { cn } from '@/lib/utils/utils';
 import {
     planAddUserType,
     planSetUserTypeKind,
@@ -56,8 +61,12 @@ const EnumValues: React.FC<{ type: UserType }> = ({ type }) => {
     };
     return (
         <div className="space-y-2">
+            <span className="flex items-center gap-1.5 px-1 text-xs font-bold text-slate-600 dark:text-slate-300">
+                <Columns2 className="size-3.5" />
+                {text('userTypes.enumValues')}
+            </span>
             {values.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="px-1 text-xs text-muted-foreground">
                     {text('userTypes.noValues')}
                 </p>
             ) : (
@@ -222,13 +231,22 @@ const TypeRow: React.FC<{
         (s) => s.ui.highlightedTypeId === type.id
     );
     return (
-        <div className="rounded-md border" data-testid="user-type-row">
-            <div className="flex items-center gap-1 p-1" {...hold}>
+        <div
+            className="rounded-[10px] border bg-card"
+            data-testid="user-type-row"
+        >
+            <div
+                className={cn(
+                    'group flex h-11 items-center gap-1 rounded-[10px] pl-2 pr-1 hover:bg-accent/70',
+                    open && 'bg-accent/70'
+                )}
+                {...hold}
+            >
                 <button
                     type="button"
                     aria-expanded={open}
                     aria-label={text('tables.toggle')}
-                    className="flex size-7 shrink-0 items-center justify-center"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={onToggle}
                 >
                     {open ? (
@@ -259,16 +277,21 @@ const TypeRow: React.FC<{
                         </span>
                     ) : null}
                 </InlineName>
+                <span className="shrink-0 rounded-full border px-2 text-[11px] font-semibold leading-5 text-muted-foreground">
+                    {type.kind === 'enum'
+                        ? text('userTypes.enum')
+                        : text('userTypes.composite')}
+                </span>
                 <DropdownMenu {...menu}>
                     <DropdownMenuTrigger asChild>
                         <Button
                             type="button"
                             size="icon"
                             variant="ghost"
-                            className="size-7 shrink-0"
+                            className="size-8 shrink-0"
                             aria-label={text('userTypes.actions')}
                         >
-                            <MoreHorizontal />
+                            <MoreVertical />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -302,9 +325,10 @@ const TypeRow: React.FC<{
                 </DropdownMenu>
             </div>
             {open ? (
-                <div className="space-y-3 border-t p-2">
+                <div className="space-y-3 p-2">
                     <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5 px-1 text-xs font-bold text-slate-600 dark:text-slate-300">
+                            <Brackets className="size-3.5" />
                             {text('userTypes.kind')}
                         </span>
                         <OptionSelect
@@ -336,6 +360,44 @@ const TypeRow: React.FC<{
                     ) : (
                         <Members type={type} />
                     )}
+                    <div className="flex flex-col items-center gap-1">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground"
+                            onClick={() =>
+                                store
+                                    .getState()
+                                    .setHighlightedType(
+                                        highlighted ? undefined : type.id
+                                    )
+                            }
+                        >
+                            <Eraser />
+                            {highlighted
+                                ? text('userTypes.clearHighlight')
+                                : text('userTypes.highlight')}
+                        </Button>
+                        {locked ? null : (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() =>
+                                    edit({
+                                        type: 'item.remove',
+                                        collection: 'userTypes',
+                                        id: type.id,
+                                    })
+                                }
+                            >
+                                <Trash2 />
+                                {text('userTypes.delete')}
+                            </Button>
+                        )}
+                    </div>
                 </div>
             ) : null}
         </div>
@@ -354,6 +416,8 @@ export const UserTypesSection: React.FC = () => {
         <Button
             type="button"
             size="sm"
+            variant="secondary"
+            className="shrink-0 px-2"
             onClick={() => edit(planAddUserType(design))}
         >
             <Plus />
@@ -367,7 +431,19 @@ export const UserTypesSection: React.FC = () => {
             <Notice
                 title={text('userTypes.empty')}
                 hint={text('userTypes.emptyHint')}
-            />
+            >
+                {locked ? null : (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="px-4 text-sm"
+                        onClick={() => edit(planAddUserType(design))}
+                    >
+                        {text('userTypes.add')}
+                    </Button>
+                )}
+            </Notice>
         );
     } else if (types.length === 0) {
         body = (
@@ -413,7 +489,7 @@ export const UserTypesSection: React.FC = () => {
                 <Input
                     aria-label={text('common.filter')}
                     placeholder={text('common.filter')}
-                    className="h-8"
+                    className="h-8 min-w-0 flex-1"
                     value={filterText}
                     onChange={(e) => setFilterText(e.target.value)}
                 />

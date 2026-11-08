@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import type { Column } from '@/core/model/column';
 import type { DatabaseType } from '@/core/model/database';
 import type { UserType } from '@/core/model/user-type';
 import { traitsOf } from '@/core/model/database';
-import { cn } from '@/lib/utils/utils';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
@@ -60,21 +59,15 @@ export const TypePicker: React.FC<{
                 type="button"
                 role="option"
                 aria-selected={current}
-                className={cn(
-                    'flex w-full items-baseline gap-2 rounded px-2 py-1 text-left text-sm hover:bg-accent',
-                    current && 'bg-accent/60'
-                )}
+                title={option.description}
+                className="flex h-8 w-full items-center justify-between gap-2 rounded-sm px-2 text-left text-sm hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => choose(option)}
             >
-                <span className="font-mono">
+                <span className="truncate">
                     {option.ref.name}
                     {suffix}
                 </span>
-                {option.description ? (
-                    <span className="truncate text-xs text-muted-foreground">
-                        {option.description}
-                    </span>
-                ) : null}
+                {current ? <Check className="size-4 shrink-0" /> : null}
             </button>
         );
     };
@@ -97,35 +90,41 @@ export const TypePicker: React.FC<{
                     aria-label={`${text('fields.typePlaceholder')}: ${
                         column.type.name ? typeLabel(column, databaseType) : '-'
                     }`}
-                    className="h-8 w-36 shrink-0 justify-between px-2 font-mono text-xs"
+                    className="h-8 w-[5.25rem] shrink-0 justify-between px-2 text-sm font-normal"
                 >
                     <span className="truncate">
                         {column.type.name
                             ? typeLabel(column, databaseType)
                             : text('fields.typePlaceholder')}
                     </span>
-                    <ChevronsUpDown className="size-3 opacity-50" />
+                    <ChevronsUpDown className="!size-3 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-64 p-2">
-                <Input
-                    aria-label={text('fields.typeSearch')}
-                    placeholder={text('fields.typeSearch')}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && typed)
-                            choose(typed.option, typed.declaration);
-                    }}
-                    className="mb-2 h-8"
-                />
-                <div role="listbox" className="max-h-64 overflow-y-auto">
+            <PopoverContent
+                align="start"
+                className="w-[min(21.75rem,calc(100vw-1rem))] overflow-hidden p-0"
+            >
+                <div className="flex items-center gap-2 border-b px-3">
+                    <Search className="size-4 shrink-0 text-muted-foreground" />
+                    <Input
+                        aria-label={text('fields.typeSearch')}
+                        placeholder={text('fields.typeSearchPlaceholder')}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && typed)
+                                choose(typed.option, typed.declaration);
+                        }}
+                        className="h-10 border-0 px-0 shadow-none"
+                    />
+                </div>
+                <div role="listbox" className="max-h-64 overflow-y-auto p-1">
                     {typed ? (
                         <button
                             type="button"
                             role="option"
                             aria-selected={false}
-                            className="flex w-full rounded px-2 py-1 text-left font-mono text-sm hover:bg-accent"
+                            className="flex h-8 w-full items-center rounded-sm px-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                             onClick={() =>
                                 choose(typed.option, typed.declaration)
                             }

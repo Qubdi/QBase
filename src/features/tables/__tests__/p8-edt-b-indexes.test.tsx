@@ -13,7 +13,7 @@ async function withIndexPopover(type: DatabaseType) {
         screen.getByRole('button', { name: /^Show or hide the details/ })
     );
     await userEvent.click(
-        screen.getAllByRole('button', { name: 'Add index' }).at(-1)!
+        screen.getAllByRole('button', { name: 'Add Index' }).at(-1)!
     );
     await userEvent.click(
         screen.getAllByRole('button', { name: 'Index attributes' }).at(-1)!

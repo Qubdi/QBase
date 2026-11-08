@@ -17,6 +17,8 @@ export interface InlineNameProps {
     /** a single click on the name, for rows that open on click */
     onActivate?: () => void;
     children?: React.ReactNode;
+    /** buttons drawn between the name and the pencil (shown with the pencil) */
+    actions?: React.ReactNode;
 }
 
 /**
@@ -33,6 +35,7 @@ export const InlineName: React.FC<InlineNameProps> = ({
     className,
     onActivate,
     children,
+    actions,
 }) => {
     const text = useText();
     const [editing, setEditing] = useState(false);
@@ -67,7 +70,7 @@ export const InlineName: React.FC<InlineNameProps> = ({
                 <Input
                     ref={input}
                     aria-label={editLabel}
-                    className="h-7 min-w-0 flex-1 px-2 text-sm"
+                    className="h-7 min-w-0 flex-1 rounded-full px-2 text-sm"
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => {
@@ -100,7 +103,10 @@ export const InlineName: React.FC<InlineNameProps> = ({
             <button
                 type="button"
                 title={readOnly ? undefined : hint}
-                className={cn('min-w-0 truncate text-left', className)}
+                className={cn(
+                    'min-w-0 truncate rounded-full border border-transparent px-2 py-0.5 text-left group-hover:border-foreground/60 group-focus-within:border-foreground/60',
+                    className
+                )}
                 onClick={onActivate}
                 onDoubleClick={(e) => {
                     e.stopPropagation();
@@ -110,12 +116,14 @@ export const InlineName: React.FC<InlineNameProps> = ({
                 {value}
             </button>
             {children}
+            <span className="min-w-0 flex-1" />
+            {actions}
             {readOnly ? null : (
                 <Button
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="size-7 shrink-0"
+                    className="size-8 shrink-0 text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
                     aria-label={editLabel}
                     onClick={(e) => {
                         e.stopPropagation();

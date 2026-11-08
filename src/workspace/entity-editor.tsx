@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, PanelRight } from 'lucide-react';
+import { PanelRight, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DebouncedInput } from '@/platform/panel/debounced-input';
 import { useEditorEnv } from '@/platform/panel/use-editor';
@@ -95,23 +95,25 @@ export const EntityEditor: React.FC<{ entityId: Id; close(): void }> = ({
             aria-label={t('editor.workspace.canvas.editTable', {
                 name: entity.name,
             })}
-            className="w-[26rem] max-w-[90vw] space-y-3 rounded-lg border bg-card p-3 text-card-foreground shadow-lg"
+            className="w-[350px] max-w-[90vw] overflow-hidden rounded-xl border border-primary bg-card text-card-foreground shadow-lg ring-2 ring-primary/25"
         >
-            {hasSchemas && entity.kind !== 'view' ? (
-                <SchemaBox
-                    entityId={entity.id}
-                    schema={entity.schema}
-                    locked={locked}
-                />
-            ) : null}
-            <div className="flex items-center gap-2">
+            <div className="flex h-12 items-center gap-2 border-b bg-gradient-to-b from-primary/10 to-transparent px-3">
+                {hasSchemas && entity.kind !== 'view' ? (
+                    <div className="w-24 shrink-0">
+                        <SchemaBox
+                            entityId={entity.id}
+                            schema={entity.schema}
+                            locked={locked}
+                        />
+                    </div>
+                ) : null}
                 <DebouncedInput
                     required
                     aria-label={t('editor.workspace.canvas.tableName')}
                     value={entity.name}
                     readOnly={locked}
                     delay={1000}
-                    className="h-8 flex-1 font-semibold"
+                    className="h-8 min-w-0 flex-1 text-sm font-semibold"
                     onCommit={(name) =>
                         edit({
                             type: 'entity.update',
@@ -124,7 +126,7 @@ export const EntityEditor: React.FC<{ entityId: Id; close(): void }> = ({
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="size-8"
+                    className="size-8 shrink-0"
                     aria-label={t('editor.workspace.canvas.openInPanel')}
                     onClick={() =>
                         store.getState().showEntityInPanel(entity.id)
@@ -136,21 +138,21 @@ export const EntityEditor: React.FC<{ entityId: Id; close(): void }> = ({
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="size-8"
+                    className="size-8 shrink-0"
                     aria-label={t('editor.workspace.canvas.done')}
                     onClick={close}
                 >
-                    <Check />
+                    <X />
                 </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <div className="max-h-[60vh] overflow-y-auto px-2 py-1">
+                <EntityForm entity={entity} />
+            </div>
+            <p className="border-t bg-muted/30 px-3 py-2 text-right text-xs text-muted-foreground">
                 {t('editor.workspace.canvas.fieldCount', {
                     count: entity.columnIds.length,
                 })}
             </p>
-            <div className="max-h-[60vh] overflow-y-auto">
-                <EntityForm entity={entity} />
-            </div>
         </div>
     );
 };

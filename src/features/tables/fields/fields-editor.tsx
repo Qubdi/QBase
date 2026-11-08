@@ -26,16 +26,21 @@ const Toggle: React.FC<{
     pressed: boolean;
     disabled?: boolean;
     onClick: () => void;
+    tone?: 'plain' | 'key';
     children: React.ReactNode;
-}> = ({ label, pressed, disabled, onClick, children }) => (
+}> = ({ label, pressed, disabled, onClick, tone = 'plain', children }) => (
     <Button
         type="button"
         size="icon"
-        variant={pressed ? 'default' : 'outline'}
+        variant="ghost"
         aria-label={label}
         aria-pressed={pressed}
         disabled={disabled}
-        className="size-7 shrink-0 text-[11px]"
+        className={cn(
+            'size-7 shrink-0 text-xs text-slate-600 dark:text-slate-400',
+            pressed && 'bg-accent text-accent-foreground',
+            pressed && tone === 'key' && 'text-orange-700 dark:text-orange-400'
+        )}
         onClick={onClick}
     >
         {children}
@@ -43,7 +48,13 @@ const Toggle: React.FC<{
 );
 
 /** The fields of one table in the side panel (EDT-117 to EDT-139). */
-export const FieldsEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
+export const FieldsEditor: React.FC<{
+    entity: Entity;
+    /** a field added from outside (the form footer) that should take the focus */
+    addedId?: string;
+    /** told the id of a field added with the button of this editor */
+    onAdded?: (id: string) => void;
+}> = ({ entity, addedId, onAdded }) => {
     const { design, locked, edit } = useEditorEnv();
     const text = useText();
     const columns = columnsOf(design, entity);
@@ -76,16 +87,19 @@ export const FieldsEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
                         <div
                             className={cn(
                                 'flex min-w-0 flex-1 items-center gap-1',
-                                added.current === column.id && 'bg-sky-100/60'
+                                (addedId ?? added.current) === column.id &&
+                                    'bg-sky-100/60'
                             )}
                         >
                             <DebouncedInput
                                 aria-label={text('fields.name')}
-                                className="h-8 min-w-0 flex-1 px-2 text-sm"
+                                className="h-8 min-w-[3.5rem] flex-1 px-2 text-sm"
                                 value={column.name}
                                 required
                                 readOnly={locked}
-                                focusOnMount={added.current === column.id}
+                                focusOnMount={
+                                    (addedId ?? added.current) === column.id
+                                }
                                 placeholder={text('fields.namePlaceholder')}
                                 onCommit={(name) => update(column.id, { name })}
                             />
@@ -137,6 +151,7 @@ export const FieldsEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
                                 <Toggle
                                     label={text('fields.primaryKey')}
                                     pressed={column.primaryKey}
+                                    tone="key"
                                     disabled={locked}
                                     onClick={() =>
                                         update(column.id, {
@@ -144,7 +159,7 @@ export const FieldsEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
                                         })
                                     }
                                 >
-                                    <Key className="size-3.5" />
+                                    <Key className="size-4" />
                                 </Toggle>
                             )}
                             <AttributesPopover
@@ -188,13 +203,15 @@ export const FieldsEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
             {locked ? null : (
                 <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="w-full"
+                    className="h-7 px-2"
                     onClick={() => {
                         const command = planAddColumn(design, entity.id);
-                        if (command?.type === 'part.insert')
+                        if (command?.type === 'part.insert') {
                             added.current = command.item.id;
+                            onAdded?.(command.item.id);
+                        }
                         edit(command);
                     }}
                 >

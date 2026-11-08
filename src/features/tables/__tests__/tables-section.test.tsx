@@ -20,7 +20,7 @@ describe('EDT-110 EDT-102 an empty diagram', () => {
         expect(screen.getByText('No tables')).toBeTruthy();
         expect(screen.getByText('Create a table to get started')).toBeTruthy();
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Add table' })[0]
+            screen.getAllByRole('button', { name: 'Add Table' })[0]
         );
         const design = store.getState().design;
         const entity = design.entities.byId[design.entities.order[0]];
@@ -38,7 +38,7 @@ describe('EDT-110 EDT-102 an empty diagram', () => {
             panel: { viewportOrigin: () => ({ x: 100, y: 40 }) },
         });
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Add table' })[0]
+            screen.getAllByRole('button', { name: 'Add Table' })[0]
         );
         const design = store.getState().design;
         const entity = design.entities.byId[design.entities.order[0]];
@@ -58,7 +58,7 @@ describe('EDT-103 EDT-109 the rows and the filter box', () => {
             screen.getByText('No tables found matching your filter.')
         ).toBeTruthy();
         await userEvent.click(
-            screen.getByRole('button', { name: 'Clear filter' })
+            screen.getByRole('button', { name: 'Clear Filter' })
         );
         expect(screen.getAllByTestId('table-row')).toHaveLength(2);
     });
@@ -71,7 +71,7 @@ describe('EDT-103 EDT-109 the rows and the filter box', () => {
         await userEvent.click(toggles[0]);
         expect(screen.getByText('Fields')).toBeTruthy();
         expect(screen.getByText('Indexes')).toBeTruthy();
-        expect(screen.getByText('Check constraints')).toBeTruthy();
+        expect(screen.getByText('Check Constraints')).toBeTruthy();
         expect(screen.getByText('Description')).toBeTruthy();
         await userEvent.click(toggles[1]);
         expect(screen.getAllByText('Fields')).toHaveLength(1);
@@ -152,7 +152,7 @@ describe('EDT-096 renaming a table in the list', () => {
         expect(
             screen.queryByRole('button', { name: 'Rename table' })
         ).toBeNull();
-        expect(screen.queryByRole('button', { name: 'Add table' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Add Table' })).toBeNull();
     });
 });
 
@@ -164,18 +164,18 @@ describe('EDT-104 EDT-099 EDT-100 EDT-107 table actions', () => {
         );
         const menu = () =>
             userEvent.click(
-                screen.getByRole('button', { name: 'Table actions' })
+                screen.getByRole('button', { name: 'Table Actions' })
             );
         await menu();
         await userEvent.click(
-            await screen.findByRole('menuitem', { name: 'Duplicate table' })
+            await screen.findByRole('menuitem', { name: 'Duplicate Table' })
         );
         expect(names(store)).toEqual(['orders', 'orders_copy']);
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Table actions' })[1]
+            screen.getAllByRole('button', { name: 'Table Actions' })[1]
         );
         await userEvent.click(
-            await screen.findByRole('menuitem', { name: 'Delete table' })
+            await screen.findByRole('menuitem', { name: 'Delete Table' })
         );
         expect(names(store)).toEqual(['orders']);
         store.getState().undo();
@@ -185,11 +185,11 @@ describe('EDT-104 EDT-099 EDT-100 EDT-107 table actions', () => {
     it('offers Add index only for tables, and Change schema only with schemas', async () => {
         renderPanel(<TablesSection />, withTables(['orders'], 'mysql'));
         await userEvent.click(
-            screen.getByRole('button', { name: 'Table actions' })
+            screen.getByRole('button', { name: 'Table Actions' })
         );
         const menu = await screen.findByRole('menu');
-        expect(within(menu).getByText('Add index')).toBeTruthy();
-        expect(within(menu).queryByText('Change schema')).toBeNull();
+        expect(within(menu).getByText('Add Index')).toBeTruthy();
+        expect(within(menu).queryByText('Change Schema')).toBeNull();
     });
 
     it('focus selects the table and asks the canvas to centre it (EDT-107, EDT-010)', async () => {
@@ -236,7 +236,7 @@ describe('EDT-076 EDT-101 schemas', () => {
             filter: {},
         });
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Add table' })[0]
+            screen.getAllByRole('button', { name: 'Add Table' })[0]
         );
         expect(await screen.findByText('Select schema')).toBeTruthy();
         await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
@@ -249,10 +249,10 @@ describe('EDT-076 EDT-101 schemas', () => {
             withTables(['a', 'b'])
         );
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Table actions' })[0]
+            screen.getAllByRole('button', { name: 'Table Actions' })[0]
         );
         await userEvent.click(
-            await screen.findByRole('menuitem', { name: 'Change schema' })
+            await screen.findByRole('menuitem', { name: 'Change Schema' })
         );
         const dialog = await screen.findByRole('dialog');
         await userEvent.click(
@@ -271,7 +271,7 @@ describe('EDT-076 EDT-101 schemas', () => {
 describe('dragging Add table onto the canvas', () => {
     it('the button is a drag source for a table and click still adds', async () => {
         const { store } = renderPanel(<TablesSection />, withTables([]));
-        const button = screen.getAllByRole('button', { name: 'Add table' })[0];
+        const button = screen.getAllByRole('button', { name: 'Add Table' })[0];
         const setData = vi.fn();
         expect(button.getAttribute('draggable')).toBe('true');
         fireEvent.dragStart(button, { dataTransfer: { setData } });
@@ -288,7 +288,7 @@ describe('dragging Add table onto the canvas', () => {
         await userEvent.click(
             screen.getAllByRole('button', { name: 'More ways to add' })[0]
         );
-        const entry = await screen.findByRole('menuitem', { name: 'Add view' });
+        const entry = await screen.findByRole('menuitem', { name: 'Add View' });
         const setData = vi.fn();
         expect(entry.getAttribute('draggable')).toBe('true');
         fireEvent.dragStart(entry, { dataTransfer: { setData } });
@@ -298,6 +298,6 @@ describe('dragging Add table onto the canvas', () => {
 
     it('has no drag source in a read-only diagram', () => {
         renderPanel(<TablesSection />, withTables([]), { readonly: true });
-        expect(screen.queryByRole('button', { name: 'Add table' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Add Table' })).toBeNull();
     });
 });

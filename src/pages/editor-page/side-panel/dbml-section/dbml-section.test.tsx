@@ -39,7 +39,9 @@ afterEach(() => {
 describe('EDT-238 EDT-239 the DBML section', () => {
     it('is read-only text with an Edit button for an editable design', () => {
         setup();
-        expect(screen.getByText(/Table "customers"/)).toBeTruthy();
+        expect(
+            screen.getByRole('textbox', { name: 'DBML' }).textContent
+        ).toMatch(/Table "customers"/);
         expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
         expect(
             screen.getByRole('button', { name: 'Show inline refs' })

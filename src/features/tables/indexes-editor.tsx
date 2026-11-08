@@ -1,5 +1,12 @@
 import React from 'react';
-import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
+import {
+    ChevronsUpDown,
+    Key as KeyIcon,
+    MoreHorizontal,
+    Plus,
+    Trash2,
+    X,
+} from 'lucide-react';
 import {
     canUseGin,
     offeredKeyMethods,
@@ -29,13 +36,7 @@ const FieldChooser: React.FC<{
     onChange: (ids: string[]) => void;
 }> = ({ columns, chosen, disabled, onChange }) => {
     const text = useText();
-    const label =
-        chosen.length === 0
-            ? text('indexes.selectFields')
-            : columns
-                  .filter((c) => chosen.includes(c.id))
-                  .map((c) => c.name)
-                  .join(', ');
+    const picked = columns.filter((c) => chosen.includes(c.id));
     return (
         <Popover>
             <PopoverTrigger asChild disabled={disabled}>
@@ -44,9 +45,28 @@ const FieldChooser: React.FC<{
                     variant="outline"
                     size="sm"
                     aria-label={text('indexes.selectFields')}
-                    className="h-8 min-w-0 flex-1 justify-start px-2 text-xs"
+                    className="h-8 min-w-0 flex-1 justify-between gap-1 px-2 text-xs font-normal"
                 >
-                    <span className="truncate">{label}</span>
+                    <span className="flex min-w-0 flex-wrap items-center gap-1 overflow-hidden">
+                        {picked.length === 0 ? (
+                            <span className="text-muted-foreground">
+                                {text('indexes.selectFields')}
+                            </span>
+                        ) : (
+                            picked.map((c) => (
+                                <span
+                                    key={c.id}
+                                    className="flex items-center gap-1 rounded-full border bg-secondary px-2 text-xs"
+                                >
+                                    {c.name}
+                                    {disabled ? null : (
+                                        <X className="!size-3" />
+                                    )}
+                                </span>
+                            ))
+                        )}
+                    </span>
+                    <ChevronsUpDown className="!size-3.5 opacity-50" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-56 space-y-1 p-2">
@@ -109,7 +129,7 @@ const IndexRow: React.FC<{
             data-testid={primary ? 'primary-key-index' : 'index-row'}
         >
             {primary ? (
-                <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">
+                <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[11px] text-accent-foreground">
                     {text('indexes.primaryKey')}
                 </span>
             ) : null}
@@ -123,14 +143,19 @@ const IndexRow: React.FC<{
             />
             <Button
                 type="button"
-                size="sm"
-                variant={index.distinct ? 'default' : 'outline'}
+                size="icon"
+                variant="ghost"
+                aria-label={text('indexes.unique')}
                 aria-pressed={index.distinct}
                 disabled={locked}
-                className="h-7 shrink-0 px-2 text-[11px]"
+                className={
+                    index.distinct
+                        ? 'size-8 shrink-0 bg-accent text-orange-700 dark:text-orange-400'
+                        : 'size-8 shrink-0 text-slate-600 dark:text-slate-400'
+                }
                 onClick={() => patch({ distinct: !index.distinct })}
             >
-                {text('indexes.unique')}
+                <KeyIcon />
             </Button>
             <Popover>
                 <PopoverTrigger asChild>
@@ -254,9 +279,9 @@ export const IndexesEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
             {locked ? null : (
                 <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="w-full"
+                    className="h-7 px-2"
                     onClick={() => edit(planAddKey(design, entity.id))}
                 >
                     <Plus />

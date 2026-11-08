@@ -8,6 +8,9 @@ import { planAddRule } from '@/core/commands/plan-column';
 import { renderPanel } from '@/features/testing/render-panel';
 import { TablesSection } from '../tables-section';
 
+const openSection = (name: string) =>
+    userEvent.click(screen.getByRole('button', { name }));
+
 async function openFirst(design = withTables(['orders'])) {
     const view = renderPanel(<TablesSection />, design);
     await userEvent.click(
@@ -26,7 +29,7 @@ describe('EDT-117 EDT-138 adding and deleting a field', () => {
     it('adds field_2 with the default type, nullable, at the end', async () => {
         const { store } = await openFirst();
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Add field' }).at(-1)!
+            screen.getAllByRole('button', { name: 'Add Field' }).at(-1)!
         );
         const { columns } = first(store);
         expect(columns.map((c) => c.name)).toEqual(['id', 'field_2']);
@@ -41,10 +44,10 @@ describe('EDT-117 EDT-138 adding and deleting a field', () => {
     it('deletes from the attributes popover and undo brings it back', async () => {
         const { store } = await openFirst();
         await userEvent.click(
-            screen.getByRole('button', { name: 'Field attributes' })
+            screen.getByRole('button', { name: 'Field Attributes' })
         );
         await userEvent.click(
-            await screen.findByRole('button', { name: 'Delete field' })
+            await screen.findByRole('button', { name: 'Delete Field' })
         );
         expect(first(store).columns).toHaveLength(0);
         store.getState().undo();
@@ -82,7 +85,7 @@ describe('EDT-133 EDT-134 the N and key toggles', () => {
     it('turning on the key makes the field not null, and the first key is unique', async () => {
         const { store } = await openFirst();
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Add field' }).at(-1)!
+            screen.getAllByRole('button', { name: 'Add Field' }).at(-1)!
         );
         const keys = screen.getAllByRole('button', { name: 'Primary key' });
         await userEvent.click(keys[0]); // clear the first key
@@ -152,7 +155,7 @@ describe('EDT-119 EDT-121 EDT-123 EDT-124 the type picker', () => {
         await userEvent.click(screen.getByRole('combobox'));
         expect(await screen.findByText('Standard types')).toBeTruthy();
         expect(screen.getByText('Custom types')).toBeTruthy();
-        expect(screen.getByText('sad | ok')).toBeTruthy();
+        expect(screen.getByTitle('sad | ok')).toBeTruthy();
     });
 });
 
@@ -160,12 +163,12 @@ describe('EDT-125 to EDT-132 the attributes popover', () => {
     it('shows only what fits: Auto Increment for integers, Array on PostgreSQL', async () => {
         await openFirst();
         await userEvent.click(
-            screen.getByRole('button', { name: 'Field attributes' })
+            screen.getByRole('button', { name: 'Field Attributes' })
         );
-        const pop = await screen.findByLabelText('Field attributes', {
+        const pop = await screen.findByLabelText('Field Attributes', {
             selector: '[role=dialog]',
         });
-        expect(within(pop).getByText('Auto increment')).toBeTruthy();
+        expect(within(pop).getByText('Auto Increment')).toBeTruthy();
         expect(within(pop).getByText('Array')).toBeTruthy();
         expect(within(pop).queryByText('Max length')).toBeNull();
     });
@@ -173,9 +176,9 @@ describe('EDT-125 to EDT-132 the attributes popover', () => {
     it('has no Array for MySQL', async () => {
         await openFirst(withTables(['orders'], 'mysql'));
         await userEvent.click(
-            screen.getByRole('button', { name: 'Field attributes' })
+            screen.getByRole('button', { name: 'Field Attributes' })
         );
-        const pop = await screen.findByLabelText('Field attributes', {
+        const pop = await screen.findByLabelText('Field Attributes', {
             selector: '[role=dialog]',
         });
         expect(within(pop).queryByText('Array')).toBeNull();
@@ -184,7 +187,7 @@ describe('EDT-125 to EDT-132 the attributes popover', () => {
     it('keeps the default value verbatim and an empty one clears it', async () => {
         const { store } = await openFirst();
         await userEvent.click(
-            screen.getByRole('button', { name: 'Field attributes' })
+            screen.getByRole('button', { name: 'Field Attributes' })
         );
         const box = await screen.findByPlaceholderText('No default');
         await userEvent.type(box, "now() + '1 day'");
@@ -198,7 +201,7 @@ describe('EDT-125 to EDT-132 the attributes popover', () => {
     it('a description shows a comment icon beside the name (EDT-132)', async () => {
         const { store } = await openFirst();
         await userEvent.click(
-            screen.getByRole('button', { name: 'Field attributes' })
+            screen.getByRole('button', { name: 'Field Attributes' })
         );
         const pop = await screen.findByRole('dialog');
         await userEvent.type(
@@ -219,7 +222,7 @@ describe('EDT-140 to EDT-146 indexes', () => {
     it('lists the primary-key index first, labelled, with no field editing', async () => {
         const { store } = await openFirst();
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Add index' }).at(-1)!
+            screen.getAllByRole('button', { name: 'Add Index' }).at(-1)!
         );
         const rows = screen.getAllByTestId(/index-row|primary-key-index/);
         expect(rows[0].getAttribute('data-testid')).toBe('primary-key-index');
@@ -239,7 +242,7 @@ describe('EDT-140 to EDT-146 indexes', () => {
     it('chooses fields and toggles Unique', async () => {
         const { store } = await openFirst();
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Add index' }).at(-1)!
+            screen.getAllByRole('button', { name: 'Add Index' }).at(-1)!
         );
         const row = screen.getAllByTestId('index-row')[0];
         await userEvent.click(
@@ -269,7 +272,7 @@ describe('EDT-140 to EDT-146 indexes', () => {
             screen.getByRole('button', { name: /^Show or hide the details/ })
         );
         expect(screen.queryByText('Indexes')).toBeNull();
-        expect(screen.queryByText('Check constraints')).toBeNull();
+        expect(screen.queryByText('Check Constraints')).toBeNull();
         expect(screen.getByText('Fields')).toBeTruthy();
     });
 });
@@ -277,8 +280,9 @@ describe('EDT-140 to EDT-146 indexes', () => {
 describe('EDT-147 to EDT-151 check constraints', () => {
     it('adds a check, saves its expression and deletes it', async () => {
         const { store } = await openFirst();
+        await openSection('Check Constraints');
         await userEvent.click(
-            screen.getAllByRole('button', { name: 'Add check' }).at(-1)!
+            screen.getAllByRole('button', { name: 'Add Check' }).at(-1)!
         );
         const box = screen.getByPlaceholderText('e.g. price > 0');
         await userEvent.type(box, 'id > 0');
@@ -305,6 +309,7 @@ describe('EDT-147 to EDT-151 check constraints', () => {
 describe('EDT-098 the description of a table', () => {
     it('saves as it is typed', async () => {
         const { store } = await openFirst();
+        await openSection('Description');
         await userEvent.type(
             screen.getByPlaceholderText('No description'),
             'orders placed'
@@ -327,7 +332,7 @@ describe('EDT-150 check constraints where SQL export leaves them out', () => {
         await userEvent.click(
             screen.getByRole('button', { name: /^Show or hide the details/ })
         );
-        expect(screen.queryByText('Check constraints')).toBeNull();
+        expect(screen.queryByText('Check Constraints')).toBeNull();
     });
 
     it('warns and offers no Add button when the table has some', async () => {
@@ -335,16 +340,17 @@ describe('EDT-150 check constraints where SQL export leaves them out', () => {
         await userEvent.click(
             screen.getByRole('button', { name: /^Show or hide the details/ })
         );
-        expect(screen.getByText('Check constraints')).toBeTruthy();
+        await openSection('Check Constraints');
         expect(screen.getByRole('note').textContent).toMatch(/leaves check/);
-        expect(screen.queryByRole('button', { name: 'Add check' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Add Check' })).toBeNull();
     });
 
     it('stays as before for a database that writes checks', async () => {
         const { store } = await openFirst();
         expect(store.getState().design.databaseType).not.toBe('clickhouse');
+        await openSection('Check Constraints');
         expect(
-            screen.getAllByRole('button', { name: 'Add check' }).length
+            screen.getAllByRole('button', { name: 'Add Check' }).length
         ).toBeGreaterThan(0);
     });
 });
@@ -370,10 +376,10 @@ describe('EDT-139 deleting a field that has a relationship', () => {
             })[0]
         );
         await userEvent.click(
-            screen.getByRole('button', { name: 'Field attributes' })
+            screen.getByRole('button', { name: 'Field Attributes' })
         );
         await userEvent.click(
-            await screen.findByRole('button', { name: 'Delete field' })
+            await screen.findByRole('button', { name: 'Delete Field' })
         );
         expect(store.getState().design.links.order).toHaveLength(0);
         expect(

@@ -5,7 +5,15 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import { Copy } from 'lucide-react';
+import {
+    ArrowLeftRight,
+    Check,
+    Copy,
+    Pencil,
+    PencilOff,
+    X,
+} from 'lucide-react';
+import { highlightLine } from './dbml-highlight';
 import type { DiffMarks } from '@/canvas/diff-marks';
 import type { Design } from '@/core/model/design';
 import { buildProposal } from '@/features/dbml-diff/build-proposal';
@@ -38,7 +46,34 @@ interface Pending {
 }
 
 const TEXT_BOX =
-    'font-mono text-xs leading-4 p-2 whitespace-pre overflow-auto break-normal';
+    'font-mono text-sm leading-[19px] py-1 pl-1 pr-12 whitespace-pre overflow-auto break-normal';
+
+const ICON_BUTTON = 'size-[30px] shrink-0 bg-background shadow-sm';
+
+/** The line numbers; they follow the vertical scroll of the text beside them. */
+const Gutter = React.forwardRef<
+    HTMLDivElement,
+    { count: number; errorLine?: number | null }
+>(({ count, errorLine }, ref) => (
+    <div
+        ref={ref}
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-12 select-none overflow-hidden py-1 pr-2 text-right font-mono text-sm leading-[19px] text-sky-800 dark:text-sky-300"
+    >
+        {Array.from({ length: count }, (_, i) => (
+            <div
+                key={i}
+                className={cn(
+                    errorLine === i + 1 &&
+                        'font-bold text-red-700 dark:text-red-400'
+                )}
+            >
+                {i + 1}
+            </div>
+        ))}
+    </div>
+));
+Gutter.displayName = 'Gutter';
 
 /**
  * The DBML section (EDT-238 to EDT-247): the design as DBML text; in an
@@ -65,6 +100,7 @@ export const DbmlSection: React.FC = () => {
     const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const applyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const backdrop = useRef<HTMLDivElement>(null);
+    const gutter = useRef<HTMLDivElement>(null);
     const result = useMemo((): {
         text: string;
         diagnostics: Diagnostic[];
@@ -198,7 +234,6 @@ export const DbmlSection: React.FC = () => {
     };
 
     const canEdit = !locked;
-    const lines = draft.split('\n');
     const summary = pending
         ? text('dbml.summary', {
               added: pending.diff.tables.added.length,
@@ -209,137 +244,196 @@ export const DbmlSection: React.FC = () => {
           })
         : undefined;
 
+    const shown = editing ? draft : result.text || text('dbml.empty');
+    const shownLines = shown.split('\n');
+    const notice =
+        errorLine !== undefined ? (
+            <p role="alert" className="text-xs text-red-700 dark:text-red-400">
+                {errorLine === null
+                    ? text('dbml.parseErrorNoLine')
+                    : text('dbml.parseError', { line: errorLine })}
+            </p>
+        ) : summary ? (
+            <p className="text-xs text-muted-foreground">{summary}</p>
+        ) : null;
+
     return (
-        <div className="relative flex h-full flex-col gap-2 p-2">
+        <div className="relative flex h-full flex-col gap-1 p-1">
+            <h3 className="sr-only">{text('dbml.title')}</h3>
             {applying ? (
                 <div
                     role="status"
                     aria-live="polite"
-                    className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70"
+                    className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-background/70"
                 >
                     <Spinner />
                     <span className="text-sm">{text('dbml.applying')}</span>
                 </div>
             ) : null}
-            <div className="flex flex-wrap items-center gap-2">
-                <h3 className="flex-1 text-sm font-semibold">
-                    {text('dbml.title')}
-                </h3>
-                {editing && pending ? (
-                    <>
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="bg-green-600 text-white hover:bg-green-700"
-                            disabled={stale || applying}
-                            onClick={accept}
-                        >
-                            {text('dbml.accept')}
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="bg-red-600 text-white hover:bg-red-700"
-                            onClick={stopEditing}
-                        >
-                            {text('dbml.undo')}
-                        </Button>
-                    </>
-                ) : (
-                    <>
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            aria-pressed={inline}
-                            disabled={editing}
-                            onClick={() => setInline((v) => !v)}
-                        >
-                            {inline
-                                ? text('dbml.standardRefs')
-                                : text('dbml.inlineRefs')}
-                        </Button>
-                        {canEdit ? (
+            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[10px] border bg-background">
+                <div className="absolute right-3 top-1 z-10 flex flex-col gap-1">
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className={ICON_BUTTON}
+                        aria-label={text('dbml.copy')}
+                        onClick={() => void copy()}
+                    >
+                        <Copy />
+                    </Button>
+                    {editing && pending ? (
+                        <>
                             <Button
                                 type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={editing ? stopEditing : startEditing}
-                            >
-                                {editing
-                                    ? text('dbml.view')
-                                    : text('dbml.edit')}
-                            </Button>
-                        ) : null}
-                    </>
-                )}
-                <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="size-8"
-                    aria-label={text('dbml.copy')}
-                    onClick={() => void copy()}
-                >
-                    <Copy />
-                </Button>
-            </div>
-            {editing ? (
-                <div className="relative min-h-0 flex-1 overflow-hidden rounded-md border bg-muted/40">
-                    <div
-                        ref={backdrop}
-                        aria-hidden
-                        className={cn(
-                            TEXT_BOX,
-                            'absolute inset-0 text-transparent'
-                        )}
-                    >
-                        {lines.map((line, i) => (
-                            <div
-                                key={i}
-                                data-line-error={errorLine === i + 1}
+                                size="icon"
                                 className={cn(
-                                    'min-h-4',
-                                    errorLine === i + 1 && 'bg-red-500/30'
+                                    ICON_BUTTON,
+                                    'bg-green-700 text-white hover:bg-green-800'
                                 )}
+                                aria-label={text('dbml.accept')}
+                                title={text('dbml.accept')}
+                                disabled={stale || applying}
+                                onClick={accept}
                             >
-                                {line}
-                            </div>
-                        ))}
-                    </div>
-                    <textarea
-                        aria-label={text('dbml.editor')}
-                        aria-invalid={errorLine !== undefined}
-                        spellCheck={false}
-                        wrap="off"
-                        value={draft}
+                                <Check />
+                            </Button>
+                            <Button
+                                type="button"
+                                size="icon"
+                                className={cn(
+                                    ICON_BUTTON,
+                                    'bg-red-700 text-white hover:bg-red-800'
+                                )}
+                                aria-label={text('dbml.undo')}
+                                title={text('dbml.undo')}
+                                onClick={stopEditing}
+                            >
+                                <X />
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                className={ICON_BUTTON}
+                                aria-label={
+                                    inline
+                                        ? text('dbml.standardRefs')
+                                        : text('dbml.inlineRefs')
+                                }
+                                aria-pressed={inline}
+                                disabled={editing}
+                                onClick={() => setInline((v) => !v)}
+                            >
+                                <ArrowLeftRight />
+                            </Button>
+                            {canEdit ? (
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="outline"
+                                    className={ICON_BUTTON}
+                                    aria-label={
+                                        editing
+                                            ? text('dbml.view')
+                                            : text('dbml.edit')
+                                    }
+                                    onClick={
+                                        editing ? stopEditing : startEditing
+                                    }
+                                >
+                                    {editing ? <PencilOff /> : <Pencil />}
+                                </Button>
+                            ) : null}
+                        </>
+                    )}
+                </div>
+                <Gutter
+                    ref={gutter}
+                    count={shownLines.length}
+                    errorLine={editing ? errorLine : undefined}
+                />
+                {editing ? (
+                    <>
+                        <div
+                            ref={backdrop}
+                            aria-hidden
+                            className={cn(
+                                TEXT_BOX,
+                                'absolute inset-y-0 left-12 right-0'
+                            )}
+                        >
+                            {shownLines.map((line, i) => (
+                                <div
+                                    key={i}
+                                    data-line-error={errorLine === i + 1}
+                                    className={cn(
+                                        'min-h-[19px]',
+                                        errorLine === i + 1 &&
+                                            'bg-red-500/20 underline decoration-red-600 decoration-wavy'
+                                    )}
+                                >
+                                    {highlightLine(line)}
+                                </div>
+                            ))}
+                        </div>
+                        <textarea
+                            aria-label={text('dbml.editor')}
+                            aria-invalid={errorLine !== undefined}
+                            spellCheck={false}
+                            wrap="off"
+                            value={draft}
+                            className={cn(
+                                TEXT_BOX,
+                                'absolute inset-y-0 left-12 right-0 h-full w-[calc(100%-3rem)] resize-none bg-transparent text-transparent caret-foreground outline-none'
+                            )}
+                            onChange={(event) => type(event.target.value)}
+                            onScroll={(event) => {
+                                const el = backdrop.current;
+                                if (el) {
+                                    el.scrollTop =
+                                        event.currentTarget.scrollTop;
+                                    el.scrollLeft =
+                                        event.currentTarget.scrollLeft;
+                                }
+                                if (gutter.current)
+                                    gutter.current.scrollTop =
+                                        event.currentTarget.scrollTop;
+                            }}
+                        />
+                    </>
+                ) : (
+                    // a read-only code view: focusable so the keyboard can scroll it
+                    <pre
+                        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
+                        role="textbox"
+                        aria-readonly="true"
+                        aria-multiline="true"
+                        tabIndex={0}
+                        aria-label={text('dbml.title')}
                         className={cn(
                             TEXT_BOX,
-                            'absolute inset-0 h-full w-full resize-none bg-transparent outline-none'
+                            'absolute inset-y-0 left-12 right-0 m-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
                         )}
-                        onChange={(event) => type(event.target.value)}
                         onScroll={(event) => {
-                            const el = backdrop.current;
-                            if (!el) return;
-                            el.scrollTop = event.currentTarget.scrollTop;
-                            el.scrollLeft = event.currentTarget.scrollLeft;
+                            if (gutter.current)
+                                gutter.current.scrollTop =
+                                    event.currentTarget.scrollTop;
                         }}
-                    />
-                </div>
-            ) : (
-                // a read-only code view: focusable so the keyboard can scroll it
-                <pre
-                    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
-                    role="textbox"
-                    aria-readonly="true"
-                    aria-multiline="true"
-                    tabIndex={0}
-                    aria-label={text('dbml.title')}
-                    className="min-h-0 flex-1 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-xs"
-                >
-                    {result.text || text('dbml.empty')}
-                </pre>
-            )}
+                    >
+                        {result.text
+                            ? shownLines.map((line, i) => (
+                                  <div key={i} className="min-h-[19px]">
+                                      {highlightLine(line)}
+                                  </div>
+                              ))
+                            : text('dbml.empty')}
+                    </pre>
+                )}
+            </div>
             {!editing && result.diagnostics.length > 0 ? (
                 <div className="text-xs text-muted-foreground">
                     <p className="font-semibold">{text('dbml.leftOut')}</p>
@@ -350,15 +444,7 @@ export const DbmlSection: React.FC = () => {
                     </ul>
                 </div>
             ) : null}
-            {errorLine !== undefined ? (
-                <p role="alert" className="text-xs text-red-600">
-                    {errorLine === null
-                        ? text('dbml.parseErrorNoLine')
-                        : text('dbml.parseError', { line: errorLine })}
-                </p>
-            ) : summary ? (
-                <p className="text-xs text-muted-foreground">{summary}</p>
-            ) : null}
+            {notice}
         </div>
     );
 };

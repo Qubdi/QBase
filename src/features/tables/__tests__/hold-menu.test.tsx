@@ -22,7 +22,7 @@ describe('EDT-009 a touch hold on a panel row opens its actions menu', () => {
         act(() => void vi.advanceTimersByTime(600));
         vi.useRealTimers();
         const items = await screen.findAllByRole('menuitem');
-        expect(items.map((i) => i.textContent)).toContain('Add field');
+        expect(items.map((i) => i.textContent)).toContain('Add Field');
         expect(row).toBeTruthy();
     });
 
@@ -50,6 +50,6 @@ describe('EDT-009 a touch hold on a panel row opens its actions menu', () => {
         const items = screen
             .queryAllByRole('menuitem')
             .map((i) => i.textContent);
-        expect(items).not.toContain('Add field');
+        expect(items).not.toContain('Add Field');
     });
 });

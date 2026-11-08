@@ -21,7 +21,9 @@ describe('EDT-188 EDT-189 the section and New Type', () => {
                 'Custom types will appear here when they are available in your database'
             )
         ).toBeTruthy();
-        await userEvent.click(screen.getByRole('button', { name: 'New type' }));
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'New Type' })[0]
+        );
         expect(types(store)[0]).toMatchObject({
             name: 'type_1',
             kind: 'enum',
@@ -46,7 +48,9 @@ describe('EDT-188 EDT-189 the section and New Type', () => {
 describe('EDT-190 renaming and deleting', () => {
     it('renames on Enter and deletes from the menu, undoably (EDT-199)', async () => {
         const { store } = renderPanel(<UserTypesSection />, withTables([]));
-        await userEvent.click(screen.getByRole('button', { name: 'New type' }));
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'New Type' })[0]
+        );
         await userEvent.click(
             screen.getByRole('button', { name: 'Rename type' })
         );
@@ -56,7 +60,7 @@ describe('EDT-190 renaming and deleting', () => {
         expect(types(store)[0].name).toBe('mood');
         await userEvent.click(screen.getByRole('button', { name: 'Actions' }));
         await userEvent.click(
-            await screen.findByRole('menuitem', { name: 'Delete' })
+            await screen.findByRole('menuitem', { name: 'Delete Type' })
         );
         expect(types(store)).toHaveLength(0);
         store.getState().undo();
@@ -67,7 +71,9 @@ describe('EDT-190 renaming and deleting', () => {
 describe('EDT-191 to EDT-194 kind, values and members', () => {
     async function open() {
         const view = renderPanel(<UserTypesSection />, withTables([]));
-        await userEvent.click(screen.getByRole('button', { name: 'New type' }));
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'New Type' })[0]
+        );
         await userEvent.click(
             screen.getByRole('button', { name: /^Show or hide the details/ })
         );
@@ -111,7 +117,7 @@ describe('EDT-191 to EDT-194 kind, values and members', () => {
             await screen.findByRole('option', { name: 'Composite' })
         );
         await userEvent.click(
-            screen.getByRole('button', { name: 'Add field' })
+            screen.getByRole('button', { name: 'Add Field' })
         );
         expect(types(store)[0].members).toHaveLength(1);
         const row = screen.getByLabelText('Field name').closest('div')!;
@@ -145,7 +151,7 @@ describe('EDT-196 Highlight Fields', () => {
         const { store } = renderPanel(<UserTypesSection />, typed());
         await userEvent.click(screen.getByRole('button', { name: 'Actions' }));
         await userEvent.click(
-            await screen.findByRole('menuitem', { name: 'Highlight fields' })
+            await screen.findByRole('menuitem', { name: 'Highlight Fields' })
         );
         expect(store.getState().ui.highlightedTypeId).toBe('a');
         expect(store.getState().history.undo).toHaveLength(0);

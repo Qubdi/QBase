@@ -32,8 +32,11 @@ describe('EDT-002 EDT-003 EDT-187 the panel shows the section the store names', 
     it('loads the DBML section on demand (EDT-238)', async () => {
         const { store } = renderPanel(<SidePanel />, withTables(['a']));
         act(() => store.getState().showPanel('dbml'));
-        expect(
-            await screen.findByText(/Table "a"|a/, {}, { timeout: 4000 })
-        ).toBeTruthy();
+        const code = await screen.findByRole(
+            'textbox',
+            { name: 'DBML' },
+            { timeout: 4000 }
+        );
+        expect(code.textContent).toMatch(/Table "public"\."a"|Table "a"/);
     });
 });

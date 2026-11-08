@@ -12,7 +12,9 @@ describe('EDT-218 EDT-208 EDT-209 EDT-200 the Areas tab', () => {
         const { store } = renderPanel(<VisualsSection />, withTables([]));
         expect(screen.getByText('No areas')).toBeTruthy();
         expect(screen.getByText('Create an area to get started')).toBeTruthy();
-        await userEvent.click(screen.getByRole('button', { name: 'Add area' }));
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Add Area' })[0]
+        );
         const d = store.getState().design;
         const region = d.regions.byId[d.regions.order[0]];
         expect(region.label).toBe('Area 1');
@@ -21,7 +23,9 @@ describe('EDT-218 EDT-208 EDT-209 EDT-200 the Areas tab', () => {
 
     it('renames, deletes (undoably) and filters areas', async () => {
         const { store } = renderPanel(<VisualsSection />, withTables([]));
-        await userEvent.click(screen.getByRole('button', { name: 'Add area' }));
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Add Area' })[0]
+        );
         await userEvent.click(
             screen.getByRole('button', { name: 'Edit name' })
         );
@@ -78,13 +82,15 @@ describe('EDT-211 EDT-214 to EDT-216 the Notes tab', () => {
 
     it('shows the empty state and adds an empty 200 x 150 yellow note', async () => {
         const { store } = await notes();
-        expect(screen.getByText('No notes')).toBeTruthy();
+        expect(screen.getByText('No Notes')).toBeTruthy();
         expect(
             screen.getByText(
                 'Create a note to add text annotations on the canvas'
             )
         ).toBeTruthy();
-        await userEvent.click(screen.getByRole('button', { name: 'Add note' }));
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Add Note' })[0]
+        );
         const d = store.getState().design;
         expect(d.memos.byId[d.memos.order[0]]).toMatchObject({
             body: '',
@@ -136,7 +142,7 @@ describe('dragging from the Visuals tabs', () => {
         const { fireEvent } = await import('@testing-library/react');
         renderPanel(<VisualsSection />, withTables([]));
         const setData = vi.fn();
-        const area = screen.getByRole('button', { name: 'Add area' });
+        const area = screen.getAllByRole('button', { name: 'Add Area' })[0];
         expect(area.getAttribute('draggable')).toBe('true');
         fireEvent.dragStart(area, { dataTransfer: { setData } });
         expect(setData).toHaveBeenCalledWith(NEW_ITEM_TYPE, 'area');
@@ -144,6 +150,6 @@ describe('dragging from the Visuals tabs', () => {
 
     it('are not draggable in a read-only diagram (no add button)', () => {
         renderPanel(<VisualsSection />, withTables([]), { readonly: true });
-        expect(screen.queryByRole('button', { name: 'Add area' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Add Area' })).toBeNull();
     });
 });

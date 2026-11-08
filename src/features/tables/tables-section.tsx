@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { ChevronDown, Plus } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronDown, Table2 } from 'lucide-react';
 import { hidesEverything } from '@/features/filters/filter-tree';
+import { cn } from '@/lib/utils/utils';
 import { Notice } from '@/platform/panel/notice';
 import { SortableList } from '@/platform/panel/sortable-list';
 import { useEditorEnv } from '@/platform/panel/use-editor';
@@ -34,7 +35,23 @@ export const TablesSection: React.FC = () => {
         if (expanded) setOpenId(expanded);
     }, [expanded]);
 
-    const { add, dialog } = useAddTable(() => setFilterText(''));
+    // a table added from here opens its form at once
+    const knownIds = useRef(new Set(design.entities.order));
+    const justAdded = useRef(false);
+    const { add, dialog } = useAddTable(() => {
+        justAdded.current = true;
+        setFilterText('');
+    });
+    useEffect(() => {
+        const fresh = design.entities.order.filter(
+            (id) => !knownIds.current.has(id)
+        );
+        knownIds.current = new Set(design.entities.order);
+        if (justAdded.current && fresh.length > 0) {
+            justAdded.current = false;
+            setOpenId(fresh[fresh.length - 1]);
+        }
+    }, [design.entities.order]);
     const rows = listTables({ design, filter, showViews, text: filterText });
     const everything = design.entities.order.length;
     const showSchema = visibleSchemas(design, filter, showViews).length > 1;
@@ -44,11 +61,12 @@ export const TablesSection: React.FC = () => {
             <Button
                 type="button"
                 size="sm"
-                className={showViews ? 'rounded-r-none' : undefined}
+                variant="secondary"
+                className={cn('px-2', showViews && 'rounded-r-none')}
                 onClick={() => add('table')}
                 {...newItemDragProps('table')}
             >
-                <Plus />
+                <Table2 />
                 {text('tables.add')}
             </Button>
             {showViews ? (
@@ -57,7 +75,8 @@ export const TablesSection: React.FC = () => {
                         <Button
                             type="button"
                             size="sm"
-                            className="rounded-l-none border-l border-primary-foreground/30 px-1.5"
+                            variant="secondary"
+                            className="rounded-l-none border-l border-border px-1.5"
                             aria-label={text('tables.addMenu')}
                         >
                             <ChevronDown />
@@ -76,6 +95,18 @@ export const TablesSection: React.FC = () => {
         </div>
     );
 
+    const emptyAdd = locked ? null : (
+        <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="px-4 text-sm"
+            onClick={() => add('table')}
+        >
+            {text('tables.add')}
+        </Button>
+    );
+
     let body: React.ReactNode;
     if (everything === 0) {
         body = (
@@ -83,7 +114,7 @@ export const TablesSection: React.FC = () => {
                 title={text('tables.empty')}
                 hint={text('tables.emptyHint')}
             >
-                {addButton}
+                {emptyAdd}
             </Notice>
         );
     } else if (hidesEverything(design, filter)) {
@@ -146,7 +177,7 @@ export const TablesSection: React.FC = () => {
     }
 
     return (
-        <div className="flex h-full flex-col gap-2 p-2">
+        <div className="flex h-full flex-col gap-1 px-2 py-1">
             <div className="flex items-center gap-2">
                 <Input
                     aria-label={text('common.filter')}

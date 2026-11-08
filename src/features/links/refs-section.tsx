@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, ListTree, Waypoints } from 'lucide-react';
 import { planDeleteDependency } from '@/core/commands/plan-dependency';
 import {
     planDeleteLink,
@@ -42,11 +42,11 @@ const RefRow: React.FC<{
     ];
 
     return (
-        <div className="rounded-md border" data-testid="ref-row">
+        <div className="rounded-[10px] border bg-card" data-testid="ref-row">
             <button
                 type="button"
                 aria-expanded={open}
-                className="flex w-full items-center gap-1 p-2 text-left text-sm font-medium"
+                className={`flex min-h-11 w-full items-center gap-1 rounded-[10px] px-2 text-left text-sm font-medium hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${open ? 'bg-accent/70' : ''}`}
                 onClick={() => {
                     store.getState().select([link.id]);
                     onToggle();
@@ -146,7 +146,7 @@ const DependencyRow: React.FC<{ dependency: Dependency }> = ({
     );
     return (
         <div
-            className={`space-y-2 rounded-md border p-2 text-sm ${selected ? 'ring-2 ring-primary' : ''}`}
+            className={`space-y-2 rounded-[10px] border bg-card p-2 text-sm ${selected ? 'ring-2 ring-primary' : ''}`}
             data-testid="dependency-row"
         >
             <button
@@ -216,7 +216,19 @@ export const RefsSection: React.FC = () => {
     let body: React.ReactNode;
     if (design.links.order.length === 0 && design.dependencies.length === 0) {
         body = (
-            <Notice title={text('refs.empty')} hint={text('refs.emptyHint')} />
+            <Notice title={text('refs.empty')} hint={text('refs.emptyHint')}>
+                {locked ? null : (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="px-4 text-sm"
+                        onClick={() => setCreating(true)}
+                    >
+                        {text('refs.add')}
+                    </Button>
+                )}
+            </Notice>
         );
     } else if (links.length === 0 && dependencies.length === 0) {
         body = <Notice title={text('refs.noMatch')} />;
@@ -225,7 +237,7 @@ export const RefsSection: React.FC = () => {
             <div className="space-y-3">
                 {links.length > 0 ? (
                     <div className="space-y-1">
-                        <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <h3 className="px-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                             {text('refs.relationships')}
                         </h3>
                         <WindowedList
@@ -244,7 +256,7 @@ export const RefsSection: React.FC = () => {
                 ) : null}
                 {dependencies.length > 0 ? (
                     <div className="space-y-1" data-testid="dependencies">
-                        <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <h3 className="px-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                             {text('refs.dependencies')}
                         </h3>
                         <WindowedList
@@ -263,10 +275,20 @@ export const RefsSection: React.FC = () => {
     return (
         <div className="flex h-full flex-col gap-2 p-2">
             <div className="flex items-center gap-2">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0"
+                    aria-label={text('refs.collapseAll')}
+                    onClick={() => setOpenIds(new Set())}
+                >
+                    <ListTree />
+                </Button>
                 <Input
                     aria-label={text('refs.filter')}
                     placeholder={text('refs.filter')}
-                    className="h-8"
+                    className="h-8 min-w-0 flex-1"
                     value={filterText}
                     onChange={(e) => setFilterText(e.target.value)}
                 />
@@ -274,22 +296,15 @@ export const RefsSection: React.FC = () => {
                     <Button
                         type="button"
                         size="sm"
+                        variant="secondary"
+                        className="shrink-0 px-2"
                         onClick={() => setCreating(true)}
                     >
-                        <Plus />
+                        <Waypoints />
                         {text('refs.add')}
                     </Button>
                 )}
             </div>
-            <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="self-start"
-                onClick={() => setOpenIds(new Set())}
-            >
-                {text('refs.collapseAll')}
-            </Button>
             <div data-window-root className="min-h-0 flex-1 overflow-y-auto">
                 {body}
             </div>

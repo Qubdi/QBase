@@ -46,7 +46,7 @@ describe('EDT-178 EDT-179 EDT-181 a relationship row', () => {
         const { store } = renderPanel(<RefsSection />, design);
         await userEvent.click(screen.getByRole('button', { name: link.name }));
         const row = screen.getByTestId('ref-row');
-        expect(within(row).getByText('Primary table')).toBeTruthy();
+        expect(within(row).getByText('Primary Table')).toBeTruthy();
         expect(within(row).getByText('Related table')).toBeTruthy();
 
         await userEvent.click(
@@ -79,11 +79,11 @@ describe('EDT-178 EDT-179 EDT-181 a relationship row', () => {
         const { design, link } = linked();
         renderPanel(<RefsSection />, design);
         await userEvent.click(screen.getByRole('button', { name: link.name }));
-        expect(screen.getByText('Primary table')).toBeTruthy();
+        expect(screen.getByText('Primary Table')).toBeTruthy();
         await userEvent.click(
-            screen.getByRole('button', { name: 'Collapse all' })
+            screen.getByRole('button', { name: 'Collapse All' })
         );
-        expect(screen.queryByText('Primary table')).toBeNull();
+        expect(screen.queryByText('Primary Table')).toBeNull();
     });
 });
 
@@ -105,7 +105,7 @@ describe('EDT-163 to EDT-168 the Create Relationship dialog', () => {
     async function openDialog(design = withTables(['users', 'orders'])) {
         const view = renderPanel(<RefsSection />, design);
         await userEvent.click(
-            screen.getByRole('button', { name: 'Add relationship' })
+            screen.getAllByRole('button', { name: 'Add Relationship' })[0]
         );
         return { ...view, dialog: await screen.findByRole('dialog') };
     }
@@ -122,11 +122,11 @@ describe('EDT-163 to EDT-168 the Create Relationship dialog', () => {
         const { dialog, store } = await openDialog();
         const create = within(dialog).getByRole('button', { name: 'Create' });
         expect(create).toHaveProperty('disabled', true);
-        await pick(dialog, 'Primary table', 'users');
-        await pick(dialog, 'Primary field', 'id');
-        await pick(dialog, 'Referenced table', 'orders');
+        await pick(dialog, 'Primary Table', 'users');
+        await pick(dialog, 'Primary Field', 'id');
+        await pick(dialog, 'Referenced Table', 'orders');
         expect(create).toHaveProperty('disabled', true);
-        await pick(dialog, 'Referenced field', 'id');
+        await pick(dialog, 'Referenced Field', 'id');
         expect(create).toHaveProperty('disabled', false);
         await userEvent.click(create);
         const links = store.getState().design.links;
@@ -137,13 +137,13 @@ describe('EDT-163 to EDT-168 the Create Relationship dialog', () => {
             targetCardinality: 'one',
         });
         // the new row is open in the list (EDT-160)
-        expect(await screen.findByText('Primary table')).toBeTruthy();
+        expect(await screen.findByText('Primary Table')).toBeTruthy();
     });
 
     it('field picker waits for its table (EDT-164)', async () => {
         const { dialog } = await openDialog();
         expect(
-            within(dialog).getByRole('combobox', { name: 'Primary field' })
+            within(dialog).getByRole('combobox', { name: 'Primary Field' })
         ).toHaveProperty('disabled', true);
     });
 
@@ -158,10 +158,10 @@ describe('EDT-163 to EDT-168 the Create Relationship dialog', () => {
             patch: { type: { id: 'text', name: 'text' } },
         }).design;
         const { dialog, store } = await openDialog(design);
-        await pick(dialog, 'Primary table', 'users');
-        await pick(dialog, 'Primary field', 'id');
-        await pick(dialog, 'Referenced table', 'orders');
-        await pick(dialog, 'Referenced field', 'id');
+        await pick(dialog, 'Primary Table', 'users');
+        await pick(dialog, 'Primary Field', 'id');
+        await pick(dialog, 'Referenced Table', 'orders');
+        await pick(dialog, 'Referenced Field', 'id');
         await userEvent.click(
             within(dialog).getByRole('button', { name: 'Create' })
         );
@@ -174,10 +174,10 @@ describe('EDT-163 to EDT-168 the Create Relationship dialog', () => {
     it('refuses a pair that is already connected (EDT-155, EDT-168)', async () => {
         const { design } = linked();
         const { dialog, store } = await openDialog(design);
-        await pick(dialog, 'Primary table', 'orders');
-        await pick(dialog, 'Primary field', 'id');
-        await pick(dialog, 'Referenced table', 'users');
-        await pick(dialog, 'Referenced field', 'id');
+        await pick(dialog, 'Primary Table', 'orders');
+        await pick(dialog, 'Primary Field', 'id');
+        await pick(dialog, 'Referenced Table', 'users');
+        await pick(dialog, 'Referenced Field', 'id');
         await userEvent.click(
             within(dialog).getByRole('button', { name: 'Create' })
         );
@@ -195,9 +195,9 @@ describe('EDT-176 a line chosen on the canvas opens its row', () => {
     it('shows the details of a link selected from outside', async () => {
         const { design, link } = linked();
         const { store } = renderPanel(<RefsSection />, design);
-        expect(screen.queryByText('Primary table')).toBeNull();
+        expect(screen.queryByText('Primary Table')).toBeNull();
         act(() => store.getState().select([link.id]));
-        expect(await screen.findByText('Primary table')).toBeTruthy();
+        expect(await screen.findByText('Primary Table')).toBeTruthy();
     });
 });
 
