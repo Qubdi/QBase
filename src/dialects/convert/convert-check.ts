@@ -39,6 +39,7 @@ const lengthFunction: Record<Flavour, string> = {
     mysql: 'CHAR_LENGTH',
     sqlserver: 'LEN',
     sqlite: 'LENGTH',
+    oracle: 'LENGTH',
 };
 
 /**
@@ -93,7 +94,14 @@ export function convertCheck(
                 continue;
             }
             if (WORDS.has(upper)) {
-                out += upper;
+                // SQL Server and Oracle (before 23ai) have no TRUE and FALSE
+                out +=
+                    (target === 'sqlserver' || target === 'oracle') &&
+                    (upper === 'TRUE' || upper === 'FALSE')
+                        ? upper === 'TRUE'
+                            ? '1'
+                            : '0'
+                        : upper;
                 continue;
             }
         }

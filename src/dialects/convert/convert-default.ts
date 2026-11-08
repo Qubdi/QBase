@@ -10,9 +10,9 @@ type Parsed =
     | { k: 'raw' };
 
 const NOW =
-    /^(?:now\(\)|current_timestamp(?:\(\d*\))?|localtimestamp|getdate\(\)|sysdatetime\(\)|sysdatetimeoffset\(\)|utc_timestamp(?:\(\))?|datetime\(\s*'now'\s*\))$/i;
+    /^(?:now\(\)|current_timestamp(?:\(\d*\))?|localtimestamp|getdate\(\)|sysdatetime\(\)|sysdatetimeoffset\(\)|sysdate|systimestamp|utc_timestamp(?:\(\))?|datetime\(\s*'now'\s*\))$/i;
 const UUID =
-    /^(?:gen_random_uuid\(\)|uuid_generate_v[1-5]\(\)|uuid\(\)|newid\(\)|newsequentialid\(\)|lower\(hex\(randomblob\(16\)\)\))$/i;
+    /^(?:gen_random_uuid\(\)|uuid_generate_v[1-5]\(\)|uuid\(\)|newid\(\)|newsequentialid\(\)|sys_guid\(\)|lower\(hex\(randomblob\(16\)\)\))$/i;
 
 /** Reads a default in the source's way (EXP-043). */
 function parse(raw: string): Parsed {
@@ -28,7 +28,7 @@ function parse(raw: string): Parsed {
             text
         );
     if (cast) text = cast[1];
-    if (/^nextval\(|identity|autoincrement/i.test(text))
+    if (/^nextval\(|\.nextval$|identity|autoincrement/i.test(text))
         return { k: 'numbering' };
     if (/^null$/i.test(text)) return { k: 'null' };
     if (/^true$/i.test(text)) return { k: 'bool', v: true };
@@ -72,6 +72,7 @@ export function convertDefault(
     const d = parse(raw);
     const isMy = target === 'mysql';
     const isMs = target === 'sqlserver';
+    const isOr = target === 'oracle';
     const textual = isTextual(neutral);
     const national =
         (neutral.kind === 'char' || neutral.kind === 'varchar') &&
@@ -113,6 +114,11 @@ export function convertDefault(
                 neutral.kind === 'time'
             )
                 return drop('a number on a date column');
+            // PostgreSQL takes only true and false for a boolean column
+            if (neutral.kind === 'bool' && target === 'postgres')
+                return d.v === '1' || d.v === '0'
+                    ? { text: d.v === '1' ? 'true' : 'false' }
+                    : drop('a number that is not 0 or 1 on a boolean column');
             return wrap(textual ? `'${d.v}'` : d.v);
         case 'string': {
             if (
@@ -142,6 +148,7 @@ export function convertDefault(
                 neutral.kind === 'bool'
             )
                 return drop('a date function on a number column');
+            if (isOr) return { text: 'CURRENT_TIMESTAMP' };
             if (isMs)
                 return {
                     text:
@@ -154,11 +161,18 @@ export function convertDefault(
             if (isMs) return { text: 'CAST(GETDATE() AS DATE)' };
             return { text: isMy ? '(CURRENT_DATE)' : 'CURRENT_DATE' };
         case 'time':
+            if (isOr) return { text: 'CURRENT_TIMESTAMP' };
             if (isMs) return { text: 'CAST(GETDATE() AS TIME)' };
             return { text: isMy ? '(CURRENT_TIME)' : 'CURRENT_TIME' };
         case 'uuid':
+            if (neutral.kind !== 'uuid' && !textual)
+                return drop('a uuid function on a column that is not a uuid');
             if (target === 'postgres') return { text: 'gen_random_uuid()' };
             if (isMy) return { text: '(UUID())' };
+            if (isOr)
+                return {
+                    text: textual ? 'RAWTOHEX(SYS_GUID())' : 'SYS_GUID()',
+                };
             if (isMs)
                 return {
                     text: textual ? 'CONVERT(VARCHAR(36), NEWID())' : 'NEWID()',

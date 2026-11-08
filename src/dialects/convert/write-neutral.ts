@@ -70,6 +70,13 @@ function intType(
                   : 'INT';
         case 'sqlite':
             return 'INTEGER';
+        case 'oracle': {
+            // NUMBER(p) holds a whole number of p digits: pick the size that holds the whole range
+            const digits = unsigned
+                ? { 8: 3, 16: 5, 24: 8, 32: 10, 64: 20 }[bits]
+                : { 8: 3, 16: 5, 24: 7, 32: 10, 64: 19 }[bits];
+            return `NUMBER(${digits})`;
+        }
     }
 }
 
@@ -92,6 +99,7 @@ export function writeNeutral(
     flavour: Flavour,
     ctx: Context
 ): TypeOut {
+    if (flavour === 'oracle') return writeOracle(n, ctx);
     const isPg = flavour === 'postgres';
     const isMy = flavour === 'mysql';
     const isMs = flavour === 'sqlserver';
@@ -312,5 +320,113 @@ export function writeNeutral(
                       ? 'LONGTEXT'
                       : 'NVARCHAR(MAX)'
             );
+    }
+}
+
+/** The Oracle spelling of a neutral type (12c and later: no BOOLEAN, JSON or TIME). */
+function writeOracle(n: Neutral, ctx: Context): TypeOut {
+    switch (n.kind) {
+        case 'int':
+            return out(intType(n, 'oracle'), [], { integer: true });
+        case 'decimal': {
+            if (n.precision === undefined) return out('NUMBER');
+            const notes: string[] = [];
+            let p = n.precision;
+            let s = n.scale;
+            if (p > 38) {
+                notes.push(`precision ${p} reduced to 38`);
+                p = 38;
+            }
+            if (s !== undefined && s > p) {
+                notes.push(`scale ${s} reduced to ${p}`);
+                s = p;
+            }
+            return out(`NUMBER${pair(p, s)}`, notes);
+        }
+        case 'float':
+            return out(n.bits === 32 ? 'BINARY_FLOAT' : 'BINARY_DOUBLE');
+        case 'bool':
+            return out('NUMBER(1)', [
+                'Oracle has no boolean type before 23ai: stored as NUMBER(1), 1 for true and 0 for false',
+            ]);
+        case 'char': {
+            const len = n.length ?? 1;
+            if (n.national)
+                return len <= 1000
+                    ? out(`NCHAR(${len})`)
+                    : out('NCLOB', [
+                          'longer than 1000 characters: stored as NCLOB',
+                      ]);
+            return len <= 2000
+                ? out(`CHAR(${len} CHAR)`)
+                : out('CLOB', ['longer than 2000 characters: stored as CLOB']);
+        }
+        case 'varchar': {
+            const len = n.length === 'max' ? undefined : n.length;
+            const nat = !!n.national;
+            const limit = nat ? 2000 : 4000;
+            const name = nat ? 'NVARCHAR2' : 'VARCHAR2';
+            const suffix = nat ? '' : ' CHAR';
+            if (len !== undefined && len <= limit)
+                return out(`${name}(${len}${suffix})`);
+            if (ctx.keySized)
+                return out(`${name}(${limit}${suffix})`, [
+                    `shortened to ${limit} characters so that it can be indexed`,
+                ]);
+            return out(nat ? 'NCLOB' : 'CLOB', [
+                `no ${name} that long: stored as ${nat ? 'NCLOB' : 'CLOB'}`,
+            ]);
+        }
+        case 'text':
+            return ctx.keySized
+                ? out('VARCHAR2(4000 CHAR)', [
+                      'shortened to 4000 characters so that it can be indexed',
+                  ])
+                : out('CLOB');
+        case 'binary':
+            if (n.length !== undefined && n.length <= 2000)
+                return out(`RAW(${n.length})`);
+            return out('BLOB');
+        case 'blob':
+            return out('BLOB');
+        case 'date':
+            return out('DATE');
+        case 'time':
+            return out(
+                n.zone ? 'TIMESTAMP WITH TIME ZONE' : 'TIMESTAMP',
+                ['Oracle has no TIME type: stored as a timestamp'],
+                { approximate: true }
+            );
+        case 'datetime':
+            return out(n.zone ? 'TIMESTAMP WITH TIME ZONE' : 'TIMESTAMP');
+        case 'json':
+            return ctx.keySized
+                ? out('VARCHAR2(4000 CHAR)', [
+                      'JSON shortened to 4000 characters so that it can be indexed',
+                  ])
+                : out('CLOB', ['JSON stored as CLOB']);
+        case 'uuid':
+            return out('RAW(16)', ['uuid stored as RAW(16)']);
+        case 'xml':
+            return out('XMLTYPE');
+        case 'enum':
+            return out(
+                'VARCHAR2(255 CHAR)',
+                n.values ? [] : ['enum values are not known: no CHECK created'],
+                { enumValues: n.values }
+            );
+        case 'bits':
+            return n.length <= 16000
+                ? out(`RAW(${Math.ceil(n.length / 8)})`)
+                : out('BLOB');
+        case 'geo':
+            return out(
+                'SDO_GEOMETRY',
+                n.geography ? ['geography converted to SDO_GEOMETRY'] : []
+            );
+        case 'array':
+            return out('CLOB');
+        case 'other':
+            return out('CLOB');
     }
 }

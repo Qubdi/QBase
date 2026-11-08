@@ -589,10 +589,10 @@ describe('which pairs have a converter', () => {
         }
     });
 
-    it('uses the generic generator for Oracle and ClickHouse, and has none to generic SQL (EXP-008)', () => {
+    it('uses the generic generator for ClickHouse, and has none to generic SQL (EXP-008)', () => {
         for (const [source, target] of [
-            [DatabaseType.ORACLE, POSTGRESQL],
             [DatabaseType.CLICKHOUSE, MYSQL],
+            [POSTGRESQL, DatabaseType.CLICKHOUSE],
         ] as const) {
             const result = sql(source, target);
             expect(result.text).toContain('-- WARNING: there is no converter');

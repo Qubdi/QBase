@@ -165,19 +165,27 @@ describe('EXP-037 EXP-040 EXP-041 EXP-042 EXP-043 EXP-044 EXP-048 converter rule
         expect(r.text).toBe('');
         expect(r.diagnostics[0].message).toContain('not supported');
     });
-    it('EXP-008 Oracle and ClickHouse sources and targets use the generic generator with a warning header', () => {
-        for (const t of ['oracle', 'clickhouse'] as const) {
-            const r = exportSql(sampleS1('postgresql'), t);
-            expect(r.text).toMatch(/^-- PostgreSQL to /);
-            expect(r.text).toContain('-- WARNING: there is no converter');
-            expect(r.text).toContain('CREATE TABLE');
-        }
+    it('EXP-008 ClickHouse sources and targets use the generic generator with a warning header', () => {
+        const r = exportSql(sampleS1('postgresql'), 'clickhouse');
+        expect(r.text).toMatch(/^-- PostgreSQL to /);
+        expect(r.text).toContain('-- WARNING: there is no converter');
+        expect(r.text).toContain('CREATE TABLE');
+        const clickhouseSource = {
+            ...sampleS1('postgresql'),
+            databaseType: 'clickhouse' as const,
+        };
+        const out = exportSql(clickhouseSource, 'mysql');
+        expect(out.text).toMatch(/^-- ClickHouse to MySQL\n-- WARNING/);
+    });
+    it('Oracle sources and targets go through the converter', () => {
+        const to = exportSql(sampleS1('postgresql'), 'oracle');
+        expect(to.text).toMatch(/^-- PostgreSQL to Oracle conversion/);
         const oracleSource = {
             ...sampleS1('postgresql'),
             databaseType: 'oracle' as const,
         };
         const out = exportSql(oracleSource, 'mysql');
-        expect(out.text).toMatch(/^-- Oracle to MySQL\n-- WARNING/);
+        expect(out.text).toMatch(/^-- Oracle to MySQL conversion/);
     });
     it('EXP-001 EXP-002 only the visible tables are exported', () => {
         const d = sampleS1('postgresql');

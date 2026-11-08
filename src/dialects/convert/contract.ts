@@ -1,5 +1,5 @@
 /** Families of SQL the converter knows how to read and write. */
-export type Flavour = 'postgres' | 'mysql' | 'sqlserver' | 'sqlite';
+export type Flavour = 'postgres' | 'mysql' | 'sqlserver' | 'sqlite' | 'oracle';
 
 /** How a dialect is read as the source of a conversion. */
 export interface ConvertSource {

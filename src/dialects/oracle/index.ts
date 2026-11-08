@@ -1,6 +1,7 @@
 import type { Dialect } from '../dialect';
-import { ownHeader, writeGenericSql } from '../generic/write';
+import { quoteDouble } from '../shared/text';
 import { readOracle } from './read';
+import { writeOracle } from './write';
 
 export const ORACLE_TYPES: readonly string[] = [
     'varchar2',
@@ -41,10 +42,7 @@ const capabilities: Dialect['capabilities'] = {
     numbering: 'identity-property',
 };
 
-/**
- * Oracle (EXP-008, restored): its own reader and type list; SQL is written by
- * the generic generator with a warning header, as the old editor did.
- */
+/** Oracle 12c and later: its own reader and writer, and converts to and from the other databases. */
 export const oracle: Dialect = {
     id: 'oracle',
     label: 'Oracle',
@@ -53,11 +51,13 @@ export const oracle: Dialect = {
     defaultType: 'number',
     // Oracle has schemas but no default schema name (editor 14.1)
     sql: {
+        source: { flavour: 'oracle' },
+        target: {
+            flavour: 'oracle',
+            quote: quoteDouble,
+            identifierLimit: 128,
+        },
         read: readOracle,
-        write: (design) =>
-            writeGenericSql(design, {
-                capabilities,
-                header: ownHeader('Oracle'),
-            }),
+        write: writeOracle,
     },
 };

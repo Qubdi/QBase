@@ -16,6 +16,8 @@ const TEXT_SIZES: Record<string, 'tiny' | 'regular' | 'medium' | 'long'> = {
     mediumtext: 'medium',
     longtext: 'long',
     clob: 'long',
+    nclob: 'long',
+    long: 'long',
 };
 const BLOB_SIZES: Record<string, 'tiny' | 'regular' | 'medium' | 'long'> = {
     tinyblob: 'tiny',
@@ -45,6 +47,8 @@ const NOTED_AS_TEXT = new Set([
     'tstzrange',
     'daterange',
     'set',
+    'interval year to month',
+    'interval day to second',
 ]);
 
 /** Reads a stored column type into a neutral description (EXP-037). */
@@ -124,10 +128,16 @@ function readBase(
         case 'bigint':
         case 'int8':
             return n({ kind: 'int', bits: 64, unsigned });
+        case 'number':
+            if (flavour === 'oracle') return readOracleNumber(column);
+            return n({
+                kind: 'decimal',
+                precision: column.precision,
+                scale: column.scale,
+            });
         case 'decimal':
         case 'numeric':
         case 'dec':
-        case 'number':
             return n({
                 kind: 'decimal',
                 precision: column.precision,
@@ -169,7 +179,8 @@ function readBase(
             return n({
                 kind: 'float',
                 bits:
-                    flavour === 'sqlserver' && (column.precision ?? 53) <= 24
+                    (flavour === 'sqlserver' || flavour === 'oracle') &&
+                    (column.precision ?? 53) <= 24
                         ? 32
                         : 64,
             });
@@ -208,6 +219,36 @@ function readBase(
                 length: column.length,
                 national: true,
             });
+        case 'raw':
+            // RAW(16) filled by SYS_GUID() is how Oracle keeps a uuid
+            if (
+                length === 16 &&
+                /^\(*\s*sys_guid\(\)\s*\)*$/i.test(column.default?.trim() ?? '')
+            )
+                return n({ kind: 'uuid' });
+            return n({ kind: 'binary', length, varying: true });
+        case 'long raw':
+            return n({ kind: 'blob', size: 'long' });
+        case 'bfile':
+            return n(
+                { kind: 'blob', size: 'long' },
+                {
+                    note: 'BFILE (an external file) converted to a binary column',
+                    approximate: true,
+                }
+            );
+        case 'rowid':
+        case 'urowid':
+            return n(
+                { kind: 'varchar', length: 255 },
+                { note: `${name} stored as text`, approximate: true }
+            );
+        case 'xmltype':
+            return n({ kind: 'xml' });
+        case 'binary float':
+            return n({ kind: 'float', bits: 32 });
+        case 'binary double':
+            return n({ kind: 'float', bits: 64 });
         case 'bytea':
             return n({ kind: 'binary', varying: true });
         case 'binary':
@@ -217,6 +258,14 @@ function readBase(
         case 'image':
             return n({ kind: 'blob', size: 'long' });
         case 'date':
+            // an Oracle DATE holds a time of day as well
+            if (flavour === 'oracle')
+                return n(
+                    { kind: 'datetime', zone: false },
+                    {
+                        note: 'Oracle DATE holds a time of day: converted to a timestamp',
+                    }
+                );
             return n({ kind: 'date' });
         case 'time':
         case 'time without time zone':
@@ -249,6 +298,7 @@ function readBase(
             return n({ kind: 'datetime', zone: false });
         case 'timestamptz':
         case 'timestamp with time zone':
+        case 'timestamp with local time zone':
         case 'datetimeoffset':
             return n({ kind: 'datetime', zone: true });
         case 'json':
@@ -295,4 +345,15 @@ function readBase(
             approximate: true,
         }
     );
+}
+
+/** An Oracle NUMBER with no decimals is a whole number whose size follows its precision. */
+function readOracleNumber(column: Column): NeutralRead {
+    const { precision, scale } = column;
+    if (precision === undefined || (scale ?? 0) !== 0)
+        return { neutral: { kind: 'decimal', precision, scale } };
+    if (precision <= 4) return { neutral: { kind: 'int', bits: 16 } };
+    if (precision <= 9) return { neutral: { kind: 'int', bits: 32 } };
+    if (precision <= 18) return { neutral: { kind: 'int', bits: 64 } };
+    return { neutral: { kind: 'decimal', precision, scale: 0 } };
 }
