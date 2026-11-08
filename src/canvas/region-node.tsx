@@ -16,6 +16,7 @@ const MIN_REGION_WIDTH = 120;
 export const RegionCard = memo(function RegionCard({
     id,
     selected,
+    data,
 }: NodeProps<RegionNode>) {
     const { t } = useTranslation();
     const surface = useSurface();
@@ -60,8 +61,9 @@ export const RegionCard = memo(function RegionCard({
             data-testid={`region-${id}`}
             data-selected={selected}
             className={cn(
-                'h-full w-full rounded-[10px] border-2 shadow-[0_1px_2px_0_rgb(0_0_0/0.05)]',
-                selected && '!border-teal-600'
+                'h-full w-full rounded-[10px] border-2 shadow-[0_1px_2px_0_rgb(0_0_0/0.05)] transition-[opacity,filter] duration-200',
+                selected && '!border-teal-600',
+                data.dimmed && 'opacity-40 grayscale'
             )}
             style={{
                 borderColor: region.tint,

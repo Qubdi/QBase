@@ -35,7 +35,10 @@ export type EntityNodeData = {
     /** the name before a renamed table's new one */
     renamedFrom?: string;
 };
-export type RegionNodeData = Record<string, never>;
+export type RegionNodeData = {
+    /** fades out: none of its tables is selected or linked to a selected table */
+    dimmed: boolean;
+};
 export type MemoNodeData = Record<string, never>;
 
 export type EntityNode = Node<EntityNodeData, 'entity'>;
@@ -118,6 +121,30 @@ export function dimmedEntities(
         if (picked.has(dep.dependentTableId)) near.add(dep.tableId);
     }
     return new Set(design.entities.order.filter((id) => !near.has(id)));
+}
+
+/**
+ * Areas that stand back with their tables: while tables are selected, an area
+ * stays bright when at least one of its tables is selected or linked to the
+ * selection, and fades when none is (an empty area fades too).
+ */
+export function dimmedRegions(
+    design: Design,
+    selection: ReadonlySet<Id>,
+    dimmedTables: ReadonlySet<Id> = dimmedEntities(design, selection)
+): Set<Id> {
+    const picking = design.entities.order.some((id) => selection.has(id));
+    if (!picking) return new Set();
+    return new Set(
+        design.regions.order.filter(
+            (regionId) =>
+                !design.entities.order.some(
+                    (id) =>
+                        design.entities.byId[id].regionId === regionId &&
+                        !dimmedTables.has(id)
+                )
+        )
+    );
 }
 
 /** The ids that are drawn: filter first, then the views switch. */
@@ -241,6 +268,7 @@ export function buildNodes(
 ): CanvasNode[] {
     const { design, selection, live } = input;
     const dim = dimmedEntities(design, selection);
+    const dimRegions = dimmedRegions(design, selection, dim);
     const nodes: CanvasNode[] = [];
     for (const id of design.regions.order) {
         const region = design.regions.byId[id];
@@ -253,7 +281,7 @@ export function buildNodes(
                 position: { x: at.x, y: at.y },
                 width: size.width,
                 height: size.height ?? region.box.height,
-                data: {},
+                data: { dimmed: dimRegions.has(id) },
                 ariaLabel: region.label,
                 selected: selection.has(id),
                 draggable: input.editable,
