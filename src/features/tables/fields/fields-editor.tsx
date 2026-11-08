@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Key, MessageSquareText, Plus } from 'lucide-react';
+import { Key, MessageSquareText, Plus, Trash2 } from 'lucide-react';
 import {
     planAddColumn,
     planDeleteColumn,
@@ -27,8 +27,18 @@ const Toggle: React.FC<{
     disabled?: boolean;
     onClick: () => void;
     tone?: 'plain' | 'key';
+    /** the 32px square of the canvas card */
+    compact?: boolean;
     children: React.ReactNode;
-}> = ({ label, pressed, disabled, onClick, tone = 'plain', children }) => (
+}> = ({
+    label,
+    pressed,
+    disabled,
+    onClick,
+    tone = 'plain',
+    compact,
+    children,
+}) => (
     <Button
         type="button"
         size="icon"
@@ -37,9 +47,18 @@ const Toggle: React.FC<{
         aria-pressed={pressed}
         disabled={disabled}
         className={cn(
-            'size-7 shrink-0 text-xs text-slate-600 dark:text-slate-400',
-            pressed && 'bg-accent text-accent-foreground',
-            pressed && tone === 'key' && 'text-orange-700 dark:text-orange-400'
+            'shrink-0 text-xs',
+            compact
+                ? 'size-8 text-muted-foreground'
+                : 'size-7 text-slate-600 dark:text-slate-400',
+            pressed &&
+                (compact
+                    ? 'bg-accent text-orange-600 dark:text-orange-400'
+                    : 'bg-accent text-accent-foreground'),
+            pressed &&
+                !compact &&
+                tone === 'key' &&
+                'text-orange-700 dark:text-orange-400'
         )}
         onClick={onClick}
     >
@@ -54,7 +73,13 @@ export const FieldsEditor: React.FC<{
     addedId?: string;
     /** told the id of a field added with the button of this editor */
     onAdded?: (id: string) => void;
-}> = ({ entity, addedId, onAdded }) => {
+    /**
+     * The canvas card's rows: no box around the name or the type, a delete
+     * button where the side panel has the attributes menu, and no add button
+     * (the card has its own in its footer).
+     */
+    compact?: boolean;
+}> = ({ entity, addedId, onAdded, compact }) => {
     const { design, locked, edit } = useEditorEnv();
     const text = useText();
     const columns = columnsOf(design, entity);
@@ -62,13 +87,24 @@ export const FieldsEditor: React.FC<{
     const [popoverFor, setPopoverFor] = useState<string | undefined>();
     const added = useRef<string | undefined>(undefined);
 
+    const removeColumn = (id: string) => {
+        setPopoverFor(undefined);
+        // relationships on the field go with it (EDT-139)
+        const lost = linksOfColumn(design, entity.id, id).length;
+        edit(planDeleteColumn(entity.id, id));
+        if (lost > 0)
+            toast({
+                title: text('fields.linksRemoved', { count: lost }),
+            });
+    };
+
     const update = (
         id: string,
         patch: Parameters<typeof planUpdateColumn>[2]
     ) => edit(planUpdateColumn(entity.id, id, patch));
 
     return (
-        <div className="space-y-1">
+        <div className={compact ? undefined : 'space-y-1'}>
             <SortableList
                 ids={entity.columnIds}
                 disabled={locked}
@@ -83,114 +119,159 @@ export const FieldsEditor: React.FC<{
                         id={column.id}
                         disabled={locked}
                         handleLabel={text('common.dragHandle')}
+                        className={
+                            compact
+                                ? 'group/row relative h-9 gap-0 rounded-md px-1.5'
+                                : undefined
+                        }
+                        handleClassName={
+                            compact
+                                ? 'absolute -left-1 z-10 h-6 w-3 bg-card opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100'
+                                : undefined
+                        }
                     >
                         <div
                             className={cn(
                                 'flex min-w-0 flex-1 items-center gap-1',
+                                compact && 'gap-2',
                                 (addedId ?? added.current) === column.id &&
                                     'bg-sky-100/60'
                             )}
                         >
-                            <DebouncedInput
-                                aria-label={text('fields.name')}
-                                className="h-8 min-w-[3.5rem] flex-1 px-2 text-sm"
-                                value={column.name}
-                                required
-                                readOnly={locked}
-                                focusOnMount={
-                                    (addedId ?? added.current) === column.id
-                                }
-                                placeholder={text('fields.namePlaceholder')}
-                                onCommit={(name) => update(column.id, { name })}
-                            />
-                            {column.comments ? (
-                                <button
-                                    type="button"
-                                    aria-label={text('fields.showComment')}
-                                    title={column.comments}
-                                    onClick={() => setPopoverFor(column.id)}
-                                    className="text-muted-foreground"
-                                >
-                                    <MessageSquareText className="size-4" />
-                                </button>
-                            ) : null}
-                            <TypePicker
-                                databaseType={design.databaseType}
-                                userTypes={userTypes}
-                                column={column}
-                                disabled={locked}
-                                onPick={(option, declaration) =>
-                                    edit(
-                                        planPickType(
-                                            design.databaseType,
-                                            entity,
-                                            column,
-                                            option,
-                                            declaration
-                                        )
-                                    )
-                                }
-                            />
-                            <Toggle
-                                label={text('fields.nullable')}
-                                pressed={column.nullable}
-                                disabled={
-                                    locked ||
-                                    column.primaryKey ||
-                                    isSerialType(column.type.id)
-                                }
-                                onClick={() =>
-                                    update(column.id, {
-                                        nullable: !column.nullable,
-                                    })
+                            <div
+                                className={
+                                    compact
+                                        ? 'flex min-w-0 flex-1 items-center gap-1'
+                                        : 'contents'
                                 }
                             >
-                                {text('fields.nullableShort')}
-                            </Toggle>
-                            {entity.kind === 'view' ? null : (
-                                <Toggle
-                                    label={text('fields.primaryKey')}
-                                    pressed={column.primaryKey}
-                                    tone="key"
+                                <DebouncedInput
+                                    aria-label={text('fields.name')}
+                                    className={cn(
+                                        'h-8 min-w-[3.5rem] flex-1 text-sm',
+                                        compact
+                                            ? 'border-transparent bg-transparent px-3 font-medium shadow-none hover:border-input'
+                                            : 'px-2'
+                                    )}
+                                    value={column.name}
+                                    required
+                                    readOnly={locked}
+                                    focusOnMount={
+                                        (addedId ?? added.current) === column.id
+                                    }
+                                    placeholder={text('fields.namePlaceholder')}
+                                    onCommit={(name) =>
+                                        update(column.id, { name })
+                                    }
+                                />
+                                {column.comments ? (
+                                    <button
+                                        type="button"
+                                        aria-label={text('fields.showComment')}
+                                        title={column.comments}
+                                        onClick={() => setPopoverFor(column.id)}
+                                        className="text-muted-foreground"
+                                    >
+                                        <MessageSquareText className="size-4" />
+                                    </button>
+                                ) : null}
+                                <TypePicker
+                                    databaseType={design.databaseType}
+                                    userTypes={userTypes}
+                                    column={column}
                                     disabled={locked}
+                                    compact={compact}
+                                    onPick={(option, declaration) =>
+                                        edit(
+                                            planPickType(
+                                                design.databaseType,
+                                                entity,
+                                                column,
+                                                option,
+                                                declaration
+                                            )
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div
+                                className={
+                                    compact
+                                        ? 'flex shrink-0 items-center justify-end gap-1'
+                                        : 'contents'
+                                }
+                            >
+                                <Toggle
+                                    label={text('fields.nullable')}
+                                    pressed={column.nullable}
+                                    compact={compact}
+                                    disabled={
+                                        locked ||
+                                        column.primaryKey ||
+                                        isSerialType(column.type.id)
+                                    }
                                     onClick={() =>
                                         update(column.id, {
-                                            primaryKey: !column.primaryKey,
+                                            nullable: !column.nullable,
                                         })
                                     }
                                 >
-                                    <Key className="size-4" />
+                                    {text('fields.nullableShort')}
                                 </Toggle>
-                            )}
-                            <AttributesPopover
-                                databaseType={design.databaseType}
-                                column={column}
-                                columns={columns}
-                                readOnly={locked}
-                                open={popoverFor === column.id}
-                                onOpenChange={(open) =>
-                                    setPopoverFor(open ? column.id : undefined)
-                                }
-                                onChange={(patch) => update(column.id, patch)}
-                                onDelete={() => {
-                                    setPopoverFor(undefined);
-                                    // relationships on the field go with it (EDT-139)
-                                    const lost = linksOfColumn(
-                                        design,
-                                        entity.id,
-                                        column.id
-                                    ).length;
-                                    edit(
-                                        planDeleteColumn(entity.id, column.id)
-                                    );
-                                    if (lost > 0)
-                                        toast({
-                                            title: text('fields.linksRemoved', {
-                                                count: lost,
-                                            }),
-                                        });
-                                }}
-                            />
+                                {entity.kind === 'view' ? null : (
+                                    <Toggle
+                                        label={text('fields.primaryKey')}
+                                        pressed={column.primaryKey}
+                                        tone="key"
+                                        compact={compact}
+                                        disabled={locked}
+                                        onClick={() =>
+                                            update(column.id, {
+                                                primaryKey: !column.primaryKey,
+                                            })
+                                        }
+                                    >
+                                        <Key
+                                            className={
+                                                compact ? 'h-3.5 w-4' : 'size-4'
+                                            }
+                                        />
+                                    </Toggle>
+                                )}
+                                {compact ? (
+                                    locked ? null : (
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            aria-label={text('fields.delete')}
+                                            className="size-8 shrink-0 text-red-700 dark:text-red-400"
+                                            onClick={() =>
+                                                removeColumn(column.id)
+                                            }
+                                        >
+                                            <Trash2 className="h-3.5 w-4" />
+                                        </Button>
+                                    )
+                                ) : (
+                                    <AttributesPopover
+                                        databaseType={design.databaseType}
+                                        column={column}
+                                        columns={columns}
+                                        readOnly={locked}
+                                        open={popoverFor === column.id}
+                                        onOpenChange={(open) =>
+                                            setPopoverFor(
+                                                open ? column.id : undefined
+                                            )
+                                        }
+                                        onChange={(patch) =>
+                                            update(column.id, patch)
+                                        }
+                                        onDelete={() => removeColumn(column.id)}
+                                    />
+                                )}
+                            </div>
                         </div>
                     </SortableRow>
                 ))}
@@ -200,7 +281,7 @@ export const FieldsEditor: React.FC<{
                     {text('fields.none')}
                 </p>
             ) : null}
-            {locked ? null : (
+            {locked || compact ? null : (
                 <Button
                     type="button"
                     variant="ghost"

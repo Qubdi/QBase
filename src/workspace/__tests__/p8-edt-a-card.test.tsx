@@ -41,7 +41,7 @@ const gone = (name: string) =>
 afterEach(() => vi.useRealTimers());
 
 describe('p8 EDT-088 to EDT-095, EDT-118 the edit card', () => {
-    it('EDT-090: each field row has a name box, type picker, N toggle, PK toggle and attributes', async () => {
+    it('EDT-090: each field row has a name box, type picker, N toggle, PK toggle and a delete button', async () => {
         const { users } = mount();
         const card = await openCard(users, 'users');
         expect(within(card).getByLabelText('Field name')).toBeTruthy();
@@ -53,8 +53,8 @@ describe('p8 EDT-088 to EDT-095, EDT-118 the edit card', () => {
             within(card).getByRole('button', { name: 'Primary key' })
         ).toBeTruthy();
         expect(
-            within(card).getByRole('button', { name: 'Field Attributes' })
-        ).toBeTruthy();
+            within(card).getAllByRole('button', { name: 'Delete Field' }).length
+        ).toBeGreaterThan(0);
     });
 
     it('EDT-091: a new field is focused and highlighted light blue', async () => {
@@ -66,7 +66,7 @@ describe('p8 EDT-088 to EDT-095, EDT-118 the edit card', () => {
         await waitFor(() => {
             const last = within(card).getAllByLabelText('Field name').at(-1)!;
             expect(document.activeElement).toBe(last);
-            expect(last.parentElement!.className).toContain('bg-sky-100');
+            expect(last.closest('[class*="bg-sky-100"]')).toBeTruthy();
         });
     });
 

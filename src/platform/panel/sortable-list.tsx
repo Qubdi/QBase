@@ -56,10 +56,20 @@ export const SortableRow: React.FC<{
     disabled?: boolean;
     handleLabel: string;
     className?: string;
+    /** replaces the look of the handle (the compact card lays it over the row) */
+    handleClassName?: string;
     /** drawn before the handle (an expand arrow) */
     leading?: React.ReactNode;
     children: React.ReactNode;
-}> = ({ id, disabled, handleLabel, className, leading, children }) => {
+}> = ({
+    id,
+    disabled,
+    handleLabel,
+    className,
+    handleClassName,
+    leading,
+    children,
+}) => {
     const sortable = useSortable({ id, disabled });
     return (
         <div
@@ -82,7 +92,10 @@ export const SortableRow: React.FC<{
                     ref={sortable.setActivatorNodeRef}
                     {...sortable.attributes}
                     {...sortable.listeners}
-                    className="flex h-8 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground"
+                    className={cn(
+                        'flex h-8 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground',
+                        handleClassName
+                    )}
                 >
                     <GripVertical className="size-3.5" />
                 </button>

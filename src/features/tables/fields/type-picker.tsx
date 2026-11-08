@@ -4,6 +4,7 @@ import type { Column } from '@/core/model/column';
 import type { DatabaseType } from '@/core/model/database';
 import type { UserType } from '@/core/model/user-type';
 import { traitsOf } from '@/core/model/database';
+import { cn } from '@/lib/utils/utils';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
@@ -28,8 +29,10 @@ export const TypePicker: React.FC<{
     userTypes: readonly UserType[];
     column: Pick<Column, 'type' | 'length' | 'precision' | 'scale' | 'isArray'>;
     disabled?: boolean;
+    /** the borderless look of the field rows of the canvas card */
+    compact?: boolean;
     onPick: (option: TypeOption, declaration?: TypeDeclaration) => void;
-}> = ({ databaseType, userTypes, column, disabled, onPick }) => {
+}> = ({ databaseType, userTypes, column, disabled, compact, onPick }) => {
     const text = useText();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -83,21 +86,31 @@ export const TypePicker: React.FC<{
             <PopoverTrigger asChild disabled={disabled}>
                 <Button
                     type="button"
-                    variant="outline"
+                    variant={compact ? 'ghost' : 'outline'}
                     size="sm"
                     role="combobox"
                     aria-expanded={open}
                     aria-label={`${text('fields.typePlaceholder')}: ${
                         column.type.name ? typeLabel(column, databaseType) : '-'
                     }`}
-                    className="h-8 w-[5.25rem] shrink-0 justify-between px-2 text-sm font-normal"
+                    className={cn(
+                        'h-8 justify-between text-sm font-normal',
+                        compact
+                            ? 'min-w-0 flex-1 gap-1 border border-transparent bg-transparent px-3 shadow-none hover:border-input hover:bg-transparent'
+                            : 'w-[5.25rem] shrink-0 px-2'
+                    )}
                 >
                     <span className="truncate">
                         {column.type.name
                             ? typeLabel(column, databaseType)
                             : text('fields.typePlaceholder')}
                     </span>
-                    <ChevronsUpDown className="!size-3 opacity-50" />
+                    <ChevronsUpDown
+                        className={cn(
+                            '!size-3 opacity-50',
+                            compact && 'shrink-0'
+                        )}
+                    />
                 </Button>
             </PopoverTrigger>
             <PopoverContent

@@ -73,7 +73,7 @@ describe('p8 EDT-088 EDT-095 the edit card', () => {
         expect(
             within(group).getByRole('button', { name: 'Change color' })
         ).toBeTruthy();
-        expect(within(group).getByText('2 fields')).toBeTruthy();
+        expect(within(group).getByText('2 Fields')).toBeTruthy();
         fireEvent.click(
             within(group).getByRole('button', {
                 name: 'Open in the side panel',
