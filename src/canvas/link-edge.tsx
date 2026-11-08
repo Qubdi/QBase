@@ -15,6 +15,9 @@ import type { LinkEdge } from './flow-model';
 import { useShown } from './diff-marks';
 import { useSurface } from './surface-context';
 
+/** How much of a line is left when a table at one end stands back; as for the table (opacity-40). */
+const DIMMED_OPACITY = 0.4;
+
 /** One relationship: a smooth line between two field rows with crow's-foot ends. */
 export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
     const { t } = useTranslation();
@@ -41,6 +44,7 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
               ? 'picked'
               : 'plain';
     const showEnds = surface.prefs.showCardinality;
+    const faded = props.data?.dimmed ? DIMMED_OPACITY : 1;
 
     return (
         <>
@@ -53,10 +57,15 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
                     stroke: TONE_STROKE[tone],
                     strokeWidth: mark ? 3 : LINE_WIDTH,
                     strokeDasharray: props.selected ? '5 5' : undefined,
+                    opacity: faded,
+                    transition: 'opacity 200ms',
                 }}
             />
             {showEnds ? (
-                <>
+                <g
+                    style={{ opacity: faded, transition: 'opacity 200ms' }}
+                    data-dimmed={props.data?.dimmed || undefined}
+                >
                     <EndMarker
                         x={props.sourceX}
                         y={props.sourceY}
@@ -79,7 +88,7 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
                                 : TONE_STROKE[tone]
                         }
                     />
-                </>
+                </g>
             ) : null}
             {props.selected ? (
                 <EdgeLabelRenderer>

@@ -49,11 +49,13 @@ export type LinkEdgeData = {
     selfLoop: boolean;
     /** how a diff preview marks this line */
     mark?: DiffMark;
+    /** a table at one end stands back (EDT-032), so the line does too */
+    dimmed?: boolean;
 };
 export type LinkEdge = Edge<LinkEdgeData, 'link'>;
 
 /** A view reads a table (EDT-184): drawn from the view's top or bottom dot. */
-export type DependencyEdgeData = { reach: number };
+export type DependencyEdgeData = { reach: number; dimmed?: boolean };
 export type DependencyEdge = Edge<DependencyEdgeData, 'dependency'>;
 
 export type DepSide = 't' | 'b';
@@ -331,6 +333,7 @@ export function buildEdges(
     kept?: Map<Id, LinkEdge>
 ): LinkEdge[] {
     const { design, live } = input;
+    const dim = dimmedEntities(design, input.selection);
     const alive = kept ? new Set<Id>() : undefined;
     const rank = new Map<string, number>();
     const edges: LinkEdge[] = [];
@@ -372,6 +375,7 @@ export function buildEdges(
                 reach: (selfLoop ? 36 : 22) + n * 14,
                 selfLoop,
                 mark: input.diff?.links[id],
+                dimmed: dim.has(from.id) || dim.has(to.id),
             },
         };
         // the edge of last time when nothing about it changed
@@ -396,6 +400,7 @@ export function buildEdges(
  */
 export function buildDependencyEdges(input: FlowInput): DependencyEdge[] {
     const { design, live } = input;
+    const dim = dimmedEntities(design, input.selection);
     const edges: DependencyEdge[] = [];
     design.dependencies.forEach((dep, index) => {
         if (
@@ -418,7 +423,10 @@ export function buildDependencyEdges(input: FlowInput): DependencyEdge[] {
             targetHandle: dependencyHandleId(tableAbove ? 'b' : 't'),
             ariaLabel: `${view.name} - ${table.name}`,
             selected: input.selection.has(dep.id),
-            data: { reach: 22 + (index % 4) * 6 },
+            data: {
+                reach: 22 + (index % 4) * 6,
+                dimmed: dim.has(view.id) || dim.has(table.id),
+            },
         });
     });
     return edges;

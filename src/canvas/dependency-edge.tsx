@@ -32,6 +32,8 @@ export const DependencyLine = memo(function DependencyLine(
                     ? DEPENDENCY_LINE.pickedWidth
                     : DEPENDENCY_LINE.width,
                 strokeDasharray: DEPENDENCY_LINE.dash,
+                opacity: props.data?.dimmed ? 0.4 : 1,
+                transition: 'opacity 200ms',
             }}
         />
     );
