@@ -196,10 +196,29 @@ export const it = {
                     tabAnalytical: 'Analitico',
                     moreDatabases: 'Altri database',
                     primaryDatabases: 'Database principali',
+                    checkExamples: 'Vedi gli esempi',
+                    titleExamples: 'Esempi',
+                    descriptionExamples:
+                        'Parti da un piccolo diagramma pensato per un database. Sceglierne uno per aprirlo come nuovo diagramma.',
                     genericOption: 'Usa invece un database generico',
                     emptyFromImport: 'Meglio un diagramma vuoto',
                     import: 'Genera dal testo',
                     failed: 'Non è stato possibile creare il diagramma. Riprovare.',
+                },
+                examples: {
+                    clinic: 'Pazienti, medici e specialità, con appuntamenti e farmaci prescritti.',
+                    bookshop:
+                        'Autori, categorie e libri, con clienti, i loro ordini e gli articoli di ogni ordine.',
+                    library:
+                        'Filiali, iscritti e materiali in prestito, con prestiti e prenotazioni.',
+                    habits: 'Persone, le loro abitudini e i controlli quotidiani, con promemoria ed etichette.',
+                    hotel: 'Hotel, tipi di camera e camere, con ospiti, prenotazioni e pagamenti.',
+                    airline:
+                        'Aeroporti, aerei e voli, con passeggeri, prenotazioni e biglietti.',
+                    delivery:
+                        'Depositi, corrieri e veicoli, con percorsi pianificati, pacchi e consegne.',
+                    analytics:
+                        'Pagine, visitatori e sessioni, con visualizzazioni e conversioni archiviate per una lettura rapida.',
                 },
                 open: {
                     title: 'Diagrammi salvati',

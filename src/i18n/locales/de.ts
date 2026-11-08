@@ -194,11 +194,30 @@ export const de = {
                     tabAnalytical: 'Analytisch',
                     moreDatabases: 'Weitere Datenbanken',
                     primaryDatabases: 'Hauptdatenbanken',
+                    checkExamples: 'Beispiele ansehen',
+                    titleExamples: 'Beispiele',
+                    descriptionExamples:
+                        'Beginnen Sie mit einem kleinen Diagramm für eine bestimmte Datenbank. Wählen Sie eines, um es als neues Diagramm zu öffnen.',
                     genericOption:
                         'Stattdessen eine allgemeine Datenbank verwenden',
                     emptyFromImport: 'Stattdessen leeres Diagramm',
                     import: 'Aus Text erstellen',
                     failed: 'Das Diagramm konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
+                },
+                examples: {
+                    clinic: 'Patienten, Ärzte und Fachgebiete, mit Terminen und den dabei verschriebenen Medikamenten.',
+                    bookshop:
+                        'Autoren, Kategorien und Bücher, mit Kunden, ihren Bestellungen und den Artikeln jeder Bestellung.',
+                    library:
+                        'Filialen, Mitglieder und ausleihbare Medien, mit Ausleihen und Vormerkungen.',
+                    habits: 'Personen, ihre Gewohnheiten und tägliche Eintragungen, mit Erinnerungen und Schlagwörtern.',
+                    hotel: 'Hotels, Zimmerarten und Zimmer, mit Gästen, Reservierungen und Zahlungen.',
+                    airline:
+                        'Flughäfen, Flugzeuge und Flüge, mit Passagieren, Buchungen und Tickets.',
+                    delivery:
+                        'Depots, Kuriere und Fahrzeuge, mit geplanten Touren, Paketen und ihren Zustellungen.',
+                    analytics:
+                        'Seiten, Besucher und Sitzungen, mit Seitenaufrufen und Conversions für schnelles Lesen.',
                 },
                 open: {
                     title: 'Ihre Diagramme',

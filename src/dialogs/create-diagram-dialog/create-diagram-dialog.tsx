@@ -17,6 +17,9 @@ import {
     storeNewDesign,
 } from '@/features/designs/design-service';
 import { useDesignList } from '@/features/designs/use-design-list';
+import { ExamplesGrid } from '@/features/examples/examples-grid';
+import type { Example } from '@/features/examples/examples';
+import { analyzeImport } from '@/features/import/analyze-import';
 import { ImportHelp } from '@/features/import/import-help';
 import { ImportBox } from '@/features/import/import-box';
 import type { ImportBoxState } from '@/features/import/import-box';
@@ -45,7 +48,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     const { closeCreateDiagramDialog, openImportDiagramDialog } = useDialog();
     const { items } = useDesignList(adapter, dialog.open);
 
-    const [step, setStep] = useState<'type' | 'import'>('type');
+    const [step, setStep] = useState<'type' | 'import' | 'examples'>('type');
     const [type, setType] = useState<DatabaseType | undefined>('generic');
     const [box, setBox] = useState<ImportBoxState | undefined>();
     const [busy, setBusy] = useState(false);
@@ -93,6 +96,18 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
         });
     };
 
+    const openExample = (example: Example) =>
+        finish(async () => {
+            const result = await analyzeImport(example.text, {
+                method: example.format,
+                databaseType: example.databaseType,
+                diagramName: example.name,
+            });
+            if (!result.design || result.blocked) throw new Error('example');
+            await storeNewDesign(adapter, result.design);
+            return result.design;
+        });
+
     const canImport =
         !!box?.analysis.design &&
         !box.analysis.blocked &&
@@ -116,14 +131,18 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                     <DialogTitle>
                         {step === 'type'
                             ? t('editor.designs.create.titleType')
-                            : t('editor.designs.create.titleImport')}
+                            : step === 'examples'
+                              ? t('editor.designs.create.titleExamples')
+                              : t('editor.designs.create.titleImport')}
                     </DialogTitle>
                     <DialogDescription
-                        className={step === 'type' ? '' : 'sr-only'}
+                        className={step === 'import' ? 'sr-only' : ''}
                     >
                         {step === 'type'
                             ? t('editor.designs.create.descriptionType')
-                            : t('editor.designs.create.descriptionImport')}
+                            : step === 'examples'
+                              ? t('editor.designs.create.descriptionExamples')
+                              : t('editor.designs.create.descriptionImport')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -135,7 +154,10 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                             setStep('import');
                         }}
                         onGeneric={() => setType('generic')}
+                        onExamples={() => setStep('examples')}
                     />
+                ) : step === 'examples' ? (
+                    <ExamplesGrid disabled={busy} onPick={openExample} />
                 ) : type ? (
                     <ImportBox
                         databaseType={type}
@@ -152,7 +174,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
 
                 <DialogFooter className="gap-4 sm:justify-between sm:space-x-0">
                     <div className="flex gap-2 max-sm:flex-col">
-                        {step === 'import' ? (
+                        {step !== 'type' ? (
                             <Button
                                 variant="secondary"
                                 onClick={() => setStep('type')}
@@ -178,32 +200,36 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                             </Button>
                         ) : null}
                     </div>
-                    <div className="flex gap-4 max-sm:flex-col-reverse">
-                        <Button
-                            variant="outline"
-                            disabled={!type || busy}
-                            onClick={() => void createEmpty()}
-                        >
-                            {step === 'type'
-                                ? t('editor.designs.create.empty')
-                                : t('editor.designs.create.emptyFromImport')}
-                        </Button>
-                        {step === 'type' ? (
+                    {step === 'examples' ? null : (
+                        <div className="flex gap-4 max-sm:flex-col-reverse">
                             <Button
+                                variant="outline"
                                 disabled={!type || busy}
-                                onClick={() => setStep('import')}
+                                onClick={() => void createEmpty()}
                             >
-                                {t('editor.common.continue')}
+                                {step === 'type'
+                                    ? t('editor.designs.create.empty')
+                                    : t(
+                                          'editor.designs.create.emptyFromImport'
+                                      )}
                             </Button>
-                        ) : (
-                            <Button
-                                disabled={!canImport}
-                                onClick={() => void importDesign()}
-                            >
-                                {t('editor.designs.create.import')}
-                            </Button>
-                        )}
-                    </div>
+                            {step === 'type' ? (
+                                <Button
+                                    disabled={!type || busy}
+                                    onClick={() => setStep('import')}
+                                >
+                                    {t('editor.common.continue')}
+                                </Button>
+                            ) : (
+                                <Button
+                                    disabled={!canImport}
+                                    onClick={() => void importDesign()}
+                                >
+                                    {t('editor.designs.create.import')}
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>

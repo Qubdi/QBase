@@ -89,7 +89,9 @@ same reason; the stray `diagramId` key (DAT-089) and the unused build variables 
 
 **Changed later the same day (owner):** the database logos are back, copied as image files from the
 main branch, with the icons of the old editor, so the interface looks the same; the code that shows
-them is new (see NOTICE). The examples and templates pages stay out.
+them is new (see NOTICE). The ChartDB examples and templates pages stay out. In their place QBase has
+its own examples, one per database (clinic, bookshop, library, habit tracker, hotel, airline, delivery,
+web analytics), written for this project and opened from "Check Examples" in the New dialog.
 
 **Not yet decided:** the "change" rows of the parity checklist that improved behaviour (for example
 undo shortcuts inside text boxes, warning on duplicate table names, the copy toast naming the

@@ -122,3 +122,44 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
         expect((await screen.findAllByRole('radio')).length).toBe(6);
     });
 });
+
+describe('the examples step of the new diagram dialog', () => {
+    it('lists one example for each database and Back returns to the databases', async () => {
+        renderInEditor(
+            <CreateDiagramDialog dialog={{ open: true }} />,
+            null,
+            '/'
+        );
+        fireEvent.click(
+            await screen.findByRole('button', { name: 'Check Examples' })
+        );
+        expect(
+            await screen.findByRole('heading', { name: 'Examples' })
+        ).toBeTruthy();
+        const cards = document.querySelectorAll('[data-example]');
+        expect(cards.length).toBe(8);
+        fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+        expect((await screen.findAllByRole('radio')).length).toBe(6);
+    });
+
+    it('opens the chosen example as a new diagram of that database', async () => {
+        const { adapter } = renderInEditor(
+            <CreateDiagramDialog dialog={{ open: true }} />,
+            null,
+            '/'
+        );
+        fireEvent.click(
+            await screen.findByRole('button', { name: 'Check Examples' })
+        );
+        await screen.findByRole('heading', { name: 'Examples' });
+        fireEvent.click(
+            document.querySelector('[data-example="bookshop"]') as HTMLElement
+        );
+        await waitFor(async () =>
+            expect((await adapter.list()).length).toBe(1)
+        );
+        const [stored] = await adapter.list();
+        expect(stored.databaseType).toBe('mysql');
+        expect(stored.name).toBe('Online bookshop');
+    });
+});

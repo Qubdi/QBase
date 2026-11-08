@@ -191,10 +191,26 @@ export const zh_CN = {
                     tabAnalytical: '分析型',
                     moreDatabases: '更多数据库',
                     primaryDatabases: '主要数据库',
+                    checkExamples: '查看示例',
+                    titleExamples: '示例',
+                    descriptionExamples:
+                        '从为某个数据库准备的小型图表开始。选择一个即可作为新图表打开。',
                     genericOption: '改用通用数据库',
                     emptyFromImport: '改用空白图表',
                     import: '从文本生成',
                     failed: '无法创建图表。请重试。',
+                },
+                examples: {
+                    clinic: '患者、医生和专科，包含预约以及预约时开具的药品。',
+                    bookshop:
+                        '作者、分类和图书，包含客户、他们的订单以及每个订单中的商品。',
+                    library: '分馆、会员和可借阅物品，包含借阅和预约。',
+                    habits: '人员、他们的习惯和每日打卡，包含提醒和标签。',
+                    hotel: '酒店、房型和房间，包含住客、预订和付款。',
+                    airline: '机场、飞机和航班，包含乘客、订票和机票。',
+                    delivery: '仓库、快递员和车辆，包含计划路线、包裹和派送。',
+                    analytics:
+                        '页面、访客和会话，包含页面浏览和转化，便于快速读取。',
                 },
                 open: {
                     title: '您的图表',

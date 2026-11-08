@@ -190,10 +190,26 @@ export const zh_TW = {
                     tabAnalytical: '分析型',
                     moreDatabases: '更多資料庫',
                     primaryDatabases: '主要資料庫',
+                    checkExamples: '查看範例',
+                    titleExamples: '範例',
+                    descriptionExamples:
+                        '從為某個資料庫準備的小型圖表開始。選擇一個即可作為新圖表開啟。',
                     genericOption: '改用通用資料庫',
                     emptyFromImport: '改用空白圖表',
                     import: '從文字建立',
                     failed: '無法建立圖表。請再試一次。',
+                },
+                examples: {
+                    clinic: '病患、醫師和專科，包含預約以及預約時開立的藥品。',
+                    bookshop:
+                        '作者、分類和書籍，包含客戶、他們的訂單以及每筆訂單中的商品。',
+                    library: '分館、會員和可借閱物品，包含借閱和預約。',
+                    habits: '人員、他們的習慣和每日打卡，包含提醒和標籤。',
+                    hotel: '飯店、房型和房間，包含住客、預訂和付款。',
+                    airline: '機場、飛機和航班，包含乘客、訂票和機票。',
+                    delivery: '倉庫、快遞員和車輛，包含計畫路線、包裹和配送。',
+                    analytics:
+                        '頁面、訪客和工作階段，包含頁面瀏覽和轉換，便於快速讀取。',
                 },
                 open: {
                     title: '您的圖表',

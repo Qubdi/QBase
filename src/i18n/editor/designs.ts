@@ -15,10 +15,28 @@ export const designsStrings = {
         tabAnalytical: 'Analytical',
         moreDatabases: 'More Databases',
         primaryDatabases: 'Primary Databases',
+        checkExamples: 'Check Examples',
+        titleExamples: 'Examples',
+        descriptionExamples:
+            'Start from a small diagram made for one database. Pick one to open it as a new diagram.',
         genericOption: 'Use a generic database instead',
         emptyFromImport: 'Empty database',
         import: 'Import',
         failed: 'The diagram could not be created. Please try again.',
+    },
+    examples: {
+        clinic: 'Patients, doctors and specialties, with appointments and the medicines prescribed at them.',
+        bookshop:
+            'Authors, categories and books, with customers, their orders and the items in each order.',
+        library: 'Branches, members and lendable items, with loans and holds.',
+        habits: 'People, their habits and daily check-ins, with reminders and tags.',
+        hotel: 'Hotels, room types and rooms, with guests, reservations and payments.',
+        airline:
+            'Airports, aircraft and flights, with passengers, bookings and tickets.',
+        delivery:
+            'Depots, couriers and vehicles, with planned routes, parcels and their deliveries.',
+        analytics:
+            'Pages, visitors and sessions, with page views and conversions stored for fast reading.',
     },
     open: {
         title: 'Open Database',

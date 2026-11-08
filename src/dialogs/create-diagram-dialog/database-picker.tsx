@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, Database } from 'lucide-react';
+import { ChevronDown, ChevronUp, Database, LayoutGrid } from 'lucide-react';
 import type { DatabaseType } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
 import { Button } from '@/platform/ui/button';
@@ -58,6 +58,8 @@ export interface DatabasePickerProps {
     onPick: (type: DatabaseType) => void;
     /** puts Generic back as the chosen database */
     onGeneric: () => void;
+    /** opens the list of examples */
+    onExamples?: () => void;
 }
 
 /** Transactional and Analytical tabs of option cards (SHL-032, SHL-042). */
@@ -65,6 +67,7 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
     value,
     onPick,
     onGeneric,
+    onExamples,
 }) => {
     const { t } = useTranslation();
     const [offset, setOffset] = useState(0);
@@ -147,6 +150,16 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                     <div className="h-[54px]" aria-hidden />
                 </TabsContent>
             </Tabs>
+            {onExamples ? (
+                <Button
+                    variant="outline"
+                    className="mx-auto mt-[5px] h-8 w-[416px] max-w-full text-primary"
+                    onClick={onExamples}
+                >
+                    <LayoutGrid />
+                    {t('editor.designs.create.checkExamples')}
+                </Button>
+            ) : null}
             <Button
                 variant="link"
                 className="mx-auto mt-[5px] h-8 w-[416px] max-w-full"
