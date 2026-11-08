@@ -381,9 +381,19 @@ export const zh_TW = {
                     instructions: '說明：',
                     pasteHere: {
                         metadata: '2. 將指令碼結果貼到此視窗 →',
-                        sql: '在此貼上您的 SQL 指令碼 →',
+                        sql: '3. 開啟匯出的 SQL 檔案，複製其內容並貼到此處。',
                         dbml: '在此貼上您的 DBML（資料庫標記語言）結構定義 →',
                     },
+                    dbClient: '資料庫用戶端',
+                    psql: 'PSQL',
+                    psqlSave: '將指令碼儲存為檔案，然後執行：',
+                    sqlInstall: '1. 安裝 {{tool}}。',
+                    sqlRun: '2. 在終端機中執行以下指令（在 Linux 上如有需要請加上 sudo）：',
+                    example: '範例：',
+                    resize: '調整說明面板大小',
+                    needHelp: '需要協助？觀看操作示範',
+                    helpBody:
+                        '複製指令碼，在您的資料庫中執行，將結果貼到右側的方框中，然後按匯入。',
                     output: {
                         metadata: '智慧查詢輸出',
                         sql: 'SQL 指令碼',

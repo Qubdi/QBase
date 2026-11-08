@@ -380,9 +380,19 @@ export const zh_CN = {
                     instructions: '说明：',
                     pasteHere: {
                         metadata: '2. 将脚本结果粘贴到此窗口 →',
-                        sql: '在此粘贴您的 SQL 脚本 →',
+                        sql: '3. 打开导出的 SQL 文件，复制其内容并粘贴到此处。',
                         dbml: '在此粘贴您的 DBML（数据库标记语言）架构定义 →',
                     },
+                    dbClient: '数据库客户端',
+                    psql: 'PSQL',
+                    psqlSave: '将脚本保存为文件，然后运行：',
+                    sqlInstall: '1. 安装 {{tool}}。',
+                    sqlRun: '2. 在终端中执行以下命令（在 Linux 上如有需要请加上 sudo）：',
+                    example: '示例：',
+                    resize: '调整说明面板大小',
+                    needHelp: '需要帮助？观看操作演示',
+                    helpBody:
+                        '复制脚本，在您的数据库中运行，将结果粘贴到右侧的框中，然后点击导入。',
                     output: {
                         metadata: '智能查询输出',
                         sql: 'SQL 脚本',

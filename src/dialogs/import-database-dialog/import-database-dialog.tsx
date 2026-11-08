@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
+import { ImportHelp } from '@/features/import/import-help';
 import {
     Dialog,
     DialogContent,
@@ -156,16 +157,19 @@ export const ImportDatabaseDialog: React.FC<ImportDatabaseDialogProps> = ({
                         ) : null}
                     </div>
                 ) : null}
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={closeImportDatabaseDialog}
-                    >
-                        {t('editor.common.cancel')}
-                    </Button>
-                    <Button disabled={!canApply} onClick={apply}>
-                        {t('editor.importing.into.apply')}
-                    </Button>
+                <DialogFooter className="gap-4 sm:justify-between sm:space-x-0">
+                    <ImportHelp />
+                    <div className="flex gap-4">
+                        <Button
+                            variant="outline"
+                            onClick={closeImportDatabaseDialog}
+                        >
+                            {t('editor.common.close')}
+                        </Button>
+                        <Button disabled={!canApply} onClick={apply}>
+                            {t('editor.importing.into.apply')}
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

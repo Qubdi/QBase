@@ -428,9 +428,20 @@ export const fr = {
                     pasteHere: {
                         metadata:
                             '2. Collez le résultat du script dans cette fenêtre →',
-                        sql: 'Collez votre script SQL ici →',
+                        sql: '3. Ouvrez le fichier SQL exporté, copiez son contenu et collez-le ici.',
                         dbml: 'Collez ici votre définition de schéma DBML (Database Markup Language) →',
                     },
+                    dbClient: 'Client BD',
+                    psql: 'PSQL',
+                    psqlSave:
+                        'Enregistrez le script dans un fichier, puis exécutez :',
+                    sqlInstall: '1. Installez {{tool}}.',
+                    sqlRun: '2. Exécutez la commande suivante dans votre terminal (préfixez avec sudo sous Linux si nécessaire) :',
+                    example: 'Exemple :',
+                    resize: "Redimensionner le panneau d'instructions",
+                    needHelp: "Besoin d'aide ? Regardez comment faire",
+                    helpBody:
+                        'Copiez le script, exécutez-le dans votre base de données, collez le résultat dans la zone de droite, puis cliquez sur Importer.',
                     output: {
                         metadata: 'Résultat de la Smart Query',
                         sql: 'Script SQL',

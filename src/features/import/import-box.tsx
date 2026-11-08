@@ -1,8 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, Copy, Info, Wand2 } from 'lucide-react';
+import { AlertCircle, GripVertical, Info, Wand2 } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/platform/ui/tabs';
 import { Textarea } from '@/platform/ui/textarea';
+import { CodeView } from './code-view';
+import {
+    dumpCommandFor,
+    DBML_SAMPLE,
+    hasPsqlTab,
+    PSQL_COMMAND,
+} from './import-instructions';
 import { cn } from '@/lib/utils/utils';
 import { editionsFor } from '@/core/model/database';
 import type { DatabaseEdition, DatabaseType } from '@/core/model/database';
@@ -44,6 +52,27 @@ export interface ImportBoxProps {
 }
 
 export const QUIET_MS = 500;
+const DEFAULT_LEFT = 350;
+const MIN_LEFT = 260;
+const MAX_LEFT = 560;
+const clampLeft = (w: number) => Math.min(MAX_LEFT, Math.max(MIN_LEFT, w));
+
+/** Two columns from the md breakpoint up; one stacked column below it. */
+const useIsWide = () => {
+    const [wide, setWide] = useState(
+        () =>
+            typeof window === 'undefined' ||
+            window.matchMedia?.('(min-width: 768px)').matches !== false
+    );
+    useEffect(() => {
+        const q = window.matchMedia?.('(min-width: 768px)');
+        if (!q) return;
+        const on = () => setWide(q.matches);
+        q.addEventListener('change', on);
+        return () => q.removeEventListener('change', on);
+    }, []);
+    return wide;
+};
 const SSMS_LIMIT = 65535;
 
 const offsetOf = (text: string, line = 1, column = 1): number => {
@@ -127,6 +156,12 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
     const [repairing, setRepairing] = useState(false);
     const [repaired, setRepaired] = useState(false);
     const area = useRef<HTMLTextAreaElement>(null);
+    const gutter = useRef<HTMLDivElement>(null);
+    const grid = useRef<HTMLDivElement>(null);
+    const dragFrom = useRef<{ x: number; w: number } | undefined>(undefined);
+    const [client, setClient] = useState<'client' | 'psql'>('client');
+    const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT);
+    const wide = useIsWide();
 
     const quiet = useDebounced(text, QUIET_MS);
     const editions = editionsFor(databaseType);
@@ -239,6 +274,11 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
     };
 
     const script = metadataScriptFor(databaseType, edition);
+    const copyCode = async (code: string) => {
+        if (await copyText(code)) {
+            toast({ title: t('editor.importing.box.scriptCopied') });
+        }
+    };
     const copyScript = async () => {
         if (!script) return;
         if (await copyText(script)) {
@@ -267,9 +307,19 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
             'inline-flex h-6 items-center gap-1.5 rounded-md border border-input px-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             on && 'bg-slate-200 text-accent-foreground dark:bg-secondary'
         );
+    const dump = dumpCommandFor(databaseType);
+    const psqlSwitch = hasPsqlTab(databaseType, method);
 
     return (
-        <div className="grid min-h-0 gap-2 md:h-[490px] md:grid-cols-[350px_minmax(0,1fr)]">
+        <div
+            ref={grid}
+            className="grid min-h-0 md:h-[500px]"
+            style={{
+                gridTemplateColumns: wide
+                    ? `${leftWidth}px 9px minmax(0,1fr)`
+                    : undefined,
+            }}
+        >
             <div className="flex flex-col gap-3 overflow-auto rounded-md bg-accent/40 p-2 text-sm">
                 {editions.length > 0 ? (
                     <div
@@ -338,39 +388,62 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
                         ))}
                     </div>
                 </div>
-                <div>
-                    <p className="mb-1 font-semibold">
+                <div className="flex flex-col gap-2">
+                    <p className="font-semibold">
                         {t('editor.importing.box.instructions')}
                     </p>
                     {method === 'metadata' ? (
                         <>
-                            <p className="mb-2 text-primary">
+                            <p className="text-primary">
                                 {t('editor.importing.box.scriptIntro')}
                             </p>
-                            {script ? (
-                                <div className="relative">
-                                    <Textarea
-                                        readOnly
-                                        value={script}
-                                        spellCheck={false}
-                                        aria-label={t(
-                                            'editor.importing.box.copyScript'
-                                        )}
-                                        className="h-[198px] resize-none bg-background pr-10 font-mono text-xs shadow-none"
+                            {psqlSwitch ? (
+                                <Tabs
+                                    value={client}
+                                    onValueChange={(v) =>
+                                        setClient(v as 'client' | 'psql')
+                                    }
+                                    className="self-start"
+                                >
+                                    <TabsList className="h-8 rounded-lg border-0 bg-secondary p-1">
+                                        <TabsTrigger
+                                            value="client"
+                                            className="h-6 flex-none rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                                        >
+                                            {t('editor.importing.box.dbClient')}
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="psql"
+                                            className="h-6 flex-none rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                                        >
+                                            {t('editor.importing.box.psql')}
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            ) : null}
+                            {script && psqlSwitch && client === 'psql' ? (
+                                <>
+                                    <p className="text-primary">
+                                        {t('editor.importing.box.psqlSave')}
+                                    </p>
+                                    <CodeView
+                                        code={PSQL_COMMAND}
+                                        language="shell"
+                                        label={t('editor.importing.box.psql')}
+                                        className="h-[96px]"
                                     />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="absolute right-1 top-1 size-[30px]"
-                                        aria-label={t(
-                                            'editor.importing.box.copyScript'
-                                        )}
-                                        onClick={copyScript}
-                                    >
-                                        <Copy />
-                                    </Button>
-                                </div>
+                                </>
+                            ) : script ? (
+                                <CodeView
+                                    code={script}
+                                    language="sql"
+                                    label={t('editor.importing.box.copyScript')}
+                                    copyLabel={t(
+                                        'editor.importing.box.copyScript'
+                                    )}
+                                    onCopy={copyScript}
+                                    className="h-[198px]"
+                                />
                             ) : (
                                 <p className="text-xs text-muted-foreground">
                                     {t('editor.importing.box.noScript')}
@@ -378,24 +451,129 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
                             )}
                         </>
                     ) : null}
-                    <p className="mt-2 text-primary">
-                        {t(`editor.importing.box.pasteHere.${method}`)}
-                    </p>
+                    {method === 'sql' && dump ? (
+                        <>
+                            <p className="text-primary">
+                                {t('editor.importing.box.sqlInstall', {
+                                    tool: dump.tool,
+                                })}
+                            </p>
+                            <p className="text-primary">
+                                {t('editor.importing.box.sqlRun')}
+                            </p>
+                            <CodeView
+                                code={dump.template}
+                                language="shell"
+                                label={dump.tool}
+                                copyLabel={t('editor.importing.box.copyScript')}
+                                onCopy={() => void copyCode(dump.template)}
+                                className="h-[62px]"
+                            />
+                            <p className="text-primary">
+                                {t('editor.importing.box.example')}
+                            </p>
+                            <CodeView
+                                code={dump.example}
+                                language="shell"
+                                label={t('editor.importing.box.example')}
+                                copyLabel={t('editor.importing.box.copyScript')}
+                                onCopy={() => void copyCode(dump.example)}
+                                className="h-[62px]"
+                            />
+                        </>
+                    ) : null}
+                    {method === 'dbml' ? (
+                        <>
+                            <p className="text-primary">
+                                {t('editor.importing.box.pasteHere.dbml')}
+                            </p>
+                            <p className="text-xs font-medium text-primary">
+                                {t('editor.importing.box.example')}
+                            </p>
+                            <CodeView
+                                code={DBML_SAMPLE}
+                                language="dbml"
+                                label={t('editor.importing.box.example')}
+                                className="h-[236px]"
+                            />
+                        </>
+                    ) : (
+                        <p className="text-primary">
+                            {t(`editor.importing.box.pasteHere.${method}`)}
+                        </p>
+                    )}
                 </div>
             </div>
 
-            <div className="flex min-h-0 flex-col gap-2 overflow-auto">
-                <div className="relative flex min-h-[200px] flex-1 flex-col rounded-md border">
-                    <span className="pointer-events-none absolute right-2 top-1 text-xs text-muted-foreground">
+            {wide ? (
+                <div
+                    role="slider"
+                    aria-orientation="vertical"
+                    aria-label={t('editor.importing.box.resize')}
+                    aria-valuenow={leftWidth}
+                    aria-valuemin={MIN_LEFT}
+                    aria-valuemax={MAX_LEFT}
+                    tabIndex={0}
+                    className="flex cursor-col-resize touch-none items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onPointerDown={(e) => {
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                        dragFrom.current = { x: e.clientX, w: leftWidth };
+                    }}
+                    onPointerMove={(e) => {
+                        if (!dragFrom.current) return;
+                        setLeftWidth(
+                            clampLeft(
+                                dragFrom.current.w +
+                                    e.clientX -
+                                    dragFrom.current.x
+                            )
+                        );
+                    }}
+                    onPointerUp={() => (dragFrom.current = undefined)}
+                    onKeyDown={(e) => {
+                        const step =
+                            e.key === 'ArrowRight'
+                                ? 20
+                                : e.key === 'ArrowLeft'
+                                  ? -20
+                                  : 0;
+                        if (!step) return;
+                        e.preventDefault();
+                        setLeftWidth((w) => clampLeft(w + step));
+                    }}
+                >
+                    <GripVertical className="size-3.5" aria-hidden />
+                </div>
+            ) : null}
+
+            <div className="flex min-h-0 flex-col gap-2 overflow-auto md:pl-0">
+                <div className="relative flex min-h-[200px] flex-1 overflow-hidden rounded-md border">
+                    <span className="pointer-events-none absolute right-2 top-1 z-10 text-xs text-muted-foreground">
                         {t(`editor.importing.box.output.${method}`)}
                     </span>
+                    <div
+                        aria-hidden
+                        ref={gutter}
+                        className="select-none overflow-hidden bg-background pl-3 pr-3 pt-2 text-right font-mono text-[13px] leading-[19px] text-[#237893] dark:text-[#858585]"
+                    >
+                        {Array.from(
+                            { length: Math.max(1, text.split('\n').length) },
+                            (_, n) => (
+                                <div key={n}>{n + 1}</div>
+                            )
+                        )}
+                    </div>
                     <Textarea
                         ref={area}
                         value={text}
                         onChange={(e) => changeText(e.target.value)}
                         onPaste={onPaste}
+                        onScroll={(e) => {
+                            if (gutter.current)
+                                gutter.current.style.transform = `translateY(${-e.currentTarget.scrollTop}px)`;
+                        }}
                         spellCheck={false}
-                        className="min-h-0 flex-1 resize-none border-0 font-mono text-xs shadow-none"
+                        className="min-h-0 flex-1 resize-none rounded-none border-0 px-0 pt-2 font-mono text-[13px] leading-[19px] shadow-none"
                         aria-label={t(`editor.importing.box.field.${method}`)}
                         placeholder={t(
                             `editor.importing.box.placeholder.${method}`

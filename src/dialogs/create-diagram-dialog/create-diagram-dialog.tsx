@@ -17,6 +17,7 @@ import {
     storeNewDesign,
 } from '@/features/designs/design-service';
 import { useDesignList } from '@/features/designs/use-design-list';
+import { ImportHelp } from '@/features/import/import-help';
 import { ImportBox } from '@/features/import/import-box';
 import type { ImportBoxState } from '@/features/import/import-box';
 import { useDialog } from '@/hooks/use-dialog';
@@ -167,6 +168,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                                 {t('editor.common.cancel')}
                             </Button>
                         ) : null}
+                        {step === 'import' ? <ImportHelp /> : null}
                         {step === 'type' && !canClose ? (
                             <Button
                                 variant="ghost"

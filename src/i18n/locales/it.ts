@@ -424,9 +424,19 @@ export const it = {
                     pasteHere: {
                         metadata:
                             '2. Incolla il risultato dello script in questa finestra →',
-                        sql: 'Incolla qui il tuo script SQL →',
+                        sql: '3. Apri il file SQL esportato, copiane il contenuto e incollalo qui.',
                         dbml: 'Incolla qui la definizione dello schema DBML (Database Markup Language) →',
                     },
+                    dbClient: 'Client DB',
+                    psql: 'PSQL',
+                    psqlSave: 'Salva lo script in un file, poi esegui:',
+                    sqlInstall: '1. Installa {{tool}}.',
+                    sqlRun: '2. Esegui il comando seguente nel terminale (anteponi sudo su Linux se necessario):',
+                    example: 'Esempio:',
+                    resize: 'Ridimensiona il pannello delle istruzioni',
+                    needHelp: 'Serve aiuto? Guarda come fare',
+                    helpBody:
+                        'Copia lo script, eseguilo nel tuo database, incolla il risultato nella casella a destra e premi Importa.',
                     output: {
                         metadata: 'Output della Smart Query',
                         sql: 'Script SQL',

@@ -29,9 +29,19 @@ export const importingStrings = {
         instructions: 'Instructions:',
         pasteHere: {
             metadata: '2. Paste the script result into this modal →',
-            sql: 'Paste your SQL script here →',
+            sql: '3. Open the exported SQL file, copy its contents, and paste them here.',
             dbml: 'Paste your DBML (Database Markup Language) schema definition here →',
         },
+        dbClient: 'DB Client',
+        psql: 'PSQL',
+        psqlSave: 'Save the script as a file, then run:',
+        sqlInstall: '1. Install {{tool}}.',
+        sqlRun: '2. Execute the following command in your terminal (prefix with sudo on Linux if needed):',
+        example: 'Example:',
+        resize: 'Resize the instructions panel',
+        needHelp: 'Need help? Watch how',
+        helpBody:
+            'Copy the script, run it in your database, paste the result into the box on the right, then press Import.',
         output: {
             metadata: 'Smart Query Output',
             sql: 'SQL Script',
