@@ -5,8 +5,6 @@
  */
 
 export interface PostgresOptions {
-    /** CockroachDB: pg_catalog without the PostgreSQL-only columns */
-    cockroach?: boolean;
     /** schemas that belong to the platform, not to the user */
     hiddenSchemas?: string[];
     /** regular expressions for more such schemas */
@@ -36,50 +34,27 @@ const SUPABASE_SCHEMAS = [
 const list = (names: string[]) => names.map((n) => `'${n}'`).join(', ');
 
 export function postgresScript(options: PostgresOptions = {}): string {
-    const cockroach = options.cockroach === true;
-    const hidden = [
-        'information_schema',
-        ...(cockroach ? ['crdb_internal', 'pg_extension'] : []),
-        ...(options.hiddenSchemas ?? []),
-    ];
+    const hidden = ['information_schema', ...(options.hiddenSchemas ?? [])];
     const patterns = ['^pg_', ...(options.hiddenPatterns ?? [])];
     const keep = (ns: string) =>
         `${ns}.nspname NOT IN (${list(hidden)})` +
         patterns.map((p) => ` AND ${ns}.nspname !~ '${p}'`).join('');
     const F = keep('n');
     // a partition child is shown through its parent
-    const notChild = cockroach ? 'true' : 'NOT c.relispartition';
+    const notChild = 'NOT c.relispartition';
     const defaultText = `pg_get_expr(ad.adbin, ad.adrelid)`;
-    const isIdentity = cockroach
-        ? `COALESCE(${defaultText} LIKE 'nextval(%' OR ${defaultText} LIKE 'unique_rowid()%', false)`
-        : `(a.attidentity IN ('a', 'd') OR COALESCE(${defaultText} LIKE 'nextval(%', false))`;
-    const collation = cockroach
-        ? 'NULL'
-        : `CASE WHEN a.attcollation <> t.typcollation THEN co.collname END`;
-    const direction = cockroach
-        ? `'asc'`
-        : `CASE WHEN pg_index_column_has_property(i.indexrelid, g.k, 'desc') THEN 'desc' ELSE 'asc' END`;
+    const isIdentity = `(a.attidentity IN ('a', 'd') OR COALESCE(${defaultText} LIKE 'nextval(%', false))`;
+    const collation = `CASE WHEN a.attcollation <> t.typcollation THEN co.collname END`;
+    const direction = `CASE WHEN pg_index_column_has_property(i.indexrelid, g.k, 'desc') THEN 'desc' ELSE 'asc' END`;
     // a domain column is reported with the domain's base type; the domain's name goes in 'domain'
-    const typeOid = cockroach
-        ? 'a.atttypid'
-        : `CASE WHEN t.typtype = 'd' THEN t.typbasetype ELSE a.atttypid END`;
-    const typeMod = cockroach
-        ? 'a.atttypmod'
-        : `CASE WHEN t.typtype = 'd' AND a.atttypmod = -1 THEN t.typtypmod ELSE a.atttypmod END`;
-    const domain = cockroach
-        ? 'NULL'
-        : `CASE WHEN t.typtype = 'd' THEN t.typname END`;
-    const generated = cockroach
-        ? 'NULL'
-        : `CASE WHEN a.attgenerated IN ('s', 'v') THEN json_build_object(
+    const typeOid = `CASE WHEN t.typtype = 'd' THEN t.typbasetype ELSE a.atttypid END`;
+    const typeMod = `CASE WHEN t.typtype = 'd' AND a.atttypmod = -1 THEN t.typtypmod ELSE a.atttypmod END`;
+    const domain = `CASE WHEN t.typtype = 'd' THEN t.typname END`;
+    const generated = `CASE WHEN a.attgenerated IN ('s', 'v') THEN json_build_object(
               'expression', ${defaultText}, 'stored', a.attgenerated = 's') END`;
-    const columnDefault = cockroach
-        ? defaultText
-        : `CASE WHEN a.attgenerated IN ('s', 'v') THEN NULL ELSE ${defaultText} END`;
-    const keyColumns = cockroach ? 'i.indnatts' : 'i.indnkeyatts';
-    const composites = cockroach
-        ? ''
-        : `
+    const columnDefault = `CASE WHEN a.attgenerated IN ('s', 'v') THEN NULL ELSE ${defaultText} END`;
+    const keyColumns = 'i.indnkeyatts';
+    const composites = `
       UNION ALL
       SELECT json_build_object('schema', n.nspname, 'type', t.typname,
           'kind', 'composite',
@@ -208,7 +183,6 @@ export function postgresScript(options: PostgresOptions = {}): string {
 }
 
 export const POSTGRES_SCRIPT = postgresScript();
-export const COCKROACH_SCRIPT = postgresScript({ cockroach: true });
 export const SUPABASE_SCRIPT = postgresScript({
     hiddenSchemas: SUPABASE_SCHEMAS,
 });

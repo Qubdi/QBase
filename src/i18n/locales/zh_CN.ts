@@ -188,15 +188,10 @@ export const zh_CN = {
                         '粘贴模式以据此生成图表，或从空白图表开始。',
                     fromFile: '打开已保存的文件',
                     empty: '空白图表',
-                    tabTransactional: '事务型',
-                    tabAnalytical: '分析型',
-                    moreDatabases: '更多数据库',
-                    primaryDatabases: '主要数据库',
                     checkExamples: '查看示例',
                     titleExamples: '示例',
                     descriptionExamples:
                         '从为某个数据库准备的小型图表开始。选择一个即可作为新图表打开。',
-                    genericOption: '改用通用数据库',
                     emptyFromImport: '改用空白图表',
                     import: '从文本生成',
                     failed: '无法创建图表。请重试。',
@@ -630,7 +625,6 @@ export const zh_CN = {
                 checks: {
                     add: '添加检查',
                     none: '没有检查约束',
-                    unsupported: '此数据库的 SQL 导出会省略检查约束',
                     expression: '表达式',
                     expressionPlaceholder: '例如 price > 0',
                     attributes: '检查约束',

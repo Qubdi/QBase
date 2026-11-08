@@ -20,6 +20,7 @@ describe('export targets (EXP-001, EXP-007, EXP-008)', () => {
             'sql_server',
             'mariadb',
             'sqlite',
+            'oracle',
         ]);
         expect(exportTargets('postgresql')).toEqual([
             'postgresql',
@@ -27,13 +28,10 @@ describe('export targets (EXP-001, EXP-007, EXP-008)', () => {
             'sql_server',
             'mariadb',
             'sqlite',
+            'oracle',
         ]);
     });
-    it('a CockroachDB diagram exports to itself and the five, never as a target of others', () => {
-        expect(exportTargets('cockroachdb')[0]).toBe('cockroachdb');
-        expect(exportTargets('postgresql')).not.toContain('cockroachdb');
-    });
-    it('Oracle and ClickHouse diagrams export to themselves and the five, and are never targets of others (EXP-008)', () => {
+    it('an Oracle diagram exports to itself and the five, and Oracle is a target of the others (EXP-008)', () => {
         expect(exportTargets('oracle')).toEqual([
             'oracle',
             'postgresql',
@@ -42,9 +40,7 @@ describe('export targets (EXP-001, EXP-007, EXP-008)', () => {
             'mariadb',
             'sqlite',
         ]);
-        expect(exportTargets('clickhouse')[0]).toBe('clickhouse');
-        expect(exportTargets('mysql')).not.toContain('oracle');
-        expect(exportTargets('mysql')).not.toContain('clickhouse');
+        expect(exportTargets('mysql')).toContain('oracle');
     });
 });
 

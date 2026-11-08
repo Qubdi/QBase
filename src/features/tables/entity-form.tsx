@@ -8,9 +8,7 @@ import {
     MessageCircleMore,
 } from 'lucide-react';
 import { planAddColumn, planAddKey } from '@/core/commands/plan-column';
-import { traitsOf } from '@/core/model/database';
 import type { Entity } from '@/core/model/entity';
-import { rulesOf } from '@/core/model/lookup';
 import { DebouncedTextarea } from '@/platform/panel/debounced-input';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
@@ -68,10 +66,7 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
     const [addedId, setAddedId] = useState<string | undefined>();
     const toggle = (name: string) =>
         setOpenSection(openSection === name ? undefined : name);
-    const showChecks =
-        !view &&
-        (traitsOf(design.databaseType).hasChecks ||
-            rulesOf(design, entity).length > 0);
+    const showChecks = !view;
     return (
         <div>
             {hasDuplicateName(design, entity) ? (

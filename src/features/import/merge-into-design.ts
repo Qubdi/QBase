@@ -25,8 +25,7 @@ const keyIn =
  * Adds what an import built to an open design. Imported tables are moved so
  * the left-most one sits 150 px right of the right-most existing table; ids
  * are already fresh. Nothing is merged: a table that exists again becomes a
- * second table and is reported in `duplicates`. A generic design takes the
- * imported database type. Custom types that are not there yet are added.
+ * second table and is reported in `duplicates`. Custom types that are not there yet are added.
  */
 export function mergeImported(
     current: Design,
@@ -84,12 +83,6 @@ export function mergeImported(
 
     const design: Design = {
         ...current,
-        ...(current.databaseType === 'generic'
-            ? {
-                  databaseType: imported.databaseType,
-                  databaseEdition: imported.databaseEdition,
-              }
-            : {}),
         entities,
         columns: { ...current.columns, ...imported.columns },
         keys: { ...current.keys, ...imported.keys },

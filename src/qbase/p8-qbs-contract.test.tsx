@@ -216,14 +216,11 @@ describe('QBS-006 saved string values do not change', () => {
             await import('./diagram-types');
         expect(Object.values(DatabaseType).sort()).toEqual(
             [
-                'generic',
                 'postgresql',
                 'mysql',
                 'sql_server',
                 'mariadb',
                 'sqlite',
-                'clickhouse',
-                'cockroachdb',
                 'oracle',
             ].sort()
         );
@@ -259,7 +256,7 @@ describe('QBS-007 label, schema and type facts are provided', () => {
             expect(databaseTypeToLabelMap[t], t).toBeTruthy();
         expect(databaseTypeToLabelMap.sql_server).toBe('SQL Server');
         expect(databasesWithSchemas).toEqual(
-            expect.arrayContaining(['postgresql', 'sql_server', 'cockroachdb'])
+            expect.arrayContaining(['postgresql', 'sql_server', 'oracle'])
         );
         expect(databasesWithSchemas).not.toContain('mysql');
         expect(knownTypes('postgresql').map((x) => x.name)).toContain(

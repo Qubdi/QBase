@@ -193,15 +193,10 @@ export const it = {
                         'Incolla uno schema per generare il diagramma, oppure inizia con uno vuoto.',
                     fromFile: 'Apri un file salvato',
                     empty: 'Diagramma vuoto',
-                    tabTransactional: 'Transazionale',
-                    tabAnalytical: 'Analitico',
-                    moreDatabases: 'Altri database',
-                    primaryDatabases: 'Database principali',
                     checkExamples: 'Vedi gli esempi',
                     titleExamples: 'Esempi',
                     descriptionExamples:
                         'Parti da un piccolo diagramma pensato per un database. Sceglierne uno per aprirlo come nuovo diagramma.',
-                    genericOption: 'Usa invece un database generico',
                     emptyFromImport: 'Meglio un diagramma vuoto',
                     import: 'Genera dal testo',
                     failed: 'Non è stato possibile creare il diagramma. Riprovare.',
@@ -704,8 +699,6 @@ export const it = {
                 checks: {
                     add: 'Aggiungi vincolo check',
                     none: 'Nessun vincolo check',
-                    unsupported:
-                        "L'esportazione SQL per questo database omette i vincoli check",
                     expression: 'Espressione',
                     expressionPlaceholder: 'ad es. price > 0',
                     attributes: 'Vincolo check',

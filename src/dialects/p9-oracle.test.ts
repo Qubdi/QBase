@@ -10,7 +10,7 @@ import { loadFromDatabaseMetadata } from '@/formats/metadata/load';
 import { exportSql } from '@/formats/sql/export-sql';
 import { importSql } from '@/formats/sql/import-sql';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
-import { detectDialect, dialectFor } from './registry';
+import { dialectFor } from './registry';
 import { sampleS1 } from './testing/sample-designs';
 
 const ORACLE_SCRIPT = `
@@ -39,38 +39,25 @@ const named = (d: Design, name: string) =>
 const columnsOf = (d: Design, name: string) =>
     named(d, name).columnIds.map((id) => d.columns[id]);
 
-describe('EXP-008 Oracle and ClickHouse model facts (editor 14)', () => {
+describe('EXP-008 Oracle model facts (editor 14)', () => {
     it('schema, array, check and default-schema rules', () => {
         expect(traitsOf('oracle')).toMatchObject({
             hasSchemas: true,
             hasArrays: false,
             hasUserTypes: false,
-            hasChecks: true,
             defaultColumnType: 'number',
         });
         expect(traitsOf('oracle').defaultSchema).toBeUndefined();
-        expect(traitsOf('clickhouse')).toMatchObject({
-            hasSchemas: true,
-            hasArrays: false,
-            hasChecks: false,
-            defaultSchema: 'default',
-        });
     });
-    it('have their own type lists and capabilities', () => {
+    it('has its own type list and capabilities', () => {
         const oracle = dialectFor('oracle');
         expect(oracle.types).toContain('varchar2');
         expect(oracle.types).toContain('timestamp with time zone');
         expect(oracle.types).toHaveLength(23);
-        const ch = dialectFor('clickhouse');
-        expect(ch.types).toEqual(expect.arrayContaining(['UInt8', 'UInt256']));
-        expect(ch.types).toEqual(
-            expect.arrayContaining(['LowCardinality', 'IPv6'])
-        );
         expect(oracle.capabilities.nativeComments).toBe(true);
-        expect(ch.capabilities.checkConstraints).toBe(false);
     });
-    it('designs of these types are edited like any other', () => {
-        for (const type of ['oracle', 'clickhouse'] as const) {
+    it('an Oracle design is edited like any other', () => {
+        for (const type of ['oracle'] as const) {
             const next = applyOk(blank(type), {
                 type: 'design.rename',
                 name: 'x',
@@ -112,23 +99,9 @@ describe('IMP-001 IMP-008 Oracle SQL import', () => {
         expect(text).toContain('use NUMBER(3)');
         expect(text).toContain('use RAW(16)');
     });
-    it('Generic text with Oracle markers is detected as Oracle', () => {
-        expect(detectDialect(ORACLE_SCRIPT)).toBe('oracle');
-        expect(detectDialect('CREATE TABLE a (id int, n NVARCHAR2(10));')).toBe(
-            'oracle'
-        );
-        expect(detectDialect('CREATE TABLE a (id int);')).toBe('postgresql');
-        const r = importSql(ORACLE_SCRIPT, 'generic');
-        expect(r.counts.tables).toBe(2);
-    });
-    it('ClickHouse has no SQL reader', () => {
-        const r = importSql('CREATE TABLE a (id UInt8);', 'clickhouse');
-        expect(r.design).toBeUndefined();
-        expect(r.diagnostics[0].message).toBe('Unsupported database type');
-    });
 });
 
-describe('EXP-008 SQL export through the generic generator', () => {
+describe('EXP-008 SQL export for Oracle', () => {
     const oracle = importSql(ORACLE_SCRIPT, 'oracle').design!;
 
     it('an Oracle diagram writes its own Oracle script', () => {
@@ -175,34 +148,6 @@ describe('EXP-008 SQL export through the generic generator', () => {
         expect(text).toMatch(/^-- PostgreSQL to Oracle conversion\n/);
         expect(text).toContain('CREATE TABLE');
     });
-    it('another database to ClickHouse says there is no converter', () => {
-        const { text } = exportSql(sampleS1('postgresql'), 'clickhouse');
-        expect(text.startsWith('-- PostgreSQL to ClickHouse\n-- WARNING')).toBe(
-            true
-        );
-        expect(text).toContain('CREATE TABLE');
-    });
-    it('a ClickHouse diagram keeps ClickHouse type spelling, leaves checks out and the schema stays', () => {
-        let d = sampleS1('postgresql');
-        d = { ...d, databaseType: 'clickhouse' };
-        const first = named(d, 'customers');
-        const column = d.columns[first.columnIds[0]];
-        d = {
-            ...d,
-            columns: {
-                ...d.columns,
-                [column.id]: {
-                    ...column,
-                    type: { id: 'uint64', name: 'uint64' },
-                },
-            },
-        };
-        const { text } = exportSql(d, 'clickhouse');
-        expect(text.startsWith('-- ClickHouse (generic SQL)')).toBe(true);
-        expect(text).toContain('UInt64');
-        expect(text).not.toContain('CHECK (');
-        expect(text).not.toContain('COMMENT ON');
-    });
     it('views are not written and are reported', () => {
         const withView = importSql(
             `${ORACLE_SCRIPT}\nCREATE VIEW V1 AS SELECT ID FROM FINANCE.ACCOUNTS;`,
@@ -219,7 +164,7 @@ describe('EXP-008 SQL export through the generic generator', () => {
     });
 });
 
-describe('IMP-056 database-metadata import accepts Oracle and ClickHouse', () => {
+describe('IMP-056 database-metadata import accepts Oracle', () => {
     const meta = (version: string): DatabaseMetadata => ({
         database_name: 'ledger',
         version,
@@ -279,7 +224,7 @@ describe('IMP-056 database-metadata import accepts Oracle and ClickHouse', () =>
         ],
         indexes: [],
     });
-    it.each(['oracle', 'clickhouse'] as const)(
+    it.each(['oracle'] as const)(
         '%s builds a design of its own type',
         (type) => {
             const r = loadFromDatabaseMetadata({
@@ -294,8 +239,8 @@ describe('IMP-056 database-metadata import accepts Oracle and ClickHouse', () =>
             });
         }
     );
-    it('both have a script that returns one metadata cell with the contract keys', () => {
-        for (const type of ['oracle', 'clickhouse'] as const) {
+    it('Oracle has a script that returns one metadata cell with the contract keys', () => {
+        for (const type of ['oracle'] as const) {
             const script = metadataScriptFor(type)!;
             for (const key of [
                 'database_name',
@@ -313,17 +258,14 @@ describe('IMP-056 database-metadata import accepts Oracle and ClickHouse', () =>
     });
 });
 
-describe('IMP-045 DBML for Oracle and ClickHouse', () => {
-    it.each(['oracle', 'clickhouse'] as const)(
-        '%s reads and writes DBML',
-        (type) => {
-            const text = `Table accounts {\n  id integer [pk]\n  name varchar(40) [not null]\n}\nTable entries {\n  id integer [pk]\n  account_id integer [ref: > accounts.id]\n}\n`;
-            const r = importDbml(text, type);
-            expect(r.design?.databaseType).toBe(type);
-            expect(r.counts).toMatchObject({ tables: 2, relationships: 1 });
-            const out = exportDbml(r.design!);
-            expect(out.text).toMatch(/Table ("default"\.)?"accounts"/);
-            expect(out.text).toContain('account_id');
-        }
-    );
+describe('IMP-045 DBML for Oracle', () => {
+    it.each(['oracle'] as const)('%s reads and writes DBML', (type) => {
+        const text = `Table accounts {\n  id integer [pk]\n  name varchar(40) [not null]\n}\nTable entries {\n  id integer [pk]\n  account_id integer [ref: > accounts.id]\n}\n`;
+        const r = importDbml(text, type);
+        expect(r.design?.databaseType).toBe(type);
+        expect(r.counts).toMatchObject({ tables: 2, relationships: 1 });
+        const out = exportDbml(r.design!);
+        expect(out.text).toMatch(/Table ("default"\.)?"accounts"/);
+        expect(out.text).toContain('account_id');
+    });
 });

@@ -46,13 +46,6 @@ describe('IMP-005 the three methods', () => {
         expect(tabs[0].getAttribute('aria-checked')).toBe('true');
         expect(last?.method).toBe('metadata');
     });
-    it('offers no SQL tab for a database without a reader (ClickHouse)', () => {
-        render(<ImportBox databaseType="clickhouse" onChange={onChange} />);
-        expect(screen.getAllByRole('radio').map((t) => t.textContent)).toEqual([
-            'Smart Query',
-            'DBML',
-        ]);
-    });
 });
 
 describe('IMP-006 pasting switches to the method that fits', () => {

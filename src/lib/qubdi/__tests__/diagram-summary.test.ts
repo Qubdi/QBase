@@ -14,11 +14,11 @@ describe('toDatabaseType', () => {
         }
     });
 
-    it('falls back to the generic database for anything else', () => {
-        expect(toDatabaseType(null)).toBe(DatabaseType.GENERIC);
-        expect(toDatabaseType(undefined)).toBe(DatabaseType.GENERIC);
-        expect(toDatabaseType('')).toBe(DatabaseType.GENERIC);
-        expect(toDatabaseType('db2')).toBe(DatabaseType.GENERIC);
+    it('falls back to PostgreSQL for anything else', () => {
+        expect(toDatabaseType(null)).toBe(DatabaseType.POSTGRESQL);
+        expect(toDatabaseType(undefined)).toBe(DatabaseType.POSTGRESQL);
+        expect(toDatabaseType('')).toBe(DatabaseType.POSTGRESQL);
+        expect(toDatabaseType('db2')).toBe(DatabaseType.POSTGRESQL);
     });
 });
 

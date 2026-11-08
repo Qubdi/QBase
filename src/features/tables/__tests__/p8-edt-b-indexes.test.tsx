@@ -50,8 +50,8 @@ describe('EDT-142 the Index Attributes popover', () => {
 });
 
 describe('EDT-143 Index Type only where the database has a choice', () => {
-    it('is offered on CockroachDB', async () => {
-        await withIndexPopover('cockroachdb');
+    it('is offered on PostgreSQL', async () => {
+        await withIndexPopover('postgresql');
         expect(
             await screen.findByRole('combobox', { name: 'Index type' })
         ).toBeTruthy();

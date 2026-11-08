@@ -108,8 +108,6 @@ export const sidePanelStrings = {
     checks: {
         add: 'Add Check',
         none: 'No check constraints',
-        unsupported:
-            'SQL export for this database leaves check constraints out',
         expression: 'Expression',
         expressionPlaceholder: 'e.g. price > 0',
         attributes: 'Check constraint',

@@ -35,18 +35,10 @@ describe('DiagramIcon', () => {
         expect(onClick).toHaveBeenCalledTimes(3);
     });
 
-    it('shows the logo of the database, and its own icon for Generic', () => {
-        const { unmount } = show();
-        const logo = screen.getByRole('img').getAttribute('src') ?? '';
-        expect(logo).toContain('postgresql');
-        unmount();
-        render(
-            <TooltipProvider>
-                <DiagramIcon databaseType={DatabaseType.GENERIC} />
-            </TooltipProvider>
+    it('shows the logo of the database', () => {
+        show();
+        expect(screen.getByRole('img').getAttribute('src') ?? '').toContain(
+            'postgresql'
         );
-        const generic = screen.getByRole('img').getAttribute('src') ?? '';
-        expect(generic).toContain('generic');
-        expect(generic).not.toBe(logo);
     });
 });

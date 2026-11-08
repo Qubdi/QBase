@@ -187,15 +187,10 @@ export const zh_TW = {
                         '貼上結構描述以建立圖表，或從空白圖表開始。',
                     fromFile: '開啟已儲存的檔案',
                     empty: '空白圖表',
-                    tabTransactional: '交易型',
-                    tabAnalytical: '分析型',
-                    moreDatabases: '更多資料庫',
-                    primaryDatabases: '主要資料庫',
                     checkExamples: '查看範例',
                     titleExamples: '範例',
                     descriptionExamples:
                         '從為某個資料庫準備的小型圖表開始。選擇一個即可作為新圖表開啟。',
-                    genericOption: '改用通用資料庫',
                     emptyFromImport: '改用空白圖表',
                     import: '從文字建立',
                     failed: '無法建立圖表。請再試一次。',
@@ -632,7 +627,6 @@ export const zh_TW = {
                 checks: {
                     add: '新增 check',
                     none: '沒有 check 限制',
-                    unsupported: '此資料庫的 SQL 匯出會略過 check 限制',
                     expression: '運算式',
                     expressionPlaceholder: '例如 price > 0',
                     attributes: 'Check 限制',

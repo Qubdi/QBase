@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { listOf } from '@/core/model/collection';
 import type { Design } from '@/core/model/design';
 import { TABLE_WIDTH } from '@/core/model/entity';
-import { detectDialect, dialectFor, listDialects } from '@/dialects/registry';
+import { dialectFor, listDialects } from '@/dialects/registry';
 import { cardHeight } from '../shared/layout';
 import { exportSql } from './export-sql';
 import { importSql } from './import-sql';
@@ -11,38 +11,28 @@ const named = (d: Design, name: string) =>
     listOf(d.entities).find((e) => e.name === name)!;
 
 describe('IMP-001 the kept dialects', () => {
-    it('offers Generic first, then PostgreSQL, MySQL, SQL Server, MariaDB, SQLite, CockroachDB, Oracle, ClickHouse', () => {
+    it('offers PostgreSQL, MySQL, SQL Server, MariaDB, SQLite and Oracle', () => {
         expect(listDialects().map((d) => d.id)).toEqual([
-            'generic',
             'postgresql',
             'mysql',
             'sql_server',
             'mariadb',
             'sqlite',
-            'cockroachdb',
             'oracle',
-            'clickhouse',
         ]);
     });
-    it('Oracle reads and writes SQL; ClickHouse only writes (EXP-008, restored)', () => {
+    it('Oracle reads and writes SQL (EXP-008, restored)', () => {
         expect(dialectFor('oracle').sql.read).toBeDefined();
         expect(dialectFor('oracle').sql.write).toBeDefined();
-        expect(dialectFor('clickhouse').sql.read).toBeUndefined();
-        expect(dialectFor('clickhouse').sql.write).toBeDefined();
-        expect(
-            importSql('CREATE TABLE a (id int);', 'clickhouse').diagnostics[0]
-                .message
-        ).toBe('Unsupported database type');
         expect(
             importSql('CREATE TABLE a (id NUMBER(10));', 'oracle').design
         ).toBeDefined();
     });
 });
 
-describe('IMP-002 MariaDB uses the MySQL code, CockroachDB the PostgreSQL code', () => {
-    it('names the dialect they reuse', () => {
+describe('IMP-002 MariaDB uses the MySQL code', () => {
+    it('names the dialect it reuses', () => {
         expect(dialectFor('mariadb').variantOf).toBe('mysql');
-        expect(dialectFor('cockroachdb').variantOf).toBe('postgresql');
     });
     it('MariaDB reads MySQL text and exports the same text as MySQL', () => {
         const sql =
@@ -54,86 +44,6 @@ describe('IMP-002 MariaDB uses the MySQL code, CockroachDB the PostgreSQL code',
         expect(exportSql(m.design!, 'mariadb').text).toBe(
             exportSql(asMysql, 'mysql').text
         );
-    });
-    it('CockroachDB reads PostgreSQL text', () => {
-        const r = importSql(
-            'CREATE TABLE a (id serial PRIMARY KEY, tags text[]);',
-            'cockroachdb'
-        );
-        expect(r.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
-        expect(r.design!.databaseType).toBe('cockroachdb');
-        expect(named(r.design!, 'a')).toBeTruthy();
-    });
-});
-
-describe('IMP-008 detecting the dialect for Generic text', () => {
-    it.each([
-        [
-            'pg_dump SET line',
-            'SET statement_timeout = 0;\nCREATE TABLE a (id int);',
-            'postgresql',
-        ],
-        [
-            'ALTER TABLE ONLY',
-            'ALTER TABLE ONLY a ADD CONSTRAINT x PRIMARY KEY (id);',
-            'postgresql',
-        ],
-        ['COPY from stdin', 'COPY a (id) FROM stdin;\n1\n\\.', 'postgresql'],
-        [
-            'SQL Server brackets',
-            'CREATE TABLE [dbo].[a] ([id] INT);',
-            'sql_server',
-        ],
-        [
-            'SQL Server IDENTITY(',
-            'CREATE TABLE a (id INT IDENTITY(1,1));',
-            'sql_server',
-        ],
-        [
-            'MySQL dump comment',
-            '-- MySQL dump 10.13\nCREATE TABLE a (id int);',
-            'mysql',
-        ],
-        [
-            'MySQL backticks and two markers',
-            'CREATE TABLE IF NOT EXISTS `a` (`id` int) ENGINE=InnoDB;',
-            'mysql',
-        ],
-        [
-            'SQLite PRAGMA',
-            'PRAGMA foreign_keys = ON;\nCREATE TABLE a (id int);',
-            'sqlite',
-        ],
-        [
-            'SQLite AUTOINCREMENT',
-            'CREATE TABLE a (id INTEGER PRIMARY KEY AUTOINCREMENT);',
-            'sqlite',
-        ],
-        [
-            'SERIAL PRIMARY KEY',
-            'CREATE TABLE a (id SERIAL PRIMARY KEY);',
-            'postgresql',
-        ],
-        ['CREATE EXTENSION', 'CREATE EXTENSION pgcrypto;', 'postgresql'],
-        ['AUTO_INCREMENT', 'CREATE TABLE a (id int AUTO_INCREMENT);', 'mysql'],
-        ['nothing matches', 'CREATE TABLE a (id int);', 'postgresql'],
-    ] as const)('%s', (_name, text, expected) => {
-        expect(detectDialect(text)).toBe(expected);
-    });
-    it('the pg_dump rule is checked before SQL Server and MySQL rules', () => {
-        expect(
-            detectDialect(
-                'SET client_encoding = 1;\nCREATE TABLE [dbo].[a] (id int);'
-            )
-        ).toBe('postgresql');
-    });
-    it('Generic reads a detected MySQL script with the MySQL reader and keeps the Generic type', () => {
-        const r = importSql(
-            'CREATE TABLE `a` (`id` int AUTO_INCREMENT, PRIMARY KEY (`id`));',
-            'generic'
-        );
-        expect(r.design!.databaseType).toBe('generic');
-        expect(named(r.design!, 'a')).toBeTruthy();
     });
 });
 

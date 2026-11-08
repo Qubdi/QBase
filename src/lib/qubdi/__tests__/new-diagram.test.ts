@@ -46,12 +46,12 @@ describe('emptyDiagram', () => {
         const a = emptyDiagram({
             id: '1',
             name: 'a',
-            databaseType: DatabaseType.GENERIC,
+            databaseType: DatabaseType.POSTGRESQL,
         });
         const b = emptyDiagram({
             id: '2',
             name: 'b',
-            databaseType: DatabaseType.GENERIC,
+            databaseType: DatabaseType.POSTGRESQL,
         });
         expect(a.tables).not.toBe(b.tables);
     });

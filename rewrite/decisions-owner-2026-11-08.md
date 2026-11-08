@@ -115,3 +115,24 @@ implementers who have not seen the old code apply the measurements and a pixel c
 - Checks that keep both true: the pixel comparison against the old editor
   (`tools/e2e/visual/compare.mjs`) for the UI, and for the code the similarity gate over the whole
   tree plus the transcript scan of every session (`rewrite/provenance-audit/`).
+
+## Six databases (owner, 2026-11-08; replaces the Oracle, ClickHouse and CockroachDB parts above)
+
+Only these databases are supported: PostgreSQL, MySQL, MariaDB, SQL Server, SQLite and Oracle.
+Generic, ClickHouse and CockroachDB were removed (model, dialects, pickers, import scripts,
+examples, logos, the type lists and the translations). This replaces the earlier decisions that
+brought back Oracle and ClickHouse (EXP-008) and the Transactional and Analytical tabs.
+
+- Oracle is now a full database: its own SQL writer, and SQL conversion in both directions with
+  the other five. It is no longer written by the generic generator with a warning.
+- Every pair of the six has a conversion, and `src/dialects/conversion-matrix.test.ts` covers all
+  of them (column types, defaults, numbering, schemas, keys, checks, indexes, comments, and a
+  read back of the converted script with the target's own reader).
+- The new diagram dialog shows the six databases on one screen with PostgreSQL chosen. There are
+  no tabs, no "More databases" toggle and no "Use a generic database instead" link.
+- A file with an unknown database type loads as PostgreSQL, with a warning. There is no automatic
+  detection of the database of a pasted script any more: the database is always chosen.
+- There are no existing diagrams in use (development phase), so nothing is migrated.
+- The pixel comparison with the old editor (`tools/e2e/visual/compare.mjs`) was not run for this
+  change: the picker has no tabs now, so its reference screenshot will differ on purpose.
+

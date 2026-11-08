@@ -1,185 +1,185 @@
 {
-  "database_name": "qbmeta",
-  "version": "11.8.9-MariaDB-ubu2404",
-  "tables": [
-    {
-      "schema": "",
-      "table": "customers",
-      "rows": 0,
-      "type": "BASE TABLE",
-      "engine": "InnoDB",
-      "collation": "utf8mb4_uca1400_ai_ci",
-      "comment": null
-    }
-  ],
-  "views": [],
-  "columns": [
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "id",
-      "type": "int",
-      "ordinal_position": 1,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": true,
-      "generated": null
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "first_name",
-      "type": "varchar",
-      "ordinal_position": 2,
-      "nullable": false,
-      "character_maximum_length": "50",
-      "precision": null,
-      "default": null,
-      "collation": "utf8mb4_uca1400_ai_ci",
-      "comment": null,
-      "is_identity": false,
-      "generated": null
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "last_name",
-      "type": "varchar",
-      "ordinal_position": 3,
-      "nullable": false,
-      "character_maximum_length": "50",
-      "precision": null,
-      "default": null,
-      "collation": "utf8mb4_uca1400_ai_ci",
-      "comment": null,
-      "is_identity": false,
-      "generated": null
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "full_name",
-      "type": "varchar",
-      "ordinal_position": 4,
-      "nullable": true,
-      "character_maximum_length": "101",
-      "precision": null,
-      "default": null,
-      "collation": "utf8mb4_uca1400_ai_ci",
-      "comment": null,
-      "is_identity": false,
-      "generated": {
-        "expression": "concat(`first_name`,' ',`last_name`)",
-        "stored": true
-      }
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "initials",
-      "type": "varchar",
-      "ordinal_position": 5,
-      "nullable": true,
-      "character_maximum_length": "3",
-      "precision": null,
-      "default": null,
-      "collation": "utf8mb4_uca1400_ai_ci",
-      "comment": null,
-      "is_identity": false,
-      "generated": {
-        "expression": "concat(left(`first_name`,1),left(`last_name`,1))",
-        "stored": false
-      }
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "score",
-      "type": "int",
-      "ordinal_position": 6,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": "0",
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "generated": null
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "state",
-      "type": "varchar",
-      "ordinal_position": 7,
-      "nullable": true,
-      "character_maximum_length": "10",
-      "precision": null,
-      "default": "'new'",
-      "collation": "utf8mb4_uca1400_ai_ci",
-      "comment": null,
-      "is_identity": false,
-      "generated": null
-    }
-  ],
-  "pk_info": [
-    {
-      "schema": "",
-      "table": "customers",
-      "column": "id",
-      "pk_def": "PRIMARY KEY"
-    }
-  ],
-  "fk_info": [],
-  "indexes": [
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "PRIMARY",
-      "column": "id",
-      "index_type": "btree",
-      "cardinality": 0,
-      "unique": true,
-      "direction": "asc",
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "customers_score_desc",
-      "column": "score",
-      "index_type": "btree",
-      "cardinality": 0,
-      "unique": false,
-      "direction": "desc",
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "name": "customers_score_desc",
-      "column": "id",
-      "index_type": "btree",
-      "cardinality": 0,
-      "unique": false,
-      "direction": "asc",
-      "column_position": 2
-    }
-  ],
-  "check_constraints": [
-    {
-      "schema": "",
-      "table": "customers",
-      "expression": "`score` >= 0"
-    },
-    {
-      "schema": "",
-      "table": "customers",
-      "expression": "`state` in ('new','paid')"
-    }
-  ]
+    "database_name": "qbmeta",
+    "version": "11.8.9-MariaDB-ubu2404",
+    "tables": [
+        {
+            "schema": "",
+            "table": "customers",
+            "rows": 0,
+            "type": "BASE TABLE",
+            "engine": "InnoDB",
+            "collation": "utf8mb4_uca1400_ai_ci",
+            "comment": null
+        }
+    ],
+    "views": [],
+    "columns": [
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "id",
+            "type": "int",
+            "ordinal_position": 1,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": true,
+            "generated": null
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "first_name",
+            "type": "varchar",
+            "ordinal_position": 2,
+            "nullable": false,
+            "character_maximum_length": "50",
+            "precision": null,
+            "default": null,
+            "collation": "utf8mb4_uca1400_ai_ci",
+            "comment": null,
+            "is_identity": false,
+            "generated": null
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "last_name",
+            "type": "varchar",
+            "ordinal_position": 3,
+            "nullable": false,
+            "character_maximum_length": "50",
+            "precision": null,
+            "default": null,
+            "collation": "utf8mb4_uca1400_ai_ci",
+            "comment": null,
+            "is_identity": false,
+            "generated": null
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "full_name",
+            "type": "varchar",
+            "ordinal_position": 4,
+            "nullable": true,
+            "character_maximum_length": "101",
+            "precision": null,
+            "default": null,
+            "collation": "utf8mb4_uca1400_ai_ci",
+            "comment": null,
+            "is_identity": false,
+            "generated": {
+                "expression": "concat(`first_name`,' ',`last_name`)",
+                "stored": true
+            }
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "initials",
+            "type": "varchar",
+            "ordinal_position": 5,
+            "nullable": true,
+            "character_maximum_length": "3",
+            "precision": null,
+            "default": null,
+            "collation": "utf8mb4_uca1400_ai_ci",
+            "comment": null,
+            "is_identity": false,
+            "generated": {
+                "expression": "concat(left(`first_name`,1),left(`last_name`,1))",
+                "stored": false
+            }
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "score",
+            "type": "int",
+            "ordinal_position": 6,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": "0",
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "generated": null
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "state",
+            "type": "varchar",
+            "ordinal_position": 7,
+            "nullable": true,
+            "character_maximum_length": "10",
+            "precision": null,
+            "default": "'new'",
+            "collation": "utf8mb4_uca1400_ai_ci",
+            "comment": null,
+            "is_identity": false,
+            "generated": null
+        }
+    ],
+    "pk_info": [
+        {
+            "schema": "",
+            "table": "customers",
+            "column": "id",
+            "pk_def": "PRIMARY KEY"
+        }
+    ],
+    "fk_info": [],
+    "indexes": [
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "PRIMARY",
+            "column": "id",
+            "index_type": "btree",
+            "cardinality": 0,
+            "unique": true,
+            "direction": "asc",
+            "column_position": 1
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "customers_score_desc",
+            "column": "score",
+            "index_type": "btree",
+            "cardinality": 0,
+            "unique": false,
+            "direction": "desc",
+            "column_position": 1
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "name": "customers_score_desc",
+            "column": "id",
+            "index_type": "btree",
+            "cardinality": 0,
+            "unique": false,
+            "direction": "asc",
+            "column_position": 2
+        }
+    ],
+    "check_constraints": [
+        {
+            "schema": "",
+            "table": "customers",
+            "expression": "`score` >= 0"
+        },
+        {
+            "schema": "",
+            "table": "customers",
+            "expression": "`state` in ('new','paid')"
+        }
+    ]
 }

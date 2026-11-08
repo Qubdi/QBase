@@ -32,7 +32,6 @@ const SQLITE: DumpCommand = {
 export const dumpCommandFor = (type: DatabaseType): DumpCommand | undefined => {
     switch (type) {
         case 'postgresql':
-        case 'cockroachdb':
             return PG;
         case 'mysql':
         case 'mariadb':
@@ -64,4 +63,4 @@ Table posts {
 
 /** Which databases have the DB Client / PSQL switch. */
 export const hasPsqlTab = (type: DatabaseType, method: ImportMethod): boolean =>
-    method === 'metadata' && (type === 'postgresql' || type === 'cockroachdb');
+    method === 'metadata' && type === 'postgresql';

@@ -13,14 +13,11 @@ import { z } from 'zod';
 const valueTable = <const T extends Record<string, string>>(table: T) => table;
 
 export const DatabaseType = valueTable({
-    GENERIC: 'generic',
     POSTGRESQL: 'postgresql',
     MYSQL: 'mysql',
     SQL_SERVER: 'sql_server',
     MARIADB: 'mariadb',
     SQLITE: 'sqlite',
-    CLICKHOUSE: 'clickhouse',
-    COCKROACHDB: 'cockroachdb',
     ORACLE: 'oracle',
 });
 export type DatabaseType = (typeof DatabaseType)[keyof typeof DatabaseType];
@@ -218,21 +215,16 @@ export type Diagram = z.infer<typeof diagramShape>;
 /** Databases whose tables belong to schemas (spec C5). */
 export const databasesWithSchemas: DatabaseType[] = [
     DatabaseType.POSTGRESQL,
-    DatabaseType.COCKROACHDB,
     DatabaseType.SQL_SERVER,
-    DatabaseType.CLICKHOUSE,
     DatabaseType.ORACLE,
 ];
 
 const LABELS: Record<DatabaseType, string> = {
-    generic: 'Generic',
     postgresql: 'PostgreSQL',
     mysql: 'MySQL',
     sql_server: 'SQL Server',
     mariadb: 'MariaDB',
     sqlite: 'SQLite',
-    clickhouse: 'ClickHouse',
-    cockroachdb: 'CockroachDB',
     oracle: 'Oracle',
 };
 

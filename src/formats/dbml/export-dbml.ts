@@ -72,9 +72,7 @@ export function exportDbml(
     options: DbmlExportOptions = {}
 ): DbmlExportResult {
     const diagnostics: Diagnostic[] = [];
-    const postgres =
-        design.databaseType === 'postgresql' ||
-        design.databaseType === 'cockroachdb';
+    const postgres = design.databaseType === 'postgresql';
     const seen = new Set<string>();
     const usable: {
         entity: Entity;

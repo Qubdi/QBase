@@ -56,11 +56,11 @@ const quiet = (r: ReturnType<typeof importSql>) =>
     r.diagnostics.filter((d) => d.severity !== 'info');
 
 describe('IMP-018 IMP-020 IMP-021 IMP-025 IMP-027 IMP-029 IMP-030 IMP-034 IMP-036 IMP-041 IMP-042 PostgreSQL import', () => {
-    const r = importSql(PG, 'generic');
+    const r = importSql(PG, 'postgresql');
     const d = r.design!;
-    it('reads the dump with no warning (detected as PostgreSQL)', () => {
+    it('reads the dump with no warning', () => {
         expect(quiet(r)).toEqual([]);
-        expect(d.databaseType).toBe('generic');
+        expect(d.databaseType).toBe('postgresql');
     });
     it('reads tables, enum, types, flags', () => {
         expect(listOf(d.entities).map((e) => e.name)).toEqual(['pets', 'vets']);

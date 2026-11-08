@@ -16,13 +16,6 @@ import sqlServerIcon from '@/assets/databases/sql-server-icon.png';
 import oracle from '@/assets/databases/oracle.png';
 import oracleDark from '@/assets/databases/oracle-dark.png';
 import oracleIcon from '@/assets/databases/oracle-icon.png';
-import cockroachdb from '@/assets/databases/cockroachdb.png';
-import cockroachdbDark from '@/assets/databases/cockroachdb-dark.png';
-import cockroachdbIcon from '@/assets/databases/cockroachdb-icon.png';
-import clickhouse from '@/assets/databases/clickhouse.png';
-import clickhouseDark from '@/assets/databases/clickhouse-dark.png';
-import clickhouseIcon from '@/assets/databases/clickhouse-icon.png';
-import genericIcon from '@/assets/databases/generic-icon.png';
 
 /** The pictures of one database: the large logo (light and dark page) and the small icon. */
 interface LogoSet {
@@ -46,19 +39,9 @@ const LOGOS: Record<string, LogoSet> = {
         icon: sqlServerIcon,
     },
     oracle: { light: oracle, dark: oracleDark, icon: oracleIcon },
-    cockroachdb: {
-        light: cockroachdb,
-        dark: cockroachdbDark,
-        icon: cockroachdbIcon,
-    },
-    clickhouse: {
-        light: clickhouse,
-        dark: clickhouseDark,
-        icon: clickhouseIcon,
-    },
 };
 
-/** The large logo for the database picker; undefined for a database without one (Generic). */
+/** The large logo for the database picker; undefined for an unknown database. */
 export function databaseLogo(
     type: string | null | undefined,
     theme: 'light' | 'dark'
@@ -67,7 +50,7 @@ export function databaseLogo(
     return set ? set[theme] : undefined;
 }
 
-/** The small icon of a database (the diagram name bar, the lists); Generic has its own. */
+/** The small icon of a database (the diagram name bar, the lists); an unknown database gets the PostgreSQL one. */
 export function databaseIcon(type: string | null | undefined): string {
-    return LOGOS[type ?? '']?.icon ?? genericIcon;
+    return (LOGOS[type ?? ''] ?? LOGOS.postgresql).icon;
 }

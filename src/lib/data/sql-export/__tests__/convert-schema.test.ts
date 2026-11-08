@@ -559,15 +559,14 @@ describe('which pairs have a converter', () => {
             targetDatabaseType: target,
         });
 
-    it('covers every pair between the five databases, generic SQL and CockroachDB', () => {
+    it('covers every pair between the six databases', () => {
         const sources = [
             POSTGRESQL,
             MYSQL,
             MARIADB,
             SQL_SERVER,
             SQLITE,
-            DatabaseType.GENERIC,
-            DatabaseType.COCKROACHDB,
+            DatabaseType.ORACLE,
         ];
         for (const source of sources) {
             for (const target of [
@@ -576,6 +575,7 @@ describe('which pairs have a converter', () => {
                 MARIADB,
                 SQL_SERVER,
                 SQLITE,
+                DatabaseType.ORACLE,
             ]) {
                 const result = sql(source, target);
                 expect(
@@ -587,23 +587,6 @@ describe('which pairs have a converter', () => {
                 );
             }
         }
-    });
-
-    it('uses the generic generator for ClickHouse, and has none to generic SQL (EXP-008)', () => {
-        for (const [source, target] of [
-            [DatabaseType.CLICKHOUSE, MYSQL],
-            [POSTGRESQL, DatabaseType.CLICKHOUSE],
-        ] as const) {
-            const result = sql(source, target);
-            expect(result.text).toContain('-- WARNING: there is no converter');
-            expect(result.text).toContain('CREATE TABLE');
-        }
-        const result = sql(MYSQL, DatabaseType.GENERIC);
-        expect(result.text).toBe('');
-        expect(result.diagnostics[0]).toMatchObject({
-            severity: 'error',
-            message: expect.stringContaining('SQL export is not supported'),
-        });
     });
 });
 

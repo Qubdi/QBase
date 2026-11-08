@@ -100,8 +100,8 @@ describe('EDT-014 / EDT-274 read-only and refused commands change nothing', () =
         expect(r).toMatchObject({ ok: false, reason: 'read-only' });
     });
 
-    it('Oracle and ClickHouse designs are edited like any other (EXP-008, restored)', () => {
-        for (const type of ['oracle', 'clickhouse'] as const) {
+    it('Oracle designs are edited like any other (EXP-008, restored)', () => {
+        for (const type of ['oracle'] as const) {
             const d = blank(type);
             expect(
                 apply(d, { type: 'design.rename', name: 'x' })

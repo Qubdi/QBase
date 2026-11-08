@@ -1,398 +1,398 @@
 {
-  "database_name": "qubdi_sample",
-  "version": "Microsoft SQL Server 2022 (RTM-CU27-GDR) (KB5126934) - 16.0.",
-  "tables": [
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "rows": 0,
-      "type": "BASE TABLE",
-      "comment": "People who buy things"
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "rows": 0,
-      "type": "BASE TABLE"
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "rows": 0,
-      "type": "BASE TABLE"
-    },
-    {
-      "schema": "shop",
-      "table": "paid_orders",
-      "type": "VIEW"
-    }
-  ],
-  "views": [
-    {
-      "schema": "shop",
-      "view_name": "paid_orders",
-      "view_definition": "QwBSAEUAQQBUAEUAIABWAEkARQBXACAAcwBoAG8AcAAuAHAAYQBpAGQAXwBvAHIAZABlAHIAcwAgAEEAUwAgAFMARQBMAEUAQwBUACAAaQBkACwAIABjAHUAcwB0AG8AbQBlAHIAXwBpAGQAIABGAFIATwBNACAAcwBoAG8AcAAuAG8AcgBkAGUAcgBzACAAVwBIAEUAUgBFACAAbgBvAHQAZQAgAEkAUwAgAE4ATwBUACAATgBVAEwATAA="
-    }
-  ],
-  "columns": [
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "name": "id",
-      "type": "bigint",
-      "ordinal_position": 1,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": true,
-      "is_array": false
-    },
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "name": "email",
-      "type": "nvarchar",
-      "ordinal_position": 2,
-      "nullable": false,
-      "character_maximum_length": "120",
-      "precision": null,
-      "default": null,
-      "collation": "SQL_Latin1_General_CP1_CI_AS",
-      "comment": "Login email",
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "name": "full_name",
-      "type": "nvarchar",
-      "ordinal_position": 3,
-      "nullable": true,
-      "character_maximum_length": "max",
-      "precision": null,
-      "default": null,
-      "collation": "SQL_Latin1_General_CP1_CI_AS",
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "name": "balance",
-      "type": "decimal",
-      "ordinal_position": 4,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": {
-        "precision": 10,
-        "scale": 2
-      },
-      "default": "((0))",
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "name": "created_at",
-      "type": "datetime2",
-      "ordinal_position": 5,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": {
-        "precision": 3,
-        "scale": null
-      },
-      "default": "(sysutcdatetime())",
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "name": "order_id",
-      "type": "int",
-      "ordinal_position": 1,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "name": "line_no",
-      "type": "smallint",
-      "ordinal_position": 2,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "name": "sku",
-      "type": "varchar",
-      "ordinal_position": 3,
-      "nullable": false,
-      "character_maximum_length": "40",
-      "precision": null,
-      "default": null,
-      "collation": "SQL_Latin1_General_CP1_CI_AS",
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "name": "qty",
-      "type": "int",
-      "ordinal_position": 4,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": "((1))",
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "name": "id",
-      "type": "int",
-      "ordinal_position": 1,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": true,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "name": "customer_id",
-      "type": "bigint",
-      "ordinal_position": 2,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "name": "status",
-      "type": "varchar",
-      "ordinal_position": 3,
-      "nullable": false,
-      "character_maximum_length": "20",
-      "precision": null,
-      "default": "('new')",
-      "collation": "SQL_Latin1_General_CP1_CI_AS",
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "name": "placed_at",
-      "type": "datetimeoffset",
-      "ordinal_position": 4,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": {
-        "precision": 7,
-        "scale": null
-      },
-      "default": "(sysdatetimeoffset())",
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "name": "note",
-      "type": "char",
-      "ordinal_position": 5,
-      "nullable": true,
-      "character_maximum_length": "8",
-      "precision": null,
-      "default": null,
-      "collation": "SQL_Latin1_General_CP1_CI_AS",
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "paid_orders",
-      "name": "id",
-      "type": "int",
-      "ordinal_position": 1,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": true,
-      "is_array": false
-    },
-    {
-      "schema": "shop",
-      "table": "paid_orders",
-      "name": "customer_id",
-      "type": "bigint",
-      "ordinal_position": 2,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false,
-      "is_array": false
-    }
-  ],
-  "pk_info": [
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "column": "id",
-      "pk_def": "PRIMARY KEY (id)"
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "column": "order_id",
-      "pk_def": "PRIMARY KEY (order_id, line_no)"
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "column": "line_no",
-      "pk_def": "PRIMARY KEY (order_id, line_no)"
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "column": "id",
-      "pk_def": "PRIMARY KEY (id)"
-    }
-  ],
-  "fk_info": [
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "column": "order_id",
-      "foreign_key_name": "items_order_fk",
-      "reference_schema": "shop",
-      "reference_table": "orders",
-      "reference_column": "id",
-      "fk_def": "FOREIGN KEY (order_id) REFERENCES shop.orders (id) ON DELETE NO ACTION ON UPDATE CASCADE"
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "column": "customer_id",
-      "foreign_key_name": "orders_customer_fk",
-      "reference_schema": "dbo",
-      "reference_table": "customers",
-      "reference_column": "id",
-      "fk_def": "FOREIGN KEY (customer_id) REFERENCES dbo.customers (id) ON DELETE CASCADE ON UPDATE NO ACTION"
-    }
-  ],
-  "indexes": [
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "name": "pk_customers",
-      "column": "id",
-      "index_type": "CLUSTERED",
-      "unique": true,
-      "direction": "ASC",
-      "column_position": 1
-    },
-    {
-      "schema": "dbo",
-      "table": "customers",
-      "name": "uq_customers_email",
-      "column": "email",
-      "index_type": "NONCLUSTERED",
-      "unique": true,
-      "direction": "ASC",
-      "column_position": 1
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "name": "PK__order_it__5903824A7DB64FDC",
-      "column": "order_id",
-      "index_type": "CLUSTERED",
-      "unique": true,
-      "direction": "ASC",
-      "column_position": 1
-    },
-    {
-      "schema": "shop",
-      "table": "order_items",
-      "name": "PK__order_it__5903824A7DB64FDC",
-      "column": "line_no",
-      "index_type": "CLUSTERED",
-      "unique": true,
-      "direction": "ASC",
-      "column_position": 2
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "name": "orders_placed_idx",
-      "column": "placed_at",
-      "index_type": "NONCLUSTERED",
-      "unique": false,
-      "direction": "DESC",
-      "column_position": 1
-    },
-    {
-      "schema": "shop",
-      "table": "orders",
-      "name": "PK__orders__3213E83F41C4CCA5",
-      "column": "id",
-      "index_type": "CLUSTERED",
-      "unique": true,
-      "direction": "ASC",
-      "column_position": 1
-    }
-  ]
+    "database_name": "qubdi_sample",
+    "version": "Microsoft SQL Server 2022 (RTM-CU27-GDR) (KB5126934) - 16.0.",
+    "tables": [
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "rows": 0,
+            "type": "BASE TABLE",
+            "comment": "People who buy things"
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "rows": 0,
+            "type": "BASE TABLE"
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "rows": 0,
+            "type": "BASE TABLE"
+        },
+        {
+            "schema": "shop",
+            "table": "paid_orders",
+            "type": "VIEW"
+        }
+    ],
+    "views": [
+        {
+            "schema": "shop",
+            "view_name": "paid_orders",
+            "view_definition": "QwBSAEUAQQBUAEUAIABWAEkARQBXACAAcwBoAG8AcAAuAHAAYQBpAGQAXwBvAHIAZABlAHIAcwAgAEEAUwAgAFMARQBMAEUAQwBUACAAaQBkACwAIABjAHUAcwB0AG8AbQBlAHIAXwBpAGQAIABGAFIATwBNACAAcwBoAG8AcAAuAG8AcgBkAGUAcgBzACAAVwBIAEUAUgBFACAAbgBvAHQAZQAgAEkAUwAgAE4ATwBUACAATgBVAEwATAA="
+        }
+    ],
+    "columns": [
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "name": "id",
+            "type": "bigint",
+            "ordinal_position": 1,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": true,
+            "is_array": false
+        },
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "name": "email",
+            "type": "nvarchar",
+            "ordinal_position": 2,
+            "nullable": false,
+            "character_maximum_length": "120",
+            "precision": null,
+            "default": null,
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "comment": "Login email",
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "name": "full_name",
+            "type": "nvarchar",
+            "ordinal_position": 3,
+            "nullable": true,
+            "character_maximum_length": "max",
+            "precision": null,
+            "default": null,
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "name": "balance",
+            "type": "decimal",
+            "ordinal_position": 4,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": {
+                "precision": 10,
+                "scale": 2
+            },
+            "default": "((0))",
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "name": "created_at",
+            "type": "datetime2",
+            "ordinal_position": 5,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": {
+                "precision": 3,
+                "scale": null
+            },
+            "default": "(sysutcdatetime())",
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "name": "order_id",
+            "type": "int",
+            "ordinal_position": 1,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "name": "line_no",
+            "type": "smallint",
+            "ordinal_position": 2,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "name": "sku",
+            "type": "varchar",
+            "ordinal_position": 3,
+            "nullable": false,
+            "character_maximum_length": "40",
+            "precision": null,
+            "default": null,
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "name": "qty",
+            "type": "int",
+            "ordinal_position": 4,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": "((1))",
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "name": "id",
+            "type": "int",
+            "ordinal_position": 1,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": true,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "name": "customer_id",
+            "type": "bigint",
+            "ordinal_position": 2,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "name": "status",
+            "type": "varchar",
+            "ordinal_position": 3,
+            "nullable": false,
+            "character_maximum_length": "20",
+            "precision": null,
+            "default": "('new')",
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "name": "placed_at",
+            "type": "datetimeoffset",
+            "ordinal_position": 4,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": {
+                "precision": 7,
+                "scale": null
+            },
+            "default": "(sysdatetimeoffset())",
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "name": "note",
+            "type": "char",
+            "ordinal_position": 5,
+            "nullable": true,
+            "character_maximum_length": "8",
+            "precision": null,
+            "default": null,
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "paid_orders",
+            "name": "id",
+            "type": "int",
+            "ordinal_position": 1,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": true,
+            "is_array": false
+        },
+        {
+            "schema": "shop",
+            "table": "paid_orders",
+            "name": "customer_id",
+            "type": "bigint",
+            "ordinal_position": 2,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false,
+            "is_array": false
+        }
+    ],
+    "pk_info": [
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "column": "id",
+            "pk_def": "PRIMARY KEY (id)"
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "column": "order_id",
+            "pk_def": "PRIMARY KEY (order_id, line_no)"
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "column": "line_no",
+            "pk_def": "PRIMARY KEY (order_id, line_no)"
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "column": "id",
+            "pk_def": "PRIMARY KEY (id)"
+        }
+    ],
+    "fk_info": [
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "column": "order_id",
+            "foreign_key_name": "items_order_fk",
+            "reference_schema": "shop",
+            "reference_table": "orders",
+            "reference_column": "id",
+            "fk_def": "FOREIGN KEY (order_id) REFERENCES shop.orders (id) ON DELETE NO ACTION ON UPDATE CASCADE"
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "column": "customer_id",
+            "foreign_key_name": "orders_customer_fk",
+            "reference_schema": "dbo",
+            "reference_table": "customers",
+            "reference_column": "id",
+            "fk_def": "FOREIGN KEY (customer_id) REFERENCES dbo.customers (id) ON DELETE CASCADE ON UPDATE NO ACTION"
+        }
+    ],
+    "indexes": [
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "name": "pk_customers",
+            "column": "id",
+            "index_type": "CLUSTERED",
+            "unique": true,
+            "direction": "ASC",
+            "column_position": 1
+        },
+        {
+            "schema": "dbo",
+            "table": "customers",
+            "name": "uq_customers_email",
+            "column": "email",
+            "index_type": "NONCLUSTERED",
+            "unique": true,
+            "direction": "ASC",
+            "column_position": 1
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "name": "PK__order_it__5903824A7DB64FDC",
+            "column": "order_id",
+            "index_type": "CLUSTERED",
+            "unique": true,
+            "direction": "ASC",
+            "column_position": 1
+        },
+        {
+            "schema": "shop",
+            "table": "order_items",
+            "name": "PK__order_it__5903824A7DB64FDC",
+            "column": "line_no",
+            "index_type": "CLUSTERED",
+            "unique": true,
+            "direction": "ASC",
+            "column_position": 2
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "name": "orders_placed_idx",
+            "column": "placed_at",
+            "index_type": "NONCLUSTERED",
+            "unique": false,
+            "direction": "DESC",
+            "column_position": 1
+        },
+        {
+            "schema": "shop",
+            "table": "orders",
+            "name": "PK__orders__3213E83F41C4CCA5",
+            "column": "id",
+            "index_type": "CLUSTERED",
+            "unique": true,
+            "direction": "ASC",
+            "column_position": 1
+        }
+    ]
 }

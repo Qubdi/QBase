@@ -1,19 +1,14 @@
 import type { DatabaseType } from '@/core/model/database';
 
-/** Step 1, Transactional tab, in card order (SHL-032): three cards per row. */
-export const TRANSACTIONAL: readonly DatabaseType[] = [
+/** Step 1, in card order (SHL-032): the six databases, three cards per row. */
+export const DATABASES: readonly DatabaseType[] = [
     'mysql',
     'postgresql',
     'mariadb',
     'sqlite',
     'sql_server',
     'oracle',
-    'cockroachdb',
 ];
 
-/** Step 1, Analytical tab. */
-export const ANALYTICAL: readonly DatabaseType[] = ['clickhouse'];
-
-export const CARDS_PER_ROW = 3;
-/** Rows visible at once; the More / Primary toggle moves the window by one row. */
-export const VISIBLE_ROWS = 2;
+/** The database a new diagram is for until another card is chosen. */
+export const DEFAULT_DATABASE: DatabaseType = 'postgresql';

@@ -23,19 +23,6 @@ const COMMON: Partial<Record<DatabaseType, readonly string[]>> = {
         'numeric',
         'jsonb',
     ],
-    cockroachdb: [
-        'integer',
-        'bigint',
-        'varchar',
-        'text',
-        'boolean',
-        'timestamp',
-        'timestamptz',
-        'date',
-        'uuid',
-        'numeric',
-        'jsonb',
-    ],
     mysql: [
         'int',
         'bigint',
@@ -82,17 +69,6 @@ const COMMON: Partial<Record<DatabaseType, readonly string[]>> = {
         'timestamp',
         'blob',
         'raw',
-    ],
-    clickhouse: [
-        'UInt32',
-        'UInt64',
-        'Int32',
-        'Int64',
-        'String',
-        'DateTime',
-        'Date',
-        'Float64',
-        'UUID',
     ],
 };
 

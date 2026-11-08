@@ -5,7 +5,7 @@ import { renderInEditor } from '@/workspace/__tests__/test-harness';
 import { CreateDiagramDialog } from './create-diagram-dialog';
 
 describe('IMP-004 step 1 of the new diagram dialog', () => {
-    it('SHL-032: Transactional tab shows two rows of three cards, Generic stays the chosen type', async () => {
+    it('SHL-032: shows two rows of three cards, PostgreSQL is the chosen type', async () => {
         renderInEditor(
             <CreateDiagramDialog dialog={{ open: true }} />,
             null,
@@ -21,62 +21,28 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
             'Oracle',
         ]);
         expect(
-            radios.every((r) => r.getAttribute('aria-checked') === 'false')
-        ).toBe(true);
-        expect(
-            screen
-                .getByRole('button', { name: 'Use a generic database instead' })
-                .getAttribute('aria-pressed')
-        ).toBe('true');
-        expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
-            'Transactional',
-            'Analytical',
-        ]);
+            radios.map((r) => r.getAttribute('aria-checked') === 'true')
+        ).toEqual([false, true, false, false, false, false]);
+        expect(screen.queryAllByRole('tab')).toEqual([]);
     });
-    it('SHL-032 SHL-042: the toggle moves the window one row down and back', async () => {
-        renderInEditor(
-            <CreateDiagramDialog dialog={{ open: true }} />,
-            null,
-            '/'
-        );
-        fireEvent.click(
-            await screen.findByRole('button', { name: 'More Databases' })
-        );
-        expect(
-            (await screen.findAllByRole('radio')).map((r) => r.textContent)
-        ).toEqual(['SQLite', 'SQL Server', 'Oracle', 'CockroachDB']);
-        fireEvent.click(
-            screen.getByRole('button', { name: 'Primary Databases' })
-        );
-        expect((await screen.findAllByRole('radio'))[0].textContent).toBe(
-            'MySQL'
-        );
-    });
-    it('SHL-032: the Analytical tab holds ClickHouse, and a card makes a ClickHouse diagram', async () => {
+    it('SHL-032: a card makes a diagram of its database, and Back keeps the card chosen', async () => {
         const { adapter } = renderInEditor(
             <CreateDiagramDialog dialog={{ open: true }} />,
             null,
             '/'
         );
-        fireEvent.mouseDown(
-            await screen.findByRole('tab', { name: 'Analytical' }),
-            {
-                button: 0,
-            }
-        );
-        const card = await screen.findByRole('radio', { name: /ClickHouse/ });
-        fireEvent.click(card);
+        fireEvent.click(await screen.findByRole('radio', { name: /Oracle/ }));
         fireEvent.click(await screen.findByRole('button', { name: 'Back' }));
         expect(
-            (
-                await screen.findByRole('radio', { name: /ClickHouse/ })
-            ).getAttribute('aria-checked')
+            (await screen.findByRole('radio', { name: /Oracle/ })).getAttribute(
+                'aria-checked'
+            )
         ).toBe('true');
         fireEvent.click(screen.getByRole('button', { name: 'Empty database' }));
         await waitFor(async () =>
             expect((await adapter.list()).length).toBe(1)
         );
-        expect((await adapter.list())[0].databaseType).toBe('clickhouse');
+        expect((await adapter.list())[0].databaseType).toBe('oracle');
     });
     it('the cards carry the logo of their database', async () => {
         renderInEditor(
@@ -92,7 +58,7 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
             expect((r.textContent ?? '').length).toBeGreaterThan(0);
         }
     });
-    it('"Blank diagram instead" makes a Generic diagram without choosing a type', async () => {
+    it('"Empty database" makes a PostgreSQL diagram without choosing a type', async () => {
         const { adapter } = renderInEditor(
             <CreateDiagramDialog dialog={{ open: true }} />,
             null,
@@ -104,7 +70,7 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
         await waitFor(async () =>
             expect((await adapter.list()).length).toBe(1)
         );
-        expect((await adapter.list())[0].databaseType).toBe('generic');
+        expect((await adapter.list())[0].databaseType).toBe('postgresql');
     });
     it('step 2 shows the three methods and Back returns to step 1', async () => {
         renderInEditor(
@@ -112,9 +78,7 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
             null,
             '/'
         );
-        fireEvent.click(
-            await screen.findByRole('button', { name: 'Continue' })
-        );
+        fireEvent.click(await screen.findByRole('radio', { name: /MariaDB/ }));
         expect(
             (await screen.findAllByRole('radio')).map((t) => t.textContent)
         ).toEqual(['Smart Query', 'SQL Script', 'DBML']);
@@ -137,7 +101,7 @@ describe('the examples step of the new diagram dialog', () => {
             await screen.findByRole('heading', { name: 'Examples' })
         ).toBeTruthy();
         const cards = document.querySelectorAll('[data-example]');
-        expect(cards.length).toBe(8);
+        expect(cards.length).toBe(6);
         fireEvent.click(screen.getByRole('button', { name: 'Back' }));
         expect((await screen.findAllByRole('radio')).length).toBe(6);
     });

@@ -1,9 +1,7 @@
 import type { DatabaseEdition, DatabaseType } from '@/core/model/database';
-import { CLICKHOUSE_SCRIPT } from './scripts/clickhouse';
 import { MYSQL_57_SCRIPT, MYSQL_SCRIPT } from './scripts/mysql';
 import { ORACLE_SCRIPT } from './scripts/oracle';
 import {
-    COCKROACH_SCRIPT,
     POSTGRES_SCRIPT,
     SUPABASE_SCRIPT,
     TIMESCALE_SCRIPT,
@@ -95,12 +93,10 @@ const SQLITE_D1_SCRIPT = SQLITE_SCRIPT.replaceAll(
 const SCRIPTS: Partial<Record<DatabaseType, string>> = {
     sqlite: SQLITE_SCRIPT,
     postgresql: POSTGRES_SCRIPT,
-    cockroachdb: COCKROACH_SCRIPT,
     mysql: MYSQL_SCRIPT,
     mariadb: MYSQL_SCRIPT,
     sql_server: SQL_SERVER_SCRIPT,
     oracle: ORACLE_SCRIPT,
-    clickhouse: CLICKHOUSE_SCRIPT,
 };
 
 const EDITION_SCRIPTS: Partial<

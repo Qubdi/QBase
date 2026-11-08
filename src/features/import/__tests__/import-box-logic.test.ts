@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blank, NOW, withTables } from '@/core/testing/helpers';
+import { NOW, withTables } from '@/core/testing/helpers';
 import { analyzeImport, listProblems } from '../analyze-import';
 import { methodForPaste, methodsFor, prettyJson } from '../import-method';
 import { mergeImported, IMPORT_GAP } from '../merge-into-design';
@@ -30,11 +30,9 @@ describe('import box: which method a paste belongs to (IMP-006)', () => {
             2 * 1024 * 1024 + 2
         );
     });
-    it('offers SQL only where a reader exists (not for ClickHouse)', () => {
+    it('offers SQL for every database, which all have a reader', () => {
         expect(methodsFor('postgresql')).toEqual(['metadata', 'sql', 'dbml']);
-        expect(methodsFor('generic')).toContain('sql');
         expect(methodsFor('oracle')).toContain('sql');
-        expect(methodsFor('clickhouse')).not.toContain('sql');
         expect(methodsFor('mysql', ['dbml'])).toEqual(['dbml']);
     });
 });
@@ -139,20 +137,5 @@ describe('import into the open diagram (IMP-075, IMP-076)', () => {
         const result = mergeImported(current, withTables(['Users']), NOW);
         expect(result.duplicates).toEqual(['public.Users']);
         expect(result.design.entities.order).toHaveLength(2);
-    });
-    it('a generic diagram takes the imported database type', () => {
-        const generic = blank('generic');
-        const result = mergeImported(
-            generic,
-            withTables(['x'], 'postgresql'),
-            NOW
-        );
-        expect(result.design.databaseType).toBe('postgresql');
-        const typed = mergeImported(
-            withTables(['y'], 'mysql'),
-            withTables(['x'], 'postgresql'),
-            NOW
-        );
-        expect(typed.design.databaseType).toBe('mysql');
     });
 });

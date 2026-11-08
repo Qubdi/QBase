@@ -405,7 +405,7 @@ CREATE TABLE public.pets (
 ALTER TABLE ONLY public.pets ADD CONSTRAINT pets_pkey PRIMARY KEY (id);
 CREATE TABLE public.vets (id serial PRIMARY KEY, pet_id integer REFERENCES public.pets(id));
 CREATE INDEX idx_pets_name ON public.pets USING btree (name);`;
-        const r = importSql(script, 'generic');
+        const r = importSql(script, 'postgresql');
         expect(r.diagnostics.filter((d) => d.severity !== 'info')).toEqual([]);
         const d = r.design!;
         const types = listOf(d.userTypes);

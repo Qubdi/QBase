@@ -111,7 +111,7 @@ export function convertDesign(
     const model = prepareExport(design);
     const userTypes = listOf(design.userTypes);
 
-    const sourceLabel = source.id === 'generic' ? 'generic SQL' : source.label;
+    const sourceLabel = source.label;
     if (model.viewCount > 0)
         notes.add(
             'Schemas and views',

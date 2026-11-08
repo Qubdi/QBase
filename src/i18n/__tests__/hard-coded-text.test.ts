@@ -51,7 +51,6 @@ const NAMES = new Set([
     'MySQL',
     'MariaDB',
     'SQLite',
-    'CockroachDB',
     'DBML',
 ]);
 

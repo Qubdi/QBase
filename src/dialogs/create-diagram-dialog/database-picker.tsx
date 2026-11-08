@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, Database, LayoutGrid } from 'lucide-react';
+import { Database, LayoutGrid } from 'lucide-react';
 import type { DatabaseType } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
 import { Button } from '@/platform/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/ui/tabs';
 import { cn } from '@/lib/utils/utils';
 import { databaseLogo } from '@/components/diagram-icon/database-logos';
 import { useTheme } from '@/platform/theme/theme-context';
-import {
-    ANALYTICAL,
-    CARDS_PER_ROW,
-    TRANSACTIONAL,
-    VISIBLE_ROWS,
-} from './database-groups';
+import { DATABASES } from './database-groups';
 
 const Card: React.FC<{
     type: DatabaseType;
@@ -56,118 +50,43 @@ const Card: React.FC<{
 export interface DatabasePickerProps {
     value: DatabaseType | undefined;
     onPick: (type: DatabaseType) => void;
-    /** puts Generic back as the chosen database */
-    onGeneric: () => void;
     /** opens the list of examples */
     onExamples?: () => void;
 }
 
-/** Transactional and Analytical tabs of option cards (SHL-032, SHL-042). */
+/** The option cards of the six databases (SHL-032). */
 export const DatabasePicker: React.FC<DatabasePickerProps> = ({
     value,
     onPick,
-    onGeneric,
     onExamples,
 }) => {
     const { t } = useTranslation();
-    const [offset, setOffset] = useState(0);
-    const rows = Math.ceil(TRANSACTIONAL.length / CARDS_PER_ROW);
-    const shifts = rows > VISIBLE_ROWS;
-    const shown = TRANSACTIONAL.slice(
-        offset * CARDS_PER_ROW,
-        (offset + VISIBLE_ROWS) * CARDS_PER_ROW
-    );
-    const label = t('editor.designs.create.titleType');
     return (
         <div className="mb-4 flex min-w-0 flex-col">
-            <Tabs
-                defaultValue={
-                    value && ANALYTICAL.includes(value)
-                        ? 'analytical'
-                        : 'transactional'
-                }
+            <div
+                role="radiogroup"
+                aria-label={t('editor.designs.create.titleType')}
+                className="mx-auto mt-2 grid w-fit grid-cols-3 content-start gap-4"
             >
-                <TabsList className="mx-auto flex w-[416px] max-w-full">
-                    <TabsTrigger value="transactional">
-                        {t('editor.designs.create.tabTransactional')}
-                    </TabsTrigger>
-                    <TabsTrigger value="analytical">
-                        {t('editor.designs.create.tabAnalytical')}
-                    </TabsTrigger>
-                </TabsList>
-                <TabsContent value="transactional">
-                    <div
-                        role="radiogroup"
-                        aria-label={label}
-                        className="mx-auto mt-2 grid min-h-[272px] w-fit grid-cols-3 max-sm:min-h-[176px] content-start gap-4"
-                    >
-                        {shown.map((type) => (
-                            <Card
-                                key={type}
-                                type={type}
-                                chosen={value === type}
-                                onPick={onPick}
-                            />
-                        ))}
-                    </div>
-                    {shifts ? (
-                        <div className="mx-auto mt-[31px] w-[416px] max-w-full">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full"
-                                aria-pressed={offset === 1}
-                                onClick={() =>
-                                    setOffset((o) => (o === 0 ? 1 : 0))
-                                }
-                            >
-                                {offset === 0 ? <ChevronDown /> : <ChevronUp />}
-                                {offset === 0
-                                    ? t('editor.designs.create.moreDatabases')
-                                    : t(
-                                          'editor.designs.create.primaryDatabases'
-                                      )}
-                            </Button>
-                        </div>
-                    ) : null}
-                </TabsContent>
-                <TabsContent value="analytical">
-                    <div
-                        role="radiogroup"
-                        aria-label={label}
-                        className="mx-auto mt-2 grid min-h-[272px] w-fit grid-cols-3 max-sm:min-h-[176px] content-start gap-4"
-                    >
-                        {ANALYTICAL.map((type) => (
-                            <Card
-                                key={type}
-                                type={type}
-                                chosen={value === type}
-                                onPick={onPick}
-                            />
-                        ))}
-                    </div>
-                    {/* the same height as the first tab, which has the More Databases button */}
-                    <div className="h-[54px]" aria-hidden />
-                </TabsContent>
-            </Tabs>
+                {DATABASES.map((type) => (
+                    <Card
+                        key={type}
+                        type={type}
+                        chosen={value === type}
+                        onPick={onPick}
+                    />
+                ))}
+            </div>
             {onExamples ? (
                 <Button
                     variant="outline"
-                    className="mx-auto mt-[5px] h-8 w-[416px] max-w-full text-primary"
+                    className="mx-auto mt-4 h-8 w-[416px] max-w-full text-primary"
                     onClick={onExamples}
                 >
                     <LayoutGrid />
                     {t('editor.designs.create.checkExamples')}
                 </Button>
             ) : null}
-            <Button
-                variant="link"
-                className="mx-auto mt-[5px] h-8 w-[416px] max-w-full"
-                aria-pressed={value === 'generic'}
-                onClick={onGeneric}
-            >
-                {t('editor.designs.create.genericOption')}
-            </Button>
         </div>
     );
 };

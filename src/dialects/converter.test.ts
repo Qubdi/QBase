@@ -152,30 +152,10 @@ describe('EXP-037 EXP-040 EXP-041 EXP-042 EXP-043 EXP-044 EXP-048 converter rule
         expect(r.text).toBe('');
         expect(r.diagnostics[0].severity).toBe('error');
     });
-    it('EXP-005 MySQL to MariaDB uses the MySQL generator; MariaDB and CockroachDB are variants', () => {
+    it('EXP-005 MySQL to MariaDB uses the MySQL generator; MariaDB is a variant', () => {
         expect(exportSql(sampleS1('mysql'), 'mariadb').text).toBe(
             exportSql(sampleS1('mysql'), 'mysql').text
         );
-        expect(exportSql(sampleS1('postgresql'), 'cockroachdb').text).toBe(
-            exportSql(sampleS1('postgresql'), 'postgresql').text
-        );
-    });
-    it('EXP-007 a generic target has no writer and gives a clear error', () => {
-        const r = exportSql(sampleS1('postgresql'), 'generic');
-        expect(r.text).toBe('');
-        expect(r.diagnostics[0].message).toContain('not supported');
-    });
-    it('EXP-008 ClickHouse sources and targets use the generic generator with a warning header', () => {
-        const r = exportSql(sampleS1('postgresql'), 'clickhouse');
-        expect(r.text).toMatch(/^-- PostgreSQL to /);
-        expect(r.text).toContain('-- WARNING: there is no converter');
-        expect(r.text).toContain('CREATE TABLE');
-        const clickhouseSource = {
-            ...sampleS1('postgresql'),
-            databaseType: 'clickhouse' as const,
-        };
-        const out = exportSql(clickhouseSource, 'mysql');
-        expect(out.text).toMatch(/^-- ClickHouse to MySQL\n-- WARNING/);
     });
     it('Oracle sources and targets go through the converter', () => {
         const to = exportSql(sampleS1('postgresql'), 'oracle');

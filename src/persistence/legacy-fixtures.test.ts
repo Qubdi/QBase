@@ -710,7 +710,7 @@ describe('PH9 damaged old rows are repaired or skipped with a diagnostic', () =>
 
         const design = (await adapter.load('bad1'))!.design;
         // the diagram itself: unknown type falls back, dates become "now"
-        expect(design.databaseType).toBe('generic');
+        expect(design.databaseType).toBe('postgresql');
         expect(design.createdAt).toBe(NOW);
         expect(design.updatedAt).toBe(NOW);
         expect(design.name.length).toBeGreaterThan(0);

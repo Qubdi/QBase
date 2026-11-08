@@ -1,7 +1,6 @@
 import type { DatabaseType } from '@/core/model/database';
 import type { Design } from '@/core/model/design';
 import type { RandomInt } from '@/core/model/ids';
-import { detectDialect } from '@/dialects/detect';
 import { dialectFor } from '@/dialects/registry';
 import type {
     Diagnostic,
@@ -199,8 +198,7 @@ export function importSql(
     dialectId: DatabaseType,
     options: SqlImportOptions = {}
 ): SqlImportResult {
-    const effective = dialectId === 'generic' ? detectDialect(text) : dialectId;
-    const dialect = dialectFor(effective);
+    const dialect = dialectFor(dialectId);
     const read = dialect.sql.read;
     if (!read)
         return {

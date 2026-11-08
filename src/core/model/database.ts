@@ -1,12 +1,9 @@
 export const DATABASE_TYPES = [
-    'generic',
     'postgresql',
     'mysql',
     'sql_server',
     'mariadb',
     'sqlite',
-    'clickhouse',
-    'cockroachdb',
     'oracle',
 ] as const;
 
@@ -68,35 +65,24 @@ export interface DatabaseTraits {
     hasUserTypes: boolean;
     /** true when an index may choose its method (btree, hash, gin) */
     hasIndexMethods: boolean;
-    /** true when SQL export writes check constraints (EDT-150); ClickHouse has none */
-    hasChecks: boolean;
     /** type given to a new key or column */
     defaultColumnType: string;
 }
 
-const SCHEMA_DATABASES: DatabaseType[] = [
-    'postgresql',
-    'cockroachdb',
-    'sql_server',
-    'clickhouse',
-    'oracle',
-];
+const SCHEMA_DATABASES: DatabaseType[] = ['postgresql', 'sql_server', 'oracle'];
 
 const DEFAULT_SCHEMAS: Partial<Record<DatabaseType, string>> = {
     postgresql: 'public',
-    cockroachdb: 'public',
     sql_server: 'dbo',
-    clickhouse: 'default',
 };
 
 export function traitsOf(type: DatabaseType): DatabaseTraits {
     return {
         defaultSchema: DEFAULT_SCHEMAS[type],
         hasSchemas: SCHEMA_DATABASES.includes(type),
-        hasArrays: type === 'postgresql' || type === 'cockroachdb',
+        hasArrays: type === 'postgresql',
         hasUserTypes: type === 'postgresql',
-        hasIndexMethods: type === 'postgresql' || type === 'cockroachdb',
-        hasChecks: type !== 'clickhouse',
+        hasIndexMethods: type === 'postgresql',
         defaultColumnType:
             type === 'sqlite'
                 ? 'integer'

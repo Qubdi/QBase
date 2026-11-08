@@ -106,7 +106,7 @@ describe('SQL export identifier escaping', () => {
     const dbmlOf = (name: string) =>
         exportDbml(
             diagramToDesign(
-                diagram(DatabaseType.GENERIC, [
+                diagram(DatabaseType.POSTGRESQL, [
                     table({
                         name,
                         fields: [

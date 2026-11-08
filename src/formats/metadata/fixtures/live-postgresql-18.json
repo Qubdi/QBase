@@ -1,366 +1,362 @@
 {
-  "database_name": "postgres",
-  "version": "PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
-  "tables": [
-    {
-      "schema": "sales",
-      "table": "customers",
-      "rows": 0,
-      "type": "BASE TABLE",
-      "comment": null
-    },
-    {
-      "schema": "sales",
-      "table": "orders",
-      "rows": 0,
-      "type": "BASE TABLE",
-      "comment": null
-    }
-  ],
-  "views": [],
-  "columns": [
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "id",
-      "type": "bigint",
-      "is_array": false,
-      "ordinal_position": 1,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": true
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "email",
-      "type": "character varying",
-      "is_array": false,
-      "ordinal_position": 2,
-      "nullable": false,
-      "character_maximum_length": "120",
-      "precision": null,
-      "default": null,
-      "domain": "email",
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "qty",
-      "type": "integer",
-      "is_array": false,
-      "ordinal_position": 3,
-      "nullable": true,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "domain": "pos_int",
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "first_name",
-      "type": "text",
-      "is_array": false,
-      "ordinal_position": 4,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "last_name",
-      "type": "text",
-      "is_array": false,
-      "ordinal_position": 5,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "full_name",
-      "type": "text",
-      "is_array": false,
-      "ordinal_position": 6,
-      "nullable": true,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "domain": null,
-      "generated": {
-        "expression": "((first_name || ' '::text) || last_name)",
-        "stored": true
-      },
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "deleted_at",
-      "type": "timestamp with time zone",
-      "is_array": false,
-      "ordinal_position": 7,
-      "nullable": true,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "score",
-      "type": "integer",
-      "is_array": false,
-      "ordinal_position": 8,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": "0",
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "state",
-      "type": "sales.status",
-      "is_array": false,
-      "ordinal_position": 9,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": "'new'::sales.status",
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "orders",
-      "name": "id",
-      "type": "integer",
-      "is_array": false,
-      "ordinal_position": 1,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": "nextval('sales.orders_id_seq'::regclass)",
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": true
-    },
-    {
-      "schema": "sales",
-      "table": "orders",
-      "name": "customer_id",
-      "type": "bigint",
-      "is_array": false,
-      "ordinal_position": 2,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null,
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    },
-    {
-      "schema": "sales",
-      "table": "orders",
-      "name": "total",
-      "type": "numeric",
-      "is_array": false,
-      "ordinal_position": 3,
-      "nullable": false,
-      "character_maximum_length": null,
-      "precision": {
-        "precision": 12,
-        "scale": 2
-      },
-      "default": null,
-      "domain": null,
-      "generated": null,
-      "collation": null,
-      "comment": null,
-      "is_identity": false
-    }
-  ],
-  "pk_info": [
-    {
-      "schema": "sales",
-      "table": "customers",
-      "column": "id",
-      "pk_def": "PRIMARY KEY (id)"
-    },
-    {
-      "schema": "sales",
-      "table": "orders",
-      "column": "id",
-      "pk_def": "PRIMARY KEY (id)"
-    }
-  ],
-  "fk_info": [
-    {
-      "schema": "sales",
-      "table": "orders",
-      "column": "customer_id",
-      "foreign_key_name": "orders_customer_id_fkey",
-      "reference_schema": "sales",
-      "reference_table": "customers",
-      "reference_column": "id",
-      "fk_def": "FOREIGN KEY (customer_id) REFERENCES sales.customers(id)"
-    }
-  ],
-  "indexes": [
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "customers_email_live",
-      "column": "email",
-      "index_type": "btree",
-      "unique": true,
-      "where": "(deleted_at IS NULL)",
-      "direction": "asc",
-      "column_position": 1
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "customers_live",
-      "column": "last_name",
-      "index_type": "btree",
-      "unique": false,
-      "where": "(deleted_at IS NULL)",
-      "direction": "asc",
-      "column_position": 1
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "customers_pkey",
-      "column": "id",
-      "index_type": "btree",
-      "unique": true,
-      "where": null,
-      "direction": "asc",
-      "column_position": 1
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "customers_score_desc",
-      "column": "score",
-      "index_type": "btree",
-      "unique": false,
-      "where": null,
-      "direction": "desc",
-      "column_position": 1
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "name": "customers_score_desc",
-      "column": "id",
-      "index_type": "btree",
-      "unique": false,
-      "where": null,
-      "direction": "asc",
-      "column_position": 2
-    },
-    {
-      "schema": "sales",
-      "table": "orders",
-      "name": "orders_pkey",
-      "column": "id",
-      "index_type": "btree",
-      "unique": true,
-      "where": null,
-      "direction": "asc",
-      "column_position": 1
-    }
-  ],
-  "check_constraints": [
-    {
-      "schema": "sales",
-      "table": "customers",
-      "expression": "(length(first_name) < 100)"
-    },
-    {
-      "schema": "sales",
-      "table": "customers",
-      "expression": "(score >= 0)"
-    }
-  ],
-  "custom_types": [
-    {
-      "schema": "sales",
-      "type": "status",
-      "kind": "enum",
-      "values": [
-        "new",
-        "paid",
-        "shipped"
-      ]
-    },
-    {
-      "schema": "sales",
-      "type": "money_pair",
-      "kind": "composite",
-      "fields": [
+    "database_name": "postgres",
+    "version": "PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "tables": [
         {
-          "field": "amount",
-          "type": "numeric(12,2)"
+            "schema": "sales",
+            "table": "customers",
+            "rows": 0,
+            "type": "BASE TABLE",
+            "comment": null
         },
         {
-          "field": "currency",
-          "type": "character(3)"
+            "schema": "sales",
+            "table": "orders",
+            "rows": 0,
+            "type": "BASE TABLE",
+            "comment": null
         }
-      ]
-    }
-  ]
+    ],
+    "views": [],
+    "columns": [
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "id",
+            "type": "bigint",
+            "is_array": false,
+            "ordinal_position": 1,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": true
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "email",
+            "type": "character varying",
+            "is_array": false,
+            "ordinal_position": 2,
+            "nullable": false,
+            "character_maximum_length": "120",
+            "precision": null,
+            "default": null,
+            "domain": "email",
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "qty",
+            "type": "integer",
+            "is_array": false,
+            "ordinal_position": 3,
+            "nullable": true,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "domain": "pos_int",
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "first_name",
+            "type": "text",
+            "is_array": false,
+            "ordinal_position": 4,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "last_name",
+            "type": "text",
+            "is_array": false,
+            "ordinal_position": 5,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "full_name",
+            "type": "text",
+            "is_array": false,
+            "ordinal_position": 6,
+            "nullable": true,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "domain": null,
+            "generated": {
+                "expression": "((first_name || ' '::text) || last_name)",
+                "stored": true
+            },
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "deleted_at",
+            "type": "timestamp with time zone",
+            "is_array": false,
+            "ordinal_position": 7,
+            "nullable": true,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "score",
+            "type": "integer",
+            "is_array": false,
+            "ordinal_position": 8,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": "0",
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "state",
+            "type": "sales.status",
+            "is_array": false,
+            "ordinal_position": 9,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": "'new'::sales.status",
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "orders",
+            "name": "id",
+            "type": "integer",
+            "is_array": false,
+            "ordinal_position": 1,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": "nextval('sales.orders_id_seq'::regclass)",
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": true
+        },
+        {
+            "schema": "sales",
+            "table": "orders",
+            "name": "customer_id",
+            "type": "bigint",
+            "is_array": false,
+            "ordinal_position": 2,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": null,
+            "default": null,
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        },
+        {
+            "schema": "sales",
+            "table": "orders",
+            "name": "total",
+            "type": "numeric",
+            "is_array": false,
+            "ordinal_position": 3,
+            "nullable": false,
+            "character_maximum_length": null,
+            "precision": {
+                "precision": 12,
+                "scale": 2
+            },
+            "default": null,
+            "domain": null,
+            "generated": null,
+            "collation": null,
+            "comment": null,
+            "is_identity": false
+        }
+    ],
+    "pk_info": [
+        {
+            "schema": "sales",
+            "table": "customers",
+            "column": "id",
+            "pk_def": "PRIMARY KEY (id)"
+        },
+        {
+            "schema": "sales",
+            "table": "orders",
+            "column": "id",
+            "pk_def": "PRIMARY KEY (id)"
+        }
+    ],
+    "fk_info": [
+        {
+            "schema": "sales",
+            "table": "orders",
+            "column": "customer_id",
+            "foreign_key_name": "orders_customer_id_fkey",
+            "reference_schema": "sales",
+            "reference_table": "customers",
+            "reference_column": "id",
+            "fk_def": "FOREIGN KEY (customer_id) REFERENCES sales.customers(id)"
+        }
+    ],
+    "indexes": [
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "customers_email_live",
+            "column": "email",
+            "index_type": "btree",
+            "unique": true,
+            "where": "(deleted_at IS NULL)",
+            "direction": "asc",
+            "column_position": 1
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "customers_live",
+            "column": "last_name",
+            "index_type": "btree",
+            "unique": false,
+            "where": "(deleted_at IS NULL)",
+            "direction": "asc",
+            "column_position": 1
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "customers_pkey",
+            "column": "id",
+            "index_type": "btree",
+            "unique": true,
+            "where": null,
+            "direction": "asc",
+            "column_position": 1
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "customers_score_desc",
+            "column": "score",
+            "index_type": "btree",
+            "unique": false,
+            "where": null,
+            "direction": "desc",
+            "column_position": 1
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "name": "customers_score_desc",
+            "column": "id",
+            "index_type": "btree",
+            "unique": false,
+            "where": null,
+            "direction": "asc",
+            "column_position": 2
+        },
+        {
+            "schema": "sales",
+            "table": "orders",
+            "name": "orders_pkey",
+            "column": "id",
+            "index_type": "btree",
+            "unique": true,
+            "where": null,
+            "direction": "asc",
+            "column_position": 1
+        }
+    ],
+    "check_constraints": [
+        {
+            "schema": "sales",
+            "table": "customers",
+            "expression": "(length(first_name) < 100)"
+        },
+        {
+            "schema": "sales",
+            "table": "customers",
+            "expression": "(score >= 0)"
+        }
+    ],
+    "custom_types": [
+        {
+            "schema": "sales",
+            "type": "status",
+            "kind": "enum",
+            "values": ["new", "paid", "shipped"]
+        },
+        {
+            "schema": "sales",
+            "type": "money_pair",
+            "kind": "composite",
+            "fields": [
+                {
+                    "field": "amount",
+                    "type": "numeric(12,2)"
+                },
+                {
+                    "field": "currency",
+                    "type": "character(3)"
+                }
+            ]
+        }
+    ]
 }

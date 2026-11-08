@@ -98,8 +98,8 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
     const databaseType: DatabaseType = (() => {
         const value = top.str('databaseType');
         if (isDatabaseType(value)) return value;
-        warn('databaseType', `unknown database type; treated as generic`);
-        return 'generic';
+        warn('databaseType', `unknown database type; treated as PostgreSQL`);
+        return 'postgresql';
     })();
     const editionText = top.str('databaseEdition');
     const databaseEdition =

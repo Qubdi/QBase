@@ -26,6 +26,7 @@ import type { ImportBoxState } from '@/features/import/import-box';
 import { useDialog } from '@/hooks/use-dialog';
 import { useStorageAdapter } from '@/qbase/storage-context';
 import { useOptionalEditorStoreApi } from '@/store/store-context';
+import { DEFAULT_DATABASE } from './database-groups';
 import { DatabasePicker } from './database-picker';
 
 export interface CreateDiagramDialogProps {
@@ -49,7 +50,9 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     const { items } = useDesignList(adapter, dialog.open);
 
     const [step, setStep] = useState<'type' | 'import' | 'examples'>('type');
-    const [type, setType] = useState<DatabaseType | undefined>('generic');
+    const [type, setType] = useState<DatabaseType | undefined>(
+        DEFAULT_DATABASE
+    );
     const [box, setBox] = useState<ImportBoxState | undefined>();
     const [busy, setBusy] = useState(false);
     const [problem, setProblem] = useState<string | undefined>();
@@ -58,7 +61,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     useEffect(() => {
         if (!dialog.open) return;
         setStep('type');
-        setType('generic');
+        setType(DEFAULT_DATABASE);
         setBox(undefined);
         setProblem(undefined);
     }, [dialog.open]);
@@ -149,7 +152,6 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                             setType(picked);
                             setStep('import');
                         }}
-                        onGeneric={() => setType('generic')}
                         onExamples={() => setStep('examples')}
                     />
                 ) : step === 'examples' ? (

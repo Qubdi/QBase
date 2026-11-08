@@ -30,7 +30,6 @@ const cases: [DatabaseType, DatabaseEdition | undefined, string[]][] = [
     ],
     ['postgresql', 'supabase', ["'auth'", "'storage'", 'pg_class']],
     ['postgresql', 'timescale', ['^_timescaledb', 'pg_class']],
-    ['cockroachdb', undefined, ['crdb_internal', 'pg_class']],
     [
         'mysql',
         undefined,
@@ -98,7 +97,6 @@ describe('metadata scripts per database and edition (IMP-056, IMP-003)', () => {
         expect(metadataScriptFor('mysql', 'mysql_5_7')).not.toContain(
             'CHECK_CONSTRAINTS'
         );
-        expect(metadataScriptFor('cockroachdb')).not.toContain('indnkeyatts');
         expect(metadataScriptFor('postgresql')).toContain('indnkeyatts');
         expect(metadataScriptFor('postgresql')).not.toContain('auth');
     });
@@ -516,7 +514,6 @@ describe('fixes found on live databases', () => {
             const script = metadataScriptFor('postgresql', edition)!;
             expect(script).toContain('i.indkey[g.k - 1]');
         }
-        expect(metadataScriptFor('cockroachdb')).toContain('i.indkey[g.k - 1]');
     });
 
     it('PostgreSQL does not call a partial unique index unique', () => {
@@ -568,10 +565,6 @@ describe('fixes found on live databases', () => {
         expect(pg).toContain(
             `CASE WHEN a.attgenerated IN ('s', 'v') THEN NULL ELSE`
         );
-        // CockroachDB has no domains and no attgenerated
-        const crdb = metadataScriptFor('cockroachdb')!;
-        expect(crdb).not.toContain('attgenerated');
-        expect(crdb).toContain(`'domain', NULL`);
         for (const type of ['mysql', 'mariadb'] as const) {
             const my = metadataScriptFor(type)!;
             expect(my).toContain('"generated":');

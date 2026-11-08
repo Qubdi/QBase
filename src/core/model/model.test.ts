@@ -73,7 +73,7 @@ describe('DAT-021 editions', () => {
         );
         expect(editionFits('sqlite', 'cloudflare_d1')).toBe(true);
         expect(editionFits('mysql', 'supabase')).toBe(false);
-        expect(editionFits('generic', 'cloudflare_d1')).toBe(false);
+        expect(editionFits('oracle', 'cloudflare_d1')).toBe(false);
     });
 
     it('a design keeps a fitting edition and drops another', () => {
@@ -142,14 +142,12 @@ describe('DAT-026 / DAT-027 / DAT-028 / DAT-029 a new table', () => {
 
     it.each([
         ['postgresql', 'public'],
-        ['cockroachdb', 'public'],
         ['sql_server', 'dbo'],
-        ['clickhouse', 'default'],
     ] as const)('DAT-028 %s tables start in schema %s', (type, schema) => {
         expect(createEntityParts(blank(type), {}).entity.schema).toBe(schema);
     });
 
-    it.each(['mysql', 'mariadb', 'sqlite', 'generic', 'oracle'] as const)(
+    it.each(['mysql', 'mariadb', 'sqlite', 'oracle'] as const)(
         'DAT-028 %s tables start without a schema',
         (type) => {
             expect(
@@ -264,9 +262,6 @@ describe('DAT-035 / DAT-036 a new field', () => {
         ['mysql', 'bigint'],
         ['sql_server', 'bigint'],
         ['mariadb', 'bigint'],
-        ['generic', 'bigint'],
-        ['cockroachdb', 'bigint'],
-        ['clickhouse', 'bigint'],
     ] as const)('DAT-036 %s uses %s', (db, type) => {
         expect(traitsOf(db).defaultColumnType).toBe(type);
         expect(createColumn({ databaseType: db }, 0).type).toEqual({
@@ -289,7 +284,6 @@ describe('DAT-037 / DAT-038 array flag and type suffix', () => {
 
     it('DAT-037 the array flag only counts for databases and types that allow it', () => {
         expect(arrayApplies({ isArray: true }, 'postgresql')).toBe(true);
-        expect(arrayApplies({ isArray: true }, 'cockroachdb')).toBe(true);
         expect(arrayApplies({ isArray: true }, 'mysql')).toBe(false);
         expect(arrayApplies({ isArray: true }, 'postgresql', false)).toBe(
             false

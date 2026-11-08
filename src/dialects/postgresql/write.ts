@@ -337,7 +337,7 @@ function foreignKeyBlock(keys: ExportForeignKey[]): string {
     return `\n-- Foreign key constraints\n${groups.join('\n\n')}`;
 }
 
-/** PostgreSQL (and CockroachDB) script for a design (EXP-013 to EXP-019). */
+/** PostgreSQL script for a design (EXP-013 to EXP-019). */
 export function writePostgres(design: Design): string {
     const model = prepareExport(design);
     if (model.tables.length === 0) return '';
@@ -350,11 +350,7 @@ export function writePostgres(design: Design): string {
         .sort((a, b) => byText(a.name, b.name));
     const userTypeNames: UserTypes = new Map(types.map((t) => [t.name, t]));
     const usedIndexNames = scopes();
-    // CockroachDB has no CREATE DOMAIN: its columns keep the base type
-    const domains =
-        design.databaseType === 'cockroachdb'
-            ? new Map<string, string>()
-            : domainsOf(model.tables, userTypeNames);
+    const domains = domainsOf(model.tables, userTypeNames);
 
     const schemas = firstSeen(
         [

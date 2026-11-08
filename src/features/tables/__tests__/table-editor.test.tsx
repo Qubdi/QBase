@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { applyOk, rng, withTables } from '@/core/testing/helpers';
 import { planLink } from '@/core/commands/plan-link';
-import { planAddRule } from '@/core/commands/plan-column';
 import { renderPanel } from '@/features/testing/render-panel';
 import { TablesSection } from '../tables-section';
 
@@ -316,42 +315,6 @@ describe('EDT-098 the description of a table', () => {
         );
         await userEvent.tab();
         expect(first(store).entity.comments).toBe('orders placed');
-    });
-});
-
-describe('EDT-150 check constraints where SQL export leaves them out', () => {
-    const openOnly = (withCheck: boolean) => {
-        let design = withTables(['orders']);
-        const id = design.entities.order[0];
-        if (withCheck) design = applyOk(design, planAddRule(id)).design;
-        return { ...design, databaseType: 'clickhouse' as const };
-    };
-
-    it('hides the section when the table has none', async () => {
-        renderPanel(<TablesSection />, openOnly(false));
-        await userEvent.click(
-            screen.getByRole('button', { name: /^Show or hide the details/ })
-        );
-        expect(screen.queryByText('Check Constraints')).toBeNull();
-    });
-
-    it('warns and offers no Add button when the table has some', async () => {
-        renderPanel(<TablesSection />, openOnly(true));
-        await userEvent.click(
-            screen.getByRole('button', { name: /^Show or hide the details/ })
-        );
-        await openSection('Check Constraints');
-        expect(screen.getByRole('note').textContent).toMatch(/leaves check/);
-        expect(screen.queryByRole('button', { name: 'Add Check' })).toBeNull();
-    });
-
-    it('stays as before for a database that writes checks', async () => {
-        const { store } = await openFirst();
-        expect(store.getState().design.databaseType).not.toBe('clickhouse');
-        await openSection('Check Constraints');
-        expect(
-            screen.getAllByRole('button', { name: 'Add Check' }).length
-        ).toBeGreaterThan(0);
     });
 });
 

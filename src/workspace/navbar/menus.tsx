@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useWorkspace } from '@/components/qubdi/workspace-context';
 import { LocalConfigContext } from '@/context/local-config-context/local-config-context';
 import { dialectFor } from '@/dialects/registry';
-import { methodsFor } from '@/features/import/import-method';
 import { useDialog } from '@/hooks/use-dialog';
 import { getOperatingSystem } from '@/lib/utils/utils';
 import { useTheme } from '@/platform/theme/theme-context';
@@ -57,8 +56,6 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
     const canRedo = useEditorStore(selectCanRedo);
     const panelOpen = useEditorStore((s) => s.ui.panel.open);
     const targets = exportTargets(type);
-    // ClickHouse has no SQL reader: only the query result and DBML bring a schema in
-    const canReadSql = methodsFor(type, ['sql']).length > 0;
     // in a project only its owners may delete a diagram (spec P12)
     const mayDelete = workspace ? workspace.project.role === 'owner' : true;
 
@@ -81,7 +78,7 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
                             </MenubarItem>
                             <MenubarSeparator />
                             <MenubarItem
-                                disabled={locked || !canReadSql}
+                                disabled={locked}
                                 onSelect={() =>
                                     dialogs.openImportDatabaseDialog({
                                         methods: ['sql'],

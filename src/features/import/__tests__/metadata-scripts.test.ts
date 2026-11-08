@@ -17,10 +17,6 @@ describe('metadata script for SQLite (IMP-056)', () => {
         expect(metadataScriptFor('oracle')).toContain(
             'metadata_json_to_import'
         );
-        expect(metadataScriptFor('clickhouse')).toContain(
-            'metadata_json_to_import'
-        );
-        expect(metadataScriptFor('generic')).toBeUndefined();
     });
 
     it.skipIf(!sqlite)('Cloudflare D1 variant hides its _cf_ tables', () => {

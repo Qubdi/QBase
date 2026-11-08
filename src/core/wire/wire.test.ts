@@ -7,7 +7,7 @@ import { looksLikeGeneratedId } from '../model/ids';
 import { rng, NOW } from '../testing/helpers';
 import { exportFileName, exportFileText } from './file-export';
 import { ImportError, importFileText } from './file-import';
-import { clickhouseFile, oracleFile } from './fixtures/other-databases';
+import { oracleFile } from './fixtures/other-databases';
 import { oldStyle } from './fixtures/old-style';
 import { shop } from './fixtures/shop';
 import { parse } from './parse';
@@ -40,16 +40,13 @@ describe('DAT-019 a diagram has id, name, type, edition and two dates', () => {
 });
 
 describe('DAT-020 / DAT-021 database types and editions', () => {
-    it('accepts every stored type, including Oracle and ClickHouse', () => {
+    it('accepts every stored type, including Oracle', () => {
         for (const type of [
-            'generic',
             'postgresql',
             'mysql',
             'sql_server',
             'mariadb',
             'sqlite',
-            'clickhouse',
-            'cockroachdb',
             'oracle',
         ]) {
             const { design, warnings } = read({
@@ -64,9 +61,9 @@ describe('DAT-020 / DAT-021 database types and editions', () => {
         }
     });
 
-    it('treats an unknown type as generic with a warning', () => {
+    it('treats an unknown type as PostgreSQL with a warning', () => {
         const { design, warnings } = read({ ...shop, databaseType: 'db2' });
-        expect(design.databaseType).toBe('generic');
+        expect(design.databaseType).toBe('postgresql');
         expect(warnings.some((w) => w.path === 'databaseType')).toBe(true);
     });
 
@@ -78,16 +75,6 @@ describe('DAT-020 / DAT-021 database types and editions', () => {
         expect(out.tables).toEqual(
             oracleFile.tables.map((t, i) => ({ ...t, order: i }))
         );
-    });
-
-    it('keeps a ClickHouse file unchanged on a round trip', () => {
-        const { design } = read(clickhouseFile);
-        expect(design.databaseType).toBe('clickhouse');
-        const out = serialise(design);
-        expect((out.tables as unknown[])[0]).toEqual({
-            ...clickhouseFile.tables[0],
-            order: 0,
-        });
     });
 
     it('drops an edition that does not fit the type', () => {
@@ -623,7 +610,7 @@ describe('DAT-072 / DAT-082 the output is accepted by the server', () => {
     });
 
     it('DAT-072 passes for old-style and open-only files too', () => {
-        for (const file of [oldStyle, oracleFile, clickhouseFile])
+        for (const file of [oldStyle, oracleFile])
             expect(() =>
                 content.parse(serialise(read(file).design))
             ).not.toThrow();

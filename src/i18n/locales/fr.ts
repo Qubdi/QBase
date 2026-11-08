@@ -193,15 +193,10 @@ export const fr = {
                         'Collez un schéma pour y construire le diagramme, ou commencez avec un diagramme vide.',
                     fromFile: 'Ouvrir un fichier enregistré',
                     empty: 'Diagramme vide',
-                    tabTransactional: 'Transactionnel',
-                    tabAnalytical: 'Analytique',
-                    moreDatabases: 'Plus de bases de données',
-                    primaryDatabases: 'Bases de données principales',
                     checkExamples: 'Voir les exemples',
                     titleExamples: 'Exemples',
                     descriptionExamples:
                         'Partez d’un petit diagramme conçu pour une base de données. Choisissez-en un pour l’ouvrir comme nouveau diagramme.',
-                    genericOption: 'Utiliser plutôt une base générique',
                     emptyFromImport: 'Diagramme vide à la place',
                     import: 'Créer à partir du texte',
                     failed: "Le diagramme n'a pas pu être créé. Veuillez réessayer.",
@@ -708,8 +703,6 @@ export const fr = {
                 checks: {
                     add: 'Ajouter une vérification',
                     none: 'Aucune contrainte de vérification',
-                    unsupported:
-                        "L'export SQL pour cette base de données omet les contraintes de vérification",
                     expression: 'Expression',
                     expressionPlaceholder: 'p. ex. price > 0',
                     attributes: 'Contrainte de vérification',

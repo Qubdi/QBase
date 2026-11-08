@@ -1,13 +1,13 @@
 import { i18n } from '@/i18n/i18n';
 import { DatabaseEdition, DatabaseType } from '@/qbase/diagram-types';
 
-/** The database a server diagram is for; anything unknown is the generic one. */
+/** The database a server diagram is for; anything unknown is PostgreSQL. */
 export const toDatabaseType = (
     value: string | null | undefined
 ): DatabaseType =>
     (Object.values(DatabaseType) as string[]).includes(value ?? '')
         ? (value as DatabaseType)
-        : DatabaseType.GENERIC;
+        : DatabaseType.POSTGRESQL;
 
 export const toDatabaseEdition = (
     value: string | null | undefined

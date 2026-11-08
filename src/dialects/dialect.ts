@@ -54,7 +54,7 @@ export interface Dialect {
     defaultSchema?: string;
     /** type names folded to one spelling when metadata or SQL is read */
     typeSynonyms?: Readonly<Record<string, string>>;
-    /** id of the dialect whose code this one reuses (MariaDB, CockroachDB) */
+    /** id of the dialect whose code this one reuses (MariaDB) */
     variantOf?: DatabaseType;
     sql: DialectSql;
 }

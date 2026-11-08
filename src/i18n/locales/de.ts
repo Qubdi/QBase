@@ -191,16 +191,10 @@ export const de = {
                         'Fügen Sie ein Schema ein, um das Diagramm daraus zu erstellen, oder beginnen Sie mit einem leeren.',
                     fromFile: 'Gespeicherte Datei öffnen',
                     empty: 'Leeres Diagramm',
-                    tabTransactional: 'Transaktional',
-                    tabAnalytical: 'Analytisch',
-                    moreDatabases: 'Weitere Datenbanken',
-                    primaryDatabases: 'Hauptdatenbanken',
                     checkExamples: 'Beispiele ansehen',
                     titleExamples: 'Beispiele',
                     descriptionExamples:
                         'Beginnen Sie mit einem kleinen Diagramm für eine bestimmte Datenbank. Wählen Sie eines, um es als neues Diagramm zu öffnen.',
-                    genericOption:
-                        'Stattdessen eine allgemeine Datenbank verwenden',
                     emptyFromImport: 'Stattdessen leeres Diagramm',
                     import: 'Aus Text erstellen',
                     failed: 'Das Diagramm konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
@@ -689,8 +683,6 @@ export const de = {
                 checks: {
                     add: 'Prüfung hinzufügen',
                     none: 'Keine Prüfeinschränkungen',
-                    unsupported:
-                        'Der SQL-Export für diese Datenbank lässt Prüfeinschränkungen aus',
                     expression: 'Ausdruck',
                     expressionPlaceholder: 'z. B. price > 0',
                     attributes: 'Prüfeinschränkung',

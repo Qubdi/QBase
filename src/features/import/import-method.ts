@@ -47,16 +47,11 @@ export function prettyJson(text: string): string {
     }
 }
 
-/**
- * Which methods a database accepts: SQL needs a reader, so ClickHouse offers
- * only the query result and DBML.
- */
+/** Which methods a database accepts: SQL needs a reader. */
 export function methodsFor(
     type: DatabaseType,
     allowed: readonly ImportMethod[] = ALL_METHODS
 ): ImportMethod[] {
     const dialect = dialectFor(type);
-    return allowed.filter(
-        (m) => m !== 'sql' || type === 'generic' || dialect.sql.read
-    );
+    return allowed.filter((m) => m !== 'sql' || dialect.sql.read);
 }

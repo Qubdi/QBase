@@ -9,13 +9,12 @@ import { applyOk, blank, NOW, rng, withTables } from '@/core/testing/helpers';
 import { planAddRule } from './plan-column';
 
 const WRITABLE: DatabaseType[] = [
-    'generic',
     'postgresql',
     'mysql',
     'sql_server',
     'mariadb',
     'sqlite',
-    'cockroachdb',
+    'oracle',
 ];
 
 describe('EDT-149 check expressions are not validated', () => {
@@ -38,18 +37,12 @@ describe('EDT-149 check expressions are not validated', () => {
 });
 
 describe('EDT-275 schema pickers only where the database has schemas', () => {
-    it('PostgreSQL, CockroachDB, SQL Server, ClickHouse and Oracle only', () => {
+    it('PostgreSQL, SQL Server and Oracle only', () => {
         const withSchemas = DATABASE_TYPES.filter(
             (t) => traitsOf(t).hasSchemas
         );
         expect([...withSchemas].sort()).toEqual(
-            [
-                'clickhouse',
-                'cockroachdb',
-                'oracle',
-                'postgresql',
-                'sql_server',
-            ].sort()
+            ['oracle', 'postgresql', 'sql_server'].sort()
         );
     });
 
@@ -61,7 +54,7 @@ describe('EDT-275 schema pickers only where the database has schemas', () => {
     });
 
     it('a table in a database without schemas never gets one', () => {
-        for (const type of ['mysql', 'mariadb', 'sqlite', 'generic'] as const) {
+        for (const type of ['mysql', 'mariadb', 'sqlite'] as const) {
             const parts = createEntityParts(blank(type), { schema: 'x' });
             expect(parts.entity.schema).toBeUndefined();
         }
@@ -69,11 +62,9 @@ describe('EDT-275 schema pickers only where the database has schemas', () => {
 });
 
 describe('EDT-143 / EDT-276 per-database features', () => {
-    it('arrays only on PostgreSQL and CockroachDB', () => {
+    it('arrays only on PostgreSQL', () => {
         for (const type of DATABASE_TYPES)
-            expect(traitsOf(type).hasArrays).toBe(
-                type === 'postgresql' || type === 'cockroachdb'
-            );
+            expect(traitsOf(type).hasArrays).toBe(type === 'postgresql');
         for (const type of WRITABLE)
             expect(dialectFor(type).capabilities.arrayColumns).toBe(
                 traitsOf(type).hasArrays
@@ -85,11 +76,9 @@ describe('EDT-143 / EDT-276 per-database features', () => {
             expect(traitsOf(type).hasUserTypes).toBe(type === 'postgresql');
     });
 
-    it('index types only on PostgreSQL and CockroachDB', () => {
+    it('index types only on PostgreSQL', () => {
         for (const type of DATABASE_TYPES)
-            expect(traitsOf(type).hasIndexMethods).toBe(
-                type === 'postgresql' || type === 'cockroachdb'
-            );
+            expect(traitsOf(type).hasIndexMethods).toBe(type === 'postgresql');
         for (const type of WRITABLE) {
             const methods = dialectFor(type).capabilities.indexMethods;
             if (traitsOf(type).hasIndexMethods)
@@ -102,11 +91,9 @@ describe('EDT-143 / EDT-276 per-database features', () => {
 });
 
 describe('EDT-277 a new table takes the default schema', () => {
-    it('public, dbo, default; none where schemas are not used', () => {
+    it('public and dbo; none where schemas are not used', () => {
         expect(schemaForNewEntity('postgresql')).toBe('public');
-        expect(schemaForNewEntity('cockroachdb')).toBe('public');
         expect(schemaForNewEntity('sql_server')).toBe('dbo');
-        expect(schemaForNewEntity('clickhouse')).toBe('default');
         expect(schemaForNewEntity('mysql')).toBeUndefined();
         expect(schemaForNewEntity('sqlite')).toBeUndefined();
     });

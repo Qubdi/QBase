@@ -75,12 +75,11 @@ export function traitsOfType(
         allowsMax: databaseType === 'sql_server' && MAX_TYPES.has(id),
         hasPrecisionScale: PRECISION_TYPES.has(id),
         allowsArray: traitsOf(databaseType).hasArrays && !serial,
-        // ClickHouse numbers nothing; an Oracle NUMBER column can be an identity
+        // an Oracle NUMBER column can be an identity
         canIncrement:
-            databaseType !== 'clickhouse' &&
-            (serial ||
-                INTEGER_TYPES.has(id) ||
-                (databaseType === 'oracle' && id === 'number')),
+            serial ||
+            INTEGER_TYPES.has(id) ||
+            (databaseType === 'oracle' && id === 'number'),
         serial,
     };
 }
@@ -112,7 +111,6 @@ export function lengthLimit(
         case 'mariadb':
             return id === 'char' || id === 'binary' ? 255 : 65535;
         case 'postgresql':
-        case 'cockroachdb':
             return 10485760;
         case 'oracle':
             if (id === 'nvarchar2') return 2000;
@@ -135,7 +133,6 @@ export interface PrecisionRange {
 export function precisionRange(databaseType: DatabaseType): PrecisionRange {
     switch (databaseType) {
         case 'postgresql':
-        case 'cockroachdb':
             return {
                 minPrecision: 1,
                 maxPrecision: 1000,
