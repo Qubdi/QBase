@@ -87,6 +87,10 @@ Examples card (SHL-018, SHL-041, SHL-091, SHL-092, SHL-104), because that conten
 the ChartDB authors; the database logos in the New dialog (neutral icons take their place), for the
 same reason; the stray `diagramId` key (DAT-089) and the unused build variables (SHL-008).
 
+**Changed later the same day (owner):** the database logos are back, copied as image files from the
+main branch, with the icons of the old editor, so the interface looks the same; the code that shows
+them is new (see NOTICE). The examples and templates pages stay out.
+
 **Not yet decided:** the "change" rows of the parity checklist that improved behaviour (for example
 undo shortcuts inside text boxes, warning on duplicate table names, the copy toast naming the
 platform's key). They stay as built until the owner says otherwise.
