@@ -19,6 +19,8 @@ import type { Key, KeyMethod } from '../model/key';
 import type { Cardinality, Link } from '../model/link';
 import { MEMO_SIZE, MEMO_TINT } from '../model/memo';
 import type { Memo } from '../model/memo';
+import { attachNotes } from './attach-notes';
+import type { NotePlace } from './attach-notes';
 import { REGION_SIZE } from '../model/region';
 import type { Region } from '../model/region';
 import type { Rule } from '../model/rule';
@@ -161,11 +163,27 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
     // ---- memos
     const memoRows: Ranked<Memo>[] = [];
     const memoIds = new Set<Id>();
+    const notePlaces = new Map<Id, NotePlace>();
     (json.notes as unknown[]).forEach((raw, i) => {
         const path = `notes[${i}]`;
         if (!isRecord(raw)) return warn(path, 'not an object; skipped');
         const rd = new RecordReader(raw, path, warn);
         const id = uniqueId(rd.str('id'), memoIds, path, warn, random);
+        const anchorType = rd.str('anchorType');
+        const anchorId = rd.str('anchorId');
+        const kind =
+            anchorType === 'area'
+                ? 'region'
+                : anchorType === 'table'
+                  ? 'entity'
+                  : anchorType === 'field'
+                    ? 'column'
+                    : undefined;
+        if (anchorType !== undefined && kind === undefined)
+            warn(
+                `${path}.anchorType`,
+                'unknown kind; the note is attached again'
+            );
         const memo: Memo = {
             id,
             body: rd.str('content') ?? '',
@@ -178,6 +196,11 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
             },
         };
         const order = rd.num('order');
+        notePlaces.set(id, {
+            x: memo.box.x,
+            y: memo.box.y,
+            ...(kind && anchorId ? { anchor: { kind, id: anchorId } } : {}),
+        });
         memoRows.push({ item: withExtras(memo, rd), order });
     });
     const memos = sortByOrder(memoRows);
@@ -492,7 +515,40 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
     };
     if (databaseEdition) design.databaseEdition = databaseEdition;
     if (designExtra) design.extra = designExtra;
-    return { design, warnings };
+
+    // a note belongs to an area, a table or a column: the ids it names are
+    // the final ones now, and a note with no owner gets one
+    const places = new Map<Id, NotePlace>();
+    for (const [id, place] of notePlaces) {
+        const named = place.anchor;
+        let anchorId: Id | undefined;
+        if (named?.kind === 'entity') anchorId = entityByRaw.get(named.id);
+        else if (named?.kind === 'region')
+            anchorId = regionIds.has(named.id) ? named.id : undefined;
+        else if (named)
+            for (const local of columnMaps.values()) {
+                anchorId = local.get(named.id);
+                if (anchorId !== undefined) break;
+            }
+        if (named && anchorId === undefined)
+            warn(
+                'notes',
+                'the note is attached to something that does not exist'
+            );
+        places.set(id, {
+            x: place.x,
+            y: place.y,
+            ...(named && anchorId !== undefined
+                ? { anchor: { kind: named.kind, id: anchorId } }
+                : {}),
+        });
+    }
+    return {
+        design: attachNotes(design, places, (_, message) =>
+            warn('notes', message)
+        ),
+        warnings,
+    };
 }
 
 function orderEntities(rows: Ranked<Entity>[]): Entity[] {

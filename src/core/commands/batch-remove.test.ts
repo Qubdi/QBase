@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { emptyCollection } from '../model/collection';
 import type { Design } from '../model/design';
 import { applyOk, NOW, rng, sameButDate } from '../testing/helpers';
 import { parse } from '../wire/parse';
@@ -7,8 +8,11 @@ import { apply } from './apply';
 import type { Command } from './command';
 import { planDeleteEntities } from './plan-entity';
 
-const shopDesign = (): Design =>
-    parse(shop, { now: NOW, random: rng() }).design;
+/** the shop without its note: notes that go with a table have their own tests */
+const shopDesign = (): Design => ({
+    ...parse(shop, { now: NOW, random: rng() }).design,
+    memos: emptyCollection(),
+});
 
 /** the reference: one `entity.remove` after the other, each on its own */
 function oneByOne(design: Design, ids: string[]) {

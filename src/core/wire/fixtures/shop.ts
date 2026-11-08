@@ -229,6 +229,8 @@ export const shop = {
             height: 150,
             color: '#ffe374',
             order: 0,
+            anchorType: 'table',
+            anchorId: 't2',
         },
     ],
     createdAt: '2026-10-17T09:30:00.000Z',

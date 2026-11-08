@@ -2,6 +2,7 @@ import { entityList } from './lookup';
 import type { Design } from './design';
 import type { Entity } from './entity';
 import { TABLE_WIDTH } from './entity';
+import { COLUMN_ROW_HEIGHT, TABLE_HEADER_HEIGHT } from './memo';
 import type { Id } from './id';
 import type { Region } from './region';
 
@@ -17,7 +18,8 @@ export interface Size {
 export function estimatedSize(entity: Entity): Size {
     return {
         width: entity.width ?? TABLE_WIDTH.default,
-        height: 48 + 32 * entity.columnIds.length,
+        height:
+            TABLE_HEADER_HEIGHT + COLUMN_ROW_HEIGHT * entity.columnIds.length,
     };
 }
 

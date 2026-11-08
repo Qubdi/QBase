@@ -111,6 +111,8 @@ const SHAPES: Record<string, Shape> = {
         height: ['number'],
         color: ['string'],
         order: ['number', 'o'],
+        anchorType: [['area', 'table', 'field'], 'o'],
+        anchorId: ['string', 'o'],
     },
 };
 

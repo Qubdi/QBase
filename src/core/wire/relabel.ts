@@ -104,6 +104,21 @@ export function relabel(
     const memos = listOf(design.memos).map((memo) => ({
         ...memo,
         id: next('memo', memo.id),
+        ...(memo.anchor
+            ? {
+                  anchor: {
+                      kind: memo.anchor.kind,
+                      id: mapped(
+                          memo.anchor.kind === 'region'
+                              ? regionMap
+                              : memo.anchor.kind === 'entity'
+                                ? entityMap
+                                : columnMap,
+                          memo.anchor.id
+                      ),
+                  },
+              }
+            : {}),
     }));
     const userTypes = listOf(design.userTypes).map((type) => ({
         ...type,

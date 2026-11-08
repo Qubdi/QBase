@@ -3,7 +3,8 @@ import type { Design } from '../model/design';
 import type { Entity } from '../model/entity';
 import type { Id } from '../model/id';
 import { entityList } from '../model/lookup';
-import type { Memo } from '../model/memo';
+import { firstOffset, MEMO_SIZE } from '../model/memo';
+import type { Memo, MemoAnchor } from '../model/memo';
 import type { Region } from '../model/region';
 import { regionMembership } from '../model/region-membership';
 import type { Size } from '../model/region-membership';
@@ -31,6 +32,28 @@ export function planAddMemo(
         collection: 'memos',
         item: createMemo(options),
     };
+}
+
+/**
+ * A new note attached to an area, a table or a column, placed to the right of
+ * it; it moves with it from then on.
+ */
+export function planAddNote(
+    design: Design,
+    anchor: MemoAnchor,
+    options: PlanOptions & Partial<Memo> = {}
+): Command {
+    const offset = firstOffset(design, anchor);
+    return planAddMemo({
+        ...options,
+        anchor,
+        box: {
+            x: offset.x,
+            y: offset.y,
+            width: options.box?.width ?? MEMO_SIZE.width,
+            height: options.box?.height ?? MEMO_SIZE.height,
+        },
+    });
 }
 
 export function planAddUserType(

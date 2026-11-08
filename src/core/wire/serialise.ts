@@ -4,6 +4,7 @@ import type { Dependency } from '../model/dependency';
 import type { Entity } from '../model/entity';
 import type { Key } from '../model/key';
 import type { Link } from '../model/link';
+import { anchorExists, memoPosition } from '../model/memo';
 import type { Memo } from '../model/memo';
 import type { Region } from '../model/region';
 import type { Rule } from '../model/rule';
@@ -180,12 +181,30 @@ function wireRegion(region: Region, order: number): RawRecord {
     });
 }
 
-function wireMemo(memo: Memo, order: number): RawRecord {
+const WIRE_ANCHOR = {
+    region: 'area',
+    entity: 'table',
+    column: 'field',
+} as const;
+
+/**
+ * A note is written with its place on the canvas (x and y, as the old readers
+ * expect) and, when it has one, what it is attached to.
+ */
+function wireMemo(design: Design, memo: Memo, order: number): RawRecord {
+    const at = memoPosition(design, memo);
+    const anchored = memo.anchor && anchorExists(design, memo.anchor);
     return withExtra(memo.extra, {
         id: memo.id,
         content: memo.body,
-        x: memo.box.x,
-        y: memo.box.y,
+        x: at.x,
+        y: at.y,
+        ...(anchored && memo.anchor
+            ? {
+                  anchorType: WIRE_ANCHOR[memo.anchor.kind],
+                  anchorId: memo.anchor.id,
+              }
+            : {}),
         width: memo.box.width,
         height: memo.box.height,
         color: memo.tint,
@@ -222,7 +241,7 @@ export function serialise(design: Design): RawRecord {
             wireUserType(design.userTypes.byId[id], i)
         ),
         notes: design.memos.order.map((id, i) =>
-            wireMemo(design.memos.byId[id], i)
+            wireMemo(design, design.memos.byId[id], i)
         ),
         createdAt: new Date(design.createdAt).toISOString(),
         updatedAt: new Date(design.updatedAt).toISOString(),

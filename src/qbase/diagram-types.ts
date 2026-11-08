@@ -174,12 +174,26 @@ const area = z.object({
 });
 export type Area = z.infer<typeof area>;
 
+/** What a note is attached to: an area, a table or a column (a table's field). */
+export const NoteAnchorType = valueTable({
+    AREA: 'area',
+    TABLE: 'table',
+    FIELD: 'field',
+});
+export type NoteAnchorType =
+    (typeof NoteAnchorType)[keyof typeof NoteAnchorType];
+
 const note = z.object({
     id,
     content: z.string(),
+    /** with an anchor, x and y are where the note is on the canvas now */
     ...extent,
     color: z.string(),
     order: z.number().optional(),
+    anchorType: z
+        .enum(Object.values(NoteAnchorType) as [NoteAnchorType])
+        .optional(),
+    anchorId: id.optional(),
 });
 export type Note = z.infer<typeof note>;
 

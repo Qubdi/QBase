@@ -14,6 +14,8 @@ import type { Design } from '../model/design';
 import { TABLE_WIDTH } from '../model/entity';
 import type { EntityParts } from '../model/entity-parts';
 import type { Id } from '../model/id';
+import { anchorExists, memosAnchoredTo } from '../model/memo';
+import type { Memo } from '../model/memo';
 import {
     entityOf,
     linksOfColumn,
@@ -102,7 +104,11 @@ function run(design: Design, command: Command): Step {
         case 'entity.insert':
             return insertEntity(design, command);
         case 'entity.remove':
-            return removeEntity(design, command.id);
+            return dropNotes(
+                design,
+                removeEntity(design, command.id),
+                idsOfEntities(design, [command.id])
+            );
         case 'entity.update':
             return updateEntity(design, command.id, command.patch);
         case 'entity.move':
@@ -119,7 +125,11 @@ function run(design: Design, command: Command): Step {
         case 'part.insert':
             return insertPart(design, command);
         case 'part.remove':
-            return removePart(design, command);
+            return dropNotes(
+                design,
+                removePart(design, command),
+                command.part === 'columns' ? new Set([command.id]) : new Set()
+            );
         case 'part.update':
             return updatePart(design, command);
         case 'part.reorder':
@@ -131,7 +141,13 @@ function run(design: Design, command: Command): Step {
         case 'item.insert':
             return insertItemCommand(design, command);
         case 'item.remove':
-            return removeItemCommand(design, command);
+            return dropNotes(
+                design,
+                removeItemCommand(design, command),
+                command.collection === 'regions'
+                    ? new Set([command.id])
+                    : new Set()
+            );
         case 'item.update':
             return updateItemCommand(design, command);
         case 'item.reorder':
@@ -163,12 +179,18 @@ function runGroup(design: Design, commands: Command[], label?: string): Step {
         let end = i + 1;
         while (kind && end < commands.length && commands[end].type === kind)
             end += 1;
-        const count = end - i;
+        const ids =
+            kind === 'entity.remove'
+                ? commands.slice(i, end).map((c) => (c as { id: Id }).id)
+                : [];
+        // tables with notes are removed one by one, so each undo puts back its own notes
+        const withNotes =
+            memosAnchoredTo(current, idsOfEntities(current, ids)).length > 0;
+        const count = withNotes ? 1 : end - i;
         let step: Step;
         if (kind === 'entity.remove' && count > 1) {
             // a run of removals or inserts is done in one pass (deleting,
             // undoing the delete and pasting many tables)
-            const ids = commands.slice(i, end).map((c) => (c as { id: Id }).id);
             step = removeEntities(current, ids);
         } else if (kind === 'entity.insert' && count > 1) {
             step = insertEntities(
@@ -193,6 +215,45 @@ function runGroup(design: Design, commands: Command[], label?: string): Step {
             type: 'group',
             commands: inverses,
             ...(label === undefined ? {} : { label }),
+        },
+        changed: true,
+    };
+}
+
+// ------------------------------------------------------------------ notes
+
+/** The ids of tables and of all their columns: what a note may be attached to. */
+function idsOfEntities(design: Design, ids: readonly Id[]): Set<Id> {
+    const out = new Set<Id>(ids);
+    for (const id of ids)
+        for (const columnId of design.entities.byId[id]?.columnIds ?? [])
+            out.add(columnId);
+    return out;
+}
+
+/**
+ * A note goes with the area, table or column it is attached to, in the same
+ * step; the undo puts the item back first and then its notes.
+ */
+function dropNotes(design: Design, step: Step, gone: ReadonlySet<Id>): Step {
+    if (!step.changed || gone.size === 0) return step;
+    const doomed = memosAnchoredTo(design, gone);
+    if (doomed.length === 0) return step;
+    let memos = step.design.memos;
+    for (const memo of doomed) memos = removeItem(memos, memo.id);
+    return {
+        design: { ...step.design, memos },
+        inverse: {
+            type: 'group',
+            commands: [
+                step.inverse,
+                ...doomed.map((memo): Command => ({
+                    type: 'item.insert',
+                    collection: 'memos',
+                    item: memo,
+                    at: indexOfItem(design.memos, memo.id),
+                })),
+            ],
         },
         changed: true,
     };
@@ -956,6 +1017,11 @@ function insertItemCommand(
     let record = item;
     if (name === 'regions' || name === 'memos')
         checkBox((item as { box?: unknown }).box);
+    if (name === 'memos') {
+        const anchor = (item as Memo).anchor;
+        if (anchor && !anchorExists(design, anchor))
+            fail('not-found', `No ${anchor.kind} ${anchor.id} to attach to`);
+    }
     if (name === 'links') {
         record = normaliseCardinality(item as Link);
         checkLink(design, record as Link);
