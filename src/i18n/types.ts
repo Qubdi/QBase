@@ -4,6 +4,6 @@ export interface LanguageMetadata {
     name: string;
     /** Name in the language's own script. */
     nativeName: string;
-    /** Locale file code, for example `de` or `zh_CN`. */
+    /** Locale file code, for example `de` or `fr`. */
     code: string;
 }

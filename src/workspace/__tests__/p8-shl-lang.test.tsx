@@ -26,10 +26,10 @@ const open = async () => {
 };
 
 describe('language button (SHL-093, SHL-096)', () => {
-    it('SHL-093: lists 7 languages, English first, each with its native name and its English name', async () => {
+    it('SHL-093: lists 5 languages, English first, each with its native name and its English name', async () => {
         const menu = await open();
         const items = within(menu).getAllByRole('radio');
-        expect(items).toHaveLength(7);
+        expect(items).toHaveLength(5);
         expect(items[0].textContent).toBe('English');
         const french = items.find((i) => i.textContent?.includes('Français'))!;
         expect(french.textContent).toBe('Français (French)');

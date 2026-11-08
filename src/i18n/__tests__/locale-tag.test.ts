@@ -9,7 +9,7 @@ describe('localeTag', () => {
     it('cleans codes taken from the system locale', () => {
         expect(localeTag('en-US@posix')).toBe('en-US');
         expect(localeTag('en_US.UTF-8')).toBe('en-US');
-        expect(localeTag('zh_CN')).toBe('zh-CN');
+        expect(localeTag('pt_BR')).toBe('pt-BR');
     });
     it('gives undefined for what Intl cannot use', () => {
         expect(localeTag('not a tag!')).toBeUndefined();

@@ -27,7 +27,6 @@
         de: 'QBase benötigt einen neueren Browser. Bitte aktualisieren Sie auf Safari 16.4 oder neuer oder verwenden Sie eine aktuelle Version von Chrome, Edge oder Firefox.',
         it: 'QBase richiede un browser più recente. Aggiornare a Safari 16.4 o successivo oppure usare una versione aggiornata di Chrome, Edge o Firefox.',
         fr: 'QBase nécessite un navigateur plus récent. Veuillez passer à Safari 16.4 ou plus récent, ou utiliser une version à jour de Chrome, Edge ou Firefox.',
-        zh: 'QBase 需要较新的浏览器。请将 Safari 更新到 16.4 或更高版本，或使用最新版本的 Chrome、Edge 或 Firefox。',
     };
 
     function show() {

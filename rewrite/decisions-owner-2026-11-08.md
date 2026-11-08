@@ -144,3 +144,9 @@ were its steps in the end-to-end flows. Six languages remain besides English: Ru
 Italian, French and Chinese (Simplified and Traditional), seven locales in all. Older entries in
 this file and in `parity-checklist.md` that name Georgian describe the state before this change.
 
+## Chinese removed (owner, 2026-11-08)
+
+Both Chinese locales (`zh_CN`, `zh_TW`) no longer ship, with their "time ago" wording, browser-check
+notice and end-to-end steps. Five languages remain: English, Russian, German, Italian and French
+(English plus four locale files). Older entries that name Chinese describe the state before this change.
+

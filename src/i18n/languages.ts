@@ -30,14 +30,4 @@ export const languages: LanguageMetadata[] = [
         nativeName: 'Français',
         code: 'fr',
     },
-    {
-        name: 'Chinese (Simplified)',
-        nativeName: '简体中文',
-        code: 'zh_CN',
-    },
-    {
-        name: 'Chinese (Traditional)',
-        nativeName: '繁體中文',
-        code: 'zh_TW',
-    },
 ];

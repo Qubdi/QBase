@@ -40,14 +40,7 @@ describe('browser check', () => {
 
     it('speaks the language of the browser and falls back to English', () => {
         const texts: Record<string, string> = {};
-        for (const language of [
-            'ru-RU',
-            'de-AT',
-            'it',
-            'fr-CA',
-            'zh-TW',
-            'ja',
-        ]) {
+        for (const language of ['ru-RU', 'de-AT', 'it', 'fr-CA', 'ja']) {
             reset();
             vi.stubGlobal('ResizeObserver', undefined);
             vi.spyOn(navigator, 'languages', 'get').mockReturnValue([language]);
@@ -61,7 +54,6 @@ describe('browser check', () => {
         expect(texts['de-AT']).toContain('benötigt');
         expect(texts.it).toContain('richiede');
         expect(texts['fr-CA']).toContain('nécessite');
-        expect(texts['zh-TW']).toContain('需要');
         expect(texts.ja).toContain('needs a newer browser');
     });
 

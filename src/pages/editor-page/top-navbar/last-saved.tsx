@@ -7,8 +7,6 @@ import de from 'timeago.js/lib/lang/de';
 import fr from 'timeago.js/lib/lang/fr';
 import it from 'timeago.js/lib/lang/it';
 import ru from 'timeago.js/lib/lang/ru';
-import zhCN from 'timeago.js/lib/lang/zh_CN';
-import zhTW from 'timeago.js/lib/lang/zh_TW';
 import { useDiagram } from '@/qbase/use-diagram';
 import { wordsFunction } from './words-function';
 
@@ -18,13 +16,11 @@ const WORDS = {
     fr,
     it,
     ru,
-    zh_CN: zhCN,
-    zh_TW: zhTW,
 };
 for (const [code, words] of Object.entries(WORDS))
     register(code, wordsFunction(words));
 
-/** The wording set for a language code such as `de`, `pt_BR` or `zh-TW`; English when there is none. */
+/** The wording set for a language code such as `de` or `pt_BR`; English when there is none. */
 const wordsFor = (language: string): string => {
     const code = language.replace('-', '_');
     if (code in WORDS) return code;

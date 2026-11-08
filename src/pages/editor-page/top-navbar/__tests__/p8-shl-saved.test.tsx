@@ -26,7 +26,7 @@ describe('time ago in the save hover text (SHL-030)', () => {
         expect(text('en')).toBe('Saved 5 minutes ago');
     });
 
-    it.each(['fr', 'de', 'it', 'ru', 'zh-CN', 'zh-TW'])(
+    it.each(['fr', 'de', 'it', 'ru'])(
         '%s: the "time ago" words are in that language',
         (lang) => {
             const label = text(lang);

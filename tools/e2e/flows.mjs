@@ -1227,8 +1227,6 @@ await flow('F7', 'settings persist across reload; language', {}, async () => {
                 ['Italiano (Italian)', 'Diagramma', 'it'],
                 ['Русский (Russian)', 'Диаграмма', 'ru'],
                 ['Français (French)', 'Diagramme', 'fr'],
-                ['简体中文 (Chinese (Simplified))', '图表', 'zh'],
-                ['繁體中文 (Chinese (Traditional))', '圖表', 'zh'],
                 ['Deutsch (German)', 'Diagramm', 'de'],
             ];
             for (const [name, word, lang] of languages) {

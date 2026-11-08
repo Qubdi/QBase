@@ -81,9 +81,7 @@ describe('copying text (EDT-272)', () => {
         const codes = Object.keys(files).map((file) =>
             file.replace(/^.*\//, '').replace(/\.ts$/, '')
         );
-        expect(codes.sort()).toEqual(
-            ['de', 'fr', 'it', 'ru', 'zh_CN', 'zh_TW'].sort()
-        );
+        expect(codes.sort()).toEqual(['de', 'fr', 'it', 'ru'].sort());
         for (const [file, load] of Object.entries(files)) {
             const code = file.replace(/^.*\//, '').replace(/\.ts$/, '');
             const block = (await load())[code].translation.editor.common
