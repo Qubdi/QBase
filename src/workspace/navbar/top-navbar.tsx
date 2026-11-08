@@ -103,7 +103,7 @@ export const MobileNavbar: React.FC<MobileNavbarProps> = ({
                 >
                     <MenuIcon />
                 </Button>
-                <Logo glyph={false} className="text-base font-semibold" />
+                <Logo className="text-base font-semibold" />
             </div>
             <Slot
                 name="navbar-right"
