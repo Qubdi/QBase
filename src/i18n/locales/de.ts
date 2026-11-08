@@ -205,6 +205,7 @@ export const de = {
                     import: 'Aus Text erstellen',
                     failed: 'Das Diagramm konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
                 },
+                examplesSize: '{{tables}} Tabellen · {{areas}} Bereiche',
                 examples: {
                     clinic: 'Patienten, Ärzte und Fachgebiete, mit Terminen und den dabei verschriebenen Medikamenten.',
                     bookshop:

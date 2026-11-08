@@ -200,6 +200,7 @@ export const zh_TW = {
                     import: '從文字建立',
                     failed: '無法建立圖表。請再試一次。',
                 },
+                examplesSize: '{{tables}} 張表 · {{areas}} 個區域',
                 examples: {
                     clinic: '病患、醫師和專科，包含預約以及預約時開立的藥品。',
                     bookshop:

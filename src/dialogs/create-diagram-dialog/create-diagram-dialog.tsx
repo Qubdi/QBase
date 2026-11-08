@@ -19,7 +19,7 @@ import {
 import { useDesignList } from '@/features/designs/use-design-list';
 import { ExamplesGrid } from '@/features/examples/examples-grid';
 import type { Example } from '@/features/examples/examples';
-import { analyzeImport } from '@/features/import/analyze-import';
+import { buildExample } from '@/features/examples/build-example';
 import { ImportHelp } from '@/features/import/import-help';
 import { ImportBox } from '@/features/import/import-box';
 import type { ImportBoxState } from '@/features/import/import-box';
@@ -98,14 +98,10 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
 
     const openExample = (example: Example) =>
         finish(async () => {
-            const result = await analyzeImport(example.text, {
-                method: example.format,
-                databaseType: example.databaseType,
-                diagramName: example.name,
-            });
-            if (!result.design || result.blocked) throw new Error('example');
-            await storeNewDesign(adapter, result.design);
-            return result.design;
+            const built = await buildExample(example.domain);
+            if ('problem' in built) throw new Error(built.problem);
+            await storeNewDesign(adapter, built.design);
+            return built.design;
         });
 
     const canImport =

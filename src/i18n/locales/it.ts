@@ -206,6 +206,7 @@ export const it = {
                     import: 'Genera dal testo',
                     failed: 'Non è stato possibile creare il diagramma. Riprovare.',
                 },
+                examplesSize: '{{tables}} tabelle · {{areas}} aree',
                 examples: {
                     clinic: 'Pazienti, medici e specialità, con appuntamenti e farmaci prescritti.',
                     bookshop:

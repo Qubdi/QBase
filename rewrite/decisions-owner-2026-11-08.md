@@ -90,8 +90,10 @@ same reason; the stray `diagramId` key (DAT-089) and the unused build variables 
 **Changed later the same day (owner):** the database logos are back, copied as image files from the
 main branch, with the icons of the old editor, so the interface looks the same; the code that shows
 them is new (see NOTICE). The ChartDB examples and templates pages stay out. In their place QBase has
-its own examples, one per database (clinic, bookshop, library, habit tracker, hotel, airline, delivery,
-web analytics), written for this project and opened from "Check Examples" in the New dialog.
+its own examples, one per database (a hospital network, an online bookshop, a library network, a
+wellness app, a hotel chain, airline operations, a delivery network, web analytics), written for this
+project. Each has 43 to 46 tables in 7 to 8 areas, with sticky notes and descriptions on every table
+and most columns. They open from "Check Examples" in the New dialog and from Actions, Examples.
 
 **Not yet decided:** the "change" rows of the parity checklist that improved behaviour (for example
 undo shortcuts inside text boxes, warning on duplicate table names, the copy toast naming the

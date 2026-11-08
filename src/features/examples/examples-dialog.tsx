@@ -13,7 +13,7 @@ import {
 import { useWorkspace } from '@/components/qubdi/workspace-context';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { storeNewDesign } from '@/features/designs/design-service';
-import { analyzeImport } from '@/features/import/analyze-import';
+import { buildExample } from './build-example';
 import { designToDiagram } from '@/qbase/diagram-convert';
 import { projectDiagramPath } from '@/lib/qubdi/project-path';
 import { useStorageAdapter } from '@/qbase/storage-context';
@@ -42,14 +42,11 @@ export const ExamplesDialog: React.FC<{ onClose: () => void }> = ({
         setBusy(true);
         setProblem(undefined);
         try {
-            const result = await analyzeImport(example.text, {
-                method: example.format,
-                databaseType: example.databaseType,
-                diagramName: example.name,
-            });
-            if (!result.design || result.blocked) throw new Error('example');
+            const built = await buildExample(example.domain);
+            if ('problem' in built) throw new Error(built.problem);
+            const design = built.design;
             if (workspace) {
-                const diagram = designToDiagram(result.design);
+                const diagram = designToDiagram(design);
                 await addDiagram({ diagram });
                 try {
                     // nothing lives outside a project: create it there right away
@@ -65,8 +62,8 @@ export const ExamplesDialog: React.FC<{ onClose: () => void }> = ({
                     throw error;
                 }
             } else {
-                await storeNewDesign(adapter, result.design);
-                navigate(`/diagrams/${result.design.id}`);
+                await storeNewDesign(adapter, design);
+                navigate(`/diagrams/${design.id}`);
             }
             onClose();
         } catch {

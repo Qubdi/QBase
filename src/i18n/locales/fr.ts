@@ -206,6 +206,7 @@ export const fr = {
                     import: 'Créer à partir du texte',
                     failed: "Le diagramme n'a pas pu être créé. Veuillez réessayer.",
                 },
+                examplesSize: '{{tables}} tables · {{areas}} zones',
                 examples: {
                     clinic: 'Patients, médecins et spécialités, avec les rendez-vous et les médicaments prescrits lors de ceux-ci.',
                     bookshop:

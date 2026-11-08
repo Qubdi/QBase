@@ -24,7 +24,7 @@ describe('the examples dialog', () => {
         );
         const [stored] = await adapter.list();
         expect(stored.databaseType).toBe('postgresql');
-        expect(stored.name).toBe('Clinic appointments');
+        expect(stored.name).toBe('Hospital network');
         await waitFor(() => expect(onClose).toHaveBeenCalled());
     });
 

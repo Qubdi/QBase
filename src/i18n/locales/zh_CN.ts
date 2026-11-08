@@ -201,6 +201,7 @@ export const zh_CN = {
                     import: '从文本生成',
                     failed: '无法创建图表。请重试。',
                 },
+                examplesSize: '{{tables}} 张表 · {{areas}} 个区域',
                 examples: {
                     clinic: '患者、医生和专科，包含预约以及预约时开具的药品。',
                     bookshop:
