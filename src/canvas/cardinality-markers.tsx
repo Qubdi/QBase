@@ -1,64 +1,50 @@
 import React from 'react';
 import type { Cardinality } from '@/core/model/link';
-import { markerId, TONE_STROKE } from './line-style';
-import type { LineTone } from './line-style';
+import { cardinalityLabel } from './line-style';
 
-/** Crow's-foot ends: a bar for "one", three prongs for "many" (EDT-173). */
-function End({
+/**
+ * A filled circle with "1" or "N" at the end of a line (EDT-173), drawn as
+ * the old editor does: radius 5, a thin halo in the page colour, the letter in
+ * 6 px type. `dir` is the side of the card the line leaves from (1 right,
+ * -1 left); the circle sits just outside the card on the line.
+ */
+export function EndMarker({
+    x,
+    y,
+    dir,
     cardinality,
-    tone,
+    fill,
 }: {
+    x: number;
+    y: number;
+    dir: 1 | -1;
     cardinality: Cardinality;
-    tone: LineTone;
+    fill: string;
 }) {
+    // the marker box scales with the 2 px line, so the 5 unit circle is 10 px
+    const cx = x + dir * 12;
     return (
-        <marker
-            id={markerId(cardinality, tone)}
-            markerWidth="14"
-            markerHeight="14"
-            viewBox="0 0 14 14"
-            refX="13"
-            refY="7"
-            orient="auto-start-reverse"
-            markerUnits="userSpaceOnUse"
-        >
-            <path
-                d={
-                    cardinality === 'one'
-                        ? 'M8 2 V12'
-                        : 'M1 7 L13 1 M1 7 L13 13 M1 7 H13'
-                }
-                fill="none"
-                stroke={TONE_STROKE[tone]}
-                strokeWidth="1.6"
+        <g data-marker={cardinality} pointerEvents="none">
+            <circle
+                cx={cx}
+                cy={y}
+                r={10}
+                fill={fill}
+                stroke="hsl(var(--background))"
+                strokeWidth={1}
             />
-        </marker>
-    );
-}
-
-/** The marker definitions every line refers to; rendered once per canvas. */
-export function MarkerDefs() {
-    return (
-        <svg
-            aria-hidden
-            width="0"
-            height="0"
-            style={{ position: 'absolute' }}
-            data-testid="marker-defs"
-        >
-            <defs>
-                {(['one', 'many'] as const).flatMap((cardinality) =>
-                    (['plain', 'picked', 'added', 'removed'] as const).map(
-                        (tone) => (
-                            <End
-                                key={`${cardinality}-${tone}`}
-                                cardinality={cardinality}
-                                tone={tone}
-                            />
-                        )
-                    )
-                )}
-            </defs>
-        </svg>
+            <text
+                x={cx}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={12}
+                fontWeight={600}
+                fill="#fff"
+                style={{ userSelect: 'none' }}
+            >
+                {cardinalityLabel(cardinality)}
+            </text>
+        </g>
     );
 }

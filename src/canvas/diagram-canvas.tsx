@@ -43,8 +43,8 @@ import {
     MINIMAP_BACKGROUND,
     MINIMAP_MASK,
     MINIMAP_WINDOW,
-    miniFill,
-    miniStroke,
+    MINIMAP_NODE,
+    MINIMAP_NODE_STROKE,
 } from './minimap-colors';
 import { CornerTools } from './corner-tools';
 import { filterHidesSomething } from './filter-state';
@@ -55,7 +55,6 @@ import type { MenuTarget } from './menu-model';
 import { runMenuAction } from './menu-actions';
 import { PointerMenu } from './pointer-menu';
 import { useLongPress } from './use-long-press';
-import { MarkerDefs } from './cardinality-markers';
 import { commitQuickLink, suggestTarget } from './link-draft';
 import { LinkDraftLayer } from './link-draft-layer';
 import { HANDLES_MIN_ZOOM } from './field-row';
@@ -81,7 +80,7 @@ import type {
 } from './flow-model';
 import {
     anyOnScreen,
-    overlappingIds,
+    overlapCounts as countOverlaps,
     resizedEnough,
     revealShift,
     sizeFor,
@@ -199,10 +198,10 @@ function Surface({
     const selected = useMemo(() => new Set(selection), [selection]);
     const none = useMemo(() => new Set<Id>(), []);
 
-    // tables whose boxes touch (EDT-038, EDT-039); the toolbar flashes them
+    // tables whose boxes touch (EDT-038, EDT-039); the toolbar highlights them
     const overlapNow = useMemo(
         () =>
-            overlappingIds(
+            countOverlaps(
                 [...visible].map((id) => {
                     const entity = design.entities.byId[id];
                     return {
@@ -217,13 +216,32 @@ function Surface({
             ),
         [design.entities, visible, sizes]
     );
-    // the same members give the same set, so a new measurement alone does not
+    // the same members give the same maps, so a new measurement alone does not
     // rebuild every node
-    const overlapKey = [...overlapNow].sort().join('|');
-    const overlapping = useMemo(
-        () => new Set(overlapKey ? overlapKey.split('|') : []),
+    const overlapKey = [...overlapNow]
+        .map(([id, n]) => `${id}:${n}`)
+        .sort()
+        .join('|');
+    const overlapCounts = useMemo(
+        () =>
+            new Map<Id, number>(
+                overlapKey
+                    ? overlapKey.split('|').map((pair) => {
+                          const at = pair.lastIndexOf(':');
+                          return [
+                              pair.slice(0, at),
+                              Number(pair.slice(at + 1)),
+                          ] as [Id, number];
+                      })
+                    : []
+            ),
         [overlapKey]
     );
+    const overlapping = useMemo(
+        () => new Set<Id>(overlapCounts.keys()),
+        [overlapCounts]
+    );
+    const [highlightOverlaps, setHighlightOverlaps] = useState(false);
     const [flashing, setFlashing] = useState<ReadonlySet<Id>>(none);
     const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
     useEffect(() => () => clearTimeout(flashTimer.current), []);
@@ -241,6 +259,8 @@ function Surface({
             live,
             flashing,
             overlapping,
+            overlapCounts,
+            highlightOverlaps: highlightOverlaps || prefs.outlineOverlaps,
             sizes,
             outlineOverlaps: prefs.outlineOverlaps,
             editable,
@@ -253,6 +273,8 @@ function Surface({
             live,
             flashing,
             overlapping,
+            overlapCounts,
+            highlightOverlaps,
             sizes,
             prefs.outlineOverlaps,
             editable,
@@ -983,7 +1005,6 @@ function Surface({
                 >
                     <ChromeStyle />
                     {dependencyDrag ? <DropTargetStyle /> : null}
-                    <MarkerDefs />
                     <div
                         role="status"
                         aria-live="polite"
@@ -1056,31 +1077,32 @@ function Surface({
                             storeApi.getState().setZoom(viewport.zoom)
                         }
                         ariaLabelConfig={ariaLabels}
-                        attributionPosition="bottom-right"
+                        proOptions={{ hideAttribution: true }}
                         className={isMacPlatform() ? 'mac' : undefined}
                     >
                         <Background
                             variant={BackgroundVariant.Dots}
                             gap={16}
                             size={1.2}
+                            color="hsl(var(--muted-foreground) / 0.35)"
                         />
                         {prefs.showMiniMap ? (
                             <MiniMap
                                 pannable
                                 zoomable
                                 className="qb-minimap"
-                                style={{ background: MINIMAP_BACKGROUND }}
+                                style={{
+                                    background: MINIMAP_BACKGROUND,
+                                    width: 100,
+                                    height: 100,
+                                }}
                                 maskColor={MINIMAP_MASK}
                                 maskStrokeColor={MINIMAP_WINDOW}
-                                maskStrokeWidth={2}
-                                nodeStrokeWidth={2}
-                                nodeBorderRadius={3}
-                                nodeColor={(node) =>
-                                    miniFill(design, node.id, node.type)
-                                }
-                                nodeStrokeColor={(node) =>
-                                    miniStroke(design, node.id, node.type)
-                                }
+                                maskStrokeWidth={0}
+                                nodeStrokeWidth={0}
+                                nodeBorderRadius={5}
+                                nodeColor={MINIMAP_NODE}
+                                nodeStrokeColor={MINIMAP_NODE_STROKE}
                             />
                         ) : null}
                     </ReactFlow>
@@ -1089,13 +1111,18 @@ function Surface({
                         snapOn={snapOn}
                         onSnap={() => setSnapOn((on) => !on)}
                         overlapping={overlapping.size > 0}
-                        onFlashOverlaps={flashOverlaps}
+                        overlapHighlight={highlightOverlaps}
+                        onOverlapHighlight={() => {
+                            if (!highlightOverlaps) flashOverlaps();
+                            setHighlightOverlaps(!highlightOverlaps);
+                        }}
                         highlight={hooks?.highlight}
                     />
                     <TypeLegend />
                     {lost ? (
                         <button
                             type="button"
+                            data-testid="show-all-pill"
                             className="qb-pill rounded-full border bg-card px-3 py-1 text-xs shadow-md hover:bg-muted"
                             onClick={() => controls.fit()}
                         >
@@ -1189,6 +1216,7 @@ function Surface({
                             </p>
                             <button
                                 type="button"
+                                data-testid="show-all-hidden"
                                 className="rounded-md border bg-card px-3 py-1.5 text-sm hover:bg-muted"
                                 onClick={() =>
                                     storeApi.getState().setFilter({})

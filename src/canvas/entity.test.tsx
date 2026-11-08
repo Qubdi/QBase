@@ -148,7 +148,7 @@ describe('entity card', () => {
         };
         renderCanvas(withNote);
         const card = screen.getByTestId(`entity-${users}`);
-        expect(within(card).getByText('users')).toHaveClass('font-bold');
+        expect(within(card).getByText('users')).toHaveClass('font-semibold');
         expect(within(card).getByText('public · Accounts')).toBeInTheDocument();
         expect(within(card).getByTitle('1 field')).toHaveTextContent('1');
         expect(within(card).getByTestId(`swatch-${users}`)).toHaveAttribute(
@@ -268,7 +268,7 @@ describe('entity card', () => {
         ).toBeInTheDocument();
     });
 
-    it('EDT-083: Show more expands a long table and the state is saved on the entity', () => {
+    it('EDT-083: Show More expands a long table and the state is saved on the entity', () => {
         const { design, users } = shop();
         const long = withColumns(design, users, 14);
         const { store } = renderCanvas(long);
@@ -276,14 +276,14 @@ describe('entity card', () => {
         expect(card.querySelectorAll('[data-testid^="field-"]')).toHaveLength(
             10
         );
-        fireEvent.click(within(card).getByText('Show more'));
+        fireEvent.click(within(card).getByText('Show More'));
         expect(store.getState().design.entities.byId[users].expanded).toBe(
             true
         );
         expect(card.querySelectorAll('[data-testid^="field-"]')).toHaveLength(
             15
         );
-        expect(within(card).getByText('Show less')).toBeInTheDocument();
+        expect(within(card).getByText('Show Less')).toBeInTheDocument();
         // the expansion is a view setting, not an undo step
         expect(store.getState().history.undo).toHaveLength(0);
     });
@@ -321,20 +321,37 @@ describe('entity card', () => {
         expect(
             card.querySelectorAll('.react-flow__handle.connectable')
         ).toHaveLength(0);
-        expect(within(card).queryByLabelText('Open in side panel')).toBeNull();
+        expect(within(card).queryByLabelText('Edit Table')).toBeNull();
     });
 
-    it('EDT-079: the header buttons open the table in the side panel and toggle the width', () => {
+    it('EDT-079: the header buttons focus the table and fold or unfold its rows', () => {
         const { design, users } = shop();
         const { store } = renderCanvas(design);
         const card = screen.getByTestId(`entity-${users}`);
-        fireEvent.click(within(card).getByLabelText('Open in side panel'));
-        expect(store.getState().ui.panel.expandedEntityId).toBe(users);
-        expect(store.getState().ui.panel.section).toBe('tables');
-        fireEvent.click(within(card).getByLabelText('Make wider'));
-        expect(store.getState().design.entities.byId[users].width).toBe(450);
-        fireEvent.click(within(card).getByLabelText('Make narrower'));
-        expect(store.getState().design.entities.byId[users].width).toBe(224);
+        fireEvent.click(within(card).getByLabelText('Focus on the canvas'));
+        expect(store.getState().ui.focus?.entityId).toBe(users);
+        fireEvent.click(within(card).getByLabelText('Show More'));
+        expect(store.getState().design.entities.byId[users].expanded).toBe(
+            true
+        );
+        fireEvent.click(within(card).getByLabelText('Show Less'));
+        expect(store.getState().design.entities.byId[users].expanded).toBe(
+            false
+        );
+    });
+
+    it('EDT-079: the pencil of a field row opens the edit form of the table', () => {
+        const { design, users } = shop();
+        renderCanvas(design, {
+            canvas: {
+                hooks: {
+                    renderEntityEditor: () => <p>the form</p>,
+                },
+            },
+        });
+        const card = screen.getByTestId(`entity-${users}`);
+        fireEvent.click(within(card).getAllByLabelText('Edit Table')[0]);
+        expect(screen.getByText('the form')).toBeInTheDocument();
     });
 
     it('EDT-116: hovering a row shows a card with the full details and the other end of links', async () => {

@@ -28,6 +28,8 @@ export type EntityNodeData = {
     flashing: boolean;
     /** carries the quiet overlap outline */
     outlined: boolean;
+    /** how many other tables this one overlaps while the overlap highlight is on */
+    overlapCount: number;
     /** how a diff preview marks this table */
     mark?: DiffMark;
     /** the name before a renamed table's new one */
@@ -83,6 +85,10 @@ export interface FlowInput {
     live: LiveShapes;
     flashing: ReadonlySet<Id>;
     overlapping: ReadonlySet<Id>;
+    /** how many tables each overlapping table touches (none counted when absent) */
+    overlapCounts?: ReadonlyMap<Id, number>;
+    /** the overlap highlight (toggle or View menu) is on; off when absent */
+    highlightOverlaps?: boolean;
     /** the measured size of each drawn table, as reported by the canvas */
     sizes: Readonly<Record<Id, Size>>;
     outlineOverlaps: boolean;
@@ -249,7 +255,7 @@ export function buildNodes(
                 ariaLabel: region.label,
                 selected: selection.has(id),
                 draggable: input.editable,
-                zIndex: -1,
+                zIndex: -10,
             })
         );
     }
@@ -268,7 +274,7 @@ export function buildNodes(
                 ariaLabel: memo.body.trim().slice(0, 60) || undefined,
                 selected: selection.has(id),
                 draggable: input.editable,
-                zIndex: 0,
+                zIndex: 50,
             })
         );
     }
@@ -294,6 +300,9 @@ export function buildNodes(
                     outlined:
                         input.outlineOverlaps &&
                         input.overlapping.has(entity.id),
+                    overlapCount: input.highlightOverlaps
+                        ? (input.overlapCounts?.get(entity.id) ?? 0)
+                        : 0,
                     mark: input.diff?.tables[entity.id],
                     renamedFrom: input.diff?.renames?.[entity.id],
                 },

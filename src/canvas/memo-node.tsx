@@ -1,4 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
+import { Pencil } from 'lucide-react';
+import { ColorPicker } from '@/components/color-picker/color-picker';
 import { NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
@@ -46,10 +48,9 @@ export const MemoCard = memo(function MemoCard({
             data-testid={`memo-${id}`}
             data-selected={selected}
             className={cn(
-                'flex h-full w-full flex-col overflow-hidden rounded-md border shadow-sm',
+                'group/note relative flex h-full w-full flex-col overflow-hidden rounded-md border border-slate-500 dark:border-slate-600',
                 selected && 'ring-2 ring-primary'
             )}
-            style={{ borderColor: memo.tint }}
         >
             {selected && surface.editable ? (
                 <NodeResizer
@@ -68,29 +69,37 @@ export const MemoCard = memo(function MemoCard({
                     onResizeEnd={() => surface.resizeEnd()}
                 />
             ) : null}
-            <div
-                className="flex h-6 shrink-0 items-center justify-end px-1"
-                style={{ background: memo.tint }}
-            >
-                {surface.editable ? (
-                    <input
-                        type="color"
-                        aria-label={t('canvas.memo.colour')}
-                        className="nodrag h-4 w-4 cursor-pointer border-0 bg-transparent p-0"
-                        value={asHex(memo.tint)}
-                        onChange={(event) =>
+            <div className="h-2 shrink-0" style={{ background: memo.tint }} />
+            {surface.editable && !editing ? (
+                <div className="nodrag absolute right-1 top-3 z-10 flex items-center gap-0.5 rounded bg-white/90 p-1 opacity-0 shadow-md transition-opacity focus-within:opacity-100 group-hover/note:opacity-100 pointer-coarse:opacity-100 dark:bg-slate-800/90">
+                    <button
+                        type="button"
+                        aria-label={t('canvas.memo.editNote')}
+                        title={t('canvas.memo.editNote')}
+                        className="flex h-7 w-7 items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+                        onClick={() => {
+                            done.current = false;
+                            setDraft(memo.body);
+                        }}
+                    >
+                        <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <ColorPicker
+                        color={asHex(memo.tint)}
+                        popoverOnMouseDown={(event) => event.stopPropagation()}
+                        onChange={(next) =>
                             storeApi.getState().edit({
                                 type: 'item.update',
                                 collection: 'memos',
                                 id,
-                                patch: { tint: event.target.value },
+                                patch: { tint: next },
                             })
                         }
                     />
-                ) : null}
-            </div>
+                </div>
+            ) : null}
             <div
-                className="min-h-0 flex-1 p-2 text-xs"
+                className="relative min-h-0 flex-1 p-2 text-sm leading-[22.75px] text-gray-700 dark:text-gray-300"
                 style={{
                     background: memoPale(memo.tint),
                 }}
@@ -119,10 +128,15 @@ export const MemoCard = memo(function MemoCard({
                         {memo.body}
                     </p>
                 ) : (
-                    <p className="text-muted-foreground/60">
+                    <p className="italic text-gray-500">
                         {t('canvas.memo.placeholder')}
                     </p>
                 )}
+                <span
+                    aria-hidden
+                    className="pointer-events-none absolute bottom-0 right-0 h-[30px] w-[30px] bg-black/10 dark:bg-white/10"
+                    style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }}
+                />
             </div>
         </div>
     );

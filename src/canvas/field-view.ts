@@ -26,15 +26,27 @@ export function typeKind(typeName: string): TypeKind {
     return 'text';
 }
 
-/** Tailwind classes for a chip of that kind; light and dark share one set. */
+/**
+ * Tailwind classes for a chip of that kind. Text colours are the 700 shade in
+ * the light theme and the 300 shade in the dark one; the background is the 500
+ * shade at 10 %. `linked` rows (a selected line ends on them) use a green tint.
+ */
 export const KIND_CLASSES: Record<TypeKind, string> = {
-    text: 'bg-teal-500/15 text-teal-700 dark:text-teal-300',
-    number: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
-    moment: 'bg-orange-500/15 text-orange-700 dark:text-orange-300',
-    identifier: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
-    flag: 'bg-pink-500/15 text-pink-700 dark:text-pink-300',
-    document: 'bg-lime-500/15 text-lime-700 dark:text-lime-300',
+    text: 'bg-teal-500/10 text-teal-700 dark:text-teal-300',
+    number: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
+    moment: 'bg-orange-500/10 text-orange-700 dark:text-orange-300',
+    identifier: 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
+    flag: 'bg-pink-500/10 text-pink-700 dark:text-pink-300',
+    document: 'bg-lime-500/10 text-lime-800 dark:text-lime-300',
 };
+
+/** The orange tint of a chip on a table that overlaps another (Highlight Overlapping Tables). */
+export const OVERLAP_CHIP_CLASS =
+    'bg-orange-500/10 text-orange-700 dark:text-orange-300';
+
+/** The green tint of a chip on a field a selected line ends on. */
+export const LINKED_CHIP_CLASS =
+    'bg-green-500/10 text-green-800 dark:text-green-300';
 
 /** The six tints, in the order the legend lists them (EDT-045). */
 export const LEGEND_KINDS: readonly TypeKind[] = [
@@ -47,20 +59,29 @@ export const LEGEND_KINDS: readonly TypeKind[] = [
 ];
 
 /**
- * The text in a type chip (EDT-113, EDT-114): the first word of the type name,
- * then size, precision and scale, then `[]` for an array. With attributes
- * hidden only the name and an array mark remain.
+ * The text in a type chip (EDT-113, EDT-114), a short form like the chips of
+ * the old editor: the first word of the type name, `integer` as `int`, a
+ * `varchar` or `character` without a size as `char`, a custom enum type as
+ * `text`; then size, precision and scale, then `[]` for an array. With
+ * attributes hidden only the name and an array mark remain.
  */
 export function chipText(
     column: Column,
     databaseType: DatabaseType,
-    showAttributes: boolean
+    showAttributes: boolean,
+    enumNames?: ReadonlySet<string>
 ): string {
-    const word = column.type.name.trim().split(/\s+/)[0] ?? '';
+    const first = column.type.name.trim().split(/\s+/)[0] ?? '';
+    const lower = first.toLowerCase();
+    const suffix = sizeSuffix(column);
     const array = arrayApplies(column, databaseType) ? '[]' : '';
-    return showAttributes
-        ? `${word}${sizeSuffix(column)}${array}`
-        : word + array;
+    let word = first;
+    if (enumNames?.has(column.type.name) || enumNames?.has(column.type.id))
+        word = 'text';
+    else if (lower === 'integer' || lower === 'int4') word = 'int';
+    else if ((lower === 'varchar' || lower === 'character') && !suffix)
+        word = 'char';
+    return showAttributes ? `${word}${suffix}${array}` : word + array;
 }
 
 /**

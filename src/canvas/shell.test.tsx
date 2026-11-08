@@ -111,11 +111,11 @@ describe('canvas shell', () => {
         expect(held.snapGrid).toEqual([20, 20]);
     });
 
-    it('EDT-069: when the filter hides every table a message offers Show all', () => {
+    it('EDT-069: when the filter hides every table a message offers Show All', () => {
         const { store } = renderCanvas(withTables(['a', 'b']));
         act(() => store.getState().setFilter({ tableIds: [] }));
         expect(screen.getByText('All tables are hidden')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+        fireEvent.click(screen.getByTestId('show-all-hidden'));
         expect(store.getState().ui.filter).toEqual({});
         expect(screen.queryByText('All tables are hidden')).toBeNull();
     });

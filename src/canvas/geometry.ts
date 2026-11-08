@@ -65,6 +65,22 @@ export function overlappingIds(
     return hit;
 }
 
+/** How many other boxes each overlapping box touches (boxes touching nothing are left out). */
+export function overlapCounts(
+    boxes: ReadonlyArray<{ id: Id; box: Box }>
+): Map<Id, number> {
+    const counts = new Map<Id, number>();
+    for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+            if (intersects(boxes[i].box, boxes[j].box)) {
+                counts.set(boxes[i].id, (counts.get(boxes[i].id) ?? 0) + 1);
+                counts.set(boxes[j].id, (counts.get(boxes[j].id) ?? 0) + 1);
+            }
+        }
+    }
+    return counts;
+}
+
 export function clampWidth(width: number): number {
     return Math.min(TABLE_WIDTH.max, Math.max(TABLE_WIDTH.min, width));
 }

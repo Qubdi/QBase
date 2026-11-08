@@ -17,7 +17,7 @@ vi.mock('./use-viewport', async (original) => ({
 }));
 
 describe('p8 EDT-022, EDT-025', () => {
-    it('EDT-022: Show all animates for half a second and Mod+0 fits the view', () => {
+    it('EDT-022: Show All animates for half a second and Mod+0 fits the view', () => {
         expect(FIT_MS).toBe(500);
         camera.fit.mockClear();
         renderCanvas(shop().design);

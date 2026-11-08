@@ -11,10 +11,12 @@ import {
     ArrowRight,
     ChevronDown,
     ChevronUp,
+    ChevronsLeftRight,
+    CircleDotDashed,
     Minus,
-    MoveHorizontal,
     Pencil,
     Plus,
+    Table2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { TABLE_WIDTH } from '@/core/model/entity';
@@ -26,7 +28,6 @@ import { linkRoles, shownColumns, subtitleParts } from './field-view';
 import { useShown } from './diff-marks';
 import { dependencyHandleId } from './flow-model';
 import type { EntityNode } from './flow-model';
-import { toggledWidth } from './geometry';
 import { useCanvasHooks } from './hooks';
 import { useSurface } from './surface-context';
 import { headerWash } from './tints';
@@ -44,19 +45,22 @@ const MARK_BADGE = {
 
 /**
  * The header buttons are always in the page so the keyboard reaches them; they
- * are drawn only on hover, focus, selection and on touch screens.
+ * take the place of the field count on hover, focus, selection and on touch
+ * screens.
  */
 const ACTIONS_CLASS = [
-    'nodrag absolute right-2 flex items-center gap-0.5 opacity-0',
+    'nodrag absolute right-3 flex items-center gap-0.5 opacity-0',
     'group-hover:static group-hover:opacity-100',
     'group-focus-within:static group-focus-within:opacity-100',
-    'group-data-[selected=true]:static group-data-[selected=true]:opacity-100',
     'pointer-coarse:static pointer-coarse:opacity-100',
 ].join(' ');
 
+const ICON_BUTTON =
+    'flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:bg-slate-700/70 pointer-coarse:h-8 pointer-coarse:w-8';
+
 // shown on hover, focus, selection and on touch screens, like a field's dots
 const DEPENDENCY_DOT = [
-    '!h-2.5 !w-2.5 !border-primary !bg-background opacity-0 transition-opacity',
+    '!h-3 !w-3 !border !border-solid !border-teal-600 !bg-white opacity-0 transition-opacity',
     'group-hover:opacity-100 group-focus-within:opacity-100',
     'group-data-[selected=true]:opacity-100 pointer-coarse:opacity-100',
     'pointer-coarse:!h-3.5 pointer-coarse:!w-3.5',
@@ -83,6 +87,32 @@ export const EntityCard = memo(function EntityCard({
     }, sameList) as Column[];
     const links = useShown((d) => d.links);
     const databaseType = useShown((d) => d.databaseType);
+    const enumKey = useShown((d) =>
+        d.userTypes.order
+            .map((tid) => d.userTypes.byId[tid])
+            .filter((u) => u?.kind === 'enum')
+            .map((u) => u.name)
+            .join('\u0000')
+    );
+    const enumNames = useMemo(
+        () => new Set(enumKey ? enumKey.split('\u0000') : []),
+        [enumKey]
+    );
+    // the columns a selected line ends on get the soft teal row (EDT-174)
+    const endsKey = useEditorStore((s) => {
+        const ends: string[] = [];
+        for (const sel of s.ui.selection) {
+            const link = s.design.links.byId[sel];
+            if (!link) continue;
+            if (link.sourceEntityId === id) ends.push(link.sourceColumnId);
+            if (link.targetEntityId === id) ends.push(link.targetColumnId);
+        }
+        return ends.join('|');
+    });
+    const linkEnds = useMemo(
+        () => new Set(endsKey ? endsKey.split('|') : []),
+        [endsKey]
+    );
     const highlightType = useEditorStore((s) =>
         s.ui.highlightedTypeId
             ? s.design.userTypes.byId[s.ui.highlightedTypeId]?.name
@@ -98,6 +128,7 @@ export const EntityCard = memo(function EntityCard({
             unique: t('canvas.entity.unique'),
             nullable: t('canvas.entity.nullable'),
             required: t('canvas.entity.required'),
+            edit: t('canvas.entity.edit'),
         }),
         [t]
     );
@@ -153,13 +184,19 @@ export const EntityCard = memo(function EntityCard({
         else setLocalExpanded(!expanded);
     };
 
+    const expandLabel = expanded
+        ? t('canvas.entity.showLess')
+        : t('canvas.entity.showMore');
+
     return (
         <div
             data-testid={`entity-${id}`}
             data-selected={selected}
             className={cn(
-                'group relative overflow-visible rounded-lg border bg-card text-card-foreground shadow-sm transition-opacity',
-                selected && 'ring-2 ring-primary',
+                'group relative overflow-visible rounded-xl border bg-card text-card-foreground shadow-[0_1px_2px_0_rgb(0_0_0/0.05)] transition-[opacity,filter] duration-200',
+                (selected || surface.linkSourceId === id) &&
+                    'border-primary ring-2 ring-primary/25',
+                'hover:border-primary hover:ring-2 hover:ring-primary/25',
                 data.dimmed && 'opacity-40 grayscale',
                 data.mark === 'added' && 'ring-2 ring-green-500',
                 data.mark === 'removed' && 'ring-2 ring-red-500',
@@ -221,7 +258,7 @@ export const EntityCard = memo(function EntityCard({
             ))}
 
             <header
-                className="flex items-center gap-2 rounded-t-lg border-b px-3 py-2"
+                className="relative flex h-12 items-center gap-2.5 rounded-t-[11px] px-3"
                 style={{
                     background: headerWash(entity.color),
                 }}
@@ -230,16 +267,17 @@ export const EntityCard = memo(function EntityCard({
                     aria-hidden
                     data-testid={`swatch-${id}`}
                     data-hollow={isView}
-                    className="h-3 w-3 shrink-0 rounded-full border-2"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
                     style={{
-                        borderColor: entity.color,
-                        background: isView ? 'transparent' : entity.color,
+                        background: entity.color,
                     }}
-                />
+                >
+                    <Table2 className="h-4 w-4" />
+                </span>
                 <div className="min-w-0 flex-1">
-                    <div
+                    <label
                         className={cn(
-                            'truncate text-sm font-bold',
+                            'block cursor-default truncate text-[13.5px] font-semibold leading-tight',
                             data.mark && MARK_TEXT[data.mark]
                         )}
                         data-diff-name={data.mark}
@@ -259,10 +297,10 @@ export const EntityCard = memo(function EntityCard({
                             </>
                         ) : null}
                         {entity.name}
-                    </div>
+                    </label>
                     {subtitle.length > 0 ? (
                         <div
-                            className="truncate text-[11px] text-muted-foreground"
+                            className="mt-0.5 truncate text-[11px] leading-tight text-muted-foreground"
                             title={entity.comments || undefined}
                         >
                             {subtitle.join(' · ')}
@@ -288,8 +326,16 @@ export const EntityCard = memo(function EntityCard({
                         )}
                     </span>
                 ) : null}
+                {data.overlapCount ? (
+                    <span
+                        data-testid={`overlap-pill-${id}`}
+                        className="shrink-0 rounded-full bg-red-100 px-1.5 text-[10px] font-semibold leading-4 text-red-800"
+                    >
+                        {data.overlapCount}
+                    </span>
+                ) : null}
                 <span
-                    className="rounded bg-muted px-1.5 text-[11px] text-muted-foreground group-hover:hidden group-focus-within:hidden group-data-[selected=true]:hidden pointer-coarse:hidden"
+                    className="tabular-nums shrink-0 rounded-full bg-background/70 px-1.5 text-[11px] font-semibold leading-4 text-muted-foreground group-hover:hidden group-focus-within:hidden pointer-coarse:hidden"
                     title={t('canvas.entity.fieldCount', {
                         count: columns.length,
                     })}
@@ -297,50 +343,35 @@ export const EntityCard = memo(function EntityCard({
                     {columns.length}
                 </span>
                 <span className={ACTIONS_CLASS}>
-                    {surface.editable ? (
-                        <button
-                            type="button"
-                            aria-label={t('canvas.entity.openInPanel')}
-                            title={t('canvas.entity.openInPanel')}
-                            className="rounded p-1 hover:bg-muted pointer-coarse:p-2"
-                            onClick={() =>
-                                storeApi.getState().showEntityInPanel(id)
-                            }
-                        >
-                            <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                    ) : null}
-                    {surface.editable ? (
-                        <button
-                            type="button"
-                            aria-label={
-                                width >= TABLE_WIDTH.max
-                                    ? t('canvas.entity.narrow')
-                                    : t('canvas.entity.widen')
-                            }
-                            title={
-                                width >= TABLE_WIDTH.max
-                                    ? t('canvas.entity.narrow')
-                                    : t('canvas.entity.widen')
-                            }
-                            className="rounded p-1 hover:bg-muted pointer-coarse:p-2"
-                            onClick={() =>
-                                storeApi.getState().edit({
-                                    type: 'entity.update',
-                                    id,
-                                    patch: {
-                                        width: toggledWidth(entity.width),
-                                    },
-                                })
-                            }
-                        >
-                            <MoveHorizontal className="h-3.5 w-3.5" />
-                        </button>
-                    ) : null}
+                    <button
+                        type="button"
+                        aria-label={t('canvas.entity.focus')}
+                        title={t('canvas.entity.focus')}
+                        className={ICON_BUTTON}
+                        onClick={() => {
+                            storeApi.getState().select([id]);
+                            storeApi.getState().focusEntity(id);
+                        }}
+                    >
+                        <CircleDotDashed className="h-4 w-4" />
+                    </button>
+                    <button
+                        type="button"
+                        aria-label={expandLabel}
+                        title={expandLabel}
+                        className={ICON_BUTTON}
+                        onClick={toggleExpanded}
+                    >
+                        <ChevronsLeftRight className="h-4 w-4" />
+                    </button>
                 </span>
             </header>
 
-            <div className="py-1">
+            <div
+                className={cn(
+                    !canCollapse && '[&>:last-child]:rounded-b-[11px]'
+                )}
+            >
                 {visibleColumns.map((column) => (
                     <FieldRow
                         key={column.id}
@@ -353,6 +384,14 @@ export const EntityCard = memo(function EntityCard({
                         connectable={surface.editable && !isView}
                         prefs={surface.prefs}
                         highlightType={highlightType}
+                        linkEnd={linkEnds.has(column.id)}
+                        overlap={!!data.overlapCount}
+                        enumNames={enumNames}
+                        onEdit={
+                            surface.editable
+                                ? () => surface.startEditing(id)
+                                : undefined
+                        }
                     />
                 ))}
             </div>
@@ -360,7 +399,7 @@ export const EntityCard = memo(function EntityCard({
             {canCollapse ? (
                 <button
                     type="button"
-                    className="nodrag flex w-full items-center justify-center gap-1 rounded-b-lg border-t py-1 text-[11px] text-muted-foreground hover:bg-muted"
+                    className="nodrag flex h-8 w-full items-center justify-center gap-1 rounded-b-[11px] border-t text-[10px] text-muted-foreground transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
                     onClick={toggleExpanded}
                     data-hidden-count={hiddenCount}
                 >

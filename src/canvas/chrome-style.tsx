@@ -10,17 +10,25 @@ import React from 'react';
  * below them, the Show All pill below the toolbar, so nothing overlaps.
  */
 export const CHROME_CSS = `
+:root { --minimap-bg:#fff; --minimap-node:rgb(226,226,226); --minimap-mask:rgba(240,240,240,0.6); }
+.dark { --minimap-bg:rgb(20,20,20); --minimap-node:rgb(43,43,43); --minimap-mask:rgba(60,60,60,0.6); --memo-base:#000; }
+.dark .react-flow { background-color:rgb(20,20,20) !important; }
 .qb-corner { position:absolute; z-index:30; display:flex; gap:8px;
-  left:calc(var(--canvas-inset-left,0px) + 12px); top:calc(var(--canvas-inset-top,0px) + 12px); }
+  left:calc(var(--canvas-inset-left,0px) + 15px); top:calc(var(--canvas-inset-top,0px) + 15px); }
 .qb-legend { position:absolute; z-index:30;
-  right:calc(var(--canvas-inset-right,0px) + 12px); top:calc(var(--canvas-inset-top,0px) + 12px); }
+  right:calc(var(--canvas-inset-right,0px) + 8px); top:calc(var(--canvas-inset-top,0px) + 8px); }
 .qb-toolbar { position:absolute; z-index:30; left:50%; transform:translateX(-50%);
   max-width:calc(100% - 24px); overflow-x:auto;
-  bottom:calc(var(--canvas-inset-bottom,0px) + 16px); }
+  bottom:calc(var(--canvas-inset-bottom,0px) + 15px); }
 .qb-pill { position:absolute; z-index:30; left:50%; transform:translateX(-50%);
   bottom:calc(var(--canvas-inset-bottom,0px) + 64px); }
-.qb-minimap { margin-bottom:calc(var(--canvas-inset-bottom,0px) + 24px) !important;
-  margin-right:calc(var(--canvas-inset-right,0px) + 15px) !important; }
+.qb-minimap { margin-bottom:calc(var(--canvas-inset-bottom,0px) + 32px) !important;
+  margin-right:calc(var(--canvas-inset-right,0px) + 15px) !important;
+  width:100px !important; height:100px !important; border-radius:0 !important; box-shadow:none !important; }
+.qb-minimap svg { width:100% !important; height:100% !important; }
+.react-flow__edge.selected .react-flow__edge-path:not(.react-flow__edge-interaction) { animation:qb-dash 0.5s linear infinite; }
+@keyframes qb-dash { to { stroke-dashoffset:-10; } }
+.react-flow__node:hover { cursor:grab; }
 /* keyboard focus on a table, area, note or line: xyflow removes its outline */
 .react-flow .react-flow__node.react-flow__node:focus-visible { outline:3px solid hsl(var(--ring)); outline-offset:4px;
   border-radius:12px; box-shadow:0 0 0 7px hsl(var(--background)); }
@@ -31,7 +39,7 @@ export const CHROME_CSS = `
   .qb-legend { display:none; }
   .qb-toolbar { bottom:auto; top:calc(var(--canvas-inset-top,0px) + 56px); }
   .qb-pill { bottom:auto; top:calc(var(--canvas-inset-top,0px) + 104px); }
-  .qb-minimap, .qb-minimap svg { height:60px !important; }
+  .qb-minimap { width:60px !important; height:60px !important; }
 }`;
 
 export function ChromeStyle() {

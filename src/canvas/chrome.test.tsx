@@ -34,23 +34,23 @@ describe('toolbar', () => {
             .getAllByRole('button')
             .map((b) => b.getAttribute('aria-label'));
         expect(names).toEqual([
-            'Filter tables (Ctrl+F)',
-            'Show all (Ctrl+0)',
-            'Zoom out',
+            'Filter Tables',
+            'Show All',
+            'Zoom Out',
             'Reset zoom to 100%',
-            'Zoom in',
-            'Auto arrange diagram',
-            'Undo (Ctrl+Z)',
-            'Redo (Ctrl+Shift+Z)',
+            'Zoom In',
+            'Auto Arrange Diagram',
+            'Undo',
+            'Redo',
         ]);
     });
 
     it('EDT-020, EDT-021, EDT-022: plus, minus, the percentage button and show all drive the camera; the percentage follows the zoom', () => {
         const { store } = renderCanvas(shop().design);
-        fireEvent.click(screen.getByLabelText('Zoom in'));
-        fireEvent.click(screen.getByLabelText('Zoom out'));
+        fireEvent.click(screen.getByLabelText('Zoom In'));
+        fireEvent.click(screen.getByLabelText('Zoom Out'));
         fireEvent.click(screen.getByLabelText('Reset zoom to 100%'));
-        fireEvent.click(screen.getByLabelText(/^Show all/));
+        fireEvent.click(screen.getByLabelText(/^Show All/));
         expect(camera.zoomIn).toHaveBeenCalledTimes(1);
         expect(camera.zoomOut).toHaveBeenCalledTimes(1);
         expect(camera.resetZoom).toHaveBeenCalledTimes(1);
@@ -96,7 +96,7 @@ describe('toolbar', () => {
         const { store } = renderCanvas(s.design, {
             canvas: { hooks: { toggleFilterPanel: toggle } },
         });
-        const button = screen.getByLabelText(/^Filter tables/);
+        const button = screen.getByLabelText(/^Filter Tables/);
         expect(button).toHaveAttribute('data-active', 'false');
         act(() => store.getState().setFilter({ tableIds: [s.users] }));
         expect(button).toHaveAttribute('data-active', 'true');
@@ -108,9 +108,9 @@ describe('toolbar', () => {
 
     it('EDT-043: auto arrange and snap are not offered in a read-only diagram', () => {
         renderCanvas(shop().design, { store: { readonly: true } });
-        expect(screen.queryByLabelText('Auto arrange diagram')).toBeNull();
-        expect(screen.queryByLabelText(/^Snap to grid/)).toBeNull();
-        expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
+        expect(screen.queryByLabelText('Auto Arrange Diagram')).toBeNull();
+        expect(screen.queryByLabelText(/^Snap to Grid/)).toBeNull();
+        expect(screen.getByLabelText('Zoom In')).toBeInTheDocument();
     });
 
     it('EDT-044: the minimap is on by default and the preference hides it', () => {
@@ -137,7 +137,7 @@ describe('toolbar', () => {
 describe('canvas chrome', () => {
     it('EDT-035: the magnet toggles snapping and says how to snap temporarily', () => {
         renderCanvas(shop().design);
-        const magnet = screen.getByLabelText('Snap to grid (hold Shift)');
+        const magnet = screen.getByLabelText('Snap to Grid (Hold Shift)');
         expect(magnet).toHaveAttribute('aria-pressed', 'false');
         fireEvent.click(magnet);
         expect(magnet).toHaveAttribute('aria-pressed', 'true');
@@ -145,13 +145,13 @@ describe('canvas chrome', () => {
         expect(magnet).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('EDT-038: a warning button appears when tables overlap and flashes them red for 0.6 s', () => {
+    it('EDT-038: the overlap button flashes overlapping tables red for 0.6 s and puts a count pill on each', () => {
         vi.useFakeTimers();
         try {
             const s = shop();
             const apart = renderCanvas(s.design);
             expect(
-                screen.queryByLabelText('Highlight overlapping tables')
+                screen.queryByLabelText('Highlight Overlapping Tables')
             ).toBeNull();
             apart.unmount();
 
@@ -170,7 +170,7 @@ describe('canvas chrome', () => {
                 },
             };
             renderCanvas(overlap);
-            const warn = screen.getByLabelText('Highlight overlapping tables');
+            const warn = screen.getByLabelText('Highlight Overlapping Tables');
             const card = screen.getByTestId(`entity-${s.users}`);
             expect(card.className).not.toContain('ring-red-500');
             fireEvent.click(warn);
@@ -178,8 +178,15 @@ describe('canvas chrome', () => {
             expect(
                 screen.getByTestId(`entity-${s.items}`).className
             ).not.toContain('ring-red-500');
+            expect(
+                within(card).getByTestId(`overlap-pill-${s.users}`)
+            ).toHaveTextContent('1');
             act(() => void vi.advanceTimersByTime(650));
             expect(card.className).not.toContain('ring-red-500');
+            fireEvent.click(warn);
+            expect(
+                within(card).queryByTestId(`overlap-pill-${s.users}`)
+            ).toBeNull();
         } finally {
             vi.useRealTimers();
         }
@@ -215,7 +222,7 @@ describe('canvas chrome', () => {
         );
     });
 
-    it('EDT-023: with no table on screen a Show all pill offers the way back', () => {
+    it('EDT-023: with no table on screen a Show All pill offers the way back', () => {
         const box = { x: 100, y: 100, width: 224, height: 100 };
         const size = { width: 1000, height: 800 };
         expect(anyOnScreen([box], { x: 0, y: 0, zoom: 1 }, size)).toBe(true);
@@ -240,13 +247,13 @@ describe('canvas chrome', () => {
             },
         };
         renderCanvas(far);
-        fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+        fireEvent.click(screen.getByTestId('show-all-pill'));
         expect(camera.fit).toHaveBeenCalled();
     });
 
     it('EDT-023: the pill is absent while a table is on screen', () => {
         renderCanvas(shop().design);
-        expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+        expect(screen.queryByTestId('show-all-pill')).toBeNull();
     });
 
     it('EDT-049: a highlighter button shows while a custom type is highlighted and clears it', () => {
@@ -263,13 +270,13 @@ describe('canvas chrome', () => {
         expect(clear).toHaveBeenCalledTimes(1);
     });
 
-    it('EDT-024: the view refits after Auto arrange is confirmed', async () => {
+    it('EDT-024: the view refits after Auto Arrange is confirmed', async () => {
         const { store } = renderCanvas(shop().design);
-        fireEvent.click(screen.getByLabelText('Auto arrange diagram'));
+        fireEvent.click(screen.getByLabelText('Auto Arrange Diagram'));
         const dialog = await screen.findByRole('alertdialog');
         camera.fit.mockClear();
         fireEvent.click(
-            within(dialog).getByRole('button', { name: 'Auto arrange' })
+            within(dialog).getByRole('button', { name: 'Auto Arrange' })
         );
         await waitFor(() => expect(camera.fit).toHaveBeenCalledTimes(1));
         expect(store.getState().history.undo).toHaveLength(1);
@@ -298,9 +305,9 @@ describe('canvas chrome', () => {
         expect(host).toHaveAttribute('data-multiselect', 'false');
     });
 
-    it('EDT-050: the toolbar Auto arrange asks before it moves anything', async () => {
+    it('EDT-050: the toolbar Auto Arrange asks before it moves anything', async () => {
         const { store } = renderCanvas(shop().design);
-        fireEvent.click(screen.getByLabelText('Auto arrange diagram'));
+        fireEvent.click(screen.getByLabelText('Auto Arrange Diagram'));
         expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
         expect(store.getState().history.undo).toHaveLength(0);
     });

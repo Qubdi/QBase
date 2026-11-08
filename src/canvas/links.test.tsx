@@ -21,7 +21,6 @@ import {
     NO_LIVE,
     parseHandle,
 } from './flow-model';
-import { markerId } from './line-style';
 import { commitQuickLink, planQuickLink, suggestTarget } from './link-draft';
 import { reportConnect } from './notify';
 import { shop } from './test/fixtures';
@@ -356,26 +355,13 @@ describe('how a link is drawn', () => {
             },
         };
         const shown = renderCanvas(asMany);
-        const defs = screen.getByTestId('marker-defs');
-        expect(
-            defs.querySelector(`#${markerId('one', 'plain')}`)
-        ).not.toBeNull();
-        expect(
-            defs.querySelector(`#${markerId('many', 'plain')}`)
-        ).not.toBeNull();
-        const path = await waitFor(() => {
-            const found = shown.container.querySelector(
-                '.react-flow__edge-path'
-            );
-            expect(found).not.toBeNull();
-            return found!;
-        });
-        expect(path.getAttribute('marker-start')).toContain(
-            markerId('one', 'plain')
+        await waitFor(() =>
+            expect(
+                shown.container.querySelectorAll('[data-marker]')
+            ).toHaveLength(2)
         );
-        expect(path.getAttribute('marker-end')).toContain(
-            markerId('many', 'plain')
-        );
+        const ends = [...shown.container.querySelectorAll('[data-marker]')];
+        expect(ends.map((g) => g.textContent).sort()).toEqual(['1', 'N']);
         shown.unmount();
 
         const hidden = renderCanvas(asMany, {
@@ -388,8 +374,8 @@ describe('how a link is drawn', () => {
             expect(found).not.toBeNull();
             return found!;
         });
-        expect(bare.getAttribute('marker-end')).toBeNull();
-        expect(bare.getAttribute('marker-start')).toBeNull();
+        expect(hidden.container.querySelector('[data-marker]')).toBeNull();
+        expect(bare).not.toBeNull();
     });
 
     it('EDT-026, EDT-174: a selected line takes the picked colour and shows a dot to open the popover', async () => {
@@ -404,10 +390,10 @@ describe('how a link is drawn', () => {
             await screen.findByTestId(`link-dot-${s.link}`)
         ).toBeInTheDocument();
         const path = container.querySelector('.react-flow__edge-path')!;
-        expect(path.getAttribute('marker-start')).toContain(
-            markerId('one', 'picked')
+        expect(path.getAttribute('style')).toContain(
+            'oklch(0.6 0.118 184.704)'
         );
-        expect(path.getAttribute('style')).toContain('--primary');
+        expect(path.getAttribute('style')).toContain('stroke-dasharray');
     });
 });
 

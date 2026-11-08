@@ -7,17 +7,20 @@ import { MEMO_TINT } from '@/core/model/memo';
 const mix = (colour: string, percent: number, into = 'transparent') =>
     `color-mix(in srgb, ${colour} ${percent}%, ${into})`;
 
-/** The wash behind a table's header (EDT-078). */
-export const headerWash = (colour: string) => mix(colour, 22);
+/** The wash behind a table's header (EDT-078): 135 degrees, 20 % fading to 6 %. */
+export const headerWash = (colour: string) =>
+    `linear-gradient(135deg, ${mix(colour, 20)}, ${mix(colour, 6)})`;
 
-/** The 15% fill of an area (EDT-201). */
-export const regionFill = (tint: string) => mix(tint, 15);
+/** The 8.2 % fill of an area (EDT-201). */
+export const regionFill = (tint: string) => mix(tint, 8.2);
 
-/** The name strip of an area. */
-export const regionStrip = (tint: string) => mix(tint, 45);
-
-/** The pale body of a note: lighter in the light theme, darker in the dark one (EDT-212). */
-export const memoPale = (tint: string) => mix(tint, 28, 'hsl(var(--card))');
+/**
+ * The pale body of a note (EDT-212): the colour at 30 % over white in the
+ * light theme and over black in the dark one (`--memo-base`, set per theme in
+ * the stylesheet), which gives the dark olive of a yellow note.
+ */
+export const memoPale = (tint: string) =>
+    mix(tint, 30, 'var(--memo-base, #fff)');
 
 /** A colour input needs `#rrggbb`; anything else falls back to the note yellow. */
 export function asHex(colour: string): string {

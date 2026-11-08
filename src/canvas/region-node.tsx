@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
+import { GripVertical, Pencil } from 'lucide-react';
 import { NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,7 @@ import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import type { RegionNode } from './flow-model';
 import { MIN_REGION_HEIGHT } from './geometry';
 import { useSurface } from './surface-context';
-import { regionFill, regionStrip } from './tints';
+import { regionFill } from './tints';
 
 const MIN_REGION_WIDTH = 120;
 
@@ -59,8 +60,8 @@ export const RegionCard = memo(function RegionCard({
             data-testid={`region-${id}`}
             data-selected={selected}
             className={cn(
-                'h-full w-full rounded-lg border-2',
-                selected && 'ring-2 ring-primary ring-offset-1'
+                'h-full w-full rounded-[10px] border-2 shadow-[0_1px_2px_0_rgb(0_0_0/0.05)]',
+                selected && '!border-teal-600'
             )}
             style={{
                 borderColor: region.tint,
@@ -72,7 +73,13 @@ export const RegionCard = memo(function RegionCard({
                     minWidth={MIN_REGION_WIDTH}
                     minHeight={MIN_REGION_HEIGHT}
                     lineStyle={{ borderColor: 'transparent' }}
-                    handleStyle={{ width: 10, height: 10 }}
+                    handleStyle={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 0,
+                        background: 'oklch(0.6 0.118 184.704)',
+                        border: '1px solid #fff',
+                    }}
                     onResize={(_, box) =>
                         surface.resizeLive(id, {
                             x: box.x,
@@ -85,10 +92,7 @@ export const RegionCard = memo(function RegionCard({
                 />
             ) : null}
             <div
-                className="inline-block max-w-full rounded-br-md rounded-tl-md px-2 py-1 text-xs font-semibold"
-                style={{
-                    background: regionStrip(region.tint),
-                }}
+                className="group/area flex h-8 items-center gap-1 rounded-t-[10px] px-2"
                 onDoubleClick={(event) => {
                     if (!surface.editable) return;
                     event.stopPropagation();
@@ -96,11 +100,15 @@ export const RegionCard = memo(function RegionCard({
                     setDraft(region.label);
                 }}
             >
+                <GripVertical
+                    aria-hidden
+                    className="h-3.5 w-3.5 shrink-0 opacity-60"
+                />
                 {renaming ? (
                     <input
                         ref={input}
                         aria-label={t('canvas.region.rename')}
-                        className="nodrag w-40 rounded border bg-background px-1 text-xs font-normal"
+                        className="nodrag w-40 rounded border bg-background px-1 text-base font-semibold"
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
                         onBlur={() => finish(true)}
@@ -111,8 +119,24 @@ export const RegionCard = memo(function RegionCard({
                         }}
                     />
                 ) : (
-                    <span className="truncate">{region.label}</span>
+                    <span className="min-w-0 flex-1 cursor-pointer truncate px-1 py-0.5 text-base font-semibold text-slate-700 dark:text-slate-300">
+                        {region.label}
+                    </span>
                 )}
+                {surface.editable && !renaming ? (
+                    <button
+                        type="button"
+                        aria-label={t('canvas.menu.editAreaName')}
+                        title={t('canvas.menu.editAreaName')}
+                        className="nodrag flex h-5 w-5 items-center justify-center rounded opacity-0 transition-opacity hover:bg-black/5 focus-visible:opacity-100 group-hover/area:opacity-100 pointer-coarse:h-6 pointer-coarse:w-6 pointer-coarse:opacity-100"
+                        onClick={() => {
+                            done.current = false;
+                            setDraft(region.label);
+                        }}
+                    >
+                        <Pencil className="h-3 w-3" />
+                    </button>
+                ) : null}
             </div>
         </div>
     );

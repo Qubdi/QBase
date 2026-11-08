@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
     LayoutGrid,
-    Maximize,
-    Minimize,
     Minus,
     Plus,
     Redo2,
@@ -30,35 +28,13 @@ export interface ToolbarProps {
 }
 
 const base =
-    'inline-flex h-8 min-w-8 items-center justify-center rounded-md px-1.5 text-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40';
+    'inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-1.5 text-sm transition-colors hover:bg-accent hover:font-medium hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40';
+
+/** The accessible name is the plain label; the shortcut belongs to the tooltip only. */
+const plain = (label: string) => label.replace(/\s*[(（][^)）]*[)）]\s*$/, '');
 
 function Divider() {
-    return <span aria-hidden className="mx-1 h-5 w-px bg-border" />;
-}
-
-/** Browser full screen for the whole page (EDT-048); null where it is not offered. */
-function useFullScreen() {
-    const supported =
-        typeof document !== 'undefined' && document.fullscreenEnabled === true;
-    const [on, setOn] = useState(
-        () => typeof document !== 'undefined' && !!document.fullscreenElement
-    );
-    useEffect(() => {
-        const sync = () => setOn(!!document.fullscreenElement);
-        document.addEventListener('fullscreenchange', sync);
-        return () => document.removeEventListener('fullscreenchange', sync);
-    }, []);
-    if (!supported) return null;
-    return {
-        on,
-        toggle: () => {
-            const done = on
-                ? document.exitFullscreen()
-                : document.documentElement.requestFullscreen();
-            // a refused request (no user gesture, policy) leaves the page as it is
-            void Promise.resolve(done).catch(() => undefined);
-        },
-    };
+    return <span aria-hidden className="h-9 w-px shrink-0 bg-border" />;
 }
 
 /**
@@ -71,13 +47,12 @@ export function Toolbar(props: ToolbarProps) {
     const zoom = useEditorStore(selectZoom);
     const canUndo = useEditorStore(selectCanUndo);
     const canRedo = useEditorStore(selectCanRedo);
-    const full = useFullScreen();
 
     return (
         <div
             role="toolbar"
             aria-label={t('canvas.toolbar.label')}
-            className="qb-toolbar flex items-center rounded-full border bg-card p-1 shadow-md"
+            className="qb-toolbar flex items-center h-11 rounded-xl border bg-secondary p-1"
         >
             <button
                 type="button"
@@ -87,9 +62,11 @@ export function Toolbar(props: ToolbarProps) {
                         'bg-primary text-primary-foreground hover:bg-primary/90'
                 )}
                 aria-pressed={props.filterOpen}
-                aria-label={t('canvas.toolbar.filter', {
-                    shortcut: shortcutLabel(['Mod', 'F']),
-                })}
+                aria-label={plain(
+                    t('canvas.toolbar.filter', {
+                        shortcut: shortcutLabel(['Mod', 'F']),
+                    })
+                )}
                 title={t('canvas.toolbar.filter', {
                     shortcut: shortcutLabel(['Mod', 'F']),
                 })}
@@ -103,9 +80,11 @@ export function Toolbar(props: ToolbarProps) {
             <button
                 type="button"
                 className={base}
-                aria-label={t('canvas.toolbar.showAll', {
-                    shortcut: shortcutLabel(['Mod', '0']),
-                })}
+                aria-label={plain(
+                    t('canvas.toolbar.showAll', {
+                        shortcut: shortcutLabel(['Mod', '0']),
+                    })
+                )}
                 title={t('canvas.toolbar.showAll', {
                     shortcut: shortcutLabel(['Mod', '0']),
                 })}
@@ -113,7 +92,6 @@ export function Toolbar(props: ToolbarProps) {
             >
                 <Scan className="h-4 w-4" />
             </button>
-            <Divider />
             <button
                 type="button"
                 className={base}
@@ -125,7 +103,7 @@ export function Toolbar(props: ToolbarProps) {
             </button>
             <button
                 type="button"
-                className={cn(base, 'w-14 tabular-nums')}
+                className={cn(base, 'w-[60px] tabular-nums')}
                 aria-label={t('canvas.toolbar.zoomReset')}
                 title={t('canvas.toolbar.zoomReset')}
                 onClick={props.onResetZoom}
@@ -160,9 +138,11 @@ export function Toolbar(props: ToolbarProps) {
                 type="button"
                 className={base}
                 disabled={!canUndo}
-                aria-label={t('canvas.toolbar.undo', {
-                    shortcut: shortcutLabel(['Mod', 'Z']),
-                })}
+                aria-label={plain(
+                    t('canvas.toolbar.undo', {
+                        shortcut: shortcutLabel(['Mod', 'Z']),
+                    })
+                )}
                 title={t('canvas.toolbar.undo', {
                     shortcut: shortcutLabel(['Mod', 'Z']),
                 })}
@@ -174,9 +154,11 @@ export function Toolbar(props: ToolbarProps) {
                 type="button"
                 className={base}
                 disabled={!canRedo}
-                aria-label={t('canvas.toolbar.redo', {
-                    shortcut: shortcutLabel(['Mod', 'Shift', 'Z']),
-                })}
+                aria-label={plain(
+                    t('canvas.toolbar.redo', {
+                        shortcut: shortcutLabel(['Mod', 'Shift', 'Z']),
+                    })
+                )}
                 title={t('canvas.toolbar.redo', {
                     shortcut: shortcutLabel(['Mod', 'Shift', 'Z']),
                 })}
@@ -184,33 +166,6 @@ export function Toolbar(props: ToolbarProps) {
             >
                 <Redo2 className="h-4 w-4" />
             </button>
-            {full ? (
-                <>
-                    <Divider />
-                    <button
-                        type="button"
-                        className={base}
-                        aria-pressed={full.on}
-                        aria-label={t(
-                            full.on
-                                ? 'canvas.toolbar.exitFullScreen'
-                                : 'canvas.toolbar.fullScreen'
-                        )}
-                        title={t(
-                            full.on
-                                ? 'canvas.toolbar.exitFullScreen'
-                                : 'canvas.toolbar.fullScreen'
-                        )}
-                        onClick={full.toggle}
-                    >
-                        {full.on ? (
-                            <Minimize className="h-4 w-4" />
-                        ) : (
-                            <Maximize className="h-4 w-4" />
-                        )}
-                    </button>
-                </>
-            ) : null}
         </div>
     );
 }

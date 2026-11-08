@@ -4,12 +4,12 @@ import { CHROME_CSS } from './chrome-style';
 import { buildNodes, NO_LIVE } from './flow-model';
 import { resizedEnough } from './geometry';
 import {
-    miniFill,
-    miniStroke,
+    MINIMAP_NODE,
+    MINIMAP_NODE_STROKE,
     MINIMAP_BACKGROUND,
     MINIMAP_MASK,
 } from './minimap-colors';
-import { shop, withMemo, withRegion } from './test/fixtures';
+import { shop } from './test/fixtures';
 import { renderCanvas } from './test/render';
 
 const camera = vi.hoisted(() => ({
@@ -24,32 +24,13 @@ const camera = vi.hoisted(() => ({
 vi.mock('./use-viewport', () => ({ useViewportControls: () => camera }));
 
 describe('minimap', () => {
-    it('EDT-044: tables, areas and notes are drawn in their own colour; the map and its mask contrast', () => {
-        const s = shop();
-        const placed = withRegion(s.design, {
-            x: 0,
-            y: 0,
-            width: 300,
-            height: 200,
-        });
-        const noted = withMemo(placed.design);
-        const d = noted.design;
-        expect(miniFill(d, s.users, 'entity')).toContain(
-            d.entities.byId[s.users].color
-        );
-        expect(miniStroke(d, s.users, 'entity')).toBe(
-            d.entities.byId[s.users].color
-        );
-        expect(miniFill(d, placed.regionId, 'region')).toContain(
-            d.regions.byId[placed.regionId].tint
-        );
-        expect(miniFill(d, noted.memoId, 'memo')).toContain(
-            d.memos.byId[noted.memoId].tint
-        );
-        expect(miniFill(d, 'gone', 'entity')).toContain('--muted-foreground');
+    it('EDT-044: every node is drawn in one light grey; the map and its mask contrast', () => {
+        // every node is one light grey, whatever its colour
+        expect(MINIMAP_NODE).toContain('--minimap-node');
+        expect(MINIMAP_NODE_STROKE).toBe('none');
         // theme variables, so both themes get a contrasting map and outside
-        expect(MINIMAP_BACKGROUND).toContain('--card');
-        expect(MINIMAP_MASK).toContain('--muted-foreground');
+        expect(MINIMAP_BACKGROUND).toContain('--minimap-bg');
+        expect(MINIMAP_MASK).toContain('--minimap-mask');
     });
 
     it('EDT-044: a measured table keeps its size in the node, so the map and the lines survive rebuilds', () => {
@@ -115,9 +96,9 @@ describe('phone layout', () => {
         const phone = CHROME_CSS.slice(CHROME_CSS.indexOf('@media'));
         expect(phone).toContain('.qb-toolbar');
         expect(phone).toContain('top:calc(var(--canvas-inset-top,0px) + 56px)');
-        // corner tools start at 12px and are 32px tall; the toolbar starts at 56px
+        // corner tools start at 15px and are 32px tall; the toolbar starts at 56px
         expect(CHROME_CSS).toContain(
-            'top:calc(var(--canvas-inset-top,0px) + 12px)'
+            'top:calc(var(--canvas-inset-top,0px) + 15px)'
         );
         // the pill is below the toolbar
         expect(phone).toContain('+ 104px');

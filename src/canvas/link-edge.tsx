@@ -1,8 +1,16 @@
 import React, { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from '@xyflow/react';
 import type { EdgeProps } from '@xyflow/react';
+import { Ellipsis } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { markerId, TONE_STROKE } from './line-style';
+import { EndMarker } from './cardinality-markers';
+import {
+    LINE_RADIUS,
+    LINE_STUB,
+    LINE_WIDTH,
+    markerDirection,
+    TONE_STROKE,
+} from './line-style';
 import type { LinkEdge } from './flow-model';
 import { useShown } from './diff-marks';
 import { useSurface } from './surface-context';
@@ -14,7 +22,7 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
     const link = useShown((d) => d.links.byId[props.id]);
     if (!link) return null;
 
-    const reach = props.data?.reach ?? 22;
+    const reach = props.data?.reach ?? LINE_STUB;
     const [path, labelX, labelY] = getSmoothStepPath({
         sourceX: props.sourceX,
         sourceY: props.sourceY,
@@ -22,8 +30,8 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
         targetX: props.targetX,
         targetY: props.targetY,
         targetPosition: props.targetPosition,
-        borderRadius: 12,
-        offset: reach,
+        borderRadius: LINE_RADIUS,
+        offset: Math.max(reach, LINE_STUB),
     });
     const mark = props.data?.mark;
     const tone =
@@ -41,28 +49,45 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
                 data-diff={mark}
                 path={path}
                 interactionWidth={18}
-                markerStart={
-                    showEnds
-                        ? `url(#${markerId(link.sourceCardinality, tone)})`
-                        : undefined
-                }
-                markerEnd={
-                    showEnds
-                        ? `url(#${markerId(link.targetCardinality, tone)})`
-                        : undefined
-                }
                 style={{
                     stroke: TONE_STROKE[tone],
-                    strokeWidth: mark ? 3 : props.selected ? 2 : 1.4,
+                    strokeWidth: mark ? 3 : LINE_WIDTH,
+                    strokeDasharray: props.selected ? '5 5' : undefined,
                 }}
             />
+            {showEnds ? (
+                <>
+                    <EndMarker
+                        x={props.sourceX}
+                        y={props.sourceY}
+                        dir={markerDirection(props.sourcePosition)}
+                        cardinality={link.sourceCardinality}
+                        fill={
+                            tone === 'plain'
+                                ? 'hsl(var(--muted-foreground))'
+                                : TONE_STROKE[tone]
+                        }
+                    />
+                    <EndMarker
+                        x={props.targetX}
+                        y={props.targetY}
+                        dir={markerDirection(props.targetPosition)}
+                        cardinality={link.targetCardinality}
+                        fill={
+                            tone === 'plain'
+                                ? 'hsl(var(--muted-foreground))'
+                                : TONE_STROKE[tone]
+                        }
+                    />
+                </>
+            ) : null}
             {props.selected ? (
                 <EdgeLabelRenderer>
                     <button
                         type="button"
                         aria-label={t('canvas.link.select')}
                         data-testid={`link-dot-${props.id}`}
-                        className="nodrag nopan pointer-events-auto absolute h-3 w-3 rounded-full border-2 border-background bg-primary"
+                        className="nodrag nopan pointer-events-auto absolute flex h-4 w-4 items-center justify-center rounded-full border border-teal-600 bg-white text-teal-600"
                         style={{
                             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
                         }}
@@ -72,7 +97,9 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
                                 y: event.clientY,
                             })
                         }
-                    />
+                    >
+                        <Ellipsis className="h-3 w-3" aria-hidden />
+                    </button>
                 </EdgeLabelRenderer>
             ) : null}
         </>

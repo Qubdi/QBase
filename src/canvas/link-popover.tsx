@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowLeftRight, PanelRight, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, CircleDotDashed, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
     planDeleteLink,
@@ -19,8 +19,10 @@ interface Props {
     onClose(): void;
 }
 
+const toggle =
+    'flex h-7 w-11 items-center justify-center rounded-[10px] border bg-card text-xs font-medium hover:bg-accent';
 const button =
-    'flex items-center gap-1.5 rounded px-2 py-1 text-xs hover:bg-muted';
+    'flex h-7 w-7 items-center justify-center rounded-[10px] text-xs hover:bg-accent';
 
 /** The small box under the pointer that edits one relationship (EDT-175 to EDT-177). */
 export function LinkPopover({ linkId, at, onClose }: Props) {
@@ -61,7 +63,7 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
             ref={ref}
             role="dialog"
             aria-label={t('canvas.link.label', { name: link.name })}
-            className="fixed z-50 flex flex-wrap items-center gap-1 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+            className="fixed z-50 flex flex-wrap items-center gap-1 rounded-[10px] border bg-popover p-2 text-popover-foreground shadow-md"
             style={{
                 left: place.left,
                 top: place.top,
@@ -72,9 +74,9 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
                 type="button"
                 aria-pressed={oneToOne}
                 className={cn(
-                    button,
+                    toggle,
                     oneToOne &&
-                        'bg-primary text-primary-foreground hover:bg-primary'
+                        'border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary'
                 )}
                 onClick={() =>
                     storeApi
@@ -88,9 +90,9 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
                 type="button"
                 aria-pressed={oneToMany}
                 className={cn(
-                    button,
+                    toggle,
                     oneToMany &&
-                        'bg-primary text-primary-foreground hover:bg-primary'
+                        'border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary'
                 )}
                 onClick={() =>
                     storeApi
@@ -100,6 +102,7 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
             >
                 {t('canvas.link.popover.oneToMany')}
             </button>
+            <span aria-hidden className="mx-0.5 h-5 w-px bg-border" />
             <button
                 type="button"
                 aria-label={t('canvas.link.popover.switch')}
@@ -107,7 +110,7 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
                 className={button}
                 onClick={() => storeApi.getState().edit(planSwitchLink(link))}
             >
-                <ArrowLeftRight className="h-3.5 w-3.5" />
+                <ArrowLeftRight className="h-4 w-4" />
             </button>
             <button
                 type="button"
@@ -120,7 +123,7 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
                     onClose();
                 }}
             >
-                <PanelRight className="h-3.5 w-3.5" />
+                <CircleDotDashed className="h-4 w-4" />
             </button>
             <button
                 type="button"
@@ -133,7 +136,7 @@ export function LinkPopover({ linkId, at, onClose }: Props) {
                     onClose();
                 }}
             >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
             </button>
         </div>
     );

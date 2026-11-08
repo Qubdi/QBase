@@ -32,7 +32,7 @@ describe('areas', () => {
         const area = screen.getByTestId(`region-${placed.regionId}`);
         expect(within(area).getByText('Billing')).toBeInTheDocument();
         expect(area.style.borderColor).not.toBe('');
-        expect(regionFill('#336699')).toContain('#336699 15%');
+        expect(regionFill('#336699')).toContain('#336699 8.2%');
     });
 
     it('EDT-201: a selected area can be resized; one that is not cannot', () => {
@@ -159,21 +159,22 @@ describe('notes', () => {
         const added = withMemo(shop().design);
         renderCanvas(added.design);
         const card = screen.getByTestId(`memo-${added.memoId}`);
-        expect(within(card).getByText('Empty note')).toBeInTheDocument();
-        expect(within(card).getByLabelText('Note color')).toHaveValue(
-            '#ffe374'
-        );
-        expect(memoPale('#ffe374')).toContain('hsl(var(--card))');
+        expect(
+            within(card).getByText('Double-click to write (Markdown format)')
+        ).toBeInTheDocument();
+        expect(
+            within(card).getByRole('button', { name: 'Change color' })
+        ).toBeInTheDocument();
+        expect(memoPale('#ffe374')).toContain('--memo-base');
     });
 
     it('EDT-212: the header colour picker changes the colour, undoably', () => {
         const added = withMemo(shop().design);
         const { store } = renderCanvas(added.design);
-        fireEvent.change(screen.getByLabelText('Note color'), {
-            target: { value: '#43d9ad' },
-        });
+        fireEvent.click(screen.getByRole('button', { name: 'Change color' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Use #42e0c0' }));
         expect(store.getState().design.memos.byId[added.memoId].tint).toBe(
-            '#43d9ad'
+            '#42e0c0'
         );
         act(() => void store.getState().undo());
         expect(store.getState().design.memos.byId[added.memoId].tint).toBe(
