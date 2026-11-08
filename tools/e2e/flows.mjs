@@ -152,13 +152,16 @@ async function flow(id, title, opts, fn) {
 }
 
 // ---------------------------------------------------------------- helpers
+// items such as 'Theme Ctrl+M' carry their shortcut in the accessible name
+const itemName = (label) =>
+    new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}( Ctrl.*)?$`);
 const menu = async (...path) => {
     await page.getByRole('menubar').getByText(path[0], { exact: true }).click();
     for (const label of path.slice(1)) {
         await page
-            .getByRole('menuitem', { name: label, exact: true })
-            .or(page.getByRole('menuitemradio', { name: label, exact: true }))
-            .or(page.getByRole('menuitemcheckbox', { name: label }))
+            .getByRole('menuitem', { name: itemName(label) })
+            .or(page.getByRole('menuitemradio', { name: itemName(label) }))
+            .or(page.getByRole('menuitemcheckbox', { name: itemName(label) }))
             .click();
     }
 };
@@ -215,22 +218,20 @@ async function chooseDatabase(db) {
 }
 async function blankDiagram(db = 'PostgreSQL') {
     await chooseDatabase(db);
-    await page.getByRole('button', { name: 'Blank diagram instead' }).click();
+    await page.getByRole('button', { name: 'Empty database' }).click();
     await page.waitForURL(/\/diagrams\/.+/);
     await page.locator('.react-flow').waitFor();
 }
 async function seededDiagram(sql = SEED_SQL, db = 'PostgreSQL') {
     await chooseDatabase(db);
-    await page
-        .getByRole('dialog')
-        .getByRole('tab', { name: 'SQL script' })
-        .click();
+    // choosing a database card opens the import step of the dialog
+    await page.getByRole('radio', { name: 'SQL Script' }).click();
     await page.getByRole('textbox', { name: 'SQL script' }).fill(sql);
     await page
         .getByText(/Found \d+ tables?/)
         .first()
         .waitFor({ timeout: 10000 });
-    await page.getByRole('button', { name: 'Build from text' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     await page.waitForURL(/\/diagrams\/.+/);
     await page.locator('[data-testid^="entity-"]').first().waitFor();
     await idle();
@@ -252,7 +253,7 @@ await flow(
         await step('01 blank diagram opens', blankDiagram);
 
         await step('02 drag Add table onto the canvas twice', async () => {
-            const add = page.getByRole('button', { name: 'Add table' }).first();
+            const add = page.getByRole('button', { name: 'Add Table' }).first();
             await add.dragTo(pane(), { targetPosition: { x: 120, y: 420 } });
             await idle();
             check(
@@ -278,17 +279,17 @@ await flow(
             await shot('two-tables-dropped');
         });
 
-        await step('03 drag Add area and Add note from Extras', async () => {
-            await rail('Extras');
+        await step('03 drag Add Area and Add Note from Visuals', async () => {
+            await rail('Visuals');
             await page
-                .getByRole('button', { name: 'Add area' })
+                .getByRole('button', { name: 'Add Area' })
                 .first()
                 .dragTo(pane(), { targetPosition: { x: 120, y: 80 } });
             await idle();
             check((await regions().count()) === 1, 'no area after the drop');
             await page.getByRole('tab', { name: 'Notes' }).click();
             await page
-                .getByRole('button', { name: 'Add note' })
+                .getByRole('button', { name: 'Add Note' })
                 .first()
                 .dragTo(pane(), { targetPosition: { x: 760, y: 120 } });
             await idle();
@@ -607,7 +608,9 @@ await flow('F2', 'copy, paste, delete, undo, edit card', {}, async () => {
     const tabToTable = async (name) => {
         for (let i = 0; i < 250; i += 1) {
             await page.keyboard.press('Tab');
-            if ((await focusedTable())?.includes(name)) return;
+            const text = await focusedTable();
+            // the pasted copy is called "<name>_copy": it is not the table asked for
+            if (text?.includes(name) && !text.includes(`${name}_copy`)) return;
         }
         check(false, `Tab never reached ${name}`);
     };
@@ -779,7 +782,7 @@ await flow(
         );
 
         await step('05 create a relationship through the dialog', async () => {
-            await rail('Links');
+            await rail('Refs');
             const before = await page.getByTestId('ref-row').count();
             await page
                 .getByRole('button', { name: 'Add Relationship' })
@@ -841,7 +844,7 @@ await flow(
         );
 
         await step('07 cardinality toggle in the Links list', async () => {
-            await rail('Links');
+            await rail('Refs');
             const row = page.getByTestId('ref-row').first();
             await row.locator('button').first().click();
             const combo = row.getByRole('combobox', { name: 'Cardinality' });
@@ -1055,7 +1058,7 @@ await flow(
     async () => {
         await step('01 seeded diagram', () => seededDiagram());
         await step('02 Import SQL: counts and duplicates warning', async () => {
-            await menu('Diagram', 'Import from', 'SQL script');
+            await menu('Actions', 'Import', 'SQL');
             const d = page.getByRole('dialog');
             await d.getByRole('textbox').first().fill(SECOND_SQL);
             await pause(1000);
@@ -1105,6 +1108,17 @@ await flow(
 await flow('F7', 'settings persist across reload; language', {}, async () => {
     await step('01 seeded diagram', () => seededDiagram());
 
+    // the language button opens a small list: a select, a search box and the languages
+    const chooseLanguage = async (name) => {
+        // the button's name is translated too: find it by its globe icon
+        const globe = page.locator('button:has(svg.lucide-globe)').first();
+        // the list stays open after a choice: open it only when it is closed
+        if ((await globe.getAttribute('aria-expanded')) !== 'true')
+            await globe.click();
+        if (!(await page.getByRole('searchbox').isVisible()))
+            await page.getByRole('dialog').getByRole('combobox').click();
+        await page.getByText(name, { exact: true }).first().click();
+    };
     const toggle = async (label) => {
         await page
             .getByRole('menubar')
@@ -1122,16 +1136,17 @@ await flow('F7', 'settings persist across reload; language', {}, async () => {
         '02 hide the minimap, compact tables, cardinality; persist',
         async () => {
             check((await minimapUp()) === 1, 'minimap not shown by default');
-            const chips0 = (await nodeText()).includes('integer');
+            // the canvas shows short type names (integer is "int"), so look at varchar
+            const chips0 = (await nodeText()).includes('varchar');
             check(chips0, 'no type chips before compact');
-            await toggle('Minimap');
-            await toggle('Compact tables');
-            await toggle('Relationship cardinality');
+            await toggle(/^(Hide|Show) Mini Map/);
+            await toggle(/^(Compact|Standard) Tables/);
+            await toggle(/^(Hide|Show) Cardinality/);
             await idle();
             await shot('settings-changed');
             check((await minimapUp()) === 0, 'minimap still there');
             check(
-                !(await nodeText()).includes('integer'),
+                !(await nodeText()).includes('varchar'),
                 'compact still shows type chips'
             );
             await page.reload();
@@ -1139,20 +1154,20 @@ await flow('F7', 'settings persist across reload; language', {}, async () => {
             await idle();
             check((await minimapUp()) === 0, 'minimap choice lost');
             check(
-                !(await nodeText()).includes('integer'),
+                !(await nodeText()).includes('varchar'),
                 'compact lost after reload'
             );
             await shot('settings-after-reload');
-            await toggle('Minimap');
-            await toggle('Compact tables');
-            await toggle('Relationship cardinality');
+            await toggle(/^(Hide|Show) Mini Map/);
+            await toggle(/^(Compact|Standard) Tables/);
+            await toggle(/^(Hide|Show) Cardinality/);
             await idle();
             check((await minimapUp()) === 1, 'minimap not back');
         }
     );
 
     await step('03 theme via View menu persists after reload', async () => {
-        await menu('View', 'Color theme', 'Dark');
+        await menu('View', 'Theme', 'Dark');
         await page.reload();
         await tables().first().waitFor();
         check(
@@ -1175,13 +1190,12 @@ await flow('F7', 'settings persist across reload; language', {}, async () => {
     await step(
         '04 switch to German: menu text is translated, app still works',
         async () => {
-            await page.getByRole('button', { name: 'Change language' }).click();
-            await page.getByText('Deutsch (German)').click();
+            await chooseLanguage('Deutsch (German)');
             await idle();
             await shot('german');
             const bar = await page.getByRole('menubar').innerText();
             check(
-                !/Diagram\s+Edit\s+View/.test(bar),
+                !/Actions\s+Edit\s+View/.test(bar),
                 `menubar still English: ${bar}`
             );
             check(
@@ -1219,12 +1233,7 @@ await flow('F7', 'settings persist across reload; language', {}, async () => {
                 ['Deutsch (German)', 'Diagramm', 'de'],
             ];
             for (const [name, word, lang] of languages) {
-                // the button's name is translated too: find it by its globe icon
-                await page
-                    .locator('button:has(svg.lucide-globe)')
-                    .first()
-                    .click();
-                await page.getByText(name, { exact: true }).first().click();
+                await chooseLanguage(name);
                 await idle();
                 await page
                     .getByRole('menubar')
@@ -1249,11 +1258,10 @@ await flow('F7', 'settings persist across reload; language', {}, async () => {
     );
 
     await step('05 switch back to English', async () => {
-        await page.locator('button:has(svg.lucide-globe)').first().click();
-        await page.getByText('English', { exact: true }).first().click();
+        await chooseLanguage('English');
         await idle();
         const bar = await page.getByRole('menubar').innerText();
-        check(/Diagram/.test(bar) && /View/.test(bar), `menubar: ${bar}`);
+        check(/Actions/.test(bar) && /View/.test(bar), `menubar: ${bar}`);
     });
 });
 
@@ -1262,12 +1270,14 @@ await flow('F8', 'export image/SQL, shortcuts, full screen', {}, async () => {
     await step('01 seeded diagram', () => seededDiagram());
 
     await step('02 export a PNG image (download is a real PNG)', async () => {
-        await menu('Diagram', 'Save as', 'PNG image');
-        await page.getByRole('button', { name: 'Save image' }).waitFor();
+        await menu('Actions', 'Export as', 'PNG');
+        await page
+            .getByRole('button', { name: 'Export', exact: true })
+            .waitFor();
         await shot('png-dialog');
         const [dl] = await Promise.all([
             page.waitForEvent('download', { timeout: 20000 }),
-            page.getByRole('button', { name: 'Save image' }).click(),
+            page.getByRole('button', { name: 'Export', exact: true }).click(),
         ]);
         const file = '/tmp/qbase-flows-export.png';
         await dl.saveAs(file);
@@ -1292,7 +1302,7 @@ await flow('F8', 'export image/SQL, shortcuts, full screen', {}, async () => {
         check(drawn < 3, `all ${drawn} tables are still in the page`);
         const [dl] = await Promise.all([
             page.waitForEvent('download', { timeout: 20000 }),
-            menu('Diagram', 'Save as', 'SVG image'),
+            menu('Actions', 'Export as', 'SVG'),
         ]);
         const file = '/tmp/qbase-flows-export.svg';
         await dl.saveAs(file);
@@ -1305,7 +1315,7 @@ await flow('F8', 'export image/SQL, shortcuts, full screen', {}, async () => {
     });
 
     await step('03 export SQL for MySQL', async () => {
-        await menu('Diagram', 'Export SQL for', 'MySQL');
+        await menu('Actions', 'Export SQL', 'MySQL');
         const ta = page.getByRole('textbox', { name: 'Generated script' });
         await page.waitForFunction(
             () =>
@@ -1389,7 +1399,9 @@ await flow(
                 await page
                     .getByRole('button', { name: 'Open the editing panel' })
                     .click();
-                await page.getByText('Diagram contents').waitFor();
+                await page
+                    .getByRole('heading', { name: 'Manage Diagram' })
+                    .waitFor();
                 await idle();
                 await shot('phone-drawer');
                 check(

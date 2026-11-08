@@ -394,10 +394,8 @@ async function loadFromSql(size) {
     const sql = makeSql(size);
     await page.goto(`${BASE}/`);
     await page.getByRole('radio', { name: /PostgreSQL/ }).click();
-    await page
-        .getByRole('dialog')
-        .getByRole('tab', { name: 'SQL script' })
-        .click();
+    // choosing a database card opens the import step of the dialog
+    await page.getByRole('radio', { name: 'SQL Script' }).click();
     const tParse = Date.now();
     await profiled(`parse-${size}`, async () => {
         // set the value the way a paste does (Playwright's fill types the text
@@ -423,7 +421,7 @@ async function loadFromSql(size) {
         Date.now() - tParse,
         'ms'
     );
-    const build = page.getByRole('button', { name: 'Build from text' });
+    const build = page.getByRole('button', { name: 'Import', exact: true });
     return profiled(`load-${size}-sql`, () =>
         renderTimes(size, 'sql', async () => {
             const wait = page.evaluate(() => window.__perf.reset());
@@ -437,11 +435,11 @@ async function loadFromJson(size, file) {
     // a blank diagram, then Import > Diagram file
     await page.goto(`${BASE}/`);
     await page.getByRole('radio', { name: /PostgreSQL/ }).click();
-    await page.getByRole('button', { name: 'Blank diagram instead' }).click();
+    await page.getByRole('button', { name: 'Empty database' }).click();
     await page.waitForURL(/\/diagrams\/.+/);
     await page.locator('.react-flow').waitFor();
     const before = page.url();
-    await menu('Diagram', 'Import from', 'Diagram file (.json)');
+    await menu('Actions', 'Import', '.json');
     await page.locator('input[type=file]').setInputFiles(file);
     const button = page.getByRole('button', { name: 'Import', exact: true });
     await button.waitFor();
@@ -651,7 +649,7 @@ async function measureInteractions(size, source) {
     // add a table, undo, redo
     if (want('undo')) {
         await page.mouse.click(5, 5).catch(() => undefined);
-        const add = page.getByRole('button', { name: 'Add table' }).first();
+        const add = page.getByRole('button', { name: 'Add Table' }).first();
         // from the input event to the next painted frame (the commit is synchronous)
         const timed = async (kind, press, label) => {
             const t = page.evaluate(
@@ -711,6 +709,9 @@ async function measureInteractions(size, source) {
                     ),
                 total - selected
             );
+            // let the timer in the page arm itself before the key goes in: on a busy
+            // page the key can overtake the evaluate and then no start time is taken
+            await pause(150);
             await profiled(`delete-${size}-${source}`, async () => {
                 await page.keyboard.press('Delete');
                 await t;
@@ -744,6 +745,7 @@ async function measureInteractions(size, source) {
                     ),
                 total
             );
+            await pause(150);
             await page.keyboard.press('ControlOrMeta+z');
             note(
                 size,
@@ -760,10 +762,10 @@ async function measureInteractions(size, source) {
     if (want('export')) {
         await page
             .getByRole('menubar')
-            .getByText('Diagram', { exact: true })
+            .getByText('Actions', { exact: true })
             .click();
         await page
-            .getByRole('menuitem', { name: 'Export SQL for', exact: true })
+            .getByRole('menuitem', { name: 'Export SQL', exact: true })
             .click();
         const t0 = Date.now();
         await startRecording();
@@ -837,7 +839,7 @@ for (const size of SIZES) {
                         .locator('.react-flow__node-entity')
                         .first()
                         .waitFor();
-                    await menu('Diagram', 'Save as', 'Diagram file (.json)');
+                    await menu('Actions', 'Export as', 'JSON');
                     const [download] = await Promise.all([
                         page.waitForEvent('download'),
                         page

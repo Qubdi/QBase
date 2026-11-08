@@ -191,16 +191,14 @@ async function chooseDatabase() {
 }
 async function seeded() {
     await chooseDatabase();
-    await page
-        .getByRole('dialog')
-        .getByRole('tab', { name: 'SQL script' })
-        .click();
+    // choosing a database card opens the import step of the dialog
+    await page.getByRole('radio', { name: 'SQL Script' }).click();
     await page.getByRole('textbox', { name: 'SQL script' }).fill(SEED_SQL);
     await page
         .getByText(/Found \d+ tables?/)
         .first()
         .waitFor({ timeout: 10000 });
-    await page.getByRole('button', { name: 'Build from text' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     await page.waitForURL(/\/diagrams\/.+/);
     await page.locator('[data-testid^="entity-"]').first().waitFor();
     await idle();
@@ -223,18 +221,18 @@ await seeded();
 await scan('editor-light-tables');
 for (const [section, label] of [
     ['DBML', 'editor-light-dbml'],
-    ['Links', 'editor-light-links'],
-    ['Types', 'editor-light-types'],
-    ['Extras', 'editor-light-extras'],
+    ['Refs', 'editor-light-refs'],
+    ['Custom Types', 'editor-light-types'],
+    ['Visuals', 'editor-light-visuals'],
 ]) {
     await attempt(label, async () => {
         await rail(section);
         await scan(label);
     });
 }
-await attempt('editor-light-extras-notes', async () => {
+await attempt('editor-light-visuals-notes', async () => {
     await page.getByRole('tab', { name: 'Notes' }).click();
-    await scan('editor-light-extras-notes');
+    await scan('editor-light-visuals-notes');
 });
 await rail('Tables');
 
@@ -249,7 +247,7 @@ await attempt('edit-card', async () => {
     await closeWithEscape();
 });
 
-for (const m of ['Diagram', 'Edit', 'View']) {
+for (const m of ['Actions', 'Edit', 'View', 'Backup']) {
     await attempt(`menu-${m}`, async () => {
         await openMenu(m);
         await page.getByRole('menu').waitFor();
@@ -257,11 +255,11 @@ for (const m of ['Diagram', 'Edit', 'View']) {
         await closeWithEscape();
     });
 }
-await attempt('menu-Diagram-submenu', async () => {
-    await openMenu('Diagram');
-    await page.getByRole('menuitem', { name: 'Save as' }).hover();
+await attempt('menu-Actions-submenu', async () => {
+    await openMenu('Actions');
+    await page.getByRole('menuitem', { name: 'Export as' }).hover();
     await pause(400);
-    await scan('menu-Diagram-save-as-submenu');
+    await scan('menu-Actions-export-as-submenu');
     await closeWithEscape();
     await closeWithEscape();
 });
@@ -274,21 +272,17 @@ await attempt('dialog-open', async () => {
     await closeWithEscape();
 });
 await attempt('dialog-import', async () => {
-    await openMenu('Diagram');
-    await page
-        .getByRole('menuitem', { name: 'Import from', exact: true })
-        .click();
-    await page
-        .getByRole('menuitem', { name: 'SQL script', exact: true })
-        .click();
+    await openMenu('Actions');
+    await page.getByRole('menuitem', { name: 'Import', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'SQL', exact: true }).click();
     await page.getByRole('dialog').waitFor();
     await scan('dialog-import-sql');
     await closeWithEscape();
 });
 await attempt('dialog-export-sql', async () => {
-    await openMenu('Diagram');
+    await openMenu('Actions');
     await page
-        .getByRole('menuitem', { name: 'Export SQL for', exact: true })
+        .getByRole('menuitem', { name: 'Export SQL', exact: true })
         .click();
     await page.getByRole('menuitem', { name: 'MySQL' }).click();
     await page.getByRole('dialog').waitFor();
@@ -296,30 +290,44 @@ await attempt('dialog-export-sql', async () => {
     await closeWithEscape();
 });
 await attempt('dialog-export-image', async () => {
-    await openMenu('Diagram');
-    await page.getByRole('menuitem', { name: 'Save as', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'PNG image' }).click();
-    await page.getByRole('button', { name: 'Save image' }).waitFor();
+    await openMenu('Actions');
+    await page
+        .getByRole('menuitem', { name: 'Export as', exact: true })
+        .click();
+    await page.getByRole('menuitem', { name: 'PNG', exact: true }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).waitFor();
     await scan('dialog-export-image');
     await closeWithEscape();
 });
 await attempt('dialog-settings', async () => {
     // there is no separate settings dialog: settings live in the View menu
     await openMenu('View');
-    await page.getByRole('menuitem', { name: 'Color theme' }).click();
-    await scan('menu-View-color-theme-submenu');
+    await page.getByRole('menuitem', { name: /^Theme/ }).click();
+    await scan('menu-View-theme-submenu');
     await closeWithEscape();
     await closeWithEscape();
 });
-await attempt('dialog-preferences', async () => {
-    await openMenu('View');
-    await page.getByRole('menuitem', { name: 'Preferences' }).click();
+await attempt('dialog-restore-diagram', async () => {
+    // Preferences is gone from View: the Backup menu holds the other dialogs
+    await openMenu('Backup');
+    await page
+        .getByRole('menuitem', { name: 'Restore Diagram', exact: true })
+        .click();
     await page.getByRole('dialog').waitFor();
-    await scan('dialog-preferences');
+    await scan('dialog-restore-diagram');
+    await closeWithEscape();
+});
+await attempt('dialog-export-diagram', async () => {
+    await openMenu('Backup');
+    await page
+        .getByRole('menuitem', { name: 'Export Diagram', exact: true })
+        .click();
+    await page.getByRole('dialog').waitFor();
+    await scan('dialog-export-diagram');
     await closeWithEscape();
 });
 await attempt('dialog-create-relationship', async () => {
-    await rail('Links');
+    await rail('Refs');
     await page
         .getByRole('button', { name: 'Add Relationship' })
         .first()
@@ -330,7 +338,7 @@ await attempt('dialog-create-relationship', async () => {
 });
 await attempt('dialog-clear', async () => {
     await openMenu('Edit');
-    await page.getByRole('menuitem', { name: 'Empty the diagram' }).click();
+    await page.getByRole('menuitem', { name: 'Clear', exact: true }).click();
     await page.getByRole('alertdialog').or(page.getByRole('dialog')).waitFor();
     await scan('dialog-clear');
     await closeWithEscape();
@@ -353,6 +361,7 @@ await attempt('toast', async () => {
 });
 await attempt('language-menu', async () => {
     await page.getByRole('button', { name: 'Change language' }).click();
+    await page.getByRole('combobox').click();
     await page.getByText('Deutsch (German)').waitFor();
     await scan('language-menu-open');
     await closeWithEscape();
@@ -361,11 +370,11 @@ await attempt('language-menu', async () => {
 // ------------------------------------------------------------ dark theme
 await attempt('dark', async () => {
     await openMenu('View');
-    await page.getByRole('menuitem', { name: 'Color theme' }).click();
+    await page.getByRole('menuitem', { name: /^Theme/ }).click();
     await page.getByRole('menuitemradio', { name: 'Dark' }).click();
     await idle();
     await scan('editor-dark-tables');
-    for (const section of ['DBML', 'Links', 'Types', 'Extras']) {
+    for (const section of ['DBML', 'Refs', 'Custom Types', 'Visuals']) {
         await attempt(`editor-dark-${section}`, async () => {
             await rail(section);
             await scan(`editor-dark-${section.toLowerCase()}`);
@@ -373,8 +382,8 @@ await attempt('dark', async () => {
     }
     await rail('Tables');
     await attempt('menu-dark', async () => {
-        await openMenu('Diagram');
-        await scan('menu-Diagram-open-dark');
+        await openMenu('Actions');
+        await scan('menu-Actions-open-dark');
         await closeWithEscape();
     });
     await attempt('dialog-dark', async () => {
@@ -426,7 +435,7 @@ await kbCheck(
 await kbCheck('Tab reaches the rail buttons', async () => {
     const n = await tabUntil(
         () =>
-            /^(Tables|Extras)$/.test(
+            /^(Tables|Visuals)$/.test(
                 document.activeElement?.getAttribute('aria-label') ??
                     document.activeElement?.textContent?.trim() ??
                     ''
@@ -476,7 +485,7 @@ for (const [name, opener] of [
     [
         'Create relationship dialog',
         async () => {
-            await rail('Links');
+            await rail('Refs');
             await page
                 .getByRole('button', { name: 'Add Relationship' })
                 .first()
@@ -488,7 +497,7 @@ for (const [name, opener] of [
         async () => {
             await openMenu('Edit');
             await page
-                .getByRole('menuitem', { name: 'Empty the diagram' })
+                .getByRole('menuitem', { name: 'Clear', exact: true })
                 .click();
         },
     ],
@@ -598,7 +607,7 @@ async function ringAudit(label) {
 }
 const rings = [];
 rings.push(await ringAudit('editor, Tables'));
-for (const s of ['DBML', 'Links', 'Types', 'Extras']) {
+for (const s of ['DBML', 'Refs', 'Custom Types', 'Visuals']) {
     await rail(s);
     await idle();
     rings.push(await ringAudit(`editor, ${s}`));
@@ -815,6 +824,7 @@ for (const [loc, lang, dir, button] of [
     await seeded();
     await attempt(`lang-${lang}`, async () => {
         await page.getByRole('button', { name: 'Change language' }).click();
+        await page.getByRole('combobox').click();
         const item = page.getByText(button);
         await item.click();
         await idle();
@@ -857,7 +867,7 @@ await seeded();
 await scan('phone-canvas');
 await attempt('phone-drawer', async () => {
     await page.getByRole('button', { name: 'Open the editing panel' }).click();
-    await page.getByText('Diagram contents').waitFor();
+    await page.getByRole('heading', { name: 'Manage Diagram' }).waitFor();
     await scan('phone-drawer');
     await page.keyboard.press('Escape');
 });

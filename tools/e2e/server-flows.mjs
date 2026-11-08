@@ -424,7 +424,7 @@ await section(
             'S3.03 add a table: Unsaved changes, then Saved to project',
             async () => {
                 await page
-                    .getByRole('button', { name: 'Add table' })
+                    .getByRole('button', { name: 'Add Table' })
                     .first()
                     .click();
                 await pendingSave().waitFor();
@@ -464,7 +464,7 @@ await section(
             'S3.06 a change shows "unpublished changes"; publish v2',
             async () => {
                 await page
-                    .getByRole('button', { name: 'Add table' })
+                    .getByRole('button', { name: 'Add Table' })
                     .first()
                     .click();
                 await waitSaved();
@@ -524,7 +524,7 @@ await section('S4', 'share link', async () => {
             check(nodes >= 2, `viewer shows ${nodes} tables`);
             check(
                 (await V.p
-                    .getByRole('button', { name: 'Add table' })
+                    .getByRole('button', { name: 'Add Table' })
                     .count()) === 0,
                 'viewer has editing'
             );
@@ -629,7 +629,7 @@ await section('S5', 'roles: editor edits, viewer is read-only', async () => {
             await p.getByRole('button', { name: 'Open diagram' }).click();
             await p.locator('.react-flow').waitFor();
             const before = await p.locator('[data-testid^="entity-"]').count();
-            await p.getByRole('button', { name: 'Add table' }).first().click();
+            await p.getByRole('button', { name: 'Add Table' }).first().click();
             await pause(500);
             const after = await p.locator('[data-testid^="entity-"]').count();
             check(after === before + 1, 'editor could not add a table');
@@ -658,7 +658,7 @@ await section('S5', 'roles: editor edits, viewer is read-only', async () => {
             );
             const n = await p.locator('[data-testid^="entity-"]').count();
             await p
-                .getByRole('button', { name: 'Add table' })
+                .getByRole('button', { name: 'Add Table' })
                 .first()
                 .click({ timeout: 2000 })
                 .catch(() => undefined);
@@ -832,17 +832,17 @@ await section('S8', 'customise, lint, drift, re-sync', async () => {
             await page.mouse.move(b.x + 140, b.y + 90, { steps: 10 });
             await page.mouse.up();
             await page
-                .getByRole('button', { name: 'Extras', exact: true })
+                .getByRole('button', { name: 'Visuals', exact: true })
                 .click();
             await page
-                .getByRole('button', { name: 'Add area' })
+                .getByRole('button', { name: 'Add Area' })
                 .first()
                 .dragTo(page.locator('.react-flow__pane'), {
                     targetPosition: { x: 40, y: 520 },
                 });
             await page.getByRole('tab', { name: 'Notes' }).click();
             await page
-                .getByRole('button', { name: 'Add note' })
+                .getByRole('button', { name: 'Add Note' })
                 .first()
                 .dragTo(page.locator('.react-flow__pane'), {
                     targetPosition: { x: 560, y: 90 },
@@ -862,6 +862,11 @@ await section('S8', 'customise, lint, drift, re-sync', async () => {
                 .nth(3)
                 .click();
             await page.keyboard.press('Escape');
+            // the Description section of the card starts closed
+            await page
+                .locator('[data-edit-card]')
+                .getByRole('button', { name: 'Description', exact: true })
+                .click();
             const desc = page
                 .getByPlaceholder(/description/i)
                 .or(page.getByRole('textbox', { name: /description/i }))
@@ -1181,19 +1186,15 @@ await section(
                     await page
                         .getByRole('button', { name: 'Change language' })
                         .click();
+                    // the language button opens a select with a searchable list
                     await page
-                        .getByRole('menuitem', {
-                            name: new RegExp(
-                                code === 'de' ? 'Deutsch' : 'ქართული'
-                            ),
-                        })
-                        .click()
-                        .catch(async () => {
-                            await page
-                                .getByText(langs.find((l) => l[0] === code)[2])
-                                .first()
-                                .click();
-                        });
+                        .getByRole('dialog')
+                        .getByRole('combobox')
+                        .click();
+                    await page
+                        .getByText(langs.find((l) => l[0] === code)[2])
+                        .first()
+                        .click();
                     await pause(1200);
                     await page
                         .getByRole('button', { name: /@example\.com/ })

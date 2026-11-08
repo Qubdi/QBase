@@ -72,12 +72,15 @@ async function step(name, fn) {
     }
 }
 
+// items such as 'Theme Ctrl+M' carry their shortcut in the accessible name
+const itemName = (label) =>
+    new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}( Ctrl.*)?$`);
 const menu = async (...path) => {
     await page.getByRole('menubar').getByText(path[0], { exact: true }).click();
     for (const label of path.slice(1)) {
         await page
-            .getByRole('menuitem', { name: label, exact: true })
-            .or(page.getByRole('menuitemradio', { name: label, exact: true }))
+            .getByRole('menuitem', { name: itemName(label) })
+            .or(page.getByRole('menuitemradio', { name: itemName(label) }))
             .click();
     }
 };
@@ -182,7 +185,7 @@ await step('01 open / and see the new-diagram dialog', async () => {
 
 await step('02 create a PostgreSQL diagram, empty canvas', async () => {
     await page.getByRole('radio', { name: /PostgreSQL/ }).click();
-    await page.getByRole('button', { name: 'Blank diagram instead' }).click();
+    await page.getByRole('button', { name: 'Empty database' }).click();
     await page.waitForURL(/\/diagrams\/.+/);
     await page.locator('.react-flow').waitFor();
     check(
@@ -195,12 +198,12 @@ await step('02 create a PostgreSQL diagram, empty canvas', async () => {
 await step(
     '03a add a table, rename it, add fields, set a primary key',
     async () => {
-        await page.getByRole('button', { name: 'Add table' }).first().click();
+        await page.getByRole('button', { name: 'Add Table' }).first().click();
         await page.getByRole('button', { name: 'Rename table' }).click();
         await page.keyboard.press('ControlOrMeta+a');
         await page.keyboard.type('customers');
         await page.keyboard.press('Enter');
-        await page.getByRole('button', { name: 'customers' }).first().click();
+        // the form of a new table is already open
         await nthField(0).waitFor();
         // the new table starts with one field (id, primary key)
         await page.getByRole('button', { name: 'Add field' }).first().click();
@@ -228,13 +231,13 @@ await step(
 );
 
 await step('03b second table and a relationship', async () => {
-    await page.getByRole('button', { name: 'Add table' }).first().click();
+    await page.getByRole('button', { name: 'Add Table' }).first().click();
     await waitIdle();
     check(
         (await page.locator('.react-flow__node').count()) === 2,
         'expected two tables'
     );
-    await page.getByRole('button', { name: 'Links' }).click();
+    await page.getByRole('button', { name: 'Refs' }).click();
     await page
         .getByRole('button', { name: 'Add Relationship' })
         .first()
@@ -274,16 +277,14 @@ await step('04 undo and redo with the keyboard', async () => {
 await step('05 build a diagram from the pasted PostgreSQL sample', async () => {
     await page.getByRole('button', { name: 'New', exact: true }).click();
     await page.getByRole('radio', { name: /PostgreSQL/ }).click();
-    await page
-        .getByRole('dialog')
-        .getByRole('tab', { name: 'SQL script' })
-        .click();
+    // choosing a database card opens the import step of the dialog
+    await page.getByRole('radio', { name: 'SQL Script' }).click();
     await page.getByRole('textbox', { name: 'SQL script' }).fill(PG_SAMPLE);
     await page
         .getByText(/Found 2 tables and 1 relationship/)
         .waitFor({ timeout: 10000 });
     await shot('import-dialog');
-    await page.getByRole('button', { name: 'Build from text' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     await page.waitForURL(/\/diagrams\/.+/);
     await page.locator('.react-flow__node').first().waitFor();
     await waitIdle();
@@ -299,7 +300,7 @@ await step('05 build a diagram from the pasted PostgreSQL sample', async () => {
 let importedUrl = '';
 await step('06a export SQL for PostgreSQL', async () => {
     importedUrl = page.url();
-    await menu('Diagram', 'Export SQL for', 'PostgreSQL');
+    await menu('Actions', 'Export SQL', 'PostgreSQL');
     const box = page.getByRole('textbox', { name: 'Generated script' });
     await box.waitFor();
     await page.waitForFunction(
@@ -330,7 +331,7 @@ await step('06b DBML section shows the diagram', async () => {
 
 let jsonFile = '/tmp/qbase-e2e-diagram.json';
 await step('06c export the diagram file and import it again', async () => {
-    await menu('Diagram', 'Save as', 'Diagram file (.json)');
+    await menu('Actions', 'Export as', 'JSON');
     const [download] = await Promise.all([
         page.waitForEvent('download'),
         page.getByRole('button', { name: 'Download', exact: true }).click(),
@@ -339,7 +340,7 @@ await step('06c export the diagram file and import it again', async () => {
     const json = readFileSync(jsonFile, 'utf8');
     check(/pets/.test(json) && /vets/.test(json), 'json lacks the tables');
     await page.keyboard.press('Escape');
-    await menu('Diagram', 'Import from', 'Diagram file (.json)');
+    await menu('Actions', 'Import', '.json');
     await page.locator('input[type=file]').setInputFiles(jsonFile);
     await page.getByRole('button', { name: 'Import', exact: true }).click();
     await page.waitForURL((u) => u.toString() !== importedUrl, {
@@ -371,14 +372,14 @@ await step('07 reload keeps the diagram (IndexedDB)', async () => {
 });
 
 await step('08 dark theme', async () => {
-    await menu('View', 'Color theme', 'Dark');
+    await menu('View', 'Theme', 'Dark');
     await waitIdle();
     const dark = await page.evaluate(() =>
         document.documentElement.classList.contains('dark')
     );
     check(dark, 'html has no dark class');
     await shot('dark');
-    await menu('View', 'Color theme', 'Light');
+    await menu('View', 'Theme', 'Light');
 });
 
 await step('09 phone width: drawer opens', async () => {
@@ -388,7 +389,7 @@ await step('09 phone width: drawer opens', async () => {
     const open = page.getByRole('button', { name: 'Open the editing panel' });
     check((await open.count()) > 0, 'no button to open the panel on a phone');
     await open.click();
-    await page.getByText('Diagram contents').waitFor();
+    await page.getByRole('heading', { name: 'Manage Diagram' }).waitFor();
     await waitIdle();
     await shot('phone-drawer');
     await page.keyboard.press('Escape');
