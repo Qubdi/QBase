@@ -86,7 +86,7 @@ export const Rail: React.FC<{ onAction?: () => void; row?: boolean }> = ({
         <nav
             aria-label={t('editor.workspace.rail.label')}
             className={cn(
-                'flex h-full shrink-0 flex-col gap-1 overflow-y-auto bg-background p-2',
+                'flex h-full shrink-0 flex-col gap-1 overflow-hidden bg-background p-2',
                 row ? 'w-full' : 'w-[52px] border-r'
             )}
         >

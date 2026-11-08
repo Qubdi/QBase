@@ -18,7 +18,7 @@ export const CHROME_CSS = `
 .qb-legend { position:absolute; z-index:30;
   right:calc(var(--canvas-inset-right,0px) + 8px); top:calc(var(--canvas-inset-top,0px) + 8px); }
 .qb-toolbar { position:absolute; z-index:30; left:50%; transform:translateX(-50%);
-  max-width:calc(100% - 24px); overflow-x:auto;
+  max-width:calc(100% - 24px); overflow:hidden;
   bottom:calc(var(--canvas-inset-bottom,0px) + 15px); }
 .qb-pill { position:absolute; z-index:30; left:50%; transform:translateX(-50%);
   bottom:calc(var(--canvas-inset-bottom,0px) + 64px); }
