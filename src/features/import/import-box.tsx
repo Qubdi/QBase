@@ -5,6 +5,7 @@ import { Button } from '@/platform/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/platform/ui/tabs';
 import { Textarea } from '@/platform/ui/textarea';
 import { CodeView } from './code-view';
+import { EditionIcon, MethodIcon } from './chip-icons';
 import {
     dumpCommandFor,
     DBML_SAMPLE,
@@ -360,6 +361,10 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
                                         )
                                     }
                                 >
+                                    <EditionIcon
+                                        databaseType={databaseType}
+                                        edition={o.value}
+                                    />
                                     {o.label}
                                 </button>
                             ))}
@@ -383,6 +388,7 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
                                 className={choiceClass(method === m)}
                                 onClick={() => setMethod(m)}
                             >
+                                <MethodIcon method={m} />
                                 {t(`editor.importing.box.method.${m}`)}
                             </button>
                         ))}

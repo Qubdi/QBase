@@ -17,10 +17,3 @@ export const ANALYTICAL: readonly DatabaseType[] = ['clickhouse'];
 export const CARDS_PER_ROW = 3;
 /** Rows visible at once; the More / Primary toggle moves the window by one row. */
 export const VISIBLE_ROWS = 2;
-
-/**
- * The logo of a database, as an image address. Empty on purpose (owner
- * decision, 2026-11-08): every card shows the neutral database icon until a
- * logo is added here.
- */
-export const DATABASE_LOGOS: Partial<Record<DatabaseType, string>> = {};

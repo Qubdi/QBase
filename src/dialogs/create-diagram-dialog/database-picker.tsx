@@ -6,10 +6,11 @@ import { dialectFor } from '@/dialects/registry';
 import { Button } from '@/platform/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/ui/tabs';
 import { cn } from '@/lib/utils/utils';
+import { databaseLogo } from '@/components/diagram-icon/database-logos';
+import { useTheme } from '@/platform/theme/theme-context';
 import {
     ANALYTICAL,
     CARDS_PER_ROW,
-    DATABASE_LOGOS,
     TRANSACTIONAL,
     VISIBLE_ROWS,
 } from './database-groups';
@@ -19,7 +20,8 @@ const Card: React.FC<{
     chosen: boolean;
     onPick: (type: DatabaseType) => void;
 }> = ({ type, chosen, onPick }) => {
-    const logo = DATABASE_LOGOS[type];
+    const { resolvedTheme } = useTheme();
+    const logo = databaseLogo(type, resolvedTheme);
     return (
         <button
             type="button"
@@ -44,7 +46,9 @@ const Card: React.FC<{
                     aria-hidden="true"
                 />
             )}
-            <span className="text-foreground">{dialectFor(type).label}</span>
+            <span className={cn('text-foreground', logo && 'sr-only')}>
+                {dialectFor(type).label}
+            </span>
         </button>
     );
 };

@@ -78,7 +78,7 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
         );
         expect((await adapter.list())[0].databaseType).toBe('clickhouse');
     });
-    it('the cards carry the neutral database icon, no logo', async () => {
+    it('the cards carry the logo of their database', async () => {
         renderInEditor(
             <CreateDiagramDialog dialog={{ open: true }} />,
             null,
@@ -86,8 +86,10 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
         );
         const radios = await screen.findAllByRole('radio');
         for (const r of radios) {
-            expect(r.querySelector('svg')).not.toBeNull();
-            expect(r.querySelector('img')).toBeNull();
+            expect(r.querySelector('img')).not.toBeNull();
+            expect(r.querySelector('svg')).toBeNull();
+            // the logo carries the name, which stays for a screen reader
+            expect((r.textContent ?? '').length).toBeGreaterThan(0);
         }
     });
     it('"Blank diagram instead" makes a Generic diagram without choosing a type', async () => {

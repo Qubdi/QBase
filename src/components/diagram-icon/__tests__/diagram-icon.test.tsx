@@ -35,13 +35,18 @@ describe('DiagramIcon', () => {
         expect(onClick).toHaveBeenCalledTimes(3);
     });
 
-    it('draws a database drum on the colour of the database, not letters', () => {
-        show();
-        const src = decodeURIComponent(
-            screen.getByRole('img').getAttribute('src') ?? ''
+    it('shows the logo of the database, and its own icon for Generic', () => {
+        const { unmount } = show();
+        const logo = screen.getByRole('img').getAttribute('src') ?? '';
+        expect(logo).toContain('postgresql');
+        unmount();
+        render(
+            <TooltipProvider>
+                <DiagramIcon databaseType={DatabaseType.GENERIC} />
+            </TooltipProvider>
         );
-        expect(src).toContain('#336791');
-        expect(src).toContain('<ellipse');
-        expect(src).not.toContain('<text');
+        const generic = screen.getByRole('img').getAttribute('src') ?? '';
+        expect(generic).toContain('generic');
+        expect(generic).not.toBe(logo);
     });
 });

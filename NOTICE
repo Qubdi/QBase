@@ -63,3 +63,12 @@ Fonts (SIL Open Font License 1.1)
   1.1 (https://openfontlicense.org); the licence text ships with each
   package (node_modules/@fontsource/<name>/LICENSE). The fonts are used
   unmodified and are not sold by themselves.
+
+Database logos (src/assets/databases)
+  The images of the PostgreSQL, MySQL, MariaDB, SQLite, SQL Server, Oracle,
+  CockroachDB, ClickHouse, Supabase, Timescale and Cloudflare D1 logos are the
+  trademarks of their owners and are shown only to name those products. They
+  were added on 2026-11-08 at the owner's request, so that the database picker
+  looks as it does on the main branch, and are copied from that branch's image
+  files, not drawn again. The code that shows them is written for this project.
+  The icons of the editor itself come from the lucide-react package (ISC licence).
