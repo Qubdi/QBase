@@ -5,6 +5,7 @@ import type { DatabaseType } from '@/core/model/database';
 import type { UserType } from '@/core/model/user-type';
 import { traitsOf } from '@/core/model/database';
 import { cn } from '@/lib/utils/utils';
+import { CaretSortIcon } from '@/platform/ui/radix-icons';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
@@ -96,7 +97,7 @@ export const TypePicker: React.FC<{
                     className={cn(
                         'h-8 justify-between text-sm font-normal',
                         compact
-                            ? 'min-w-0 flex-1 gap-1 border border-transparent bg-transparent px-3 shadow-none hover:border-input hover:bg-transparent'
+                            ? 'min-w-0 flex-1 gap-1 border border-transparent bg-transparent px-3 py-1 shadow-none transition-none hover:border-input hover:bg-transparent hover:text-foreground active:scale-100 data-[state=open]:border-ring data-[state=open]:bg-transparent'
                             : 'w-[5.25rem] shrink-0 px-2'
                     )}
                 >
@@ -105,12 +106,13 @@ export const TypePicker: React.FC<{
                             ? typeLabel(column, databaseType)
                             : text('fields.typePlaceholder')}
                     </span>
-                    <ChevronsUpDown
-                        className={cn(
-                            '!size-3 opacity-50',
-                            compact && 'shrink-0'
-                        )}
-                    />
+                    {compact ? (
+                        <span className="flex items-center self-stretch pl-1 text-muted-foreground/60">
+                            <CaretSortIcon className="size-4" />
+                        </span>
+                    ) : (
+                        <ChevronsUpDown className="!size-3 opacity-50" />
+                    )}
                 </Button>
             </PopoverTrigger>
             <PopoverContent

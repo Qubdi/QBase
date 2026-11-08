@@ -101,40 +101,42 @@ export const EntityEditor: React.FC<{ entityId: Id; close(): void }> = ({
             aria-label={t('editor.workspace.canvas.editTable', {
                 name: entity.name,
             })}
-            className="w-[350px] max-w-[90vw] overflow-hidden rounded-xl border border-primary bg-card text-card-foreground shadow-lg ring-2 ring-primary/25"
+            className="flex max-h-[450px] w-[350px] max-w-[90vw] flex-col overflow-hidden rounded-xl border border-primary bg-card text-card-foreground shadow-lg ring-2 ring-primary/25"
         >
             <div className="flex h-12 shrink-0 items-center gap-2.5 border-b bg-gradient-to-b from-primary/10 to-transparent px-3">
-                <span
-                    aria-hidden
-                    className="flex size-7 shrink-0 items-center justify-center rounded-lg text-white"
-                    style={{ background: entity.color }}
-                >
-                    <Table2 className="size-4" />
-                </span>
-                {hasSchemas && entity.kind !== 'view' ? (
-                    <div className="w-20 shrink-0">
-                        <SchemaBox
-                            entityId={entity.id}
-                            schema={entity.schema}
-                            locked={locked}
-                        />
-                    </div>
-                ) : null}
-                <DebouncedInput
-                    required
-                    aria-label={t('editor.workspace.canvas.tableName')}
-                    value={entity.name}
-                    readOnly={locked}
-                    delay={1000}
-                    className="h-7 min-w-0 flex-1 text-sm font-semibold"
-                    onCommit={(name) =>
-                        edit({
-                            type: 'entity.update',
-                            id: entity.id,
-                            patch: { name },
-                        })
-                    }
-                />
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span
+                        aria-hidden
+                        className="flex size-7 shrink-0 items-center justify-center rounded-lg text-white"
+                        style={{ background: entity.color }}
+                    >
+                        <Table2 className="size-4" />
+                    </span>
+                    {hasSchemas && entity.kind !== 'view' ? (
+                        <div className="w-20 shrink-0">
+                            <SchemaBox
+                                entityId={entity.id}
+                                schema={entity.schema}
+                                locked={locked}
+                            />
+                        </div>
+                    ) : null}
+                    <DebouncedInput
+                        required
+                        aria-label={t('editor.workspace.canvas.tableName')}
+                        value={entity.name}
+                        readOnly={locked}
+                        delay={1000}
+                        className="h-7 min-w-0 flex-1 text-sm font-semibold"
+                        onCommit={(name) =>
+                            edit({
+                                type: 'entity.update',
+                                id: entity.id,
+                                patch: { name },
+                            })
+                        }
+                    />
+                </div>
                 <div className="flex shrink-0 flex-row gap-1">
                     <Button
                         type="button"
@@ -165,7 +167,7 @@ export const EntityEditor: React.FC<{ entityId: Id; close(): void }> = ({
                     {text('tables.duplicateName', { name: entity.name })}
                 </p>
             ) : null}
-            <div className="max-h-[60vh] overflow-y-auto px-1.5 py-1">
+            <div className="min-h-0 flex-1 overflow-y-auto px-1.5 py-1">
                 <FieldsEditor entity={entity} addedId={addedId} compact />
             </div>
             <div className="flex h-[49px] shrink-0 items-center justify-between border-t bg-muted/30 px-3">
