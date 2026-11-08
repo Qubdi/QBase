@@ -111,7 +111,7 @@ export const DiagramName: React.FC = () => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="size-7 opacity-0 hover:opacity-100 focus-visible:opacity-100"
+                            className="size-7"
                             aria-label={t('editor.workspace.name.rename')}
                             onClick={begin}
                         >
