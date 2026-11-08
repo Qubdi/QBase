@@ -15,12 +15,13 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-// the query script on the left is a read-only box; the paste box is the editable one
+// the query script on the left is a read-only code view (a div); the paste box is the textarea
 const area = () =>
     screen
         .getAllByRole('textbox')
         .find(
-            (e) => !(e as HTMLTextAreaElement).readOnly
+            (e) =>
+                e.tagName === 'TEXTAREA' && !(e as HTMLTextAreaElement).readOnly
         ) as HTMLTextAreaElement;
 const type = (value: string) => fireEvent.change(area(), { target: { value } });
 const settle = () => act(() => void vi.advanceTimersByTime(QUIET_MS + 10));
