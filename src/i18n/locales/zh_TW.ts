@@ -81,10 +81,6 @@ export const zh_TW = {
                     rename: '重新命名圖表',
                     hint: '按兩下以重新命名',
                 },
-                banner: {
-                    openOnly:
-                        '此版本的編輯器可以開啟及檢視 {{database}} 圖表，但無法變更。',
-                },
                 menu: {
                     label: '編輯器選單',
                     diagram: {
@@ -126,6 +122,11 @@ export const zh_TW = {
                         },
                         themeKey: '切換淺色與深色',
                         preferences: '偏好設定',
+                    },
+                    backup: {
+                        label: '備份',
+                        export: '匯出圖表',
+                        restore: '還原圖表',
                     },
                 },
                 rail: {
@@ -179,6 +180,11 @@ export const zh_TW = {
                         '貼上結構描述以建立圖表，或從空白圖表開始。',
                     fromFile: '開啟已儲存的檔案',
                     empty: '空白圖表',
+                    tabTransactional: '交易型',
+                    tabAnalytical: '分析型',
+                    moreDatabases: '更多資料庫',
+                    primaryDatabases: '主要資料庫',
+                    genericOption: '改用通用資料庫',
                     emptyFromImport: '改用空白圖表',
                     import: '從文字建立',
                     failed: '無法建立圖表。請再試一次。',
@@ -588,6 +594,9 @@ export const zh_TW = {
                     add: '新增關聯',
                     collapseAll: '全部收合',
                     relationships: '關聯',
+                    dependencies: '相依性',
+                    dependencyTable: '資料表',
+                    dependentView: '相依檢視',
                     empty: '沒有關聯',
                     emptyHint: '建立關聯以開始使用',
                     noMatch: '找不到符合篩選條件的關聯。',
@@ -626,6 +635,8 @@ export const zh_TW = {
                     emptyHint: '當您的資料庫有自訂類型時，會顯示在這裡',
                     noMatch: '找不到符合篩選條件的自訂類型。',
                     actions: '動作',
+                    highlight: '醒目提示欄位',
+                    clearHighlight: '清除醒目提示',
                     delete: '刪除',
                     rename: '重新命名類型',
                     kind: '種類',
@@ -743,6 +754,15 @@ export const zh_TW = {
             },
             highlight: {
                 label: '正在醒目標示「{{name}}」- 按一下即可清除',
+            },
+            legend: {
+                label: '類型顏色',
+                text: '文字 / 其他',
+                number: '數字',
+                moment: '日期與時間',
+                identifier: '識別碼',
+                flag: '布林',
+                document: 'JSON / XML',
             },
             toolbar: {
                 label: '畫布工具',

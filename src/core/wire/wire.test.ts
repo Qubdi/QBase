@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- hand-edited JSON fixtures */
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
-import { isOpenOnly } from '../model/database';
 import { listOf } from '../model/collection';
 import { KEY_METHODS } from '../model/key';
 import { looksLikeGeneratedId } from '../model/ids';
@@ -41,7 +40,7 @@ describe('DAT-019 a diagram has id, name, type, edition and two dates', () => {
 });
 
 describe('DAT-020 / DAT-021 database types and editions', () => {
-    it('accepts every stored type, including the open-only ones', () => {
+    it('accepts every stored type, including Oracle and ClickHouse', () => {
         for (const type of [
             'generic',
             'postgresql',
@@ -71,9 +70,9 @@ describe('DAT-020 / DAT-021 database types and editions', () => {
         expect(warnings.some((w) => w.path === 'databaseType')).toBe(true);
     });
 
-    it('keeps an Oracle file unchanged on a round trip and marks it open-only', () => {
+    it('keeps an Oracle file unchanged on a round trip and edits it like any other design', () => {
         const { design } = read(oracleFile);
-        expect(isOpenOnly(design.databaseType)).toBe(true);
+        expect(design.databaseType).toBe('oracle');
         const out = serialise(design);
         expect(out.databaseType).toBe('oracle');
         expect(out.tables).toEqual(
@@ -83,7 +82,7 @@ describe('DAT-020 / DAT-021 database types and editions', () => {
 
     it('keeps a ClickHouse file unchanged on a round trip', () => {
         const { design } = read(clickhouseFile);
-        expect(isOpenOnly(design.databaseType)).toBe(true);
+        expect(design.databaseType).toBe('clickhouse');
         const out = serialise(design);
         expect((out.tables as unknown[])[0]).toEqual({
             ...clickhouseFile.tables[0],

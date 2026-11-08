@@ -67,6 +67,19 @@ const RULES: Rule[] = [
             ]),
     },
     {
+        dialect: 'oracle',
+        test: (t) =>
+            any(t, [
+                /\bN?VARCHAR2\b/i,
+                /\bNUMBER\s*\(\s*\d/i,
+                /\bSYSDATE\b/i,
+                /\bSYS_GUID\s*\(/i,
+                /\bBINARY_(?:FLOAT|DOUBLE)\b/i,
+                /\b(?:PCTFREE|NOCOMPRESS|NOLOGGING)\b/i,
+                /\bTABLESPACE\s+\w+\s*;/i,
+            ]),
+    },
+    {
         dialect: 'postgresql',
         test: (t) =>
             any(t, [

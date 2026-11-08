@@ -33,8 +33,8 @@ describe('IMP-005 the three methods', () => {
         expect(tabs[0].getAttribute('aria-selected')).toBe('true');
         expect(last?.method).toBe('metadata');
     });
-    it('offers no SQL tab for a database without a reader', () => {
-        render(<ImportBox databaseType="oracle" onChange={onChange} />);
+    it('offers no SQL tab for a database without a reader (ClickHouse)', () => {
+        render(<ImportBox databaseType="clickhouse" onChange={onChange} />);
         expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
             'Database query',
             'DBML',

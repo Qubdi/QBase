@@ -10,12 +10,16 @@ import { metadataScriptFor } from '../metadata-scripts';
 const sqlite = await import('node:sqlite').catch(() => undefined);
 
 describe('metadata script for SQLite (IMP-056)', () => {
-    it('is offered, and none for the open-only types', () => {
+    it('is offered, also for Oracle and ClickHouse, and none for generic', () => {
         expect(metadataScriptFor('sqlite')).toContain(
             'metadata_json_to_import'
         );
-        expect(metadataScriptFor('oracle')).toBeUndefined();
-        expect(metadataScriptFor('clickhouse')).toBeUndefined();
+        expect(metadataScriptFor('oracle')).toContain(
+            'metadata_json_to_import'
+        );
+        expect(metadataScriptFor('clickhouse')).toContain(
+            'metadata_json_to_import'
+        );
         expect(metadataScriptFor('generic')).toBeUndefined();
     });
 

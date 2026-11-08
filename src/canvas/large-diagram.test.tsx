@@ -125,7 +125,8 @@ describe('connection dots on a zoomed-out diagram', () => {
     const dots = (id: string) =>
         screen
             .getByTestId(`entity-${id}`)
-            .querySelectorAll('.react-flow__handle').length;
+            .querySelectorAll('.react-flow__handle[data-handleid^="c:"]')
+            .length;
 
     it('every field has its two dots when zoomed in', () => {
         const s = shop();

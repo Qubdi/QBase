@@ -1,4 +1,3 @@
-import { isOpenOnly } from '@/core/model/database';
 import type { DatabaseType } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
 
@@ -13,11 +12,11 @@ export const EXPORT_TARGETS: readonly DatabaseType[] = [
 
 /**
  * The SQL export targets for a diagram: its own database first when it can be
- * written, then the standard five without repeating it. Open-only databases
- * export nothing.
+ * written (Oracle and ClickHouse through the generic generator, EXP-008), then
+ * the standard five without repeating it. Oracle, ClickHouse and CockroachDB
+ * are never offered as targets for another database's diagram.
  */
 export function exportTargets(own: DatabaseType): DatabaseType[] {
-    if (isOpenOnly(own)) return [];
     const first = dialectFor(own).sql.write ? [own] : [];
     return [...first, ...EXPORT_TARGETS.filter((t) => t !== own)];
 }

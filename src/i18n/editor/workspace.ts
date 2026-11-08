@@ -78,10 +78,6 @@ export const workspaceStrings = {
             rename: 'Rename the diagram',
             hint: 'Double-click to rename',
         },
-        banner: {
-            openOnly:
-                '{{database}} diagrams can be opened and viewed but not changed in this version of the editor.',
-        },
         menu: {
             label: 'Editor menus',
             diagram: {
@@ -123,6 +119,11 @@ export const workspaceStrings = {
                 },
                 themeKey: 'Switch light and dark',
                 preferences: 'Preferences',
+            },
+            backup: {
+                label: 'Backup',
+                export: 'Export diagram',
+                restore: 'Restore diagram',
             },
         },
         rail: {

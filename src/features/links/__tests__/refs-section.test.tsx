@@ -200,3 +200,46 @@ describe('EDT-176 a line chosen on the canvas opens its row', () => {
         expect(await screen.findByText('Primary table')).toBeTruthy();
     });
 });
+
+describe('EDT-184 EDT-185 dependencies in Refs', () => {
+    function viewed() {
+        const base = withTables(['users', 'v']);
+        const [users, view] = base.entities.order;
+        const asView = applyOk(base, {
+            type: 'entity.update',
+            id: view,
+            patch: { kind: 'view' },
+        }).design;
+        return applyOk(asView, {
+            type: 'dependency.insert',
+            item: {
+                id: 'dep1',
+                tableId: users,
+                dependentTableId: view,
+                createdAt: 1,
+            },
+        }).design;
+    }
+
+    it('lists them under Dependencies with the table and the dependent view, and Delete removes one (undoable)', async () => {
+        const { store } = renderPanel(<RefsSection />, viewed(), {
+            showViews: true,
+        });
+        const group = screen.getByTestId('dependencies');
+        expect(within(group).getByText('Dependencies')).toBeTruthy();
+        expect(within(group).getByText('Dependent view')).toBeTruthy();
+        expect(within(group).getByText('v')).toBeTruthy();
+        await userEvent.click(
+            within(group).getByRole('button', { name: 'Delete' })
+        );
+        expect(store.getState().design.dependencies).toEqual([]);
+        act(() => void store.getState().undo());
+        expect(store.getState().design.dependencies).toHaveLength(1);
+    });
+
+    it('follows the filter text', async () => {
+        renderPanel(<RefsSection />, viewed(), { showViews: true });
+        await userEvent.type(screen.getByLabelText('Filter'), 'zzz');
+        expect(screen.queryByTestId('dependencies')).toBeNull();
+    });
+});

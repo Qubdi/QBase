@@ -26,6 +26,8 @@ export interface UiState {
     /** which entities are shown on the canvas */
     filter: VisibilityFilter;
     zoom: number;
+    /** the custom type whose fields are tinted (EDT-196); one at a time, never saved */
+    highlightedTypeId?: Id;
     /**
      * A request for the canvas to pan to an entity. The number changes on every
      * request, so asking for the same entity twice is seen twice.

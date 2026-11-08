@@ -30,10 +30,11 @@ describe('import box: which method a paste belongs to (IMP-006)', () => {
             2 * 1024 * 1024 + 2
         );
     });
-    it('offers SQL only where a reader exists', () => {
+    it('offers SQL only where a reader exists (not for ClickHouse)', () => {
         expect(methodsFor('postgresql')).toEqual(['metadata', 'sql', 'dbml']);
         expect(methodsFor('generic')).toContain('sql');
-        expect(methodsFor('oracle')).not.toContain('sql');
+        expect(methodsFor('oracle')).toContain('sql');
+        expect(methodsFor('clickhouse')).not.toContain('sql');
         expect(methodsFor('mysql', ['dbml'])).toEqual(['dbml']);
     });
 });

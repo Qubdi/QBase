@@ -20,12 +20,22 @@ const LENGTH_TYPES = new Set([
     'varchar2',
     'nvarchar2',
     'raw',
+    'fixedstring',
 ]);
 
 /** Types that accept `max` in place of a number (SQL Server). */
 const MAX_TYPES = new Set(['varchar', 'nvarchar', 'varbinary']);
 
-const PRECISION_TYPES = new Set(['numeric', 'decimal', 'number', 'dec']);
+const PRECISION_TYPES = new Set([
+    'numeric',
+    'decimal',
+    'number',
+    'dec',
+    'decimal32',
+    'decimal64',
+    'decimal128',
+    'decimal256',
+]);
 
 const INTEGER_TYPES = new Set([
     'integer',
@@ -65,7 +75,12 @@ export function traitsOfType(
         allowsMax: databaseType === 'sql_server' && MAX_TYPES.has(id),
         hasPrecisionScale: PRECISION_TYPES.has(id),
         allowsArray: traitsOf(databaseType).hasArrays && !serial,
-        canIncrement: serial || INTEGER_TYPES.has(id),
+        // ClickHouse numbers nothing; an Oracle NUMBER column can be an identity
+        canIncrement:
+            databaseType !== 'clickhouse' &&
+            (serial ||
+                INTEGER_TYPES.has(id) ||
+                (databaseType === 'oracle' && id === 'number')),
         serial,
     };
 }
@@ -99,6 +114,10 @@ export function lengthLimit(
         case 'postgresql':
         case 'cockroachdb':
             return 10485760;
+        case 'oracle':
+            if (id === 'nvarchar2') return 2000;
+            if (id === 'nchar') return 1000;
+            return id === 'char' || id === 'raw' ? 2000 : 4000;
         default:
             return undefined;
     }

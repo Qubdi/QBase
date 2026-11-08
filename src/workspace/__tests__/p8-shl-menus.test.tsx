@@ -132,6 +132,38 @@ describe('Diagram menu (SHL-057 to SHL-060)', () => {
     });
 });
 
+describe('Backup menu (SHL-064)', () => {
+    it('SHL-064: Export diagram and Restore diagram open the same dialogs as the JSON items', async () => {
+        const dialogs = show('postgresql');
+        await openMenu('Backup');
+        const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
+        expect(labels(items)).toEqual(['Export diagram', 'Restore diagram']);
+        fireEvent.click(items[0]);
+        expect(dialogs.openExportJsonDialog).toHaveBeenCalled();
+    });
+
+    it('SHL-064: Restore diagram opens the .json import dialog', async () => {
+        const dialogs = show('postgresql');
+        await openMenu('Backup');
+        fireEvent.click(
+            await screen.findByRole('menuitem', { name: 'Restore diagram' })
+        );
+        expect(dialogs.openImportDiagramDialog).toHaveBeenCalled();
+    });
+
+    it('EXP-008: an Oracle diagram offers itself first in Export SQL and can import SQL; ClickHouse cannot import SQL', async () => {
+        const dialogs = show('oracle');
+        await openMenu('Diagram');
+        await openSub(/Export SQL for/);
+        const items = await screen.findAllByRole('menuitem', {
+            name: /^(PostgreSQL|MySQL|SQL Server|MariaDB|SQLite|Oracle)$/,
+        });
+        expect(labels(items)[0]).toBe('Oracle');
+        fireEvent.click(items[0]);
+        expect(dialogs.openExportSqlDialog).toHaveBeenCalledWith('oracle');
+    });
+});
+
 describe('View menu (SHL-062, SHL-063)', () => {
     it('SHL-062: lists side panel, cardinality, field attributes, compact tables, minimap with check marks', async () => {
         show('postgresql');

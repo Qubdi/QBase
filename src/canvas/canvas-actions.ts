@@ -6,6 +6,10 @@ import {
     planDuplicateEntity,
     planPaste,
 } from '@/core/commands/plan-entity';
+import {
+    planDeleteDependency,
+    planDependency,
+} from '@/core/commands/plan-dependency';
 import { planDeleteLink, planLink } from '@/core/commands/plan-link';
 import { planAddMemo, planAddRegion } from '@/core/commands/plan-visual';
 import type { Design } from '@/core/model/design';
@@ -93,6 +97,14 @@ export function deleteSelection(store: EditorStore): boolean {
         )
             commands.push(planDeleteLink(id));
     }
+    // a dependency goes with its table or view, in the same step
+    for (const dep of design.dependencies)
+        if (
+            chosen.has(dep.id) &&
+            !gone.has(dep.tableId) &&
+            !gone.has(dep.dependentTableId)
+        )
+            commands.push(planDeleteDependency(dep.id));
     for (const id of design.regions.order)
         if (chosen.has(id))
             commands.push({ type: 'item.remove', collection: 'regions', id });
@@ -302,4 +314,20 @@ export function connectFromHandles(
     const ends = endsOf(connection);
     if (!ends || !isUsableConnection(connection)) return undefined;
     return connectColumns(store, ends.from, ends.to);
+}
+
+/**
+ * A drag that started on a view's top or bottom dot has been released over a
+ * table (EDT-183): the view now reads that table. No dialog; an existing pair
+ * is left as it is. Returns the dependency's id when one was made.
+ */
+export function connectDependency(
+    store: EditorStore,
+    viewId: Id,
+    tableId: Id
+): Id | undefined {
+    const state = store.getState();
+    const plan = planDependency(state.design, viewId, tableId);
+    if (plan.kind !== 'ok') return undefined;
+    return state.edit(plan.command).ok ? plan.dependency.id : undefined;
 }

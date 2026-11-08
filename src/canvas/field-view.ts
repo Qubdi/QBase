@@ -36,6 +36,16 @@ export const KIND_CLASSES: Record<TypeKind, string> = {
     document: 'bg-lime-500/15 text-lime-700 dark:text-lime-300',
 };
 
+/** The six tints, in the order the legend lists them (EDT-045). */
+export const LEGEND_KINDS: readonly TypeKind[] = [
+    'text',
+    'number',
+    'moment',
+    'identifier',
+    'flag',
+    'document',
+];
+
 /**
  * The text in a type chip (EDT-113, EDT-114): the first word of the type name,
  * then size, precision and scale, then `[]` for an array. With attributes

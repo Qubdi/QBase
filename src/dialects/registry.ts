@@ -1,10 +1,10 @@
-import type { DatabaseType } from '@/core/model/database';
-import { DATABASE_TYPES } from '@/core/model/database';
 import type { Dialect } from './dialect';
+import { clickhouse } from './clickhouse';
 import { cockroachdb } from './cockroachdb';
 import { generic, readOnlyDialect } from './generic';
 import { mariadb } from './mariadb';
 import { mysql } from './mysql';
+import { oracle } from './oracle';
 import { postgresql } from './postgresql';
 import { sqlServer } from './sql-server';
 import { sqlite } from './sqlite';
@@ -17,34 +17,18 @@ const MODULES: readonly Dialect[] = [
     mariadb,
     sqlite,
     cockroachdb,
+    oracle,
+    clickhouse,
 ];
-
-const LABELS: Record<DatabaseType, string> = {
-    generic: 'Generic',
-    postgresql: 'PostgreSQL',
-    mysql: 'MySQL',
-    sql_server: 'SQL Server',
-    mariadb: 'MariaDB',
-    sqlite: 'SQLite',
-    clickhouse: 'ClickHouse',
-    cockroachdb: 'CockroachDB',
-    oracle: 'Oracle',
-};
 
 const TABLE = new Map<string, Dialect>(MODULES.map((d) => [d.id, d]));
 
-/** The dialect for an id; unknown or dropped ids resolve to a read-only generic one. */
+/** The dialect for an id; an unknown id resolves to a read-only generic one that keeps its name. */
 export function dialectFor(id: string): Dialect {
-    const found = TABLE.get(id);
-    if (found) return found;
-    const known = (DATABASE_TYPES as readonly string[]).includes(id);
-    return readOnlyDialect(
-        known ? (id as DatabaseType) : 'generic',
-        known ? LABELS[id as DatabaseType] : id
-    );
+    return TABLE.get(id) ?? readOnlyDialect('generic', id);
 }
 
-/** Dialects offered in pickers: those with a module, generic first. */
+/** Dialects offered in pickers, generic first. */
 export function listDialects(): readonly Dialect[] {
     return MODULES;
 }

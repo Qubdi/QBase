@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { planDeleteDependency } from '@/core/commands/plan-dependency';
 import {
     planDeleteLink,
     planSetCardinality,
     planSwitchLink,
 } from '@/core/commands/plan-link';
 import type { CardinalityChoice } from '@/core/commands/plan-link';
+import type { Dependency } from '@/core/model/dependency';
 import type { Link } from '@/core/model/link';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { Notice } from '@/platform/panel/notice';
@@ -16,7 +18,7 @@ import { Input } from '@/platform/ui/input';
 import { WindowedList } from '@/features/tables/windowed-list';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { CreateLinkDialog } from './create-link-dialog';
-import { cardinalityChoiceOf, listRefs } from './link-rules';
+import { cardinalityChoiceOf, listDependencies, listRefs } from './link-rules';
 
 const RefRow: React.FC<{
     link: Link;
@@ -131,7 +133,54 @@ const RefRow: React.FC<{
     );
 };
 
-/** The Refs section (EDT-178 to EDT-182). Dependencies are no longer a feature. */
+const DependencyRow: React.FC<{ dependency: Dependency }> = ({
+    dependency,
+}) => {
+    const { design, locked, edit } = useEditorEnv();
+    const text = useText();
+    const store = useEditorStoreApi();
+    const table = design.entities.byId[dependency.tableId];
+    const view = design.entities.byId[dependency.dependentTableId];
+    const selected = useEditorStore((s) =>
+        s.ui.selection.includes(dependency.id)
+    );
+    return (
+        <div
+            className={`space-y-2 rounded-md border p-2 text-sm ${selected ? 'ring-2 ring-primary' : ''}`}
+            data-testid="dependency-row"
+        >
+            <button
+                type="button"
+                className="block w-full truncate text-left font-medium"
+                onClick={() => store.getState().select([dependency.id])}
+            >
+                {table?.name ?? ''}
+            </button>
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1">
+                <dt className="text-muted-foreground">
+                    {text('refs.dependencyTable')}
+                </dt>
+                <dd className="truncate">{table?.name ?? ''}</dd>
+                <dt className="text-muted-foreground">
+                    {text('refs.dependentView')}
+                </dt>
+                <dd className="truncate">{view?.name ?? ''}</dd>
+            </dl>
+            {locked ? null : (
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => edit(planDeleteDependency(dependency.id))}
+                >
+                    {text('refs.delete')}
+                </Button>
+            )}
+        </div>
+    );
+};
+
+/** The Refs section (EDT-178 to EDT-186): relationships, then dependencies. */
 export const RefsSection: React.FC = () => {
     const { design, filter, showViews, locked } = useEditorEnv();
     const text = useText();
@@ -150,6 +199,12 @@ export const RefsSection: React.FC = () => {
     }, [chosen]);
     const [creating, setCreating] = useState(false);
     const links = listRefs({ design, filter, showViews, text: filterText });
+    const dependencies = listDependencies({
+        design,
+        filter,
+        showViews,
+        text: filterText,
+    });
 
     const toggle = (id: string) =>
         setOpenIds((current) => {
@@ -159,30 +214,48 @@ export const RefsSection: React.FC = () => {
         });
 
     let body: React.ReactNode;
-    if (design.links.order.length === 0) {
+    if (design.links.order.length === 0 && design.dependencies.length === 0) {
         body = (
             <Notice title={text('refs.empty')} hint={text('refs.emptyHint')} />
         );
-    } else if (links.length === 0) {
+    } else if (links.length === 0 && dependencies.length === 0) {
         body = <Notice title={text('refs.noMatch')} />;
     } else {
         body = (
-            <div className="space-y-1">
-                <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {text('refs.relationships')}
-                </h3>
-                <WindowedList
-                    items={links}
-                    getId={(l) => l.id}
-                    keepIds={[...openIds]}
-                    renderItem={(link) => (
-                        <RefRow
-                            link={link}
-                            open={openIds.has(link.id)}
-                            onToggle={() => toggle(link.id)}
+            <div className="space-y-3">
+                {links.length > 0 ? (
+                    <div className="space-y-1">
+                        <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {text('refs.relationships')}
+                        </h3>
+                        <WindowedList
+                            items={links}
+                            getId={(l) => l.id}
+                            keepIds={[...openIds]}
+                            renderItem={(link) => (
+                                <RefRow
+                                    link={link}
+                                    open={openIds.has(link.id)}
+                                    onToggle={() => toggle(link.id)}
+                                />
+                            )}
                         />
-                    )}
-                />
+                    </div>
+                ) : null}
+                {dependencies.length > 0 ? (
+                    <div className="space-y-1" data-testid="dependencies">
+                        <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {text('refs.dependencies')}
+                        </h3>
+                        <WindowedList
+                            items={dependencies}
+                            getId={(d) => d.id}
+                            renderItem={(dep) => (
+                                <DependencyRow dependency={dep} />
+                            )}
+                        />
+                    </div>
+                ) : null}
             </div>
         );
     }

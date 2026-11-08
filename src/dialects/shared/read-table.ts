@@ -42,6 +42,7 @@ const AFTER_ARGUMENT_WORDS = new Set([
     'WITHOUT',
     'TIME',
     'ZONE',
+    'LOCAL',
     'VARYING',
     'PRECISION',
     'UNSIGNED',
@@ -55,6 +56,9 @@ const LENGTH_TYPES = new Set([
     'varchar',
     'nchar',
     'nvarchar',
+    'varchar2',
+    'nvarchar2',
+    'raw',
     'binary',
     'varbinary',
 ]);
@@ -159,7 +163,9 @@ export function readType(cur: Cursor, ctx: ReadContext): TypeRead {
         const first = numbers[0];
         if (LENGTH_TYPES.has(name)) {
             if (first.toLowerCase() === 'max') out.length = 'max';
-            else if (/^\d+$/.test(first)) out.length = Number(first);
+            else if (/^\d+(?:byte|char)?$/i.test(first))
+                // Oracle: VARCHAR2(50 CHAR) counts characters, VARCHAR2(50 BYTE) bytes
+                out.length = Number.parseInt(first, 10);
         } else if (PRECISION_TYPES.has(name)) {
             if (/^\d+$/.test(first)) out.precision = Number(first);
             if (numbers[1] !== undefined && /^-?\d+$/.test(numbers[1]))
@@ -395,7 +401,8 @@ export function readColumn(
                 cur.next();
                 readGenerated(cur, column);
             } else {
-                cur.acceptWords('BY', 'DEFAULT');
+                if (cur.acceptWords('BY', 'DEFAULT'))
+                    cur.acceptWords('ON', 'NULL');
                 if (cur.acceptWords('AS', 'IDENTITY')) {
                     column.numbered = true;
                     if (cur.isPunct('(')) cur.readGroup();

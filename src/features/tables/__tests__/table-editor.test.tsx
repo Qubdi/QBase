@@ -319,7 +319,7 @@ describe('EDT-150 check constraints where SQL export leaves them out', () => {
         let design = withTables(['orders']);
         const id = design.entities.order[0];
         if (withCheck) design = applyOk(design, planAddRule(id)).design;
-        return { ...design, databaseType: 'oracle' as const };
+        return { ...design, databaseType: 'clickhouse' as const };
     };
 
     it('hides the section when the table has none', async () => {
@@ -342,7 +342,7 @@ describe('EDT-150 check constraints where SQL export leaves them out', () => {
 
     it('stays as before for a database that writes checks', async () => {
         const { store } = await openFirst();
-        expect(store.getState().design.databaseType).not.toBe('oracle');
+        expect(store.getState().design.databaseType).not.toBe('clickhouse');
         expect(
             screen.getAllByRole('button', { name: 'Add check' }).length
         ).toBeGreaterThan(0);

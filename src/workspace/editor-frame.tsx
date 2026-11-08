@@ -10,7 +10,6 @@ import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { CanvasSlot } from './canvas-slot';
 import { MobilePanel } from './mobile-panel';
 import { MobileNavbar, Slot, TopNavbar } from './navbar/top-navbar';
-import { OpenOnlyBanner } from './open-only-banner';
 import { clampPanelWidth, defaultPanelWidth, PANEL_MIN } from './panel-width';
 import { Rail } from './rail';
 import { RememberDefault } from './remember-default';
@@ -116,7 +115,6 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
             )}
             <Slot name="below-navbar" className="shrink-0 empty:hidden">
                 <AccessBanner />
-                <OpenOnlyBanner />
             </Slot>
             <div ref={row} className="relative flex min-h-0 flex-1">
                 {desktop ? (

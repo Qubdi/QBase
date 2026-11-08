@@ -9,7 +9,7 @@ import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 export interface EditorEnv {
     design: ReturnType<typeof selectDesign>;
     filter: ReturnType<typeof selectFilter>;
-    /** the design cannot be edited: read-only session or an open-only database */
+    /** the design cannot be edited: read-only session */
     locked: boolean;
     /** View > Database Views */
     showViews: boolean;

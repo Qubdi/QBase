@@ -10,9 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/platform/ui/dialog';
-import { DiagramIcon } from '@/components/diagram-icon/diagram-icon';
 import type { DatabaseType } from '@/core/model/database';
-import { listDialects } from '@/dialects/registry';
 import {
     createBlankDesign,
     nextNumber,
@@ -22,9 +20,9 @@ import { useDesignList } from '@/features/designs/use-design-list';
 import { ImportBox } from '@/features/import/import-box';
 import type { ImportBoxState } from '@/features/import/import-box';
 import { useDialog } from '@/hooks/use-dialog';
-import { cn } from '@/lib/utils/utils';
 import { useStorageAdapter } from '@/qbase/storage-context';
 import { useOptionalEditorStoreApi } from '@/store/store-context';
+import { DatabasePicker } from './database-picker';
 
 export interface CreateDiagramDialogProps {
     dialog: { open: boolean };
@@ -127,34 +125,14 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                 </DialogHeader>
 
                 {step === 'type' ? (
-                    <div
-                        role="radiogroup"
-                        aria-label={t('editor.designs.create.titleType')}
-                        className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-                    >
-                        {listDialects().map((d) => (
-                            <button
-                                key={d.id}
-                                type="button"
-                                role="radio"
-                                aria-checked={type === d.id}
-                                onClick={() => {
-                                    setType(d.id);
-                                    setStep('import');
-                                }}
-                                className={cn(
-                                    'flex items-center gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-accent',
-                                    type === d.id && 'border-primary bg-accent'
-                                )}
-                            >
-                                <DiagramIcon
-                                    databaseType={d.id}
-                                    className="size-8"
-                                />
-                                <span className="font-medium">{d.label}</span>
-                            </button>
-                        ))}
-                    </div>
+                    <DatabasePicker
+                        value={type}
+                        onPick={(picked) => {
+                            setType(picked);
+                            setStep('import');
+                        }}
+                        onGeneric={() => setType('generic')}
+                    />
                 ) : type ? (
                     <ImportBox
                         databaseType={type}

@@ -54,7 +54,7 @@ describe('New diagram dialog, step 1 (SHL-032, SHL-033, SHL-034)', () => {
             'MariaDB',
             'SQLite',
             'SQL Server',
-            'CockroachDB',
+            'Oracle',
         ])
             expect(names, name).toContain(name);
     });

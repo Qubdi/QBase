@@ -81,10 +81,6 @@ export const zh_CN = {
                     rename: '重命名图表',
                     hint: '双击可重命名',
                 },
-                banner: {
-                    openOnly:
-                        '此版本的编辑器只能打开和查看 {{database}} 图表，不能修改。',
-                },
                 menu: {
                     label: '编辑器菜单',
                     diagram: {
@@ -126,6 +122,11 @@ export const zh_CN = {
                         },
                         themeKey: '切换浅色和深色',
                         preferences: '偏好设置',
+                    },
+                    backup: {
+                        label: '备份',
+                        export: '导出图表',
+                        restore: '恢复图表',
                     },
                 },
                 rail: {
@@ -180,6 +181,11 @@ export const zh_CN = {
                         '粘贴模式以据此生成图表，或从空白图表开始。',
                     fromFile: '打开已保存的文件',
                     empty: '空白图表',
+                    tabTransactional: '事务型',
+                    tabAnalytical: '分析型',
+                    moreDatabases: '更多数据库',
+                    primaryDatabases: '主要数据库',
+                    genericOption: '改用通用数据库',
                     emptyFromImport: '改用空白图表',
                     import: '从文本生成',
                     failed: '无法创建图表。请重试。',
@@ -586,6 +592,9 @@ export const zh_CN = {
                     add: '添加关系',
                     collapseAll: '全部折叠',
                     relationships: '关系',
+                    dependencies: '依赖',
+                    dependencyTable: '表',
+                    dependentView: '依赖视图',
                     empty: '没有关系',
                     emptyHint: '创建一个关系即可开始',
                     noMatch: '未找到符合筛选条件的关系。',
@@ -624,6 +633,8 @@ export const zh_CN = {
                     emptyHint: '当数据库中有自定义类型时，将显示在这里',
                     noMatch: '未找到符合筛选条件的自定义类型。',
                     actions: '操作',
+                    highlight: '高亮字段',
+                    clearHighlight: '清除高亮',
                     delete: '删除',
                     rename: '重命名类型',
                     kind: '种类',
@@ -741,6 +752,15 @@ export const zh_CN = {
             },
             highlight: {
                 label: '正在高亮“{{name}}”，点击可清除',
+            },
+            legend: {
+                label: '类型颜色',
+                text: '文本 / 其他',
+                number: '数字',
+                moment: '日期和时间',
+                identifier: '标识符',
+                flag: '布尔',
+                document: 'JSON / XML',
             },
             toolbar: {
                 label: '画布工具',

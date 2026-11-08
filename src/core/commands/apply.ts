@@ -10,7 +10,6 @@ import {
 } from '../model/collection';
 import type { Collection } from '../model/collection';
 import type { Column } from '../model/column';
-import { isOpenOnly } from '../model/database';
 import type { Design } from '../model/design';
 import { TABLE_WIDTH } from '../model/entity';
 import type { EntityParts } from '../model/entity-parts';
@@ -63,7 +62,7 @@ export function apply(
     command: Command,
     options: ApplyOptions = {}
 ): ApplyResult {
-    if (options.readOnly || isOpenOnly(design.databaseType))
+    if (options.readOnly)
         return {
             ok: false,
             reason: 'read-only',
@@ -125,6 +124,10 @@ function run(design: Design, command: Command): Step {
             return updatePart(design, command);
         case 'part.reorder':
             return reorderParts(design, command);
+        case 'dependency.insert':
+            return insertDependency(design, command.item, command.at);
+        case 'dependency.remove':
+            return removeDependency(design, command.id);
         case 'item.insert':
             return insertItemCommand(design, command);
         case 'item.remove':
@@ -897,6 +900,48 @@ function checkLink(design: Design, link: Link): void {
         if (!entity.columnIds.includes(columnId))
             fail('invalid', `Link ${link.id} points at a missing column`);
     }
+}
+
+function insertDependency(
+    design: Design,
+    item: Design['dependencies'][number],
+    at?: number
+): Step {
+    if (design.dependencies.some((d) => d.id === item.id))
+        fail('duplicate', `Id ${item.id} is already used`);
+    const view = design.entities.byId[item.dependentTableId];
+    if (!view || !design.entities.byId[item.tableId])
+        fail('invalid', `Dependency ${item.id} points at a missing table`);
+    if (item.tableId === item.dependentTableId)
+        fail('invalid', 'A table cannot depend on itself');
+    const list = design.dependencies.slice();
+    list.splice(
+        at === undefined ? list.length : Math.max(0, Math.min(at, list.length)),
+        0,
+        item
+    );
+    return {
+        design: { ...design, dependencies: list },
+        inverse: { type: 'dependency.remove', id: item.id },
+        changed: true,
+    };
+}
+
+function removeDependency(design: Design, id: Id): Step {
+    const index = design.dependencies.findIndex((d) => d.id === id);
+    if (index < 0) fail('not-found', `No dependency ${id}`);
+    return {
+        design: {
+            ...design,
+            dependencies: design.dependencies.filter((d) => d.id !== id),
+        },
+        inverse: {
+            type: 'dependency.insert',
+            item: design.dependencies[index],
+            at: index,
+        },
+        changed: true,
+    };
 }
 
 function insertItemCommand(

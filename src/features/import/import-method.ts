@@ -48,8 +48,8 @@ export function prettyJson(text: string): string {
 }
 
 /**
- * Which methods a database accepts: SQL needs a reader, and databases without
- * one (the open-only ones) get no import at all.
+ * Which methods a database accepts: SQL needs a reader, so ClickHouse offers
+ * only the query result and DBML.
  */
 export function methodsFor(
     type: DatabaseType,

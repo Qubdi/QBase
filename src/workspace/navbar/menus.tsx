@@ -2,8 +2,8 @@ import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWorkspace } from '@/components/qubdi/workspace-context';
 import { LocalConfigContext } from '@/context/local-config-context/local-config-context';
-import { isOpenOnly } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
+import { methodsFor } from '@/features/import/import-method';
 import { useDialog } from '@/hooks/use-dialog';
 import { getOperatingSystem } from '@/lib/utils/utils';
 import { useTheme } from '@/platform/theme/theme-context';
@@ -45,7 +45,7 @@ export interface MenusProps {
     commands: WorkspaceCommands;
 }
 
-/** The three menus of the navbar: Diagram, Edit and View. */
+/** The menus of the navbar: Diagram, Edit, View and Backup (SHL-064). */
 export const Menus: React.FC<MenusProps> = ({ commands }) => {
     const { t } = useTranslation();
     const dialogs = useDialog();
@@ -57,8 +57,9 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
     const canUndo = useEditorStore(selectCanUndo);
     const canRedo = useEditorStore(selectCanRedo);
     const panelOpen = useEditorStore((s) => s.ui.panel.open);
-    const openOnly = isOpenOnly(type);
     const targets = exportTargets(type);
+    // ClickHouse has no SQL reader: only the query result and DBML bring a schema in
+    const canReadSql = methodsFor(type, ['sql']).length > 0;
     // in a project only its owners may delete a diagram (spec P12)
     const mayDelete = workspace ? workspace.project.role === 'owner' : true;
 
@@ -81,7 +82,7 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
                             </MenubarItem>
                             <MenubarSeparator />
                             <MenubarItem
-                                disabled={locked || openOnly}
+                                disabled={locked || !canReadSql}
                                 onSelect={() =>
                                     dialogs.openImportDatabaseDialog({
                                         methods: ['sql'],
@@ -92,7 +93,7 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
                                 {t('editor.workspace.menu.diagram.importSql')}
                             </MenubarItem>
                             <MenubarItem
-                                disabled={locked || openOnly}
+                                disabled={locked}
                                 onSelect={() =>
                                     dialogs.openImportDatabaseDialog({
                                         methods: ['dbml'],
@@ -288,6 +289,20 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
                     <MenubarSeparator />
                     <MenubarItem onSelect={dialogs.openSettingsDialog}>
                         {t('editor.workspace.menu.view.preferences')}
+                    </MenubarItem>
+                </MenubarContent>
+            </MenubarMenu>
+
+            <MenubarMenu>
+                <MenubarTrigger>
+                    {t('editor.workspace.menu.backup.label')}
+                </MenubarTrigger>
+                <MenubarContent>
+                    <MenubarItem onSelect={dialogs.openExportJsonDialog}>
+                        {t('editor.workspace.menu.backup.export')}
+                    </MenubarItem>
+                    <MenubarItem onSelect={dialogs.openImportDiagramDialog}>
+                        {t('editor.workspace.menu.backup.restore')}
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>

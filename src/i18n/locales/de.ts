@@ -84,10 +84,6 @@ export const de = {
                     rename: 'Diagramm umbenennen',
                     hint: 'Zum Umbenennen doppelklicken',
                 },
-                banner: {
-                    openOnly:
-                        '{{database}}-Diagramme können in dieser Version des Editors geöffnet und angezeigt, aber nicht geändert werden.',
-                },
                 menu: {
                     label: 'Editor-Menüs',
                     diagram: {
@@ -129,6 +125,11 @@ export const de = {
                         },
                         themeKey: 'Zwischen hell und dunkel wechseln',
                         preferences: 'Einstellungen',
+                    },
+                    backup: {
+                        label: 'Sicherung',
+                        export: 'Diagramm exportieren',
+                        restore: 'Diagramm wiederherstellen',
                     },
                 },
                 rail: {
@@ -184,6 +185,12 @@ export const de = {
                         'Fügen Sie ein Schema ein, um das Diagramm daraus zu erstellen, oder beginnen Sie mit einem leeren.',
                     fromFile: 'Gespeicherte Datei öffnen',
                     empty: 'Leeres Diagramm',
+                    tabTransactional: 'Transaktional',
+                    tabAnalytical: 'Analytisch',
+                    moreDatabases: 'Weitere Datenbanken',
+                    primaryDatabases: 'Hauptdatenbanken',
+                    genericOption:
+                        'Stattdessen eine allgemeine Datenbank verwenden',
                     emptyFromImport: 'Stattdessen leeres Diagramm',
                     import: 'Aus Text erstellen',
                     failed: 'Das Diagramm konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
@@ -640,6 +647,9 @@ export const de = {
                     add: 'Beziehung hinzufügen',
                     collapseAll: 'Alle zuklappen',
                     relationships: 'Beziehungen',
+                    dependencies: 'Abhängigkeiten',
+                    dependencyTable: 'Tabelle',
+                    dependentView: 'Abhängige Sicht',
                     empty: 'Keine Beziehungen',
                     emptyHint: 'Erstellen Sie eine Beziehung, um zu beginnen',
                     noMatch: 'Keine Beziehungen für Ihren Filter gefunden.',
@@ -684,6 +694,8 @@ export const de = {
                     noMatch:
                         'Keine benutzerdefinierten Typen für Ihren Filter gefunden.',
                     actions: 'Aktionen',
+                    highlight: 'Felder hervorheben',
+                    clearHighlight: 'Hervorhebung aufheben',
                     delete: 'Löschen',
                     rename: 'Typ umbenennen',
                     kind: 'Art',
@@ -803,6 +815,15 @@ export const de = {
             },
             highlight: {
                 label: '„{{name}}“ ist hervorgehoben – zum Aufheben klicken',
+            },
+            legend: {
+                label: 'Typfarben',
+                text: 'Text / andere',
+                number: 'Zahl',
+                moment: 'Datum und Zeit',
+                identifier: 'Kennung',
+                flag: 'Boolesch',
+                document: 'JSON / XML',
             },
             toolbar: {
                 label: 'Zeichenflächen-Werkzeuge',

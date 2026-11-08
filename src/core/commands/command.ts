@@ -101,6 +101,9 @@ export type Command =
     | { type: 'entity.reorder'; ids: Id[] }
     /** puts an entity and its own records back exactly as captured */
     | { type: 'entity.restore'; parts: EntityParts }
+    /** a view reads a table (EDT-183); the two are inverses of each other */
+    | { type: 'dependency.insert'; item: Dependency; at?: number }
+    | { type: 'dependency.remove'; id: Id }
     | PartCommand<'columns'>
     | PartCommand<'keys'>
     | PartCommand<'rules'>

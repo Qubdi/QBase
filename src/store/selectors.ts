@@ -1,7 +1,7 @@
 import { canRedo, canUndo } from '@/core/history/history';
 import { entityList } from '@/core/model/lookup';
 import { isVisible } from '@/core/model/visibility-filter';
-import { isOpenOnly, traitsOf } from '@/core/model/database';
+import { traitsOf } from '@/core/model/database';
 import type { EditorState } from './editor-store';
 
 /** Selectors take the whole state and return one narrow piece of it. */
@@ -24,9 +24,8 @@ export const selectLocation = (s: EditorState) => s.session.location;
 export const selectCanUndo = (s: EditorState) => canUndo(s.history);
 export const selectCanRedo = (s: EditorState) => canRedo(s.history);
 
-/** The design cannot be edited: the session says so, or its database is open-only. */
-export const selectLocked = (s: EditorState) =>
-    s.session.readonly || isOpenOnly(s.design.databaseType);
+/** The design cannot be edited: the session says so. */
+export const selectLocked = (s: EditorState) => s.session.readonly;
 
 let visibleCache:
     | {

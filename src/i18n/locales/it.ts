@@ -86,10 +86,6 @@ export const it = {
                     rename: 'Rinomina il diagramma',
                     hint: 'Doppio clic per rinominare',
                 },
-                banner: {
-                    openOnly:
-                        "I diagrammi {{database}} possono essere aperti e visualizzati, ma non modificati in questa versione dell'editor.",
-                },
                 menu: {
                     label: "Menu dell'editor",
                     diagram: {
@@ -131,6 +127,11 @@ export const it = {
                         },
                         themeKey: 'Passa da chiaro a scuro',
                         preferences: 'Preferenze',
+                    },
+                    backup: {
+                        label: 'Backup',
+                        export: 'Esporta diagramma',
+                        restore: 'Ripristina diagramma',
                     },
                 },
                 rail: {
@@ -186,6 +187,11 @@ export const it = {
                         'Incolla uno schema per generare il diagramma, oppure inizia con uno vuoto.',
                     fromFile: 'Apri un file salvato',
                     empty: 'Diagramma vuoto',
+                    tabTransactional: 'Transazionale',
+                    tabAnalytical: 'Analitico',
+                    moreDatabases: 'Altri database',
+                    primaryDatabases: 'Database principali',
+                    genericOption: 'Usa invece un database generico',
                     emptyFromImport: 'Meglio un diagramma vuoto',
                     import: 'Genera dal testo',
                     failed: 'Non è stato possibile creare il diagramma. Riprovare.',
@@ -658,6 +664,9 @@ export const it = {
                     add: 'Aggiungi relazione',
                     collapseAll: 'Comprimi tutto',
                     relationships: 'Relazioni',
+                    dependencies: 'Dipendenze',
+                    dependencyTable: 'Tabella',
+                    dependentView: 'Vista dipendente',
                     empty: 'Nessuna relazione',
                     emptyHint: 'Creare una relazione per iniziare',
                     noMatch: 'Nessuna relazione corrisponde al filtro.',
@@ -703,6 +712,8 @@ export const it = {
                     noMatch:
                         'Nessun tipo personalizzato corrisponde al filtro.',
                     actions: 'Azioni',
+                    highlight: 'Evidenzia i campi',
+                    clearHighlight: 'Rimuovi evidenziazione',
                     delete: 'Elimina',
                     rename: 'Rinomina tipo',
                     kind: 'Genere',
@@ -823,6 +834,15 @@ export const it = {
             },
             highlight: {
                 label: 'Evidenziazione di "{{name}}" - fare clic per annullare',
+            },
+            legend: {
+                label: 'Colori dei tipi',
+                text: 'Testo / altro',
+                number: 'Numero',
+                moment: 'Data e ora',
+                identifier: 'Identificatore',
+                flag: 'Booleano',
+                document: 'JSON / XML',
             },
             toolbar: {
                 label: 'Strumenti del canvas',

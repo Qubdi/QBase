@@ -31,6 +31,11 @@ const Surface: React.FC = () => {
     const design = useEditorStore(selectDesign);
     const filter = useEditorStore(selectFilter);
     const diff = usePreviewStore((s) => s.marks);
+    const highlightName = useEditorStore((s) =>
+        s.ui.highlightedTypeId
+            ? s.design.userTypes.byId[s.ui.highlightedTypeId]?.name
+            : undefined
+    );
     const [filterOpen, setFilterOpen] = useState(false);
     const [linkDialog, setLinkDialog] = useState(false);
     // the canvas hands these over once it is mounted (fit, zoom to tables, view origin)
@@ -80,8 +85,16 @@ const Surface: React.FC = () => {
             filterPanelOpen: filterOpen,
             visibleSchemas: schemas,
             diff,
+            highlight:
+                highlightName === undefined
+                    ? undefined
+                    : {
+                          label: highlightName,
+                          clear: () =>
+                              store.getState().setHighlightedType(undefined),
+                      },
         }),
-        [store, toggleFilter, filterOpen, schemas, diff]
+        [store, toggleFilter, filterOpen, schemas, diff, highlightName]
     );
 
     return (

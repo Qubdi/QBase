@@ -12,7 +12,6 @@ import {
 import type { DispatchOptions } from '@/core/history/history';
 import type { Design } from '@/core/model/design';
 import type { Id } from '@/core/model/id';
-import { isOpenOnly } from '@/core/model/database';
 import { initialFilter } from '@/core/model/visibility-filter';
 import type { VisibilityFilter } from '@/core/model/visibility-filter';
 import type { WireWarning } from '@/core/wire/warning';
@@ -60,6 +59,8 @@ export interface EditorActions {
     select(ids: Id[]): void;
     setFilter(filter: VisibilityFilter): void;
     setZoom(zoom: number): void;
+    /** tints the fields that use this custom type; undefined clears (EDT-196) */
+    setHighlightedType(id: Id | undefined): void;
     showPanel(section?: PanelSection, visualsTab?: VisualsTab): void;
     hidePanel(): void;
     /** shows the panel on Tables with that entity expanded (a lint finding, a canvas click) */
@@ -202,10 +203,7 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                     );
                 // 'step' went through the guarded dispatch above; the others
                 // swap the design themselves and must honour the same locks
-                if (
-                    get().session.readonly ||
-                    isOpenOnly(get().design.databaseType)
-                )
+                if (get().session.readonly)
                     return {
                         ok: false,
                         reason: 'read-only',
@@ -221,7 +219,11 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                 set((s) => ({
                     design,
                     history: emptyHistory(),
-                    ui: { ...s.ui, selection: [] },
+                    ui: {
+                        ...s.ui,
+                        selection: [],
+                        highlightedTypeId: undefined,
+                    },
                     session: { ...s.session, dirty: false },
                 }));
                 return { ok: true, changed: true };
@@ -287,6 +289,14 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
 
             setFilter(filter) {
                 set((s) => ({ ui: { ...s.ui, filter } }));
+            },
+
+            setHighlightedType(id) {
+                set((s) =>
+                    s.ui.highlightedTypeId === id
+                        ? s
+                        : { ui: { ...s.ui, highlightedTypeId: id } }
+                );
             },
 
             setZoom(zoom) {

@@ -11,7 +11,7 @@ const named = (d: Design, name: string) =>
     listOf(d.entities).find((e) => e.name === name)!;
 
 describe('IMP-001 the kept dialects', () => {
-    it('offers Generic first, then PostgreSQL, MySQL, SQL Server, MariaDB, SQLite, CockroachDB', () => {
+    it('offers Generic first, then PostgreSQL, MySQL, SQL Server, MariaDB, SQLite, CockroachDB, Oracle, ClickHouse', () => {
         expect(listDialects().map((d) => d.id)).toEqual([
             'generic',
             'postgresql',
@@ -20,17 +20,22 @@ describe('IMP-001 the kept dialects', () => {
             'mariadb',
             'sqlite',
             'cockroachdb',
+            'oracle',
+            'clickhouse',
         ]);
     });
-    it('Oracle and ClickHouse have no SQL reader or writer', () => {
-        for (const id of ['oracle', 'clickhouse'] as const) {
-            expect(listDialects().some((d) => d.id === id)).toBe(false);
-            expect(dialectFor(id).sql.read).toBeUndefined();
-            expect(dialectFor(id).sql.write).toBeUndefined();
-            expect(importSql('CREATE TABLE a (id int);', id).design).toBe(
-                undefined
-            );
-        }
+    it('Oracle reads and writes SQL; ClickHouse only writes (EXP-008, restored)', () => {
+        expect(dialectFor('oracle').sql.read).toBeDefined();
+        expect(dialectFor('oracle').sql.write).toBeDefined();
+        expect(dialectFor('clickhouse').sql.read).toBeUndefined();
+        expect(dialectFor('clickhouse').sql.write).toBeDefined();
+        expect(
+            importSql('CREATE TABLE a (id int);', 'clickhouse').diagnostics[0]
+                .message
+        ).toBe('Unsupported database type');
+        expect(
+            importSql('CREATE TABLE a (id NUMBER(10));', 'oracle').design
+        ).toBeDefined();
     });
 });
 

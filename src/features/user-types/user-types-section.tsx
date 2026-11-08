@@ -27,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from '@/platform/ui/dropdown-menu';
 import { Input } from '@/platform/ui/input';
+import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { WindowedList } from '@/features/tables/windowed-list';
 import {
     listUserTypes,
@@ -214,7 +215,12 @@ const TypeRow: React.FC<{
 }> = ({ type, open, onToggle, showSchema }) => {
     const { locked, edit } = useEditorEnv();
     const text = useText();
-    const { menu, hold } = useHoldMenu(!locked);
+    const { menu, hold } = useHoldMenu(true);
+    const store = useEditorStoreApi();
+    // Highlight Fields changes what is drawn, not the design: allowed when locked
+    const highlighted = useEditorStore(
+        (s) => s.ui.highlightedTypeId === type.id
+    );
     return (
         <div className="rounded-md border" data-testid="user-type-row">
             <div className="flex items-center gap-1 p-1" {...hold}>
@@ -253,20 +259,33 @@ const TypeRow: React.FC<{
                         </span>
                     ) : null}
                 </InlineName>
-                {locked ? null : (
-                    <DropdownMenu {...menu}>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className="size-7 shrink-0"
-                                aria-label={text('userTypes.actions')}
-                            >
-                                <MoreHorizontal />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                <DropdownMenu {...menu}>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="size-7 shrink-0"
+                            aria-label={text('userTypes.actions')}
+                        >
+                            <MoreHorizontal />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                            onSelect={() =>
+                                store
+                                    .getState()
+                                    .setHighlightedType(
+                                        highlighted ? undefined : type.id
+                                    )
+                            }
+                        >
+                            {highlighted
+                                ? text('userTypes.clearHighlight')
+                                : text('userTypes.highlight')}
+                        </DropdownMenuItem>
+                        {locked ? null : (
                             <DropdownMenuItem
                                 onSelect={() =>
                                     edit({
@@ -278,9 +297,9 @@ const TypeRow: React.FC<{
                             >
                                 {text('userTypes.delete')}
                             </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             {open ? (
                 <div className="space-y-3 border-t p-2">
@@ -323,7 +342,7 @@ const TypeRow: React.FC<{
     );
 };
 
-/** The Custom Types section (EDT-187 to EDT-199). Highlight Fields is dropped (EDT-196). */
+/** The Custom Types section (EDT-187 to EDT-199). */
 export const UserTypesSection: React.FC = () => {
     const { design, filter, showViews, locked, edit } = useEditorEnv();
     const text = useText();

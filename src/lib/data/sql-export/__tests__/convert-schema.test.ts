@@ -589,20 +589,21 @@ describe('which pairs have a converter', () => {
         }
     });
 
-    it('has none for Oracle and ClickHouse, nor to generic SQL', () => {
-        // Phase 5 decision: only the six writers exist; everything else is a clear error
+    it('uses the generic generator for Oracle and ClickHouse, and has none to generic SQL (EXP-008)', () => {
         for (const [source, target] of [
             [DatabaseType.ORACLE, POSTGRESQL],
             [DatabaseType.CLICKHOUSE, MYSQL],
-            [MYSQL, DatabaseType.GENERIC],
         ] as const) {
             const result = sql(source, target);
-            expect(result.text).toBe('');
-            expect(result.diagnostics[0]).toMatchObject({
-                severity: 'error',
-                message: expect.stringContaining('SQL export is not supported'),
-            });
+            expect(result.text).toContain('-- WARNING: there is no converter');
+            expect(result.text).toContain('CREATE TABLE');
         }
+        const result = sql(MYSQL, DatabaseType.GENERIC);
+        expect(result.text).toBe('');
+        expect(result.diagnostics[0]).toMatchObject({
+            severity: 'error',
+            message: expect.stringContaining('SQL export is not supported'),
+        });
     });
 });
 

@@ -5,7 +5,7 @@ import { renderInEditor } from '@/workspace/__tests__/test-harness';
 import { CreateDiagramDialog } from './create-diagram-dialog';
 
 describe('IMP-004 step 1 of the new diagram dialog', () => {
-    it('offers the seven kept databases, Generic chosen first', async () => {
+    it('SHL-032: Transactional tab shows two rows of three cards, Generic stays the chosen type', async () => {
         renderInEditor(
             <CreateDiagramDialog dialog={{ open: true }} />,
             null,
@@ -13,20 +13,82 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
         );
         const radios = await screen.findAllByRole('radio');
         expect(radios.map((r) => r.textContent)).toEqual([
-            'Generic',
-            'PostgreSQL',
             'MySQL',
-            'SQL Server',
+            'PostgreSQL',
             'MariaDB',
             'SQLite',
-            'CockroachDB',
+            'SQL Server',
+            'Oracle',
         ]);
-        expect(radios[0].getAttribute('aria-checked')).toBe('true');
         expect(
-            radios
-                .slice(1)
-                .every((r) => r.getAttribute('aria-checked') === 'false')
+            radios.every((r) => r.getAttribute('aria-checked') === 'false')
         ).toBe(true);
+        expect(
+            screen
+                .getByRole('button', { name: 'Use a generic database instead' })
+                .getAttribute('aria-pressed')
+        ).toBe('true');
+        expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
+            'Transactional',
+            'Analytical',
+        ]);
+    });
+    it('SHL-032 SHL-042: the toggle moves the window one row down and back', async () => {
+        renderInEditor(
+            <CreateDiagramDialog dialog={{ open: true }} />,
+            null,
+            '/'
+        );
+        fireEvent.click(
+            await screen.findByRole('button', { name: 'More databases' })
+        );
+        expect(
+            (await screen.findAllByRole('radio')).map((r) => r.textContent)
+        ).toEqual(['SQLite', 'SQL Server', 'Oracle', 'CockroachDB']);
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Primary databases' })
+        );
+        expect((await screen.findAllByRole('radio'))[0].textContent).toBe(
+            'MySQL'
+        );
+    });
+    it('SHL-032: the Analytical tab holds ClickHouse, and a card makes a ClickHouse diagram', async () => {
+        const { adapter } = renderInEditor(
+            <CreateDiagramDialog dialog={{ open: true }} />,
+            null,
+            '/'
+        );
+        fireEvent.mouseDown(
+            await screen.findByRole('tab', { name: 'Analytical' }),
+            {
+                button: 0,
+            }
+        );
+        const card = await screen.findByRole('radio', { name: /ClickHouse/ });
+        fireEvent.click(card);
+        fireEvent.click(await screen.findByRole('button', { name: 'Back' }));
+        expect(
+            (
+                await screen.findByRole('radio', { name: /ClickHouse/ })
+            ).getAttribute('aria-checked')
+        ).toBe('true');
+        fireEvent.click(screen.getByRole('button', { name: 'Blank diagram' }));
+        await waitFor(async () =>
+            expect((await adapter.list()).length).toBe(1)
+        );
+        expect((await adapter.list())[0].databaseType).toBe('clickhouse');
+    });
+    it('the cards carry the neutral database icon, no logo', async () => {
+        renderInEditor(
+            <CreateDiagramDialog dialog={{ open: true }} />,
+            null,
+            '/'
+        );
+        const radios = await screen.findAllByRole('radio');
+        for (const r of radios) {
+            expect(r.querySelector('svg')).not.toBeNull();
+            expect(r.querySelector('img')).toBeNull();
+        }
     });
     it('"Blank diagram instead" makes a Generic diagram without choosing a type', async () => {
         const { adapter } = renderInEditor(
@@ -55,6 +117,6 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
             (await screen.findAllByRole('tab')).map((t) => t.textContent)
         ).toEqual(['Database query', 'SQL script', 'DBML']);
         fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-        expect((await screen.findAllByRole('radio')).length).toBe(7);
+        expect((await screen.findAllByRole('radio')).length).toBe(6);
     });
 });

@@ -76,10 +76,10 @@ describe('EDT-226 Clear asks first and empties the history', () => {
 });
 
 describe('EDT-251 the menu bar', () => {
-    it('has the diagram (Actions), Edit and View menus; Backup was dropped (SHL-064)', () => {
+    it('has the diagram (Actions), Edit, View and Backup menus (SHL-064)', () => {
         renderInEditor(<Menus commands={{}} />, { design: blank() });
         const names = screen.getAllByRole('menuitem').map((m) => m.textContent);
-        expect(names).toEqual(['Diagram', 'Edit', 'View']);
+        expect(names).toEqual(['Diagram', 'Edit', 'View', 'Backup']);
     });
 });
 

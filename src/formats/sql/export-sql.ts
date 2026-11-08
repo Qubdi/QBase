@@ -4,6 +4,7 @@ import type { Design } from '@/core/model/design';
 import { isVisible } from '@/core/model/visibility-filter';
 import type { VisibilityFilter } from '@/core/model/visibility-filter';
 import { convertDesign } from '@/dialects/convert/engine';
+import { pairHeader, writeGenericSql } from '@/dialects/generic/write';
 import { dialectFor } from '@/dialects/registry';
 import type { Diagnostic } from '@/dialects/script-model';
 import { error } from './diagnostics';
@@ -75,7 +76,7 @@ function unkeptByWriter(
 /**
  * SQL for a design in the target's dialect (EXP-001 to EXP-012). The same
  * family writes with the target's own generator; another family goes
- * through the converter; ids without a writer give a clear error (EXP-008).
+ * through the converter; a pair with no converter uses the generic generator (EXP-008); ids without a writer give a clear error.
  */
 export function exportSql(
     design: Design,
@@ -115,5 +116,34 @@ export function exportSql(
             text: target.sql.write(filtered),
             diagnostics: unkeptByWriter(filtered, family(targetId)),
         };
+    // a pair with no converter (Oracle and ClickHouse on either side) gets the
+    // generic generator and a warning that the types are copied as written
+    if (!target.sql.target || (!source.sql.source && source.id !== 'generic'))
+        return {
+            text: writeGenericSql(filtered, {
+                capabilities: target.capabilities,
+                header: pairHeader(
+                    source.id === 'generic' ? 'generic SQL' : source.label,
+                    target.label
+                ),
+                spelling: target.types,
+            }),
+            diagnostics: genericDiagnostics(filtered),
+        };
     return convertDesign(filtered, source, target);
+}
+
+/** What the generic generator leaves out. */
+function genericDiagnostics(design: Design): Diagnostic[] {
+    const views = design.entities.order.filter(
+        (id) => design.entities.byId[id].kind === 'view'
+    ).length;
+    return views === 0
+        ? []
+        : [
+              {
+                  severity: 'warning',
+                  message: `${views} view${views === 1 ? '' : 's'} not exported: only tables are written.`,
+              },
+          ];
 }

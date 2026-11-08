@@ -33,19 +33,28 @@ describe('export targets (EXP-001, EXP-007, EXP-008)', () => {
         expect(exportTargets('cockroachdb')[0]).toBe('cockroachdb');
         expect(exportTargets('postgresql')).not.toContain('cockroachdb');
     });
-    it('Oracle and ClickHouse diagrams have no SQL export', () => {
-        expect(exportTargets('oracle')).toEqual([]);
-        expect(exportTargets('clickhouse')).toEqual([]);
+    it('Oracle and ClickHouse diagrams export to themselves and the five, and are never targets of others (EXP-008)', () => {
+        expect(exportTargets('oracle')).toEqual([
+            'oracle',
+            'postgresql',
+            'mysql',
+            'sql_server',
+            'mariadb',
+            'sqlite',
+        ]);
+        expect(exportTargets('clickhouse')[0]).toBe('clickhouse');
+        expect(exportTargets('mysql')).not.toContain('oracle');
+        expect(exportTargets('mysql')).not.toContain('clickhouse');
     });
 });
 
 describe('navbar menus (SHL-050 to SHL-063)', () => {
-    it('has the three menus', () => {
+    it('has the four menus, Backup last (SHL-064)', () => {
         renderInEditor(<Menus commands={{}} />, { design: blank() });
         expect(screen.getByRole('menuitem', { name: 'Diagram' })).toBeTruthy();
         expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeTruthy();
         expect(screen.getByRole('menuitem', { name: 'View' })).toBeTruthy();
-        expect(screen.queryByRole('menuitem', { name: /backup/i })).toBeNull();
+        expect(screen.getByRole('menuitem', { name: 'Backup' })).toBeTruthy();
     });
 
     it('Undo and Redo are off with nothing to undo, and Undo works after an edit', async () => {

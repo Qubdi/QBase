@@ -13,6 +13,15 @@ export const canvas = {
     snap: { label: 'Snap to grid (hold {{key}})' },
     overlap: { label: 'Highlight overlapping tables' },
     highlight: { label: 'Highlighting "{{name}}" - click to clear' },
+    legend: {
+        label: 'Type colours',
+        text: 'Text / other',
+        number: 'Number',
+        moment: 'Date & time',
+        identifier: 'Identifier',
+        flag: 'Boolean',
+        document: 'JSON / XML',
+    },
     toolbar: {
         label: 'Canvas tools',
         filter: 'Filter tables ({{shortcut}})',

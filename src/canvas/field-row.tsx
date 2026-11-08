@@ -18,6 +18,8 @@ export const ROW_HEIGHT = 32;
  * diagram slow to draw).
  */
 export const HANDLES_MIN_ZOOM = 0.4;
+/** The tint of a field that uses the highlighted custom type: one place to change. */
+export const HIGHLIGHT_CLASS = 'bg-yellow-300/50 dark:bg-yellow-400/30';
 const HOVER_DELAY_MS = 450;
 const TOUCH_MOUSE_MS = 1000;
 
@@ -41,6 +43,8 @@ interface FieldRowProps {
     /** the row has its connection dots in the page (see `HANDLES_MIN_ZOOM`) */
     handles: boolean;
     prefs: CanvasPrefs;
+    /** the name of the custom type being highlighted (EDT-196) */
+    highlightType?: string;
 }
 
 // shown on hover, on focus inside the table, while the table is selected and on
@@ -63,6 +67,7 @@ export const FieldRow = memo(function FieldRow({
     connectable,
     handles,
     prefs,
+    highlightType,
 }: FieldRowProps) {
     const storeApi = useEditorStoreApi();
     const [card, setCard] = useState(false);
@@ -84,11 +89,19 @@ export const FieldRow = memo(function FieldRow({
 
     const strong = column.primaryKey || column.unique;
     const kind = typeKind(column.type.name);
+    const highlighted =
+        highlightType !== undefined &&
+        (column.type.id === highlightType ||
+            column.type.name === highlightType);
 
     return (
         <div
             data-testid={`field-${column.id}`}
-            className="group/row relative flex items-center gap-1.5 px-3 text-xs"
+            data-highlighted={highlighted || undefined}
+            className={cn(
+                'group/row relative flex items-center gap-1.5 px-3 text-xs',
+                highlighted && HIGHLIGHT_CLASS
+            )}
             style={{ height: ROW_HEIGHT }}
             onTouchStart={() => {
                 touchedAt.current = Date.now();

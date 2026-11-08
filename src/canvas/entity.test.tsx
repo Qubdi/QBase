@@ -307,7 +307,9 @@ describe('entity card', () => {
         const dots = (id: string) =>
             screen
                 .getByTestId(`entity-${id}`)
-                .querySelectorAll('.react-flow__handle.connectable');
+                .querySelectorAll(
+                    '.react-flow__handle.connectable[data-handleid^="c:"]'
+                );
         expect(dots(users).length).toBe(2);
         expect(dots(items).length).toBe(0);
     });

@@ -1,5 +1,6 @@
 import type { LinkPlan, CardinalityChoice } from '@/core/commands/plan-link';
 import type { Design } from '@/core/model/design';
+import type { Dependency } from '@/core/model/dependency';
 import type { Link } from '@/core/model/link';
 import { listOf } from '@/core/model/collection';
 import type { VisibilityFilter } from '@/core/model/visibility-filter';
@@ -33,6 +34,31 @@ export function listRefs({
             link.name,
             design.entities.byId[link.sourceEntityId]?.name ?? '',
             design.entities.byId[link.targetEntityId]?.name ?? '',
+        ];
+        return text.trim() === '' || names.some((n) => nameMatches(n, text));
+    });
+}
+
+/**
+ * The Dependencies group (EDT-184): same rules as relationships. A dependency
+ * shows only when both of its tables are visible and the text matches either
+ * table name.
+ */
+export function listDependencies({
+    design,
+    filter,
+    showViews,
+    text = '',
+}: RefsInput): Dependency[] {
+    const visible = new Set(
+        listTables({ design, filter, showViews }).map((e) => e.id)
+    );
+    return design.dependencies.filter((dep) => {
+        if (!visible.has(dep.tableId) || !visible.has(dep.dependentTableId))
+            return false;
+        const names = [
+            design.entities.byId[dep.tableId]?.name ?? '',
+            design.entities.byId[dep.dependentTableId]?.name ?? '',
         ];
         return text.trim() === '' || names.some((n) => nameMatches(n, text));
     });

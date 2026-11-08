@@ -12,6 +12,8 @@ import React from 'react';
 export const CHROME_CSS = `
 .qb-corner { position:absolute; z-index:30; display:flex; gap:8px;
   left:calc(var(--canvas-inset-left,0px) + 12px); top:calc(var(--canvas-inset-top,0px) + 12px); }
+.qb-legend { position:absolute; z-index:30;
+  right:calc(var(--canvas-inset-right,0px) + 12px); top:calc(var(--canvas-inset-top,0px) + 12px); }
 .qb-toolbar { position:absolute; z-index:30; left:50%; transform:translateX(-50%);
   max-width:calc(100% - 24px); overflow-x:auto;
   bottom:calc(var(--canvas-inset-bottom,0px) + 16px); }
@@ -26,6 +28,7 @@ export const CHROME_CSS = `
   stroke:hsl(var(--ring)) !important; stroke-width:4px !important;
   filter:drop-shadow(0 0 3px hsl(var(--background))); }
 @media (max-width: 767px) {
+  .qb-legend { display:none; }
   .qb-toolbar { bottom:auto; top:calc(var(--canvas-inset-top,0px) + 56px); }
   .qb-pill { bottom:auto; top:calc(var(--canvas-inset-top,0px) + 104px); }
   .qb-minimap, .qb-minimap svg { height:60px !important; }
@@ -33,4 +36,12 @@ export const CHROME_CSS = `
 
 export function ChromeStyle() {
     return <style data-testid="canvas-chrome-style">{CHROME_CSS}</style>;
+}
+
+const DROP_TARGET_CSS =
+    '.react-flow__node-entity:hover > div { box-shadow:0 0 0 3px hsl(var(--primary)); }';
+
+/** While a dependency is dragged the table under the pointer shows it can take it. */
+export function DropTargetStyle() {
+    return <style data-testid="canvas-drop-style">{DROP_TARGET_CSS}</style>;
 }

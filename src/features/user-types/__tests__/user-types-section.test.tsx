@@ -132,3 +132,27 @@ describe('EDT-192 enum value rules', () => {
         expect(withoutEnumValue(['a', 'b'], 'a')).toEqual(['b']);
     });
 });
+
+describe('EDT-196 Highlight Fields', () => {
+    const typed = () =>
+        applyOk(withTables([]), {
+            type: 'item.insert',
+            collection: 'userTypes',
+            item: { id: 'a', name: 'mood', kind: 'enum', values: [] },
+        }).design;
+
+    it('Highlight Fields sets the one highlighted type, Clear Highlight clears it; nothing is undoable', async () => {
+        const { store } = renderPanel(<UserTypesSection />, typed());
+        await userEvent.click(screen.getByRole('button', { name: 'Actions' }));
+        await userEvent.click(
+            await screen.findByRole('menuitem', { name: 'Highlight fields' })
+        );
+        expect(store.getState().ui.highlightedTypeId).toBe('a');
+        expect(store.getState().history.undo).toHaveLength(0);
+        await userEvent.click(screen.getByRole('button', { name: 'Actions' }));
+        await userEvent.click(
+            await screen.findByRole('menuitem', { name: 'Clear highlight' })
+        );
+        expect(store.getState().ui.highlightedTypeId).toBeUndefined();
+    });
+});

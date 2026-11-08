@@ -72,6 +72,28 @@ const COMMON: Partial<Record<DatabaseType, readonly string[]>> = {
         'uniqueidentifier',
     ],
     sqlite: ['integer', 'text', 'real', 'blob', 'numeric'],
+    oracle: [
+        'number',
+        'varchar2',
+        'nvarchar2',
+        'char',
+        'clob',
+        'date',
+        'timestamp',
+        'blob',
+        'raw',
+    ],
+    clickhouse: [
+        'UInt32',
+        'UInt64',
+        'Int32',
+        'Int64',
+        'String',
+        'DateTime',
+        'Date',
+        'Float64',
+        'UUID',
+    ],
 };
 
 export interface TypeOption {

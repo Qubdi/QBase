@@ -1,5 +1,7 @@
 import type { DatabaseEdition, DatabaseType } from '@/core/model/database';
+import { CLICKHOUSE_SCRIPT } from './scripts/clickhouse';
 import { MYSQL_57_SCRIPT, MYSQL_SCRIPT } from './scripts/mysql';
+import { ORACLE_SCRIPT } from './scripts/oracle';
 import {
     COCKROACH_SCRIPT,
     POSTGRES_SCRIPT,
@@ -97,6 +99,8 @@ const SCRIPTS: Partial<Record<DatabaseType, string>> = {
     mysql: MYSQL_SCRIPT,
     mariadb: MYSQL_SCRIPT,
     sql_server: SQL_SERVER_SCRIPT,
+    oracle: ORACLE_SCRIPT,
+    clickhouse: CLICKHOUSE_SCRIPT,
 };
 
 const EDITION_SCRIPTS: Partial<

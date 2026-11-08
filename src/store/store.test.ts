@@ -66,14 +66,15 @@ describe('editor store: read-only (EDT-014)', () => {
         expect(selectLocked(store.getState())).toBe(true);
     });
 
-    it('can be switched on and off, and Oracle designs are always locked', () => {
+    it('can be switched on and off; Oracle designs are edited like any other', () => {
         const store = createEditorStore({ design: blank() });
         store.getState().setReadonly(true);
         expect(store.getState().edit(addTable('a')).ok).toBe(false);
         store.getState().setReadonly(false);
         expect(store.getState().edit(addTable('a')).ok).toBe(true);
         const oracle = createEditorStore({ design: blank('oracle') });
-        expect(selectLocked(oracle.getState())).toBe(true);
+        expect(selectLocked(oracle.getState())).toBe(false);
+        expect(oracle.getState().edit(addTable('a')).ok).toBe(true);
     });
 
     it('still lets the person select, filter, zoom and focus', () => {
@@ -264,4 +265,57 @@ describe('review ui 9: replaceDesign honours the locks in every mode', () => {
             expect(store.getState().design).toBe(before);
         }
     );
+});
+
+describe('editor store: highlighted custom type (EDT-196)', () => {
+    it('holds one type at a time, is not undoable and is not saved', () => {
+        const store = createEditorStore({ design: blank(), now: () => NOW });
+        const before = store.getState().design;
+        store.getState().setHighlightedType('a');
+        store.getState().setHighlightedType('b');
+        expect(store.getState().ui.highlightedTypeId).toBe('b');
+        expect(store.getState().design).toBe(before);
+        expect(selectCanUndo(store.getState())).toBe(false);
+        expect(selectDirty(store.getState())).toBe(false);
+        store.getState().setHighlightedType(undefined);
+        expect(store.getState().ui.highlightedTypeId).toBeUndefined();
+    });
+
+    it('is forgotten when another design is opened', () => {
+        const store = createEditorStore({ design: blank(), now: () => NOW });
+        store.getState().setHighlightedType('a');
+        store.getState().replaceDesign(blank());
+        expect(store.getState().ui.highlightedTypeId).toBeUndefined();
+    });
+});
+
+describe('editor store: dependencies (EDT-185, EDT-186)', () => {
+    it('adds, deletes and undoes a dependency, and a deleted view takes it along in one step', () => {
+        const store = createEditorStore({
+            design: withTables(['users', 'v']),
+            now: () => NOW,
+        });
+        const [table, view] = store.getState().design.entities.order;
+        store.getState().edit({
+            type: 'entity.update',
+            id: view,
+            patch: { kind: 'view' },
+        });
+        const dep = {
+            id: 'dep1',
+            tableId: table,
+            dependentTableId: view,
+            createdAt: NOW,
+        };
+        store.getState().edit({ type: 'dependency.insert', item: dep });
+        expect(store.getState().design.dependencies).toEqual([dep]);
+        store.getState().edit({ type: 'entity.remove', id: view });
+        expect(store.getState().design.dependencies).toEqual([]);
+        store.getState().undo();
+        expect(store.getState().design.dependencies).toEqual([dep]);
+        store.getState().edit({ type: 'dependency.remove', id: 'dep1' });
+        expect(store.getState().design.dependencies).toEqual([]);
+        store.getState().undo();
+        expect(store.getState().design.dependencies).toEqual([dep]);
+    });
 });

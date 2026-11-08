@@ -1,6 +1,8 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Handle,
     NodeResizeControl,
+    Position,
     ResizeControlVariant,
     useUpdateNodeInternals,
 } from '@xyflow/react';
@@ -22,6 +24,7 @@ import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { FieldRow, HANDLES_MIN_ZOOM } from './field-row';
 import { linkRoles, shownColumns, subtitleParts } from './field-view';
 import { useShown } from './diff-marks';
+import { dependencyHandleId } from './flow-model';
 import type { EntityNode } from './flow-model';
 import { toggledWidth } from './geometry';
 import { useCanvasHooks } from './hooks';
@@ -51,6 +54,15 @@ const ACTIONS_CLASS = [
     'pointer-coarse:static pointer-coarse:opacity-100',
 ].join(' ');
 
+// shown on hover, focus, selection and on touch screens, like a field's dots
+const DEPENDENCY_DOT = [
+    '!h-2.5 !w-2.5 !border-primary !bg-background opacity-0 transition-opacity',
+    'group-hover:opacity-100 group-focus-within:opacity-100',
+    'group-data-[selected=true]:opacity-100 pointer-coarse:opacity-100',
+    'pointer-coarse:!h-3.5 pointer-coarse:!w-3.5',
+    "after:absolute after:-inset-2 after:content-['']",
+].join(' ');
+
 const sameList = (a: readonly unknown[], b: readonly unknown[]) =>
     a.length === b.length && a.every((item, i) => item === b[i]);
 
@@ -71,6 +83,11 @@ export const EntityCard = memo(function EntityCard({
     }, sameList) as Column[];
     const links = useShown((d) => d.links);
     const databaseType = useShown((d) => d.databaseType);
+    const highlightType = useEditorStore((s) =>
+        s.ui.highlightedTypeId
+            ? s.design.userTypes.byId[s.ui.highlightedTypeId]?.name
+            : undefined
+    );
     const [localExpanded, setLocalExpanded] = useState(false);
     const detailed = useEditorStore((s) => s.ui.zoom >= HANDLES_MIN_ZOOM);
 
@@ -185,6 +202,23 @@ export const EntityCard = memo(function EntityCard({
                       />
                   ))
                 : null}
+
+            {/* top and bottom dots: a view offers them for a dependency (EDT-183);
+                a table keeps them out of sight so a dependency line can end on it */}
+            {(['t', 'b'] as const).map((side) => (
+                <Handle
+                    key={side}
+                    id={dependencyHandleId(side)}
+                    type="source"
+                    position={side === 't' ? Position.Top : Position.Bottom}
+                    isConnectable={surface.editable && isView}
+                    className={
+                        surface.editable && isView
+                            ? DEPENDENCY_DOT
+                            : '!pointer-events-none !opacity-0'
+                    }
+                />
+            ))}
 
             <header
                 className="flex items-center gap-2 rounded-t-lg border-b px-3 py-2"
@@ -318,6 +352,7 @@ export const EntityCard = memo(function EntityCard({
                         foreign={roles.foreign.has(column.id)}
                         connectable={surface.editable && !isView}
                         prefs={surface.prefs}
+                        highlightType={highlightType}
                     />
                 ))}
             </div>

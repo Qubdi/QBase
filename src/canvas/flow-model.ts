@@ -50,6 +50,21 @@ export type LinkEdgeData = {
 };
 export type LinkEdge = Edge<LinkEdgeData, 'link'>;
 
+/** A view reads a table (EDT-184): drawn from the view's top or bottom dot. */
+export type DependencyEdgeData = { reach: number };
+export type DependencyEdge = Edge<DependencyEdgeData, 'dependency'>;
+
+export type DepSide = 't' | 'b';
+
+/** The dots a view and a table offer to dependencies: top and bottom centre. */
+export const dependencyHandleId = (side: DepSide) => `d:${side}`;
+
+export function parseDependencyHandle(
+    id: string | null | undefined
+): DepSide | undefined {
+    return id === 'd:t' ? 't' : id === 'd:b' ? 'b' : undefined;
+}
+
 /** A handle id names a column and the side of the table it sits on. */
 export const handleId = (columnId: Id, side: Side) => `c:${columnId}:${side}`;
 
@@ -89,6 +104,10 @@ export function dimmedEntities(
         const link = design.links.byId[id];
         if (picked.has(link.sourceEntityId)) near.add(link.targetEntityId);
         if (picked.has(link.targetEntityId)) near.add(link.sourceEntityId);
+    }
+    for (const dep of design.dependencies) {
+        if (picked.has(dep.tableId)) near.add(dep.dependentTableId);
+        if (picked.has(dep.dependentTableId)) near.add(dep.tableId);
     }
     return new Set(design.entities.order.filter((id) => !near.has(id)));
 }
@@ -359,5 +378,39 @@ export function buildEdges(
     }
     if (kept && alive)
         for (const id of kept.keys()) if (!alive.has(id)) kept.delete(id);
+    return edges;
+}
+
+/**
+ * The lines of the dependencies (EDT-184). The view leaves by its top dot when
+ * the table is above it and by its bottom dot when the table is below.
+ */
+export function buildDependencyEdges(input: FlowInput): DependencyEdge[] {
+    const { design, live } = input;
+    const edges: DependencyEdge[] = [];
+    design.dependencies.forEach((dep, index) => {
+        if (
+            !input.visible.has(dep.tableId) ||
+            !input.visible.has(dep.dependentTableId)
+        )
+            return;
+        const view = design.entities.byId[dep.dependentTableId];
+        const table = design.entities.byId[dep.tableId];
+        if (!view || !table) return;
+        const viewY = live.positions[view.id]?.y ?? view.y;
+        const tableY = live.positions[table.id]?.y ?? table.y;
+        const tableAbove = tableY < viewY;
+        edges.push({
+            id: dep.id,
+            type: 'dependency',
+            source: view.id,
+            target: table.id,
+            sourceHandle: dependencyHandleId(tableAbove ? 't' : 'b'),
+            targetHandle: dependencyHandleId(tableAbove ? 'b' : 't'),
+            ariaLabel: `${view.name} - ${table.name}`,
+            selected: input.selection.has(dep.id),
+            data: { reach: 22 + (index % 4) * 6 },
+        });
+    });
     return edges;
 }

@@ -85,10 +85,6 @@ export const fr = {
                     rename: 'Renommer le diagramme',
                     hint: 'Double-cliquez pour renommer',
                 },
-                banner: {
-                    openOnly:
-                        "Les diagrammes {{database}} peuvent être ouverts et consultés, mais pas modifiés dans cette version de l'éditeur.",
-                },
                 menu: {
                     label: "Menus de l'éditeur",
                     diagram: {
@@ -130,6 +126,11 @@ export const fr = {
                         },
                         themeKey: 'Basculer entre clair et sombre',
                         preferences: 'Préférences',
+                    },
+                    backup: {
+                        label: 'Sauvegarde',
+                        export: 'Exporter le diagramme',
+                        restore: 'Restaurer le diagramme',
                     },
                 },
                 rail: {
@@ -185,6 +186,11 @@ export const fr = {
                         'Collez un schéma pour y construire le diagramme, ou commencez avec un diagramme vide.',
                     fromFile: 'Ouvrir un fichier enregistré',
                     empty: 'Diagramme vide',
+                    tabTransactional: 'Transactionnel',
+                    tabAnalytical: 'Analytique',
+                    moreDatabases: 'Plus de bases de données',
+                    primaryDatabases: 'Bases de données principales',
+                    genericOption: 'Utiliser plutôt une base générique',
                     emptyFromImport: 'Diagramme vide à la place',
                     import: 'Créer à partir du texte',
                     failed: "Le diagramme n'a pas pu être créé. Veuillez réessayer.",
@@ -659,6 +665,9 @@ export const fr = {
                     add: 'Ajouter une relation',
                     collapseAll: 'Tout réduire',
                     relationships: 'Relations',
+                    dependencies: 'Dépendances',
+                    dependencyTable: 'Table',
+                    dependentView: 'Vue dépendante',
                     empty: 'Aucune relation',
                     emptyHint: 'Créez une relation pour commencer',
                     noMatch: 'Aucune relation ne correspond à votre filtre.',
@@ -703,6 +712,8 @@ export const fr = {
                     noMatch:
                         'Aucun type personnalisé ne correspond à votre filtre.',
                     actions: 'Actions',
+                    highlight: 'Surligner les champs',
+                    clearHighlight: 'Effacer le surlignage',
                     delete: 'Supprimer',
                     rename: 'Renommer le type',
                     kind: 'Nature',
@@ -824,6 +835,15 @@ export const fr = {
             },
             highlight: {
                 label: '« {{name}} » est mis en évidence – cliquez pour annuler',
+            },
+            legend: {
+                label: 'Couleurs des types',
+                text: 'Texte / autre',
+                number: 'Nombre',
+                moment: 'Date et heure',
+                identifier: 'Identifiant',
+                flag: 'Booléen',
+                document: 'JSON / XML',
             },
             toolbar: {
                 label: 'Outils du canevas',

@@ -29,6 +29,7 @@ import { selectLocked } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import {
     arrangeDiagram,
+    connectDependency,
     connectFromHandles,
     copySelection,
     deleteSelection,
@@ -37,7 +38,7 @@ import {
 } from './canvas-actions';
 import { ArrangeConfirm } from './arrange-confirm';
 import { dropNewItem, NEW_ITEM_TYPE } from './drop-items';
-import { ChromeStyle } from './chrome-style';
+import { ChromeStyle, DropTargetStyle } from './chrome-style';
 import {
     MINIMAP_BACKGROUND,
     MINIMAP_MASK,
@@ -48,6 +49,7 @@ import {
 import { CornerTools } from './corner-tools';
 import { filterHidesSomething } from './filter-state';
 import { Toolbar } from './toolbar';
+import { TypeLegend } from './type-legend';
 import { buildMenu } from './menu-model';
 import type { MenuTarget } from './menu-model';
 import { runMenuAction } from './menu-actions';
@@ -61,11 +63,13 @@ import { LinkPopover } from './link-popover';
 import { reportConnect, reportCopied, reportPasted } from './notify';
 import { commitShapes } from './commit-shapes';
 import {
+    buildDependencyEdges,
     buildEdges,
     buildNodes,
     drawnEntityIds,
     inOrder,
     NO_LIVE,
+    parseDependencyHandle,
     readingOrder,
 } from './flow-model';
 import type {
@@ -278,7 +282,10 @@ function Surface({
     const sideMemory = useRef(new Map<Id, [Side, Side]>());
     const edgeMemory = useRef(new Map<Id, LinkEdge>());
     const edges = useMemo(
-        () => buildEdges(input, sideMemory.current, edgeMemory.current),
+        () => [
+            ...buildEdges(input, sideMemory.current, edgeMemory.current),
+            ...buildDependencyEdges(input),
+        ],
         [input]
     );
 
@@ -411,6 +418,42 @@ function Surface({
         (connection: Connection) => {
             const outcome = connectFromHandles(storeApi, connection);
             if (outcome) reportConnect(outcome);
+        },
+        [storeApi]
+    );
+
+    // a drag from a view's top or bottom dot lands on the table under the pointer
+    const [dependencyDrag, setDependencyDrag] = useState(false);
+    const onConnectStart = useCallback(
+        (_: unknown, params: { handleId: string | null }) =>
+            setDependencyDrag(
+                parseDependencyHandle(params.handleId) !== undefined
+            ),
+        []
+    );
+    const onConnectEnd = useCallback(
+        (
+            event: MouseEvent | TouchEvent,
+            state: {
+                fromNode: { id: string } | null;
+                fromHandle: { id?: string | null } | null;
+            }
+        ) => {
+            setDependencyDrag(false);
+            if (
+                !state.fromNode ||
+                parseDependencyHandle(state.fromHandle?.id) === undefined
+            )
+                return;
+            const point =
+                'changedTouches' in event ? event.changedTouches[0] : event;
+            if (!point) return;
+            const over = document
+                .elementFromPoint(point.clientX, point.clientY)
+                ?.closest('.react-flow__node-entity');
+            const tableId = over?.getAttribute('data-id');
+            if (tableId)
+                connectDependency(storeApi, state.fromNode.id, tableId);
         },
         [storeApi]
     );
@@ -939,6 +982,7 @@ function Surface({
                     )}
                 >
                     <ChromeStyle />
+                    {dependencyDrag ? <DropTargetStyle /> : null}
                     <MarkerDefs />
                     <div
                         role="status"
@@ -956,9 +1000,12 @@ function Surface({
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
+                        onConnectStart={onConnectStart}
+                        onConnectEnd={onConnectEnd}
                         isValidConnection={isUsableConnection}
                         onEdgeDoubleClick={(event, edge) =>
                             editable &&
+                            edge.type === 'link' &&
                             setPopover({
                                 linkId: edge.id,
                                 at: { x: event.clientX, y: event.clientY },
@@ -1045,6 +1092,7 @@ function Surface({
                         onFlashOverlaps={flashOverlaps}
                         highlight={hooks?.highlight}
                     />
+                    <TypeLegend />
                     {lost ? (
                         <button
                             type="button"

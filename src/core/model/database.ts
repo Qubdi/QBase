@@ -56,14 +56,6 @@ export function editionFits(
     return editionsFor(type).includes(edition);
 }
 
-/**
- * Database types the rewritten editor can still open but not change
- * (owner decision 4). Such designs open read-only and keep their stored type.
- */
-export function isOpenOnly(type: DatabaseType): boolean {
-    return type === 'oracle' || type === 'clickhouse';
-}
-
 /** Facts about a database type that the model itself needs. */
 export interface DatabaseTraits {
     /** schema used for a new table; undefined where there is none */
@@ -76,7 +68,7 @@ export interface DatabaseTraits {
     hasUserTypes: boolean;
     /** true when an index may choose its method (btree, hash, gin) */
     hasIndexMethods: boolean;
-    /** true when SQL export writes check constraints (EDT-150) */
+    /** true when SQL export writes check constraints (EDT-150); ClickHouse has none */
     hasChecks: boolean;
     /** type given to a new key or column */
     defaultColumnType: string;
@@ -104,7 +96,7 @@ export function traitsOf(type: DatabaseType): DatabaseTraits {
         hasArrays: type === 'postgresql' || type === 'cockroachdb',
         hasUserTypes: type === 'postgresql',
         hasIndexMethods: type === 'postgresql' || type === 'cockroachdb',
-        hasChecks: type !== 'oracle' && type !== 'clickhouse',
+        hasChecks: type !== 'clickhouse',
         defaultColumnType:
             type === 'sqlite'
                 ? 'integer'
