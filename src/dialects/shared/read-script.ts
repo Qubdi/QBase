@@ -39,6 +39,9 @@ const CREATE_MODIFIERS = new Set([
     'NONCLUSTERED',
     'FULLTEXT',
     'SPATIAL',
+    'BITMAP',
+    'XML',
+    'PRIMARY',
     'MATERIALIZED',
     'RECURSIVE',
     'COLUMNSTORE',
@@ -354,8 +357,14 @@ function readCreateIndex(
     const table = cur.readName();
     if (!table) return;
     let method: KeyMethod | undefined;
+    // CREATE [UNIQUE] [CLUSTERED | NONCLUSTERED] [COLUMNSTORE | XML | FULLTEXT | SPATIAL | BITMAP] INDEX
+    if (modifiers.has('CLUSTERED')) method = 'clustered';
+    if (modifiers.has('NONCLUSTERED')) method = 'nonclustered';
+    if (modifiers.has('COLUMNSTORE')) method = 'columnstore';
+    if (modifiers.has('XML')) method = 'xml';
     if (modifiers.has('FULLTEXT')) method = 'fulltext';
     if (modifiers.has('SPATIAL')) method = 'spatial';
+    if (modifiers.has('BITMAP')) method = 'bitmap';
     const readUsing = (): void => {
         if (cur.acceptWord('USING')) {
             const m = cur.next()?.value.toLowerCase();

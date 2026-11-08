@@ -71,12 +71,12 @@ export const ORACLE_SCRIPT = `SELECT JSON_OBJECT(
         'table' VALUE i.table_name,
         'name' VALUE i.index_name,
         'column' VALUE c.column_name,
-        'index_type' VALUE 'btree',
+        'index_type' VALUE CASE WHEN i.index_type = 'BITMAP' THEN 'bitmap' ELSE 'btree' END,
         'unique' VALUE CASE WHEN i.uniqueness = 'UNIQUE' THEN 'true' ELSE 'false' END FORMAT JSON,
         'direction' VALUE LOWER(c.descend),
         'column_position' VALUE c.column_position) RETURNING CLOB)
       FROM user_indexes i
       JOIN user_ind_columns c ON c.index_name = i.index_name
-      WHERE i.index_type = 'NORMAL'), '[]') FORMAT JSON
+      WHERE i.index_type IN ('NORMAL', 'BITMAP')), '[]') FORMAT JSON
   RETURNING CLOB) AS metadata_json_to_import
 FROM dual;`;

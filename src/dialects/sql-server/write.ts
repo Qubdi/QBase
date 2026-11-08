@@ -125,14 +125,36 @@ function indexStatements(table: ExportTable, qualified: string): string[] {
                 entity.schema && !key.label.startsWith(`${entity.schema}_`)
                     ? `${entity.schema}_${key.label}`
                     : key.label;
-            return `${warning}CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${quoteBracket(
+            // columnstore and xml indexes have no order of their own
+            const ordered =
+                key.algorithm !== 'columnstore' && key.algorithm !== 'xml';
+            const head =
+                key.algorithm === 'columnstore'
+                    ? 'NONCLUSTERED COLUMNSTORE '
+                    : key.algorithm === 'xml'
+                      ? 'PRIMARY XML '
+                      : `${key.distinct ? 'UNIQUE ' : ''}${
+                            key.algorithm === 'clustered'
+                                ? 'CLUSTERED '
+                                : key.algorithm === 'nonclustered'
+                                  ? 'NONCLUSTERED '
+                                  : ''
+                        }`;
+            return `${warning}CREATE ${head}INDEX ${quoteBracket(
                 name
-            )} ON ${qualified} (${commaList(used.map((c) => indexColumnText(key, c, quoteBracket)))})${
+            )} ON ${qualified} (${commaList(used.map((c) => (ordered ? indexColumnText(key, c, quoteBracket) : quoteBracket(c.name))))})${
                 key.where ? ` WHERE ${key.where}` : ''
             };`;
         }
     );
     return sortedStatements(out);
+}
+
+/** A clustered index of its own takes the place of the primary key as the clustered one. */
+function hasClustered(table: ExportTable): boolean {
+    return indexKeys(table, { byColumns: true }).some(
+        ({ key }) => key.algorithm === 'clustered'
+    );
 }
 
 function tableText(table: ExportTable): string {
@@ -141,7 +163,7 @@ function tableText(table: ExportTable): string {
     const parts = table.columns.map(columnLine);
     if (table.primary.length > 0)
         parts.push(
-            `    PRIMARY KEY (${commaList(
+            `    PRIMARY KEY ${hasClustered(table) ? 'NONCLUSTERED ' : ''}(${commaList(
                 table.primary.map((c) => quoteBracket(c.name))
             )})`
         );

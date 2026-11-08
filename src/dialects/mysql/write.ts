@@ -154,19 +154,28 @@ function indexStatements(table: ExportTable, qualified: string): string[] {
                 }`,
                 64
             );
+            // a fulltext or spatial index is not unique and has no prefix lengths
+            const special =
+                key.algorithm === 'fulltext' || key.algorithm === 'spatial';
             const cols = columns.map((c) =>
                 indexColumnText(
                     key,
                     c,
                     quoteBacktick,
-                    TEXTUAL_FOR_INDEX.has(c.type.name.toLowerCase())
+                    !special && TEXTUAL_FOR_INDEX.has(c.type.name.toLowerCase())
                         ? '(255)'
                         : ''
                 )
             );
-            return `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${quoteBacktick(
+            const head = special
+                ? `${key.algorithm!.toUpperCase()} `
+                : key.distinct
+                  ? 'UNIQUE '
+                  : '';
+            const using = key.algorithm === 'hash' ? ' USING HASH' : '';
+            return `CREATE ${head}INDEX ${quoteBacktick(
                 name
-            )} ON ${qualified} (${commaList(cols)});`;
+            )} ON ${qualified} (${commaList(cols)})${using};`;
         }
     );
     return sortedStatements(out);

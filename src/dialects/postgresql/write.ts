@@ -1,3 +1,4 @@
+import { INDEX_METHODS } from '@/core/model/index-methods';
 import { listOf } from '@/core/model/collection';
 import type { Column } from '@/core/model/column';
 import type { Design } from '@/core/model/design';
@@ -206,7 +207,9 @@ function indexStatements(
         )
             continue;
         const method =
-            key.algorithm && key.algorithm !== 'btree'
+            key.algorithm &&
+            key.algorithm !== 'btree' &&
+            INDEX_METHODS.postgresql.includes(key.algorithm)
                 ? ` USING ${key.algorithm.toUpperCase()}`
                 : '';
         out.push(

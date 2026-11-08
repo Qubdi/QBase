@@ -36,6 +36,14 @@ const keyOf = (schema: string | undefined, name: string): string =>
     `${schema ?? ''}\u0000${name}`;
 const truthy = (v: boolean | 0 | 1): boolean => v === true || v === 1;
 
+/** How a database spells an index type that QBase names another way. */
+const METHOD_NAMES: Readonly<Record<string, KeyMethod>> = {
+    'clustered columnstore': 'columnstore',
+    'nonclustered columnstore': 'columnstore',
+    'nonclustered hash': 'nonclustered',
+    rtree: 'spatial',
+};
+
 function lengthOf(text: string | null | undefined): number | 'max' | undefined {
     if (text === null || text === undefined || text === '') return undefined;
     if (text === '-1' || text.toLowerCase() === 'max') return 'max';
@@ -170,7 +178,8 @@ export function loadFromDatabaseMetadata(
                 primaryKeyName ??= raw.name;
                 continue;
             }
-            const lowerType = raw.type.toLowerCase();
+            const lowerType =
+                METHOD_NAMES[raw.type.toLowerCase()] ?? raw.type.toLowerCase();
             const method: KeyMethod | undefined = isKeyMethod(lowerType)
                 ? lowerType
                 : undefined;

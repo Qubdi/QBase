@@ -86,7 +86,13 @@ function indexStatements(
             const left = key.where
                 ? ` -- ${oneLine(`WHERE ${key.where}`)} left out: Oracle has no partial indexes`
                 : '';
-            return `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${quoteDouble(
+            const head =
+                key.algorithm === 'bitmap'
+                    ? 'BITMAP '
+                    : key.distinct
+                      ? 'UNIQUE '
+                      : '';
+            return `CREATE ${head}INDEX ${quoteDouble(
                 name
             )} ON ${qualified} (${commaList(
                 columns.map((c) => indexColumnText(key, c, quoteDouble))

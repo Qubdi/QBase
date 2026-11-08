@@ -8,6 +8,7 @@ import type {
 import { Cursor, splitTop } from './cursor';
 import type { ReaderProfile } from './profile';
 import type { Token } from './tokenizer';
+import { isKeyMethod } from '@/core/model/key';
 import type { KeyMethod } from '@/core/model/key';
 
 /** Words that end a column type. */
@@ -630,8 +631,14 @@ export function readConstraint(
     if (cur.acceptWord('KEY') || cur.acceptWord('INDEX')) {
         if (!cur.isPunct('(') && !cur.isWord('USING'))
             name = name ?? cur.readName()?.name;
-        if (cur.acceptWord('USING')) cur.next();
+        const using = (): void => {
+            if (!cur.acceptWord('USING')) return;
+            const m = cur.next()?.value.toLowerCase();
+            if (isKeyMethod(m)) method = m;
+        };
+        using();
         const listed = readIndexColumns(cur, ctx);
+        using();
         return {
             kind: 'index',
             name,

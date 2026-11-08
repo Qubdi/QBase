@@ -21,6 +21,7 @@ import {
 } from '../shared/text';
 import { convertCheck } from './convert-check';
 import { convertDefault } from './convert-default';
+import { convertIndex } from './convert-index';
 import type { Neutral, NeutralRead } from './contract';
 import { readNeutral } from './read-neutral';
 import { writeNeutral } from './write-neutral';
@@ -270,6 +271,17 @@ export function convertDesign(
                 numberedColumns.push(column);
             }
         }
+        // a clustered index replaces the primary key as the table's clustered one
+        const clusteredKeyId =
+            flavour === 'sqlserver'
+                ? t.keys.find(
+                      (k) =>
+                          !k.key.pk &&
+                          k.key.algorithm === 'clustered' &&
+                          k.columns.length > 0 &&
+                          !coversPrimaryKey(t, k)
+                  )?.key.id
+                : undefined;
         const inlineKey =
             flavour === 'sqlite' && numberedColumns.length === 1
                 ? numberedColumns[0]
@@ -391,7 +403,7 @@ export function convertDesign(
         const constraints: string[] = [];
         if (t.primary.length > 0 && !inlineKey)
             constraints.push(
-                `PRIMARY KEY (${commaList(t.primary.map((c) => q(c.name)))})`
+                `PRIMARY KEY ${clusteredKeyId ? 'NONCLUSTERED ' : ''}(${commaList(t.primary.map((c) => q(c.name)))})`
             );
         if (flavour === 'mysql')
             for (const c of numberedColumns) {
@@ -549,28 +561,27 @@ export function convertDesign(
                 );
             }
             name = claimName(usedIndexNames, name, tgt.identifierLimit);
-            const method = key.algorithm;
-            if (
-                method &&
-                !['btree', 'index'].includes(method) &&
-                !(
-                    flavour === 'sqlserver' &&
-                    (method === 'clustered' || method === 'nonclustered')
-                )
-            )
-                notes.add(
-                    'Indexes',
-                    `${t.entity.name}.${stored}`,
-                    `${method} index created as a regular index`
-                );
+            const made = convertIndex(key.algorithm, key.distinct, flavour, {
+                kinds: columns.map((c) => prepared.get(c.id)!.neutral.kind),
+                hasPrimaryKey: t.primary.length > 0,
+                mayBeClustered: key.id === clusteredKeyId,
+            });
+            if (made.note)
+                notes.add('Indexes', `${t.entity.name}.${stored}`, made.note);
             if (key.where)
                 notes.add(
                     'Indexes',
                     `${t.entity.name}.${stored}`,
                     'partial index created without its WHERE condition (conditions are not converted between databases)'
                 );
+            // a columnstore index has no order of its own
+            const order = (c: Column): string =>
+                key.descending?.includes(c.id) &&
+                !made.head.includes('COLUMNSTORE')
+                    ? ' DESC'
+                    : '';
             statements.push(
-                `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX ${q(name)} ON ${qualifiedName(t.entity)} (${commaList(columns.map((c) => `${q(c.name)}${key.descending?.includes(c.id) ? ' DESC' : ''}`))});`
+                `CREATE ${made.head}INDEX ${q(name)} ON ${qualifiedName(t.entity)}${made.between} (${commaList(columns.map((c) => `${q(c.name)}${order(c)}`))})${made.tail};`
             );
         }
         if (statements.length)
