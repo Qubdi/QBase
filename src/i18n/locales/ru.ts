@@ -93,6 +93,7 @@ export const ru = {
                     diagram: {
                         label: 'Диаграмма',
                         import: 'Импортировать из',
+                        examples: 'Примеры',
                         importFile: 'Файл диаграммы (.json)',
                         importSql: 'Скрипт SQL',
                         importDbml: 'Текст DBML',

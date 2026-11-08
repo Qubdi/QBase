@@ -88,6 +88,7 @@ export const zh_TW = {
                     diagram: {
                         label: '圖表',
                         import: '匯入自',
+                        examples: '範例',
                         importFile: '圖表檔案 (.json)',
                         importSql: 'SQL 指令碼',
                         importDbml: 'DBML 文字',

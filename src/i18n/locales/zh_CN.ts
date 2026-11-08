@@ -88,6 +88,7 @@ export const zh_CN = {
                     diagram: {
                         label: '图表',
                         import: '导入自',
+                        examples: '示例',
                         importFile: '图表文件 (.json)',
                         importSql: 'SQL 脚本',
                         importDbml: 'DBML 文本',

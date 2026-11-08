@@ -92,6 +92,7 @@ export const fr = {
                     diagram: {
                         label: 'Diagramme',
                         import: 'Importer depuis',
+                        examples: 'Exemples',
                         importFile: 'Fichier de diagramme (.json)',
                         importSql: 'Script SQL',
                         importDbml: 'Texte DBML',

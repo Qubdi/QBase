@@ -25,6 +25,11 @@ const CreateDiagramDialog = lazy(() =>
         (m) => ({ default: m.CreateDiagramDialog })
     )
 );
+const ExamplesDialog = lazy(() =>
+    import('@/features/examples/examples-dialog').then((m) => ({
+        default: m.ExamplesDialog,
+    }))
+);
 const ImportDatabaseDialog = lazy(() =>
     import('@/dialogs/import-database-dialog/import-database-dialog').then(
         (m) => ({ default: m.ImportDatabaseDialog })
@@ -83,6 +88,7 @@ const ProjectOpenDialog = lazy(() =>
 
 interface Open {
     create: boolean;
+    examples: boolean;
     open?: Required<OpenDiagramOptions>;
     importFile: boolean;
     importDatabase?: ImportIntoOpenOptions;
@@ -96,6 +102,7 @@ interface Open {
 
 const NONE: Open = {
     create: false,
+    examples: false,
     importFile: false,
     exportJson: false,
     settings: false,
@@ -133,6 +140,8 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
             openCreateDiagramDialog: () =>
                 set({ create: true, open: undefined }),
             closeCreateDiagramDialog: () => set({ create: false }),
+            openExamplesDialog: () => set({ examples: true }),
+            closeExamplesDialog: () => set({ examples: false }),
             openOpenDiagramDialog: (o) =>
                 set({ open: { canClose: o?.canClose ?? true } }),
             closeOpenDiagramDialog: () => set({ open: undefined }),
@@ -236,6 +245,9 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                         ) : null}
                     </>
                 )}
+                {open.examples ? (
+                    <ExamplesDialog onClose={api.closeExamplesDialog} />
+                ) : null}
                 {open.importFile ? (
                     <ImportDiagramDialog dialog={{ open: true }} />
                 ) : null}

@@ -41,6 +41,17 @@ const openSub = async (name: RegExp) => {
 const labels = (items: HTMLElement[]) => items.map((i) => i.textContent ?? '');
 
 describe('Diagram menu (SHL-057 to SHL-060)', () => {
+    it('Examples is the first item of Actions and opens the list of examples', async () => {
+        const dialogs = show('postgresql');
+        await openMenu('Actions');
+        const items = within(await screen.findByRole('menu')).getAllByRole(
+            'menuitem'
+        );
+        expect(items[0].textContent).toBe('Examples');
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Examples' }));
+        expect(dialogs.openExamplesDialog).toHaveBeenCalledTimes(1);
+    });
+
     it('SHL-057: Import offers the .json file, then SQL and DBML, both limited to their own method', async () => {
         const dialogs = show('postgresql');
         await openMenu('Actions');

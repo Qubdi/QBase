@@ -85,6 +85,7 @@ export const workspaceStrings = {
             diagram: {
                 label: 'Actions',
                 import: 'Import',
+                examples: 'Examples',
                 importFile: '.json',
                 importSql: 'SQL',
                 importDbml: 'DBML',

@@ -21,6 +21,9 @@ export interface ImportIntoOpenOptions {
 export interface DialogApi {
     openCreateDiagramDialog(): void;
     closeCreateDiagramDialog(): void;
+    /** the list of example diagrams */
+    openExamplesDialog(): void;
+    closeExamplesDialog(): void;
     openOpenDiagramDialog(options?: OpenDiagramOptions): void;
     closeOpenDiagramDialog(): void;
     /** the .json file import */
@@ -50,6 +53,8 @@ const missing = () => {
 export const DialogContext = createContext<DialogApi>({
     openCreateDiagramDialog: missing,
     closeCreateDiagramDialog: missing,
+    openExamplesDialog: missing,
+    closeExamplesDialog: missing,
     openOpenDiagramDialog: missing,
     closeOpenDiagramDialog: missing,
     openImportDiagramDialog: missing,

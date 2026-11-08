@@ -85,6 +85,7 @@ export const ka = {
                     diagram: {
                         label: 'დიაგრამა',
                         import: 'იმპორტი',
+                        examples: 'მაგალითები',
                         importFile: 'დიაგრამის ფაილი (.json)',
                         importSql: 'SQL სკრიპტი',
                         importDbml: 'DBML ტექსტი',
