@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** "Powered by Qubdi", the dot on the last i in the text colour. */
+/** "Powered by Qubdi", the name in bold text. */
 export const PoweredByMark: React.FC<{ className?: string }> = ({
     className,
 }) => {
@@ -11,16 +11,12 @@ export const PoweredByMark: React.FC<{ className?: string }> = ({
             className={`pointer-events-none flex items-center gap-1 text-xs text-muted-foreground ${className ?? ''}`}
         >
             <span>{t('qubdi.account.poweredBy')}</span>
-            {/* the name as text, with the dot on the last i */}
+            {/* the name as plain text, so the i has the font's own dot */}
             <span
                 aria-label="Qubdi"
-                className="inline-flex items-baseline text-sm leading-none font-bold tracking-[-0.01em] text-foreground"
+                className="text-sm leading-none font-bold tracking-[-0.01em] text-foreground"
             >
-                <span aria-hidden="true">Qubd</span>
-                <span aria-hidden="true" className="relative inline-block">
-                    ı
-                    <span className="absolute top-[0.08em] left-1/2 size-[0.22em] -translate-x-1/2 rounded-full bg-foreground" />
-                </span>
+                Qubdi
             </span>
         </span>
     );
