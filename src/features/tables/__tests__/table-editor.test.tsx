@@ -52,6 +52,32 @@ describe('EDT-117 EDT-138 adding and deleting a field', () => {
         store.getState().undo();
         expect(first(store).columns).toHaveLength(1);
     });
+
+    it('adds a note attached to the column from the attributes popover; deleting the column takes it along', async () => {
+        const { store } = await openFirst();
+        const column = first(store).columns[0];
+        await userEvent.click(
+            screen.getByRole('button', { name: 'Field Attributes' })
+        );
+        await userEvent.click(
+            await screen.findByRole('button', { name: 'Add Note' })
+        );
+        const d = store.getState().design;
+        expect(d.memos.order).toHaveLength(1);
+        expect(d.memos.byId[d.memos.order[0]].anchor).toEqual({
+            kind: 'column',
+            id: column.id,
+        });
+        await userEvent.click(
+            screen.getByRole('button', { name: 'Field Attributes' })
+        );
+        await userEvent.click(
+            await screen.findByRole('button', { name: 'Delete Field' })
+        );
+        expect(store.getState().design.memos.order).toHaveLength(0);
+        store.getState().undo();
+        expect(store.getState().design.memos.order).toHaveLength(1);
+    });
 });
 
 describe('EDT-118 renaming a field', () => {

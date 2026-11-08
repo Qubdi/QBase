@@ -3,6 +3,7 @@ import type { Command } from '@/core/commands/command';
 import { planMembership, planMoveRegion } from '@/core/commands/plan-visual';
 import type { Design } from '@/core/model/design';
 import type { Entity } from '@/core/model/entity';
+import { boxAt } from '@/core/model/memo';
 import type { Size } from '@/core/model/region-membership';
 import { clampWidth } from './geometry';
 import type { LiveShapes } from './flow-model';
@@ -37,12 +38,14 @@ export function commitShapes(
             if (step && (region.box.x !== at.x || region.box.y !== at.y))
                 commands.push(step);
         } else if (memo && !live.sizes[id]) {
-            if (memo.box.x !== at.x || memo.box.y !== at.y)
+            // a note keeps its distance from what it belongs to, wherever that ends up
+            const box = boxAt(design, memo, at, live.positions);
+            if (memo.box.x !== box.x || memo.box.y !== box.y)
                 commands.push({
                     type: 'item.update',
                     collection: 'memos',
                     id,
-                    patch: { box: { ...memo.box, x: at.x, y: at.y } },
+                    patch: { box },
                 });
         }
     }
@@ -69,9 +72,11 @@ export function commitShapes(
                 });
         } else if (region || memo) {
             const box = (region ?? memo)!.box;
+            const moved =
+                memo && at ? boxAt(design, memo, at, live.positions) : box;
             const next = {
-                x: at?.x ?? box.x,
-                y: at?.y ?? box.y,
+                x: region ? (at?.x ?? box.x) : moved.x,
+                y: region ? (at?.y ?? box.y) : moved.y,
                 width: size.width,
                 height: size.height ?? box.height,
             };

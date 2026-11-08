@@ -6,6 +6,7 @@ import {
     planReorderColumns,
     planUpdateColumn,
 } from '@/core/commands/plan-column';
+import { planAddNote } from '@/core/commands/plan-visual';
 import { isSerialType } from '@/core/commands/settle-column';
 import { listOf } from '@/core/model/collection';
 import type { Entity } from '@/core/model/entity';
@@ -50,7 +51,7 @@ const Toggle: React.FC<{
             'shrink-0 text-xs',
             compact
                 ? 'size-8 text-muted-foreground'
-                : 'size-7 text-slate-600 dark:text-slate-400',
+                : 'size-7 text-slate-700 dark:text-slate-300',
             pressed &&
                 (compact
                     ? 'bg-accent text-orange-600 dark:text-orange-400'
@@ -58,7 +59,7 @@ const Toggle: React.FC<{
             pressed &&
                 !compact &&
                 tone === 'key' &&
-                'text-orange-700 dark:text-orange-400'
+                'font-semibold text-orange-600 dark:text-orange-400'
         )}
         onClick={onClick}
     >
@@ -204,6 +205,7 @@ export const FieldsEditor: React.FC<{
                                 <Toggle
                                     label={text('fields.nullable')}
                                     pressed={column.nullable}
+                                    tone="key"
                                     compact={compact}
                                     disabled={
                                         locked ||
@@ -269,6 +271,15 @@ export const FieldsEditor: React.FC<{
                                             update(column.id, patch)
                                         }
                                         onDelete={() => removeColumn(column.id)}
+                                        onAddNote={() => {
+                                            setPopoverFor(undefined);
+                                            edit(
+                                                planAddNote(design, {
+                                                    kind: 'column',
+                                                    id: column.id,
+                                                })
+                                            );
+                                        }}
                                     />
                                 )}
                             </div>

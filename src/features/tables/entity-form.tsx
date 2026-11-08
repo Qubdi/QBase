@@ -30,13 +30,13 @@ export const Section: React.FC<{
     onToggle: () => void;
     children: React.ReactNode;
 }> = ({ title, icon, open, onToggle, children }) => (
-    <section className="py-1">
+    <section className="border-t py-1 first:border-t-0">
         <h3 className="m-0">
             <button
                 type="button"
                 aria-expanded={open}
                 onClick={onToggle}
-                className="flex h-6 w-full items-center gap-2 rounded-sm px-2 text-xs font-medium text-slate-600 hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-slate-300"
+                className="flex h-7 w-full items-center gap-2 rounded-sm px-2 text-xs font-semibold text-slate-700 hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-slate-200"
             >
                 <span className="shrink-0 [&_svg]:size-4">{icon}</span>
                 <span className="flex-1 text-left">{title}</span>
@@ -47,7 +47,9 @@ export const Section: React.FC<{
                 )}
             </button>
         </h3>
-        {open ? <div className="space-y-2 px-1 py-2">{children}</div> : null}
+        {open ? (
+            <div className="space-y-2 px-2 pb-2 pt-1">{children}</div>
+        ) : null}
     </section>
 );
 

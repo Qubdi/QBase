@@ -9,6 +9,8 @@ import {
     within,
 } from '@testing-library/react';
 import { createEditorStore } from '@/store/editor-store';
+import { blank } from '@/core/testing/helpers';
+import { memoPosition } from '@/core/model/memo';
 import { toast } from '@/platform/toast/use-toast';
 import {
     copySelection,
@@ -60,14 +62,13 @@ const context = (
 });
 
 describe('right-click menus', () => {
-    it('EDT-054: the background menu offers new table, view, relationship, area, note and auto arrange', () => {
+    it('EDT-054: the background menu offers new table, view, relationship, area and auto arrange (a note needs a table or an area)', () => {
         const lines = buildMenu(context({ design: shop().design }));
         expect(labels(lines)).toEqual([
             'newTable',
             'newView',
             'newRelationship',
             'newArea',
-            'newNote',
             'arrange',
         ]);
         expect(lines.some((l) => l.kind === 'separator')).toBe(true);
@@ -81,12 +82,7 @@ describe('right-click menus', () => {
                 canOpenLinkDialog: false,
             })
         );
-        expect(labels(lines)).toEqual([
-            'newTable',
-            'newArea',
-            'newNote',
-            'arrange',
-        ]);
+        expect(labels(lines)).toEqual(['newTable', 'newArea', 'arrange']);
     });
 
     it('EDT-055: a table made from the menu lands at the pointer in the default schema and opens for editing', () => {
@@ -149,6 +145,7 @@ describe('right-click menus', () => {
         expect(labels(lines)).toEqual([
             'editTable',
             'duplicateTable',
+            'addNote',
             'addRelationship',
             'moveToArea',
             'deleteTable',
@@ -257,7 +254,7 @@ describe('right-click menus', () => {
                     })
                 )
             )
-        ).toEqual(['editAreaName', 'arrangeArea', 'deleteArea']);
+        ).toEqual(['editAreaName', 'addNote', 'arrangeArea', 'deleteArea']);
     });
 
     it('EDT-060: a note has no menu', () => {
@@ -686,12 +683,22 @@ describe('keyboard delete and drops', () => {
         expect(dropNewItem(store, 'table', { x: 10, y: 20 })).toBe(true);
         expect(dropNewItem(store, 'view', { x: 10, y: 20 })).toBe(true);
         expect(dropNewItem(store, 'area', { x: 10, y: 20 })).toBe(true);
+        // a note dropped lands on the table or area it is nearest to
         expect(dropNewItem(store, 'note', { x: 10, y: 20 })).toBe(true);
         expect(dropNewItem(store, 'file', { x: 10, y: 20 })).toBe(false);
         const d = store.getState().design;
         expect(d.entities.order).toHaveLength(5);
         expect(d.regions.order).toHaveLength(1);
         expect(d.memos.order).toHaveLength(1);
+        const note = d.memos.byId[d.memos.order[0]];
+        expect(note.anchor).toBeDefined();
+        expect(memoPosition(d, note)).toEqual({ x: 10, y: 20 });
+    });
+
+    it('a note dropped where there is no table and no area is not made', () => {
+        const store = createEditorStore({ design: blank() });
+        expect(dropNewItem(store, 'note', { x: 10, y: 20 })).toBe(false);
+        expect(store.getState().design.memos.order).toHaveLength(0);
     });
 });
 

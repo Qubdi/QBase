@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { applyOk, withTables } from '@/core/testing/helpers';
@@ -80,14 +80,25 @@ describe('EDT-211 EDT-214 to EDT-216 the Notes tab', () => {
         return view;
     }
 
-    it('shows the empty state and adds an empty 200 x 150 yellow note', async () => {
-        const { store } = await notes();
+    it('shows the empty state; with nothing to attach a note to the button cannot be used', async () => {
+        await notes();
         expect(screen.getByText('No Notes')).toBeTruthy();
         expect(
             screen.getByText(
-                'Create a note to add text annotations on the canvas'
+                'Select a table or an area, then add a note to attach to it'
             )
         ).toBeTruthy();
+        for (const button of screen.getAllByRole('button', {
+            name: 'Add Note',
+        }))
+            expect((button as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('adds an empty 200 x 150 yellow note to the selected table, and says what it is attached to', async () => {
+        const design = withTables(['orders']);
+        const { store } = await notes(design);
+        const table = design.entities.order[0];
+        act(() => store.getState().select([table]));
         await userEvent.click(
             screen.getAllByRole('button', { name: 'Add Note' })[0]
         );
@@ -96,8 +107,18 @@ describe('EDT-211 EDT-214 to EDT-216 the Notes tab', () => {
             body: '',
             tint: '#ffe374',
             box: { width: 200, height: 150 },
+            anchor: { kind: 'entity', id: table },
         });
         expect(screen.getByText('Empty note')).toBeTruthy();
+        expect(screen.getByText('orders')).toBeTruthy();
+    });
+
+    it('asks for a table or an area first when none is selected', async () => {
+        const { store } = await notes(withTables(['orders']));
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Add Note' })[0]
+        );
+        expect(store.getState().design.memos.order).toHaveLength(0);
     });
 
     it('shows the first line of a note and deletes it', async () => {

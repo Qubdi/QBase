@@ -6,7 +6,9 @@ import {
     StickyNote,
     FileText,
 } from 'lucide-react';
-import { planAddMemo, planAddRegion } from '@/core/commands/plan-visual';
+import { planAddNote, planAddRegion } from '@/core/commands/plan-visual';
+import { ownerFromSelection, ownerName } from '@/core/model/memo-owner';
+import { toast } from '@/platform/toast/use-toast';
 import { ColorPicker } from '@/components/color-picker/color-picker';
 import { InlineName } from '@/platform/panel/inline-name';
 import { Notice } from '@/platform/panel/notice';
@@ -92,7 +94,19 @@ const Header: React.FC<{
     dragKind: 'area' | 'note';
     addLabel: string;
     filterLabel: string;
-}> = ({ value, onChange, onAdd, dragKind, addLabel, filterLabel }) => (
+    /** the add button cannot be used now, and `addHint` says what to do */
+    addDisabled?: boolean;
+    addHint?: string;
+}> = ({
+    value,
+    onChange,
+    onAdd,
+    dragKind,
+    addLabel,
+    filterLabel,
+    addDisabled,
+    addHint,
+}) => (
     <div className="flex items-center gap-2">
         <Input
             aria-label={filterLabel}
@@ -107,6 +121,8 @@ const Header: React.FC<{
                 size="sm"
                 variant="secondary"
                 className="shrink-0 px-2"
+                disabled={addDisabled}
+                title={addDisabled ? addHint : undefined}
                 onClick={onAdd}
                 {...newItemDragProps(dragKind)}
             >
@@ -224,6 +240,19 @@ const AreasList: React.FC = () => {
 
 const NotesList: React.FC = () => {
     const { design, locked, edit } = useEditorEnv();
+    const selection = useEditorStore((state) => state.ui.selection);
+    // a note belongs to the selected table or area
+    const owner = ownerFromSelection(design, selection);
+    const addNote = () => {
+        if (!owner) {
+            toast({ description: text('visuals.selectOwner') });
+            return;
+        }
+        edit(planAddNote(design, owner));
+    };
+    // with no table and no area there is nothing to attach a note to
+    const nothingToAttach =
+        design.entities.order.length === 0 && design.regions.order.length === 0;
     const text = useText();
     const focus = useFocus();
     const [filterText, setFilterText] = useState('');
@@ -236,7 +265,9 @@ const NotesList: React.FC = () => {
                 filterLabel={text('common.filter')}
                 dragKind="note"
                 addLabel={text('visuals.addNote')}
-                onAdd={locked ? undefined : () => edit(planAddMemo())}
+                onAdd={locked ? undefined : addNote}
+                addDisabled={nothingToAttach}
+                addHint={text('visuals.selectOwner')}
             />
             {design.memos.order.length === 0 ? (
                 <Notice
@@ -249,7 +280,13 @@ const NotesList: React.FC = () => {
                             variant="outline"
                             size="sm"
                             className="px-4 text-sm"
-                            onClick={() => edit(planAddMemo())}
+                            disabled={nothingToAttach}
+                            title={
+                                nothingToAttach
+                                    ? text('visuals.selectOwner')
+                                    : undefined
+                            }
+                            onClick={addNote}
                         >
                             {text('visuals.addNote')}
                         </Button>
@@ -296,6 +333,19 @@ const NotesList: React.FC = () => {
                                 >
                                     {line || text('visuals.emptyNote')}
                                 </span>
+                                {memo.anchor ? (
+                                    <span
+                                        className="max-w-[40%] shrink-0 truncate text-xs text-muted-foreground"
+                                        title={text('visuals.attachedTo', {
+                                            name: ownerName(
+                                                design,
+                                                memo.anchor
+                                            ),
+                                        })}
+                                    >
+                                        {ownerName(design, memo.anchor)}
+                                    </span>
+                                ) : null}
                                 <ColorPicker
                                     color={memo.tint}
                                     disabled={locked}

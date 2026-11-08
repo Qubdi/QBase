@@ -11,11 +11,12 @@ import {
     planDependency,
 } from '@/core/commands/plan-dependency';
 import { planDeleteLink, planLink } from '@/core/commands/plan-link';
-import { planAddMemo, planAddRegion } from '@/core/commands/plan-visual';
+import { planAddNote, planAddRegion } from '@/core/commands/plan-visual';
 import type { Design } from '@/core/model/design';
 import type { Entity, EntityKind } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
-import { MEMO_SIZE } from '@/core/model/memo';
+import type { MemoAnchor } from '@/core/model/memo';
+import { nearestOwner } from '@/core/model/memo-owner';
 import { REGION_SIZE } from '@/core/model/region';
 import type { Size } from '@/core/model/region-membership';
 import type { EditorStore } from '@/store/editor-store';
@@ -108,9 +109,17 @@ export function deleteSelection(store: EditorStore): boolean {
     for (const id of design.regions.order)
         if (chosen.has(id))
             commands.push({ type: 'item.remove', collection: 'regions', id });
-    for (const id of design.memos.order)
-        if (chosen.has(id))
+    // a note goes with its table, column or area: deleting it twice would be refused
+    const goneWith = new Set<string>([
+        ...gone,
+        ...[...gone].flatMap((id) => design.entities.byId[id]?.columnIds ?? []),
+        ...design.regions.order.filter((id) => chosen.has(id)),
+    ]);
+    for (const id of design.memos.order) {
+        const anchor = design.memos.byId[id].anchor;
+        if (chosen.has(id) && !(anchor && goneWith.has(anchor.id)))
             commands.push({ type: 'item.remove', collection: 'memos', id });
+    }
     if (commands.length === 0) return false;
     const result = store
         .getState()
@@ -154,16 +163,30 @@ export function addRegionAt(store: EditorStore, at: Point): Id | undefined {
     return command.item.id;
 }
 
-export function addMemoAt(store: EditorStore, at: Point): Id | undefined {
+/**
+ * Adds a note attached to an area, a table or a column. It is put at `at` when
+ * given (a drop), else to the right of what it belongs to.
+ */
+export function addNoteTo(
+    store: EditorStore,
+    anchor: MemoAnchor,
+    at?: Point
+): Id | undefined {
     const state = store.getState();
-    const command = planAddMemo({
-        box: { x: Math.round(at.x), y: Math.round(at.y), ...MEMO_SIZE },
+    const command = planAddNote(state.design, anchor, {
+        ...(at ? { at: { x: Math.round(at.x), y: Math.round(at.y) } } : {}),
     });
     if (command.type !== 'item.insert' || command.collection !== 'memos')
         return undefined;
     if (!state.edit(command).ok) return undefined;
     state.select([command.item.id]);
     return command.item.id;
+}
+
+/** Adds a note where it was dropped, attached to the area it lies in or the nearest table. */
+export function addNoteAt(store: EditorStore, at: Point): Id | undefined {
+    const owner = nearestOwner(store.getState().design, at.x, at.y);
+    return owner ? addNoteTo(store, owner, at) : undefined;
 }
 
 export function duplicateEntity(

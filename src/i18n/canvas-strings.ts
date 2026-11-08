@@ -105,7 +105,7 @@ export const canvas = {
         newView: 'New View',
         newRelationship: 'New Relationship',
         newArea: 'New Area',
-        newNote: 'New Note',
+        addNote: 'Add Note',
         arrange: 'Auto Arrange Diagram',
         moveToArea: 'Move to Area',
         moveToAreaCount: 'Move to Area ({{count}})',

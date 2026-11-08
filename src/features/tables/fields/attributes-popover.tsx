@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { MoreHorizontal, StickyNote, Trash2 } from 'lucide-react';
 import type { Column } from '@/core/model/column';
 import type { DatabaseType } from '@/core/model/database';
 import {
@@ -32,6 +32,8 @@ export const AttributesPopover: React.FC<{
     onOpenChange?: (open: boolean) => void;
     onChange: (patch: Partial<Column>) => void;
     onDelete: () => void;
+    /** adds a note attached to this column */
+    onAddNote?: () => void;
 }> = ({
     databaseType,
     column,
@@ -41,6 +43,7 @@ export const AttributesPopover: React.FC<{
     onOpenChange,
     onChange,
     onDelete,
+    onAddNote,
 }) => {
     const text = useText();
     const state = fieldAttributeState(databaseType, column, columns);
@@ -75,7 +78,7 @@ export const AttributesPopover: React.FC<{
                 <h4 className="border-b pb-2 text-sm font-semibold">
                     {text('fields.attributes')}
                 </h4>
-                <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                     {text('fields.unique')}
                     <Checkbox
                         checked={column.unique}
@@ -86,7 +89,7 @@ export const AttributesPopover: React.FC<{
                     />
                 </Label>
                 {state.showIncrement ? (
-                    <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                         {text('fields.autoIncrement')}
                         <Checkbox
                             checked={column.increment === true}
@@ -98,7 +101,7 @@ export const AttributesPopover: React.FC<{
                     </Label>
                 ) : null}
                 {state.showArray ? (
-                    <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                         {text('fields.array')}
                         <Checkbox
                             checked={column.isArray === true}
@@ -207,7 +210,7 @@ export const AttributesPopover: React.FC<{
                         </Label>
                     </div>
                 ) : null}
-                <Label className="block space-y-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+                <Label className="block space-y-1 text-sm font-medium text-slate-700 dark:text-slate-200">
                     <span>{text('fields.default')}</span>
                     <DebouncedInput
                         className="h-9 bg-secondary font-normal text-foreground"
@@ -219,7 +222,7 @@ export const AttributesPopover: React.FC<{
                         }
                     />
                 </Label>
-                <Label className="block space-y-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+                <Label className="block space-y-1 text-sm font-medium text-slate-700 dark:text-slate-200">
                     <span>{text('fields.description')}</span>
                     <DebouncedTextarea
                         className="min-h-[60px] bg-secondary font-normal text-foreground"
@@ -232,7 +235,18 @@ export const AttributesPopover: React.FC<{
                     />
                 </Label>
                 {readOnly ? null : (
-                    <div className="border-t pt-3">
+                    <div className="space-y-2 border-t pt-3">
+                        {onAddNote ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                onClick={onAddNote}
+                            >
+                                <StickyNote />
+                                {text('fields.addNote')}
+                            </Button>
+                        ) : null}
                         <Button
                             type="button"
                             variant="outline"

@@ -3,6 +3,7 @@ import type { Design } from '@/core/model/design';
 import { TABLE_WIDTH } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
 import { entityList } from '@/core/model/lookup';
+import { memoPosition, tiePoint } from '@/core/model/memo';
 import type { Size } from '@/core/model/region-membership';
 import type { DiffMark, DiffMarks } from './diff-marks';
 
@@ -39,7 +40,11 @@ export type RegionNodeData = {
     /** fades out: none of its tables is selected or linked to a selected table */
     dimmed: boolean;
 };
-export type MemoNodeData = Record<string, never>;
+export type MemoNodeData = {
+    /** where the line to what the note belongs to ends, from the note's top-left corner */
+    tieX?: number;
+    tieY?: number;
+};
 
 export type EntityNode = Node<EntityNodeData, 'entity'>;
 export type RegionNode = Node<RegionNodeData, 'region'>;
@@ -291,8 +296,11 @@ export function buildNodes(
     }
     for (const id of design.memos.order) {
         const memo = design.memos.byId[id];
-        const at = live.positions[id] ?? memo.box;
+        // a note is where its owner puts it, unless the note itself is being dragged
+        const at =
+            live.positions[id] ?? memoPosition(design, memo, live.positions);
         const size = live.sizes[id] ?? memo.box;
+        const tie = tiePoint(design, memo, at, live.positions);
         nodes.push(
             remembered<MemoNode>(memory, {
                 id,
@@ -300,7 +308,12 @@ export function buildNodes(
                 position: { x: at.x, y: at.y },
                 width: size.width,
                 height: size.height ?? memo.box.height,
-                data: {},
+                data: tie
+                    ? {
+                          tieX: Math.round(tie.x - at.x),
+                          tieY: Math.round(tie.y - at.y),
+                      }
+                    : {},
                 ariaLabel: memo.body.trim().slice(0, 60) || undefined,
                 selected: selection.has(id),
                 draggable: input.editable,

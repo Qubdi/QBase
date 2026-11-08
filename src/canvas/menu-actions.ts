@@ -9,7 +9,7 @@ import { REGION_SIZE } from '@/core/model/region';
 import type { EditorStore } from '@/store/editor-store';
 import {
     addEntityAt,
-    addMemoAt,
+    addNoteTo,
     addRegionAt,
     arrangeDiagram,
     deleteSelection,
@@ -85,8 +85,8 @@ export function runMenuAction(action: MenuAction, deps: MenuDeps): void {
         case 'new-region':
             addRegionAt(store, action.at);
             return;
-        case 'new-memo':
-            addMemoAt(store, action.at);
+        case 'new-note':
+            addNoteTo(store, action.anchor);
             return;
         case 'arrange-all':
             deps.askArrange();

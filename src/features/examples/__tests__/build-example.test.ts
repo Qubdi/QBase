@@ -13,6 +13,9 @@ describe('building an example from its tables', () => {
             expect(design.links.order.length).toBeGreaterThanOrEqual(5);
             expect(design.regions.order).toHaveLength(2);
             expect(design.memos.order).toHaveLength(3);
+            // every note is attached to its area, so it moves with it
+            for (const id of design.memos.order)
+                expect(design.memos.byId[id].anchor?.kind).toBe('region');
             // every table sits inside its area, and has its description
             for (const id of design.entities.order) {
                 const entity = design.entities.byId[id];

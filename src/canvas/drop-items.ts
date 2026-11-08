@@ -1,6 +1,6 @@
 import type { EntityKind } from '@/core/model/entity';
 import type { EditorStore } from '@/store/editor-store';
-import { addEntityAt, addMemoAt, addRegionAt } from './canvas-actions';
+import { addEntityAt, addNoteAt, addRegionAt } from './canvas-actions';
 import type { Point } from './flow-model';
 
 /**
@@ -25,7 +25,7 @@ export function dropNewItem(
 ): boolean {
     if (!isNewItemKind(kind)) return false;
     if (kind === 'area') return addRegionAt(store, at) !== undefined;
-    if (kind === 'note') return addMemoAt(store, at) !== undefined;
+    if (kind === 'note') return addNoteAt(store, at) !== undefined;
     return addEntityAt(store, kind, at, visibleSchemas, measure) !== undefined;
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { createEditorStore } from '@/store/editor-store';
-import { addMemoAt, addRegionAt, deleteSelection } from './canvas-actions';
+import { addNoteTo, addRegionAt, deleteSelection } from './canvas-actions';
 import { asHex, memoPale, regionFill } from './tints';
 import { shop, withMemo, withRegion } from './test/fixtures';
 import { renderCanvas } from './test/render';
@@ -146,12 +146,14 @@ describe('areas', () => {
 });
 
 describe('notes', () => {
-    it('EDT-211: a new note is empty, 200 x 150 and yellow, at the given point', () => {
-        const store = createEditorStore({ design: shop().design });
-        const id = addMemoAt(store, { x: 10, y: 20 })!;
+    it('EDT-211: a new note is empty, 200 x 150 and yellow, and is put to the right of its table', () => {
+        const s = shop();
+        const store = createEditorStore({ design: s.design });
+        const id = addNoteTo(store, { kind: 'entity', id: s.users })!;
         const memo = store.getState().design.memos.byId[id];
         expect(memo.body).toBe('');
-        expect(memo.box).toEqual({ x: 10, y: 20, width: 200, height: 150 });
+        expect(memo.box).toEqual({ x: 248, y: 0, width: 200, height: 150 });
+        expect(memo.anchor).toEqual({ kind: 'entity', id: s.users });
         expect(memo.tint).toBe('#ffe374');
     });
 
@@ -204,8 +206,9 @@ describe('notes', () => {
     });
 
     it('EDT-217: add, edit and delete of a note are undoable', () => {
-        const store = createEditorStore({ design: shop().design });
-        const id = addMemoAt(store, { x: 0, y: 0 })!;
+        const s = shop();
+        const store = createEditorStore({ design: s.design });
+        const id = addNoteTo(store, { kind: 'entity', id: s.users })!;
         store.getState().edit({
             type: 'item.update',
             collection: 'memos',

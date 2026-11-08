@@ -1,6 +1,7 @@
 import type { Design } from '@/core/model/design';
 import type { EntityKind } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
+import type { MemoAnchor } from '@/core/model/memo';
 import type { Point } from './flow-model';
 
 /** What picking a menu line does. The canvas runs these (see `menu-actions.ts`). */
@@ -8,7 +9,7 @@ export type MenuAction =
     | { type: 'new-entity'; kind: EntityKind; at: Point }
     | { type: 'new-link-dialog' }
     | { type: 'new-region'; at: Point }
-    | { type: 'new-memo'; at: Point }
+    | { type: 'new-note'; anchor: MemoAnchor }
     | { type: 'arrange-all' }
     | { type: 'move-to-area'; ids: Id[]; regionId: Id | undefined }
     | { type: 'move-to-new-area'; ids: Id[]; at: Point }
@@ -120,7 +121,6 @@ export function buildMenu(context: MenuContext): MenuLine[] {
             lines.push(item('newRelationship', { type: 'new-link-dialog' }));
         lines.push(
             item('newArea', { type: 'new-region', at }),
-            item('newNote', { type: 'new-memo', at }),
             SEPARATOR,
             item('arrange', { type: 'arrange-all' })
         );
@@ -147,7 +147,11 @@ export function buildMenu(context: MenuContext): MenuLine[] {
                 item('editTable', { type: 'edit-entity', id: target.id })
             );
         lines.push(
-            item('duplicateTable', { type: 'duplicate-entity', id: target.id })
+            item('duplicateTable', { type: 'duplicate-entity', id: target.id }),
+            item('addNote', {
+                type: 'new-note',
+                anchor: { kind: 'entity', id: target.id },
+            })
         );
         if (entity?.kind === 'table')
             lines.push(
@@ -176,6 +180,10 @@ export function buildMenu(context: MenuContext): MenuLine[] {
     if (target.kind === 'region')
         return [
             item('editAreaName', { type: 'rename-region', id: target.id }),
+            item('addNote', {
+                type: 'new-note',
+                anchor: { kind: 'region', id: target.id },
+            }),
             item('arrangeArea', { type: 'arrange-region', id: target.id }),
             item('deleteArea', { type: 'delete-region', id: target.id }),
         ];

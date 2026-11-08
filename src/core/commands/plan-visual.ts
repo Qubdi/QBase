@@ -3,7 +3,8 @@ import type { Design } from '../model/design';
 import type { Entity } from '../model/entity';
 import type { Id } from '../model/id';
 import { entityList } from '../model/lookup';
-import { firstOffset, MEMO_SIZE } from '../model/memo';
+import { anchorPoint, firstOffset, MEMO_SIZE } from '../model/memo';
+import type { Point } from '../model/memo';
 import type { Memo, MemoAnchor } from '../model/memo';
 import type { Region } from '../model/region';
 import { regionMembership } from '../model/region-membership';
@@ -41,11 +42,16 @@ export function planAddMemo(
 export function planAddNote(
     design: Design,
     anchor: MemoAnchor,
-    options: PlanOptions & Partial<Memo> = {}
+    options: PlanOptions & Partial<Memo> & { at?: Point } = {}
 ): Command {
-    const offset = firstOffset(design, anchor);
+    const { at, ...rest } = options;
+    const origin = at ? anchorPoint(design, anchor) : undefined;
+    const offset =
+        at && origin
+            ? { x: at.x - origin.x, y: at.y - origin.y }
+            : firstOffset(design, anchor);
     return planAddMemo({
-        ...options,
+        ...rest,
         anchor,
         box: {
             x: offset.x,

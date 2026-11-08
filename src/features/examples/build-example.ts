@@ -1,7 +1,7 @@
 import { apply } from '@/core/commands/apply';
 import type { Command } from '@/core/commands/command';
 import { planUpdateColumn } from '@/core/commands/plan-column';
-import { planAddMemo, planAddRegion } from '@/core/commands/plan-visual';
+import { planAddNote, planAddRegion } from '@/core/commands/plan-visual';
 import { REGION_COLORS } from '@/core/model/defaults';
 import type { Design } from '@/core/model/design';
 import { COLLAPSED_COLUMNS, TABLE_WIDTH } from '@/core/model/entity';
@@ -154,15 +154,24 @@ export async function buildExample(
         for (const note of domain.notes.filter((n) => n.area === area.id)) {
             design = must(
                 design,
-                planAddMemo({
-                    body: note.text,
-                    box: {
-                        x: at.x + k * (NOTE.width + NOTE.gap),
-                        y: at.y - NOTE.room + 20,
-                        width: NOTE.width,
-                        height: NOTE.height,
-                    },
-                })
+                // attached to the area, so it moves with it
+                planAddNote(
+                    design,
+                    { kind: 'region', id: regionId },
+                    {
+                        body: note.text,
+                        at: {
+                            x: at.x + k * (NOTE.width + NOTE.gap),
+                            y: at.y - NOTE.room + 20,
+                        },
+                        box: {
+                            x: 0,
+                            y: 0,
+                            width: NOTE.width,
+                            height: NOTE.height,
+                        },
+                    }
+                )
             );
             k++;
         }

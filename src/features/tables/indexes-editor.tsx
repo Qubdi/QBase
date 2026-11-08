@@ -151,7 +151,7 @@ const IndexRow: React.FC<{
                 className={
                     index.distinct
                         ? 'size-8 shrink-0 bg-accent text-orange-700 dark:text-orange-400'
-                        : 'size-8 shrink-0 text-slate-600 dark:text-slate-400'
+                        : 'size-8 shrink-0 text-slate-700 dark:text-slate-300'
                 }
                 onClick={() => patch({ distinct: !index.distinct })}
             >
@@ -212,7 +212,7 @@ const IndexRow: React.FC<{
                                 }))}
                             />
                             {ginOk ? null : (
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-slate-600 dark:text-slate-300">
                                     {text('indexes.ginNeedsFields')}
                                 </p>
                             )}
@@ -264,7 +264,7 @@ export const IndexesEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
     return (
         <div className="space-y-2">
             {ordered.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
                     {text('indexes.none')}
                 </p>
             ) : null}

@@ -17,7 +17,7 @@ export const ChecksEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
     return (
         <div className="space-y-2">
             {rules.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
                     {text('checks.none')}
                 </p>
             ) : null}

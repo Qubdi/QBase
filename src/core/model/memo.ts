@@ -110,19 +110,22 @@ export function boxAt(
     };
 }
 
-/** The first place for a new note: to the right of what it belongs to. */
-export function firstOffset(design: Design, anchor: MemoAnchor): Point {
-    if (anchor.kind === 'region') {
-        const region = design.regions.byId[anchor.id];
-        return { x: (region?.box.width ?? 0) + MEMO_GAP, y: 0 };
-    }
+/** How wide the area or table an anchor points at is. */
+function widthOf(design: Design, anchor: MemoAnchor): number {
+    if (anchor.kind === 'region')
+        return design.regions.byId[anchor.id]?.box.width ?? 0;
     const entity =
         anchor.kind === 'entity'
             ? design.entities.byId[anchor.id]
             : design.entities.order
                   .map((id) => design.entities.byId[id])
                   .find((e) => e.columnIds.includes(anchor.id));
-    return { x: (entity?.width ?? TABLE_WIDTH.default) + MEMO_GAP, y: 0 };
+    return entity?.width ?? TABLE_WIDTH.default;
+}
+
+/** The first place for a new note: to the right of what it belongs to. */
+export function firstOffset(design: Design, anchor: MemoAnchor): Point {
+    return { x: widthOf(design, anchor) + MEMO_GAP, y: 0 };
 }
 
 /** Does the anchor point at something the design has? */
@@ -135,4 +138,32 @@ export function memosAnchoredTo(design: Design, ids: ReadonlySet<Id>): Memo[] {
     return design.memos.order
         .map((id) => design.memos.byId[id])
         .filter((m) => m.anchor !== undefined && ids.has(m.anchor.id));
+}
+
+/**
+ * The point on its owner that a note's line ends at: on the owner's right edge
+ * when the note is to the right of it, else on its left edge; at the height of
+ * the table's title, the column's row or the top of the area. Undefined for a
+ * note with no owner.
+ */
+export function tiePoint(
+    design: Design,
+    memo: Memo,
+    at: Point,
+    moved: MovedItems = {}
+): Point | undefined {
+    const anchor = memo.anchor;
+    const origin = anchor && anchorPoint(design, anchor, moved);
+    if (!anchor || !origin) return undefined;
+    const width = widthOf(design, anchor);
+    const down =
+        anchor.kind === 'region'
+            ? 12
+            : anchor.kind === 'column'
+              ? COLUMN_ROW_HEIGHT / 2
+              : TABLE_HEADER_HEIGHT / 2;
+    return {
+        x: at.x >= origin.x + width ? origin.x + width : origin.x,
+        y: origin.y + down,
+    };
 }

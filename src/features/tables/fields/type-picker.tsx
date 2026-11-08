@@ -98,7 +98,7 @@ export const TypePicker: React.FC<{
                         'h-8 justify-between text-sm font-normal',
                         compact
                             ? 'min-w-0 flex-1 gap-1 border border-transparent bg-transparent px-3 py-1 shadow-none transition-none hover:border-input hover:bg-transparent hover:text-foreground active:scale-100 data-[state=open]:border-ring data-[state=open]:bg-transparent'
-                            : 'w-[5.25rem] shrink-0 px-2'
+                            : 'w-[5.25rem] shrink-0 bg-slate-100 px-2 font-medium text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
                     )}
                 >
                     <span className="truncate">
@@ -111,7 +111,7 @@ export const TypePicker: React.FC<{
                             <CaretSortIcon className="size-4" />
                         </span>
                     ) : (
-                        <ChevronsUpDown className="!size-3 opacity-50" />
+                        <ChevronsUpDown className="!size-3 opacity-70" />
                     )}
                 </Button>
             </PopoverTrigger>
