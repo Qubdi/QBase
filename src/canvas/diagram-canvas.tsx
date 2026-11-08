@@ -63,6 +63,7 @@ import { HANDLES_MIN_ZOOM } from './field-row';
 import { LinkPopover } from './link-popover';
 import { reportConnect, reportCopied, reportPasted } from './notify';
 import { commitShapes } from './commit-shapes';
+import { withMembersFollowing } from './region-follow';
 import {
     buildDependencyEdges,
     buildEdges,
@@ -392,10 +393,29 @@ function Surface({
             let moved = false;
             const choice = new Set(storeApi.getState().ui.selection);
             let choiceChanged = false;
+            const before = liveRef.current.positions;
+            // tables that move by themselves in this batch, and areas that are being resized
+            const own = new Set<string>();
+            const resizing = new Set<string>();
+            for (const change of changes) {
+                if (change.type === 'position' && change.position)
+                    own.add(change.id);
+                else if (change.type === 'dimensions' && change.resizing)
+                    resizing.add(change.id);
+            }
             for (const change of changes) {
                 if (change.type === 'position' && change.position) {
                     positions = { ...positions, [change.id]: change.position };
                     moved = true;
+                    // an area that is dragged (not resized) takes its tables along
+                    if (!resizing.has(change.id))
+                        positions = withMembersFollowing(
+                            storeApi.getState().design,
+                            change.id,
+                            before,
+                            positions,
+                            own
+                        );
                 } else if (change.type === 'dimensions' && change.dimensions) {
                     // a table that only the DBML preview draws is measured too:
                     // the minimap and the fit need its size
