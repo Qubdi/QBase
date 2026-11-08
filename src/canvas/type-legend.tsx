@@ -37,31 +37,31 @@ export function TypeLegend() {
                 <PopoverTrigger asChild>
                     <button
                         type="button"
-                        className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border bg-card px-2.5 text-sm transition hover:bg-accent"
+                        className="inline-flex h-8 items-center justify-center gap-1 rounded-[10px] border border-input bg-background/80 px-3 text-xs font-medium shadow-xs transition hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
                     >
                         <Palette className="h-4 w-4" aria-hidden />
                         {t('canvas.legend.label')}
                     </button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-64 rounded-[10px] p-3">
-                    <ul className="space-y-1.5">
+                    <ul className="flex flex-col gap-2 text-xs">
                         {LEGEND_KINDS.map((kind) => (
                             <li
                                 key={kind}
                                 data-kind={kind}
-                                className="flex items-start gap-3"
+                                className="flex items-center gap-2"
                             >
                                 <span
                                     aria-hidden
                                     className={cn(
-                                        'mt-0.5 w-20 shrink-0 rounded-[10px] px-1.5 py-0.5 text-center font-mono text-[11px] font-normal',
+                                        'w-20 shrink-0 rounded px-1.5 py-0.5 text-center font-mono text-[11px] leading-[14.6667px] font-normal',
                                         KIND_CLASSES[kind]
                                     )}
                                 >
                                     {SAMPLE[kind]}
                                 </span>
                                 <span className="min-w-0">
-                                    <span className="block text-sm font-medium leading-5">
+                                    <span className="block text-xs font-medium leading-4">
                                         {t(`canvas.legend.${kind}`)}
                                     </span>
                                     <span className="block text-xs leading-4 text-muted-foreground">
