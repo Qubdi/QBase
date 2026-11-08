@@ -216,10 +216,6 @@ export const de = {
                     hotel: 'Hotels, Zimmerarten und Zimmer, mit Gästen, Reservierungen und Zahlungen.',
                     airline:
                         'Flughäfen, Flugzeuge und Flüge, mit Passagieren, Buchungen und Tickets.',
-                    delivery:
-                        'Depots, Kuriere und Fahrzeuge, mit geplanten Touren, Paketen und ihren Zustellungen.',
-                    analytics:
-                        'Seiten, Besucher und Sitzungen, mit Seitenaufrufen und Conversions für schnelles Lesen.',
                 },
                 open: {
                     title: 'Ihre Diagramme',

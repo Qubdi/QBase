@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DATABASE_TYPES } from '@/core/model/database';
+import { EXAMPLES } from '../examples';
 import { buildExample } from '../build-example';
 import { sampleDomain } from './sample-domain';
 
 describe('building an example from its tables', () => {
-    for (const type of DATABASE_TYPES.filter((t) => t !== 'generic')) {
+    for (const type of EXAMPLES.map((e) => e.databaseType)) {
         it(`${type}: imports, lays out the areas, and fills in notes and descriptions`, async () => {
             const built = await buildExample(sampleDomain(type));
             if ('problem' in built) throw new Error(built.problem);

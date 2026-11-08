@@ -165,41 +165,6 @@ const WORDS: Partial<Record<DatabaseType, Words>> = {
         json: 'CLOB',
         bin: 'BLOB',
     },
-    cockroachdb: {
-        id: 'UUID PRIMARY KEY DEFAULT gen_random_uuid()',
-        fkId: 'UUID',
-        int: 'INT4',
-        big: 'INT8',
-        small: 'INT2',
-        text: 'STRING',
-        str: (n) => `VARCHAR(${n})`,
-        date: 'DATE',
-        time: 'TIME',
-        ts: 'TIMESTAMP',
-        bool: 'BOOL',
-        dec: (p, s) => `DECIMAL(${p}, ${s})`,
-        uuid: 'UUID',
-        json: 'JSONB',
-        bin: 'BYTES',
-    },
-};
-
-const CLICKHOUSE: Words = {
-    id: 'UInt32',
-    fkId: 'UInt32',
-    int: 'Int32',
-    big: 'Int64',
-    small: 'Int16',
-    text: 'String',
-    str: () => 'String',
-    date: 'Date',
-    time: 'String',
-    ts: 'DateTime',
-    bool: 'Bool',
-    dec: (p, s) => `Decimal(${p}, ${s})`,
-    uuid: 'UUID',
-    json: 'String',
-    bin: 'String',
 };
 
 function word(w: Words, type: string): string {
@@ -216,16 +181,10 @@ function plainType(w: Words, type: string): string {
     return type === 'id' ? w.fkId : word(w, type);
 }
 
-/** Which language the text of this domain is written in. */
-export function formatOf(databaseType: DatabaseType): 'sql' | 'dbml' {
-    return databaseType === 'clickhouse' ? 'dbml' : 'sql';
-}
-
-/** The SQL, or the DBML for ClickHouse, of the domain's tables. */
+/** The SQL of the domain's tables, in its database's own words. */
 export function writeScript(domain: Domain): string {
     const tables = ordered(domain);
     const byName = new Map(tables.map((t) => [t.name, t]));
-    if (domain.databaseType === 'clickhouse') return writeDbml(tables, byName);
     const w = WORDS[domain.databaseType];
     if (!w) throw new Error(`no SQL words for ${domain.databaseType}`);
     let fk = 0;
@@ -258,30 +217,4 @@ export function writeScript(domain: Domain): string {
             })
             .join('\n') + '\n'
     );
-}
-
-function writeDbml(tables: Table[], byName: Map<string, Table>): string {
-    const w = CLICKHOUSE;
-    const refs: string[] = [];
-    const blocks = tables.map((t) => {
-        const composite = t.columns.filter((c) => c.pk && c.type !== 'id');
-        const lines = t.columns.map((c) => {
-            const type = resolve(c, byName, t.name);
-            const flags: string[] = [];
-            if (c.type === 'id') flags.push('pk');
-            else if (c.notNull) flags.push('not null');
-            if (c.unique) flags.push('unique');
-            if (c.references)
-                refs.push(
-                    `Ref: ${t.name}.${c.name} > ${c.references.table}.${c.references.column}`
-                );
-            return `  ${c.name} ${plainType(w, type)}${flags.length ? ` [${flags.join(', ')}]` : ''}`;
-        });
-        const indexes =
-            composite.length > 0
-                ? `\n  indexes {\n    (${composite.map((c) => c.name).join(', ')}) [pk]\n  }`
-                : '';
-        return `Table ${t.name} {\n${lines.join('\n')}${indexes}\n}`;
-    });
-    return `${blocks.join('\n\n')}\n\n${refs.join('\n')}\n`;
 }

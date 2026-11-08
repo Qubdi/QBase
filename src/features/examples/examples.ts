@@ -4,7 +4,7 @@ import type { Domain } from './spec';
 
 /**
  * One example diagram per database, written for QBase in that database's own
- * SQL (ClickHouse in DBML). Each is a large, realistic schema with areas,
+ * SQL. Each is a large, realistic schema with areas,
  * sticky notes and descriptions; see `domains/` for the tables and
  * `build-example.ts` for how a domain becomes a diagram.
  */

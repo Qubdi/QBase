@@ -217,10 +217,6 @@ export const it = {
                     hotel: 'Hotel, tipi di camera e camere, con ospiti, prenotazioni e pagamenti.',
                     airline:
                         'Aeroporti, aerei e voli, con passeggeri, prenotazioni e biglietti.',
-                    delivery:
-                        'Depositi, corrieri e veicoli, con percorsi pianificati, pacchi e consegne.',
-                    analytics:
-                        'Pagine, visitatori e sessioni, con visualizzazioni e conversioni archiviate per una lettura rapida.',
                 },
                 open: {
                     title: 'Diagrammi salvati',

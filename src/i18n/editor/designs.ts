@@ -34,10 +34,6 @@ export const designsStrings = {
         hotel: 'Hotels, room types and rooms, with guests, reservations and payments.',
         airline:
             'Airports, aircraft and flights, with passengers, bookings and tickets.',
-        delivery:
-            'Depots, couriers and vehicles, with planned routes, parcels and their deliveries.',
-        analytics:
-            'Pages, visitors and sessions, with page views and conversions stored for fast reading.',
     },
     open: {
         title: 'Open Database',

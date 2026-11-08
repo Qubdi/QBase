@@ -15,7 +15,7 @@ describe('the examples dialog', () => {
         expect(
             await screen.findByRole('heading', { name: 'Examples' })
         ).toBeTruthy();
-        expect(document.querySelectorAll('[data-example]').length).toBe(8);
+        expect(document.querySelectorAll('[data-example]').length).toBe(6);
         fireEvent.click(
             document.querySelector('[data-example="clinic"]') as HTMLElement
         );

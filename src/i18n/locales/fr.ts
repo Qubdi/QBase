@@ -217,10 +217,6 @@ export const fr = {
                     hotel: 'Hôtels, types de chambres et chambres, avec clients, réservations et paiements.',
                     airline:
                         'Aéroports, avions et vols, avec passagers, réservations et billets.',
-                    delivery:
-                        'Dépôts, coursiers et véhicules, avec tournées prévues, colis et livraisons.',
-                    analytics:
-                        'Pages, visiteurs et sessions, avec pages vues et conversions stockées pour une lecture rapide.',
                 },
                 open: {
                     title: 'Vos diagrammes',

@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { DATABASE_TYPES } from '@/core/model/database';
 import { buildExample } from '../build-example';
 import { EXAMPLES } from '../examples';
 import { parseColumn } from '../spec';
 import { writeScript } from '../write-script';
 
 describe('the examples', () => {
-    it('has one for every database that is not Generic', () => {
+    it('has one for each of the six databases', () => {
         expect(EXAMPLES.map((e) => e.databaseType).sort()).toEqual(
-            DATABASE_TYPES.filter((t) => t !== 'generic').sort()
+            [
+                'mariadb',
+                'mysql',
+                'oracle',
+                'postgresql',
+                'sql_server',
+                'sqlite',
+            ].sort()
         );
         expect(new Set(EXAMPLES.map((e) => e.name)).size).toBe(EXAMPLES.length);
         expect(new Set(EXAMPLES.map((e) => e.id)).size).toBe(EXAMPLES.length);

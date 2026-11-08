@@ -8,7 +8,7 @@ import { COLLAPSED_COLUMNS, TABLE_WIDTH } from '@/core/model/entity';
 import { analyzeImport } from '@/features/import/analyze-import';
 import { parseColumn } from './spec';
 import type { Domain, TableSpec } from './spec';
-import { formatOf, writeScript } from './write-script';
+import { writeScript } from './write-script';
 
 const COLUMN_GAP = 64;
 const ROW_GAP = 56;
@@ -78,7 +78,7 @@ export async function buildExample(
     domain: Domain
 ): Promise<{ design: Design } | { problem: string }> {
     const result = await analyzeImport(writeScript(domain), {
-        method: formatOf(domain.databaseType),
+        method: 'sql',
         databaseType: domain.databaseType,
         diagramName: domain.name,
     });
