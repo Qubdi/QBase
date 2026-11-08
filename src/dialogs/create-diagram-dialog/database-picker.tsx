@@ -40,7 +40,7 @@ const Card: React.FC<{
                 />
             ) : (
                 <Database
-                    className="size-14 max-sm:size-9"
+                    className="size-14 shrink-0 max-sm:size-9"
                     aria-hidden="true"
                 />
             )}
@@ -72,7 +72,7 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
     );
     const label = t('editor.designs.create.titleType');
     return (
-        <div className="mb-4 flex flex-col">
+        <div className="mb-4 flex min-w-0 flex-col">
             <Tabs
                 defaultValue={
                     value && ANALYTICAL.includes(value)
@@ -92,7 +92,7 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                     <div
                         role="radiogroup"
                         aria-label={label}
-                        className="mx-auto mt-2 grid min-h-[272px] w-fit grid-cols-3 content-start gap-4"
+                        className="mx-auto mt-2 grid min-h-[272px] w-fit grid-cols-3 max-sm:min-h-[176px] content-start gap-4"
                     >
                         {shown.map((type) => (
                             <Card
@@ -128,7 +128,7 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                     <div
                         role="radiogroup"
                         aria-label={label}
-                        className="mx-auto mt-2 grid min-h-[272px] w-fit grid-cols-3 content-start gap-4"
+                        className="mx-auto mt-2 grid min-h-[272px] w-fit grid-cols-3 max-sm:min-h-[176px] content-start gap-4"
                     >
                         {ANALYTICAL.map((type) => (
                             <Card

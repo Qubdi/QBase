@@ -6,6 +6,7 @@ import {
     waitFor,
     within,
 } from '@testing-library/react';
+import { CHROME_CSS } from './chrome-style';
 import { filterHidesSomething } from './filter-state';
 import { anyOnScreen } from './geometry';
 import { shortcutLabel } from './keyboard';
@@ -310,5 +311,13 @@ describe('canvas chrome', () => {
         fireEvent.click(screen.getByLabelText('Auto Arrange Diagram'));
         expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
         expect(store.getState().history.undo).toHaveLength(0);
+    });
+});
+
+describe('edit card stacking', () => {
+    it('the table being edited is raised above the tables around it, so its card is never covered', () => {
+        expect(CHROME_CSS).toMatch(
+            /\.react-flow__node:has\(\[data-edit-card\]\)\s*\{\s*z-index:\s*1000\s*!important/
+        );
     });
 });

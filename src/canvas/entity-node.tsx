@@ -119,6 +119,9 @@ export const EntityCard = memo(function EntityCard({
             : undefined
     );
     const [localExpanded, setLocalExpanded] = useState(false);
+    // the pencil of each row is only drawn for a table the pointer is over, or that
+    // is selected or has the focus: 1600 hidden buttons made every drag frame slow
+    const [pointerOver, setPointerOver] = useState(false);
     const detailed = useEditorStore((s) => s.ui.zoom >= HANDLES_MIN_ZOOM);
 
     const labels = useMemo(
@@ -207,6 +210,8 @@ export const EntityCard = memo(function EntityCard({
                     'outline outline-1 outline-red-400/50'
             )}
             style={{ width }}
+            onPointerEnter={() => setPointerOver(true)}
+            onPointerLeave={() => setPointerOver(false)}
             onDoubleClick={(event) => {
                 if (!surface.editable) return;
                 event.stopPropagation();
@@ -388,7 +393,7 @@ export const EntityCard = memo(function EntityCard({
                         overlap={!!data.overlapCount}
                         enumNames={enumNames}
                         onEdit={
-                            surface.editable
+                            surface.editable && (pointerOver || selected)
                                 ? () => surface.startEditing(id)
                                 : undefined
                         }

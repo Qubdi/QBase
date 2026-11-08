@@ -84,7 +84,7 @@ export const FilterPanel: React.FC<{
         <div
             role="dialog"
             aria-label={text('filters.title')}
-            className="flex h-full max-h-[calc(100vh-8rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col rounded-[10px] border bg-popover text-popover-foreground shadow-md"
+            className="flex h-full max-h-[calc(100vh-5rem)] w-80 max-w-[calc(100vw-2rem)] flex-col rounded-[10px] border bg-popover text-popover-foreground shadow-md"
         >
             <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
                 <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronsUpDown, Globe } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
@@ -16,6 +16,7 @@ export const LanguageButton: React.FC = () => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [listOpen, setListOpen] = useState(false);
+    const listId = useId();
     const needle = search.trim().toLowerCase();
     const shown = languages.filter(
         (l) =>
@@ -58,7 +59,9 @@ export const LanguageButton: React.FC = () => {
                 <Button
                     variant="outline"
                     role="combobox"
+                    aria-label={t('editor.workspace.navbar.language')}
                     aria-expanded={listOpen}
+                    aria-controls={listOpen ? listId : undefined}
                     className="w-full justify-between font-normal"
                     onClick={() => setListOpen((v) => !v)}
                 >
@@ -77,6 +80,7 @@ export const LanguageButton: React.FC = () => {
                             />
                         </div>
                         <div
+                            id={listId}
                             role="radiogroup"
                             aria-label={t('editor.workspace.navbar.language')}
                             className="max-h-60 overflow-auto"

@@ -29,6 +29,8 @@ export const CHROME_CSS = `
 .react-flow__edge.selected .react-flow__edge-path:not(.react-flow__edge-interaction) { animation:qb-dash 0.5s linear infinite; }
 @keyframes qb-dash { to { stroke-dashoffset:-10; } }
 .react-flow__node:hover { cursor:grab; }
+/* the table being edited sits above the tables around it, so its card is never covered */
+.react-flow__node:has([data-edit-card]) { z-index:1000 !important; }
 /* keyboard focus on a table, area, note or line: xyflow removes its outline */
 .react-flow .react-flow__node.react-flow__node:focus-visible { outline:3px solid hsl(var(--ring)); outline-offset:4px;
   border-radius:12px; box-shadow:0 0 0 7px hsl(var(--background)); }

@@ -150,7 +150,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                 ) : null}
 
                 <DialogFooter className="gap-4 sm:justify-between sm:space-x-0">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 max-sm:flex-col">
                         {step === 'import' ? (
                             <Button
                                 variant="secondary"
@@ -176,7 +176,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                             </Button>
                         ) : null}
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 max-sm:flex-col-reverse">
                         <Button
                             variant="outline"
                             disabled={!type || busy}

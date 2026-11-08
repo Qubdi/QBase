@@ -28,12 +28,13 @@
     --accent-foreground: 173 80% 20%;
     --subtitle: 215 19% 35%;
 
-    /* brand and state (primary is 1 step darker than measured, destructive too: AA) */
-    --primary: 173 82% 28%;
+    /* brand and state: the old editor's measured values, each one darkened by the
+       smallest step that reaches WCAG AA text contrast (axe: tools/e2e/a11y.mjs) */
+    --primary: 173 82% 27%;
     --primary-foreground: 0 0% 100%;
-    --destructive: 0 84% 49%;
+    --destructive: 0 84% 48%;
     --destructive-foreground: 210 40% 98%;
-    --ring: 173 82% 28%;
+    --ring: 173 82% 29%;
 
     /* lines */
     --border: 190 16% 88%;
@@ -42,14 +43,14 @@
     /* rail, large tabs */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 173 82% 28%;
+    --sidebar-primary: 173 82% 29%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 5% 96%;
     --sidebar-accent-foreground: 240 6% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217 91% 60%;
     --rail-hover: 240 5% 91%;
-    --rail-selected-text: 173 100% 25%;
+    --rail-selected-text: 173 100% 24%;
     --tab-active: 202 100% 38%;
     --tab-active-foreground: 0 0% 100%;
 }

@@ -105,7 +105,7 @@ const Surface: React.FC = () => {
         >
             <DiagramCanvas hooks={hooks} prefs={prefs} onReady={onReady} />
             {filterOpen ? (
-                <div className="absolute left-3 top-3 z-40">
+                <div className="absolute bottom-4 right-4 top-4 z-40">
                     <FilterPanel
                         onClose={() => setFilterOpen(false)}
                         onZoomToGroup={(ids) =>

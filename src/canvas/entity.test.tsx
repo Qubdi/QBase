@@ -340,7 +340,7 @@ describe('entity card', () => {
         );
     });
 
-    it('EDT-079: the pencil of a field row opens the edit form of the table', () => {
+    it('EDT-079: the pencil of a field row opens the edit form of the table; only a table the pointer is over has the pencils', () => {
         const { design, users } = shop();
         renderCanvas(design, {
             canvas: {
@@ -350,6 +350,8 @@ describe('entity card', () => {
             },
         });
         const card = screen.getByTestId(`entity-${users}`);
+        expect(within(card).queryAllByLabelText('Edit Table')).toHaveLength(0);
+        fireEvent.pointerEnter(card);
         fireEvent.click(within(card).getAllByLabelText('Edit Table')[0]);
         expect(screen.getByText('the form')).toBeInTheDocument();
     });
