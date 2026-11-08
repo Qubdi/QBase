@@ -13,6 +13,7 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { autoMeasure, collectStrings } from './measure.mjs';
+import { dumpElements } from './elements.mjs';
 
 const { chromium } = createRequire('/tmp/pw/')('playwright');
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -84,6 +85,10 @@ for (const scene of scenes.filter((s) => filter(s.name))) {
             document.body.innerText.replace(/\n{2,}/g, '\n').slice(0, 4000)
         );
         await page.screenshot({ path: path.join(OUT, `${scene.name}.png`) });
+        writeFileSync(
+            path.join(OUT, `${scene.name}.elements.json`),
+            JSON.stringify(await dumpElements(page))
+        );
     } catch (e) {
         rec.error =
             (rec.error ? rec.error + ' | ' : '') +

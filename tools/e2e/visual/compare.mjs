@@ -12,6 +12,19 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 
+if (process.argv[2] === '--elements') {
+    const [, , , dirA, dirB, filter] = process.argv;
+    if (!dirA || !dirB) {
+        console.error(
+            'usage: node compare.mjs --elements <dirA> <dirB> [scene filter]'
+        );
+        process.exit(2);
+    }
+    const { runElementsDiff } = await import('./elements-diff.mjs');
+    runElementsDiff(dirA, dirB, filter);
+    process.exit(0);
+}
+
 const req = createRequire('/tmp/pw/');
 const pixelmatch = req('pixelmatch');
 const { PNG } = req('pngjs');
