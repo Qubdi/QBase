@@ -62,7 +62,7 @@ PostgreSQL 16 and 18 (same output apart from the version): all tables with schem
 
 ## Not verified
 
-SQL Server (all editions); the Wrangler command variant for D1; a psql variant; a browser run of server mode; the re-sync dialog against a live database through a browser (EDT-250); CockroachDB with a multi-node cluster or secure mode.
+SQL Server (all editions); the Wrangler command variant for D1; a psql variant; (a browser run of server mode and the re-sync dialog were done later: see "Server mode in a real browser" below); CockroachDB with a multi-node cluster or secure mode.
 
 ## Introspection and import fidelity (second pass)
 
@@ -131,3 +131,34 @@ Tests: `src/formats/sql/index-and-generated.test.ts` (per dialect: read, diagnos
 - The PostgreSQL writer writes `VIRTUAL` for a non-stored generated column; PostgreSQL 17 and older reject it (18 accepts it). Not changed.
 - A domain's own `CHECK`/`DEFAULT`/`NOT NULL` is dropped (warned); the writer's `CREATE DOMAIN` carries only the base type, and when two columns name the same domain with different base types the first one wins.
 - DBML export unchanged: DBML has no syntax for `DESC` per column, `WHERE` or generated columns (index settings are `type`, `name`, `unique`, `pk`, `note`), and the parser would reject invented syntax.
+
+## Server mode in a real browser
+
+Run on 2026-11-08 with `tools/e2e/run-server-flows.sh` (new, self-contained, removes everything it starts, also on failure): the app image built from this tree (`qbtest-app`), a throwaway PostgreSQL 18 as its backend, a second throwaway PostgreSQL 18 as the "live source database" (`INTROSPECT_ALLOW_HOSTS` names it), Chromium (Playwright 1.49.1) on one private network. Random passwords, no published port. The steps are in `tools/e2e/server-flows.mjs`; every step prints PASS/FAIL and each section ends with a "no console error, page error or failed request" check (4xx answers are allowed only in steps that provoke them). SQL Server was **not** started (its image needs an accepted EULA).
+
+### Result: 55 of 55 steps pass (last run, about 2 min 40 s)
+
+| Section | What was driven |
+| ------- | --------------- |
+| S1 | sign-in prompt on an empty server, password rules shown as not met then met, first account becomes admin and lands on the admin panel, `/config.js` gives `/api`, sign out from the editor menu, wrong password shows "Wrong email or password.", the right one signs in |
+| S2 | admin users page (create an editor and a viewer with temporary passwords), project "Test", assign Editor and Viewer, projects, diagrams and activity pages |
+| S3 | open from the project list, rename, add a table: "Unsaved changes" then saved, reload keeps name and table, publish v1 with a note, "unpublished changes" after an edit, publish v2, `GET /versions` lists both |
+| S4 | Share creates a link; a fresh browser opens it as a read-only viewer with the tables; an expiry date can be set; a link that expires gives "Link not available" (404); Revoke asks twice and the link then gives 404 |
+| S5 | admin-created users must choose their own password (403 until then); the editor opens the diagram, adds a table and sees Publish; the viewer sees the "view-only access" banner, no Publish, cannot add a table; the viewer cannot use the admin panel |
+| S6 | two-factor dialog: Set up shows a QR code |
+| S7 | a private host that is not allow-listed is refused; connection form, table picker, preview and Create build the diagram "Shop DB" (4 tables, the foreign key line) from the live PostgreSQL |
+| S8 | move a table, add an area and a note, change a table colour and give it a description; lint panel lists findings and one Fix applies and the finding goes; publish; drift check lists differences without a webhook; the source database is changed (add a column, drop a table, rename a table, rename a column, add a table); the Drift badge shows; **the re-sync dialog**: lists added, removed and changed lines and possible renames, renames unticked, "Apply 9 selected" applies, positions, colour, description, area and note stay, ONE undo reverts everything, redo brings it back |
+| S10 | German and Georgian: sign-in dialog and re-sync dialog, no raw `qubdi.` key on screen |
+| S9 | phone 390x844: sign-in dialog fits (no sideways scroll), editor opens, Drift and Publish reachable by scrolling the bar |
+
+### Bugs found and fixed
+
+Details, tests and screenshot names are in `server-browser-findings.md`. In short: (1) fonts inlined as `data:` URIs were refused by the server's `font-src 'self'` (about 20 console errors per page load), (2) sign-out sent a lock release after the session ended (401), (3) the Publish badge did not show "unpublished changes" after an edit, (4) re-sync and drift never listed a table added to the database after an import of "all tables".
+
+### Findings not fixed
+
+Phone navbar is wider than the screen (reachable by scrolling), Qubdi screens and re-sync lines are English in German and Georgian (documented fallback, no raw keys), a long Georgian menu label wraps, the sign-in inputs have only a placeholder, no versions list in the UI. See `server-browser-findings.md`.
+
+### Still not verified in a browser
+
+SQL Server import and re-sync, two-factor sign-in with a real authenticator code (only the setup dialog was reached), the conflict/overwrite dialog and the edit-lock banner between two editors, share link "signed-in only" and live updates, the leave-page prompt, saved-connection management (add, edit, delete) in the connections dialog, a webhook delivery, the admin panel's share-link revoke screen and bulk user actions, and a hidden-tab pause of the drift timer.

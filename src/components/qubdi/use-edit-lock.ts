@@ -15,6 +15,19 @@ const CHECKING: LockState = { status: 'checking' };
 // lock is per tab, so giving it back would take it from that one).
 const openEditors = new Map<string, symbol>();
 
+// Gives back the lock of each open editor that holds one (see releaseHeldLocks).
+const holders = new Map<symbol, () => Promise<void>>();
+
+/**
+ * Lets go of every edit lock this tab holds and waits for the server to know.
+ * Sign-out calls it before the session ends: the editor's own release runs
+ * only when it unmounts, after the session is gone, and the server answered
+ * that with a 401 (found in a real-browser run).
+ */
+export async function releaseHeldLocks(): Promise<void> {
+    await Promise.all([...holders.values()].map((give) => give()));
+}
+
 /**
  * Holds the edit lock of a server diagram while the editor is open: takes it,
  * renews it, and lets go when the editor leaves. Only one editor at a time may
@@ -46,6 +59,7 @@ export function useEditLock(remoteId: string | undefined): LockState {
                 }
                 held = res.held;
                 if (res.held) {
+                    holders.set(me, giveBack);
                     setLock({ status: 'held' });
                 } else {
                     // someone else has it: stop renewing, so we never take it quietly
@@ -67,6 +81,13 @@ export function useEditLock(remoteId: string | undefined): LockState {
             api
                 .releaseLock(remoteId, editorId, { keepalive: true })
                 .catch(() => undefined);
+
+        const giveBack = async () => {
+            if (!held) return;
+            held = false;
+            await settleFinalSave();
+            await sendRelease();
+        };
 
         const release = () => {
             if (!held) return;
@@ -105,6 +126,7 @@ export function useEditLock(remoteId: string | undefined): LockState {
         return () => {
             cancelled = true;
             if (openEditors.get(remoteId) === me) openEditors.delete(remoteId);
+            holders.delete(me);
             stopListening();
             clearInterval(timer);
             window.removeEventListener('pagehide', releaseNow);

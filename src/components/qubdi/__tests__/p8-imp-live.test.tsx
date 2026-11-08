@@ -140,7 +140,9 @@ describe('IMP-067 IMP-072 what the browser remembers', () => {
             },
             schemas: ['public'],
         });
-        expect(state.tables.length).toBeGreaterThan(0);
+        // everything was chosen: "every table" is remembered as an empty list,
+        // so a table added later is found by re-sync
+        expect(state.tables).toEqual([]);
         expect(JSON.stringify(state)).not.toContain('secret-pw-123');
         expect(JSON.stringify(localStorage)).not.toContain('secret-pw-123');
     });

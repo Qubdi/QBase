@@ -182,7 +182,12 @@ export const ImportFromDatabaseDialog: React.FC<
                 source: usedSaved
                     ? { kind: 'saved', savedConnectionId: usedSaved }
                     : { kind: 'inline', connection: withoutPassword },
-                tables: [...selected],
+                // every table chosen: remember "all", so a table added to the
+                // database later shows up in re-sync and drift checks
+                tables:
+                    selected.size === allTableKeys(catalog.schemas).length
+                        ? []
+                        : [...selected],
                 schemas: schemasOfSelection(selected),
                 sourceKeys: snapshotSourceKeys(
                     diagram,

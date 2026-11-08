@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { keepFontsAsFiles } from './vite.fonts';
 
 const srcDir = fileURLToPath(new URL('./src', import.meta.url));
 
@@ -29,6 +30,7 @@ export default defineConfig({
     plugins,
     resolve: { alias: { '@': srcDir } },
     build: {
+        assetsInlineLimit: keepFontsAsFiles,
         // Vite 8 bundles with Rolldown and names this option differently
         rolldownOptions: {
             output: {

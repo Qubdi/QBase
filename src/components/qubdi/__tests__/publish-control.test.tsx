@@ -1,12 +1,16 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     qubdiContext,
     type QubdiContext,
 } from '@/context/qubdi-context/qubdi-context';
 import { PublishControl } from '../publish-control';
-import { registerFlushNow } from '@/lib/qubdi/save-status-store';
+import {
+    registerFlushNow,
+    resetSaveStatus,
+    setSaveStatus,
+} from '@/lib/qubdi/save-status-store';
 import { DiagramAccessContext } from '../diagram-access-context';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { getBaseUpdatedAt } from '@/lib/qubdi/remote-version';
@@ -231,5 +235,23 @@ describe('PublishControl for people who cannot edit', () => {
             </qubdiContext.Provider>
         );
         expect(view.container.textContent).toBe('');
+    });
+
+    it('shows "unpublished changes" after a save without a click on Publish', async () => {
+        resetSaveStatus();
+        getDiagram.mockResolvedValue({
+            publishedVersion: 1,
+            unpublishedChanges: false,
+        });
+        show();
+        await screen.findByRole('button', { name: /Published v1$/ });
+        getDiagram.mockResolvedValue({
+            publishedVersion: 1,
+            unpublishedChanges: true,
+        });
+        act(() => setSaveStatus('saved'));
+        await screen.findByRole('button', {
+            name: /Published v1, unpublished changes/,
+        });
     });
 });

@@ -36,7 +36,10 @@ vi.mock('@/lib/qubdi/import-from-db', async (importOriginal) => ({
     }),
 }));
 vi.mock('@/lib/qubdi/resync', () => ({ snapshotSourceKeys: () => ({}) }));
-vi.mock('@/lib/qubdi/sync-state', () => ({ setSyncState: vi.fn() }));
+const setSyncState = vi.fn();
+vi.mock('@/lib/qubdi/sync-state', () => ({
+    setSyncState: (...a: unknown[]) => setSyncState(...a),
+}));
 
 const navigate = vi.fn();
 vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
@@ -79,6 +82,7 @@ describe('ImportFromDatabaseDialog', () => {
             deleteDiagram,
             syncDiagram,
             navigate,
+            setSyncState,
         ]) {
             m.mockReset();
         }
@@ -177,6 +181,35 @@ describe('ImportFromDatabaseDialog', () => {
         await createDiagram();
         await waitFor(() => expect(navigate).toHaveBeenCalled());
         expect(deleteDiagram).not.toHaveBeenCalled();
+    });
+
+    it('remembers "every table" (empty) when everything was chosen, so new tables are found later', async () => {
+        syncDiagram.mockResolvedValue('remote-1');
+        mount();
+        await createDiagram();
+        await waitFor(() => expect(setSyncState).toHaveBeenCalled());
+        expect(setSyncState.mock.calls[0][1]).toMatchObject({ tables: [] });
+    });
+
+    it('remembers the list when only some tables were chosen', async () => {
+        introspectCatalog.mockResolvedValue({
+            database: 'shop',
+            schemas: [
+                { schema: 'public', tables: ['users', 'logs'], views: [] },
+            ],
+        });
+        syncDiagram.mockResolvedValue('remote-1');
+        mount();
+        await fillAndConnect();
+        fireEvent.click(screen.getByRole('checkbox', { name: /logs/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+        fireEvent.click(
+            await screen.findByRole('button', { name: 'Create diagram' })
+        );
+        await waitFor(() => expect(setSyncState).toHaveBeenCalled());
+        expect(setSyncState.mock.calls[0][1]).toMatchObject({
+            tables: ['public.users'],
+        });
     });
 
     it('leaves nothing to delete when reading the database failed', async () => {

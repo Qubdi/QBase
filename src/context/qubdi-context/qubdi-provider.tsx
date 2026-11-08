@@ -35,6 +35,7 @@ import {
     hasUnsavedChanges,
 } from '@/lib/qubdi/save-status-store';
 import { i18n } from '@/i18n/i18n';
+import { releaseHeldLocks } from '@/components/qubdi/use-edit-lock';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/qbase/diagram-types';
 
@@ -119,6 +120,8 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         ) {
             return;
         }
+        // give the edit lock back while the session can still do it
+        await releaseHeldLocks().catch(() => undefined);
         await api.logout().catch(() => undefined);
         resetAdminLanding();
         setSessionEnded(false);

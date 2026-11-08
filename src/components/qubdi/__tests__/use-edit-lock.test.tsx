@@ -2,7 +2,11 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerFinalFlush } from '@/lib/qubdi/save-status-store';
 import { reportLockLost } from '@/lib/qubdi/lock-lost';
-import { LOCK_HEARTBEAT_MS, useEditLock } from '../use-edit-lock';
+import {
+    LOCK_HEARTBEAT_MS,
+    releaseHeldLocks,
+    useEditLock,
+} from '../use-edit-lock';
 
 const acquire = vi.fn();
 const release = vi.fn();
@@ -52,6 +56,19 @@ describe('useEditLock', () => {
         await tick(LOCK_HEARTBEAT_MS * 3);
         expect(result.current).toEqual({ status: 'checking' });
         expect(acquire).not.toHaveBeenCalled();
+    });
+
+    it('releaseHeldLocks gives the lock back once, so the unmount sends no second release', async () => {
+        acquire.mockResolvedValue(held);
+        const { unmount } = renderHook(() => useEditLock('r1'));
+        await tick();
+        await act(async () => {
+            await releaseHeldLocks();
+        });
+        expect(release).toHaveBeenCalledTimes(1);
+        unmount();
+        await tick();
+        expect(release).toHaveBeenCalledTimes(1);
     });
 
     describe('holding the lock', () => {

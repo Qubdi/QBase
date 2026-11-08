@@ -17,7 +17,7 @@ import { useDiagramAccess } from './diagram-access-context';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import { getEditorId } from '@/lib/qubdi/editor-id';
 import { setBaseUpdatedAt } from '@/lib/qubdi/remote-version';
-import { flushPendingSave } from '@/lib/qubdi/save-status-store';
+import { flushPendingSave, useSaveStatus } from '@/lib/qubdi/save-status-store';
 import {
     publishStatusBadge,
     publishStatusText,
@@ -81,9 +81,12 @@ export const PublishControl: React.FC = () => {
 
     const canPublish = access.status === 'editor';
 
+    // a save that reached the server may have left changes that are not
+    // published: the badge must say so without a click (found in a real browser)
+    const saved = useSaveStatus().status === 'saved';
     useEffect(() => {
         if (user && canPublish) void refresh();
-    }, [user, canPublish, refresh, currentDiagram.id]);
+    }, [user, canPublish, refresh, currentDiagram.id, saved]);
 
     // only the editor who holds the diagram publishes: a viewer, or an editor
     // whose lock went to someone else, has nothing to publish from here
