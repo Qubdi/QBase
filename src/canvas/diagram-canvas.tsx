@@ -1,3 +1,4 @@
+import { PoweredByMark } from '@/components/qubdi/powered-by';
 import React, {
     useCallback,
     useEffect,
@@ -10,6 +11,7 @@ import {
     BackgroundVariant,
     ConnectionMode,
     MiniMap,
+    Panel,
     ReactFlow,
     ReactFlowProvider,
     useKeyPress,
@@ -1105,6 +1107,9 @@ function Surface({
                                 nodeStrokeColor={MINIMAP_NODE_STROKE}
                             />
                         ) : null}
+                        <Panel position="bottom-right" className="qb-powered">
+                            <PoweredByMark />
+                        </Panel>
                     </ReactFlow>
                     <CornerTools
                         editable={editable}

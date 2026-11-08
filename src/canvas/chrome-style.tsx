@@ -25,6 +25,7 @@ export const CHROME_CSS = `
 .qb-minimap { margin-bottom:calc(var(--canvas-inset-bottom,0px) + 32px) !important;
   margin-right:calc(var(--canvas-inset-right,0px) + 15px) !important;
   width:100px !important; height:100px !important; border-radius:0 !important; box-shadow:none !important; }
+.qb-powered { margin:0 calc(var(--canvas-inset-right,0px) + 8px) calc(var(--canvas-inset-bottom,0px) + 8px) 0 !important; }
 .qb-minimap svg { width:100% !important; height:100% !important; }
 .react-flow__edge.selected .react-flow__edge-path:not(.react-flow__edge-interaction) { animation:qb-dash 0.5s linear infinite; }
 @keyframes qb-dash { to { stroke-dashoffset:-10; } }
