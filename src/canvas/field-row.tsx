@@ -162,9 +162,9 @@ export const FieldRow = memo(function FieldRow({
                     />
                 ) : null}
             </span>
-            <span
+            <div
                 className={cn(
-                    'min-w-0 flex-1 truncate',
+                    'flex min-w-0 flex-1 items-center gap-1',
                     column.primaryKey || column.unique
                         ? 'font-semibold'
                         : 'font-normal',
@@ -172,10 +172,14 @@ export const FieldRow = memo(function FieldRow({
                         ? 'text-blue-600 dark:text-blue-400'
                         : undefined
                 )}
-                title={column.comments || undefined}
             >
-                {column.name}
-            </span>
+                <span
+                    className="min-w-0 truncate"
+                    title={column.comments || undefined}
+                >
+                    {column.name}
+                </span>
+            </div>
             <span
                 className={cn(
                     'flex shrink-0 items-center gap-1',
@@ -184,7 +188,7 @@ export const FieldRow = memo(function FieldRow({
                 )}
             >
                 {column.unique && !column.primaryKey ? (
-                    <span className="rounded border px-1 text-[9px] font-medium leading-tight text-muted-foreground">
+                    <span className="shrink-0 rounded-xs border px-1 text-[9px] font-semibold leading-3 text-muted-foreground">
                         {labels.unique}
                     </span>
                 ) : null}
@@ -193,11 +197,11 @@ export const FieldRow = memo(function FieldRow({
                         <span
                             data-kind={kind}
                             className={cn(
-                                'rounded-[10px] px-1.5 py-0.5 font-mono text-[11px] font-semibold leading-[15.7143px]',
+                                'min-w-0 overflow-hidden rounded-[10px] px-1.5 py-0.5 text-right font-mono text-[11px] font-semibold leading-[15.7143px]',
                                 chipClass
                             )}
                         >
-                            <span>
+                            <span className="block truncate">
                                 {chipText(
                                     column,
                                     databaseType,
@@ -220,8 +224,8 @@ export const FieldRow = memo(function FieldRow({
                             }
                             data-nullable={column.nullable}
                             className={cn(
-                                'box-border h-1.5 w-1.5 shrink-0 rounded-full border-[1.5px] border-muted-foreground/60',
-                                !column.nullable && 'bg-foreground/70'
+                                'box-border h-1.5 w-1.5 shrink-0 rounded-full border border-muted-foreground/60',
+                                !column.nullable && 'bg-muted-foreground/60'
                             )}
                         />
                     </>

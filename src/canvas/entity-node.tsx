@@ -263,7 +263,7 @@ export const EntityCard = memo(function EntityCard({
             ))}
 
             <header
-                className="relative flex h-12 items-center gap-2.5 rounded-t-[11px] px-3"
+                className="relative flex h-12 items-center gap-2.5 rounded-t-[11px] border-b px-3"
                 style={{
                     background: headerWash(entity.color),
                 }}
