@@ -24,7 +24,6 @@
     var messages = {
         en: 'QBase needs a newer browser. Please update to Safari 16.4 or newer, or use a current version of Chrome, Edge or Firefox.',
         ru: 'Для QBase нужен более новый браузер. Обновите Safari до версии 16.4 или новее либо используйте актуальную версию Chrome, Edge или Firefox.',
-        ka: 'QBase-ს უფრო ახალი ბრაუზერი სჭირდება. განაახლეთ Safari 16.4 ან უფრო ახალ ვერსიამდე, ან გამოიყენეთ Chrome-ის, Edge-ის ან Firefox-ის მიმდინარე ვერსია.',
         de: 'QBase benötigt einen neueren Browser. Bitte aktualisieren Sie auf Safari 16.4 oder neuer oder verwenden Sie eine aktuelle Version von Chrome, Edge oder Firefox.',
         it: 'QBase richiede un browser più recente. Aggiornare a Safari 16.4 o successivo oppure usare una versione aggiornata di Chrome, Edge o Firefox.',
         fr: 'QBase nécessite un navigateur plus récent. Veuillez passer à Safari 16.4 ou plus récent, ou utiliser une version à jour de Chrome, Edge ou Firefox.',

@@ -818,7 +818,6 @@ for (const scheme of ['light', 'dark']) {
 // ------------------------------------------------------------ languages
 for (const [loc, lang, dir, button] of [
     ['en-US', 'de', 'ltr', 'Deutsch (German)'],
-    ['en-US', 'ka', 'ltr', 'ქართული (Georgian)'],
 ]) {
     await newPage({ locale: loc });
     await seeded();

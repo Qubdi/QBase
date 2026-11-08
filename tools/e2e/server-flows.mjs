@@ -1137,91 +1137,81 @@ await section('S8', 'customise, lint, drift, re-sync', async () => {
 });
 
 // =====================================================================  S10
-await section(
-    'S10',
-    'German and Georgian: sign-in and re-sync dialogs',
-    async () => {
-        await src.query('alter table orders add column priority int');
-        const langs = [
-            ['de', 'German', 'Deutsch'],
-            ['ka', 'Georgian', 'ქართული'],
-        ];
-        for (const [code, label] of langs) {
-            const L = await newContext({ locale: code });
-            watch(L.p, code);
-            const prev = page;
-            page = L.p;
-            await step(
-                `S10.${code}.1 ${label}: sign-in dialog is translated or English, no raw keys`,
-                async () => {
-                    await page.goto(BASE + '/');
-                    await page.getByRole('button').first().waitFor();
-                    await pause(800);
-                    check(
-                        await page.evaluate(() =>
-                            document.documentElement.lang.startsWith(
-                                document.documentElement.lang.slice(0, 2)
-                            )
-                        ),
-                        'lang'
-                    );
-                    await page.locator('button').last().click();
-                    await page.getByRole('dialog').waitFor();
-                    await pause(400);
-                    await shot(`s10-${code}-signin`);
-                    await noRawKeys();
-                    const t = await page.getByRole('dialog').innerText();
-                    check(/[A-Za-zႠ-ჿÀ-ſ]{3}/.test(t), 'dialog empty');
-                }
-            );
-            await L.ctx.close();
-            page = prev;
+await section('S10', 'German: sign-in and re-sync dialogs', async () => {
+    await src.query('alter table orders add column priority int');
+    const langs = [['de', 'German', 'Deutsch']];
+    for (const [code, label] of langs) {
+        const L = await newContext({ locale: code });
+        watch(L.p, code);
+        const prev = page;
+        page = L.p;
+        await step(
+            `S10.${code}.1 ${label}: sign-in dialog is translated or English, no raw keys`,
+            async () => {
+                await page.goto(BASE + '/');
+                await page.getByRole('button').first().waitFor();
+                await pause(800);
+                check(
+                    await page.evaluate(() =>
+                        document.documentElement.lang.startsWith(
+                            document.documentElement.lang.slice(0, 2)
+                        )
+                    ),
+                    'lang'
+                );
+                await page.locator('button').last().click();
+                await page.getByRole('dialog').waitFor();
+                await pause(400);
+                await shot(`s10-${code}-signin`);
+                await noRawKeys();
+                const t = await page.getByRole('dialog').innerText();
+                check(/[A-Za-zႠ-ჿÀ-ſ]{3}/.test(t), 'dialog empty');
+            }
+        );
+        await L.ctx.close();
+        page = prev;
 
-            // the re-sync dialog needs the sync state kept in the admin browser
-            page = A.p;
-            await step(
-                `S10.${code}.2 ${label}: re-sync dialog, no raw keys, nothing clipped`,
-                async () => {
-                    await openDiagramByName(IMPORTED);
-                    await page
-                        .getByRole('button', { name: 'Change language' })
-                        .click();
-                    // the language button opens a select with a searchable list
-                    await page
-                        .getByRole('dialog')
-                        .getByRole('combobox')
-                        .click();
-                    await page
-                        .getByText(langs.find((l) => l[0] === code)[2])
-                        .first()
-                        .click();
-                    await pause(1200);
-                    await page
-                        .getByRole('button', { name: /@example\.com/ })
-                        .click();
-                    // the re-sync item is the third in the account menu
-                    await page.getByRole('menuitem').nth(2).click();
-                    await pause(600);
-                    const d = page.getByRole('dialog');
-                    const pw = d.locator('input[type=password]');
-                    if (await pw.count()) await pw.fill(E.SRC_PASSWORD);
-                    await d.locator('button[type=submit]').click();
-                    await d
-                        .getByTestId('resync-changes')
-                        .or(d.getByTestId('resync-clean'))
-                        .waitFor();
-                    await shot(`s10-${code}-resync`);
-                    await noRawKeys();
-                    await page.keyboard.press('Escape');
-                }
-            );
-            // back to English whatever happened above
-            await page.evaluate(() => localStorage.setItem('i18nextLng', 'en'));
-            await page.reload();
-            await pause(800);
-        }
+        // the re-sync dialog needs the sync state kept in the admin browser
+        page = A.p;
+        await step(
+            `S10.${code}.2 ${label}: re-sync dialog, no raw keys, nothing clipped`,
+            async () => {
+                await openDiagramByName(IMPORTED);
+                await page
+                    .getByRole('button', { name: 'Change language' })
+                    .click();
+                // the language button opens a select with a searchable list
+                await page.getByRole('dialog').getByRole('combobox').click();
+                await page
+                    .getByText(langs.find((l) => l[0] === code)[2])
+                    .first()
+                    .click();
+                await pause(1200);
+                await page
+                    .getByRole('button', { name: /@example\.com/ })
+                    .click();
+                // the re-sync item is the third in the account menu
+                await page.getByRole('menuitem').nth(2).click();
+                await pause(600);
+                const d = page.getByRole('dialog');
+                const pw = d.locator('input[type=password]');
+                if (await pw.count()) await pw.fill(E.SRC_PASSWORD);
+                await d.locator('button[type=submit]').click();
+                await d
+                    .getByTestId('resync-changes')
+                    .or(d.getByTestId('resync-clean'))
+                    .waitFor();
+                await shot(`s10-${code}-resync`);
+                await noRawKeys();
+                await page.keyboard.press('Escape');
+            }
+        );
+        // back to English whatever happened above
+        await page.evaluate(() => localStorage.setItem('i18nextLng', 'en'));
+        await page.reload();
+        await pause(800);
     }
-);
+});
 
 // the phone signs in as the admin last: an account has one session at a time,
 // so this ends the admin's other browser

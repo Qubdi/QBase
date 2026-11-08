@@ -136,3 +136,11 @@ brought back Oracle and ClickHouse (EXP-008) and the Transactional and Analytica
 - The pixel comparison with the old editor (`tools/e2e/visual/compare.mjs`) was not run for this
   change: the picker has no tabs now, so its reference screenshot will differ on purpose.
 
+## Georgian removed (owner, 2026-11-08)
+
+Georgian (`ka`) no longer ships: its locale file, its list entry, its "time ago" wording, its
+browser-check notice and its translation notes (`rewrite/phase7/ka-notes.md`) were removed, and so
+were its steps in the end-to-end flows. Six languages remain besides English: Russian, German,
+Italian, French and Chinese (Simplified and Traditional), seven locales in all. Older entries in
+this file and in `parity-checklist.md` that name Georgian describe the state before this change.
+

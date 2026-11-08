@@ -82,7 +82,7 @@ describe('copying text (EDT-272)', () => {
             file.replace(/^.*\//, '').replace(/\.ts$/, '')
         );
         expect(codes.sort()).toEqual(
-            ['de', 'fr', 'it', 'ka', 'ru', 'zh_CN', 'zh_TW'].sort()
+            ['de', 'fr', 'it', 'ru', 'zh_CN', 'zh_TW'].sort()
         );
         for (const [file, load] of Object.entries(files)) {
             const code = file.replace(/^.*\//, '').replace(/\.ts$/, '');

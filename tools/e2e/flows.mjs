@@ -1225,7 +1225,6 @@ await flow('F7', 'settings persist across reload; language', {}, async () => {
             // [name in the list, a word the menu bar must contain, html lang]
             const languages = [
                 ['Italiano (Italian)', 'Diagramma', 'it'],
-                ['ქართული (Georgian)', 'დიაგრამა', 'ka'],
                 ['Русский (Russian)', 'Диаграмма', 'ru'],
                 ['Français (French)', 'Diagramme', 'fr'],
                 ['简体中文 (Chinese (Simplified))', '图表', 'zh'],

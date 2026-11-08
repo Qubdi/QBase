@@ -256,7 +256,7 @@ describe('QBS-020 i18n works outside React and locale files keep their shape', (
         const files = readdirSync(join(ROOT, 'i18n/locales')).filter((f) =>
             f.endsWith('.ts')
         );
-        expect(files.length).toBe(8);
+        expect(files.length).toBe(7);
         for (const file of files) {
             const code = file.replace(/\.ts$/, '');
             const mod = await localeModules[`../i18n/locales/${code}.ts`]();

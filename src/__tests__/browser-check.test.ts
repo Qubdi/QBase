@@ -42,7 +42,6 @@ describe('browser check', () => {
         const texts: Record<string, string> = {};
         for (const language of [
             'ru-RU',
-            'ka',
             'de-AT',
             'it',
             'fr-CA',
@@ -59,7 +58,6 @@ describe('browser check', () => {
             vi.unstubAllGlobals();
         }
         expect(texts['ru-RU']).toContain('Для QBase');
-        expect(texts.ka).toContain('QBase-ს');
         expect(texts['de-AT']).toContain('benötigt');
         expect(texts.it).toContain('richiede');
         expect(texts['fr-CA']).toContain('nécessite');

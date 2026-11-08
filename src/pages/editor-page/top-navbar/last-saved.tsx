@@ -6,7 +6,6 @@ import { format, register } from 'timeago.js';
 import de from 'timeago.js/lib/lang/de';
 import fr from 'timeago.js/lib/lang/fr';
 import it from 'timeago.js/lib/lang/it';
-import ka from 'timeago.js/lib/lang/ka';
 import ru from 'timeago.js/lib/lang/ru';
 import zhCN from 'timeago.js/lib/lang/zh_CN';
 import zhTW from 'timeago.js/lib/lang/zh_TW';
@@ -18,7 +17,6 @@ const WORDS = {
     de,
     fr,
     it,
-    ka,
     ru,
     zh_CN: zhCN,
     zh_TW: zhTW,

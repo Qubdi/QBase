@@ -11,11 +11,6 @@ export const languages: LanguageMetadata[] = [
         code: 'en',
     },
     {
-        name: 'Georgian',
-        nativeName: 'ქართული',
-        code: 'ka',
-    },
-    {
         name: 'Russian',
         nativeName: 'Русский',
         code: 'ru',
