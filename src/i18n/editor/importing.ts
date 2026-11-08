@@ -2,17 +2,17 @@
 // the new-diagram flow and by "import into this diagram", and the table picker.
 export const importingStrings = {
     file: {
-        title: 'Open a saved diagram',
-        description:
-            'Choose a .json file that was saved from QBase. It is added as a new diagram.',
-        drop: 'Drop a file here, or click to choose one',
+        title: 'Import Diagram',
+        description: 'Import a diagram from a JSON file.',
+        drop: 'Drag and drop a file here or click to select',
+        types: 'Supported types: .json',
         action: 'Import',
         invalid:
             'That file is not a diagram saved from QBase, so nothing was imported.',
         failed: 'The file could not be imported. Please try again.',
     },
     box: {
-        method: { metadata: 'Database query', sql: 'SQL script', dbml: 'DBML' },
+        method: { metadata: 'Smart Query', sql: 'SQL Script', dbml: 'DBML' },
         field: {
             metadata: 'Query result',
             sql: 'SQL script',
@@ -23,8 +23,20 @@ export const importingStrings = {
             sql: 'Paste CREATE TABLE statements here',
             dbml: 'Paste DBML here',
         },
-        edition: 'Edition',
-        editionStandard: 'Standard',
+        edition: 'Database Edition:',
+        editionStandard: 'Regular',
+        methodLabel: 'How would you like to import?',
+        instructions: 'Instructions:',
+        pasteHere: {
+            metadata: '2. Paste the script result into this modal →',
+            sql: 'Paste your SQL script here →',
+            dbml: 'Paste your DBML (Database Markup Language) schema definition here →',
+        },
+        output: {
+            metadata: 'Smart Query Output',
+            sql: 'SQL Script',
+            dbml: 'DBML Script',
+        },
         editions: {
             supabase: 'Supabase',
             timescale: 'Timescale',
@@ -32,8 +44,7 @@ export const importingStrings = {
             sql_server_2016_and_below: 'SQL Server 2016 and older',
             cloudflare_d1: 'Cloudflare D1',
         },
-        scriptIntro:
-            'Run the query in your own database client, then paste the single result cell below.',
+        scriptIntro: '1. Run this script in your database:',
         copyScript: 'Copy the query',
         noScript: 'No ready-made query is shipped for this database yet.',
         scriptCopied: 'Query copied',
@@ -68,7 +79,7 @@ export const importingStrings = {
         page: 'Page {{page}} of {{pages}}',
     },
     into: {
-        title: 'Add to this diagram',
+        title: 'Import to Current Diagram',
         description:
             'New tables are placed to the right of what is already here. The history is cleared afterwards.',
         newTables_one: '{{count}} table will be added.',
@@ -79,7 +90,7 @@ export const importingStrings = {
         newTypes_other: '{{count}} custom types will be added.',
         duplicates:
             'These tables already exist and will appear twice: {{names}}',
-        apply: 'Add to diagram',
+        apply: 'Import',
         done_one: 'Added {{count}} table',
         done_other: 'Added {{count}} tables',
         failed: 'Nothing was imported',

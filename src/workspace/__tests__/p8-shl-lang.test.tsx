@@ -17,7 +17,12 @@ afterEach(async () => {
 const open = async () => {
     renderInEditor(<LanguageButton />, null, '/');
     fireEvent.click(screen.getByRole('button', { name: 'Change language' }));
-    return screen.findByRole('dialog', { name: 'Change language' });
+    const panel = await screen.findByRole('dialog', {
+        name: 'Change language',
+    });
+    // the panel shows the current language; its box opens the list
+    fireEvent.click(within(panel).getByRole('combobox'));
+    return panel;
 };
 
 describe('language button (SHL-093, SHL-096)', () => {

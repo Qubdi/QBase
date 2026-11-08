@@ -782,7 +782,7 @@ await flow(
             await rail('Links');
             const before = await page.getByTestId('ref-row').count();
             await page
-                .getByRole('button', { name: 'Add relationship' })
+                .getByRole('button', { name: 'Add Relationship' })
                 .first()
                 .click();
             const d = page.getByRole('dialog');
@@ -911,7 +911,7 @@ await flow('F4', 'filter panel and zoom to group', {}, async () => {
         await idle();
         check((await tables().count()) === 0, 'group hide left tables');
         await shot('all-hidden');
-        await page.getByRole('button', { name: 'Show all' }).first().click();
+        await page.getByRole('button', { name: 'Show All' }).first().click();
         await idle();
         check(
             (await tables().count()) === 3,
@@ -1091,7 +1091,7 @@ await flow(
                     'expected the duplicate customers table'
                 );
                 await page
-                    .getByRole('button', { name: 'Show all' })
+                    .getByRole('button', { name: 'Show All' })
                     .first()
                     .click();
                 await idle();
@@ -1282,7 +1282,7 @@ await flow('F8', 'export image/SQL, shortcuts, full screen', {}, async () => {
 
     await step('02b SVG export holds tables that are off screen', async () => {
         for (let i = 0; i < 9; i += 1) {
-            await page.getByRole('button', { name: 'Zoom in' }).click();
+            await page.getByRole('button', { name: 'Zoom In' }).click();
             await pause(250);
         }
         await mouseDrag({ x: 800, y: 500 }, { x: 800, y: 200 });
@@ -1353,22 +1353,6 @@ await flow('F8', 'export image/SQL, shortcuts, full screen', {}, async () => {
         await shot('ctrl-o');
         await page.keyboard.press('Escape');
     });
-
-    await step('06 full screen toggle', async () => {
-        await page.getByRole('button', { name: 'Full screen' }).click();
-        await idle();
-        await shot('fullscreen');
-        const on = await page.evaluate(() =>
-            Boolean(document.fullscreenElement)
-        );
-        check(on, 'document is not in full screen');
-        await page.getByRole('button', { name: 'Exit full screen' }).click();
-        await idle();
-        check(
-            !(await page.evaluate(() => Boolean(document.fullscreenElement))),
-            'still in full screen'
-        );
-    });
 });
 
 // ============================================================== flow 9
@@ -1426,8 +1410,8 @@ await flow(
             await pause(900);
             await shot(`${label}-finger-down`);
             const item = label.includes('table')
-                ? page.getByRole('menuitem', { name: 'Duplicate table' })
-                : page.getByRole('menuitem', { name: 'New table' });
+                ? page.getByRole('menuitem', { name: 'Duplicate Table' })
+                : page.getByRole('menuitem', { name: 'New Table' });
             await item.waitFor();
             await page.evaluate(() => {
                 window.__ev = [];

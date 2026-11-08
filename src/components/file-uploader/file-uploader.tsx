@@ -10,6 +10,8 @@ export interface FileUploaderProps {
     label: string;
     /** name of the chosen file, shown once there is one */
     chosen?: string;
+    /** a smaller line under it, for example the types that are accepted */
+    hint?: string;
     disabled?: boolean;
     className?: string;
 }
@@ -20,6 +22,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     onFilesChange,
     label,
     chosen,
+    hint,
     disabled,
     className,
 }) => {
@@ -44,13 +47,18 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                 if (!disabled) take(e.dataTransfer.files);
             }}
             className={cn(
-                'flex h-32 w-full flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed text-sm text-muted-foreground transition-colors hover:bg-accent/40 disabled:opacity-50',
+                'flex h-[164px] w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-sm text-slate-600 dark:text-slate-300 transition-colors hover:bg-accent/40 disabled:opacity-50',
                 over && 'border-primary bg-accent/40',
                 className
             )}
         >
-            <Upload className="size-5" />
+            <Upload className="mb-2 size-10" aria-hidden />
             <span>{chosen ?? label}</span>
+            {hint ? (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {hint}
+                </span>
+            ) : null}
             <input
                 ref={input}
                 type="file"

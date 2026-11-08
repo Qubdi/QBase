@@ -15,7 +15,13 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-const area = () => screen.getByRole('textbox') as HTMLTextAreaElement;
+// the query script on the left is a read-only box; the paste box is the editable one
+const area = () =>
+    screen
+        .getAllByRole('textbox')
+        .find(
+            (e) => !(e as HTMLTextAreaElement).readOnly
+        ) as HTMLTextAreaElement;
 const type = (value: string) => fireEvent.change(area(), { target: { value } });
 const settle = () => act(() => void vi.advanceTimersByTime(QUIET_MS + 10));
 const paste = (text: string) =>
@@ -24,19 +30,25 @@ const paste = (text: string) =>
 describe('IMP-005 the three methods', () => {
     it('shows Database query (the default), SQL script and DBML for PostgreSQL', () => {
         render(<ImportBox databaseType="postgresql" onChange={onChange} />);
-        const tabs = screen.getAllByRole('tab');
+        const tabs = screen
+            .getAllByRole('radio')
+            .filter((r) =>
+                ['Smart Query', 'SQL Script', 'DBML'].includes(
+                    r.textContent ?? ''
+                )
+            );
         expect(tabs.map((t) => t.textContent)).toEqual([
-            'Database query',
-            'SQL script',
+            'Smart Query',
+            'SQL Script',
             'DBML',
         ]);
-        expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+        expect(tabs[0].getAttribute('aria-checked')).toBe('true');
         expect(last?.method).toBe('metadata');
     });
     it('offers no SQL tab for a database without a reader (ClickHouse)', () => {
         render(<ImportBox databaseType="clickhouse" onChange={onChange} />);
-        expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
-            'Database query',
+        expect(screen.getAllByRole('radio').map((t) => t.textContent)).toEqual([
+            'Smart Query',
             'DBML',
         ]);
     });
@@ -48,8 +60,8 @@ describe('IMP-006 pasting switches to the method that fits', () => {
         paste('Table a {\n  id int [pk]\n}');
         expect(
             screen
-                .getByRole('tab', { name: 'DBML' })
-                .getAttribute('aria-selected')
+                .getByRole('radio', { name: 'DBML' })
+                .getAttribute('aria-checked')
         ).toBe('true');
         expect(area().value).toBe('Table a {\n  id int [pk]\n}');
     });
@@ -58,8 +70,8 @@ describe('IMP-006 pasting switches to the method that fits', () => {
         paste('CREATE TABLE a (id int);');
         expect(
             screen
-                .getByRole('tab', { name: 'SQL script' })
-                .getAttribute('aria-selected')
+                .getByRole('radio', { name: 'SQL Script' })
+                .getAttribute('aria-checked')
         ).toBe('true');
     });
     it('JSON goes to the query tab and is pretty printed', () => {
@@ -73,8 +85,8 @@ describe('IMP-006 pasting switches to the method that fits', () => {
         paste('{"a":1}');
         expect(
             screen
-                .getByRole('tab', { name: 'Database query' })
-                .getAttribute('aria-selected')
+                .getByRole('radio', { name: 'Smart Query' })
+                .getAttribute('aria-checked')
         ).toBe('true');
         expect(area().value).toBe('{\n  "a": 1\n}');
     });

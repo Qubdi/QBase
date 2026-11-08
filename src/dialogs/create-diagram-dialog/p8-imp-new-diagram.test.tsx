@@ -40,13 +40,13 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
             '/'
         );
         fireEvent.click(
-            await screen.findByRole('button', { name: 'More databases' })
+            await screen.findByRole('button', { name: 'More Databases' })
         );
         expect(
             (await screen.findAllByRole('radio')).map((r) => r.textContent)
         ).toEqual(['SQLite', 'SQL Server', 'Oracle', 'CockroachDB']);
         fireEvent.click(
-            screen.getByRole('button', { name: 'Primary databases' })
+            screen.getByRole('button', { name: 'Primary Databases' })
         );
         expect((await screen.findAllByRole('radio'))[0].textContent).toBe(
             'MySQL'
@@ -72,7 +72,7 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
                 await screen.findByRole('radio', { name: /ClickHouse/ })
             ).getAttribute('aria-checked')
         ).toBe('true');
-        fireEvent.click(screen.getByRole('button', { name: 'Blank diagram' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Empty database' }));
         await waitFor(async () =>
             expect((await adapter.list()).length).toBe(1)
         );
@@ -97,7 +97,7 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
             '/'
         );
         fireEvent.click(
-            await screen.findByRole('button', { name: 'Blank diagram' })
+            await screen.findByRole('button', { name: 'Empty database' })
         );
         await waitFor(async () =>
             expect((await adapter.list()).length).toBe(1)
@@ -114,8 +114,8 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
             await screen.findByRole('button', { name: 'Continue' })
         );
         expect(
-            (await screen.findAllByRole('tab')).map((t) => t.textContent)
-        ).toEqual(['Database query', 'SQL script', 'DBML']);
+            (await screen.findAllByRole('radio')).map((t) => t.textContent)
+        ).toEqual(['Smart Query', 'SQL Script', 'DBML']);
         fireEvent.click(screen.getByRole('button', { name: 'Back' }));
         expect((await screen.findAllByRole('radio')).length).toBe(6);
     });

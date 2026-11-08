@@ -107,13 +107,13 @@ describe('Open dialog (SHL-043 to SHL-048)', () => {
             .map((h) => h.textContent);
         expect(heads.slice(0, 4)).toEqual([
             'Name',
-            'Created',
-            'Changed',
+            'Created at',
+            'Last modified',
             'Tables',
         ]);
         // the Created column is hidden on phones
         expect(
-            screen.getByRole('columnheader', { name: 'Created' }).className
+            screen.getByRole('columnheader', { name: 'Created at' }).className
         ).toContain('hidden');
         expect(cells[2].className).toContain('hidden');
     });
@@ -166,12 +166,12 @@ describe('Open dialog (SHL-043 to SHL-048)', () => {
         await screen.findByText('Shop');
         expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
         const open = screen.getByRole('button', {
-            name: 'Open diagram',
+            name: 'Open',
         }) as HTMLButtonElement;
         expect(open.disabled).toBe(true);
         fireEvent.click(await rowOf('Shop'));
         expect(open.disabled).toBe(false);
-        fireEvent.click(screen.getByRole('button', { name: 'New diagram' }));
+        fireEvent.click(screen.getByRole('button', { name: 'New Database' }));
         expect(onCreate).toHaveBeenCalled();
         closable.unmount();
         renderInEditor(<OpenHere canClose={false} />, null, '/', adapter);
@@ -339,7 +339,7 @@ describe('the diagram name in the bar (SHL-050, SHL-051)', () => {
             document.querySelector('[data-testid="diagram-name"]')!
                 .previousElementSibling!
         );
-        expect(await screen.findByText('Your diagrams')).toBeTruthy();
+        expect(await screen.findByText('Open Database')).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     });
 });

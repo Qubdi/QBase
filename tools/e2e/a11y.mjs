@@ -321,7 +321,7 @@ await attempt('dialog-preferences', async () => {
 await attempt('dialog-create-relationship', async () => {
     await rail('Links');
     await page
-        .getByRole('button', { name: 'Add relationship' })
+        .getByRole('button', { name: 'Add Relationship' })
         .first()
         .click();
     await page.getByRole('dialog').waitFor();
@@ -478,7 +478,7 @@ for (const [name, opener] of [
         async () => {
             await rail('Links');
             await page
-                .getByRole('button', { name: 'Add relationship' })
+                .getByRole('button', { name: 'Add Relationship' })
                 .first()
                 .click();
         },

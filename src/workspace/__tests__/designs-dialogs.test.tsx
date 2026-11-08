@@ -125,7 +125,7 @@ describe('Open dialog, local mode (SHL-043 to SHL-049)', () => {
             'tr'
         ) as HTMLElement;
         const open = screen.getByRole('button', {
-            name: 'Open diagram',
+            name: 'Open',
         }) as HTMLButtonElement;
         expect(open.disabled).toBe(true);
         fireEvent.click(row);
@@ -143,7 +143,7 @@ describe('Open dialog, local mode (SHL-043 to SHL-049)', () => {
         await screen.findByRole('dialog');
         expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
         expect(
-            screen.getByRole('button', { name: 'New diagram' })
+            screen.getByRole('button', { name: 'New Database' })
         ).toBeTruthy();
     });
 
@@ -254,7 +254,7 @@ describe('New diagram dialog, local mode (SHL-036 to SHL-041)', () => {
             await screen.findByRole('radio', { name: /PostgreSQL/ })
         );
         fireEvent.click(
-            await screen.findByRole('button', { name: 'Blank diagram instead' })
+            await screen.findByRole('button', { name: 'Empty database' })
         );
         await waitFor(async () =>
             expect((await adapter.list()).length).toBe(1)
@@ -275,7 +275,7 @@ describe('New diagram dialog, local mode (SHL-036 to SHL-041)', () => {
         expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
         expect(
-            screen.getByRole('button', { name: 'Open a saved file' })
+            screen.getByRole('button', { name: 'Import from File' })
         ).toBeTruthy();
     });
 
@@ -299,11 +299,11 @@ describe('New diagram dialog, local mode (SHL-036 to SHL-041)', () => {
         fireEvent.click(
             await screen.findByRole('radio', { name: /PostgreSQL/ })
         );
-        fireEvent.mouseDown(
-            await screen.findByRole('tab', { name: 'SQL script' })
+        fireEvent.click(
+            await screen.findByRole('radio', { name: 'SQL Script' })
         );
         const build = screen.getByRole('button', {
-            name: 'Build from text',
+            name: 'Import',
         }) as HTMLButtonElement;
         expect(build.disabled).toBe(true);
         fireEvent.change(screen.getByRole('textbox', { name: 'SQL script' }), {

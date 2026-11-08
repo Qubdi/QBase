@@ -106,7 +106,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
             }}
         >
             <DialogContent
-                className="max-w-3xl"
+                className="max-w-[900px]"
                 showClose={canClose}
                 onEscapeKeyDown={(e) => !canClose && e.preventDefault()}
                 onInteractOutside={(e) => !canClose && e.preventDefault()}
@@ -117,7 +117,9 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                             ? t('editor.designs.create.titleType')
                             : t('editor.designs.create.titleImport')}
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription
+                        className={step === 'type' ? '' : 'sr-only'}
+                    >
                         {step === 'type'
                             ? t('editor.designs.create.descriptionType')
                             : t('editor.designs.create.descriptionImport')}
@@ -147,11 +149,11 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                     </p>
                 ) : null}
 
-                <DialogFooter className="gap-2 sm:justify-between">
+                <DialogFooter className="gap-4 sm:justify-between sm:space-x-0">
                     <div className="flex gap-2">
                         {step === 'import' ? (
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 onClick={() => setStep('type')}
                                 disabled={busy}
                             >
@@ -159,7 +161,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                             </Button>
                         ) : canClose ? (
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 onClick={closeCreateDiagramDialog}
                             >
                                 {t('editor.common.cancel')}
@@ -174,9 +176,9 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
                             </Button>
                         ) : null}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-4">
                         <Button
-                            variant="secondary"
+                            variant="outline"
                             disabled={!type || busy}
                             onClick={() => void createEmpty()}
                         >

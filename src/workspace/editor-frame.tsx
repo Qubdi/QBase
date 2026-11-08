@@ -10,8 +10,14 @@ import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { CanvasSlot } from './canvas-slot';
 import { MobilePanel } from './mobile-panel';
 import { MobileNavbar, Slot, TopNavbar } from './navbar/top-navbar';
-import { clampPanelWidth, defaultPanelWidth, PANEL_MIN } from './panel-width';
+import {
+    clampPanelWidth,
+    defaultPanelWidth,
+    minPanelWidth,
+    RAIL_WIDTH,
+} from './panel-width';
 import { Rail } from './rail';
+import { RailDrawer } from './rail-drawer';
 import { RememberDefault } from './remember-default';
 import { SidePanelSlot } from './side-panel-slot';
 import { useIsDesktop } from './use-is-desktop';
@@ -33,10 +39,10 @@ const PanelHandle: React.FC<{
             aria-label={t('editor.workspace.frame.resizePanel')}
             aria-valuenow={width}
             aria-valuetext={`${width}px`}
-            aria-valuemin={PANEL_MIN}
+            aria-valuemin={minPanelWidth(container())}
             aria-valuemax={Math.round(container() * 0.99)}
             tabIndex={0}
-            className="w-1.5 shrink-0 cursor-col-resize touch-none bg-border/60 transition-colors hover:bg-primary/60 focus-visible:bg-primary/60"
+            className="relative w-px shrink-0 touch-none bg-border before:absolute before:inset-y-0 before:-inset-x-1 before:cursor-col-resize before:content-[''] focus-visible:bg-primary"
             onPointerDown={(e) => {
                 e.currentTarget.setPointerCapture(e.pointerId);
                 start.current = { x: e.clientX, width };
@@ -80,7 +86,9 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
     const row = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(() =>
         defaultPanelWidth(
-            typeof window === 'undefined' ? 1400 : window.innerWidth
+            typeof window === 'undefined'
+                ? 1400
+                : window.innerWidth - RAIL_WIDTH
         )
     );
     const [dragging, setDragging] = useState(false);
@@ -93,7 +101,8 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
         if (!desktop) store.getState().hidePanel();
     }, [desktop, store]);
 
-    const container = () => row.current?.clientWidth ?? window.innerWidth;
+    const container = () =>
+        (row.current?.clientWidth ?? window.innerWidth) - RAIL_WIDTH;
 
     return (
         <div
@@ -123,7 +132,7 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
                         <div
                             aria-hidden={!panelOpen}
                             inert={!panelOpen}
-                            className={`shrink-0 overflow-hidden border-r bg-background ${dragging ? '' : 'transition-[width] duration-200'}`}
+                            className={`shrink-0 overflow-hidden bg-background ${dragging ? '' : 'transition-[width] duration-200'}`}
                             style={{ width: panelOpen ? width : 0 }}
                         >
                             <div style={{ width }} className="h-full">
@@ -141,10 +150,6 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
                             />
                         ) : null}
                     </>
-                ) : railOpen ? (
-                    <div className="absolute inset-y-0 left-0 z-30 shadow-lg">
-                        <Rail onAction={() => setRailOpen(false)} />
-                    </div>
                 ) : null}
                 <div data-region="content" className="relative min-w-0 flex-1">
                     <CanvasSlot />
@@ -160,7 +165,12 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
                     ) : null}
                 </div>
             </div>
-            {desktop ? null : <MobilePanel />}
+            {desktop ? null : (
+                <>
+                    <RailDrawer open={railOpen} onOpenChange={setRailOpen} />
+                    <MobilePanel />
+                </>
+            )}
         </div>
     );
 };

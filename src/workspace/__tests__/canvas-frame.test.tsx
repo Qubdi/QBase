@@ -60,7 +60,7 @@ describe('the canvas in the editor frame (EDT-011, EDT-012)', () => {
             store.getState().design.entities.byId[users].columnIds.length;
         const before = columns();
         fireEvent.click(
-            within(form).getAllByRole('button', { name: 'Add field' })[0]
+            within(form).getAllByRole('button', { name: 'Add Field' })[0]
         );
         expect(columns()).toBe(before + 1);
         store.getState().undo();
@@ -70,25 +70,25 @@ describe('the canvas in the editor frame (EDT-011, EDT-012)', () => {
     it('EDT-042: the Filter button opens the Filter tables panel, and Ctrl+F toggles it', async () => {
         mount();
         const button = await screen.findByRole('button', {
-            name: /Filter tables/,
+            name: /Filter Tables/,
         });
         fireEvent.click(button);
         expect(
-            await screen.findByRole('dialog', { name: 'Filter tables' })
+            await screen.findByRole('dialog', { name: 'Filter Tables' })
         ).toBeTruthy();
         fireEvent.keyDown(document.body, { key: 'f', ctrlKey: true });
         await waitFor(() =>
             expect(
-                screen.queryByRole('dialog', { name: 'Filter tables' })
+                screen.queryByRole('dialog', { name: 'Filter Tables' })
             ).toBeNull()
         );
     });
 
     it('EDT-023: Show all moves the camera, from the toolbar and from the workspace', async () => {
         const { container } = mount();
-        await screen.findByRole('button', { name: /Show all/ });
+        await screen.findByRole('button', { name: /Show All/ });
         const start = transformOf(container);
-        fireEvent.click(screen.getAllByRole('button', { name: /Show all/ })[0]);
+        fireEvent.click(screen.getAllByRole('button', { name: /Show All/ })[0]);
         await waitFor(() => expect(transformOf(container)).not.toBe(start), {
             timeout: 3000,
         });

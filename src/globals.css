@@ -2,72 +2,95 @@
 @config '../tailwind.config.js';
 
 /*
- * Colours are "H S% L%" triples so tailwind.config.js can wrap them in hsl()
- * and still allow an opacity modifier. One calm slate neutral, one teal accent.
+ * Design tokens. Every colour is a "hue sat% light%" triple so that
+ * tailwind.config.js can wrap it in hsl() and still allow an opacity
+ * modifier. The values were measured from the editor the owner wants kept.
+ * A few are moved by the smallest step that reaches WCAG AA contrast:
+ * see rewrite/decisions-phase9-restore.md ("Accessibility changes").
  */
 :root {
-    --background: 210 25% 98%;
-    --foreground: 215 28% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 215 28% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 28% 14%;
-    --primary: 174 72% 26%;
-    --primary-foreground: 170 40% 98%;
-    --secondary: 214 22% 94%;
-    --secondary-foreground: 215 28% 20%;
-    --muted: 214 22% 94%;
-    --muted-foreground: 215 14% 40%;
-    --accent: 174 40% 90%;
-    --accent-foreground: 174 72% 16%;
-    --destructive: 0 72% 46%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214 20% 87%;
-    --input: 214 20% 84%;
-    --ring: 174 72% 32%;
-    --subtitle: 215 14% 44%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 210 25% 96%;
-    --sidebar-foreground: 215 24% 22%;
-    --sidebar-primary: 174 72% 26%;
-    --sidebar-primary-foreground: 170 40% 98%;
-    --sidebar-accent: 214 22% 91%;
-    --sidebar-accent-foreground: 215 28% 14%;
-    --sidebar-border: 214 20% 87%;
-    --sidebar-ring: 174 72% 32%;
+    /* surfaces */
+    --background: 180 25% 99%;
+    --card: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --secondary: 185 22% 94%;
+    --muted: 185 22% 94%;
+    --accent: 174 40% 93%;
+
+    /* text on those surfaces */
+    --foreground: 200 30% 10%;
+    --card-foreground: 200 30% 10%;
+    --popover-foreground: 200 30% 10%;
+    --secondary-foreground: 200 30% 14%;
+    --muted-foreground: 200 12% 40%;
+    --accent-foreground: 173 80% 20%;
+    --subtitle: 215 19% 35%;
+
+    /* brand and state (primary is 1 step darker than measured, destructive too: AA) */
+    --primary: 173 82% 28%;
+    --primary-foreground: 0 0% 100%;
+    --destructive: 0 84% 49%;
+    --destructive-foreground: 210 40% 98%;
+    --ring: 173 82% 28%;
+
+    /* lines */
+    --border: 190 16% 88%;
+    --input: 190 16% 86%;
+
+    /* rail, large tabs */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5% 26%;
+    --sidebar-primary: 173 82% 28%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217 91% 60%;
+    --rail-hover: 240 5% 91%;
+    --rail-selected-text: 173 100% 25%;
+    --tab-active: 202 100% 38%;
+    --tab-active-foreground: 0 0% 100%;
 }
 
 .dark {
-    --background: 215 24% 9%;
-    --foreground: 210 20% 94%;
-    --card: 215 22% 12%;
-    --card-foreground: 210 20% 94%;
-    --popover: 215 22% 12%;
-    --popover-foreground: 210 20% 94%;
-    --primary: 172 60% 46%;
-    --primary-foreground: 175 60% 8%;
-    --secondary: 215 18% 18%;
-    --secondary-foreground: 210 20% 90%;
-    --muted: 215 18% 18%;
-    --muted-foreground: 214 14% 71%;
-    --accent: 174 30% 20%;
-    --accent-foreground: 172 50% 88%;
-    --destructive: 0 68% 52%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 215 16% 22%;
-    --input: 215 16% 26%;
-    --ring: 172 60% 50%;
-    --subtitle: 214 14% 62%;
+    --background: 200 28% 7%;
+    --card: 200 26% 9%;
+    --popover: 200 26% 9%;
+    --secondary: 200 18% 15%;
+    --muted: 200 18% 15%;
+    --accent: 190 30% 16%;
 
-    --sidebar-background: 215 24% 11%;
-    --sidebar-foreground: 210 18% 88%;
-    --sidebar-primary: 172 60% 46%;
-    --sidebar-primary-foreground: 175 60% 8%;
-    --sidebar-accent: 215 18% 18%;
-    --sidebar-accent-foreground: 210 20% 94%;
-    --sidebar-border: 215 16% 22%;
-    --sidebar-ring: 172 60% 50%;
+    --foreground: 180 20% 96%;
+    --card-foreground: 180 20% 96%;
+    --popover-foreground: 180 20% 96%;
+    --secondary-foreground: 180 20% 96%;
+    --muted-foreground: 195 12% 66%;
+    --accent-foreground: 172 60% 80%;
+    --subtitle: 213 27% 84%;
+
+    --primary: 172 66% 46%;
+    --primary-foreground: 200 40% 6%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+    --ring: 172 66% 46%;
+
+    --border: 200 15% 18%;
+    --input: 200 15% 20%;
+
+    --sidebar-background: 200 26% 8%;
+    --sidebar-foreground: 240 5% 96%;
+    --sidebar-primary: 172 66% 46%;
+    --sidebar-primary-foreground: 200 40% 6%;
+    --sidebar-accent: 221 39% 11%;
+    --sidebar-accent-foreground: 240 5% 96%;
+    --sidebar-border: 240 4% 16%;
+    --sidebar-ring: 217 91% 60%;
+    --rail-hover: 221 39% 11%;
+    --rail-selected-text: 175 100% 42%;
+    --tab-active: 200 100% 48%;
+    --tab-active-foreground: 200 40% 6%;
 }
 
 @layer base {

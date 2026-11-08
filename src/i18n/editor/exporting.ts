@@ -1,8 +1,8 @@
 // English text for the SQL, JSON and image export dialogs.
 export const exportingStrings = {
     sql: {
-        title: 'SQL for {{database}}',
-        description: 'The script covers the tables that are currently shown.',
+        title: 'Export SQL',
+        description: 'Export your diagram schema to {{database}} script',
         script: 'Generated script',
         copy: 'Copy',
         copied: 'Script copied',
@@ -10,21 +10,23 @@ export const exportingStrings = {
         nothing: 'There are no tables to export yet.',
     },
     json: {
-        title: 'Save as a diagram file',
-        description:
-            'The file keeps the whole diagram and can be opened again from the new-diagram screen.',
+        title: 'Export Diagram',
+        description: 'Choose the format for export:',
         summary: '{{name}} (about {{size}} KB)',
         download: 'Download',
     },
     image: {
-        title: 'Save as {{format}}',
-        description:
-            'The picture shows the whole diagram, in the colors you are using now.',
-        scale: 'Size',
-        pattern: 'Draw the dotted background',
+        title: 'Export Image',
+        description: 'Choose the scale factor for export:',
+        scale: 'Scale',
+        scaleBest: '{{scale}}x (Best Quality)',
+        advanced: 'Advanced Options',
+        patternHelp: 'Add subtle grid pattern to background.',
+        transparentHelp: 'Remove background color from image.',
+        pattern: 'Include background pattern',
         transparent: 'Transparent background',
         jpegNote: 'JPEG cannot be transparent, so the page color is used.',
-        action: 'Save image',
+        action: 'Export',
         working: 'Creating the image',
         empty: 'There is nothing to put in the picture yet',
         failed: 'The image could not be created',

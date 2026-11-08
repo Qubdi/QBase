@@ -49,6 +49,9 @@ import { matchesSearch } from './design-search';
 import { RenameDesignDialog } from './rename-design-dialog';
 import { useDesignList } from './use-design-list';
 
+/** The search box shows when more diagrams than this are stored (the old editor had no search). */
+const SEARCH_FROM = 1;
+
 export interface OpenDesignDialogProps {
     open: boolean;
     adapter: StorageAdapter;
@@ -162,7 +165,7 @@ export const OpenDesignDialog: React.FC<OpenDesignDialogProps> = ({
                 onOpenChange={(next) => !next && canClose && onClose()}
             >
                 <DialogContent
-                    className="max-w-4xl"
+                    className="max-w-[704px]"
                     showClose={canClose}
                     onEscapeKeyDown={(e) => !canClose && e.preventDefault()}
                     onInteractOutside={(e) => !canClose && e.preventDefault()}
@@ -175,12 +178,15 @@ export const OpenDesignDialog: React.FC<OpenDesignDialogProps> = ({
                             {t('editor.designs.open.description')}
                         </DialogDescription>
                     </DialogHeader>
-                    <SearchInput
-                        value={search}
-                        onChange={setSearch}
-                        placeholder={t('editor.designs.open.search')}
-                    />
-                    <div className="max-h-[30rem] min-h-48 overflow-auto rounded-md border">
+                    {/* one diagram needs no search box; it appears with the second */}
+                    {(items?.length ?? 0) > SEARCH_FROM ? (
+                        <SearchInput
+                            value={search}
+                            onChange={setSearch}
+                            placeholder={t('editor.designs.open.search')}
+                        />
+                    ) : null}
+                    <div className="h-[316px] overflow-auto">
                         {items === undefined ? (
                             <div className="flex h-48 items-center justify-center">
                                 <Spinner />
@@ -374,23 +380,27 @@ export const OpenDesignDialog: React.FC<OpenDesignDialogProps> = ({
                             </Table>
                         )}
                     </div>
-                    <DialogFooter className="gap-2">
+                    <DialogFooter className="gap-2 sm:justify-between sm:space-x-0">
                         {canClose ? (
-                            <Button variant="outline" onClick={onClose}>
+                            <Button variant="secondary" onClick={onClose}>
                                 {t('editor.common.cancel')}
                             </Button>
-                        ) : null}
-                        <Button variant="secondary" onClick={onCreate}>
-                            {t('editor.designs.open.newDatabase')}
-                        </Button>
-                        <Button
-                            disabled={!selected}
-                            onClick={() =>
-                                selected && void openDesign(selected)
-                            }
-                        >
-                            {t('editor.designs.open.open')}
-                        </Button>
+                        ) : (
+                            <span />
+                        )}
+                        <div className="flex gap-2 max-sm:flex-col-reverse">
+                            <Button variant="secondary" onClick={onCreate}>
+                                {t('editor.designs.open.newDatabase')}
+                            </Button>
+                            <Button
+                                disabled={!selected}
+                                onClick={() =>
+                                    selected && void openDesign(selected)
+                                }
+                            >
+                                {t('editor.designs.open.open')}
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

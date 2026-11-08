@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Database } from 'lucide-react';
+import { ChevronDown, ChevronUp, Database } from 'lucide-react';
 import type { DatabaseType } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
 import { Button } from '@/platform/ui/button';
@@ -27,16 +27,24 @@ const Card: React.FC<{
             aria-checked={chosen}
             onClick={() => onPick(type)}
             className={cn(
-                'flex flex-col items-center gap-2 rounded-lg border p-4 text-center transition-colors hover:bg-accent',
-                chosen && 'border-primary bg-accent'
+                'flex size-32 flex-col items-center justify-center gap-2 rounded-md p-2 text-center text-sm text-muted-foreground transition-colors hover:bg-secondary max-sm:size-20',
+                chosen && 'bg-secondary text-foreground ring-2 ring-primary'
             )}
         >
             {logo ? (
-                <img src={logo} alt="" className="size-10" draggable={false} />
+                <img
+                    src={logo}
+                    alt=""
+                    className="w-26 max-sm:w-14"
+                    draggable={false}
+                />
             ) : (
-                <Database className="size-10" aria-hidden="true" />
+                <Database
+                    className="size-14 max-sm:size-9"
+                    aria-hidden="true"
+                />
             )}
-            <span className="font-medium">{dialectFor(type).label}</span>
+            <span className="text-foreground">{dialectFor(type).label}</span>
         </button>
     );
 };
@@ -64,7 +72,7 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
     );
     const label = t('editor.designs.create.titleType');
     return (
-        <div className="flex flex-col gap-3">
+        <div className="mb-4 flex flex-col">
             <Tabs
                 defaultValue={
                     value && ANALYTICAL.includes(value)
@@ -72,7 +80,7 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                         : 'transactional'
                 }
             >
-                <TabsList>
+                <TabsList className="mx-auto flex w-[416px] max-w-full">
                     <TabsTrigger value="transactional">
                         {t('editor.designs.create.tabTransactional')}
                     </TabsTrigger>
@@ -84,7 +92,7 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                     <div
                         role="radiogroup"
                         aria-label={label}
-                        className="grid grid-cols-3 gap-3"
+                        className="mx-auto mt-2 grid min-h-[272px] w-fit grid-cols-3 content-start gap-4"
                     >
                         {shown.map((type) => (
                             <Card
@@ -96,13 +104,17 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                         ))}
                     </div>
                     {shifts ? (
-                        <div className="mt-3 flex justify-center">
+                        <div className="mx-auto mt-[31px] w-[416px] max-w-full">
                             <Button
                                 variant="ghost"
+                                size="sm"
+                                className="w-full"
+                                aria-pressed={offset === 1}
                                 onClick={() =>
                                     setOffset((o) => (o === 0 ? 1 : 0))
                                 }
                             >
+                                {offset === 0 ? <ChevronDown /> : <ChevronUp />}
                                 {offset === 0
                                     ? t('editor.designs.create.moreDatabases')
                                     : t(
@@ -116,7 +128,7 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                     <div
                         role="radiogroup"
                         aria-label={label}
-                        className="grid grid-cols-3 gap-3"
+                        className="mx-auto mt-2 grid min-h-[272px] w-fit grid-cols-3 content-start gap-4"
                     >
                         {ANALYTICAL.map((type) => (
                             <Card
@@ -127,11 +139,13 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                             />
                         ))}
                     </div>
+                    {/* the same height as the first tab, which has the More Databases button */}
+                    <div className="h-[54px]" aria-hidden />
                 </TabsContent>
             </Tabs>
             <Button
                 variant="link"
-                className="self-start px-0"
+                className="mx-auto mt-[5px] h-8 w-[416px] max-w-full"
                 aria-pressed={value === 'generic'}
                 onClick={onGeneric}
             >

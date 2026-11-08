@@ -78,6 +78,9 @@ export const ru = {
                     searchLanguage: 'Поиск языка',
                     showTools: 'Показать панель инструментов',
                     hideTools: 'Скрыть панель инструментов',
+                    sidebarTitle: 'Боковая панель',
+                    sidebarDescription:
+                        'Показывает боковую панель для мобильных устройств.',
                 },
                 name: {
                     label: 'Название диаграммы',
@@ -109,23 +112,26 @@ export const ru = {
                     },
                     view: {
                         label: 'Вид',
-                        sidePanel: 'Боковая панель',
-                        cardinality: 'Кратность связей',
-                        fieldAttributes: 'Атрибуты полей',
+                        sidePanel: 'Скрыть боковую панель',
+                        sidePanelShow: 'Показать боковую панель',
+                        cardinality: 'Скрыть кратность',
+                        cardinalityShow: 'Показать кратность',
+                        fieldAttributes: 'Скрыть атрибуты полей',
+                        fieldAttributesShow: 'Показать атрибуты полей',
                         compactTables: 'Компактные таблицы',
-                        minimap: 'Миникарта',
+                        compactTablesStandard: 'Обычные таблицы',
+                        minimap: 'Скрыть миникарту',
+                        minimapShow: 'Показать миникарту',
                         views: 'Представления базы данных',
-                        wheel: 'Колесо мыши',
-                        wheelPan: 'Перемещает вид',
-                        wheelZoom: 'Масштабирует вид',
+                        wheel: 'Масштаб прокруткой',
+                        on: 'Вкл.',
+                        off: 'Выкл.',
                         theme: 'Цветовая тема',
                         themes: {
-                            system: 'Как в системе',
+                            system: 'Системная',
                             light: 'Светлая',
                             dark: 'Тёмная',
                         },
-                        themeKey: 'Переключить светлую и тёмную',
-                        preferences: 'Настройки',
                     },
                     backup: {
                         label: 'Резервная копия',
@@ -144,9 +150,10 @@ export const ru = {
                     visuals: 'Прочее',
                 },
                 drawer: {
-                    title: 'Содержимое диаграммы',
-                    description: 'Просмотр и изменение частей этой диаграммы',
+                    title: 'Управление диаграммой',
+                    description: 'Управляйте объектами диаграммы',
                     sections: 'Раздел',
+                    viewAll: 'Все параметры...',
                     entries: {
                         tables: 'Таблицы',
                         dbml: 'DBML',
@@ -228,7 +235,7 @@ export const ru = {
                 delete: {
                     title: 'Удалить эту диаграмму?',
                     description:
-                        '«{{name}}» будет удалена навсегда. Это действие нельзя отменить.',
+                        'Это действие нельзя отменить. Диаграмма будет удалена навсегда.',
                     confirm: 'Удалить',
                     failed: 'Не удалось удалить диаграмму',
                 },
@@ -392,6 +399,7 @@ export const ru = {
                     description:
                         'Выберите файл .json, сохранённый из QBase. Он будет добавлен как новая диаграмма.',
                     drop: 'Перетащите файл сюда или щёлкните, чтобы выбрать',
+                    types: 'Поддерживаемые типы: .json',
                     action: 'Импортировать',
                     invalid:
                         'Этот файл не является диаграммой, сохранённой из QBase, поэтому ничего не импортировано.',
@@ -399,8 +407,8 @@ export const ru = {
                 },
                 box: {
                     method: {
-                        metadata: 'Запрос к базе данных',
-                        sql: 'Скрипт SQL',
+                        metadata: 'Smart Query',
+                        sql: 'SQL-скрипт',
                         dbml: 'DBML',
                     },
                     field: {
@@ -413,8 +421,20 @@ export const ru = {
                         sql: 'Вставьте сюда операторы CREATE TABLE',
                         dbml: 'Вставьте сюда DBML',
                     },
-                    edition: 'Редакция',
-                    editionStandard: 'Стандартная',
+                    edition: 'Редакция базы данных:',
+                    editionStandard: 'Обычная',
+                    methodLabel: 'Как вы хотите импортировать?',
+                    instructions: 'Инструкции:',
+                    pasteHere: {
+                        metadata: '2. Вставьте результат скрипта в это окно →',
+                        sql: 'Вставьте сюда SQL-скрипт →',
+                        dbml: 'Вставьте сюда описание схемы DBML (Database Markup Language) →',
+                    },
+                    output: {
+                        metadata: 'Результат Smart Query',
+                        sql: 'SQL-скрипт',
+                        dbml: 'DBML-скрипт',
+                    },
                     editions: {
                         supabase: 'Supabase',
                         timescale: 'Timescale',
@@ -423,7 +443,7 @@ export const ru = {
                         cloudflare_d1: 'Cloudflare D1',
                     },
                     scriptIntro:
-                        'Выполните запрос в своём клиенте базы данных, затем вставьте ниже единственную ячейку с результатом.',
+                        '1. Выполните этот скрипт в вашей базе данных:',
                     copyScript: 'Скопировать запрос',
                     noScript: 'Для этой базы данных готового запроса пока нет.',
                     scriptCopied: 'Запрос скопирован',
@@ -496,9 +516,9 @@ export const ru = {
             },
             exporting: {
                 sql: {
-                    title: 'SQL для {{database}}',
+                    title: 'Экспорт SQL',
                     description:
-                        'Скрипт охватывает таблицы, которые показаны сейчас.',
+                        'Экспорт схемы диаграммы в скрипт {{database}}',
                     script: 'Созданный скрипт',
                     copy: 'Копировать',
                     copied: 'Скрипт скопирован',
@@ -513,10 +533,14 @@ export const ru = {
                     download: 'Скачать',
                 },
                 image: {
-                    title: 'Сохранить как {{format}}',
+                    title: 'Экспорт изображения',
                     description:
                         'На изображении вся диаграмма в тех цветах, которые используются сейчас.',
-                    scale: 'Размер',
+                    scale: 'Масштаб',
+                    scaleBest: '{{scale}}x (Лучшее качество)',
+                    advanced: 'Дополнительные параметры',
+                    patternHelp: 'Добавить тонкую сетку на фон.',
+                    transparentHelp: 'Убрать цвет фона с изображения.',
                     pattern: 'Рисовать точечный фон',
                     transparent: 'Прозрачный фон',
                     jpegNote:
@@ -565,6 +589,7 @@ export const ru = {
                     cancel: 'Отмена',
                     confirm: 'Подтвердить',
                     close: 'Закрыть',
+                    customColor: 'Свой цвет',
                 },
                 tables: {
                     add: 'Добавить таблицу',
@@ -614,6 +639,7 @@ export const ru = {
                     namePlaceholder: 'Название поля',
                     typePlaceholder: 'Тип',
                     typeSearch: 'Поиск типов',
+                    typeSearchPlaceholder: 'Поиск...',
                     noTypes: 'Типы не найдены',
                     standardTypes: 'Стандартные типы',
                     customTypes: 'Пользовательские типы',
@@ -719,6 +745,7 @@ export const ru = {
                     delete: 'Удалить',
                     rename: 'Переименовать тип',
                     kind: 'Вид типа',
+                    enumValues: 'Значения перечисления',
                     enum: 'Перечисление',
                     composite: 'Составной',
                     valuePlaceholder: 'Добавить значение перечисления...',
@@ -875,6 +902,7 @@ export const ru = {
                 fieldCount_one: '{{count}} поле',
                 fieldCount_few: '{{count}} поля',
                 fieldCount_many: '{{count}} полей',
+                focus: 'Перейти к холсту',
                 openInPanel: 'Открыть в боковой панели',
                 widen: 'Расширить',
                 narrow: 'Сузить',
@@ -889,6 +917,7 @@ export const ru = {
             },
             fieldCard: {
                 type: 'Тип',
+                key: 'Ключ',
                 nullable: 'Допускает null',
                 notNull: 'Не null',
                 unique: 'Уникальное',
@@ -923,6 +952,7 @@ export const ru = {
             memo: {
                 placeholder: 'Пустая заметка',
                 edit: 'Текст заметки',
+                editNote: 'Изменить заметку',
                 colour: 'Цвет заметки',
             },
             menu: {

@@ -2,9 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, Copy, Info, Wand2 } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/platform/ui/tabs';
 import { Textarea } from '@/platform/ui/textarea';
-import { OptionSelect } from '@/components/option-select/option-select';
+import { cn } from '@/lib/utils/utils';
 import { editionsFor } from '@/core/model/database';
 import type { DatabaseEdition, DatabaseType } from '@/core/model/database';
 import type { Diagnostic } from '@/dialects/script-model';
@@ -263,169 +262,234 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
         !analysis.blocked &&
         !analysis.design;
 
+    const choiceClass = (on: boolean) =>
+        cn(
+            'inline-flex h-6 items-center gap-1.5 rounded-md border border-input px-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            on && 'bg-slate-200 text-accent-foreground dark:bg-secondary'
+        );
+
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <Tabs
-                    value={method}
-                    onValueChange={(v) => setMethod(v as ImportMethod)}
+        <div className="grid min-h-0 gap-2 md:h-[490px] md:grid-cols-[350px_minmax(0,1fr)]">
+            <div className="flex flex-col gap-3 overflow-auto rounded-md bg-accent/40 p-2 text-sm">
+                {editions.length > 0 ? (
+                    <div
+                        role="radiogroup"
+                        aria-label={t('editor.importing.box.edition')}
+                    >
+                        <p className="mb-1 text-primary">
+                            {t('editor.importing.box.edition')}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                {
+                                    value: '',
+                                    label: t(
+                                        'editor.importing.box.editionStandard'
+                                    ),
+                                },
+                                ...editions.map((e) => ({
+                                    value: e as string,
+                                    label: t(
+                                        `editor.importing.box.editions.${e}`
+                                    ),
+                                })),
+                            ].map((o) => (
+                                <button
+                                    key={o.value}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={(edition ?? '') === o.value}
+                                    className={choiceClass(
+                                        (edition ?? '') === o.value
+                                    )}
+                                    onClick={() =>
+                                        setEdition(
+                                            o.value === ''
+                                                ? undefined
+                                                : (o.value as DatabaseEdition)
+                                        )
+                                    }
+                                >
+                                    {o.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
+                <div
+                    role="radiogroup"
+                    aria-label={t('editor.importing.box.methodLabel')}
                 >
-                    <TabsList>
+                    <p className="mb-1 text-primary">
+                        {t('editor.importing.box.methodLabel')}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
                         {available.map((m) => (
-                            <TabsTrigger
+                            <button
                                 key={m}
-                                value={m}
-                                aria-controls={undefined}
+                                type="button"
+                                role="radio"
+                                aria-checked={method === m}
+                                className={choiceClass(method === m)}
+                                onClick={() => setMethod(m)}
                             >
                                 {t(`editor.importing.box.method.${m}`)}
-                            </TabsTrigger>
+                            </button>
                         ))}
-                    </TabsList>
-                </Tabs>
-                {editions.length > 0 ? (
-                    <OptionSelect
-                        aria-label={t('editor.importing.box.edition')}
-                        value={edition ?? ''}
-                        onValueChange={(v) =>
-                            setEdition(
-                                v === '' ? undefined : (v as DatabaseEdition)
-                            )
-                        }
-                        options={[
-                            {
-                                value: '',
-                                label: t(
-                                    'editor.importing.box.editionStandard'
-                                ),
-                            },
-                            ...editions.map((e) => ({
-                                value: e,
-                                label: t(`editor.importing.box.editions.${e}`),
-                            })),
-                        ]}
+                    </div>
+                </div>
+                <div>
+                    <p className="mb-1 font-semibold">
+                        {t('editor.importing.box.instructions')}
+                    </p>
+                    {method === 'metadata' ? (
+                        <>
+                            <p className="mb-2 text-primary">
+                                {t('editor.importing.box.scriptIntro')}
+                            </p>
+                            {script ? (
+                                <div className="relative">
+                                    <Textarea
+                                        readOnly
+                                        value={script}
+                                        spellCheck={false}
+                                        aria-label={t(
+                                            'editor.importing.box.copyScript'
+                                        )}
+                                        className="h-[198px] resize-none bg-background pr-10 font-mono text-xs shadow-none"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        className="absolute right-1 top-1 size-[30px]"
+                                        aria-label={t(
+                                            'editor.importing.box.copyScript'
+                                        )}
+                                        onClick={copyScript}
+                                    >
+                                        <Copy />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground">
+                                    {t('editor.importing.box.noScript')}
+                                </p>
+                            )}
+                        </>
+                    ) : null}
+                    <p className="mt-2 text-primary">
+                        {t(`editor.importing.box.pasteHere.${method}`)}
+                    </p>
+                </div>
+            </div>
+
+            <div className="flex min-h-0 flex-col gap-2 overflow-auto">
+                <div className="relative flex min-h-[200px] flex-1 flex-col rounded-md border">
+                    <span className="pointer-events-none absolute right-2 top-1 text-xs text-muted-foreground">
+                        {t(`editor.importing.box.output.${method}`)}
+                    </span>
+                    <Textarea
+                        ref={area}
+                        value={text}
+                        onChange={(e) => changeText(e.target.value)}
+                        onPaste={onPaste}
+                        spellCheck={false}
+                        className="min-h-0 flex-1 resize-none border-0 font-mono text-xs shadow-none"
+                        aria-label={t(`editor.importing.box.field.${method}`)}
+                        placeholder={t(
+                            `editor.importing.box.placeholder.${method}`
+                        )}
+                    />
+                </div>
+
+                {method === 'metadata' && text.length === SSMS_LIMIT ? (
+                    <p role="note" className="text-sm text-amber-600">
+                        {t('editor.importing.box.truncated')}
+                    </p>
+                ) : null}
+
+                {repairing ? (
+                    <p className="text-sm text-muted-foreground">
+                        {t('editor.importing.box.repairing')}
+                    </p>
+                ) : null}
+                {repaired && !analysis.blocked ? (
+                    <p className="text-sm text-green-600">
+                        {t('editor.importing.box.repaired')}
+                    </p>
+                ) : null}
+
+                {shown.length > 0 ? (
+                    <ul role="alert" className="flex flex-col gap-1">
+                        {shown.map((d, i) => (
+                            <DiagnosticLine
+                                key={i}
+                                item={d}
+                                onJump={() => jump(d)}
+                            />
+                        ))}
+                        {more > 0 ? (
+                            <li className="text-sm text-destructive">
+                                {t('editor.importing.box.moreProblems', {
+                                    count: more,
+                                })}
+                            </li>
+                        ) : null}
+                    </ul>
+                ) : null}
+                {analysis.fixable && !pending ? (
+                    <Button
+                        type="button"
+                        variant="outline"
                         size="sm"
+                        className="self-start"
+                        onClick={repair}
+                    >
+                        <Wand2 /> {t('editor.importing.box.repair')}
+                    </Button>
+                ) : null}
+                {warnings.length > 0 ? (
+                    <ul className="flex max-h-24 flex-col gap-1 overflow-auto">
+                        {warnings.map((d, i) => (
+                            <DiagnosticLine
+                                key={i}
+                                item={d}
+                                onJump={() => jump(d)}
+                            />
+                        ))}
+                    </ul>
+                ) : null}
+
+                {counted ? (
+                    <p
+                        className="text-sm text-muted-foreground"
+                        data-testid="import-counts"
+                    >
+                        {t('editor.importing.box.found', {
+                            tables: t('editor.importing.box.foundTables', {
+                                count: analysis.counts.tables,
+                            }),
+                            links: t('editor.importing.box.foundLinks', {
+                                count: analysis.counts.relationships,
+                            }),
+                        })}
+                    </p>
+                ) : null}
+                {empty ? (
+                    <p className="text-sm text-muted-foreground">
+                        {t('editor.importing.box.nothing')}
+                    </p>
+                ) : null}
+
+                {needsPicker && picked ? (
+                    <TablePicker
+                        rows={rows}
+                        selected={picked}
+                        onChange={setSelection}
                     />
                 ) : null}
             </div>
-
-            {method === 'metadata' ? (
-                <div className="rounded-md border bg-muted/40 p-3 text-sm">
-                    <p>{t('editor.importing.box.scriptIntro')}</p>
-                    {script ? (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={copyScript}
-                        >
-                            <Copy /> {t('editor.importing.box.copyScript')}
-                        </Button>
-                    ) : (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            {t('editor.importing.box.noScript')}
-                        </p>
-                    )}
-                </div>
-            ) : null}
-
-            <Textarea
-                ref={area}
-                value={text}
-                onChange={(e) => changeText(e.target.value)}
-                onPaste={onPaste}
-                spellCheck={false}
-                className="h-56 resize-none font-mono text-xs"
-                aria-label={t(`editor.importing.box.field.${method}`)}
-                placeholder={t(`editor.importing.box.placeholder.${method}`)}
-            />
-
-            {method === 'metadata' && text.length === SSMS_LIMIT ? (
-                <p role="note" className="text-sm text-amber-600">
-                    {t('editor.importing.box.truncated')}
-                </p>
-            ) : null}
-
-            {repairing ? (
-                <p className="text-sm text-muted-foreground">
-                    {t('editor.importing.box.repairing')}
-                </p>
-            ) : null}
-            {repaired && !analysis.blocked ? (
-                <p className="text-sm text-green-600">
-                    {t('editor.importing.box.repaired')}
-                </p>
-            ) : null}
-
-            {shown.length > 0 ? (
-                <ul role="alert" className="flex flex-col gap-1">
-                    {shown.map((d, i) => (
-                        <DiagnosticLine
-                            key={i}
-                            item={d}
-                            onJump={() => jump(d)}
-                        />
-                    ))}
-                    {more > 0 ? (
-                        <li className="text-sm text-destructive">
-                            {t('editor.importing.box.moreProblems', {
-                                count: more,
-                            })}
-                        </li>
-                    ) : null}
-                </ul>
-            ) : null}
-            {analysis.fixable && !pending ? (
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="self-start"
-                    onClick={repair}
-                >
-                    <Wand2 /> {t('editor.importing.box.repair')}
-                </Button>
-            ) : null}
-            {warnings.length > 0 ? (
-                <ul className="flex max-h-24 flex-col gap-1 overflow-auto">
-                    {warnings.map((d, i) => (
-                        <DiagnosticLine
-                            key={i}
-                            item={d}
-                            onJump={() => jump(d)}
-                        />
-                    ))}
-                </ul>
-            ) : null}
-
-            {counted ? (
-                <p
-                    className="text-sm text-muted-foreground"
-                    data-testid="import-counts"
-                >
-                    {t('editor.importing.box.found', {
-                        tables: t('editor.importing.box.foundTables', {
-                            count: analysis.counts.tables,
-                        }),
-                        links: t('editor.importing.box.foundLinks', {
-                            count: analysis.counts.relationships,
-                        }),
-                    })}
-                </p>
-            ) : null}
-            {empty ? (
-                <p className="text-sm text-muted-foreground">
-                    {t('editor.importing.box.nothing')}
-                </p>
-            ) : null}
-
-            {needsPicker && picked ? (
-                <TablePicker
-                    rows={rows}
-                    selected={picked}
-                    onChange={setSelection}
-                />
-            ) : null}
         </div>
     );
 };

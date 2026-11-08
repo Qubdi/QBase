@@ -126,7 +126,7 @@ describe('Open key with a server (SHL-067)', () => {
             '/diagrams/x'
         );
         fireEvent.keyDown(document.body, { key: 'o', ctrlKey: true });
-        expect(await view.findByText('Your diagrams')).toBeTruthy();
+        expect(await view.findByText('Open Database')).toBeTruthy();
         expect(view.getByTestId('where').textContent).toBe('/diagrams/x');
     });
 });

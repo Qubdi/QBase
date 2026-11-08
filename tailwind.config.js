@@ -54,6 +54,9 @@ export default {
                 background: token('background'),
                 foreground: token('foreground'),
                 subtitle: token('subtitle'),
+                'rail-hover': token('rail-hover'),
+                'rail-selected': token('rail-selected-text'),
+                'tab-active': surface('tab-active'),
                 primary: surface('primary'),
                 secondary: surface('secondary'),
                 destructive: surface('destructive'),
@@ -66,7 +69,7 @@ export default {
             borderRadius: {
                 lg: 'var(--radius)',
                 md: 'calc(var(--radius) - 2px)',
-                sm: 'calc(var(--radius) - 4px)',
+                sm: '0.125rem',
             },
             keyframes: {
                 'accordion-down': {

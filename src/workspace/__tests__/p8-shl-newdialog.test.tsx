@@ -34,10 +34,8 @@ describe('New diagram dialog, step 1 (SHL-032, SHL-033, SHL-034)', () => {
         );
         const card = await screen.findByRole('radio', { name: /MySQL/ });
         fireEvent.click(card);
-        expect(
-            await screen.findByText('Start from existing work')
-        ).toBeTruthy();
-        expect(screen.queryByRole('radio')).toBeNull();
+        expect(await screen.findByText('Import your Database')).toBeTruthy();
+        expect(screen.queryByRole('radio', { name: 'MySQL' })).toBeNull();
     });
 
     it('SHL-032: offers the databases the editor supports as option cards', async () => {
@@ -69,7 +67,7 @@ describe('New diagram dialog, step 1 (SHL-032, SHL-033, SHL-034)', () => {
         await screen.findByRole('dialog');
         expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
         expect(
-            screen.queryByRole('button', { name: 'Open a saved file' })
+            screen.queryByRole('button', { name: 'Import from File' })
         ).toBeNull();
         open.unmount();
         renderInEditor(
@@ -80,7 +78,7 @@ describe('New diagram dialog, step 1 (SHL-032, SHL-033, SHL-034)', () => {
         await screen.findByRole('dialog');
         expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
         expect(
-            screen.getByRole('button', { name: 'Open a saved file' })
+            screen.getByRole('button', { name: 'Import from File' })
         ).toBeTruthy();
     });
 
@@ -92,7 +90,7 @@ describe('New diagram dialog, step 1 (SHL-032, SHL-033, SHL-034)', () => {
         );
         await screen.findByRole('dialog');
         expect(
-            screen.getByRole('button', { name: 'Blank diagram' })
+            screen.getByRole('button', { name: 'Empty database' })
         ).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     });
@@ -115,7 +113,7 @@ describe('New diagram dialog, creating (SHL-035, SHL-036, SHL-038, SHL-039, SHL-
         fireEvent.click(await screen.findByRole('button', { name: 'Back' }));
         fireEvent.click(await screen.findByRole('radio', { name: /MariaDB/ }));
         fireEvent.click(await screen.findByRole('button', { name: 'Back' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Blank diagram' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Empty database' }));
         await waitFor(async () =>
             expect((await adapter.list()).length).toBe(1)
         );
@@ -135,17 +133,20 @@ describe('New diagram dialog, creating (SHL-035, SHL-036, SHL-038, SHL-039, SHL-
             await screen.findByRole('button', { name: 'Back' })
         ).toBeTruthy();
         expect(
-            screen.getByRole('button', { name: 'Blank diagram instead' })
+            screen.getByRole('button', { name: 'Empty database' })
         ).toBeTruthy();
-        expect(
-            screen.getByRole('button', { name: 'Build from text' })
-        ).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Import' })).toBeTruthy();
         // the wizard: query script, SQL, DBML
-        expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
-            'Database query',
-            'SQL script',
-            'DBML',
-        ]);
+        expect(
+            screen
+                .getAllByRole('radio')
+                .filter((r) =>
+                    ['Smart Query', 'SQL Script', 'DBML'].includes(
+                        r.textContent ?? ''
+                    )
+                )
+                .map((t) => t.textContent)
+        ).toEqual(['Smart Query', 'SQL Script', 'DBML']);
         fireEvent.click(screen.getByRole('button', { name: 'Back' }));
         expect(await screen.findByRole('radiogroup')).toBeTruthy();
     });
@@ -165,7 +166,7 @@ describe('New diagram dialog, creating (SHL-035, SHL-036, SHL-038, SHL-039, SHL-
             adapter
         );
         await screen.findByRole('dialog');
-        fireEvent.click(screen.getByRole('button', { name: 'Blank diagram' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Empty database' }));
         // while it works, Escape does not close it
         fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
         expect(screen.getByRole('dialog')).toBeTruthy();
@@ -197,7 +198,7 @@ describe('New diagram dialog, creating (SHL-035, SHL-036, SHL-038, SHL-039, SHL-
             adapter
         );
         await screen.findByRole('dialog');
-        fireEvent.click(screen.getByRole('button', { name: 'Blank diagram' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Empty database' }));
         await waitFor(async () =>
             expect((await adapter.list()).length).toBe(3)
         );
@@ -218,13 +219,11 @@ describe('New diagram dialog, creating (SHL-035, SHL-036, SHL-038, SHL-039, SHL-
         fireEvent.click(
             await screen.findByRole('radio', { name: /PostgreSQL/ })
         );
-        await screen.findByText('Start from existing work');
+        await screen.findByText('Import your Database');
         fireEvent.click(screen.getByText('toggle'));
         await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
         fireEvent.click(screen.getByText('toggle'));
-        expect(
-            await screen.findByText('Which database is this for?')
-        ).toBeTruthy();
+        expect(await screen.findByText('What is your Database?')).toBeTruthy();
     });
 });
 
@@ -263,9 +262,12 @@ describe('a big metadata script asks which tables to bring (SHL-037)', () => {
                 }}
             />
         );
-        fireEvent.change(screen.getByRole('textbox'), {
-            target: { value: text },
-        });
+        fireEvent.change(
+            screen.getByRole('textbox', { name: 'Query result' }),
+            {
+                target: { value: text },
+            }
+        );
         await waitFor(() => expect(last?.pending).toBe(false), {
             timeout: QUIET_MS + 3000,
         });

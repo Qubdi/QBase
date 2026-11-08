@@ -71,6 +71,8 @@ export const ka = {
                     searchLanguage: 'ენების ძიება',
                     showTools: 'ხელსაწყოების ზოლის ჩვენება',
                     hideTools: 'ხელსაწყოების ზოლის დამალვა',
+                    sidebarTitle: 'გვერდითი პანელი',
+                    sidebarDescription: 'აჩვენებს მობილურ გვერდით პანელს.',
                 },
                 name: {
                     label: 'დიაგრამის სახელი',
@@ -102,23 +104,26 @@ export const ka = {
                     },
                     view: {
                         label: 'ხედი',
-                        sidePanel: 'გვერდითი პანელი',
-                        cardinality: 'კავშირის კარდინალობა',
-                        fieldAttributes: 'ველის ატრიბუტები',
+                        sidePanel: 'გვერდითი პანელის დამალვა',
+                        sidePanelShow: 'გვერდითი პანელის ჩვენება',
+                        cardinality: 'კარდინალობის დამალვა',
+                        cardinalityShow: 'კარდინალობის ჩვენება',
+                        fieldAttributes: 'ველის ატრიბუტების დამალვა',
+                        fieldAttributesShow: 'ველის ატრიბუტების ჩვენება',
                         compactTables: 'კომპაქტური ცხრილები',
-                        minimap: 'მინირუკა',
+                        compactTablesStandard: 'სტანდარტული ცხრილები',
+                        minimap: 'მინირუკის დამალვა',
+                        minimapShow: 'მინირუკის ჩვენება',
                         views: 'მონაცემთა ბაზის ხედები',
-                        wheel: 'მაუსის ბორბალი',
-                        wheelPan: 'ხედს გადააადგილებს',
-                        wheelZoom: 'ხედს მასშტაბს შეუცვლის',
+                        wheel: 'მასშტაბი გადახვევისას',
+                        on: 'ჩართვა',
+                        off: 'გამორთვა',
                         theme: 'ფერთა თემა',
                         themes: {
-                            system: 'სისტემის მიხედვით',
+                            system: 'სისტემა',
                             light: 'ღია',
                             dark: 'მუქი',
                         },
-                        themeKey: 'ღიასა და მუქს შორის გადართვა',
-                        preferences: 'პარამეტრები',
                     },
                     backup: {
                         label: 'სარეზერვო ასლი',
@@ -137,9 +142,10 @@ export const ka = {
                     visuals: 'დამატებითი',
                 },
                 drawer: {
-                    title: 'დიაგრამის შიგთავსი',
-                    description: 'დიაგრამის ნაწილების დათვალიერება და შეცვლა',
+                    title: 'დიაგრამის მართვა',
+                    description: 'მართეთ თქვენი დიაგრამის ობიექტები',
                     sections: 'განყოფილება',
+                    viewAll: 'ყველა პარამეტრის ჩვენება...',
                     entries: {
                         tables: 'ცხრილები',
                         dbml: 'DBML',
@@ -221,7 +227,7 @@ export const ka = {
                 delete: {
                     title: 'წაიშალოს ეს დიაგრამა?',
                     description:
-                        '„{{name}}“ სამუდამოდ წაიშლება. ამის გაუქმება შეუძლებელია.',
+                        'ეს მოქმედება ვერ გაუქმდება. დიაგრამა სამუდამოდ წაიშლება.',
                     confirm: 'წაშლა',
                     failed: 'დიაგრამის წაშლა ვერ მოხერხდა',
                 },
@@ -370,6 +376,7 @@ export const ka = {
                     description:
                         'აირჩიეთ .json ფაილი, რომელიც QBase-იდან შეინახეთ. ის ახალ დიაგრამად დაემატება.',
                     drop: 'ჩააგდეთ ფაილი აქ ან დააწკაპუნეთ არჩევისთვის',
+                    types: 'მხარდაჭერილი ტიპები: .json',
                     action: 'იმპორტი',
                     invalid:
                         'ეს ფაილი QBase-იდან შენახული დიაგრამა არ არის, ამიტომ არაფერი დაიმპორტდა.',
@@ -377,7 +384,7 @@ export const ka = {
                 },
                 box: {
                     method: {
-                        metadata: 'მონაცემთა ბაზის მოთხოვნა',
+                        metadata: 'Smart Query',
                         sql: 'SQL სკრიპტი',
                         dbml: 'DBML',
                     },
@@ -391,8 +398,20 @@ export const ka = {
                         sql: 'ჩასვით CREATE TABLE ოპერატორები აქ',
                         dbml: 'ჩასვით DBML აქ',
                     },
-                    edition: 'გამოშვება',
-                    editionStandard: 'სტანდარტული',
+                    edition: 'მონაცემთა ბაზის გამოშვება:',
+                    editionStandard: 'რეგულარული',
+                    methodLabel: 'როგორ გსურთ იმპორტი?',
+                    instructions: 'ინსტრუქცია:',
+                    pasteHere: {
+                        metadata: '2. ჩასვით სკრიპტის შედეგი ამ ფანჯარაში →',
+                        sql: 'ჩასვით აქ თქვენი SQL სკრიპტი →',
+                        dbml: 'ჩასვით აქ თქვენი DBML სქემის აღწერა →',
+                    },
+                    output: {
+                        metadata: 'Smart Query-ის შედეგი',
+                        sql: 'SQL სკრიპტი',
+                        dbml: 'DBML სკრიპტი',
+                    },
                     editions: {
                         supabase: 'Supabase',
                         timescale: 'Timescale',
@@ -402,7 +421,7 @@ export const ka = {
                         cloudflare_d1: 'Cloudflare D1',
                     },
                     scriptIntro:
-                        'გაუშვით მოთხოვნა თქვენს მონაცემთა ბაზის კლიენტში, შემდეგ ჩასვით ქვემოთ ერთადერთი შედეგის უჯრა.',
+                        '1. გაუშვით ეს სკრიპტი თქვენს მონაცემთა ბაზაში:',
                     copyScript: 'მოთხოვნის კოპირება',
                     noScript:
                         'ამ მონაცემთა ბაზისთვის მზა მოთხოვნა ჯერ არ არის.',
@@ -458,8 +477,9 @@ export const ka = {
             },
             exporting: {
                 sql: {
-                    title: 'SQL: {{database}}',
-                    description: 'სკრიპტი მოიცავს ამჟამად ნაჩვენებ ცხრილებს.',
+                    title: 'SQL-ის ექსპორტი',
+                    description:
+                        'დიაგრამის სქემის ექსპორტი {{database}} სკრიპტად',
                     script: 'გენერირებული სკრიპტი',
                     copy: 'კოპირება',
                     copied: 'სკრიპტი დაკოპირდა',
@@ -474,10 +494,14 @@ export const ka = {
                     download: 'ჩამოტვირთვა',
                 },
                 image: {
-                    title: 'შენახვა როგორც {{format}}',
+                    title: 'სურათის ექსპორტი',
                     description:
                         'სურათზე მთელი დიაგრამა ჩანს, ახლა გამოყენებული ფერებით.',
-                    scale: 'ზომა',
+                    scale: 'მასშტაბი',
+                    scaleBest: '{{scale}}x (საუკეთესო ხარისხი)',
+                    advanced: 'დამატებითი პარამეტრები',
+                    patternHelp: 'ფონზე დახვეწილი ბადის დამატება.',
+                    transparentHelp: 'ფონის ფერის მოცილება სურათიდან.',
                     pattern: 'წერტილოვანი ფონის დახატვა',
                     transparent: 'გამჭვირვალე ფონი',
                     jpegNote:
@@ -526,6 +550,7 @@ export const ka = {
                     cancel: 'გაუქმება',
                     confirm: 'დადასტურება',
                     close: 'დახურვა',
+                    customColor: 'საკუთარი ფერი',
                 },
                 tables: {
                     add: 'ცხრილის დამატება',
@@ -575,6 +600,7 @@ export const ka = {
                     namePlaceholder: 'ველის სახელი',
                     typePlaceholder: 'ტიპი',
                     typeSearch: 'ტიპების ძიება',
+                    typeSearchPlaceholder: 'ძიება...',
                     noTypes: 'ტიპები ვერ მოიძებნა',
                     standardTypes: 'სტანდარტული ტიპები',
                     customTypes: 'მორგებული ტიპები',
@@ -682,6 +708,7 @@ export const ka = {
                     delete: 'წაშლა',
                     rename: 'ტიპის გადარქმევა',
                     kind: 'სახეობა',
+                    enumValues: 'Enum-ის მნიშვნელობები',
                     enum: 'Enum',
                     composite: 'კომპოზიტური',
                     valuePlaceholder: 'დაამატეთ enum-ის მნიშვნელობა...',
@@ -833,6 +860,7 @@ export const ka = {
                 materializedView: 'მატერიალიზებული ხედი',
                 fieldCount_other: '{{count}} ველი',
                 fieldCount_one: '{{count}} ველი',
+                focus: 'კანვასზე ფოკუსირება',
                 openInPanel: 'გახსნა გვერდით პანელში',
                 widen: 'გაგანიერება',
                 narrow: 'დავიწროება',
@@ -847,6 +875,7 @@ export const ka = {
             },
             fieldCard: {
                 type: 'ტიპი',
+                key: 'გასაღები',
                 nullable: 'Nullable',
                 notNull: 'Not null',
                 unique: 'უნიკალური',
@@ -878,6 +907,7 @@ export const ka = {
             memo: {
                 placeholder: 'ცარიელი შენიშვნა',
                 edit: 'შენიშვნის ტექსტი',
+                editNote: 'ჩანაწერის რედაქტირება',
                 colour: 'შენიშვნის ფერი',
             },
             menu: {

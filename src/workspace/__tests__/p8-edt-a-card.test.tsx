@@ -53,7 +53,7 @@ describe('p8 EDT-088 to EDT-095, EDT-118 the edit card', () => {
             within(card).getByRole('button', { name: 'Primary key' })
         ).toBeTruthy();
         expect(
-            within(card).getByRole('button', { name: 'Field attributes' })
+            within(card).getByRole('button', { name: 'Field Attributes' })
         ).toBeTruthy();
     });
 
@@ -61,7 +61,7 @@ describe('p8 EDT-088 to EDT-095, EDT-118 the edit card', () => {
         const { users } = mount();
         const card = await openCard(users, 'users');
         fireEvent.click(
-            within(card).getAllByRole('button', { name: 'Add field' }).at(-1)!
+            within(card).getAllByRole('button', { name: 'Add Field' }).at(-1)!
         );
         await waitFor(() => {
             const last = within(card).getAllByLabelText('Field name').at(-1)!;
@@ -98,7 +98,7 @@ describe('p8 EDT-088 to EDT-095, EDT-118 the edit card', () => {
         );
         fireEvent.click(
             within(screen.getByTestId('pointer-menu')).getByText(
-                'Add relationship'
+                'Add Relationship'
             )
         );
         await gone('users');

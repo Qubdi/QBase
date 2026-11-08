@@ -92,7 +92,7 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
             open={dialog.open}
             onOpenChange={(open) => !open && !busy && close()}
         >
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
                         {t('editor.importing.file.title')}
@@ -104,6 +104,7 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
                 <FileUploader
                     accept=".json,application/json"
                     label={t('editor.importing.file.drop')}
+                    hint={t('editor.importing.file.types')}
                     chosen={file?.name}
                     disabled={busy}
                     onFilesChange={(files) => {
@@ -117,7 +118,7 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
                     </p>
                 ) : null}
                 <DialogFooter>
-                    <Button variant="outline" onClick={close} disabled={busy}>
+                    <Button variant="secondary" onClick={close} disabled={busy}>
                         {t('editor.common.cancel')}
                     </Button>
                     <Button onClick={() => void run()} disabled={!file || busy}>

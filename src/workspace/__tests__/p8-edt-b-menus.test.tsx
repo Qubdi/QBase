@@ -66,9 +66,7 @@ describe('EDT-226 Clear asks first and empties the history', () => {
         expect(store.getState().design.entities.order).toHaveLength(2);
         expect(store.getState().history.undo.length).toBeGreaterThan(0);
 
-        fireEvent.click(
-            within(alert).getByRole('button', { name: 'Empty it' })
-        );
+        fireEvent.click(within(alert).getByRole('button', { name: 'Clear' }));
         expect(store.getState().design.entities.order).toHaveLength(0);
         expect(store.getState().history.undo).toHaveLength(0);
         expect(store.getState().history.redo).toHaveLength(0);
@@ -79,7 +77,7 @@ describe('EDT-251 the menu bar', () => {
     it('has the diagram (Actions), Edit, View and Backup menus (SHL-064)', () => {
         renderInEditor(<Menus commands={{}} />, { design: blank() });
         const names = screen.getAllByRole('menuitem').map((m) => m.textContent);
-        expect(names).toEqual(['Diagram', 'Edit', 'View', 'Backup']);
+        expect(names).toEqual(['Actions', 'Edit', 'View', 'Backup']);
     });
 });
 
@@ -91,8 +89,8 @@ describe('EDT-252 View > side panel', () => {
             { design: blank() }
         );
         await openMenu('View');
-        const item = screen.getByRole('menuitemcheckbox', {
-            name: /Side panel/,
+        const item = screen.getByRole('menuitem', {
+            name: /Hide Sidebar/,
         });
         expect(item.textContent).toMatch(/Ctrl\+B/);
         fireEvent.click(item);
@@ -105,14 +103,14 @@ describe('EDT-253 View > Theme', () => {
         renderInEditor(<Menus commands={{}} />, { design: blank() });
         await openMenu('View');
         fireEvent.keyDown(
-            await screen.findByRole('menuitem', { name: /Color theme/ }),
+            await screen.findByRole('menuitem', { name: /Theme/ }),
             {
                 key: 'ArrowRight',
             }
         );
         const radios = await screen.findAllByRole('menuitemradio');
         expect(radios.map((r) => r.textContent)).toEqual([
-            'Match system',
+            'System',
             'Light',
             'Dark',
         ]);
@@ -126,10 +124,9 @@ describe('EDT-254 display preferences live in the browser, not in the diagram', 
         const design = withTables(['a']);
         const { store } = renderInEditor(<Menus commands={{}} />, { design });
         await openMenu('View');
-        const item = screen.getByRole('menuitemcheckbox', {
-            name: /Relationship cardinality/,
+        const item = screen.getByRole('menuitem', {
+            name: /Hide Cardinality/,
         });
-        expect(item.getAttribute('aria-checked')).toBe('true');
         fireEvent.click(item);
         await waitFor(() =>
             expect(localStorage.getItem('show_cardinality')).toBe('false')
@@ -155,10 +152,10 @@ describe('EDT-258 Delete diagram', () => {
                 undefined,
                 wrap
             );
-            await openMenu('Diagram');
+            await openMenu('Actions');
             expect(
                 !!screen.queryByRole('menuitem', {
-                    name: 'Delete this diagram',
+                    name: 'Delete',
                 })
             ).toBe(shown);
             view.unmount();

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Globe } from 'lucide-react';
+import { Check, ChevronsUpDown, Globe } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
 import { SearchInput } from '@/components/qubdi/search-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/ui/popover';
@@ -15,6 +15,7 @@ export const LanguageButton: React.FC = () => {
     const { t, i18n } = useTranslation();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
+    const [listOpen, setListOpen] = useState(false);
     const needle = search.trim().toLowerCase();
     const shown = languages.filter(
         (l) =>
@@ -31,57 +32,78 @@ export const LanguageButton: React.FC = () => {
             open={open}
             onOpenChange={(next) => {
                 setOpen(next);
-                if (next) setSearch('');
+                if (next) {
+                    setSearch('');
+                    setListOpen(false);
+                }
             }}
         >
             <PopoverTrigger asChild>
                 <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    aria-label={t('editor.workspace.navbar.language')}
+                    className="size-8 rounded-full"
                 >
                     <Globe />
+                    <span className="sr-only">
+                        {t('editor.workspace.navbar.language')}
+                    </span>
                 </Button>
             </PopoverTrigger>
             <PopoverContent
                 align="end"
                 aria-label={t('editor.workspace.navbar.language')}
-                className="max-h-80 w-56 overflow-auto p-1"
+                className="w-56 rounded-lg p-1.5"
             >
-                <div className="p-1">
-                    <SearchInput
-                        value={search}
-                        onChange={setSearch}
-                        placeholder={t(
-                            'editor.workspace.navbar.searchLanguage'
-                        )}
-                    />
-                </div>
-                <div
-                    role="radiogroup"
-                    aria-label={t('editor.workspace.navbar.language')}
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={listOpen}
+                    className="w-full justify-between font-normal"
+                    onClick={() => setListOpen((v) => !v)}
                 >
-                    {shown.map((l) => (
-                        <button
-                            key={l.code}
-                            type="button"
-                            role="radio"
-                            aria-checked={l.code === current}
-                            onClick={() => {
-                                void i18n.changeLanguage(l.code);
-                                setOpen(false);
-                            }}
-                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-sm hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:outline-none"
+                    {languages.find((l) => l.code === current)?.nativeName}
+                    <ChevronsUpDown className="opacity-50" />
+                </Button>
+                {listOpen ? (
+                    <>
+                        <div className="py-1">
+                            <SearchInput
+                                value={search}
+                                onChange={setSearch}
+                                placeholder={t(
+                                    'editor.workspace.navbar.searchLanguage'
+                                )}
+                            />
+                        </div>
+                        <div
+                            role="radiogroup"
+                            aria-label={t('editor.workspace.navbar.language')}
+                            className="max-h-60 overflow-auto"
                         >
-                            <span className="flex size-4 items-center justify-center">
-                                {l.code === current ? (
-                                    <Check className="size-4" />
-                                ) : null}
-                            </span>
-                            {labelOf(l)}
-                        </button>
-                    ))}
-                </div>
+                            {shown.map((l) => (
+                                <button
+                                    key={l.code}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={l.code === current}
+                                    onClick={() => {
+                                        void i18n.changeLanguage(l.code);
+                                        setOpen(false);
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-sm hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:outline-none"
+                                >
+                                    <span className="flex size-4 items-center justify-center">
+                                        {l.code === current ? (
+                                            <Check className="size-4" />
+                                        ) : null}
+                                    </span>
+                                    {labelOf(l)}
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                ) : null}
             </PopoverContent>
         </Popover>
     );

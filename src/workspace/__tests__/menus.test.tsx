@@ -51,7 +51,7 @@ describe('export targets (EXP-001, EXP-007, EXP-008)', () => {
 describe('navbar menus (SHL-050 to SHL-063)', () => {
     it('has the four menus, Backup last (SHL-064)', () => {
         renderInEditor(<Menus commands={{}} />, { design: blank() });
-        expect(screen.getByRole('menuitem', { name: 'Diagram' })).toBeTruthy();
+        expect(screen.getByRole('menuitem', { name: 'Actions' })).toBeTruthy();
         expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeTruthy();
         expect(screen.getByRole('menuitem', { name: 'View' })).toBeTruthy();
         expect(screen.getByRole('menuitem', { name: 'Backup' })).toBeTruthy();
@@ -86,7 +86,7 @@ describe('navbar menus (SHL-050 to SHL-063)', () => {
         await openMenu('Edit');
         expect(
             screen
-                .getByRole('menuitem', { name: /Empty the diagram/ })
+                .getByRole('menuitem', { name: /Clear/ })
                 .getAttribute('data-disabled')
         ).not.toBeNull();
     });
@@ -98,10 +98,7 @@ describe('navbar menus (SHL-050 to SHL-063)', () => {
             { design: blank() }
         );
         await openMenu('View');
-        const item = screen.getByRole('menuitemcheckbox', {
-            name: /Side panel/,
-        });
-        expect(item.getAttribute('aria-checked')).toBe('true');
+        const item = screen.getByRole('menuitem', { name: /Hide Sidebar/ });
         fireEvent.click(item);
         await waitFor(() => expect(toggled).toBe(1));
     });

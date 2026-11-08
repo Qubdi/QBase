@@ -44,7 +44,7 @@ const DropdownMenuSubContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <MenuPrimitive.SubContent
         ref={ref}
-        className={cn(panelBase, 'shadow-lg', className)}
+        className={cn(panelBase, 'shadow-md', className)}
         {...props}
     />
 ));

@@ -26,12 +26,6 @@ import {
 import { LintSettingsDialog } from './lint-settings-dialog';
 
 const SEVERITY_ORDER: LintSeverity[] = ['error', 'warning', 'info'];
-const SEVERITY_CLASS: Record<LintSeverity, string> = {
-    error: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    warning:
-        'bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100',
-    info: 'bg-sky-100 text-sky-900 dark:bg-sky-900 dark:text-sky-100',
-};
 // the side panel animates its width for 200ms (editor-desktop-layout.tsx)
 const SIDE_PANEL_SETTLE_MS = 220;
 
@@ -161,7 +155,7 @@ export const LintControl: React.FC = () => {
             <Button
                 variant="outline"
                 size="sm"
-                className="gap-1"
+                className="gap-1 aria-pressed:bg-accent aria-pressed:text-accent-foreground"
                 aria-pressed={open}
                 onClick={() => setOpen((v) => !v)}
             >
@@ -170,15 +164,7 @@ export const LintControl: React.FC = () => {
                 {summary.total > 0 ? (
                     <span
                         data-testid="lint-badge"
-                        className={`rounded-full px-1.5 text-[10px] font-semibold ${
-                            SEVERITY_CLASS[
-                                summary.error > 0
-                                    ? 'error'
-                                    : summary.warning > 0
-                                      ? 'warning'
-                                      : 'info'
-                            ]
-                        }`}
+                        className="rounded-full bg-card/70 px-1.5 text-[11px] font-semibold leading-4 text-muted-foreground"
                     >
                         {summary.total}
                     </span>
@@ -191,10 +177,10 @@ export const LintControl: React.FC = () => {
                       <aside
                           aria-label={t('qubdi.database.lint.panel')}
                           data-testid="lint-panel"
-                          className="fixed bottom-3 right-3 top-14 z-50 flex w-96 max-w-[calc(100vw-1.5rem)] flex-col gap-3 overflow-y-auto rounded-md border bg-background p-3 text-sm shadow-lg"
+                          className="fixed bottom-4 right-4 top-14 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-3 overflow-y-auto rounded-md border bg-card p-3 text-sm shadow-lg"
                       >
                           <div className="flex items-center justify-between">
-                              <h2 className="font-semibold">
+                              <h2 className="text-sm font-semibold leading-5">
                                   {t('qubdi.database.lint.heading', {
                                       errors: summary.error,
                                       warnings: summary.warning,
@@ -271,9 +257,7 @@ export const LintControl: React.FC = () => {
                                                           if (id) showTable(id);
                                                       }}
                                                   >
-                                                      <span
-                                                          className={`mr-1 rounded px-1 text-[10px] font-semibold uppercase ${SEVERITY_CLASS[f.severity]}`}
-                                                      >
+                                                      <span className="mr-1 font-mono text-xs uppercase text-primary">
                                                           {f.ruleId}
                                                       </span>
                                                       {f.message}

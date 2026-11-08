@@ -89,7 +89,7 @@ describe('editor frame (EDT-001 to EDT-010, SHL-050)', () => {
     it('Ctrl+O opens the Open dialog in local mode', async () => {
         frame();
         fireEvent.keyDown(document.body, { key: 'o', ctrlKey: true });
-        expect(await screen.findByText('Your diagrams')).toBeTruthy();
+        expect(await screen.findByText('Open Database')).toBeTruthy();
     });
 
     it('Ctrl+M flips the theme, also inside a text box', async () => {
@@ -123,10 +123,14 @@ describe('editor frame (EDT-001 to EDT-010, SHL-050)', () => {
 describe('rail (SHL-051 to SHL-056)', () => {
     it('the Custom types entry only exists for a database with custom types', () => {
         const pg = renderInEditor(<Rail />, { design: blank('postgresql') });
-        expect(screen.getByRole('button', { name: 'Types' })).toBeTruthy();
+        expect(
+            screen.getByRole('button', { name: 'Custom Types' })
+        ).toBeTruthy();
         pg.unmount();
         renderInEditor(<Rail />, { design: blank('mysql') });
-        expect(screen.queryByRole('button', { name: 'Types' })).toBeNull();
+        expect(
+            screen.queryByRole('button', { name: 'Custom Types' })
+        ).toBeNull();
     });
 
     it('choosing a section shows the panel on it; Extras opens on Areas', () => {
@@ -134,19 +138,19 @@ describe('rail (SHL-051 to SHL-056)', () => {
             design: blank('postgresql'),
             panelOpen: false,
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Links' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Refs' }));
         expect(store.getState().ui.panel).toMatchObject({
             open: true,
             section: 'refs',
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Extras' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Visuals' }));
         expect(store.getState().ui.panel).toMatchObject({
             section: 'visuals',
             visualsTab: 'areas',
         });
         expect(
             screen
-                .getByRole('button', { name: 'Extras' })
+                .getByRole('button', { name: 'Visuals' })
                 .getAttribute('aria-pressed')
         ).toBe('true');
     });
@@ -206,7 +210,7 @@ describe('import into the open diagram (IMP-075, IMP-076, spec 16.2)', () => {
             }
         );
         const apply = screen.getByRole('button', {
-            name: 'Add to diagram',
+            name: 'Import',
         }) as HTMLButtonElement;
         await waitFor(() => expect(apply.disabled).toBe(false), {
             timeout: 3000,
@@ -233,9 +237,7 @@ describe('Clear (EDT-224)', () => {
         );
         const alert = await screen.findByRole('alertdialog');
         expect(store.getState().design.entities.order).toHaveLength(2);
-        fireEvent.click(
-            within(alert).getByRole('button', { name: 'Empty it' })
-        );
+        fireEvent.click(within(alert).getByRole('button', { name: 'Clear' }));
         const next = store.getState().design;
         expect(next.entities.order).toHaveLength(0);
         expect(next.id).toBe(design.id);

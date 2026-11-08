@@ -110,7 +110,7 @@ export const ImportDatabaseDialog: React.FC<ImportDatabaseDialogProps> = ({
             open={dialog.open}
             onOpenChange={(open) => !open && closeImportDatabaseDialog()}
         >
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-[900px]">
                 <DialogHeader>
                     <DialogTitle>
                         {t('editor.importing.into.title')}

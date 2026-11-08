@@ -52,11 +52,11 @@ export const MobilePanel: React.FC = () => {
                 <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
                 <Drawer.Content
                     aria-describedby="mobile-panel-description"
-                    className="fixed inset-x-0 bottom-0 z-50 flex h-[85dvh] flex-col rounded-t-xl border bg-background"
+                    className="fixed inset-x-0 bottom-0 z-50 flex h-dvh flex-col border bg-background"
                 >
-                    <div className="mx-auto mt-2 h-1.5 w-12 shrink-0 rounded-full bg-muted" />
-                    <div className="px-4 pb-2 pt-3">
-                        <Drawer.Title className="text-base font-semibold">
+                    <div className="mx-auto mt-4 h-2 w-24 shrink-0 rounded-full bg-muted" />
+                    <div className="px-4 pb-3 pt-3 text-center">
+                        <Drawer.Title className="text-lg font-semibold leading-7">
                             {t('editor.workspace.drawer.title')}
                         </Drawer.Title>
                         <Drawer.Description
@@ -66,10 +66,18 @@ export const MobilePanel: React.FC = () => {
                             {t('editor.workspace.drawer.description')}
                         </Drawer.Description>
                     </div>
-                    <div className="px-4 pb-2">
+                    <div className="flex items-center justify-between gap-2 border-y px-3 py-2">
+                        <span className="text-sm font-semibold">
+                            {t(
+                                `editor.workspace.drawer.entries.${entryOf(section, tab)}`
+                            )}
+                        </span>
                         <OptionSelect
                             aria-label={t('editor.workspace.drawer.sections')}
-                            value={entryOf(section, tab)}
+                            value=""
+                            placeholder={t('editor.workspace.drawer.viewAll')}
+                            size="sm"
+                            className="h-6 w-auto gap-1 border-0 px-1 text-xs shadow-none"
                             onValueChange={(v) => {
                                 const next = target(v as Entry);
                                 store

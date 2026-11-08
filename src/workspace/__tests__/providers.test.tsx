@@ -34,9 +34,7 @@ describe('dialog provider (spec B2, P9)', () => {
     it('opens the local dialogs outside a project', async () => {
         renderInEditor(<Openers />, { design: blank() });
         fireEvent.click(screen.getByText('make'));
-        expect(
-            await screen.findByText('Which database is this for?')
-        ).toBeTruthy();
+        expect(await screen.findByText('What is your Database?')).toBeTruthy();
     });
 
     it('opens the QBase project dialogs inside a project workspace', async () => {
@@ -68,13 +66,13 @@ describe('dialog provider (spec B2, P9)', () => {
         expect(
             await screen.findByRole('button', { name: /create/i })
         ).toBeTruthy();
-        expect(screen.queryByText('Which database is this for?')).toBeNull();
+        expect(screen.queryByText('What is your Database?')).toBeNull();
     });
 
     it('the open dialog takes a can-close flag', async () => {
         renderInEditor(<Openers />, { design: blank() });
         fireEvent.click(screen.getByText('browse'));
-        await screen.findByText('Your diagrams');
+        await screen.findByText('Open Database');
         expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     });
 
@@ -88,9 +86,7 @@ describe('dialog provider (spec B2, P9)', () => {
 describe('start flow (spec A3)', () => {
     it('with nothing stored it asks for a new diagram and cannot be dismissed', async () => {
         renderInEditor(<StartFlow />, null, '/');
-        expect(
-            await screen.findByText('Which database is this for?')
-        ).toBeTruthy();
+        expect(await screen.findByText('What is your Database?')).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
     });
 
@@ -98,7 +94,7 @@ describe('start flow (spec A3)', () => {
         const adapter = new MemoryStorageAdapter();
         await adapter.save(withTables(['a']));
         renderInEditor(<StartFlow />, null, '/', adapter);
-        expect(await screen.findByText('Your diagrams')).toBeTruthy();
+        expect(await screen.findByText('Open Database')).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     });
 });

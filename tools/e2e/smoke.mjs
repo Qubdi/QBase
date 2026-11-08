@@ -236,7 +236,7 @@ await step('03b second table and a relationship', async () => {
     );
     await page.getByRole('button', { name: 'Links' }).click();
     await page
-        .getByRole('button', { name: 'Add relationship' })
+        .getByRole('button', { name: 'Add Relationship' })
         .first()
         .click();
     const d = page.getByRole('dialog');

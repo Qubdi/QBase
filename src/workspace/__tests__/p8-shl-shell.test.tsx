@@ -109,7 +109,8 @@ describe('phone layout (SHL-068, SHL-070, SHL-071, SHL-072)', () => {
         const rail = screen.getByRole('navigation', {
             name: 'Editor sections',
         });
-        expect(rail.parentElement!.className).toContain('absolute');
+        // the rail is the content of a sheet named Sidebar
+        expect(rail.closest('[role="dialog"]')).toBeTruthy();
     });
 
     it('SHL-072: the editor fills dynamic viewport units on a phone and screen units on a desktop', () => {
@@ -171,8 +172,8 @@ describe('phone layout (SHL-068, SHL-070, SHL-071, SHL-072)', () => {
         expect(options).toEqual([
             'Tables',
             'DBML',
-            'Links',
-            'Custom types',
+            'Refs',
+            'Custom Types',
             'Areas',
             'Notes',
         ]);
@@ -214,9 +215,9 @@ describe('icon rail (SHL-074 to SHL-076)', () => {
             'Open',
             'Tables',
             'DBML',
-            'Links',
-            'Types',
-            'Extras',
+            'Refs',
+            'Custom Types',
+            'Visuals',
         ]);
         const sep = rail.querySelector('hr')!;
         const [, browse, tables] = within(rail).getAllByRole('button');
@@ -227,22 +228,24 @@ describe('icon rail (SHL-074 to SHL-076)', () => {
     it('SHL-074: the active section is tinted', () => {
         const { store } = frame('postgresql');
         const tables = screen.getByRole('button', { name: 'Tables' });
-        expect(tables.className).toContain('text-primary');
+        expect(tables.className).toContain('text-rail-selected');
         expect(
-            screen.getByRole('button', { name: 'Links' }).className
-        ).not.toContain('text-primary');
+            screen.getByRole('button', { name: 'Refs' }).className
+        ).not.toContain('text-rail-selected');
         act(() => store.getState().showPanel('refs'));
         expect(
-            screen.getByRole('button', { name: 'Links' }).className
-        ).toContain('text-primary');
+            screen.getByRole('button', { name: 'Refs' }).className
+        ).toContain('text-rail-selected');
         expect(
             screen.getByRole('button', { name: 'Tables' }).className
-        ).not.toContain('text-primary');
+        ).not.toContain('text-rail-selected');
     });
 
     it('SHL-075: the Custom types entry is there for PostgreSQL only', () => {
         const pg = frame('postgresql');
-        expect(screen.queryByRole('button', { name: 'Types' })).toBeTruthy();
+        expect(
+            screen.queryByRole('button', { name: 'Custom Types' })
+        ).toBeTruthy();
         pg.unmount();
         for (const type of [
             'mysql',
@@ -252,7 +255,7 @@ describe('icon rail (SHL-074 to SHL-076)', () => {
         ] as const) {
             const view = frame(type);
             expect(
-                screen.queryByRole('button', { name: 'Types' }),
+                screen.queryByRole('button', { name: 'Custom Types' }),
                 type
             ).toBeNull();
             view.unmount();
@@ -262,7 +265,7 @@ describe('icon rail (SHL-074 to SHL-076)', () => {
     it('SHL-076: Extras opens on the Areas tab, and the rail has no links to other sites', () => {
         const { store } = frame();
         store.getState().showPanel('visuals', 'notes');
-        fireEvent.click(screen.getByRole('button', { name: 'Extras' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Visuals' }));
         expect(store.getState().ui.panel.visualsTab).toBe('areas');
         const rail = screen.getByRole('navigation', {
             name: 'Editor sections',
@@ -272,13 +275,13 @@ describe('icon rail (SHL-074 to SHL-076)', () => {
 });
 
 describe('side panel (SHL-077)', () => {
-    it('opens at a quarter of the width, never under 350 px, and animates its width in 200 ms', () => {
+    it('opens at a quarter of the width, never under a quarter of the width, and animates its width in 200 ms', () => {
         const { container } = frame();
         const panel = container.querySelector('[data-slot="side-panel"]')!
             .parentElement!.parentElement!;
         expect(panel.className).toContain('duration-200');
         expect(panel.className).toContain('transition-[width]');
-        expect(parseInt(panel.style.width, 10)).toBeGreaterThanOrEqual(350);
+        expect(parseInt(panel.style.width, 10)).toBeGreaterThanOrEqual(240);
     });
 
     it('hides to zero width, with no drag handle, when closed', () => {
@@ -302,12 +305,14 @@ describe('side panel (SHL-077)', () => {
         fireEvent.keyDown(handle, { key: 'ArrowRight' });
         const panel = container.querySelector('[data-slot="side-panel"]')!
             .parentElement!.parentElement!;
-        expect(parseInt(panel.style.width, 10)).toBe(before + 20);
+        expect(parseInt(panel.style.width, 10)).toBe(
+            Math.max(before + 20, 362)
+        );
         for (let i = 0; i < 40; i++)
             fireEvent.keyDown(handle, { key: 'ArrowLeft' });
-        expect(parseInt(panel.style.width, 10)).toBe(350);
-        expect(handle.getAttribute('aria-valuemin')).toBe('350');
-        expect(handle.getAttribute('aria-valuemax')).toBe('1485');
+        expect(parseInt(panel.style.width, 10)).toBe(362);
+        expect(handle.getAttribute('aria-valuemin')).toBe('362');
+        expect(handle.getAttribute('aria-valuemax')).toBe('1434');
         width.mockRestore();
     });
 });

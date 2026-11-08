@@ -36,7 +36,7 @@ export const ExportJsonDialog: React.FC<ExportJsonDialogProps> = ({
 
     return (
         <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
                         {t('editor.exporting.json.title')}

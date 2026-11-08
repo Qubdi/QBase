@@ -35,26 +35,32 @@ const RailButton: React.FC<{
     icon: LucideIcon;
     label: string;
     active?: boolean;
+    /** icon and label side by side (the phone drawer) instead of stacked */
+    row?: boolean;
     onClick: () => void;
-}> = ({ icon: Icon, label, active, onClick }) => (
+}> = ({ icon: Icon, label, active, row, onClick }) => (
     <button
         type="button"
         onClick={onClick}
         title={label}
         aria-pressed={active}
         className={cn(
-            'flex w-full flex-col items-center gap-1 rounded-md px-1 py-2 text-center text-[11px] leading-tight hover:bg-accent',
-            label.length > 9 && 'px-0',
-            active && 'bg-primary/10 text-primary'
+            'flex w-full items-center rounded-md text-sidebar-foreground transition-colors hover:bg-rail-hover',
+            row
+                ? 'min-h-8 gap-2 px-2 py-1 text-start text-sm'
+                : 'flex-col gap-1.5 px-0 py-2 text-center text-[10px] font-normal leading-tight',
+            active &&
+                'bg-sidebar-accent font-medium text-rail-selected hover:bg-sidebar-accent'
         )}
     >
-        <Icon className="size-5" />
+        <Icon className="size-4" />
         <span
-            className={cn(
-                '[overflow-wrap:anywhere]',
-                // a long word (German "Beziehungen") must fit the rail
-                label.length > 9 && 'text-[10px] leading-[1.1] tracking-tight'
-            )}
+            className={
+                // one long word (German "Beziehungen") must still fit the rail
+                row || /\s/.test(label) || label.length <= 8
+                    ? 'break-words'
+                    : '[overflow-wrap:anywhere]'
+            }
         >
             {label}
         </span>
@@ -65,7 +71,10 @@ const RailButton: React.FC<{
  * The icon rail on the left (spec A7): New and Browse, then one button per
  * section of the side panel. Choosing a section shows the panel on it.
  */
-export const Rail: React.FC<{ onAction?: () => void }> = ({ onAction }) => {
+export const Rail: React.FC<{ onAction?: () => void; row?: boolean }> = ({
+    onAction,
+    row,
+}) => {
     const { t } = useTranslation();
     const dialogs = useDialog();
     const store = useEditorStoreApi();
@@ -76,10 +85,14 @@ export const Rail: React.FC<{ onAction?: () => void }> = ({ onAction }) => {
     return (
         <nav
             aria-label={t('editor.workspace.rail.label')}
-            className="flex h-full w-[4.5rem] shrink-0 flex-col gap-1 overflow-y-auto border-r bg-background p-1"
+            className={cn(
+                'flex h-full shrink-0 flex-col gap-1 overflow-y-auto bg-background p-2',
+                row ? 'w-full' : 'w-[52px] border-r'
+            )}
         >
             <RailButton
                 icon={Plus}
+                row={row}
                 label={t('editor.workspace.rail.new')}
                 onClick={() => {
                     dialogs.openCreateDiagramDialog();
@@ -88,18 +101,20 @@ export const Rail: React.FC<{ onAction?: () => void }> = ({ onAction }) => {
             />
             <RailButton
                 icon={FolderOpen}
+                row={row}
                 label={t('editor.workspace.rail.browse')}
                 onClick={() => {
                     dialogs.openOpenDiagramDialog({ canClose: true });
                     onAction?.();
                 }}
             />
-            <hr className="my-1" />
+            <hr className="mx-auto my-1 w-9" />
             {SECTIONS.filter((s) => !s.userTypes || hasUserTypes).map(
                 ({ section, icon }) => (
                     <RailButton
                         key={section}
                         icon={icon}
+                        row={row}
                         label={t(`editor.workspace.rail.${section}`)}
                         active={panel.open && panel.section === section}
                         onClick={() => {

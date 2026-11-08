@@ -43,17 +43,13 @@ const labels = (items: HTMLElement[]) => items.map((i) => i.textContent ?? '');
 describe('Diagram menu (SHL-057 to SHL-060)', () => {
     it('SHL-057: Import offers the .json file, then SQL and DBML, both limited to their own method', async () => {
         const dialogs = show('postgresql');
-        await openMenu('Diagram');
-        await openSub(/Import from/);
+        await openMenu('Actions');
+        await openSub(/^Import$/);
         const items = await screen.findAllByRole('menuitem', {
-            name: /Diagram file|SQL script|DBML text/,
+            name: /^(\.json|SQL|DBML)$/,
         });
-        expect(labels(items)).toEqual([
-            'Diagram file (.json)',
-            'SQL script',
-            'DBML text',
-        ]);
-        fireEvent.click(screen.getByRole('menuitem', { name: 'SQL script' }));
+        expect(labels(items)).toEqual(['.json', 'SQL', 'DBML']);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'SQL' }));
         expect(dialogs.openImportDatabaseDialog).toHaveBeenCalledWith({
             methods: ['sql'],
             initial: 'sql',
@@ -62,11 +58,9 @@ describe('Diagram menu (SHL-057 to SHL-060)', () => {
 
     it('SHL-057: DBML opens the import dialog on the DBML method; the file item opens the .json import', async () => {
         const dialogs = show('mysql');
-        await openMenu('Diagram');
-        await openSub(/Import from/);
-        fireEvent.click(
-            await screen.findByRole('menuitem', { name: 'DBML text' })
-        );
+        await openMenu('Actions');
+        await openSub(/^Import$/);
+        fireEvent.click(await screen.findByRole('menuitem', { name: 'DBML' }));
         expect(dialogs.openImportDatabaseDialog).toHaveBeenCalledWith({
             methods: ['dbml'],
             initial: 'dbml',
@@ -75,8 +69,8 @@ describe('Diagram menu (SHL-057 to SHL-060)', () => {
 
     it('SHL-058: Export SQL lists the own database first, then the others once each', async () => {
         const dialogs = show('mysql');
-        await openMenu('Diagram');
-        await openSub(/Export SQL for/);
+        await openMenu('Actions');
+        await openSub(/^Export SQL$/);
         const items = await screen.findAllByRole('menuitem', {
             name: /^(PostgreSQL|MySQL|SQL Server|MariaDB|SQLite|Oracle|ClickHouse|CockroachDB|Generic)$/,
         });
@@ -93,27 +87,22 @@ describe('Diagram menu (SHL-057 to SHL-060)', () => {
 
     it('SHL-059: PNG and JPG open an options dialog, SVG goes at once, JSON opens the export dialog', async () => {
         const dialogs = show('postgresql');
-        await openMenu('Diagram');
-        await openSub(/Save as/);
+        await openMenu('Actions');
+        await openSub(/^Export as$/);
         const items = await screen.findAllByRole('menuitem', {
-            name: /PNG image|JPEG image|SVG image|Diagram file/,
+            name: /^(PNG|JPG|SVG|JSON)$/,
         });
-        expect(labels(items)).toEqual([
-            'PNG image',
-            'JPEG image',
-            'SVG image',
-            'Diagram file (.json)',
-        ]);
+        expect(labels(items)).toEqual(['PNG', 'JPG', 'SVG', 'JSON']);
         fireEvent.click(items[0]);
         expect(dialogs.openExportImageDialog).toHaveBeenCalledWith('png');
     });
 
     it('SHL-059: the JSON item opens the export dialog', async () => {
         const dialogs = show('postgresql');
-        await openMenu('Diagram');
-        await openSub(/Save as/);
+        await openMenu('Actions');
+        await openSub(/^Export as$/);
         const items = await screen.findAllByRole('menuitem', {
-            name: 'Diagram file (.json)',
+            name: 'JSON',
         });
         fireEvent.click(items[0]);
         expect(dialogs.openExportJsonDialog).toHaveBeenCalled();
@@ -121,11 +110,11 @@ describe('Diagram menu (SHL-057 to SHL-060)', () => {
 
     it('SHL-060: Delete this diagram is the last item, set apart and red', async () => {
         const dialogs = show('postgresql');
-        await openMenu('Diagram');
+        await openMenu('Actions');
         const menu = screen.getByRole('menu');
         const items = within(menu).getAllByRole('menuitem');
         const last = items[items.length - 1];
-        expect(last.textContent).toBe('Delete this diagram');
+        expect(last.textContent).toBe('Delete');
         expect(last.className).toContain('text-destructive');
         fireEvent.click(last);
         expect(dialogs.openDeleteDiagramDialog).toHaveBeenCalled();
@@ -137,7 +126,7 @@ describe('Backup menu (SHL-064)', () => {
         const dialogs = show('postgresql');
         await openMenu('Backup');
         const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
-        expect(labels(items)).toEqual(['Export diagram', 'Restore diagram']);
+        expect(labels(items)).toEqual(['Export Diagram', 'Restore Diagram']);
         fireEvent.click(items[0]);
         expect(dialogs.openExportJsonDialog).toHaveBeenCalled();
     });
@@ -146,15 +135,15 @@ describe('Backup menu (SHL-064)', () => {
         const dialogs = show('postgresql');
         await openMenu('Backup');
         fireEvent.click(
-            await screen.findByRole('menuitem', { name: 'Restore diagram' })
+            await screen.findByRole('menuitem', { name: 'Restore Diagram' })
         );
         expect(dialogs.openImportDiagramDialog).toHaveBeenCalled();
     });
 
     it('EXP-008: an Oracle diagram offers itself first in Export SQL and can import SQL; ClickHouse cannot import SQL', async () => {
         const dialogs = show('oracle');
-        await openMenu('Diagram');
-        await openSub(/Export SQL for/);
+        await openMenu('Actions');
+        await openSub(/^Export SQL$/);
         const items = await screen.findAllByRole('menuitem', {
             name: /^(PostgreSQL|MySQL|SQL Server|MariaDB|SQLite|Oracle)$/,
         });
@@ -165,89 +154,80 @@ describe('Backup menu (SHL-064)', () => {
 });
 
 describe('View menu (SHL-062, SHL-063)', () => {
-    it('SHL-062: lists side panel, cardinality, field attributes, compact tables, minimap with check marks', async () => {
+    it('SHL-062: the toggles are plain items whose wording follows the state', async () => {
         show('postgresql');
         await openMenu('View');
-        const boxes = screen.getAllByRole('menuitemcheckbox');
-        const names = boxes.map((b) => b.textContent);
-        expect(names).toEqual([
-            expect.stringContaining('Side panel'),
-            'Relationship cardinality',
-            'Field attributes',
-            'Compact tables',
-            'Minimap',
-            'Database views',
+        const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
+        expect(labels(items)).toEqual([
+            expect.stringContaining('Hide Sidebar'),
+            'Hide Cardinality',
+            'Hide Field Attributes',
+            'Compact Tables',
+            'Hide Mini Map',
+            'Zoom on Scroll',
+            'Database Views',
+            expect.stringContaining('Theme'),
         ]);
-        // the defaults of the spec: panel, cardinality, attributes, minimap on; compact, views off
-        expect(boxes.map((b) => b.getAttribute('aria-checked'))).toEqual([
-            'true',
-            'true',
-            'true',
-            'false',
-            'true',
-            'false',
-        ]);
-        expect(
-            screen.getByRole('menuitemcheckbox', { name: /Side panel/ })
-                .textContent
-        ).toMatch(/Ctrl\+B|⌘B|Cmd\+B/);
+        expect(items[0].textContent).toMatch(/Ctrl\+B|⌘B|Cmd\+B/);
     });
 
     it('SHL-062: compact tables and minimap are written to the browser settings', async () => {
         show('postgresql');
         await openMenu('View');
         fireEvent.click(
-            screen.getByRole('menuitemcheckbox', { name: 'Compact tables' })
+            screen.getByRole('menuitem', { name: 'Compact Tables' })
         );
         await waitFor(() =>
             expect(localStorage.getItem('compact_tables')).toBe('true')
         );
         await openMenu('View');
         fireEvent.click(
-            screen.getByRole('menuitemcheckbox', { name: 'Minimap' })
+            screen.getByRole('menuitem', { name: 'Hide Mini Map' })
         );
         await waitFor(() =>
             expect(localStorage.getItem('show_minimap_on_canvas')).toBe('false')
         );
     });
 
-    it('SHL-063: the mouse wheel moves the view by default and zooms when chosen', async () => {
+    it('SHL-063: Zoom on Scroll is Off by default and On zooms', async () => {
         show('postgresql');
         await openMenu('View');
-        await openSub(/Mouse wheel/);
+        await openSub(/Zoom on Scroll/);
         const radios = await screen.findAllByRole('menuitemradio');
-        expect(labels(radios)).toEqual(['Moves the view', 'Zooms the view']);
+        expect(labels(radios)).toEqual(['On', 'Off']);
         expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
-            'true',
             'false',
+            'true',
         ]);
-        fireEvent.click(radios[1]);
+        fireEvent.click(radios[0]);
         await waitFor(() =>
             expect(localStorage.getItem('scroll_action')).toBe('zoom')
         );
     });
 
-    it('SHL-063: database views are shown or hidden by one switch, off by default', async () => {
+    it('SHL-063: Database Views are On or Off, off by default', async () => {
         show('postgresql');
         await openMenu('View');
-        const views = screen.getByRole('menuitemcheckbox', {
-            name: 'Database views',
-        });
-        expect(views.getAttribute('aria-checked')).toBe('false');
-        fireEvent.click(views);
+        await openSub(/Database Views/);
+        const radios = await screen.findAllByRole('menuitemradio');
+        expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
+            'false',
+            'true',
+        ]);
+        fireEvent.click(radios[0]);
         await waitFor(() =>
             expect(localStorage.getItem('show_db_views')).toBe('true')
         );
     });
 
-    it('SHL-063: the theme item shows the Ctrl/Cmd+M key', async () => {
+    it('SHL-063: the Theme item shows the Ctrl/Cmd+M key and offers System, Light, Dark', async () => {
         show('postgresql');
         await openMenu('View');
-        await openSub(/Color theme/);
-        const key = await screen.findByRole('menuitem', {
-            name: /Switch light and dark/,
-        });
-        expect(key.textContent).toMatch(/Ctrl\+M|⌘M|Cmd\+M/);
+        const theme = await screen.findByRole('menuitem', { name: /Theme/ });
+        expect(theme.textContent).toMatch(/Ctrl\+M|⌘M|Cmd\+M/);
+        await openSub(/Theme/);
+        const radios = await screen.findAllByRole('menuitemradio');
+        expect(labels(radios)).toEqual(['System', 'Light', 'Dark']);
     });
 });
 

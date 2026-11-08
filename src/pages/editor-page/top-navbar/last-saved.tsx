@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import i18next from 'i18next';
 import { format, register } from 'timeago.js';
@@ -63,7 +63,7 @@ export const LastSaved: React.FC = () => {
             title={`${text}\n${currentDiagram.updatedAt.toLocaleString()}`}
             className="flex size-8 items-center justify-center rounded-md text-muted-foreground [&_svg]:size-4"
         >
-            <Check />
+            <Save />
         </span>
     );
 };

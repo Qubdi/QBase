@@ -49,13 +49,14 @@ describe('EXP-061 EXP-062 EXP-067 the image dialog', () => {
             { design: withTables(['users']) }
         );
         expect(
-            (await screen.findByRole('radio', { name: '4x' })).getAttribute(
-                'aria-checked'
-            )
-        ).toBe('true');
+            (await screen.findByRole('combobox', { name: 'Scale' })).textContent
+        ).toBe('4x (Best Quality)');
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Advanced Options' })
+        );
         expect(
             screen
-                .getByRole('checkbox', { name: /dot/i })
+                .getByRole('checkbox', { name: /background pattern/i })
                 .getAttribute('aria-checked')
         ).toBe('true');
         expect(
@@ -77,8 +78,12 @@ describe('EXP-061 EXP-062 EXP-067 the image dialog', () => {
         );
         store.getState().select([design.entities.order[0]]);
         expect(store.getState().ui.selection.length).toBeGreaterThan(0);
-        fireEvent.click(await screen.findByRole('radio', { name: '2x' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Save image' }));
+        fireEvent.keyDown(
+            await screen.findByRole('combobox', { name: 'Scale' }),
+            { key: ' ' }
+        );
+        fireEvent.click(await screen.findByRole('option', { name: '2x' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Export' }));
         await waitFor(() => expect(request).toBeTruthy());
         expect(store.getState().ui.selection).toEqual([]);
         expect(request?.options).toMatchObject({

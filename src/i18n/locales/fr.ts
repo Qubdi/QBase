@@ -78,6 +78,8 @@ export const fr = {
                     searchLanguage: 'Rechercher une langue',
                     showTools: "Afficher la barre d'outils",
                     hideTools: "Masquer la barre d'outils",
+                    sidebarTitle: 'Barre latérale',
+                    sidebarDescription: 'Affiche la barre latérale mobile.',
                 },
                 name: {
                     label: 'Nom du diagramme',
@@ -109,23 +111,27 @@ export const fr = {
                     },
                     view: {
                         label: 'Affichage',
-                        sidePanel: 'Panneau latéral',
-                        cardinality: 'Cardinalité des relations',
-                        fieldAttributes: 'Attributs des champs',
+                        sidePanel: 'Masquer la barre latérale',
+                        sidePanelShow: 'Afficher la barre latérale',
+                        cardinality: 'Masquer la cardinalité',
+                        cardinalityShow: 'Afficher la cardinalité',
+                        fieldAttributes: 'Masquer les attributs des champs',
+                        fieldAttributesShow:
+                            'Afficher les attributs des champs',
                         compactTables: 'Tables compactes',
-                        minimap: 'Minicarte',
+                        compactTablesStandard: 'Tables standard',
+                        minimap: 'Masquer la minicarte',
+                        minimapShow: 'Afficher la minicarte',
                         views: 'Vues de la base de données',
-                        wheel: 'Molette de la souris',
-                        wheelPan: 'Déplace la vue',
-                        wheelZoom: 'Zoome la vue',
+                        wheel: 'Zoom au défilement',
+                        on: 'Activé',
+                        off: 'Désactivé',
                         theme: 'Thème de couleurs',
                         themes: {
-                            system: 'Comme le système',
+                            system: 'Système',
                             light: 'Clair',
                             dark: 'Sombre',
                         },
-                        themeKey: 'Basculer entre clair et sombre',
-                        preferences: 'Préférences',
                     },
                     backup: {
                         label: 'Sauvegarde',
@@ -144,10 +150,10 @@ export const fr = {
                     visuals: 'Extras',
                 },
                 drawer: {
-                    title: 'Contenu du diagramme',
-                    description:
-                        'Parcourir et modifier les éléments de ce diagramme',
+                    title: 'Gérer le diagramme',
+                    description: 'Gérez les objets de votre diagramme',
                     sections: 'Section',
+                    viewAll: 'Voir toutes les options...',
                     entries: {
                         tables: 'Tables',
                         dbml: 'DBML',
@@ -229,7 +235,7 @@ export const fr = {
                 delete: {
                     title: 'Supprimer ce diagramme ?',
                     description:
-                        '« {{name}} » sera supprimé définitivement. Cette action est irréversible.',
+                        'Cette action est irréversible. Le diagramme sera définitivement supprimé.',
                     confirm: 'Supprimer',
                     failed: "Le diagramme n'a pas pu être supprimé",
                 },
@@ -393,6 +399,7 @@ export const fr = {
                     description:
                         'Choisissez un fichier .json enregistré depuis QBase. Il est ajouté comme nouveau diagramme.',
                     drop: 'Déposez un fichier ici, ou cliquez pour en choisir un',
+                    types: 'Types pris en charge : .json',
                     action: 'Importer',
                     invalid:
                         "Ce fichier n'est pas un diagramme enregistré depuis QBase, rien n'a donc été importé.",
@@ -400,7 +407,7 @@ export const fr = {
                 },
                 box: {
                     method: {
-                        metadata: 'Requête de base de données',
+                        metadata: 'Smart Query',
                         sql: 'Script SQL',
                         dbml: 'DBML',
                     },
@@ -414,8 +421,21 @@ export const fr = {
                         sql: 'Collez ici les instructions CREATE TABLE',
                         dbml: 'Collez ici le DBML',
                     },
-                    edition: 'Édition',
+                    edition: 'Édition de la base de données :',
                     editionStandard: 'Standard',
+                    methodLabel: 'Comment souhaitez-vous importer ?',
+                    instructions: 'Instructions :',
+                    pasteHere: {
+                        metadata:
+                            '2. Collez le résultat du script dans cette fenêtre →',
+                        sql: 'Collez votre script SQL ici →',
+                        dbml: 'Collez ici votre définition de schéma DBML (Database Markup Language) →',
+                    },
+                    output: {
+                        metadata: 'Résultat de la Smart Query',
+                        sql: 'Script SQL',
+                        dbml: 'Script DBML',
+                    },
                     editions: {
                         supabase: 'Supabase',
                         timescale: 'Timescale',
@@ -425,7 +445,7 @@ export const fr = {
                         cloudflare_d1: 'Cloudflare D1',
                     },
                     scriptIntro:
-                        'Exécutez la requête dans votre propre client de base de données, puis collez ci-dessous la cellule de résultat unique.',
+                        '1. Exécutez ce script dans votre base de données :',
                     copyScript: 'Copier la requête',
                     noScript:
                         "Aucune requête prête à l'emploi n'est encore fournie pour cette base de données.",
@@ -490,9 +510,9 @@ export const fr = {
             },
             exporting: {
                 sql: {
-                    title: 'SQL pour {{database}}',
+                    title: 'Exporter en SQL',
                     description:
-                        'Le script couvre les tables actuellement affichées.',
+                        'Exporter le schéma de votre diagramme en script {{database}}',
                     script: 'Script généré',
                     copy: 'Copier',
                     copied: 'Script copié',
@@ -507,10 +527,15 @@ export const fr = {
                     download: 'Télécharger',
                 },
                 image: {
-                    title: 'Enregistrer en {{format}}',
+                    title: "Exporter l'image",
                     description:
                         "L'image montre tout le diagramme, dans les couleurs que vous utilisez actuellement.",
-                    scale: 'Taille',
+                    scale: 'Échelle',
+                    scaleBest: '{{scale}}x (Meilleure qualité)',
+                    advanced: 'Options avancées',
+                    patternHelp: "Ajouter une trame discrète à l'arrière-plan.",
+                    transparentHelp:
+                        "Supprimer la couleur d'arrière-plan de l'image.",
                     pattern: "Dessiner l'arrière-plan en pointillés",
                     transparent: 'Arrière-plan transparent',
                     jpegNote:
@@ -559,6 +584,7 @@ export const fr = {
                     cancel: 'Annuler',
                     confirm: 'Confirmer',
                     close: 'Fermer',
+                    customColor: 'Couleur personnalisée',
                 },
                 tables: {
                     add: 'Ajouter une table',
@@ -609,6 +635,7 @@ export const fr = {
                     namePlaceholder: 'Nom du champ',
                     typePlaceholder: 'Type',
                     typeSearch: 'Rechercher un type',
+                    typeSearchPlaceholder: 'Rechercher...',
                     noTypes: 'Aucun type trouvé',
                     standardTypes: 'Types standard',
                     customTypes: 'Types personnalisés',
@@ -717,6 +744,7 @@ export const fr = {
                     delete: 'Supprimer',
                     rename: 'Renommer le type',
                     kind: 'Nature',
+                    enumValues: "Valeurs de l'énumération",
                     enum: 'Enum',
                     composite: 'Composite',
                     valuePlaceholder: "Ajouter une valeur d'enum...",
@@ -874,6 +902,7 @@ export const fr = {
                 fieldCount_other: '{{count}} champs',
                 fieldCount_many: '{{count}} champs',
                 fieldCount_one: '{{count}} champ',
+                focus: 'Centrer sur le canevas',
                 openInPanel: 'Ouvrir dans le panneau latéral',
                 widen: 'Élargir',
                 narrow: 'Rétrécir',
@@ -888,6 +917,7 @@ export const fr = {
             },
             fieldCard: {
                 type: 'Type',
+                key: 'Clé',
                 nullable: 'NULL autorisé',
                 notNull: 'Non NULL',
                 unique: 'Unique',
@@ -922,6 +952,7 @@ export const fr = {
             memo: {
                 placeholder: 'Note vide',
                 edit: 'Texte de la note',
+                editNote: 'Modifier la note',
                 colour: 'Couleur de la note',
             },
             menu: {

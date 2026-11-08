@@ -1,14 +1,14 @@
 import * as React from 'react';
 import * as Primitive from '@radix-ui/react-menubar';
-import { Check, ChevronRight, Circle } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 
 /** Styled pieces of Radix's menubar, in the same look as the dropdown menu. */
 
 const item =
-    'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0';
+    'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0';
 const panel =
-    'z-50 min-w-[10rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md';
+    'z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95';
 
 export const Menubar = React.forwardRef<
     React.ComponentRef<typeof Primitive.Root>,
@@ -16,7 +16,10 @@ export const Menubar = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <Primitive.Root
         ref={ref}
-        className={cn('flex items-center gap-1', className)}
+        className={cn(
+            'flex h-9 items-center gap-1.5 rounded-md p-1',
+            className
+        )}
         {...props}
     />
 ));
@@ -33,7 +36,7 @@ export const MenubarTrigger = React.forwardRef<
     <Primitive.Trigger
         ref={ref}
         className={cn(
-            'flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none hover:bg-accent focus:bg-accent data-[state=open]:bg-accent',
+            'flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
             className
         )}
         {...props}
@@ -44,7 +47,7 @@ MenubarTrigger.displayName = 'MenubarTrigger';
 export const MenubarContent = React.forwardRef<
     React.ComponentRef<typeof Primitive.Content>,
     React.ComponentPropsWithoutRef<typeof Primitive.Content>
->(({ className, align = 'start', sideOffset = 8, ...props }, ref) => (
+>(({ className, align = 'start', sideOffset = 9, ...props }, ref) => (
     <Primitive.Portal>
         <Primitive.Content
             ref={ref}
@@ -124,7 +127,7 @@ export const MenubarRadioItem = React.forwardRef<
     >
         <span className="absolute left-2 flex size-4 items-center justify-center">
             <Primitive.ItemIndicator>
-                <Circle className="size-2 fill-current" />
+                <Check className="size-4" />
             </Primitive.ItemIndicator>
         </span>
         {children}
@@ -138,7 +141,7 @@ export const MenubarSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <Primitive.Separator
         ref={ref}
-        className={cn('-mx-1 my-1 h-px bg-muted', className)}
+        className={cn('-mx-1 my-1 h-px bg-secondary', className)}
         {...props}
     />
 ));
@@ -150,7 +153,7 @@ export const MenubarShortcut = ({
 }: React.HTMLAttributes<HTMLSpanElement>) => (
     <span
         className={cn(
-            'ml-auto pl-6 text-xs tracking-widest text-muted-foreground',
+            'ml-auto pl-6 text-xs tracking-[1.2px] text-muted-foreground',
             className
         )}
         {...props}

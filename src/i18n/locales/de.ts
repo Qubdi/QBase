@@ -77,6 +77,8 @@ export const de = {
                     searchLanguage: 'Sprachen suchen',
                     showTools: 'Werkzeugleiste einblenden',
                     hideTools: 'Werkzeugleiste ausblenden',
+                    sidebarTitle: 'Seitenleiste',
+                    sidebarDescription: 'Zeigt die mobile Seitenleiste an.',
                 },
                 name: {
                     label: 'Diagrammname',
@@ -108,23 +110,26 @@ export const de = {
                     },
                     view: {
                         label: 'Ansicht',
-                        sidePanel: 'Seitenleiste',
-                        cardinality: 'Kardinalität der Beziehungen',
-                        fieldAttributes: 'Feldattribute',
+                        sidePanel: 'Seitenleiste ausblenden',
+                        sidePanelShow: 'Seitenleiste einblenden',
+                        cardinality: 'Kardinalität ausblenden',
+                        cardinalityShow: 'Kardinalität einblenden',
+                        fieldAttributes: 'Feldattribute ausblenden',
+                        fieldAttributesShow: 'Feldattribute einblenden',
                         compactTables: 'Kompakte Tabellen',
-                        minimap: 'Minimap',
+                        compactTablesStandard: 'Standardtabellen',
+                        minimap: 'Minimap ausblenden',
+                        minimapShow: 'Minimap einblenden',
                         views: 'Datenbanksichten',
-                        wheel: 'Mausrad',
-                        wheelPan: 'Verschiebt die Ansicht',
-                        wheelZoom: 'Zoomt die Ansicht',
+                        wheel: 'Zoom beim Scrollen',
+                        on: 'Ein',
+                        off: 'Aus',
                         theme: 'Farbschema',
                         themes: {
-                            system: 'Wie System',
+                            system: 'System',
                             light: 'Hell',
                             dark: 'Dunkel',
                         },
-                        themeKey: 'Zwischen hell und dunkel wechseln',
-                        preferences: 'Einstellungen',
                     },
                     backup: {
                         label: 'Sicherung',
@@ -143,10 +148,10 @@ export const de = {
                     visuals: 'Extras',
                 },
                 drawer: {
-                    title: 'Diagramminhalt',
-                    description:
-                        'Teile dieses Diagramms durchsuchen und ändern',
+                    title: 'Diagramm verwalten',
+                    description: 'Verwalten Sie die Objekte Ihres Diagramms',
                     sections: 'Abschnitt',
+                    viewAll: 'Alle Optionen anzeigen ...',
                     entries: {
                         tables: 'Tabellen',
                         dbml: 'DBML',
@@ -229,7 +234,7 @@ export const de = {
                 delete: {
                     title: 'Dieses Diagramm löschen?',
                     description:
-                        '„{{name}}“ wird endgültig entfernt. Das lässt sich nicht rückgängig machen.',
+                        'Diese Aktion kann nicht rückgängig gemacht werden. Das Diagramm wird dauerhaft gelöscht.',
                     confirm: 'Löschen',
                     failed: 'Das Diagramm konnte nicht gelöscht werden',
                 },
@@ -384,6 +389,7 @@ export const de = {
                     description:
                         'Wählen Sie eine .json-Datei, die aus QBase gespeichert wurde. Sie wird als neues Diagramm hinzugefügt.',
                     drop: 'Datei hier ablegen oder zum Auswählen klicken',
+                    types: 'Unterstützte Typen: .json',
                     action: 'Importieren',
                     invalid:
                         'Diese Datei ist kein aus QBase gespeichertes Diagramm, daher wurde nichts importiert.',
@@ -391,7 +397,7 @@ export const de = {
                 },
                 box: {
                     method: {
-                        metadata: 'Datenbankabfrage',
+                        metadata: 'Smart Query',
                         sql: 'SQL-Skript',
                         dbml: 'DBML',
                     },
@@ -405,8 +411,21 @@ export const de = {
                         sql: 'Fügen Sie hier CREATE TABLE-Anweisungen ein',
                         dbml: 'Fügen Sie hier DBML ein',
                     },
-                    edition: 'Edition',
+                    edition: 'Datenbank-Edition:',
                     editionStandard: 'Standard',
+                    methodLabel: 'Wie möchten Sie importieren?',
+                    instructions: 'Anleitung:',
+                    pasteHere: {
+                        metadata:
+                            '2. Fügen Sie das Ergebnis des Skripts in dieses Fenster ein →',
+                        sql: 'Fügen Sie Ihr SQL-Skript hier ein →',
+                        dbml: 'Fügen Sie Ihre DBML-Schemadefinition (Database Markup Language) hier ein →',
+                    },
+                    output: {
+                        metadata: 'Ausgabe der Smart Query',
+                        sql: 'SQL-Skript',
+                        dbml: 'DBML-Skript',
+                    },
                     editions: {
                         supabase: 'Supabase',
                         timescale: 'Timescale',
@@ -415,7 +434,7 @@ export const de = {
                         cloudflare_d1: 'Cloudflare D1',
                     },
                     scriptIntro:
-                        'Führen Sie die Abfrage in Ihrem eigenen Datenbank-Client aus und fügen Sie dann die einzelne Ergebniszelle unten ein.',
+                        '1. Führen Sie dieses Skript in Ihrer Datenbank aus:',
                     copyScript: 'Abfrage kopieren',
                     noScript:
                         'Für diese Datenbank wird noch keine fertige Abfrage mitgeliefert.',
@@ -473,9 +492,9 @@ export const de = {
             },
             exporting: {
                 sql: {
-                    title: 'SQL für {{database}}',
+                    title: 'SQL exportieren',
                     description:
-                        'Das Skript umfasst die Tabellen, die gerade angezeigt werden.',
+                        'Das Schema Ihres Diagramms als {{database}}-Skript exportieren',
                     script: 'Erzeugtes Skript',
                     copy: 'Kopieren',
                     copied: 'Skript kopiert',
@@ -490,10 +509,15 @@ export const de = {
                     download: 'Herunterladen',
                 },
                 image: {
-                    title: 'Als {{format}} speichern',
+                    title: 'Bild exportieren',
                     description:
                         'Das Bild zeigt das gesamte Diagramm in den Farben, die Sie gerade verwenden.',
-                    scale: 'Größe',
+                    scale: 'Maßstab',
+                    scaleBest: '{{scale}}x (Beste Qualität)',
+                    advanced: 'Erweiterte Optionen',
+                    patternHelp:
+                        'Dezentes Rastermuster zum Hintergrund hinzufügen.',
+                    transparentHelp: 'Hintergrundfarbe aus dem Bild entfernen.',
                     pattern: 'Gepunkteten Hintergrund zeichnen',
                     transparent: 'Transparenter Hintergrund',
                     jpegNote:
@@ -542,6 +566,7 @@ export const de = {
                     cancel: 'Abbrechen',
                     confirm: 'Bestätigen',
                     close: 'Schließen',
+                    customColor: 'Eigene Farbe',
                 },
                 tables: {
                     add: 'Tabelle hinzufügen',
@@ -591,6 +616,7 @@ export const de = {
                     namePlaceholder: 'Feldname',
                     typePlaceholder: 'Typ',
                     typeSearch: 'Typen suchen',
+                    typeSearchPlaceholder: 'Suchen...',
                     noTypes: 'Keine Typen gefunden',
                     standardTypes: 'Standardtypen',
                     customTypes: 'Benutzerdefinierte Typen',
@@ -699,6 +725,7 @@ export const de = {
                     delete: 'Löschen',
                     rename: 'Typ umbenennen',
                     kind: 'Art',
+                    enumValues: 'Enum-Werte',
                     enum: 'Enum',
                     composite: 'Zusammengesetzt',
                     valuePlaceholder: 'Enum-Wert hinzufügen ...',
@@ -853,6 +880,7 @@ export const de = {
                 materializedView: 'materialisierte Sicht',
                 fieldCount_other: '{{count}} Felder',
                 fieldCount_one: '{{count}} Feld',
+                focus: 'Auf der Zeichenfläche anzeigen',
                 openInPanel: 'In der Seitenleiste öffnen',
                 widen: 'Breiter machen',
                 narrow: 'Schmaler machen',
@@ -867,6 +895,7 @@ export const de = {
             },
             fieldCard: {
                 type: 'Typ',
+                key: 'Schlüssel',
                 nullable: 'NULL erlaubt',
                 notNull: 'Nicht NULL',
                 unique: 'Eindeutig',
@@ -901,6 +930,7 @@ export const de = {
             memo: {
                 placeholder: 'Leere Notiz',
                 edit: 'Notiztext',
+                editNote: 'Notiz bearbeiten',
                 colour: 'Notizfarbe',
             },
             menu: {

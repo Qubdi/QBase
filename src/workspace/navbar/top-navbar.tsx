@@ -44,8 +44,8 @@ export interface TopNavbarProps {
 export const TopNavbar: React.FC<TopNavbarProps> = ({ commands }) => {
     const { t } = useTranslation();
     return (
-        <header className="relative z-10 grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b bg-background/80 px-3 backdrop-blur">
-            <Slot name="navbar-left" className="flex items-center gap-3">
+        <header className="relative z-10 grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b bg-background px-4">
+            <Slot name="navbar-left" className="flex items-center gap-2">
                 <Link
                     to="/"
                     aria-label={t('editor.workspace.navbar.home')}
@@ -88,8 +88,8 @@ export const MobileNavbar: React.FC<MobileNavbarProps> = ({
 }) => {
     const { t } = useTranslation();
     return (
-        <header className="relative z-10 grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[3rem_auto] border-b bg-background/80 backdrop-blur">
-            <div className="col-start-1 row-start-1 flex items-center gap-1 pl-2">
+        <header className="relative z-10 grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[44px_auto_auto] border-b bg-background pb-1">
+            <div className="col-start-1 row-start-1 flex items-center gap-2 pl-3">
                 <Button
                     variant="ghost"
                     size="icon"
@@ -103,22 +103,27 @@ export const MobileNavbar: React.FC<MobileNavbarProps> = ({
                 >
                     <MenuIcon />
                 </Button>
-                <Logo />
+                <Logo glyph={false} className="text-base font-semibold" />
             </div>
             <Slot
                 name="navbar-right"
-                className="col-start-3 row-start-1 flex items-center gap-1 pr-2"
+                className="col-start-3 row-start-1 flex items-center gap-1 pr-4"
             >
                 <AccountMenu />
                 <LanguageButton />
             </Slot>
-            <div className="col-span-3 row-start-2 flex items-center gap-2 overflow-x-auto px-2 pb-1">
+            <div className="col-span-3 row-start-2 flex items-center gap-2 overflow-x-auto px-3">
                 <Menus commands={commands} />
-                <SaveAndPublishControls />
+                {/* the saved mark and the Lint pill stay on the desktop bar; the
+                    server controls have a place here when there is a server */}
+                <ServerSaveStatus fallback={null} />
+                <GetLatestControl />
+                <DriftControl />
+                <PublishControl />
             </div>
             <div
                 data-testid="phone-name-row"
-                className="col-start-2 row-start-1 flex min-w-0 items-center justify-center px-1"
+                className="col-span-3 row-start-3 flex min-w-0 items-center justify-center px-1 pt-1"
             >
                 <DiagramName />
             </div>

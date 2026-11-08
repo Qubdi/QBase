@@ -20,7 +20,6 @@ import type { ShortcutId } from '../shortcuts';
 import type { WorkspaceCommands } from '../use-workspace-commands';
 import {
     Menubar,
-    MenubarCheckboxItem,
     MenubarContent,
     MenubarItem,
     MenubarMenu,
@@ -199,44 +198,61 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
                     {t('editor.workspace.menu.view.label')}
                 </MenubarTrigger>
                 <MenubarContent>
-                    <MenubarCheckboxItem
-                        checked={panelOpen}
-                        onCheckedChange={() => commands.togglePanel?.()}
-                    >
-                        {t('editor.workspace.menu.view.sidePanel')}
+                    <MenubarItem onSelect={() => commands.togglePanel?.()}>
+                        {t(
+                            panelOpen
+                                ? 'editor.workspace.menu.view.sidePanel'
+                                : 'editor.workspace.menu.view.sidePanelShow'
+                        )}
                         <Keys id="togglePanel" />
-                    </MenubarCheckboxItem>
+                    </MenubarItem>
                     <MenubarSeparator />
-                    <MenubarCheckboxItem
-                        checked={config.showCardinality}
-                        onCheckedChange={config.setShowCardinality}
+                    <MenubarItem
+                        onSelect={() =>
+                            config.setShowCardinality(!config.showCardinality)
+                        }
                     >
-                        {t('editor.workspace.menu.view.cardinality')}
-                    </MenubarCheckboxItem>
-                    <MenubarCheckboxItem
-                        checked={config.showFieldAttributes}
-                        onCheckedChange={config.setShowFieldAttributes}
+                        {t(
+                            config.showCardinality
+                                ? 'editor.workspace.menu.view.cardinality'
+                                : 'editor.workspace.menu.view.cardinalityShow'
+                        )}
+                    </MenubarItem>
+                    <MenubarItem
+                        onSelect={() =>
+                            config.setShowFieldAttributes(
+                                !config.showFieldAttributes
+                            )
+                        }
                     >
-                        {t('editor.workspace.menu.view.fieldAttributes')}
-                    </MenubarCheckboxItem>
-                    <MenubarCheckboxItem
-                        checked={config.compactTables}
-                        onCheckedChange={config.setCompactTables}
+                        {t(
+                            config.showFieldAttributes
+                                ? 'editor.workspace.menu.view.fieldAttributes'
+                                : 'editor.workspace.menu.view.fieldAttributesShow'
+                        )}
+                    </MenubarItem>
+                    <MenubarItem
+                        onSelect={() =>
+                            config.setCompactTables(!config.compactTables)
+                        }
                     >
-                        {t('editor.workspace.menu.view.compactTables')}
-                    </MenubarCheckboxItem>
-                    <MenubarCheckboxItem
-                        checked={config.showMinimap}
-                        onCheckedChange={config.setShowMinimap}
+                        {t(
+                            config.compactTables
+                                ? 'editor.workspace.menu.view.compactTablesStandard'
+                                : 'editor.workspace.menu.view.compactTables'
+                        )}
+                    </MenubarItem>
+                    <MenubarItem
+                        onSelect={() =>
+                            config.setShowMinimap(!config.showMinimap)
+                        }
                     >
-                        {t('editor.workspace.menu.view.minimap')}
-                    </MenubarCheckboxItem>
-                    <MenubarCheckboxItem
-                        checked={config.showDbViews}
-                        onCheckedChange={config.setShowDbViews}
-                    >
-                        {t('editor.workspace.menu.view.views')}
-                    </MenubarCheckboxItem>
+                        {t(
+                            config.showMinimap
+                                ? 'editor.workspace.menu.view.minimap'
+                                : 'editor.workspace.menu.view.minimapShow'
+                        )}
+                    </MenubarItem>
                     <MenubarSeparator />
                     <MenubarSub>
                         <MenubarSubTrigger>
@@ -251,18 +267,41 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
                                     )
                                 }
                             >
-                                <MenubarRadioItem value="pan">
-                                    {t('editor.workspace.menu.view.wheelPan')}
-                                </MenubarRadioItem>
                                 <MenubarRadioItem value="zoom">
-                                    {t('editor.workspace.menu.view.wheelZoom')}
+                                    {t('editor.workspace.menu.view.on')}
+                                </MenubarRadioItem>
+                                <MenubarRadioItem value="pan">
+                                    {t('editor.workspace.menu.view.off')}
                                 </MenubarRadioItem>
                             </MenubarRadioGroup>
                         </MenubarSubContent>
                     </MenubarSub>
+                    <MenubarSeparator />
+                    <MenubarSub>
+                        <MenubarSubTrigger>
+                            {t('editor.workspace.menu.view.views')}
+                        </MenubarSubTrigger>
+                        <MenubarSubContent>
+                            <MenubarRadioGroup
+                                value={config.showDbViews ? 'on' : 'off'}
+                                onValueChange={(v) =>
+                                    config.setShowDbViews(v === 'on')
+                                }
+                            >
+                                <MenubarRadioItem value="on">
+                                    {t('editor.workspace.menu.view.on')}
+                                </MenubarRadioItem>
+                                <MenubarRadioItem value="off">
+                                    {t('editor.workspace.menu.view.off')}
+                                </MenubarRadioItem>
+                            </MenubarRadioGroup>
+                        </MenubarSubContent>
+                    </MenubarSub>
+                    <MenubarSeparator />
                     <MenubarSub>
                         <MenubarSubTrigger>
                             {t('editor.workspace.menu.view.theme')}
+                            <Keys id="toggleTheme" />
                         </MenubarSubTrigger>
                         <MenubarSubContent>
                             <MenubarRadioGroup
@@ -279,17 +318,8 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
                                     )
                                 )}
                             </MenubarRadioGroup>
-                            <MenubarSeparator />
-                            <MenubarItem disabled>
-                                {t('editor.workspace.menu.view.themeKey')}
-                                <Keys id="toggleTheme" />
-                            </MenubarItem>
                         </MenubarSubContent>
                     </MenubarSub>
-                    <MenubarSeparator />
-                    <MenubarItem onSelect={dialogs.openSettingsDialog}>
-                        {t('editor.workspace.menu.view.preferences')}
-                    </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
 

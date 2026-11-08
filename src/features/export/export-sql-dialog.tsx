@@ -62,13 +62,15 @@ export const ExportSqlDialog: React.FC<ExportSqlDialogProps> = ({
 
     return (
         <Dialog open={!!target} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-[960px]">
                 <DialogHeader>
                     <DialogTitle>
                         {t('editor.exporting.sql.title', { database: label })}
                     </DialogTitle>
                     <DialogDescription>
-                        {t('editor.exporting.sql.description')}
+                        {t('editor.exporting.sql.description', {
+                            database: label,
+                        })}
                     </DialogDescription>
                 </DialogHeader>
                 {!result ? (

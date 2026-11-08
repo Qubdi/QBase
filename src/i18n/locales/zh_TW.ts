@@ -74,6 +74,8 @@ export const zh_TW = {
                     searchLanguage: '搜尋語言',
                     showTools: '顯示工具列',
                     hideTools: '隱藏工具列',
+                    sidebarTitle: '側邊欄',
+                    sidebarDescription: '顯示行動版側邊欄。',
                 },
                 name: {
                     label: '圖表名稱',
@@ -105,23 +107,26 @@ export const zh_TW = {
                     },
                     view: {
                         label: '檢視',
-                        sidePanel: '側邊面板',
-                        cardinality: '關聯基數',
-                        fieldAttributes: '欄位屬性',
-                        compactTables: '精簡資料表',
-                        minimap: '縮圖地圖',
+                        sidePanel: '隱藏側邊欄',
+                        sidePanelShow: '顯示側邊欄',
+                        cardinality: '隱藏基數',
+                        cardinalityShow: '顯示基數',
+                        fieldAttributes: '隱藏欄位屬性',
+                        fieldAttributesShow: '顯示欄位屬性',
+                        compactTables: '緊湊表格',
+                        compactTablesStandard: '標準表格',
+                        minimap: '隱藏小地圖',
+                        minimapShow: '顯示小地圖',
                         views: '資料庫檢視表',
-                        wheel: '滑鼠滾輪',
-                        wheelPan: '移動檢視',
-                        wheelZoom: '縮放檢視',
+                        wheel: '捲動時縮放',
+                        on: '開',
+                        off: '關',
                         theme: '色彩主題',
                         themes: {
-                            system: '跟隨系統',
+                            system: '系統',
                             light: '淺色',
                             dark: '深色',
                         },
-                        themeKey: '切換淺色與深色',
-                        preferences: '偏好設定',
                     },
                     backup: {
                         label: '備份',
@@ -140,9 +145,10 @@ export const zh_TW = {
                     visuals: '其他',
                 },
                 drawer: {
-                    title: '圖表內容',
-                    description: '瀏覽並變更此圖表的各個部分',
+                    title: '管理圖表',
+                    description: '管理圖表中的物件',
                     sections: '區段',
+                    viewAll: '檢視所有選項...',
                     entries: {
                         tables: '資料表',
                         dbml: 'DBML',
@@ -221,7 +227,7 @@ export const zh_TW = {
                 },
                 delete: {
                     title: '刪除此圖表？',
-                    description: '「{{name}}」將被永久移除。此動作無法復原。',
+                    description: '此操作無法復原。圖表將被永久刪除。',
                     confirm: '刪除',
                     failed: '無法刪除圖表',
                 },
@@ -347,6 +353,7 @@ export const zh_TW = {
                     description:
                         '請選擇從 QBase 儲存的 .json 檔案。它會被加入為新圖表。',
                     drop: '將檔案拖放到這裡，或按一下以選擇',
+                    types: '支援的類型：.json',
                     action: '匯入',
                     invalid:
                         '該檔案不是從 QBase 儲存的圖表，因此未匯入任何內容。',
@@ -354,7 +361,7 @@ export const zh_TW = {
                 },
                 box: {
                     method: {
-                        metadata: '資料庫查詢',
+                        metadata: '智慧查詢',
                         sql: 'SQL 指令碼',
                         dbml: 'DBML',
                     },
@@ -368,8 +375,20 @@ export const zh_TW = {
                         sql: '在此貼上 CREATE TABLE 陳述式',
                         dbml: '在此貼上 DBML',
                     },
-                    edition: '版本',
-                    editionStandard: '標準',
+                    edition: '資料庫版本：',
+                    editionStandard: '一般',
+                    methodLabel: '您想如何匯入？',
+                    instructions: '說明：',
+                    pasteHere: {
+                        metadata: '2. 將指令碼結果貼到此視窗 →',
+                        sql: '在此貼上您的 SQL 指令碼 →',
+                        dbml: '在此貼上您的 DBML（資料庫標記語言）結構定義 →',
+                    },
+                    output: {
+                        metadata: '智慧查詢輸出',
+                        sql: 'SQL 指令碼',
+                        dbml: 'DBML 指令碼',
+                    },
                     editions: {
                         supabase: 'Supabase',
                         timescale: 'Timescale',
@@ -377,8 +396,7 @@ export const zh_TW = {
                         sql_server_2016_and_below: 'SQL Server 2016 及更早版本',
                         cloudflare_d1: 'Cloudflare D1',
                     },
-                    scriptIntro:
-                        '請在您自己的資料庫用戶端執行查詢，然後將單一結果儲存格貼到下方。',
+                    scriptIntro: '1. 在您的資料庫中執行此指令碼：',
                     copyScript: '複製查詢',
                     noScript: '此資料庫尚未提供現成的查詢。',
                     scriptCopied: '已複製查詢',
@@ -425,8 +443,8 @@ export const zh_TW = {
             },
             exporting: {
                 sql: {
-                    title: '{{database}} 的 SQL',
-                    description: '指令碼涵蓋目前顯示的資料表。',
+                    title: '匯出 SQL',
+                    description: '將圖表結構匯出為 {{database}} 腳本',
                     script: '產生的指令碼',
                     copy: '複製',
                     copied: '已複製指令碼',
@@ -441,9 +459,13 @@ export const zh_TW = {
                     download: '下載',
                 },
                 image: {
-                    title: '另存為 {{format}}',
+                    title: '匯出圖片',
                     description: '圖片會顯示整個圖表，使用您目前的顏色。',
-                    scale: '大小',
+                    scale: '縮放比例',
+                    scaleBest: '{{scale}}x（最佳品質）',
+                    advanced: '進階選項',
+                    patternHelp: '為背景加上淡淡的格線圖案。',
+                    transparentHelp: '移除圖片的背景色。',
                     pattern: '繪製點狀背景',
                     transparent: '透明背景',
                     jpegNote: 'JPEG 無法透明，因此會使用頁面顏色。',
@@ -490,6 +512,7 @@ export const zh_TW = {
                     cancel: '取消',
                     confirm: '確認',
                     close: '關閉',
+                    customColor: '自訂顏色',
                 },
                 tables: {
                     add: '新增資料表',
@@ -539,6 +562,7 @@ export const zh_TW = {
                     namePlaceholder: '欄位名稱',
                     typePlaceholder: '類型',
                     typeSearch: '搜尋類型',
+                    typeSearchPlaceholder: '搜尋...',
                     noTypes: '找不到類型',
                     standardTypes: '標準類型',
                     customTypes: '自訂類型',
@@ -640,6 +664,7 @@ export const zh_TW = {
                     delete: '刪除',
                     rename: '重新命名類型',
                     kind: '種類',
+                    enumValues: '列舉值',
                     enum: 'Enum',
                     composite: 'Composite',
                     valuePlaceholder: '新增 enum 值...',
@@ -791,6 +816,7 @@ export const zh_TW = {
                 view: '檢視表',
                 materializedView: '具體化檢視表',
                 fieldCount_other: '{{count}} 個欄位',
+                focus: '聚焦於畫布',
                 openInPanel: '在側邊面板中開啟',
                 widen: '加寬',
                 narrow: '縮窄',
@@ -805,6 +831,7 @@ export const zh_TW = {
             },
             fieldCard: {
                 type: '類型',
+                key: '鍵',
                 nullable: '可為 null',
                 notNull: '非 null',
                 unique: '唯一',
@@ -839,6 +866,7 @@ export const zh_TW = {
             memo: {
                 placeholder: '空白備註',
                 edit: '備註文字',
+                editNote: '編輯便籤',
                 colour: '備註顏色',
             },
             menu: {

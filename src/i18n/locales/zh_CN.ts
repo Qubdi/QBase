@@ -74,6 +74,8 @@ export const zh_CN = {
                     searchLanguage: '搜索语言',
                     showTools: '显示工具栏',
                     hideTools: '隐藏工具栏',
+                    sidebarTitle: '侧边栏',
+                    sidebarDescription: '显示移动端侧边栏。',
                 },
                 name: {
                     label: '图表名称',
@@ -105,23 +107,26 @@ export const zh_CN = {
                     },
                     view: {
                         label: '视图',
-                        sidePanel: '侧边栏',
-                        cardinality: '关系基数',
-                        fieldAttributes: '字段属性',
+                        sidePanel: '隐藏侧边栏',
+                        sidePanelShow: '显示侧边栏',
+                        cardinality: '隐藏基数',
+                        cardinalityShow: '显示基数',
+                        fieldAttributes: '隐藏字段属性',
+                        fieldAttributesShow: '显示字段属性',
                         compactTables: '紧凑表格',
-                        minimap: '小地图',
+                        compactTablesStandard: '标准表格',
+                        minimap: '隐藏小地图',
+                        minimapShow: '显示小地图',
                         views: '数据库视图',
-                        wheel: '鼠标滚轮',
-                        wheelPan: '移动视图',
-                        wheelZoom: '缩放视图',
+                        wheel: '滚动时缩放',
+                        on: '开',
+                        off: '关',
                         theme: '颜色主题',
                         themes: {
-                            system: '跟随系统',
+                            system: '系统',
                             light: '浅色',
                             dark: '深色',
                         },
-                        themeKey: '切换浅色和深色',
-                        preferences: '偏好设置',
                     },
                     backup: {
                         label: '备份',
@@ -140,9 +145,10 @@ export const zh_CN = {
                     visuals: '其他',
                 },
                 drawer: {
-                    title: '图表内容',
-                    description: '浏览并修改此图表的各个部分',
+                    title: '管理图表',
+                    description: '管理图表中的对象',
                     sections: '分区',
+                    viewAll: '查看所有选项...',
                     entries: {
                         tables: '表',
                         dbml: 'DBML',
@@ -222,7 +228,7 @@ export const zh_CN = {
                 },
                 delete: {
                     title: '删除此图表？',
-                    description: '“{{name}}”将被永久删除，且无法撤销。',
+                    description: '此操作无法撤销。图表将被永久删除。',
                     confirm: '删除',
                     failed: '无法删除图表',
                 },
@@ -346,6 +352,7 @@ export const zh_CN = {
                     description:
                         '选择一个从 QBase 保存的 .json 文件。它将作为新图表添加。',
                     drop: '将文件拖到这里，或点击选择',
+                    types: '支持的类型：.json',
                     action: '导入',
                     invalid:
                         '该文件不是从 QBase 保存的图表，因此未导入任何内容。',
@@ -353,7 +360,7 @@ export const zh_CN = {
                 },
                 box: {
                     method: {
-                        metadata: '数据库查询',
+                        metadata: '智能查询',
                         sql: 'SQL 脚本',
                         dbml: 'DBML',
                     },
@@ -367,8 +374,20 @@ export const zh_CN = {
                         sql: '在此粘贴 CREATE TABLE 语句',
                         dbml: '在此粘贴 DBML',
                     },
-                    edition: '版本',
-                    editionStandard: '标准',
+                    edition: '数据库版本：',
+                    editionStandard: '常规',
+                    methodLabel: '您想如何导入？',
+                    instructions: '说明：',
+                    pasteHere: {
+                        metadata: '2. 将脚本结果粘贴到此窗口 →',
+                        sql: '在此粘贴您的 SQL 脚本 →',
+                        dbml: '在此粘贴您的 DBML（数据库标记语言）架构定义 →',
+                    },
+                    output: {
+                        metadata: '智能查询输出',
+                        sql: 'SQL 脚本',
+                        dbml: 'DBML 脚本',
+                    },
                     editions: {
                         supabase: 'Supabase',
                         timescale: 'Timescale',
@@ -376,8 +395,7 @@ export const zh_CN = {
                         sql_server_2016_and_below: 'SQL Server 2016 及更早版本',
                         cloudflare_d1: 'Cloudflare D1',
                     },
-                    scriptIntro:
-                        '请在您自己的数据库客户端中运行查询，然后将唯一的结果单元格粘贴到下方。',
+                    scriptIntro: '1. 在您的数据库中运行此脚本：',
                     copyScript: '复制查询',
                     noScript: '此数据库尚未提供现成的查询。',
                     scriptCopied: '查询已复制',
@@ -424,8 +442,8 @@ export const zh_CN = {
             },
             exporting: {
                 sql: {
-                    title: '{{database}} 的 SQL',
-                    description: '脚本涵盖当前显示的表。',
+                    title: '导出 SQL',
+                    description: '将图表架构导出为 {{database}} 脚本',
                     script: '生成的脚本',
                     copy: '复制',
                     copied: '脚本已复制',
@@ -440,9 +458,13 @@ export const zh_CN = {
                     download: '下载',
                 },
                 image: {
-                    title: '另存为 {{format}}',
+                    title: '导出图片',
                     description: '图片显示整个图表，使用当前的颜色。',
-                    scale: '尺寸',
+                    scale: '缩放比例',
+                    scaleBest: '{{scale}}x（最佳质量）',
+                    advanced: '高级选项',
+                    patternHelp: '为背景添加淡淡的网格图案。',
+                    transparentHelp: '移除图片的背景色。',
                     pattern: '绘制点状背景',
                     transparent: '透明背景',
                     jpegNote: 'JPEG 不支持透明，因此将使用页面颜色。',
@@ -489,6 +511,7 @@ export const zh_CN = {
                     cancel: '取消',
                     confirm: '确认',
                     close: '关闭',
+                    customColor: '自定义颜色',
                 },
                 tables: {
                     add: '添加表',
@@ -537,6 +560,7 @@ export const zh_CN = {
                     namePlaceholder: '字段名',
                     typePlaceholder: '类型',
                     typeSearch: '搜索类型',
+                    typeSearchPlaceholder: '搜索...',
                     noTypes: '未找到类型',
                     standardTypes: '标准类型',
                     customTypes: '自定义类型',
@@ -638,6 +662,7 @@ export const zh_CN = {
                     delete: '删除',
                     rename: '重命名类型',
                     kind: '种类',
+                    enumValues: '枚举值',
                     enum: '枚举',
                     composite: '复合',
                     valuePlaceholder: '添加枚举值...',
@@ -789,6 +814,7 @@ export const zh_CN = {
                 view: '视图',
                 materializedView: '物化视图',
                 fieldCount_other: '{{count}} 个字段',
+                focus: '聚焦到画布',
                 openInPanel: '在侧边栏中打开',
                 widen: '加宽',
                 narrow: '收窄',
@@ -803,6 +829,7 @@ export const zh_CN = {
             },
             fieldCard: {
                 type: '类型',
+                key: '键',
                 nullable: '可为空',
                 notNull: '非空',
                 unique: '唯一',
@@ -837,6 +864,7 @@ export const zh_CN = {
             memo: {
                 placeholder: '空备注',
                 edit: '备注文本',
+                editNote: '编辑便签',
                 colour: '备注颜色',
             },
             menu: {

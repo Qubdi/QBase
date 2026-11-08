@@ -4,7 +4,11 @@ import { HelmetProvider } from 'react-helmet-async';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { blank } from '@/core/testing/helpers';
 import { EditorFrame } from '../editor-frame';
-import { clampPanelWidth, defaultPanelWidth, PANEL_MIN } from '../panel-width';
+import {
+    clampPanelWidth,
+    defaultPanelWidth,
+    PANEL_FLOOR,
+} from '../panel-width';
 import { renderInEditor } from './test-harness';
 
 const phone = () =>
@@ -43,9 +47,10 @@ describe('phone layout (EDT-004 to EDT-010, SHL-066 to SHL-073)', () => {
         expect(
             screen.getByRole('navigation', { name: 'Editor sections' })
         ).toBeTruthy();
-        fireEvent.click(
-            screen.getByRole('button', { name: 'Hide the tool strip' })
-        );
+        // the sheet covers the bar; Escape closes it
+        fireEvent.keyDown(screen.getByRole('dialog', { name: 'Sidebar' }), {
+            key: 'Escape',
+        });
         expect(
             screen.queryByRole('navigation', { name: 'Editor sections' })
         ).toBeNull();
@@ -66,24 +71,22 @@ describe('phone layout (EDT-004 to EDT-010, SHL-066 to SHL-073)', () => {
         ).toBeNull();
     });
 
-    it('the save status and the menus are on the phone too (SHL-069)', () => {
+    it('the menus are on the phone too; the saved mark and Lint stay on the desktop bar (SHL-069)', () => {
         const { container } = frame();
-        expect(screen.getByRole('menuitem', { name: 'Diagram' })).toBeTruthy();
-        expect(
-            container.querySelectorAll('[role="img"]').length
-        ).toBeGreaterThan(0);
+        expect(screen.getByRole('menuitem', { name: 'Actions' })).toBeTruthy();
+        expect(container.querySelector('[aria-label^="Saved"]')).toBeNull();
     });
 });
 
 describe('side panel width (spec A7)', () => {
-    it('starts at a quarter of the width but not under 350 px', () => {
+    it('starts at a quarter of the width but not under 240 px (the old editor had no floor)', () => {
         expect(defaultPanelWidth(2000)).toBe(500);
-        expect(defaultPanelWidth(800)).toBe(PANEL_MIN);
+        expect(defaultPanelWidth(800)).toBe(PANEL_FLOOR);
     });
-    it('is clamped between 350 px and 99% of the container', () => {
-        expect(clampPanelWidth(10, 1500)).toBe(PANEL_MIN);
+    it('is clamped between a quarter and 99% of the container', () => {
+        expect(clampPanelWidth(10, 1500)).toBe(375);
         expect(clampPanelWidth(5000, 1500)).toBe(1485);
         expect(clampPanelWidth(600, 1500)).toBe(600);
-        expect(clampPanelWidth(900, 300)).toBe(PANEL_MIN);
+        expect(clampPanelWidth(900, 300)).toBe(297);
     });
 });
