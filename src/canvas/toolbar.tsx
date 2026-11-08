@@ -1,12 +1,12 @@
 import React from 'react';
 import {
     LayoutGrid,
-    Minus,
-    Plus,
-    Redo2,
+    Redo,
     Scan,
     Search,
-    Undo2,
+    Undo,
+    ZoomIn,
+    ZoomOut,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils/utils';
@@ -99,7 +99,7 @@ export function Toolbar(props: ToolbarProps) {
                 title={t('canvas.toolbar.zoomOut')}
                 onClick={props.onZoomOut}
             >
-                <Minus className="h-4 w-4" />
+                <ZoomOut className="h-4 w-4" />
             </button>
             <button
                 type="button"
@@ -117,7 +117,7 @@ export function Toolbar(props: ToolbarProps) {
                 title={t('canvas.toolbar.zoomIn')}
                 onClick={props.onZoomIn}
             >
-                <Plus className="h-4 w-4" />
+                <ZoomIn className="h-4 w-4" />
             </button>
             {props.editable ? (
                 <>
@@ -148,7 +148,7 @@ export function Toolbar(props: ToolbarProps) {
                 })}
                 onClick={() => storeApi.getState().undo()}
             >
-                <Undo2 className="h-4 w-4" />
+                <Undo className="h-4 w-4" />
             </button>
             <button
                 type="button"
@@ -164,7 +164,7 @@ export function Toolbar(props: ToolbarProps) {
                 })}
                 onClick={() => storeApi.getState().redo()}
             >
-                <Redo2 className="h-4 w-4" />
+                <Redo className="h-4 w-4" />
             </button>
         </div>
     );

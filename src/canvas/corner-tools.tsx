@@ -1,5 +1,5 @@
 import React from 'react';
-import { Highlighter, Magnet, SquaresIntersect } from 'lucide-react';
+import { Highlighter, Magnet, TriangleAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils/utils';
 import { isMacPlatform, shortcutLabel } from './keyboard';
@@ -55,7 +55,7 @@ export function CornerTools(props: CornerToolsProps) {
                     title={t('canvas.overlap.label')}
                     onClick={props.onOverlapHighlight}
                 >
-                    <SquaresIntersect className="h-4 w-4" />
+                    <TriangleAlert className="h-4 w-4" />
                 </button>
             ) : null}
             {props.highlight ? (

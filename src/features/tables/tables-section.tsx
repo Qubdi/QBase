@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Table2 } from 'lucide-react';
+import { ChevronDown, Table } from 'lucide-react';
 import { hidesEverything } from '@/features/filters/filter-tree';
 import { cn } from '@/lib/utils/utils';
 import { Notice } from '@/platform/panel/notice';
@@ -66,7 +66,7 @@ export const TablesSection: React.FC = () => {
                 onClick={() => add('table')}
                 {...newItemDragProps('table')}
             >
-                <Table2 />
+                <Table />
                 {text('tables.add')}
             </Button>
             {showViews ? (

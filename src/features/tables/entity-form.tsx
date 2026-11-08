@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import {
     ChevronDown,
     ChevronUp,
-    FileOutput,
-    FilePlus,
+    FileKey,
+    FileTypeCorner,
     ListChecks,
-    MessageCircle,
+    MessageCircleMore,
 } from 'lucide-react';
 import { planAddColumn, planAddKey } from '@/core/commands/plan-column';
 import { traitsOf } from '@/core/model/database';
@@ -81,7 +81,7 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
             ) : null}
             <Section
                 title={text('tables.fields')}
-                icon={<FileOutput />}
+                icon={<FileTypeCorner />}
                 open={openSection === 'fields'}
                 onToggle={() => toggle('fields')}
             >
@@ -94,7 +94,7 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
             {view ? null : (
                 <Section
                     title={text('tables.indexes')}
-                    icon={<FileOutput />}
+                    icon={<FileKey />}
                     open={openSection === 'indexes'}
                     onToggle={() => toggle('indexes')}
                 >
@@ -113,7 +113,7 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
             ) : null}
             <Section
                 title={text('tables.description')}
-                icon={<MessageCircle />}
+                icon={<MessageCircleMore />}
                 open={openSection === 'description'}
                 onToggle={() => toggle('description')}
             >
@@ -162,7 +162,7 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
                                     setOpenSection('indexes');
                                 }}
                             >
-                                <FilePlus />
+                                <FileKey />
                                 {text('tables.addIndex')}
                             </Button>
                         )}
@@ -181,7 +181,7 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
                                 setOpenSection('fields');
                             }}
                         >
-                            <FilePlus />
+                            <FileTypeCorner />
                             {text('tables.addField')}
                         </Button>
                     </>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PanelRight, Plus, Table2, X } from 'lucide-react';
+import { CircleDotDashed, Plus, Table2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DebouncedInput } from '@/platform/panel/debounced-input';
 import { useEditorEnv } from '@/platform/panel/use-editor';
@@ -146,7 +146,7 @@ export const EntityEditor: React.FC<{ entityId: Id; close(): void }> = ({
                             store.getState().showEntityInPanel(entity.id)
                         }
                     >
-                        <PanelRight />
+                        <CircleDotDashed />
                     </Button>
                     <Button
                         type="button"

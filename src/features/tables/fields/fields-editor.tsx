@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Key, MessageSquareText, Plus, Trash2 } from 'lucide-react';
+import { KeyRound, MessageSquareText, Plus, Trash } from 'lucide-react';
 import {
     planAddColumn,
     planDeleteColumn,
@@ -231,7 +231,7 @@ export const FieldsEditor: React.FC<{
                                             })
                                         }
                                     >
-                                        <Key
+                                        <KeyRound
                                             className={
                                                 compact ? 'h-3.5 w-4' : 'size-4'
                                             }
@@ -250,7 +250,7 @@ export const FieldsEditor: React.FC<{
                                                 removeColumn(column.id)
                                             }
                                         >
-                                            <Trash2 className="h-3.5 w-4" />
+                                            <Trash className="h-3.5 w-4" />
                                         </Button>
                                     )
                                 ) : (

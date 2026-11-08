@@ -1,13 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Braces,
+    CodeXml,
+    FileType,
     FolderOpen,
-    GitBranch,
+    Group,
     Plus,
-    Shapes,
-    Table2,
-    FileCode2,
+    Table,
+    Workflow,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { traitsOf } from '@/core/model/database';
@@ -24,11 +24,11 @@ interface SectionItem {
 }
 
 const SECTIONS: readonly SectionItem[] = [
-    { section: 'tables', icon: Table2 },
-    { section: 'dbml', icon: FileCode2 },
-    { section: 'refs', icon: GitBranch },
-    { section: 'customTypes', icon: Braces, userTypes: true },
-    { section: 'visuals', icon: Shapes },
+    { section: 'tables', icon: Table },
+    { section: 'dbml', icon: CodeXml },
+    { section: 'refs', icon: Workflow },
+    { section: 'customTypes', icon: FileType, userTypes: true },
+    { section: 'visuals', icon: Group },
 ];
 
 const RailButton: React.FC<{
