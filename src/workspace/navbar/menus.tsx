@@ -69,9 +69,6 @@ export const Menus: React.FC<MenusProps> = ({ commands }) => {
                     {t('editor.workspace.menu.diagram.label')}
                 </MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem onSelect={dialogs.openExamplesDialog}>
-                        {t('editor.workspace.menu.diagram.examples')}
-                    </MenubarItem>
                     <MenubarSub>
                         <MenubarSubTrigger>
                             {t('editor.workspace.menu.diagram.import')}

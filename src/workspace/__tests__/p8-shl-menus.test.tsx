@@ -41,15 +41,14 @@ const openSub = async (name: RegExp) => {
 const labels = (items: HTMLElement[]) => items.map((i) => i.textContent ?? '');
 
 describe('Diagram menu (SHL-057 to SHL-060)', () => {
-    it('Examples is the first item of Actions and opens the list of examples', async () => {
-        const dialogs = show('postgresql');
+    it('Actions does not list Examples: they are under New', async () => {
+        show('postgresql');
         await openMenu('Actions');
         const items = within(await screen.findByRole('menu')).getAllByRole(
             'menuitem'
         );
-        expect(items[0].textContent).toBe('Examples');
-        fireEvent.click(screen.getByRole('menuitem', { name: 'Examples' }));
-        expect(dialogs.openExamplesDialog).toHaveBeenCalledTimes(1);
+        expect(items.map((i) => i.textContent)).not.toContain('Examples');
+        expect(items[0].textContent).toBe('Import');
     });
 
     it('SHL-057: Import offers the .json file, then SQL and DBML, both limited to their own method', async () => {
@@ -83,7 +82,7 @@ describe('Diagram menu (SHL-057 to SHL-060)', () => {
         await openMenu('Actions');
         await openSub(/^Export SQL$/);
         const items = await screen.findAllByRole('menuitem', {
-            name: /^(PostgreSQL|MySQL|SQL Server|MariaDB|SQLite|Oracle|ClickHouse|CockroachDB|Generic)$/,
+            name: /^(PostgreSQL|MySQL|SQL Server|MariaDB|SQLite|Oracle)$/,
         });
         expect(labels(items)).toEqual([
             'MySQL',
@@ -91,6 +90,7 @@ describe('Diagram menu (SHL-057 to SHL-060)', () => {
             'SQL Server',
             'MariaDB',
             'SQLite',
+            'Oracle',
         ]);
         fireEvent.click(items[1]);
         expect(dialogs.openExportSqlDialog).toHaveBeenCalledWith('postgresql');
@@ -151,7 +151,7 @@ describe('Backup menu (SHL-064)', () => {
         expect(dialogs.openImportDiagramDialog).toHaveBeenCalled();
     });
 
-    it('EXP-008: an Oracle diagram offers itself first in Export SQL and can import SQL; ClickHouse cannot import SQL', async () => {
+    it('EXP-008: an Oracle diagram offers itself first in Export SQL and can import SQL', async () => {
         const dialogs = show('oracle');
         await openMenu('Actions');
         await openSub(/^Export SQL$/);

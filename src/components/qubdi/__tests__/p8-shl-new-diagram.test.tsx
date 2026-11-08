@@ -6,6 +6,8 @@ import {
     qubdiContext,
     type QubdiContext,
 } from '@/context/qubdi-context/qubdi-context';
+import { DialogContext } from '@/context/dialog-context/dialog-context';
+import type { DialogApi } from '@/context/dialog-context/dialog-context';
 import { ApiError } from '@/lib/qubdi/api';
 import { NewDiagramDialog } from '../new-diagram-dialog';
 
@@ -27,66 +29,92 @@ const Where: React.FC = () => (
     <div data-testid="where">{useLocation().pathname}</div>
 );
 
+const openExamplesDialog = vi.fn();
+const dialogs = { openExamplesDialog } as unknown as DialogApi;
+const onOpenChange = vi.fn();
+
 const show = (withImport = true) =>
     render(
         <MemoryRouter>
-            <qubdiContext.Provider
-                value={{ syncDiagram } as unknown as QubdiContext}
-            >
-                <NewDiagramDialog
-                    open
-                    onOpenChange={() => undefined}
-                    projectId="p1"
-                    projectName="Billing"
-                    projectSlug="Billing"
-                    onImport={withImport ? onImport : undefined}
-                />
-                <Where />
-            </qubdiContext.Provider>
+            <DialogContext.Provider value={dialogs}>
+                <qubdiContext.Provider
+                    value={{ syncDiagram } as unknown as QubdiContext}
+                >
+                    <NewDiagramDialog
+                        open
+                        onOpenChange={onOpenChange}
+                        projectId="p1"
+                        projectName="Billing"
+                        projectSlug="Billing"
+                        onImport={withImport ? onImport : undefined}
+                    />
+                    <Where />
+                </qubdiContext.Provider>
+            </DialogContext.Provider>
         </MemoryRouter>
     );
 
 beforeEach(() => vi.clearAllMocks());
 
 describe('New diagram in a project (SHL-110)', () => {
-    it('is a small form: an optional name up to 200 characters, a type select defaulting to PostgreSQL, Create', () => {
+    it('is a form: an optional name up to 200 characters, a card for each database with PostgreSQL chosen, Create', () => {
         show();
         const name = screen.getByRole('textbox', {
             name: 'Diagram name',
         }) as HTMLInputElement;
         expect(name.maxLength).toBe(200);
         expect(name.required).toBe(false);
-        expect(
-            screen.getByRole('combobox', { name: 'Database type' }).textContent
-        ).toContain('PostgreSQL');
+        const chosen = screen
+            .getAllByRole('radio')
+            .filter((r) => r.getAttribute('aria-checked') === 'true');
+        expect(chosen.map((r) => r.textContent)).toEqual(['PostgreSQL']);
         expect(
             screen.getByRole('button', { name: 'Create diagram' })
         ).toBeTruthy();
         expect(screen.getByText(/created in Billing/)).toBeTruthy();
     });
 
-    it('offers every database type, Generic included', async () => {
+    it('offers a card with a logo for each of the six common databases', () => {
         show();
-        fireEvent.keyDown(
-            screen.getByRole('combobox', { name: 'Database type' }),
-            { key: ' ' }
-        );
-        const options = (await screen.findAllByRole('option')).map(
-            (o) => o.textContent
-        );
-        expect(options).toHaveLength(9);
+        const cards = screen.getAllByRole('radio');
+        const labels = cards.map((c) => c.textContent);
         for (const label of [
-            'Generic',
             'PostgreSQL',
             'MySQL',
             'SQL Server',
             'MariaDB',
             'SQLite',
-            'ClickHouse',
-            'CockroachDB',
             'Oracle',
         ])
-            expect(options, label).toContain(label);
+            expect(labels, label).toContain(label);
+        for (const card of cards)
+            expect(card.querySelector('img')).not.toBeNull();
+    });
+
+    it('creates a diagram of the database whose card was chosen', async () => {
+        syncDiagram.mockResolvedValue('remote-1');
+        show();
+        fireEvent.click(screen.getByRole('radio', { name: 'MySQL' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Create diagram' }));
+        await waitFor(() => expect(syncDiagram).toHaveBeenCalled());
+        const [{ diagram }] = storage.addDiagram.mock.calls[0] as unknown as [
+            { diagram: { databaseType: string } },
+        ];
+        expect(diagram.databaseType).toBe('mysql');
+    });
+
+    it('Check Examples closes this form and opens the examples', () => {
+        show();
+        fireEvent.click(screen.getByRole('button', { name: 'Check Examples' }));
+        expect(onOpenChange).toHaveBeenCalledWith(false);
+        expect(openExamplesDialog).toHaveBeenCalledTimes(1);
+    });
+
+    it('Cancel closes the form without creating anything', () => {
+        show();
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+        expect(onOpenChange).toHaveBeenCalledWith(false);
+        expect(syncDiagram).not.toHaveBeenCalled();
     });
 
     it('offers "Import from database" when an importer is given', () => {
