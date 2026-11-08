@@ -94,3 +94,16 @@ platform's key). They stay as built until the owner says otherwise.
 Method: two black-box observers measure the old editor (no source, bundles or `main` read);
 implementers who have not seen the old code apply the measurements and a pixel comparison
 (`tools/e2e/visual/compare.mjs`) shows what still differs.
+
+## The rule for the restored UI (owner, 2026-11-08)
+
+"UI must be very much the same, but the code structure and logic can be different."
+
+- The UI (what a person sees and does: look, sizes, colours, spacing, wording, behaviour) is to
+  match the old editor as closely as the measurements allow.
+- The code (structure, file and variable names, component split, state handling, CSS
+  organisation, helper functions) is written new and may differ. It is not a copy of the old
+  project, and an exact replica is not wanted.
+- Checks that keep both true: the pixel comparison against the old editor
+  (`tools/e2e/visual/compare.mjs`) for the UI, and for the code the similarity gate over the whole
+  tree plus the transcript scan of every session (`rewrite/provenance-audit/`).
