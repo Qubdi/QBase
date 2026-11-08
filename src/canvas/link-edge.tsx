@@ -95,8 +95,9 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
                     <button
                         type="button"
                         aria-label={t('canvas.link.select')}
+                        title={t('canvas.link.select')}
                         data-testid={`link-dot-${props.id}`}
-                        className="nodrag nopan pointer-events-auto absolute flex h-4 w-4 items-center justify-center rounded-full border border-teal-600 bg-white text-teal-600"
+                        className="nodrag nopan pointer-events-auto absolute flex size-6 items-center justify-center rounded-full border-2 border-teal-600 bg-background text-teal-600 shadow-lg transition-all hover:scale-110 hover:bg-teal-50"
                         style={{
                             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
                         }}
@@ -107,7 +108,10 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
                             })
                         }
                     >
-                        <Ellipsis className="h-3 w-3" aria-hidden />
+                        <Ellipsis
+                            className="size-4 text-teal-600"
+                            aria-hidden
+                        />
                     </button>
                 </EdgeLabelRenderer>
             ) : null}
