@@ -1,3 +1,4 @@
+import { INDEX_METHODS } from '@/core/model/index-methods';
 import type { Dialect } from '../dialect';
 import { readMysql } from './read';
 import { writeMysql } from './write';
@@ -56,7 +57,7 @@ export const mysql: Dialect = {
         views: true,
         materializedViews: false,
         nativeComments: false,
-        indexMethods: [],
+        indexMethods: INDEX_METHODS.mysql,
         numbering: 'auto-increment-keyword',
     },
     types: MYSQL_TYPES,

@@ -8,10 +8,11 @@ import {
     X,
 } from 'lucide-react';
 import {
-    canUseGin,
     offeredKeyMethods,
     planAddKey,
+    indexMethodProblem,
     planSetKeyColumns,
+    planUpdateKey,
 } from '@/core/commands/plan-column';
 import type { Column } from '@/core/model/column';
 import type { Entity } from '@/core/model/entity';
@@ -112,15 +113,11 @@ const IndexRow: React.FC<{
     const text = useText();
     const methods = offeredKeyMethods(design.databaseType);
     const patch = (change: Partial<Key>) =>
-        edit({
-            type: 'part.update',
-            entityId: entity.id,
-            part: 'keys',
-            id: index.id,
-            patch: change,
-        });
-    const chosenColumns = columns.filter((c) => index.members.includes(c.id));
-    const ginOk = canUseGin(chosenColumns);
+        edit(planUpdateKey(design, entity.id, index.id, change));
+    // what each type of this database would say to this index
+    const problems = new Map(
+        methods.map((m) => [m, indexMethodProblem(design, entity.id, index, m)])
+    );
     const primary = index.pk === true;
 
     return (
@@ -200,7 +197,7 @@ const IndexRow: React.FC<{
                             </Label>
                             <OptionSelect
                                 aria-label={text('indexes.type')}
-                                value={index.algorithm ?? 'btree'}
+                                value={index.algorithm ?? methods[0]}
                                 disabled={locked}
                                 onValueChange={(v) =>
                                     patch({ algorithm: v as KeyMethod })
@@ -208,14 +205,21 @@ const IndexRow: React.FC<{
                                 options={methods.map((m) => ({
                                     value: m,
                                     label: m,
-                                    disabled: m === 'gin' && !ginOk,
+                                    disabled: problems.get(m) !== undefined,
                                 }))}
                             />
-                            {ginOk ? null : (
-                                <p className="text-xs text-slate-600 dark:text-slate-300">
-                                    {text('indexes.ginNeedsFields')}
-                                </p>
-                            )}
+                            {methods.map((m) => {
+                                const problem = problems.get(m);
+                                return problem ? (
+                                    <p
+                                        key={m}
+                                        className="text-xs text-slate-600 dark:text-slate-300"
+                                    >
+                                        {m}:{' '}
+                                        {text(`indexes.problem.${problem}`)}
+                                    </p>
+                                ) : null;
+                            })}
                         </div>
                     ) : null}
                     <Label className="block space-y-1 text-sm">

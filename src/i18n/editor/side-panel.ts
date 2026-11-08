@@ -104,7 +104,17 @@ export const sidePanelStrings = {
         noDescription: 'No description',
         delete: 'Delete index',
         primaryKey: 'Primary key',
-        ginNeedsFields: 'Needs array, json, jsonb, tsvector or hstore fields',
+        problem: {
+            arrayOrJson: 'Needs array, json, jsonb, tsvector or hstore fields',
+            oneField: 'Works on one field only',
+            notUnique: 'Cannot be unique',
+            needsText: 'Needs text fields (char, varchar, text)',
+            needsGeometry: 'Needs one geometry field',
+            needsXml: 'Needs one xml field',
+            oneClustered: 'A table has only one clustered index',
+            oneColumnstore: 'A table has only one columnstore index',
+            needsPrimaryKey: 'Needs a primary key',
+        },
     },
     checks: {
         add: 'Add Check',

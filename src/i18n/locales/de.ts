@@ -678,8 +678,20 @@ export const de = {
                     noDescription: 'Keine Beschreibung',
                     delete: 'Index löschen',
                     primaryKey: 'Primärschlüssel',
-                    ginNeedsFields:
-                        'Erfordert Felder vom Typ array, json, jsonb, tsvector oder hstore',
+                    problem: {
+                        arrayOrJson:
+                            'Erfordert Felder vom Typ array, json, jsonb, tsvector oder hstore',
+                        oneField: 'Funktioniert nur mit einem Feld',
+                        notUnique: 'Kann nicht eindeutig sein',
+                        needsText: 'Erfordert Textfelder (char, varchar, text)',
+                        needsGeometry: 'Erfordert ein Geometriefeld',
+                        needsXml: 'Erfordert ein xml-Feld',
+                        oneClustered:
+                            'Eine Tabelle hat nur einen gruppierten Index',
+                        oneColumnstore:
+                            'Eine Tabelle hat nur einen Columnstore-Index',
+                        needsPrimaryKey: 'Erfordert einen Primärschlüssel',
+                    },
                 },
                 checks: {
                     add: 'Prüfung hinzufügen',

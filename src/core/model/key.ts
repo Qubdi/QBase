@@ -3,8 +3,9 @@ import type { Id } from './id';
 
 /** Access methods grouped by the database family that uses them. */
 const METHODS_BY_FAMILY = {
-    server: ['clustered', 'nonclustered'],
+    server: ['clustered', 'nonclustered', 'columnstore'],
     special: ['fulltext', 'spatial', 'xml'],
+    oracle: ['bitmap'],
     generic: ['index'],
     postgres: ['brin', 'spgist', 'gist', 'gin', 'hash', 'btree'],
 } as const;

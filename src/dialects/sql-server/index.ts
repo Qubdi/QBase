@@ -1,3 +1,4 @@
+import { INDEX_METHODS } from '@/core/model/index-methods';
 import type { Dialect } from '../dialect';
 import { readSqlServer } from './read';
 import { writeSqlServer } from './write';
@@ -53,7 +54,7 @@ export const sqlServer: Dialect = {
         views: true,
         materializedViews: false,
         nativeComments: false,
-        indexMethods: [],
+        indexMethods: INDEX_METHODS.sql_server,
         numbering: 'identity-property',
     },
     types: SQL_SERVER_TYPES,

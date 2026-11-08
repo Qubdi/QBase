@@ -701,8 +701,19 @@ export const ru = {
                     noDescription: 'Нет описания',
                     delete: 'Удалить индекс',
                     primaryKey: 'Первичный ключ',
-                    ginNeedsFields:
-                        'Нужны поля типа array, json, jsonb, tsvector или hstore',
+                    problem: {
+                        arrayOrJson:
+                            'Нужны поля типа array, json, jsonb, tsvector или hstore',
+                        oneField: 'Работает только с одним полем',
+                        notUnique: 'Не может быть уникальным',
+                        needsText: 'Нужны текстовые поля (char, varchar, text)',
+                        needsGeometry: 'Нужно одно геометрическое поле',
+                        needsXml: 'Нужно одно поле xml',
+                        oneClustered: 'В таблице только один кластерный индекс',
+                        oneColumnstore:
+                            'В таблице только один индекс columnstore',
+                        needsPrimaryKey: 'Нужен первичный ключ',
+                    },
                 },
                 checks: {
                     add: 'Добавить проверку',

@@ -698,8 +698,20 @@ export const fr = {
                     noDescription: 'Aucune description',
                     delete: "Supprimer l'index",
                     primaryKey: 'Clé primaire',
-                    ginNeedsFields:
-                        'Nécessite des champs de type array, json, jsonb, tsvector ou hstore',
+                    problem: {
+                        arrayOrJson:
+                            'Nécessite des champs de type array, json, jsonb, tsvector ou hstore',
+                        oneField: 'Fonctionne sur un seul champ',
+                        notUnique: 'Ne peut pas être unique',
+                        needsText:
+                            'Nécessite des champs texte (char, varchar, text)',
+                        needsGeometry: 'Nécessite un champ géométrique',
+                        needsXml: 'Nécessite un champ xml',
+                        oneClustered: 'Une table n’a qu’un seul index cluster',
+                        oneColumnstore:
+                            'Une table n’a qu’un seul index columnstore',
+                        needsPrimaryKey: 'Nécessite une clé primaire',
+                    },
                 },
                 checks: {
                     add: 'Ajouter une vérification',

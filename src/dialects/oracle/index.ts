@@ -1,3 +1,4 @@
+import { INDEX_METHODS } from '@/core/model/index-methods';
 import type { Dialect } from '../dialect';
 import { quoteDouble } from '../shared/text';
 import { readOracle } from './read';
@@ -38,7 +39,7 @@ const capabilities: Dialect['capabilities'] = {
     views: true,
     materializedViews: false,
     nativeComments: true,
-    indexMethods: [],
+    indexMethods: INDEX_METHODS.oracle,
     numbering: 'identity-property',
 };
 

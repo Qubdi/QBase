@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DATABASE_TYPES, traitsOf } from '@/core/model/database';
+import { INDEX_METHODS } from '../model/index-methods';
 import type { DatabaseType } from '@/core/model/database';
 import { createEntityParts, schemaForNewEntity } from '@/core/model/defaults';
 import { dialectFor } from '@/dialects/registry';
@@ -76,17 +77,36 @@ describe('EDT-143 / EDT-276 per-database features', () => {
             expect(traitsOf(type).hasUserTypes).toBe(type === 'postgresql');
     });
 
-    it('index types only on PostgreSQL', () => {
+    it('index types on every database but SQLite, the same list in the dialect', () => {
         for (const type of DATABASE_TYPES)
-            expect(traitsOf(type).hasIndexMethods).toBe(type === 'postgresql');
-        for (const type of WRITABLE) {
-            const methods = dialectFor(type).capabilities.indexMethods;
-            if (traitsOf(type).hasIndexMethods)
-                expect(methods).toEqual(
-                    expect.arrayContaining(['btree', 'hash', 'gin'])
-                );
-            else expect(methods).toEqual([]);
-        }
+            expect(traitsOf(type).hasIndexMethods).toBe(type !== 'sqlite');
+        for (const type of WRITABLE)
+            expect(dialectFor(type).capabilities.indexMethods).toEqual(
+                INDEX_METHODS[type]
+            );
+        expect(INDEX_METHODS.postgresql).toEqual([
+            'btree',
+            'hash',
+            'gist',
+            'gin',
+            'spgist',
+            'brin',
+        ]);
+        expect(INDEX_METHODS.mysql).toEqual([
+            'btree',
+            'hash',
+            'fulltext',
+            'spatial',
+        ]);
+        expect(INDEX_METHODS.mariadb).toEqual(INDEX_METHODS.mysql);
+        expect(INDEX_METHODS.sql_server).toEqual([
+            'nonclustered',
+            'clustered',
+            'columnstore',
+            'xml',
+        ]);
+        expect(INDEX_METHODS.oracle).toEqual(['btree', 'bitmap']);
+        expect(INDEX_METHODS.sqlite).toEqual([]);
     });
 });
 

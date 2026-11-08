@@ -1,3 +1,5 @@
+import { INDEX_METHODS } from './index-methods';
+
 export const DATABASE_TYPES = [
     'postgresql',
     'mysql',
@@ -63,7 +65,7 @@ export interface DatabaseTraits {
     hasArrays: boolean;
     /** true when the database has user-defined enum or composite types */
     hasUserTypes: boolean;
-    /** true when an index may choose its method (btree, hash, gin) */
+    /** true when an index may choose its type (see `INDEX_METHODS`) */
     hasIndexMethods: boolean;
     /** type given to a new key or column */
     defaultColumnType: string;
@@ -82,7 +84,7 @@ export function traitsOf(type: DatabaseType): DatabaseTraits {
         hasSchemas: SCHEMA_DATABASES.includes(type),
         hasArrays: type === 'postgresql',
         hasUserTypes: type === 'postgresql',
-        hasIndexMethods: type === 'postgresql',
+        hasIndexMethods: INDEX_METHODS[type].length > 0,
         defaultColumnType:
             type === 'sqlite'
                 ? 'integer'

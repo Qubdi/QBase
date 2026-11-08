@@ -50,23 +50,29 @@ describe('EDT-142 the Index Attributes popover', () => {
 });
 
 describe('EDT-143 Index Type only where the database has a choice', () => {
-    it('is offered on PostgreSQL', async () => {
-        await withIndexPopover('postgresql');
-        expect(
+    it.each([
+        ['postgresql', ['btree', 'hash', 'gist', 'gin', 'spgist', 'brin']],
+        ['mysql', ['btree', 'hash', 'fulltext', 'spatial']],
+        ['mariadb', ['btree', 'hash', 'fulltext', 'spatial']],
+        ['sql_server', ['nonclustered', 'clustered', 'columnstore', 'xml']],
+        ['oracle', ['btree', 'bitmap']],
+    ] as const)('is offered on %s with its own types', async (type, types) => {
+        await withIndexPopover(type);
+        await userEvent.click(
             await screen.findByRole('combobox', { name: 'Index type' })
-        ).toBeTruthy();
+        );
+        expect(
+            (await screen.findAllByRole('option')).map((o) => o.textContent)
+        ).toEqual(types);
     });
 
-    it.each(['mysql', 'sql_server', 'sqlite', 'mariadb'] as const)(
-        'is not offered on %s',
-        async (type) => {
-            await withIndexPopover(type);
-            expect(
-                await screen.findByRole('textbox', { name: 'Name' })
-            ).toBeTruthy();
-            expect(
-                screen.queryByRole('combobox', { name: 'Index type' })
-            ).toBeNull();
-        }
-    );
+    it('is not offered on SQLite, which has one kind of index', async () => {
+        await withIndexPopover('sqlite');
+        expect(
+            await screen.findByRole('textbox', { name: 'Name' })
+        ).toBeTruthy();
+        expect(
+            screen.queryByRole('combobox', { name: 'Index type' })
+        ).toBeNull();
+    });
 });

@@ -1,3 +1,4 @@
+import { INDEX_METHODS } from '@/core/model/index-methods';
 import type { Dialect } from '../dialect';
 import { POSTGRES_TYPE_SYNONYMS, fixPostgres, readPostgres } from './read';
 import { writePostgres } from './write';
@@ -86,7 +87,7 @@ export const postgresql: Dialect = {
         views: true,
         materializedViews: true,
         nativeComments: true,
-        indexMethods: ['btree', 'hash', 'gin'],
+        indexMethods: INDEX_METHODS.postgresql,
         numbering: 'serial',
     },
     types: POSTGRES_TYPES,

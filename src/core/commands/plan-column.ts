@@ -4,7 +4,13 @@ import type { Design } from '../model/design';
 import type { Id } from '../model/id';
 import { entityOf, partsOf } from '../model/lookup';
 import type { Key, KeyMethod } from '../model/key';
-import { traitsOf } from '../model/database';
+import {
+    canUseGin,
+    defaultMethodOf,
+    INDEX_METHODS,
+    methodProblem,
+} from '../model/index-methods';
+import type { MethodProblem } from '../model/index-methods';
 import type { Command, Patch } from './command';
 import type { PlanOptions } from './plan-entity';
 
@@ -82,27 +88,37 @@ export function planReorderColumns(entityId: Id, columnIds: Id[]): Command {
 
 // ------------------------------------------------------------------------ indexes
 
-const GIN_TYPES = ['jsonb', 'json', 'tsvector', 'hstore'];
+export { canUseGin };
 
-/** Whether `gin` may be used on these columns (DAT-044). */
-export function canUseGin(columns: readonly Column[]): boolean {
-    return (
-        columns.length > 0 &&
-        columns.every(
-            (c) =>
-                c.isArray === true ||
-                GIN_TYPES.includes(c.type.id.toLowerCase())
-        )
-    );
-}
-
-/** The index methods a database offers for a choice (DAT-044). */
+/** The index types a database offers for a choice (DAT-044). */
 export function offeredKeyMethods(
     databaseType: Design['databaseType']
 ): KeyMethod[] {
-    return traitsOf(databaseType).hasIndexMethods
-        ? ['btree', 'hash', 'gin']
-        : [];
+    return [...INDEX_METHODS[databaseType]];
+}
+
+/** The type of an index, as the database would take it with these columns and neighbours. */
+export function indexMethodProblem(
+    design: Design,
+    entityId: Id,
+    key: Key,
+    method: KeyMethod,
+    patch: Partial<Key> = {}
+): MethodProblem | undefined {
+    const entity = entityOf(design, entityId);
+    if (!entity) return undefined;
+    const parts = partsOf(design, entity);
+    const members = patch.members ?? key.members;
+    return methodProblem(
+        design.databaseType,
+        method,
+        parts.columns.filter((c) => members.includes(c.id)),
+        patch.distinct ?? key.distinct,
+        {
+            others: parts.keys.filter((k) => k.id !== key.id),
+            hasPrimaryKey: parts.keys.some((k) => k.pk),
+        }
+    );
 }
 
 /** `index_N` with no columns, not unique; `btree` where the database has a choice (EDT-141). */
@@ -113,9 +129,7 @@ export function planAddKey(
 ): Command | undefined {
     const entity = entityOf(design, entityId);
     if (!entity || entity.kind === 'view') return undefined;
-    const method = traitsOf(design.databaseType).hasIndexMethods
-        ? ('btree' as const)
-        : undefined;
+    const method = defaultMethodOf(design.databaseType);
     return {
         type: 'part.insert',
         entityId,
@@ -129,25 +143,40 @@ export function planAddKey(
 }
 
 /**
- * Sets the columns of an index. A `gin` method that no longer fits the chosen
- * columns is reset to `btree` (EDT-144).
+ * Changes an index. A type that the database would refuse for the new columns
+ * or the new unique flag is reset to the database's first type (EDT-144).
  */
+export function planUpdateKey(
+    design: Design,
+    entityId: Id,
+    keyId: Id,
+    change: Partial<Key>
+): Command | undefined {
+    const entity = entityOf(design, entityId);
+    const key = design.keys[keyId];
+    if (!entity || !key) return undefined;
+    const patch: Patch<Key> = { ...change };
+    const method = change.algorithm ?? key.algorithm;
+    const changesWhatMatters =
+        change.members !== undefined || change.distinct !== undefined;
+    if (
+        method &&
+        changesWhatMatters &&
+        change.algorithm === undefined &&
+        indexMethodProblem(design, entityId, key, method, change)
+    )
+        patch.algorithm = defaultMethodOf(design.databaseType);
+    return { type: 'part.update', entityId, part: 'keys', id: keyId, patch };
+}
+
+/** Sets the columns of an index (see `planUpdateKey`). */
 export function planSetKeyColumns(
     design: Design,
     entityId: Id,
     keyId: Id,
     columnIds: Id[]
 ): Command | undefined {
-    const entity = entityOf(design, entityId);
-    const key = design.keys[keyId];
-    if (!entity || !key) return undefined;
-    const patch: Patch<Key> = { members: columnIds };
-    if (key.algorithm === 'gin') {
-        const parts = partsOf(design, entity);
-        const chosen = parts.columns.filter((c) => columnIds.includes(c.id));
-        if (!canUseGin(chosen)) patch.algorithm = 'btree';
-    }
-    return { type: 'part.update', entityId, part: 'keys', id: keyId, patch };
+    return planUpdateKey(design, entityId, keyId, { members: columnIds });
 }
 
 /** A new, empty check constraint (EDT-148). */

@@ -1,3 +1,4 @@
+import type { Key } from '../model/key';
 import { describe, expect, it } from 'vitest';
 import { listOf } from '../model/collection';
 import type { Design } from '../model/design';
@@ -953,7 +954,24 @@ describe('EDT-138 / EDT-139 deleting a column', () => {
 });
 
 describe('EDT-141 to EDT-146 indexes', () => {
-    it('EDT-141 a new index is btree on PostgreSQL and has no method elsewhere', () => {
+    it('EDT-141 a new index has the first index type of its database, none for SQLite', () => {
+        const first = (type: Parameters<typeof withTables>[1]) => {
+            const d = withTables(['a'], type);
+            const command = planAddKey(d, d.entities.order[0], {}) as Extract<
+                Command,
+                { type: 'part.insert' }
+            >;
+            return (command.item as Key).algorithm;
+        };
+        expect(first('postgresql')).toBe('btree');
+        expect(first('mysql')).toBe('btree');
+        expect(first('mariadb')).toBe('btree');
+        expect(first('sql_server')).toBe('nonclustered');
+        expect(first('oracle')).toBe('btree');
+        expect(first('sqlite')).toBeUndefined();
+    });
+
+    it('EDT-141 a new index is btree on PostgreSQL', () => {
         const pg = withTables(['a']);
         const key = (
             planAddKey(pg, pg.entities.order[0], {
@@ -967,14 +985,6 @@ describe('EDT-141 to EDT-146 indexes', () => {
             members: [],
             algorithm: 'btree',
         });
-        const my = withTables(['a'], 'mysql');
-        const myKey = (
-            planAddKey(my, my.entities.order[0], {}) as Extract<
-                Command,
-                { type: 'part.insert' }
-            >
-        ).item;
-        expect(myKey).not.toHaveProperty('algorithm');
     });
 
     it('a view takes no index or check', () => {

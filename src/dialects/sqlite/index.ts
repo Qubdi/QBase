@@ -1,3 +1,4 @@
+import { INDEX_METHODS } from '@/core/model/index-methods';
 import type { Dialect } from '../dialect';
 import { readSqlite } from './read';
 import { writeSqlite } from './write';
@@ -41,7 +42,7 @@ export const sqlite: Dialect = {
         views: true,
         materializedViews: false,
         nativeComments: false,
-        indexMethods: [],
+        indexMethods: INDEX_METHODS.sqlite,
         numbering: 'integer-key-only',
     },
     types: SQLITE_TYPES,

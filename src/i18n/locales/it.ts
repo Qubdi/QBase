@@ -694,8 +694,20 @@ export const it = {
                     noDescription: 'Nessuna descrizione',
                     delete: 'Elimina indice',
                     primaryKey: 'Chiave primaria',
-                    ginNeedsFields:
-                        'Richiede campi array, json, jsonb, tsvector o hstore',
+                    problem: {
+                        arrayOrJson:
+                            'Richiede campi array, json, jsonb, tsvector o hstore',
+                        oneField: 'Funziona su un solo campo',
+                        notUnique: 'Non può essere univoco',
+                        needsText:
+                            'Richiede campi di testo (char, varchar, text)',
+                        needsGeometry: 'Richiede un campo geometrico',
+                        needsXml: 'Richiede un campo xml',
+                        oneClustered: 'Una tabella ha un solo indice cluster',
+                        oneColumnstore:
+                            'Una tabella ha un solo indice columnstore',
+                        needsPrimaryKey: 'Richiede una chiave primaria',
+                    },
                 },
                 checks: {
                     add: 'Aggiungi vincolo check',
