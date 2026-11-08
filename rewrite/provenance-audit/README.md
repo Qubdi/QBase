@@ -115,3 +115,37 @@ similarity gate is what shows that.
 | ab2e4f63 | 2026-11-07 20:44 | audit files | 13 | no |
 | ad01578e | 2026-11-07 20:50 | translation ka | 11 | no |
 | a9425e36 | 2026-11-07 20:50 | translation it | 13 | no |
+
+## Second scan, 2026-11-08 (66 sessions)
+
+The same scan over all 66 sub-sessions, including the ten started after the first audit. The
+new sessions are:
+
+| Session | Started (UTC) | Role | Tool calls | Opened main or ChartDB material |
+| --- | --- | --- | --- | --- |
+| a4207ec7 | 2026-11-07 21:36 | SQL-file import: DESC, partial indexes, generated columns, domains | 100 | no |
+| ae974ec2 | 2026-11-07 22:01 | server-mode browser flows and re-sync dialog | 240 | no |
+| a192c8c9 | 2026-11-07 22:22 | black-box measurement of the old editor: shell, panels, dialogs, wording | 240 | no: observed the running old editor through a browser only |
+| ae6fe04c | 2026-11-07 22:22 | black-box measurement of the old editor: canvas | 189 | no: same |
+| a4a47a58 | 2026-11-07 22:25 | dependencies, Highlight Fields, type legend | 145 | no |
+| a1ce03c7 | 2026-11-07 22:25 | Oracle, ClickHouse, Backup menu, New dialog tabs | 175 | no |
+| a0da0d01 | 2026-11-08 09:04 | canvas restyle from the measured spec | 300 | no |
+| a0c3eb03 | 2026-11-08 09:19 | shell restyle from the measured spec | 364 | no (one flag: the word "ChartDB" in its own report) |
+| ae001e48 | 2026-11-08 09:19 | side panel restyle from the measured spec | 369 | no |
+| aff08dc9 | 2026-11-08 11:51 | repair of the browser scripts for the restored wording | 215 | no |
+
+Notes for this round:
+
+- The two measuring sessions looked at the old editor only from outside, through a browser
+  (computed styles, element boxes, screenshots). They did not read its source, its bundles or its
+  container files. Their results are in `rewrite/spec/visual-*.md`; the screenshots stay outside
+  the repository.
+- The three restyling sessions had not seen the old editor's code; they worked from those
+  measurements and the screenshots. The only paths outside the repository and the temporary
+  folder that any of them touched are `/home/qubdi/ui-reference/` (screenshots of the old and the
+  new editor).
+- The similarity gate over the result: 883 files checked, none over the limits, 0 identical,
+  97.6 percent of lines original.
+- A peer interactive session, `qbase-be`, appeared on 2026-11-08 and is not one of the
+  orchestrator's sub-sessions: its transcript is not in this scan. The owner should state what it
+  did.
