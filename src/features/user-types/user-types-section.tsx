@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
     Brackets,
-    ChevronDown,
-    ChevronRight,
     Columns2,
     Eraser,
     MoreVertical,
@@ -10,6 +8,7 @@ import {
     Trash2,
     X,
 } from 'lucide-react';
+import { ChevronDownIcon } from '@/platform/ui/radix-icons';
 import { cn } from '@/lib/utils/utils';
 import {
     planAddUserType,
@@ -249,11 +248,12 @@ const TypeRow: React.FC<{
                     className="flex size-8 shrink-0 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={onToggle}
                 >
-                    {open ? (
-                        <ChevronDown className="size-4" />
-                    ) : (
-                        <ChevronRight className="size-4" />
-                    )}
+                    <ChevronDownIcon
+                        className={cn(
+                            'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                            open && 'rotate-180'
+                        )}
+                    />
                 </button>
                 <InlineName
                     value={type.name}
@@ -484,7 +484,7 @@ export const UserTypesSection: React.FC = () => {
     }
 
     return (
-        <div className="flex h-full flex-col gap-2 p-2">
+        <div className="flex h-full flex-col gap-1 px-2 py-1">
             <div className="flex items-center gap-2">
                 <Input
                     aria-label={text('common.filter')}

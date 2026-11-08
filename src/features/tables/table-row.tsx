@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Crosshair, MoreVertical } from 'lucide-react';
+import { Crosshair, MoreVertical } from 'lucide-react';
+import { ChevronDownIcon } from '@/platform/ui/radix-icons';
 import {
     planChangeSchema,
     planDeleteEntities,
@@ -60,11 +61,12 @@ export const TableRow: React.FC<{
             onClick={onToggle}
             className="flex size-8 shrink-0 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-            {open ? (
-                <ChevronUp className="size-4" />
-            ) : (
-                <ChevronDown className="size-4" />
-            )}
+            <ChevronDownIcon
+                className={cn(
+                    'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                    open && 'rotate-180'
+                )}
+            />
         </button>
     );
 

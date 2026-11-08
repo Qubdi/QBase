@@ -4,7 +4,7 @@ import React from 'react';
 const Illustration: React.FC = () => (
     <svg
         aria-hidden="true"
-        viewBox="0 0 106 72"
+        viewBox="-11 -12 128 96"
         width="128"
         height="96"
         className="shrink-0 text-primary"
@@ -59,10 +59,20 @@ export const Notice: React.FC<{
     hint?: string;
     children?: React.ReactNode;
 }> = ({ title, hint, children }) => (
-    <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-        <Illustration />
-        <p className="text-lg font-medium leading-7 tracking-tight">{title}</p>
-        {hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}
+    <div className="mt-20 flex flex-col items-center justify-center gap-6 p-12 text-center">
+        <div className="flex flex-col items-center gap-2">
+            <div className="mb-2 flex h-24 w-32 justify-center">
+                <Illustration />
+            </div>
+            <p className="text-lg font-medium leading-7 tracking-tight">
+                {title}
+            </p>
+            {hint ? (
+                <p className="text-sm leading-[22.75px] text-muted-foreground">
+                    {hint}
+                </p>
+            ) : null}
+        </div>
         {children}
     </div>
 );

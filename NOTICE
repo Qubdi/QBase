@@ -72,3 +72,8 @@ Database logos (src/assets/databases)
   looks as it does on the main branch, and are copied from that branch's image
   files, not drawn again. The code that shows them is written for this project.
   The icons of the editor itself come from the lucide-react package (ISC licence).
+
+Radix Icons (MIT)
+  src/platform/ui/radix-icons.tsx holds two 15 x 15 icons (the select box caret
+  and the accordion chevron) from the Radix Icons set, Copyright (c) WorkOS,
+  MIT licence (https://github.com/radix-ui/icons).

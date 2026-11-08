@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, ChevronRight, ListTree, Waypoints } from 'lucide-react';
+import { ListCollapse, Workflow } from 'lucide-react';
+import { cn } from '@/lib/utils/utils';
+import { ChevronDownIcon } from '@/platform/ui/radix-icons';
 import { planDeleteDependency } from '@/core/commands/plan-dependency';
 import {
     planDeleteLink,
@@ -52,11 +54,12 @@ const RefRow: React.FC<{
                     onToggle();
                 }}
             >
-                {open ? (
-                    <ChevronDown className="size-4 shrink-0" />
-                ) : (
-                    <ChevronRight className="size-4 shrink-0" />
-                )}
+                <ChevronDownIcon
+                    className={cn(
+                        'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                        open && 'rotate-180'
+                    )}
+                />
                 <span className="truncate">{link.name}</span>
             </button>
             {open ? (
@@ -222,7 +225,7 @@ export const RefsSection: React.FC = () => {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="px-4 text-sm"
+                        className="px-4 text-sm font-normal"
                         onClick={() => setCreating(true)}
                     >
                         {text('refs.add')}
@@ -273,7 +276,7 @@ export const RefsSection: React.FC = () => {
     }
 
     return (
-        <div className="flex h-full flex-col gap-2 p-2">
+        <div className="flex h-full flex-col gap-1 px-2 py-1">
             <div className="flex items-center gap-2">
                 <Button
                     type="button"
@@ -283,7 +286,7 @@ export const RefsSection: React.FC = () => {
                     aria-label={text('refs.collapseAll')}
                     onClick={() => setOpenIds(new Set())}
                 >
-                    <ListTree />
+                    <ListCollapse />
                 </Button>
                 <Input
                     aria-label={text('refs.filter')}
@@ -300,7 +303,7 @@ export const RefsSection: React.FC = () => {
                         className="shrink-0 px-2"
                         onClick={() => setCreating(true)}
                     >
-                        <Waypoints />
+                        <Workflow />
                         {text('refs.add')}
                     </Button>
                 )}
