@@ -161,6 +161,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         const why = allowEntryProblem(entry);
         if (why) problems.push(`INTROSPECT_ALLOW_HOSTS entry "${entry}": ${why}`);
     }
+    // the browser's Origin header is scheme://host[:port] with nothing after it,
+    // and the server compares it as text: `*`, a path or a trailing slash would
+    // match no request and fail every credentialed call without saying why
+    const corsOrigin = env.CORS_ORIGIN?.trim() || null;
+    if (corsOrigin !== null) {
+        let exact = false;
+        try {
+            const url = new URL(corsOrigin);
+            exact = /^https?:$/.test(url.protocol) && url.origin === corsOrigin;
+        } catch {
+            // not a URL at all
+        }
+        if (!exact) {
+            problems.push(
+                `CORS_ORIGIN must be one exact origin such as https://editor.example.com, with no path or trailing slash (got "${corsOrigin}")`
+            );
+        }
+    }
     const key = (name: string) => {
         const value = env[name] || null;
         if (value !== null && value.length < MIN_KEY_LENGTH) {
@@ -216,7 +234,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         // loopback unless told otherwise; the Docker image sets 0.0.0.0
         host: env.HOST ?? '127.0.0.1',
         port: int('PORT', 3001, 1, 65535),
-        corsOrigin: env.CORS_ORIGIN ?? null,
+        corsOrigin,
         webDir: env.WEB_DIR?.trim() || null,
         sessionDays: int('SESSION_DAYS', 30, 1, 3650),
         sessionIdleDays: int('SESSION_IDLE_DAYS', 14),

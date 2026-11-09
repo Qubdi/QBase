@@ -165,6 +165,23 @@ describe('boot-time validation', () => {
         });
     });
 
+    describe('CORS_ORIGIN', () => {
+        const origin = (value: string) => loadConfig({ CORS_ORIGIN: value }).corsOrigin;
+
+        it('accepts one exact origin, or nothing', () => {
+            expect(origin('http://localhost:5173')).toBe('http://localhost:5173');
+            expect(origin('https://editor.example.com')).toBe('https://editor.example.com');
+            expect(origin('')).toBeNull();
+            expect(loadConfig({}).corsOrigin).toBeNull();
+        });
+
+        it('refuses a value that could never match a browser Origin, and says so', () => {
+            for (const value of ['*', 'https://editor.example.com/', 'https://editor.example.com/app', 'editor.example.com', 'ftp://editor.example.com', 'https://a.example.com,https://b.example.com'])
+                expect(() => origin(value), value).toThrow(ConfigError);
+            expect(() => origin('*')).toThrow(/CORS_ORIGIN must be one exact origin/);
+        });
+    });
+
     it('names every bad setting at once', () => {
         expect(() => loadConfig({ PORT: 'x', SESSION_DAYS: 'y' })).toThrow(/PORT[\s\S]*SESSION_DAYS/);
     });

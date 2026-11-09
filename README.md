@@ -233,7 +233,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `HOST` | `127.0.0.1` (`0.0.0.0` in the Docker image) | Interface the server listens on |
 | `PORT` | `3001` | HTTP port |
 | `WEB_DIR` | unset (set in the Docker image) | Folder holding the built editor. When set, the server serves the editor too and the API moves under `/api`; unset = API only, at the root |
-| `CORS_ORIGIN` | unset | Origin of the editor when it runs on another host (`npm run dev`); not needed in the image, where editor and API share one address |
+| `CORS_ORIGIN` | unset | One exact origin (`https://editor.example.com`: no path, no trailing slash, no `*`; the server refuses to start otherwise) of the editor when it runs on another host (`npm run dev`); not needed in the image, where editor and API share one address |
 | `CONNECTION_KEY` | unset | Encrypts saved database passwords and the tokens of active share links (at least 16 characters). Saving connections, and with them drift checks and re-syncs, need it; without it a share link's URL is shown only once, when it is created or regenerated |
 | `SECRETS_KEY` | unset | Encrypts the secrets of authenticator apps (two-factor sign-in), at least 16 characters. Unset = `CONNECTION_KEY` is used; with neither, two-factor sign-in is not offered. Do not lose it: people who turned it on could not sign in |
 | `MFA_ENABLED` | `true` | `false` removes two-factor sign-in completely: no endpoints, no screens |
