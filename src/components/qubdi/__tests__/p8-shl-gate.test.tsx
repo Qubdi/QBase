@@ -117,6 +117,56 @@ beforeEach(() => {
     api.getDiagramSummary.mockResolvedValue(summary());
 });
 
+describe('the gate when the signed-in user object is refreshed', () => {
+    it('keeps what it shows and does not look the diagram up again (2FA recovery codes stay)', async () => {
+        const adapter = new MemoryStorageAdapter();
+        api.getDiagram.mockResolvedValue(undefined);
+        const design = withTables(['a']);
+        await adapter.save(design);
+        setRemoteId(design.id, 'r1');
+        setProjectId(design.id, 'p1');
+        const tree = (who: RemoteUser) => (
+            <MemoryRouter initialEntries={['/billing/diagrams/r1']}>
+                <qubdiContext.Provider
+                    value={
+                        { enabled: true, user: who } as unknown as QubdiContext
+                    }
+                >
+                    <StorageContext.Provider
+                        value={{
+                            adapter,
+                            diagrams: localDiagramsOver(adapter),
+                        }}
+                    >
+                        <Routes>
+                            <Route
+                                path=":projectSlug/diagrams/:remoteDiagramId"
+                                element={
+                                    <DiagramAccessGate
+                                        fallback={<div>start flow</div>}
+                                    >
+                                        <Probe />
+                                    </DiagramAccessGate>
+                                }
+                            />
+                        </Routes>
+                    </StorageContext.Provider>
+                </qubdiContext.Provider>
+            </MemoryRouter>
+        );
+        const view = render(tree(user));
+        expect(await screen.findByText(/^status:/)).toBeTruthy();
+        const lookups = api.getProject.mock.calls.length;
+        // the same person, a new object: what turning two-factor on does
+        view.rerender(tree({ ...user, mfaEnabled: true } as RemoteUser));
+        // still showing the page, not back at "loading"
+        expect(screen.getByText(/^status:/)).toBeTruthy();
+        await new Promise((r) => setTimeout(r, 30));
+        expect(screen.getByText(/^status:/)).toBeTruthy();
+        expect(api.getProject.mock.calls.length).toBe(lookups);
+    });
+});
+
 describe('the project editor gate (SHL-016, SHL-111)', () => {
     it('SHL-016: a diagram of another project shows "not found", never the diagram', async () => {
         api.getDiagramSummary.mockResolvedValue(

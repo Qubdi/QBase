@@ -118,9 +118,13 @@ function useWorkspaceResolution(
     const storageRef = useRef(storage);
     storageRef.current = storage;
     const [state, setState] = useState<Resolution>({ kind: 'loading' });
+    // keyed on who is signed in, not on the user object: turning two-factor
+    // on refreshes that object, and starting over here would remount the
+    // gate and lose the recovery codes shown once
+    const userId = user?.id;
 
     useEffect(() => {
-        if (!user) return;
+        if (!userId) return;
         let cancelled = false;
         const done = (next: Resolution) => !cancelled && setState(next);
         setState({ kind: 'loading' });
@@ -187,7 +191,7 @@ function useWorkspaceResolution(
         return () => {
             cancelled = true;
         };
-    }, [user, slug, remoteDiagramId]);
+    }, [userId, slug, remoteDiagramId]);
 
     return state;
 }
@@ -272,12 +276,14 @@ function useLegacyAccess(localId: string | undefined): DiagramAccessValue {
     const [tick, setTick] = useState(0);
     const refresh = useCallback(() => setTick((t) => t + 1), []);
 
+    // who is signed in, not the user object (see useWorkspaceResolution)
+    const who = user === undefined ? undefined : user === null ? null : user.id;
     useEffect(() => {
-        if (user === undefined) {
+        if (who === undefined) {
             setAccess({ status: 'loading' });
             return;
         }
-        if (user === null) {
+        if (who === null) {
             setAccess({ status: 'signed_out' });
             return;
         }
@@ -309,7 +315,7 @@ function useLegacyAccess(localId: string | undefined): DiagramAccessValue {
         return () => {
             cancelled = true;
         };
-    }, [user, localId, tick]);
+    }, [who, localId, tick]);
 
     return useMemo(() => ({ access, refresh }), [access, refresh]);
 }
