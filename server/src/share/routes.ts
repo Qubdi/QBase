@@ -242,9 +242,11 @@ export const shareManagementRoutes =
                     .returning();
                 return row;
             });
-            if (!updated) {
+            // null: no room under the cap; undefined: the link went away meanwhile
+            if (updated === null) {
                 return reply.code(409).send({ error: 'too_many_links' });
             }
+            if (!updated) return reply.code(404).send({ error: 'not_found' });
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.update',
