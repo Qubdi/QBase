@@ -170,6 +170,12 @@ export function importDbml(
                 values: e.values.map((v) => v.name),
             });
 
+    // an enum is found by its written name in any letter case: the column's type
+    // is lower-cased below, which would otherwise lose the link to `Status`
+    const enumByLower = new Map<string, string>();
+    for (const s of schemas)
+        for (const e of s.enums) enumByLower.set(e.name.toLowerCase(), e.name);
+
     const allTables = schemas.flatMap((s) =>
         s.tables.map((t) => ({ t, schema: s.name }))
     );
@@ -189,7 +195,10 @@ export function importDbml(
             const lower = decl.name.toLowerCase();
             const spec: ColumnSpec = {
                 name: f.name,
-                typeName: dialect.typeSynonyms?.[lower] ?? lower,
+                typeName:
+                    enumByLower.get(lower) ??
+                    dialect.typeSynonyms?.[lower] ??
+                    lower,
                 nullable: !(f.not_null || primary.has(f.name) || f.increment),
                 primary: primary.has(f.name),
                 unique: !!f.unique,

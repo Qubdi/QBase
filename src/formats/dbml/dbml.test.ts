@@ -197,6 +197,17 @@ describe('IMP-045 to IMP-055 DBML import and round trip', () => {
             Object.values(ok.design!.rules).map((x) => x.expression)
         ).toEqual(['n > 0']);
     });
+    it('links a field to an enum whose name has capitals', () => {
+        const r = importDbml(
+            'enum Status {\n  open\n  closed\n}\nTable a {\n  s Status\n}\n',
+            'postgresql'
+        );
+        const d = r.design!;
+        const column = Object.values(d.columns).find((c) => c.name === 's')!;
+        expect(column.type.name).toBe('Status');
+        const types = Object.values(d.userTypes.byId);
+        expect(types.map((t) => t.name)).toEqual(['Status']);
+    });
     it('IMP-048 checks from the field setting and the checks block', () => {
         const r = importDbml(
             "Table a {\n  n int [check: `n > 0`]\n  m int\n  checks {\n    `m < 9` [name: 'c']\n  }\n}\n",
