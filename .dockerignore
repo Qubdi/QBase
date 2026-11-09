@@ -8,8 +8,12 @@ coverage
 **/.env
 **/.env.*
 
-# Not read by the image: audit notes, CI, git hooks, version control
+# Not read by the image: audit notes, rewrite records, dev tools, load tests, CI,
+# git hooks, version control
 Audit/
+rewrite/
+tools/
+server/load/
 .github/
 .husky/
 .git
