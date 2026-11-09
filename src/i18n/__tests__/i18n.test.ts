@@ -41,6 +41,16 @@ describe('lazy translations', () => {
         expect(i18n.hasResourceBundle('ja', 'translation')).toBe(false);
     });
 
+    it('does not switch back to a language that finished loading late', async () => {
+        void i18n.changeLanguage('it');
+        await i18n.changeLanguage('en');
+        await expect
+            .poll(() => i18n.hasResourceBundle('it', 'translation'))
+            .toBe(true);
+        await new Promise((r) => setTimeout(r, 20));
+        expect(i18n.language).toBe('en');
+    });
+
     it('falls back to English for a language it has no file for', async () => {
         await i18n.changeLanguage('xx');
         await i18n.changeLanguage('en');
