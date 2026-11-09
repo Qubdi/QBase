@@ -3,7 +3,6 @@ import { account } from '../qubdi/account';
 import { adminProjects } from '../qubdi/admin-projects';
 import { adminUsers } from '../qubdi/admin-users';
 import { database } from '../qubdi/database';
-import { sidePanel } from '../qubdi/side-panel';
 import { workspace } from '../qubdi/workspace';
 import { diagnosticsStrings } from '../editor/diagnostics';
 import { designsStrings } from '../editor/designs';
@@ -35,7 +34,6 @@ export const en = {
         canvas,
         qubdi: {
             account,
-            sidePanel,
             database,
             workspace,
             adminUsers,
