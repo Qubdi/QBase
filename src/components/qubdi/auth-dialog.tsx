@@ -208,6 +208,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                     <Input
                         type="email"
                         placeholder={t('qubdi.account.authDialog.email')}
+                        aria-label={t('qubdi.account.authDialog.email')}
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -217,6 +218,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                         <Input
                             type="password"
                             placeholder={t('qubdi.account.authDialog.password')}
+                            aria-label={t('qubdi.account.authDialog.password')}
                             autoComplete="current-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

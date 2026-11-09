@@ -48,6 +48,12 @@ describe('password dialogs', () => {
             });
         });
 
+        it('names the email and password fields, not by placeholder alone', () => {
+            render(<AuthDialog open onOpenChange={vi.fn()} />);
+            expect(screen.getByRole('textbox', { name: 'Email' })).toBeTruthy();
+            expect(screen.getByLabelText('Password')).toBeTruthy();
+        });
+
         it('takes any password: the rules are for choosing one, not for signing in', async () => {
             login.mockResolvedValue(undefined);
             render(<AuthDialog open onOpenChange={vi.fn()} />);
