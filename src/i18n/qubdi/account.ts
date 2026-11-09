@@ -110,6 +110,8 @@ export const account = {
         newPassword: 'New password',
         factor: 'Authenticator or recovery code',
         done: 'Password changed. Other devices were signed out.',
+        refreshFailed:
+            'Your password was changed, but this page could not update. Reload the page to continue.',
         submit: 'Change password',
         signOut: 'Sign out',
     },

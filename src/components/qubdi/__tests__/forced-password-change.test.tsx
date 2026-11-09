@@ -128,6 +128,19 @@ describe('ForcedPasswordChange', () => {
             await waitFor(() => expect(refreshUser).toHaveBeenCalledTimes(1));
         });
 
+        it('says so when the change worked but the page could not update', async () => {
+            changePassword.mockResolvedValue({ ok: true });
+            refreshUser.mockRejectedValue(new Error('offline'));
+            render(<ForcedPasswordChange />);
+            fillIn('Temp-Pass-123!', 'My-Own-Pass-456!');
+            fireEvent.click(
+                screen.getByRole('button', { name: 'Change password' })
+            );
+            const alert = await screen.findByRole('alert');
+            expect(alert.textContent).toMatch(/password was changed/);
+            expect(alert.textContent).toMatch(/Reload the page/);
+        });
+
         it('stays open and says why when the server refuses', async () => {
             const { ApiError } = await import('@/lib/qubdi/api');
             changePassword.mockRejectedValue(
