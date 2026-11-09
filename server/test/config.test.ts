@@ -123,10 +123,19 @@ describe('boot-time validation', () => {
             { PORT: '70000' },
             { DB_POOL_MAX: '-3' },
             { SESSION_DAYS: 'NaN' },
+            // beyond what a Date can hold, so an expiry would be Invalid Date
+            { SESSION_DAYS: '99999999999' },
+            { SESSION_DAYS: '3651' },
             { PASSWORD_MIN_LENGTH: 'abc' },
         ]) {
             expect(() => loadConfig(env), JSON.stringify(env)).toThrow(ConfigError);
         }
+    });
+
+    it('accepts the longest session a year count allows', () => {
+        expect(loadConfig({ SESSION_DAYS: '3650' }).sessionDays).toBe(3650);
+        // and an expiry that long is a real date
+        expect(Number.isNaN(new Date(Date.now() + 3650 * 86_400_000).getTime())).toBe(false);
     });
 
     it('names every bad setting at once', () => {

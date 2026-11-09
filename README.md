@@ -250,7 +250,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) before an account is locked |
 | `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |
 | `PASSWORD_MIN_LENGTH` | `12` | Fewest characters of a new password. Cannot be set below 8. Applies when a password is set, never at sign-in |
-| `SESSION_DAYS` | `30` | Longest a session lasts, in days |
+| `SESSION_DAYS` | `30` | Longest a session lasts, in days (1 to 3650) |
 | `SESSION_IDLE_DAYS` | `14` | A session unused for this many days ends early; `0` = only `SESSION_DAYS` applies |
 | `TRUST_PROXY` | unset | Behind a reverse proxy: the number of proxies in front of the server (`1` for one), or their addresses, comma separated. `true` is refused, because any visitor can send `X-Forwarded-For` |
 | `LINT_RATE_LIMIT` | `30` | Schema lint calls per minute per user |

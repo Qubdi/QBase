@@ -209,7 +209,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         port: int('PORT', 3001, 1, 65535),
         corsOrigin: env.CORS_ORIGIN ?? null,
         webDir: env.WEB_DIR?.trim() || null,
-        sessionDays: int('SESSION_DAYS', 30, 1),
+        sessionDays: int('SESSION_DAYS', 30, 1, 3650),
         sessionIdleDays: int('SESSION_IDLE_DAYS', 14),
         lintRateLimit: int('LINT_RATE_LIMIT', 30, 1),
         outboundRateLimit: int('OUTBOUND_RATE_LIMIT', 20, 1),
