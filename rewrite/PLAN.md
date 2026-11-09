@@ -140,7 +140,7 @@ ChartDB is not copying; copying its code is. Re-run `node tools/licences.mjs` in
   history, which contains ChartDB code, so Phase 10 still ends in a fresh repository.
 - Pull requests into `main` are not possible (unrelated histories). Work lands directly on
   this branch; protect it and review changes before merging.
-- The branch does not build until the foundations exist (Phase 3). That is expected; the
+- (History: at the start) The branch does not build until the foundations exist (Phase 3). That is expected; the
   similarity check is the CI gate until then.
 - Never copy a file back from `main` (`git checkout main -- <path>`).
 
@@ -347,7 +347,7 @@ to the schedule are SQL import and export, and reaching parity on the canvas.
 ## 11. Risks
 
 - The process is judged too weak: mitigate with the lawyer review in Phase 2 and clean authors.
-- The branch cannot build for a long time: mitigate by making Phase 3 small and early.
+- (History: it builds, lints and passes its tests now, see TODO.md.) The branch cannot build for a long time: mitigate by making Phase 3 small and early.
 - The rewrite drifts from `main` behaviour: mitigate with the parity checklist and sign-off.
 - The public image keeps circulating: see section 2.
 - Contributors read `main` while writing clean modules: mitigate with `rewrite/provenance.md`.
