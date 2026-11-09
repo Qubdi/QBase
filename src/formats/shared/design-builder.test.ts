@@ -54,3 +54,27 @@ describe('DesignBuilder table lookup', () => {
         expect(Date.now() - start).toBeLessThan(5000);
     });
 });
+
+describe('DesignBuilder diagnostics', () => {
+    it('names a table and a field that was dropped for repeating a name', () => {
+        const b = builder();
+        b.addTable({
+            name: 'users',
+            columns: [
+                { name: 'id', typeName: 'int', nullable: false },
+                { name: 'id', typeName: 'text', nullable: true },
+                { name: 'email', typeName: 'text', nullable: true },
+            ],
+            indexes: [],
+            checks: [],
+        });
+        const design = b.build();
+        expect(design.entities.order).toHaveLength(1);
+        expect(
+            design.entities.byId[design.entities.order[0]].columnIds
+        ).toHaveLength(2);
+        expect(b.diagnostics.map((d) => d.message)).toEqual([
+            'Table users: a second field named id was left out.',
+        ]);
+    });
+});

@@ -183,7 +183,13 @@ export class DesignBuilder {
         const columns: Column[] = [];
         const byName = new Map<string, Column>();
         for (const c of spec.columns) {
-            if (byName.has(c.name)) continue;
+            if (byName.has(c.name)) {
+                this.diagnostics.push({
+                    severity: 'warning',
+                    message: `Table ${spec.name}: a second field named ${c.name} was left out.`,
+                });
+                continue;
+            }
             const lower = c.typeName.toLowerCase();
             const asUser = enumNames.has(c.typeName);
             const column: Column = {
