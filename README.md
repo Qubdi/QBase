@@ -381,6 +381,11 @@ and 21 KB of WAL on a laptop. To go further:
   `docker compose exec -T db pg_restore -U qbase -d qbase --no-owner < qbase-2026-01-01.dump`
   (add `--clean --if-exists` to replace what is already there). For point-in-time recovery use WAL archiving
   (`archive_mode`, `archive_command`) or a managed Postgres.
+  **Keep `CONNECTION_KEY` (and `SECRETS_KEY`, if you set it) with the backup, in a separate
+  secret store, not inside the dump.** The dump holds saved database passwords, share-link
+  tokens and authenticator secrets only in encrypted form. Restored with a different key,
+  saved connections and share-link URLs cannot be read and people with two-factor on cannot
+  sign in. After a restore, start the server with the same values.
 
 QBase is licensed under the [Elastic License 2.0](LICENSE): free to use, modify and self-host, for personal and commercial use alike, including inside a company. The one thing it does not allow is offering QBase to others as a hosted or managed service (a SaaS) without a separate licence from Qubdi.
 
