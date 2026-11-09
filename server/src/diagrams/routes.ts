@@ -492,14 +492,17 @@ export const diagramRoutes =
                 .select({ id: shareLinks.id })
                 .from(shareLinks)
                 .where(eq(shareLinks.diagramId, id));
-            await db.delete(diagrams).where(eq(diagrams.id, id));
-            for (const link of links) emitLinkChanged(link.id);
-            await audit(db, {
-                userId: req.user!.id,
-                action: 'diagram.delete',
-                diagramId: id,
-                meta: { projectId: gone?.projectId, name: gone?.title },
+            // the delete and its log row together: no diagram is gone unrecorded
+            await db.transaction(async (tx) => {
+                await tx.delete(diagrams).where(eq(diagrams.id, id));
+                await audit(tx, {
+                    userId: req.user!.id,
+                    action: 'diagram.delete',
+                    diagramId: id,
+                    meta: { projectId: gone?.projectId, name: gone?.title },
+                });
             });
+            for (const link of links) emitLinkChanged(link.id);
             return reply.code(204).send();
         });
 

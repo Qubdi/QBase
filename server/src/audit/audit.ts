@@ -1,5 +1,5 @@
 import { and, eq, gt } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
+import type { Db, Tx } from '../db/client.js';
 import { auditLog } from '../db/schema.js';
 
 export const AUDIT_ACTIONS = [
@@ -148,7 +148,7 @@ const toRow = (entry: AuditEntry) => ({
     meta: cleanMeta(entry.meta),
 });
 
-export async function audit(db: Db, entry: AuditEntry) {
+export async function audit(db: Db | Tx, entry: AuditEntry) {
     await db.insert(auditLog).values(toRow(entry));
 }
 
@@ -185,7 +185,7 @@ export async function auditDiagramSave(
 }
 
 /** Several rows in one statement, for an action done to many things at once. */
-export async function auditMany(db: Db, entries: AuditEntry[]) {
+export async function auditMany(db: Db | Tx, entries: AuditEntry[]) {
     if (entries.length === 0) return;
     await db.insert(auditLog).values(entries.map(toRow));
 }
