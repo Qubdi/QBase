@@ -14,7 +14,12 @@
         <script src="/config.js"></script>
     </head>
     <body>
-        <main id="root"></main>
+        <main id="root">
+            <!-- replaced when the app starts; shown only without JavaScript -->
+            <noscript>
+                <p>QBase needs JavaScript. Turn it on and reload the page.</p>
+            </noscript>
+        </main>
         <script src="/src/main.tsx" type="module"></script>
     </body>
 </html>
