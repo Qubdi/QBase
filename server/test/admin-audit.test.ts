@@ -356,6 +356,15 @@ describe('GET /admin/audit', () => {
             expect(after.targetUserEmail).toBe(null);
         });
 
+        it('records whether an account was created as an admin', async () => {
+            const plain = await call('POST', '/admin/users', { email: 'plain@example.com', password: 'Password-123!' });
+            const boss = await call('POST', '/admin/users', { email: 'boss@example.com', password: 'Password-123!', isAdmin: true });
+            const rows = (await page('?action=user.create&limit=10')).items;
+            const adminFlag = (id: string) => rows.find((r) => r.targetUserId === id)?.meta?.isAdmin;
+            expect(adminFlag(plain.json().id)).toBe(false);
+            expect(adminFlag(boss.json().id)).toBe(true);
+        });
+
         it('has no email for an actor whose account is gone', async () => {
             const ghost = randomUUID();
             await insertAs(ghost, [

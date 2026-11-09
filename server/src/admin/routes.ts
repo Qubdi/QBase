@@ -343,7 +343,9 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'user.create',
-                meta: { targetUserId: user.id },
+                // whether the new account can administer: the one fact in this row
+                // that matters when the log is read after something went wrong
+                meta: { targetUserId: user.id, isAdmin: user.isAdmin },
             });
             return reply.code(201).send({
                 id: user.id,
