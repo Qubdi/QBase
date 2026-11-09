@@ -51,6 +51,9 @@ const changePassword = z.object({
     recoveryCode: z.string().max(40).optional(),
 });
 
+/** the all-addresses ceiling on failures at one account, as a multiple of AUTH_MAX_FAILURES */
+const ACCOUNT_FAILURE_FACTOR = 5;
+
 export const authRoutes =
     (db: Db, config: Config): FastifyPluginAsync =>
     async (app) => {
@@ -66,6 +69,13 @@ export const authRoutes =
         };
         const failures = createFailureThrottle({
             max: config.authMaxFailures,
+            windowMs: config.authLockoutMinutes * 60_000,
+        });
+        // Failures at one account from every address together. The ceiling is well
+        // above the per-address one, so a stranger cannot cheaply keep the owner
+        // out, but guesses spread over many addresses still run into it.
+        const accountFailures = createFailureThrottle({
+            max: config.authMaxFailures * ACCOUNT_FAILURE_FACTOR,
             windowMs: config.authLockoutMinutes * 60_000,
         });
         const locked = (reply: FastifyReply, key: string) => {
@@ -197,7 +207,15 @@ export const authRoutes =
             // out by guessing at their account on purpose. (Guesses spread over
             // many addresses are held back by the per-address rate limit.)
             const key = `login:${body.email}:${req.ip}`;
+            const accountKey = `login:${body.email}`;
             if (locked(reply, key)) return;
+            const accountWait = accountFailures.blockedFor(accountKey);
+            if (accountWait > 0) {
+                return reply
+                    .code(429)
+                    .header('retry-after', accountWait)
+                    .send({ error: 'too_many_attempts' });
+            }
             const [user] = await db
                 .select()
                 .from(users)
@@ -209,6 +227,7 @@ export const authRoutes =
             // password cannot confirm that the account exists but is switched off
             if (!user || !user.isActive || !ok) {
                 failures.recordFailure(key);
+                accountFailures.recordFailure(accountKey);
                 reply.code(401).send({ error: 'invalid_credentials' });
                 // The row is written after the answer has gone out, and only for
                 // an account that exists (guesses at made-up emails would fill the
@@ -227,6 +246,7 @@ export const authRoutes =
                 return reply;
             }
             failures.reset(key);
+            accountFailures.reset(accountKey);
             // password right, but there is a second step: no cookie yet, only
             // a ticket for POST /auth/login/mfa
             if (config.mfaEnabled && user.mfaEnabledAt) {

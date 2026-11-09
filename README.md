@@ -247,7 +247,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `SHARE_RATE_LIMIT` | `60` | Public share requests per minute per IP |
 | `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`) |
 | `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
-| `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) before an account is locked |
+| `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) from one address before it is locked out of an account; failures from all addresses together lock the account at five times this |
 | `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |
 | `PASSWORD_MIN_LENGTH` | `12` | Fewest characters of a new password. Cannot be set below 8. Applies when a password is set, never at sign-in |
 | `SESSION_DAYS` | `30` | Longest a session lasts, in days (1 to 3650) |

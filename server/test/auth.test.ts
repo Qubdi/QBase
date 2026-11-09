@@ -265,6 +265,29 @@ describe('auth throttling', () => {
         }
     });
 
+    it('locks an account that is guessed at from many addresses, though no one address is locked', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 2 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            const from = (n: number, password: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/login',
+                    payload: { email: 'a@example.com', password },
+                    remoteAddress: `203.0.113.${n}`,
+                });
+            // one failure per address: no address reaches its own limit of 2
+            for (let n = 1; n <= 10; n++) {
+                expect((await from(n, 'wrong-password')).statusCode).toBe(401);
+            }
+            const locked = await from(99, 'Password-123!');
+            expect(locked.statusCode).toBe(429);
+            expect(Number(locked.headers['retry-after'])).toBeGreaterThan(0);
+        } finally {
+            await ctx.close();
+        }
+    });
+
     it('counts unknown emails too, so the lockout does not reveal accounts', async () => {
         const ctx = await createTestApp({ authMaxFailures: 2 });
         try {
