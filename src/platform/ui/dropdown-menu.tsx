@@ -5,11 +5,6 @@ import { cn } from '@/lib/utils/utils';
 
 const DropdownMenu = MenuPrimitive.Root;
 const DropdownMenuTrigger = MenuPrimitive.Trigger;
-const DropdownMenuGroup = MenuPrimitive.Group;
-const DropdownMenuPortal = MenuPrimitive.Portal;
-const DropdownMenuSub = MenuPrimitive.Sub;
-const DropdownMenuRadioGroup = MenuPrimitive.RadioGroup;
-
 const itemBase =
     'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0';
 
@@ -148,16 +143,6 @@ const DropdownMenuSeparator = React.forwardRef<
 ));
 DropdownMenuSeparator.displayName = MenuPrimitive.Separator.displayName;
 
-const DropdownMenuShortcut = ({
-    className,
-    ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => (
-    <span
-        className={cn('ml-auto text-xs tracking-widest opacity-60', className)}
-        {...props}
-    />
-);
-
 export {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -167,11 +152,6 @@ export {
     DropdownMenuRadioItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuShortcut,
-    DropdownMenuGroup,
-    DropdownMenuPortal,
-    DropdownMenuSub,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
-    DropdownMenuRadioGroup,
 };
