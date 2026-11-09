@@ -17,7 +17,7 @@ import {
     verifyPassword,
 } from './password.js';
 import { createMfa, mfaAvailable } from './mfa.js';
-import { mfaRoutes } from './mfa-routes.js';
+import { mfaRoutes, type MfaGuard } from './mfa-routes.js';
 import { weakPassword } from './password-rules.js';
 import {
     createSession,
@@ -88,6 +88,31 @@ export const authRoutes =
             return true;
         };
 
+        // The second-step (code) lockout. It is keyed by account and address, so
+        // someone who holds the password cannot lock the owner out of their own
+        // second step by failing it from elsewhere; codes guessed from many
+        // addresses are held back by the all-addresses ceiling.
+        const mfaGuard: MfaGuard = {
+            locked(reply, req, userId) {
+                if (locked(reply, `mfa:${userId}:${req.ip}`)) return true;
+                const wait = accountFailures.blockedFor(`mfa:${userId}`);
+                if (wait === 0) return false;
+                reply
+                    .code(429)
+                    .header('retry-after', wait)
+                    .send({ error: 'too_many_attempts' });
+                return true;
+            },
+            fail(req, userId) {
+                failures.recordFailure(`mfa:${userId}:${req.ip}`);
+                accountFailures.recordFailure(`mfa:${userId}`);
+            },
+            reset(req, userId) {
+                failures.reset(`mfa:${userId}:${req.ip}`);
+                accountFailures.reset(`mfa:${userId}`);
+            },
+        };
+
         const cookieSecure = (req: FastifyRequest) =>
             config.cookieSecure === 'auto'
                 ? req.protocol === 'https'
@@ -133,7 +158,7 @@ export const authRoutes =
 
         if (config.mfaEnabled) {
             await app.register(
-                mfaRoutes({ db, config, mfa, failures, locked, limit, startSession })
+                mfaRoutes({ db, config, mfa, failures, locked, mfaGuard, limit, startSession })
             );
         }
 
@@ -332,18 +357,17 @@ export const authRoutes =
                 if (!config.secretsKey) {
                     return reply.code(503).send({ error: 'mfa_unavailable' });
                 }
-                const mfaKey = `mfa:${user.id}`;
-                if (locked(reply, mfaKey)) return;
+                if (mfaGuard.locked(reply, req, user.id)) return;
                 const ok =
                     body.code !== undefined
                         ? await mfa.checkCode(user.id, body.code)
                         : await mfa.spendRecoveryCode(user.id, body.recoveryCode!);
                 if (!ok) {
-                    failures.recordFailure(mfaKey);
+                    mfaGuard.fail(req, user.id);
                     await audit(db, { userId: user.id, action: 'mfa.failed' });
                     return reply.code(403).send({ error: 'invalid_code' });
                 }
-                failures.reset(mfaKey);
+                mfaGuard.reset(req, user.id);
                 if (body.code === undefined) {
                     await audit(db, { userId: user.id, action: 'mfa.recovery_used' });
                 }

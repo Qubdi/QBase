@@ -12,6 +12,14 @@ import { generateSecret, otpauthUrl } from './totp.js';
 
 type Failures = ReturnType<typeof createFailureThrottle>;
 
+/** the second-step lockout, keyed by account and address (see routes.ts) */
+export interface MfaGuard {
+    /** answers 429 and returns true while this address or the account is locked out */
+    locked: (reply: FastifyReply, req: FastifyRequest, userId: string) => boolean;
+    fail: (req: FastifyRequest, userId: string) => void;
+    reset: (req: FastifyRequest, userId: string) => void;
+}
+
 export interface MfaRouteDeps {
     db: Db;
     config: Config;
@@ -19,6 +27,7 @@ export interface MfaRouteDeps {
     failures: Failures;
     /** answers 429 and returns true while the key is locked out */
     locked: (reply: FastifyReply, key: string) => boolean;
+    mfaGuard: MfaGuard;
     /** route options with the per-address rate limit */
     limit: object;
     /** sets the session cookie and records the sign-in */
@@ -63,7 +72,7 @@ const renewBody = z.object({
 export const mfaRoutes =
     (deps: MfaRouteDeps): FastifyPluginAsync =>
     async (app) => {
-        const { db, config, mfa, failures, locked, limit, startSession } = deps;
+        const { db, config, mfa, failures, locked, mfaGuard, limit, startSession } = deps;
 
         /**
          * One second factor: a code from the app, or a recovery code (spent
@@ -95,9 +104,8 @@ export const mfaRoutes =
             if (!challenge) {
                 return reply.code(401).send({ error: 'invalid_challenge' });
             }
-            const key = `mfa:${challenge.userId}`;
             // guesses over several challenges count against the account too
-            if (locked(reply, key)) return;
+            if (mfaGuard.locked(reply, req, challenge.userId)) return;
             const [user] = await db
                 .select()
                 .from(users)
@@ -107,7 +115,7 @@ export const mfaRoutes =
             }
             const used = await checkFactor(user.id, body);
             if (!used) {
-                failures.recordFailure(key);
+                mfaGuard.fail(req, user.id);
                 await audit(db, { userId: user.id, action: 'mfa.failed' });
                 return reply.code(401).send({ error: 'invalid_code' });
             }
@@ -115,7 +123,7 @@ export const mfaRoutes =
             if (!(await mfa.finishChallenge(challenge.id))) {
                 return reply.code(401).send({ error: 'invalid_challenge' });
             }
-            failures.reset(key);
+            mfaGuard.reset(req, user.id);
             await startSession(req, reply, user.id);
             if (used === 'recovery') {
                 await audit(db, { userId: user.id, action: 'mfa.recovery_used' });
@@ -181,16 +189,15 @@ export const mfaRoutes =
             // leave the owner asked for a code they do not have
             const user = await checkPassword(req, reply, body.password);
             if (!user) return;
-            const key = `mfa:${req.user.id}`;
             if ((await mfa.secretOf(req.user.id)) === null) {
                 return reply.code(409).send({ error: 'setup_first' });
             }
             if (!(await mfa.checkCode(req.user.id, body.code))) {
-                failures.recordFailure(key);
+                mfaGuard.fail(req, req.user.id);
                 await audit(db, { userId: req.user.id, action: 'mfa.failed' });
                 return reply.code(400).send({ error: 'invalid_code' });
             }
-            failures.reset(key);
+            mfaGuard.reset(req, req.user.id);
             const recoveryCodes = await mfa.enable(req.user.id);
             await audit(db, { userId: req.user.id, action: 'mfa.enable' });
             // the only time they are shown: only their hashes are kept
@@ -268,12 +275,11 @@ export const mfaRoutes =
             body: { password: string; code?: string; recoveryCode?: string }
         ) {
             const userId = req.user!.id;
-            const key = `mfa:${userId}`;
             const user = await checkPassword(req, reply, body.password);
             if (!user) return null;
             const used = await checkFactor(userId, body);
             if (!used) {
-                failures.recordFailure(key);
+                mfaGuard.fail(req, userId);
                 await audit(db, { userId, action: 'mfa.failed' });
                 reply.code(403).send({ error: 'invalid_code' });
                 return null;
@@ -281,7 +287,7 @@ export const mfaRoutes =
             if (used === 'recovery') {
                 await audit(db, { userId, action: 'mfa.recovery_used' });
             }
-            failures.reset(key);
+            mfaGuard.reset(req, userId);
             return user;
         }
     };

@@ -376,7 +376,8 @@ describe('two-factor sign-in', () => {
             const { user } = await enrolled();
             await ctx.db.update(users).set({ isActive: false }).where(eq(users.id, user.id));
             const res = await password(user.email);
-            expect(res.statusCode).toBe(403);
+            expect(res.statusCode).toBe(401);
+            expect(res.json().challenge).toBeUndefined();
             await ctx.db.update(users).set({ isActive: true }).where(eq(users.id, user.id));
         });
 
@@ -616,6 +617,41 @@ describe('two-factor sign-in', () => {
                     payload: { challenge: 'x', code: wrong },
                 });
                 expect(locked.statusCode).toBe(401);
+            } finally {
+                await strict.close();
+            }
+        });
+
+        it('wrong codes from one address do not lock the owner out from another', async () => {
+            const strict = await createTestApp(
+                { secretsKey: KEY, authMaxFailures: 3 },
+                undefined,
+                false
+            );
+            try {
+                const { user, secret } = await enrolledOn(strict);
+                const wrong = totp(secret) === '000000' ? '000001' : '000000';
+                const second = async (remoteAddress: string, code: string) => {
+                    const first = await strict.app.inject({
+                        method: 'POST',
+                        url: '/auth/login',
+                        payload: { email: user.email, password: PASSWORD },
+                        remoteAddress,
+                    });
+                    return strict.app.inject({
+                        method: 'POST',
+                        url: '/auth/login/mfa',
+                        payload: { challenge: first.json().challenge, code },
+                        remoteAddress,
+                    });
+                };
+                // the password holder fails the second step from their own address
+                for (let i = 0; i < 3; i++) {
+                    expect((await second('203.0.113.7', wrong)).statusCode).toBe(401);
+                }
+                expect((await second('203.0.113.7', wrong)).statusCode).toBe(429);
+                // the owner, from another address, still gets in
+                expect((await second('198.51.100.9', totp(secret, Date.now() + 30_000))).statusCode).toBe(200);
             } finally {
                 await strict.close();
             }
