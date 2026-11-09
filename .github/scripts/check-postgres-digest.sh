@@ -6,6 +6,13 @@
 set -eu
 
 files="docker-compose.yml .github/workflows/ci.yaml .github/workflows/publish.yaml server/load/docker-compose.yml"
+# a file with no pin at all is a failure too: it would run an unpinned image
+for file in $files; do
+    if ! grep -Eq 'postgres:[0-9a-z.-]+@sha256:[0-9a-f]{64}' "$file"; then
+        echo "$file has no digest-pinned Postgres image." >&2
+        exit 1
+    fi
+done
 pins=$(grep -Eho 'postgres:[0-9a-z.-]+@sha256:[0-9a-f]{64}' $files | sort -u)
 count=$(printf '%s\n' "$pins" | grep -c .)
 
