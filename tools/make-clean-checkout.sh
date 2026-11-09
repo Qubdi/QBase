@@ -12,7 +12,7 @@
 #
 # Put the destination OUTSIDE the QBase folders (for example ~/clean-room/qbase-phase4) and,
 # while the clean session runs, move the `main` worktree and any ChartDB clone out of reach
-# (see "Residual risk" in rewrite/clean-author-brief.md hand-off notes printed at the end).
+# (see "Residual risk" in rewrite/clean-author-brief-phase*.md hand-off notes printed at the end).
 set -euo pipefail
 
 phase="${1:-}"; dest="${2:-}"
