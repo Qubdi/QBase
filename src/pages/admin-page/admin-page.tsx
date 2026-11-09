@@ -84,7 +84,7 @@ export const AdminLayout: React.FC = () => {
         <Shell title={section?.label}>
             <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 md:flex-row md:gap-8 md:py-8">
                 <AdminNav />
-                <main className="min-w-0 max-w-5xl flex-1">
+                <div className="min-w-0 max-w-5xl flex-1">
                     {section ? (
                         <header className="mb-6">
                             <h1 className="font-primary text-2xl font-bold">
@@ -96,7 +96,7 @@ export const AdminLayout: React.FC = () => {
                         </header>
                     ) : null}
                     <Outlet />
-                </main>
+                </div>
             </div>
         </Shell>
     );

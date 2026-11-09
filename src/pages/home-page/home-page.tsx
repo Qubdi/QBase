@@ -36,7 +36,7 @@ export const ProjectList: React.FC = () => {
     );
 
     return (
-        <main className="mx-auto w-full max-w-5xl px-4 py-8">
+        <div className="mx-auto w-full max-w-5xl px-4 py-8">
             <h1 className="font-primary text-2xl font-bold">
                 {t('qubdi.account.home.title')}
             </h1>
@@ -133,7 +133,7 @@ export const ProjectList: React.FC = () => {
                     />
                 </div>
             )}
-        </main>
+        </div>
     );
 };
 
