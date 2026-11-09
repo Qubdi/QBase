@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 9 · **date** 2026-11-09
+**rev** 10 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 57 | 0 | 1 | 0 | 0 |
 | Server | 36 | 0 | 4 | 0 | 0 |
 | Database | 19 | 0 | 0 | 0 | 0 |
-| Client | 64 | 0 | 2 | 30 | 0 |
+| Client | 54 | 0 | 2 | 40 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 220 | 0 | 7 | 59 | 0 |
+| **Total** | 210 | 0 | 7 | 69 | 0 |
 
 ## Act first
 
@@ -222,17 +222,13 @@
 | CLI-026 | Med | Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram | `src/persistence/dexie-adapter.ts:84` | Check store row or broadcast removals across tabs |
 | CLI-027 | Low | `save` clears removed flag, so an in-flight autosave resurrects a just-deleted diagram | `src/persistence/dexie-adapter.ts:69` | Keep flag; clear it only on explicit create |
 | CLI-028 | Med | Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s | `src/formats/shared/layout.ts:89` | Use spatial grid or per-column cursor for hub neighbours |
-| CLI-029 | Low | Builder copies neighbour array per link; hub table is quadratic | `src/formats/shared/design-builder.ts:402` | Push into the existing array |
-| CLI-030 | Low | `hasTable` and `resolveTable` scan all tables per call; import is quadratic | `src/formats/shared/design-builder.ts:122` | Index tables by lower-cased schema and name |
-| CLI-031 | Low | DBML export finds tables and columns by linear scan per link | `src/formats/dbml/export-dbml.ts:123` | Build id-to-name maps once |
 | CLI-032 | Low | Bulk remove still does `indexOf` and `splice` per table and link | `src/core/commands/apply.ts:597`, `src/core/commands/apply.ts:609` | Compute positions in one pass with a Set |
-| CLI-034 | Low | DBML export strips backticks from defaults and checks, corrupting MySQL expressions | `src/formats/dbml/export-dbml.ts:58`, `src/formats/dbml/export-dbml.ts:234` | Escape backticks instead of removing them |
-| CLI-035 | Low | DBML export writes many-to-many link as `<`, silently becoming one-to-many | `src/formats/dbml/export-dbml.ts:66`, `src/formats/dbml/export-dbml.ts:167` | Add diagnostic or emit `<>` |
-| CLI-036 | Low | Builder drops duplicate column names silently, no diagnostic | `src/formats/shared/design-builder.ts:180` | Push warning naming table and column |
-| CLI-037 | Low | Many-to-many cardinality silently coerced to one-to-many on import | `src/formats/shared/design-builder.ts:379` | Warn when coercing |
+| CLI-034 | Low | DBML export strips backticks from defaults and checks, corrupting MySQL expressions | `src/formats/dbml/export-dbml.ts:58`, `src/formats/dbml/export-dbml.ts:242` | Escape backticks instead of removing them |
+| CLI-035 | Low | DBML export writes many-to-many link as `<`, silently becoming one-to-many | `src/formats/dbml/export-dbml.ts:66`, `src/formats/dbml/export-dbml.ts:175` | Add diagnostic or emit `<>` |
+| CLI-036 | Low | Builder drops duplicate column names silently, no diagnostic | `src/formats/shared/design-builder.ts:186` | Push warning naming table and column |
+| CLI-037 | Low | Many-to-many cardinality silently coerced to one-to-many on import | `src/formats/shared/design-builder.ts:390` | Warn when coercing |
 | CLI-038 | Low | Array default conversion swaps every `'` for `"`, mangling items with quotes | `src/dialects/convert/convert-default.ts:47` | Parse list items; re-quote per target |
 | CLI-039 | Low | Metadata import names primary key after any unique index on same columns | `src/formats/metadata/load.ts:177` | Use primary flag from metadata, not column match |
-| CLI-041 | Low | Link-pair lookup uses `includes` per pair; hub arrange is quadratic | `src/canvas/auto-arrange.ts:46` | Use Set per tile |
 | CLI-045 | Low | Every edit serialises the whole design before section reuse check | `src/qbase/diagram-convert.ts:83` | Serialise only changed sections |
 | CLI-050 | Med | Sign-in email and password inputs have placeholder only, no label | `src/components/qubdi/auth-dialog.tsx:210`, `src/components/qubdi/auth-dialog.tsx:219` | Add aria-label matching the placeholder |
 | CLI-052 | Med | Viewer primary-key icon has no accessible name; meaning is icon-only | `src/pages/share-viewer-page/viewer-table-node.tsx:118` | Add aria-label or visually hidden text |
@@ -244,22 +240,16 @@
 | CLI-068 | Med | Editor chunk 2.87 MB (561 kB gzip) bundles full all-dialect node-sql-parser | `src/formats/metadata/view-sources.ts:1`, `vite.config.ts:16` | Import per-dialect parser build lazily inside metadata import |
 | CLI-069 | Low | DBML chunk 15.6 MB (2.75 MB gzip) fetched on first DBML view | `src/formats/dbml/import-dbml.ts:1`, `vite.config.ts:16` | Split @dbml/core parser; load exporter without importer |
 | CLI-071 | Low | No `supportedLngs`; unsupported browser language sets `<html lang>` over English text | `src/i18n/i18n.ts:50`, `src/i18n/i18n.ts:70` | Set supportedLngs and nonExplicitSupportedLngs in init |
-| CLI-081 | Med | DBML enum with capitalised name not linked; field lower-cased into unknown type | `src/formats/dbml/import-dbml.ts:192`, `src/formats/shared/design-builder.ts:182` | Match user types case-insensitively before lower-casing type name |
+| CLI-081 | Med | DBML enum with capitalised name not linked; field lower-cased into unknown type | `src/formats/dbml/import-dbml.ts:192`, `src/formats/shared/design-builder.ts:188` | Match user types case-insensitively before lower-casing type name |
 | CLI-082 | Med | Default text containing identity, autoincrement or nextval treated as numbering; value dropped | `src/dialects/convert/convert-default.ts:31`, `src/dialects/shared/defaults.ts:53`, `src/dialects/sql-server/write.ts:96` | Test markers on unquoted text only, anchored |
-| CLI-083 | Low | Array default converted to JSON leaves inner `'` unescaped; literal breaks | `src/dialects/convert/convert-default.ts:137` | Double single quotes in JSON text before wrapping |
-| CLI-084 | Low | Check conversion passes `--`, `/*` and a stray `'` through as safe | `src/dialects/convert/convert-check.ts:78` | Reject comment openers and unmatched quotes |
 | CLI-085 | Med | PostgreSQL default containing `nextval` written raw; sequence name raw in CREATE SEQUENCE | `src/dialects/postgresql/write.ts:50`, `src/dialects/postgresql/write.ts:393` | Anchor nextval form; quote sequence name as identifier |
 | CLI-086 | Med | Column type name written raw into DDL by every writer | `src/dialects/postgresql/write.ts:91`, `src/dialects/mysql/write.ts:84`, `src/dialects/sql-server/write.ts:61`, `src/dialects/oracle/write.ts:38`, `src/dialects/sqlite/write.ts:87` | Refuse type text outside word, space, parentheses, digits, comma |
 | CLI-087 | Low | MySQL writer keeps quoted defaults verbatim; a backslash escapes the closing quote | `src/dialects/mysql/write.ts:108` | Re-quote string defaults with MySQL `asStringLiteral` |
 | CLI-091 | Low | SQLite writer drops schema; same-named tables collapse via IF NOT EXISTS silently | `src/dialects/sqlite/write.ts:212`, `src/dialects/sqlite/write.ts:175` | Prefix schema like converter, or warn |
-| CLI-092 | Low | Binary length not capped: MySQL BINARY over 255, SQL Server over 8000 | `src/dialects/convert/write-neutral.ts:224`, `src/dialects/convert/write-neutral.ts:229` | Fall back to BLOB or VARBINARY(MAX) above limits |
 | CLI-093 | Low | Column collation imported and saved but no SQL writer emits it | `src/formats/metadata/load.ts:141`, `src/dialects/postgresql/write.ts:150` | Write COLLATE in same-dialect export; note it in conversion |
-| CLI-094 | Low | DBML export drops views and partial-index WHERE with no diagnostic | `src/formats/dbml/export-dbml.ts:82`, `src/formats/dbml/export-dbml.ts:216` | Push a warning per dropped view and condition |
-| CLI-095 | Low | Same-dialect SQL export drops views silently; converter path notes them | `src/formats/sql/export-sql.ts:104`, `src/dialects/shared/export-model.ts:172` | Add view-count warning in unkeptByWriter |
+| CLI-094 | Low | DBML export drops views and partial-index WHERE with no diagnostic | `src/formats/dbml/export-dbml.ts:82`, `src/formats/dbml/export-dbml.ts:224` | Push a warning per dropped view and condition |
+| CLI-095 | Low | Same-dialect SQL export drops views silently; converter path notes them | `src/formats/sql/export-sql.ts:117`, `src/dialects/shared/export-model.ts:172` | Add view-count warning in unkeptByWriter |
 | CLI-096 | Low | Multi-line comments flattened to one line in DBML notes and COMMENT ON | `src/formats/dbml/export-dbml.ts:28`, `src/dialects/postgresql/write.ts:271` | Use `'''` notes and E-strings with newlines |
-| CLI-097 | Low | Paste-detect and decimal-repair regexes quadratic: 80k newlines take 4 s | `src/features/import/import-method.ts:16`, `src/dialects/postgresql/read.ts:119` | Use `[ \t]*` and drop overlapping `\s*` around `\n` |
-| CLI-098 | Low | Export filter removes hidden links one by one, copying collection each time | `src/formats/sql/export-sql.ts:48` | Filter links once with the gone set |
-| CLI-099 | Low | File parse finds source table by linear scan per relationship | `src/core/wire/parse.ts:442` | Build id-to-entity map once |
 | CLI-101 | High | Metadata over 50 tables: new default Set each render loops onChange forever; dialog hangs | `src/features/import/import-box.tsx:209`, `src/features/import/import-box.tsx:225`, `src/dialogs/import-database-dialog/import-database-dialog.tsx:45` | Memoise defaultSelection(rows) with useMemo on rows |
 
 ### Dead code
@@ -284,6 +274,16 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| CLI-029 | Client | Builder copies neighbour array per link; hub table is quadratic |
+| CLI-030 | Client | `hasTable` and `resolveTable` scan all tables per call; import is quadratic |
+| CLI-031 | Client | DBML export finds tables and columns by linear scan per link |
+| CLI-041 | Client | Link-pair lookup uses `includes` per pair; hub arrange is quadratic |
+| CLI-083 | Client | Array default converted to JSON leaves inner `'` unescaped; literal breaks |
+| CLI-084 | Client | Check conversion passes `--`, `/*` and a stray `'` through as safe |
+| CLI-092 | Client | Binary length not capped: MySQL BINARY over 255, SQL Server over 8000 |
+| CLI-097 | Client | Paste-detect and decimal-repair regexes quadratic: 80k newlines take 4 s |
+| CLI-098 | Client | Export filter removes hidden links one by one, copying collection each time |
+| CLI-099 | Client | File parse finds source table by linear scan per relationship |
 | CLI-058 | Client | Numbers hard-coded to en-US in admin tiles and chart table |
 | CLI-060 | Client | "Copied" label swap is not announced to screen readers |
 | CLI-062 | Client | Open-failed screen offers only "back to projects"; no retry for transient errors |
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 10 | 2026-11-09 | 10 fixed (client low batch 4: conversion safety and speed), anchors remapped |
 | 9 | 2026-11-09 | 10 fixed, 1 dropped (client low batch 3), anchors remapped |
 | 8 | 2026-11-09 | 10 fixed (client low batch 2), anchors remapped through the diff |
 | 7 | 2026-11-09 | 10 fixed (client low batch 1), anchors refreshed |
