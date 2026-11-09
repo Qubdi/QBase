@@ -32,8 +32,6 @@ export const canvas = {
         arrange: 'Auto Arrange Diagram',
         undo: 'Undo ({{shortcut}})',
         redo: 'Redo ({{shortcut}})',
-        fullScreen: 'Full screen',
-        exitFullScreen: 'Exit full screen',
     },
     showAllPill: 'Show All',
     hiddenAll: {
@@ -52,7 +50,6 @@ export const canvas = {
         fieldCount_one: '{{count}} field',
         focus: 'Focus on the canvas',
         openInPanel: 'Open in side panel',
-        widen: 'Make wider',
         narrow: 'Make narrower',
         showMore: 'Show More',
         showLess: 'Show Less',
@@ -134,5 +131,4 @@ export const canvas = {
         failed: 'Copy failed',
     },
     drawing: { hint: 'Click the table that holds the foreign key' },
-    keys: { mod: 'Ctrl', modMac: '⌘' },
 };

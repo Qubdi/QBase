@@ -892,8 +892,6 @@ export const de = {
                 arrange: 'Diagramm automatisch anordnen',
                 undo: 'Rückgängig ({{shortcut}})',
                 redo: 'Wiederholen ({{shortcut}})',
-                fullScreen: 'Vollbild',
-                exitFullScreen: 'Vollbild beenden',
             },
             showAllPill: 'Alle anzeigen',
             hiddenAll: {
@@ -912,7 +910,6 @@ export const de = {
                 fieldCount_one: '{{count}} Feld',
                 focus: 'Auf der Zeichenfläche anzeigen',
                 openInPanel: 'In der Seitenleiste öffnen',
-                widen: 'Breiter machen',
                 narrow: 'Schmaler machen',
                 showMore: 'Mehr anzeigen',
                 showLess: 'Weniger anzeigen',
@@ -998,10 +995,6 @@ export const de = {
             },
             drawing: {
                 hint: 'Klicken Sie auf die Tabelle, die den Fremdschlüssel enthält',
-            },
-            keys: {
-                mod: 'Ctrl',
-                modMac: '⌘',
             },
         },
     },

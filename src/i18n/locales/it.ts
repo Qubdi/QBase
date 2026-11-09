@@ -908,8 +908,6 @@ export const it = {
                 arrange: 'Disponi automaticamente il diagramma',
                 undo: 'Annulla ({{shortcut}})',
                 redo: 'Ripeti ({{shortcut}})',
-                fullScreen: 'Schermo intero',
-                exitFullScreen: 'Esci da schermo intero',
             },
             showAllPill: 'Mostra tutto',
             hiddenAll: {
@@ -929,7 +927,6 @@ export const it = {
                 fieldCount_other: '{{count}} campi',
                 focus: 'Metti a fuoco sul canvas',
                 openInPanel: 'Apri nel pannello laterale',
-                widen: 'Allarga',
                 narrow: 'Restringi',
                 showMore: 'Mostra di più',
                 showLess: 'Mostra meno',
@@ -1015,10 +1012,6 @@ export const it = {
             },
             drawing: {
                 hint: 'Fare clic sulla tabella che contiene la chiave esterna',
-            },
-            keys: {
-                mod: 'Ctrl',
-                modMac: '⌘',
             },
         },
     },

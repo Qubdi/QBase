@@ -910,8 +910,6 @@ export const ru = {
                 arrange: 'Автоматически упорядочить диаграмму',
                 undo: 'Отменить ({{shortcut}})',
                 redo: 'Повторить ({{shortcut}})',
-                fullScreen: 'Во весь экран',
-                exitFullScreen: 'Выйти из полноэкранного режима',
             },
             showAllPill: 'Показать все',
             hiddenAll: {
@@ -932,7 +930,6 @@ export const ru = {
                 fieldCount_many: '{{count}} полей',
                 focus: 'Перейти к холсту',
                 openInPanel: 'Открыть в боковой панели',
-                widen: 'Расширить',
                 narrow: 'Сузить',
                 showMore: 'Показать больше',
                 showLess: 'Показать меньше',
@@ -1018,10 +1015,6 @@ export const ru = {
             },
             drawing: {
                 hint: 'Щёлкните таблицу, в которой находится внешний ключ',
-            },
-            keys: {
-                mod: 'Ctrl',
-                modMac: '⌘',
             },
         },
     },

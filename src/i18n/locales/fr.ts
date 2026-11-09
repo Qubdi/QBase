@@ -913,8 +913,6 @@ export const fr = {
                 arrange: 'Organiser le diagramme automatiquement',
                 undo: 'Annuler ({{shortcut}})',
                 redo: 'Rétablir ({{shortcut}})',
-                fullScreen: 'Plein écran',
-                exitFullScreen: 'Quitter le plein écran',
             },
             showAllPill: 'Tout afficher',
             hiddenAll: {
@@ -934,7 +932,6 @@ export const fr = {
                 fieldCount_one: '{{count}} champ',
                 focus: 'Centrer sur le canevas',
                 openInPanel: 'Ouvrir dans le panneau latéral',
-                widen: 'Élargir',
                 narrow: 'Rétrécir',
                 showMore: 'Afficher plus',
                 showLess: 'Afficher moins',
@@ -1020,10 +1017,6 @@ export const fr = {
             },
             drawing: {
                 hint: 'Cliquez sur la table qui contient la clé étrangère',
-            },
-            keys: {
-                mod: 'Ctrl',
-                modMac: '⌘',
             },
         },
     },
