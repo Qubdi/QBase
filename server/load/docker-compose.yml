@@ -5,11 +5,14 @@
 # virtual user comes from one address, so the stock limits would only measure
 # themselves. Everything that decides capacity (DB_POOL_MAX, CPU, memory) stays
 # at its real default and can be changed from the environment, see README.md.
+# Every image is pinned by digest, so a load run measures the same software each
+# time. Dependabot does not watch this file: when the bundled Postgres in the
+# root docker-compose.yml moves, move the one here to the same digest (CI checks).
 name: qbase-load
 
 services:
   db:
-    image: postgres:18-alpine
+    image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
     environment:
       POSTGRES_USER: qbase
       POSTGRES_PASSWORD: load
@@ -37,7 +40,7 @@ services:
       retries: 30
 
   app:
-    image: node:24-slim
+    image: node:24-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c
     working_dir: /app
     # installs the server's dependencies from its lockfile in a copy of this
     # checkout, so the host's node_modules (and its OS) do not matter
@@ -87,7 +90,7 @@ services:
 
   # one-off helpers, started with `docker compose run`
   seed:
-    image: node:24-slim
+    image: node:24-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c
     profiles: ["tools"]
     working_dir: /load
     volumes:
@@ -101,7 +104,7 @@ services:
       SSE_P95_MS: ${SSE_P95_MS:-2000}
 
   k6:
-    image: grafana/k6:latest
+    image: grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df56760fa0bdb0fba0b8
     profiles: ["tools"]
     working_dir: /load
     volumes:

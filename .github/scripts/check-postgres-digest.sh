@@ -1,11 +1,11 @@
 #!/bin/sh
-# The Postgres image is pinned by digest in three places: docker-compose.yml
-# (which Dependabot updates) and the service containers of CI and publish. They
-# must name the same image, or the tests run on a different database than the
-# one that ships. Run from the repository root.
+# The Postgres image is pinned by digest in four places: docker-compose.yml
+# (which Dependabot updates), the service containers of CI and publish and the
+# load-test compose file. They must name the same image, or the tests run on a
+# different database than the one that ships. Run from the repository root.
 set -eu
 
-files="docker-compose.yml .github/workflows/ci.yaml .github/workflows/publish.yaml"
+files="docker-compose.yml .github/workflows/ci.yaml .github/workflows/publish.yaml server/load/docker-compose.yml"
 pins=$(grep -Eho 'postgres:[0-9a-z.-]+@sha256:[0-9a-f]{64}' $files | sort -u)
 count=$(printf '%s\n' "$pins" | grep -c .)
 
