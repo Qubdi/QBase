@@ -66,6 +66,7 @@ services:
       MFA_ENABLED: ${MFA_ENABLED:-true}
       MFA_WINDOW_STEPS: ${MFA_WINDOW_STEPS:-1}
       INTROSPECT_ALLOW_HOSTS: ${INTROSPECT_ALLOW_HOSTS:-}
+      WEBHOOK_ALLOW_HOSTS: ${WEBHOOK_ALLOW_HOSTS:-}
       PORT: "3001"
       # the rest of the server's settings (see server/.env.example); the
       # defaults here are the server's own

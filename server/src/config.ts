@@ -70,6 +70,8 @@ export interface Config {
     shareRateLimit: number;
     /** hostnames, IPs or IPv4 CIDRs that introspection may reach even if private */
     introspectAllowHosts: string[];
+    /** hostnames, IPs or IPv4 CIDRs that a drift webhook may reach even if private; separate from the database list */
+    webhookAllowHosts: string[];
     /** secret for encrypting saved connection passwords; null disables saving */
     connectionKey: string | null;
     /**
@@ -153,14 +155,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         }
         return n;
     };
-    const introspectAllowHosts = (env.INTROSPECT_ALLOW_HOSTS ?? '')
-        .split(',')
-        .map((h) => h.trim())
-        .filter(Boolean);
-    for (const entry of introspectAllowHosts) {
-        const why = allowEntryProblem(entry);
-        if (why) problems.push(`INTROSPECT_ALLOW_HOSTS entry "${entry}": ${why}`);
-    }
+    const allowList = (name: string) => {
+        const hosts = (env[name] ?? '')
+            .split(',')
+            .map((h) => h.trim())
+            .filter(Boolean);
+        for (const entry of hosts) {
+            const why = allowEntryProblem(entry);
+            if (why) problems.push(`${name} entry "${entry}": ${why}`);
+        }
+        return hosts;
+    };
+    const introspectAllowHosts = allowList('INTROSPECT_ALLOW_HOSTS');
+    const webhookAllowHosts = allowList('WEBHOOK_ALLOW_HOSTS');
     // the browser's Origin header is scheme://host[:port] with nothing after it,
     // and the server compares it as text: `*`, a path or a trailing slash would
     // match no request and fail every credentialed call without saying why
@@ -266,6 +273,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
         introspectAllowHosts,
+        webhookAllowHosts,
         connectionKey,
         secretsKey,
         mfaEnabled: env.MFA_ENABLED?.trim().toLowerCase() !== 'false',

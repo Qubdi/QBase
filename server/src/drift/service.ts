@@ -379,7 +379,7 @@ export async function runDriftCheck(
                     })),
                     at: now.toISOString(),
                 },
-                { allow: deps.config.introspectAllowHosts, lookup: deps.lookup }
+                { allow: deps.config.webhookAllowHosts, lookup: deps.lookup }
             );
             // the report is already stored, so a failed insert cannot make the
             // next check send this change again

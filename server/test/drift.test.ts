@@ -761,7 +761,7 @@ describe('drift webhooks', () => {
         port = (server.address() as { port: number }).port;
 
         ctx = await createTestApp(
-            { connectionKey: 'a-long-enough-connection-key', secretsKey: 'a-long-enough-connection-key', introspectAllowHosts: ['127.0.0.1'] },
+            { connectionKey: 'a-long-enough-connection-key', secretsKey: 'a-long-enough-connection-key', introspectAllowHosts: ['127.0.0.1'], webhookAllowHosts: ['127.0.0.1'] },
             { factory }
         );
         owner = await registerUser(ctx.app, 'hook@example.com');
@@ -911,5 +911,54 @@ describe('drift webhooks', () => {
         for (let i = 0; i < 60; i++) drift(`c${i}`);
         await check();
         expect((received[0].body.changes as unknown[]).length).toBe(50);
+    });
+});
+
+describe('drift webhooks and the database allow-list', () => {
+    let ctx: TestCtx;
+    let owner: TestUser;
+    let server: http.Server;
+    let hits = 0;
+
+    beforeAll(async () => {
+        server = http.createServer((_req, res) => {
+            hits++;
+            res.end('ok');
+        });
+        await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+        meta = clone(base);
+        factoryError = null;
+        // the database list allows loopback; the webhook list is left empty
+        ctx = await createTestApp(
+            { connectionKey: 'a-long-enough-connection-key', secretsKey: 'a-long-enough-connection-key', introspectAllowHosts: ['127.0.0.1'] },
+            { factory }
+        );
+        owner = await registerUser(ctx.app, 'hook2@example.com');
+    });
+    afterAll(async () => {
+        await ctx.close();
+        await new Promise((r) => server.close(r));
+    });
+
+    it('does not let a database allow-list open internal webhook targets', async () => {
+        const port = (server.address() as { port: number }).port;
+        const projectId = await projectFor(ctx.app);
+        const diagramId = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId } })).json().id;
+        const connectionId = (
+            await ctx.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(owner), payload: { ...conn(), projectId, name: 'c' } })
+        ).json().id;
+        const put = await ctx.app.inject({
+            method: 'PUT',
+            url: `/diagrams/${diagramId}/drift`,
+            headers: as(owner),
+            payload: { connectionId, webhookUrl: `http://127.0.0.1:${port}/hook` },
+        });
+        expect(put.statusCode).toBe(200);
+        // a first check records the baseline; the second sees the change and would post
+        await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/check`, headers: as(owner) });
+        meta.columns.push({ schema: 'public', table: 'customers', name: 'phone', type: 'text', ordinal_position: 99, nullable: true } as DatabaseMetadata['columns'][number]);
+        const report = (await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/check`, headers: as(owner) })).json();
+        expect(report.webhook).toMatch(/^failed:/);
+        expect(hits).toBe(0);
     });
 });

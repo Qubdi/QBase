@@ -165,6 +165,16 @@ describe('boot-time validation', () => {
         });
     });
 
+    describe('WEBHOOK_ALLOW_HOSTS', () => {
+        it('is its own list, validated like the database one', () => {
+            const c = loadConfig({ INTROSPECT_ALLOW_HOSTS: 'db.internal', WEBHOOK_ALLOW_HOSTS: 'hooks.internal, 10.1.0.5' });
+            expect(c.introspectAllowHosts).toEqual(['db.internal']);
+            expect(c.webhookAllowHosts).toEqual(['hooks.internal', '10.1.0.5']);
+            expect(loadConfig({}).webhookAllowHosts).toEqual([]);
+            expect(() => loadConfig({ WEBHOOK_ALLOW_HOSTS: '*' })).toThrow(/WEBHOOK_ALLOW_HOSTS entry "\*"/);
+        });
+    });
+
     describe('CORS_ORIGIN', () => {
         const origin = (value: string) => loadConfig({ CORS_ORIGIN: value }).corsOrigin;
 
