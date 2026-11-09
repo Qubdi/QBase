@@ -22,6 +22,7 @@ import {
 import {
     byText,
     claimName,
+    keepLines,
     clip,
     commaList,
     firstSeen,
@@ -237,7 +238,7 @@ function indexComments(
                     quoteDouble,
                     table.entity.schema,
                     names.get(key.id)!
-                )} IS ${sqlString(oneLine(key.note ?? ''))};`
+                )} IS ${sqlString(keepLines(key.note ?? ''))};`
         );
 }
 
@@ -268,13 +269,13 @@ function tableText(
     text += `CREATE TABLE ${qualified} (\n${parts.join(',\n')}\n);`;
     if (entity.comments)
         text += `\nCOMMENT ON TABLE ${qualified} IS ${sqlString(
-            oneLine(entity.comments)
+            keepLines(entity.comments)
         )};`;
     for (const c of table.columns)
         if (c.comments)
             text += `\nCOMMENT ON COLUMN ${qualified}.${quoteDouble(
                 c.name
-            )} IS ${sqlString(oneLine(c.comments))};`;
+            )} IS ${sqlString(keepLines(c.comments))};`;
     const indexes = indexStatements(table, qualified, names);
     if (indexes.length > 0) text += `\n-- Indexes\n${indexes.join('\n')}`;
     const comments = indexComments(table, names);

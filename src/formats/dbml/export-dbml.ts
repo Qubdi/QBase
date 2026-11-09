@@ -24,8 +24,9 @@ export interface DbmlExportResult {
 
 const q = (name: string): string =>
     `"${name.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+// a line break is written as `\n`, which the DBML parser reads back as one
 const str = (text: string): string =>
-    `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' ')}'`;
+    `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n')}'`;
 const qualified = (schema: string | undefined, name: string): string =>
     schema ? `${q(schema)}.${q(name)}` : q(name);
 

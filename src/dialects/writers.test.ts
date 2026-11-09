@@ -504,3 +504,34 @@ describe('SQLite tables that share a name across schemas', () => {
         expect(text).toContain('CREATE TABLE IF NOT EXISTS "orders"');
     });
 });
+
+describe('PostgreSQL comments with line breaks', () => {
+    it('keep their lines in COMMENT ON', () => {
+        const b = new DesignBuilder({
+            databaseType: 'postgresql',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'users',
+            comment: 'first line\nsecond line',
+            columns: [
+                {
+                    name: 'id',
+                    typeName: 'int',
+                    nullable: false,
+                    comment: 'a\nb',
+                },
+            ],
+            indexes: [],
+            checks: [],
+        });
+        const { text } = exportSql(b.build(), 'postgresql');
+        expect(text).toContain(
+            `COMMENT ON TABLE "users" IS 'first line\nsecond line';`
+        );
+        expect(text).toContain(`COMMENT ON COLUMN "users"."id" IS 'a\nb';`);
+    });
+});

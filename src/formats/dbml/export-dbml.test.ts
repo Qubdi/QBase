@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { seededRandom } from '@/core/model/ids';
 import { DesignBuilder } from '@/formats/shared/design-builder';
 import { exportDbml } from './export-dbml';
+import { importDbml } from './import-dbml';
 
 const withExpressions = () => {
     const b = new DesignBuilder({
@@ -149,5 +150,36 @@ describe('DBML export of what DBML cannot hold', () => {
             'View active_users was left out: DBML has no views.',
             expect.stringContaining('only_active'),
         ]);
+    });
+});
+
+describe('DBML notes with line breaks', () => {
+    it('keep their lines when written and read back', () => {
+        const b = new DesignBuilder({
+            databaseType: 'postgresql',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'users',
+            comment: 'first line\nsecond line',
+            columns: [
+                {
+                    name: 'id',
+                    typeName: 'int',
+                    nullable: false,
+                    comment: 'a\nb',
+                },
+            ],
+            indexes: [],
+            checks: [],
+        });
+        const { text } = exportDbml(b.build());
+        const back = importDbml(text, 'postgresql').design!;
+        const table = back.entities.byId[back.entities.order[0]];
+        expect(table.comments).toBe('first line\nsecond line');
+        expect(back.columns[table.columnIds[0]].comments).toBe('a\nb');
     });
 });
