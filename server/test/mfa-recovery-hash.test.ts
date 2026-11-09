@@ -42,4 +42,15 @@ describe('recovery code storage', () => {
         const other = createMfa(ctx.db, { secretsKey: 'another-key-of-at-least-16-chars', mfaWindowSteps: 1 });
         expect(await other.spendRecoveryCode(user.id, codes[1])).toBe(false);
     });
+
+    it('leaves exactly one set of codes when several renewals run at once', async () => {
+        const sets = await Promise.all(Array.from({ length: 8 }, () => mfa().renewRecoveryCodes(user.id)));
+        const hashes = await stored();
+        // one renewal won; the codes of the others no longer exist
+        expect(hashes).toHaveLength(sets[0].length);
+        const live = await Promise.all(
+            sets.map(async (codes) => (await mfa().spendRecoveryCode(user.id, codes[0])) ? 1 : 0)
+        );
+        expect(live.reduce((a: number, b: number) => a + b, 0)).toBe(1);
+    });
 });

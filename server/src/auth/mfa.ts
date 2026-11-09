@@ -99,6 +99,9 @@ export function createMfa(
     const replaceCodes = async (userId: string) => {
         const codes = generateRecoveryCodes();
         await db.transaction(async (tx) => {
+            // one renewal at a time per user: a second one waits here, then
+            // deletes the first one's codes, so two sets are never valid at once
+            await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update');
             await tx.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, userId));
             await tx
                 .insert(mfaRecoveryCodes)
