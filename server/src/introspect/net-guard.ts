@@ -143,6 +143,31 @@ export function matchesIpEntry(ip: string, entry: string): boolean {
     return entry.toLowerCase() === ip.toLowerCase();
 }
 
+/** The widest IPv4 range an allow-list entry may name: a /8 is 16 million addresses. */
+export const MIN_ALLOW_CIDR_BITS = 8;
+
+/**
+ * Why `entry` is not a usable INTROSPECT_ALLOW_HOSTS entry (a host name, an IP
+ * or an IPv4 CIDR), or null when it is. A typo would otherwise match nothing
+ * and a `0.0.0.0/0` would match everything, both without a word.
+ */
+export function allowEntryProblem(entry: string): string | null {
+    if (entry.includes('/')) {
+        const [base, bitsText, ...extra] = entry.split('/');
+        if (extra.length > 0 || !net.isIPv4(base)) return 'a range must be an IPv4 address and a prefix length, like 10.1.0.0/16';
+        if (!/^\d{1,2}$/.test(bitsText) || Number(bitsText) > 32) return 'the prefix length must be 0 to 32';
+        if (Number(bitsText) < MIN_ALLOW_CIDR_BITS) {
+            return `/${bitsText} is far too wide: ranges must be /${MIN_ALLOW_CIDR_BITS} or narrower`;
+        }
+        return null;
+    }
+    if (net.isIP(entry) !== 0) return null;
+    // a host name: letters, digits, dots and hyphens
+    return /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i.test(entry) && !entry.includes('..')
+        ? null
+        : 'not a host name, an IP address or a range';
+}
+
 export interface ResolvedTarget {
     address: string;
     family: 4 | 6;

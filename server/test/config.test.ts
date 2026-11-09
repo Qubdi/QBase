@@ -138,6 +138,33 @@ describe('boot-time validation', () => {
         expect(Number.isNaN(new Date(Date.now() + 3650 * 86_400_000).getTime())).toBe(false);
     });
 
+    describe('INTROSPECT_ALLOW_HOSTS', () => {
+        const hosts = (value: string) => loadConfig({ INTROSPECT_ALLOW_HOSTS: value }).introspectAllowHosts;
+
+        it('accepts host names, IP addresses and ranges that are not huge', () => {
+            expect(hosts('db.internal, 10.1.0.5 ,192.168.0.0/16,::1,localhost')).toEqual([
+                'db.internal',
+                '10.1.0.5',
+                '192.168.0.0/16',
+                '::1',
+                'localhost',
+            ]);
+            expect(hosts('10.0.0.0/8')).toEqual(['10.0.0.0/8']);
+            expect(hosts('')).toEqual([]);
+        });
+
+        it('refuses a range wider than /8, which would allow most of the internet', () => {
+            for (const entry of ['0.0.0.0/0', '10.0.0.0/7', '128.0.0.0/1'])
+                expect(() => hosts(entry), entry).toThrow(/too wide/);
+        });
+
+        it('refuses entries that can only be typos, and says which', () => {
+            for (const entry of ['*', 'https://db.internal', 'db internal', '10.0.0.0/33', '10.0.0.0/x', '999.1.1.1/24', 'a/b/c', '-bad'])
+                expect(() => hosts(entry), entry).toThrow(ConfigError);
+            expect(() => hosts('good.example,*')).toThrow(/INTROSPECT_ALLOW_HOSTS entry "\*"/);
+        });
+    });
+
     it('names every bad setting at once', () => {
         expect(() => loadConfig({ PORT: 'x', SESSION_DAYS: 'y' })).toThrow(/PORT[\s\S]*SESSION_DAYS/);
     });

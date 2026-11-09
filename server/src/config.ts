@@ -1,4 +1,5 @@
 import { normalizeMinLength } from '../../shared/password.js';
+import { allowEntryProblem } from './introspect/net-guard.js';
 
 export interface Config {
     databaseUrl: string;
@@ -152,6 +153,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         }
         return n;
     };
+    const introspectAllowHosts = (env.INTROSPECT_ALLOW_HOSTS ?? '')
+        .split(',')
+        .map((h) => h.trim())
+        .filter(Boolean);
+    for (const entry of introspectAllowHosts) {
+        const why = allowEntryProblem(entry);
+        if (why) problems.push(`INTROSPECT_ALLOW_HOSTS entry "${entry}": ${why}`);
+    }
     const key = (name: string) => {
         const value = env[name] || null;
         if (value !== null && value.length < MIN_KEY_LENGTH) {
@@ -238,10 +247,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         autoPublishCoalesceSeconds: int('AUTO_PUBLISH_COALESCE_SECONDS', 300),
         dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
-        introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')
-            .split(',')
-            .map((h) => h.trim())
-            .filter(Boolean),
+        introspectAllowHosts,
         connectionKey,
         secretsKey,
         mfaEnabled: env.MFA_ENABLED?.trim().toLowerCase() !== 'false',
