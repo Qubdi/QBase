@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { i18n } from '@/i18n/i18n';
 import {
     busiestDay,
     compactNumber,
+    formatNumber,
     dayLabel,
     heightPercent,
     MIN_AXIS_MAX,
@@ -139,5 +141,18 @@ describe('busiestDay', () => {
             ])
         ).toBeNull();
         expect(busiestDay([])).toBeNull();
+    });
+});
+
+describe('number formatting follows the chosen language', () => {
+    afterEach(async () => {
+        await i18n.changeLanguage('en');
+    });
+
+    it('writes a count with the separators of the language', async () => {
+        expect(formatNumber(1284)).toBe('1,284');
+        await i18n.changeLanguage('de');
+        expect(formatNumber(1284)).toBe('1.284');
+        expect(compactNumber(1284)).toBe('1.284');
     });
 });

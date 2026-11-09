@@ -4,6 +4,7 @@ import { Button } from '@/platform/ui/button';
 import {
     busiestDay,
     compactNumber,
+    formatNumber,
     dayLabel,
     heightPercent,
     scaleFor,
@@ -239,7 +240,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({
                                     ) : null}
                                 </td>
                                 <td className="py-1.5 text-right tabular-nums">
-                                    {d.events.toLocaleString('en-US')}
+                                    {formatNumber(d.events)}
                                 </td>
                             </tr>
                         ))}
