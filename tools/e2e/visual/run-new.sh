@@ -1,13 +1,13 @@
 #!/bin/sh
 # Builds the NEW editor (this repo, empty backend URL), serves it with vite preview inside the
 # Playwright container and runs the scene harness against it.
-#   tools/e2e/visual/run-new.sh [scene-filter]      (output in /home/qubdi/ui-reference/new)
+#   tools/e2e/visual/run-new.sh [scene-filter]      (output in $HOME/ui-reference/new)
 #   tools/e2e/visual/run-new.sh --script my.mjs     (serve the new editor, run any node script against BASE_URL)
-# Then compare:  tools/e2e/visual/run-run.sh --compare /home/qubdi/ui-reference/old /home/qubdi/ui-reference/new
+# Then compare:  tools/e2e/visual/run-run.sh --compare $HOME/ui-reference/old $HOME/ui-reference/new
 set -e
 cd "$(dirname "$0")/../../.."
 CACHE="${PW_CACHE:-$HOME/.cache/qbase-pw}"
-OUT="${OUT:-/home/qubdi/ui-reference/new}"
+OUT="${OUT:-$HOME/ui-reference/new}"
 REF="$(dirname "$OUT")"
 mkdir -p "$CACHE" "$OUT"
 docker run --rm --network host --ipc=host -u "$(id -u)" -e HOME=/tmp -e OUT="$OUT" \
