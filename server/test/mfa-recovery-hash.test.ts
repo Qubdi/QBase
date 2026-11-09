@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createMfa } from '../src/auth/mfa.js';
 import { legacyHashRecoveryCode } from '../src/auth/totp.js';
@@ -52,5 +52,23 @@ describe('recovery code storage', () => {
             sets.map(async (codes) => (await mfa().spendRecoveryCode(user.id, codes[0])) ? 1 : 0)
         );
         expect(live.reduce((a: number, b: number) => a + b, 0)).toBe(1);
+    });
+
+    it('enables two-factor and stores its codes together, or neither', async () => {
+        await ctx.db.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, user.id));
+        // the second write of enable() fails: the codes written before it must not stay
+        await ctx.db.execute(sql`
+            create function refuse_mfa_enable() returns trigger language plpgsql as
+            $$ begin raise exception 'refused'; end $$`);
+        await ctx.db.execute(sql`
+            create trigger refuse_mfa_enable before update of mfa_enabled_at on users
+            for each row execute function refuse_mfa_enable()`);
+        try {
+            await expect(mfa().enable(user.id)).rejects.toThrow();
+            expect(await stored()).toHaveLength(0);
+        } finally {
+            await ctx.db.execute(sql`drop trigger refuse_mfa_enable on users`);
+            await ctx.db.execute(sql`drop function refuse_mfa_enable()`);
+        }
     });
 });
