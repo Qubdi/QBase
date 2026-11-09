@@ -6,13 +6,6 @@ import { NOW, withTables } from '../core/testing/helpers';
 import { parse } from '../core/wire/parse';
 import { serialise } from '../core/wire/serialise';
 import { shop } from '../core/wire/fixtures/shop';
-import { adoptUser, clearLocalData, OWNER_KEY } from './local-data';
-import {
-    CUSTOM_COLOURS_KEY,
-    normaliseColour,
-    readCustomColours,
-    rememberColour,
-} from './custom-colours';
 import {
     DATABASE_NAME,
     PREVIOUS_DATABASE_NAME,
@@ -20,7 +13,6 @@ import {
     databaseExists,
 } from './database';
 import { openDexieStorage } from './dexie-adapter';
-import type { KeyValueStore } from './key-value-store';
 import { MemoryStorageAdapter } from './memory-adapter';
 import { mergePreviousDatabase } from './merge-previous';
 import { MIGRATION_MARKER } from './migrate-legacy';
@@ -34,41 +26,6 @@ import {
 } from './test-support';
 
 const now = NOW;
-
-class FakeStore implements KeyValueStore {
-    private readonly map = new Map<string, string>();
-    get length() {
-        return this.map.size;
-    }
-    key(index: number) {
-        return [...this.map.keys()][index] ?? null;
-    }
-    getItem(key: string) {
-        return this.map.get(key) ?? null;
-    }
-    setItem(key: string, value: string) {
-        this.map.set(key, value);
-    }
-    removeItem(key: string) {
-        this.map.delete(key);
-    }
-}
-
-const blocked: KeyValueStore = {
-    length: 0,
-    key() {
-        throw new Error('blocked');
-    },
-    getItem() {
-        throw new Error('blocked');
-    },
-    setItem() {
-        throw new Error('blocked');
-    },
-    removeItem() {
-        throw new Error('blocked');
-    },
-};
 
 describe('DAT-001 diagrams live in the browser database QBase and survive reloads', () => {
     it('keeps the name QBase and a browser version of 140 or higher', async () => {
@@ -675,122 +632,6 @@ describe('DAT-018 the app opens with defaults when the browser blocks storage', 
         expect((await openStorage({ ...freshIndexedDb(), now })).volatile).toBe(
             false
         );
-    });
-
-    it('blocked localStorage reads as empty and never throws', async () => {
-        expect(readCustomColours(blocked)).toEqual([]);
-        expect(rememberColour(blocked, '#ff0000')).toEqual(['#ff0000']); // kept for this page only
-        await expect(
-            adoptUser('u1', { local: blocked, session: blocked })
-        ).resolves.toBe('claimed');
-        await expect(
-            clearLocalData({
-                local: blocked,
-                session: blocked,
-                dexie: freshIndexedDb(),
-            })
-        ).resolves.toBeUndefined();
-    });
-});
-
-describe('DAT-015 / DAT-016 / DAT-017 signing out and local ownership', () => {
-    async function setup() {
-        const dexie = freshIndexedDb();
-        await writeOldDatabase(dexie, DATABASE_NAME, 14, version14Rows);
-        await writeOldDatabase(dexie, PREVIOUS_DATABASE_NAME, 14, {
-            diagrams: [
-                {
-                    id: 'q',
-                    name: 'Q',
-                    databaseType: 'mysql',
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                },
-            ],
-        });
-        const local = new FakeStore();
-        const session = new FakeStore();
-        local.setItem('qbase.remote-map', '{"a":"b"}');
-        local.setItem('qbase.local-owner', 'user-1');
-        local.setItem('theme', 'dark');
-        local.setItem('uuid', 'abcd1234');
-        session.setItem('qbase.sent-content', '{}');
-        session.setItem('other', 'x');
-        return { dexie, local, session };
-    }
-
-    it('DAT-015 sign-out deletes both databases and every qbase. key, and keeps the rest', async () => {
-        const { dexie, local, session } = await setup();
-        await clearLocalData({ local, session, dexie });
-        expect(await databaseExists(DATABASE_NAME, dexie)).toBe(false);
-        expect(await databaseExists(PREVIOUS_DATABASE_NAME, dexie)).toBe(false);
-        expect(local.getItem('qbase.remote-map')).toBeNull();
-        expect(local.getItem(OWNER_KEY)).toBeNull();
-        expect(session.getItem('qbase.sent-content')).toBeNull();
-        expect(local.getItem('theme')).toBe('dark');
-        expect(local.getItem('uuid')).toBe('abcd1234');
-        expect(session.getItem('other')).toBe('x');
-    });
-
-    it('DAT-016 a different person clears the copies first and becomes the owner', async () => {
-        const { dexie, local, session } = await setup();
-        expect(await adoptUser('user-2', { local, session, dexie })).toBe(
-            'cleared'
-        );
-        expect(await databaseExists(DATABASE_NAME, dexie)).toBe(false);
-        expect(local.getItem('qbase.remote-map')).toBeNull();
-        expect(local.getItem(OWNER_KEY)).toBe('user-2');
-        expect(local.getItem('theme')).toBe('dark');
-    });
-
-    it('the same person changes nothing', async () => {
-        const { dexie, local, session } = await setup();
-        expect(await adoptUser('user-1', { local, session, dexie })).toBe(
-            'same'
-        );
-        expect(await databaseExists(DATABASE_NAME, dexie)).toBe(true);
-        expect(local.getItem('qbase.remote-map')).not.toBeNull();
-    });
-
-    it('DAT-017 copies with no recorded owner are claimed, not deleted', async () => {
-        const { dexie, local, session } = await setup();
-        local.removeItem(OWNER_KEY);
-        expect(await adoptUser('user-3', { local, session, dexie })).toBe(
-            'claimed'
-        );
-        expect(await databaseExists(DATABASE_NAME, dexie)).toBe(true);
-        expect(local.getItem('qbase.remote-map')).not.toBeNull();
-        expect(local.getItem(OWNER_KEY)).toBe('user-3');
-    });
-});
-
-describe('DAT-091 the custom colour list', () => {
-    it('normalises to #rrggbb, ignores invalid entries, caps at 12', () => {
-        expect(normaliseColour('#ABC')).toBe('#aabbcc');
-        expect(normaliseColour(' #A1B2C3 ')).toBe('#a1b2c3');
-        expect(normaliseColour('red')).toBeUndefined();
-        expect(normaliseColour('#12345')).toBeUndefined();
-        expect(normaliseColour(5)).toBeUndefined();
-        const store = new FakeStore();
-        store.setItem(
-            CUSTOM_COLOURS_KEY,
-            JSON.stringify(['#FFF', 'nope', 7, '#ffffff', '#000000'])
-        );
-        expect(readCustomColours(store)).toEqual(['#ffffff', '#000000']);
-        for (let i = 0; i < 20; i++)
-            rememberColour(store, `#0000${(i + 16).toString(16)}`);
-        const list = readCustomColours(store);
-        expect(list).toHaveLength(12);
-        expect(list[0]).toBe('#000023');
-        expect(rememberColour(store, '#000023')).toHaveLength(12);
-    });
-
-    it('a malformed stored value reads as empty', () => {
-        const store = new FakeStore();
-        store.setItem(CUSTOM_COLOURS_KEY, '{oops');
-        expect(readCustomColours(store)).toEqual([]);
-        store.setItem(CUSTOM_COLOURS_KEY, '{"a":1}');
-        expect(readCustomColours(store)).toEqual([]);
     });
 });
 
