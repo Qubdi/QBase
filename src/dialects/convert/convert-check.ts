@@ -70,7 +70,19 @@ export function convertCheck(
             out += ' ';
             continue;
         }
+        // two characters that start or end a comment: the rest of the
+        // statement would be swallowed, so such text is not converted
+        const before = tokens[i - 1];
+        if (
+            (t === '-' && before === '-') ||
+            (t === '*' && before === '/') ||
+            (t === '/' && before === '*')
+        )
+            return { reason: 'a comment marker' };
         if (/^N'/.test(t) || t.startsWith("'")) {
+            // a lone quote is not a string: it would open one in the output
+            if (!/^N?'(?:[^']|'')*'$/s.test(t))
+                return { reason: 'an unclosed quote' };
             const bare = t.startsWith('N') ? t.slice(1) : t;
             out += target === 'sqlserver' ? `N${bare}` : bare;
             continue;
