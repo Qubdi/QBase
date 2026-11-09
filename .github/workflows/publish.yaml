@@ -11,12 +11,18 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+# two release tags never publish at once, and a run that is publishing is not cancelled
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   # A tag can be pushed from any commit, so nothing is published until the
   # same checks CI runs on a pull request pass for the tagged commit.
   verify:
     name: Lint, typecheck, test, audit and secret scan
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
     services:
@@ -90,6 +96,7 @@ jobs:
   build-and-publish:
     needs: verify
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
       packages: write

@@ -14,6 +14,7 @@ jobs:
   title:
     name: Conventional Commits title
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check the pull request title
         env:
