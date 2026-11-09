@@ -66,9 +66,9 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
    speakers (owner states, 2026-11-08; the reviewers' changes, if any, are not in this repository). The other
    16 locales were removed.
    Open for the owner: `src/lib/data/**` keeps its old folder layout (rename is optional).
-9. [x] **Phase 8: tests**, written from the spec (2026-11-07): 683 of 687 parity rows ticked with a named
-   test, 3 partly (IMP-003, IMP-056, IMP-059: SQL Server scripts not run on a live server), 1 open (EDT-250,
-   the re-sync dialog in a browser, being run). Results per slice in `phase8/`.
+9. [x] **Phase 8: tests**, written from the spec (2026-11-07): 684 of 687 parity rows ticked with a named
+   test, 3 partly (IMP-003, IMP-056, IMP-059: SQL Server scripts not run on a live server). EDT-250 (the
+   re-sync dialog) was ticked after a run in a real browser. Results per slice in `phase8/`.
 10. [~] **Phase 9: cleanup and verification** (2026-11-07 to 2026-11-08). Done: similarity clean on every
     checked file (867), licences re-audited and `NOTICE` updated (fonts), unused files and 23 unused
     dependencies removed, old-layout migration tested with hand-built fixtures, relationship direction
@@ -81,7 +81,7 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
     declarations, the native-speaker review of the translations, the Docker Hub release secrets.
     Still open: GitHub still lists 71 old pull-request refs (`git ls-remote origin 'refs/pull/*/head'`,
     2026-11-08), so the purge part of SEC-001 is not confirmed; "run the similarity workflow once on
-    GitHub"; the re-sync dialog in a real browser (EDT-250); SQL Server on a live server (needs a licence
+    GitHub"; SQL Server on a live server (needs a licence
     acceptance); the fresh-repository release (Phase 10, which also closes REPO-069).
 11. [ ] **Phase 10: release.** Fresh repository with new history, chosen licence applied,
     old Docker Hub tags replaced or removed, new image published.
