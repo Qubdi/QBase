@@ -1,7 +1,7 @@
 import fastifyStatic from '@fastify/static';
 import type { FastifyInstance } from 'fastify';
 import path from 'node:path';
-import { API_SECURITY_HEADERS } from './lib/security-headers.js';
+import { API_SECURITY_HEADERS, hstsHeaders } from './lib/security-headers.js';
 
 /** Where the API lives when this server also serves the editor. */
 export const API_PREFIX = '/api';
@@ -31,9 +31,15 @@ const isApiPath = (url: string) =>
  * editor does its own routing). A missing file under /assets/ is a 404, not
  * index.html: a stale asset URL must not get HTML where a script was expected.
  */
-export function registerWeb(app: FastifyInstance, root: string): void {
+export function registerWeb(
+    app: FastifyInstance,
+    root: string,
+    cookieSecure: boolean | 'auto' = 'auto'
+): void {
     app.addHook('onSend', async (req, reply) => {
-        if (!isApiPath(req.url)) reply.headers(WEB_SECURITY_HEADERS);
+        if (isApiPath(req.url)) return;
+        reply.headers(WEB_SECURITY_HEADERS);
+        reply.headers(hstsHeaders(req, cookieSecure));
     });
 
     app.get('/config.js', async (_req, reply) =>

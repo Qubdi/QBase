@@ -1,4 +1,4 @@
-import { API_SECURITY_HEADERS } from './lib/security-headers.js';
+import { API_SECURITY_HEADERS, hstsHeaders } from './lib/security-headers.js';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -148,8 +148,12 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     api.register(rateLimit, { global: false });
     api.decorateRequest('user', null);
 
-    api.addHook('onSend', async (_req, reply) => {
+    api.addHook('onSend', async (req, reply) => {
         reply.headers(API_SECURITY_HEADERS);
+        reply.headers(hstsHeaders(req, config.cookieSecure));
+        // answers carry sessions, tokens and diagrams: no cache keeps a copy
+        // (a route that sets its own cache-control, like the event stream, keeps it)
+        if (!reply.hasHeader('cache-control')) reply.header('cache-control', 'no-store');
     });
 
     api.addHook('onRequest', async (req, reply) => {
@@ -255,7 +259,7 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         // link's page, /s/<token>, is the editor's own route); the hooks and error
         // handler stay inside that prefix so the pages do not get them.
         app.register(async (api) => mountApi(api), { prefix });
-        registerWeb(app, config.webDir);
+        registerWeb(app, config.webDir, config.cookieSecure);
     } else {
         // on its own, the API is the whole server, at the root
         mountApi(app);

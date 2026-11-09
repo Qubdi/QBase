@@ -154,6 +154,14 @@ describe('the API beside the editor', () => {
         }
     });
 
+    it('sends HSTS on an editor page only over https', async () => {
+        const https = await app.inject({ url: '/', headers: { 'x-forwarded-proto': 'https' } });
+        const http = await app.inject({ url: '/' });
+        // the app here does not trust a proxy, so the header is not believed
+        expect(http.headers['strict-transport-security']).toBeUndefined();
+        expect(https.headers['strict-transport-security']).toBeUndefined();
+    });
+
     it('is not also at the root', async () => {
         const res = await app.inject({ url: '/auth/setup-status' });
         expect(res.body).toContain('<title>editor</title>');
