@@ -182,6 +182,21 @@ describe('IMP-045 to IMP-055 DBML import and round trip', () => {
         );
         expect(no.diagnostics[0].line).toBe(2);
     });
+    it('reads arrays and checks the same from a file with Windows line endings', () => {
+        const crlf = (text: string) => text.replace(/\n/g, '\r\n');
+        const ok = importDbml(
+            crlf('Table a {\n  tags text[]\n  n int [check: `n > 0`]\n}\n'),
+            'postgresql'
+        );
+        const columns = Object.values(ok.design!.columns);
+        expect(columns.find((c) => c.name === 'tags')).toMatchObject({
+            isArray: true,
+            type: { name: 'text' },
+        });
+        expect(
+            Object.values(ok.design!.rules).map((x) => x.expression)
+        ).toEqual(['n > 0']);
+    });
     it('IMP-048 checks from the field setting and the checks block', () => {
         const r = importDbml(
             "Table a {\n  n int [check: `n > 0`]\n  m int\n  checks {\n    `m < 9` [name: 'c']\n  }\n}\n",

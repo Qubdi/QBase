@@ -64,7 +64,7 @@ export function prepareDbml(source: string): Prepared {
     let table = '';
     let depth = 0;
     let inTriple = false;
-    const lines = source.split('\n').map((line, index) => {
+    const lines = source.split(/\r?\n/).map((line, index) => {
         const header = TABLE_LINE.exec(line);
         if (header && depth === 0) {
             const first = header[1] ?? header[2];
