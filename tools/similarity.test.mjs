@@ -82,4 +82,19 @@ describe('tools/similarity.mjs', () => {
     it('accepts a --rewritten list of paths that exist', () => {
         expect(run(...base, '--rewritten', 'list-ok.txt').code).toBe(0);
     });
+
+    it('refuses an upstream folder that has nothing to index', () => {
+        fs.mkdirSync(path.join(dir, 'empty-up'), { recursive: true });
+        const res = run(
+            '--upstream',
+            'empty-up',
+            '--src',
+            'work/own.ts',
+            '--check',
+            '--all'
+        );
+        expect(res.code).toBe(2);
+        expect(res.out).toContain('nothing was indexed');
+        expect(res.out).not.toContain('No checked file is over the limits');
+    });
 });

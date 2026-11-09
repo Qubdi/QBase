@@ -352,6 +352,11 @@ function main() {
     console.log(
         `Indexed ${upstream.fileCount} upstream files (${upstream.index.size} runs of ${options.shingle} lines)`
     );
+    // nothing to compare with means "no shared code" would be a meaningless answer
+    if (upstream.index.size === 0)
+        die(
+            `nothing was indexed from ${options.upstream}: is it the right folder?`
+        );
 
     const files = options.tracked
         ? trackedFiles(options.exclude)
