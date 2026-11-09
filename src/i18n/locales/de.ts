@@ -909,8 +909,6 @@ export const de = {
                 fieldCount_other: '{{count}} Felder',
                 fieldCount_one: '{{count}} Feld',
                 focus: 'Auf der Zeichenfläche anzeigen',
-                openInPanel: 'In der Seitenleiste öffnen',
-                narrow: 'Schmaler machen',
                 showMore: 'Mehr anzeigen',
                 showLess: 'Weniger anzeigen',
                 edit: 'Tabelle bearbeiten',
@@ -952,13 +950,11 @@ export const de = {
             },
             region: {
                 rename: 'Bereichsname',
-                colour: 'Bereichsfarbe',
             },
             memo: {
                 placeholder: 'Leere Notiz',
                 edit: 'Notiztext',
                 editNote: 'Notiz bearbeiten',
-                colour: 'Notizfarbe',
             },
             menu: {
                 newTable: 'Neue Tabelle',
@@ -991,7 +987,6 @@ export const de = {
                 hint: 'Drücken Sie {{key}}, um sie einzufügen.',
                 pastedOne: 'Tabelle eingefügt',
                 pastedMany: '{{count}} Tabellen eingefügt',
-                failed: 'Kopieren fehlgeschlagen',
             },
             drawing: {
                 hint: 'Klicken Sie auf die Tabelle, die den Fremdschlüssel enthält',

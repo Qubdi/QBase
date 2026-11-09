@@ -926,8 +926,6 @@ export const it = {
                 fieldCount_many: '{{count}} di campi',
                 fieldCount_other: '{{count}} campi',
                 focus: 'Metti a fuoco sul canvas',
-                openInPanel: 'Apri nel pannello laterale',
-                narrow: 'Restringi',
                 showMore: 'Mostra di più',
                 showLess: 'Mostra meno',
                 edit: 'Modifica tabella',
@@ -969,13 +967,11 @@ export const it = {
             },
             region: {
                 rename: "Nome dell'area",
-                colour: "Colore dell'area",
             },
             memo: {
                 placeholder: 'Nota vuota',
                 edit: 'Testo della nota',
                 editNote: 'Modifica nota',
-                colour: 'Colore della nota',
             },
             menu: {
                 newTable: 'Nuova tabella',
@@ -1008,7 +1004,6 @@ export const it = {
                 hint: 'Premere {{key}} per incollarla.',
                 pastedOne: 'Tabella incollata',
                 pastedMany: '{{count}} tabelle incollate',
-                failed: 'Copia non riuscita',
             },
             drawing: {
                 hint: 'Fare clic sulla tabella che contiene la chiave esterna',

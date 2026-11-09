@@ -929,8 +929,6 @@ export const ru = {
                 fieldCount_few: '{{count}} поля',
                 fieldCount_many: '{{count}} полей',
                 focus: 'Перейти к холсту',
-                openInPanel: 'Открыть в боковой панели',
-                narrow: 'Сузить',
                 showMore: 'Показать больше',
                 showLess: 'Показать меньше',
                 edit: 'Изменить таблицу',
@@ -972,13 +970,11 @@ export const ru = {
             },
             region: {
                 rename: 'Название области',
-                colour: 'Цвет области',
             },
             memo: {
                 placeholder: 'Пустая заметка',
                 edit: 'Текст заметки',
                 editNote: 'Изменить заметку',
-                colour: 'Цвет заметки',
             },
             menu: {
                 newTable: 'Новая таблица',
@@ -1011,7 +1007,6 @@ export const ru = {
                 hint: 'Нажмите {{key}}, чтобы вставить.',
                 pastedOne: 'Таблица вставлена',
                 pastedMany: 'Вставлено таблиц: {{count}}',
-                failed: 'Не удалось скопировать',
             },
             drawing: {
                 hint: 'Щёлкните таблицу, в которой находится внешний ключ',

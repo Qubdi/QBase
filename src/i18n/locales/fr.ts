@@ -931,8 +931,6 @@ export const fr = {
                 fieldCount_many: '{{count}} champs',
                 fieldCount_one: '{{count}} champ',
                 focus: 'Centrer sur le canevas',
-                openInPanel: 'Ouvrir dans le panneau latéral',
-                narrow: 'Rétrécir',
                 showMore: 'Afficher plus',
                 showLess: 'Afficher moins',
                 edit: 'Modifier la table',
@@ -974,13 +972,11 @@ export const fr = {
             },
             region: {
                 rename: 'Nom de la zone',
-                colour: 'Couleur de la zone',
             },
             memo: {
                 placeholder: 'Note vide',
                 edit: 'Texte de la note',
                 editNote: 'Modifier la note',
-                colour: 'Couleur de la note',
             },
             menu: {
                 newTable: 'Nouvelle table',
@@ -1013,7 +1009,6 @@ export const fr = {
                 hint: 'Appuyez sur {{key}} pour la coller.',
                 pastedOne: 'Table collée',
                 pastedMany: '{{count}} tables collées',
-                failed: 'Échec de la copie',
             },
             drawing: {
                 hint: 'Cliquez sur la table qui contient la clé étrangère',
