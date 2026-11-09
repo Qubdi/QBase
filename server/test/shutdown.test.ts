@@ -28,6 +28,30 @@ describe('createShutdown', () => {
         expect(exit).toHaveBeenCalledExactlyOnceWith(0);
     });
 
+    it('starts closing the app while a long clean-up pass is still running', async () => {
+        let finishMaintenance!: () => void;
+        const order: string[] = [];
+        const { shutdown, exit } = setup({
+            stopMaintenance: () =>
+                new Promise<void>((resolve) => {
+                    finishMaintenance = () => {
+                        order.push('maintenance done');
+                        resolve();
+                    };
+                }),
+            closeApp: async () => void order.push('app closed'),
+            closePool: async () => void order.push('pool'),
+        });
+        const done = shutdown('SIGTERM');
+        await vi.advanceTimersByTimeAsync(0);
+        // the app is closed already; the pool waits for the pass
+        expect(order).toEqual(['app closed']);
+        finishMaintenance();
+        await done;
+        expect(order).toEqual(['app closed', 'maintenance done', 'pool']);
+        expect(exit).toHaveBeenCalledExactlyOnceWith(0);
+    });
+
     it('closes in order after an unhandled error, but exits 1', async () => {
         const { shutdown, order, exit } = setup();
         await shutdown('unhandledRejection', true);

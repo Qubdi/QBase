@@ -36,8 +36,10 @@ export function createShutdown(deps: ShutdownDeps) {
         log(`${signal} received, shutting down`);
         setTimeout(() => exit(1), forceAfterMs).unref();
         try {
-            await stopMaintenance();
-            await closeApp();
+            // together, not one after the other: a long clean-up pass must not
+            // keep the server taking and holding requests while it finishes,
+            // and both finish before the pool they use is closed
+            await Promise.all([stopMaintenance(), closeApp()]);
             await stopEvents?.();
             await closePool();
             exit(crashed ? 1 : 0);
