@@ -6,6 +6,7 @@ import { convertDesign } from '@/dialects/convert/engine';
 import { dialectFor } from '@/dialects/registry';
 import type { Diagnostic } from '@/dialects/script-model';
 import { error } from './diagnostics';
+import { unsafeText } from './unsafe-text';
 
 export interface SqlExportResult {
     text: string;
@@ -122,6 +123,9 @@ export function exportSql(
         )
     )
         return { text: '', diagnostics: [error('Nothing to export')] };
+    // text the writers put into the DDL as it is must not end its statement
+    const unsafe = unsafeText(filtered);
+    if (unsafe.length > 0) return { text: '', diagnostics: unsafe };
     if (family(design.databaseType) === family(targetId))
         return {
             text: target.sql.write(filtered),

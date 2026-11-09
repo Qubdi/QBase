@@ -323,12 +323,13 @@ describe('PostgreSQL nextval defaults are written only in their real form (CLI-0
     });
 
     it('does not pass text that only contains the word through as SQL', async () => {
+        // a `;` in a default would end the statement, so nothing is exported
         const text = await withDefault("x'); DROP TABLE customers; -- nextval");
-        expect(text).not.toMatch(/DEFAULT x'\)/);
-        expect(text).not.toContain('CREATE SEQUENCE');
-        expect(text).toContain(
-            "DEFAULT 'x''); DROP TABLE customers; -- nextval'"
-        );
+        expect(text).toBe('');
+        // without a statement break the word alone does not make it a nextval call
+        const plain = await withDefault('my nextval notes');
+        expect(plain).toContain("DEFAULT 'my nextval notes'");
+        expect(plain).not.toContain('CREATE SEQUENCE');
     });
 
     it('does not make a sequence out of a name that is not a plain reference', async () => {
