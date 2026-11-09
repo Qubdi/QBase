@@ -4,6 +4,10 @@ Tasks for the clean-room rewrite. The reasoning, rules and "done when" criteria 
 phase are in [PLAN.md](PLAN.md); this file is only the checklist. Tick an item when it
 ships and note the commit. Last reviewed 2026-11-07.
 
+> **Branch names have changed since this was written.** The rewrite now lives on `main`; the
+> ChartDB-derived code is kept, read-only, on `main-old`. Below, "`main`" as the old code
+> means `main-old`.
+
 Do not publish the repository or change the licence until the last item is ticked.
 The ChartDB-derived code is already deleted on this branch; read it from `main`
 (see section 5 of the plan).

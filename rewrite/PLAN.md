@@ -1,6 +1,11 @@
 # Rewrite plan: replace the ChartDB-derived editor with original code
 
 Branch: `rewrite/clean-room` (its own history, no parent; `main` is the read-only reference).
+
+> **Branch names have changed since this was written.** The rewrite now lives on `main`.
+> The ChartDB-derived code is kept, read-only, on `main-old`. Below, "`main`" as the old code
+> means `main-old`, and "this branch" means the rewrite. The records and briefs keep their
+> original wording on purpose.
 Last reviewed: 2026-11-07. Measured against ChartDB commit `ee95448` (2026-11-01).
 
 Not legal advice. A lawyer should review the process early (Phase 2) and the result at the
