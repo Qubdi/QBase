@@ -10,6 +10,7 @@ export const importingStrings = {
         invalid:
             'That file is not a diagram saved from QBase, so nothing was imported.',
         failed: 'The file could not be imported. Please try again.',
+        tooLarge: 'The file is too large to import (50 MB at most).',
     },
     box: {
         method: { metadata: 'Smart Query', sql: 'SQL Script', dbml: 'DBML' },

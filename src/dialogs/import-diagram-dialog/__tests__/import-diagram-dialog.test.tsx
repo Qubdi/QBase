@@ -22,6 +22,7 @@ import { DatabaseType } from '@/qbase/diagram-types';
 import { diagramToJSONOutput } from '@/lib/export-import-utils';
 import { ImportDiagramDialog } from '../import-diagram-dialog';
 
+let hugeFile = false;
 let badFile = false;
 const addDiagram = vi.fn();
 const deleteDiagram = vi.fn();
@@ -43,22 +44,32 @@ vi.mock('@/components/file-uploader/file-uploader', () => ({
     }) => (
         <button
             onClick={() =>
-                onFilesChange([
-                    new File(
-                        [
-                            badFile
-                                ? 'not json'
-                                : diagramToJSONOutput(
-                                      emptyDiagram({
-                                          id: 'old',
-                                          name: 'Shop',
-                                          databaseType: DatabaseType.POSTGRESQL,
-                                      })
-                                  ),
-                        ],
-                        'shop.json'
-                    ),
-                ])
+                onFilesChange(
+                    [
+                        new File(
+                            [
+                                badFile
+                                    ? 'not json'
+                                    : diagramToJSONOutput(
+                                          emptyDiagram({
+                                              id: 'old',
+                                              name: 'Shop',
+                                              databaseType:
+                                                  DatabaseType.POSTGRESQL,
+                                          })
+                                      ),
+                            ],
+                            'shop.json'
+                        ),
+                    ].map((file) => {
+                        // a file over the limit, without building 50 MB of text
+                        if (hugeFile)
+                            Object.defineProperty(file, 'size', {
+                                value: 50 * 1024 * 1024 + 1,
+                            });
+                        return file;
+                    })
+                )
             }
         >
             pick file
@@ -101,6 +112,7 @@ const importFile = async () => {
 describe('ImportDiagramDialog', () => {
     beforeEach(() => {
         badFile = false;
+        hugeFile = false;
         addDiagram.mockReset().mockResolvedValue(undefined);
         deleteDiagram.mockReset().mockResolvedValue(undefined);
     });
@@ -128,6 +140,16 @@ describe('ImportDiagramDialog', () => {
         await importFile();
         expect(deleteDiagram).toHaveBeenCalledTimes(1);
         expect(screen.getByTestId('where').textContent).toBe('/');
+    });
+
+    it('refuses a file over the size limit before reading it', async () => {
+        hugeFile = true;
+        const sync = vi.fn();
+        show(sync, workspace);
+        await importFile();
+        expect(screen.getByRole('alert').textContent).toMatch(/too large/);
+        expect(addDiagram).not.toHaveBeenCalled();
+        expect(sync).not.toHaveBeenCalled();
     });
 
     it('shows an error for a file it cannot read, and creates nothing', async () => {

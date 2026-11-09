@@ -401,6 +401,7 @@ export const de = {
                     invalid:
                         'Diese Datei ist kein aus QBase gespeichertes Diagramm, daher wurde nichts importiert.',
                     failed: 'Die Datei konnte nicht importiert werden. Bitte versuchen Sie es erneut.',
+                    tooLarge: 'Die Datei ist zu groß (höchstens 50 MB).',
                 },
                 box: {
                     method: {

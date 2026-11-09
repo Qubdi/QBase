@@ -412,6 +412,8 @@ export const fr = {
                     invalid:
                         "Ce fichier n'est pas un diagramme enregistré depuis QBase, rien n'a donc été importé.",
                     failed: "Le fichier n'a pas pu être importé. Veuillez réessayer.",
+                    tooLarge:
+                        'Le fichier est trop volumineux (50 Mo au maximum).',
                 },
                 box: {
                     method: {

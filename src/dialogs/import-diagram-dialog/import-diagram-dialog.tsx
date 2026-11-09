@@ -15,7 +15,7 @@ import { useWorkspace } from '@/components/qubdi/workspace-context';
 import { ImportError, importFileText } from '@/core/wire/file-import';
 import { useDialog } from '@/hooks/use-dialog';
 import { useQubdi } from '@/hooks/use-qubdi';
-import { readFileText } from '@/lib/export-import-utils';
+import { MAX_IMPORT_BYTES, readFileText } from '@/lib/export-import-utils';
 import { errorMessage } from '@/lib/qubdi/api';
 import { projectDiagramPath } from '@/lib/qubdi/project-path';
 import { designToDiagram } from '@/qbase/diagram-convert';
@@ -51,6 +51,10 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
 
     const run = async () => {
         if (!file) return;
+        if (file.size > MAX_IMPORT_BYTES) {
+            setProblem(t('editor.importing.file.tooLarge'));
+            return;
+        }
         setBusy(true);
         setProblem(undefined);
         let storedId: string | undefined;
