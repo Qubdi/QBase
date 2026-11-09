@@ -220,6 +220,8 @@ export const diagramRoutes =
                         ...r,
                         title: last.title,
                         updatedAt: last.publishedAt,
+                        // who owns the working copy is for people who can edit it
+                        ownerEmail: null,
                         // the numbers describe what the viewer can open: the published copy
                         databaseType: last.databaseType,
                         databaseEdition: last.databaseEdition,
@@ -544,7 +546,7 @@ export const diagramRoutes =
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
-            return db
+            const rows = await db
                 .select({
                     version: snapshots.version,
                     note: snapshots.note,
@@ -557,6 +559,8 @@ export const diagramRoutes =
                 .orderBy(desc(snapshots.version))
                 // SNAPSHOT_KEEP=0 keeps every version, so the list is bounded here
                 .limit(MAX_LISTED_VERSIONS);
+            // who published is for people who can edit; a viewer sees the versions
+            return canWrite(role) ? rows : rows.map((r) => ({ ...r, publishedBy: null }));
         });
 
         app.get('/:id/versions/:version', async (req, reply) => {

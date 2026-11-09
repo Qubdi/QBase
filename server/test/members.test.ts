@@ -37,8 +37,8 @@ describe('diagram members (read-only)', () => {
     });
     afterAll(() => ctx.close());
 
-    it('lists the project members with their roles to any member', async () => {
-        for (const who of [admin, bob, carol]) {
+    it('lists the project members with their roles to people who can edit', async () => {
+        for (const who of [admin, carol]) {
             const res = await list(who);
             expect(res.statusCode).toBe(200);
             const roles = Object.fromEntries(
@@ -49,6 +49,13 @@ describe('diagram members (read-only)', () => {
                 'carol@example.com': 'editor',
             });
         }
+    });
+
+    it('keeps the list of emails from a viewer', async () => {
+        const res = await list(bob);
+        expect(res.statusCode).toBe(403);
+        expect(res.json()).toEqual({ error: 'forbidden' });
+        expect(res.body).not.toContain('@');
     });
 
     it('hides the list from strangers and anonymous callers', async () => {

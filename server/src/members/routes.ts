@@ -4,12 +4,12 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import type { Db } from '../db/client.js';
 import { projectMembers, users } from '../db/schema.js';
-import { getDiagramProject, getRole } from '../diagrams/permissions.js';
+import { canWrite, getDiagramProject, getRole } from '../diagrams/permissions.js';
 
 const diagramParam = z.object({ id: z.string().uuid() });
 
 /**
- * Who can open a diagram. Access is granted per project by an admin (see the
+ * Who can open a diagram, for people who can edit it. Access is granted per project by an admin (see the
  * /admin routes), so this is read-only.
  */
 export const memberRoutes =
@@ -25,6 +25,9 @@ export const memberRoutes =
             const { id } = diagramParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
+            // the list is every member's email: people who can edit see it, a
+            // viewer of a published copy does not
+            if (!canWrite(role)) return reply.code(403).send({ error: 'forbidden' });
             const projectId = await getDiagramProject(db, id);
             if (!projectId) return reply.code(404).send({ error: 'not_found' });
             return db

@@ -170,6 +170,8 @@ describe('diagram list summary', () => {
             databaseType: 'postgresql',
             databaseEdition: 'supabase',
         });
+        // who owns the working copy is for people who can edit it
+        expect(asViewer.ownerEmail).toBeNull();
     });
 
     it('agrees between writers and viewers once the work is published', async () => {

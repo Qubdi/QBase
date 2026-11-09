@@ -258,7 +258,7 @@ describe('admin panel and projects', () => {
         });
 
         it('shows project members on the diagram, read-only', async () => {
-            const list = await call('GET', `/diagrams/${diagramId}/members`, viewer);
+            const list = await call('GET', `/diagrams/${diagramId}/members`, editor);
             expect(list.statusCode).toBe(200);
             expect(list.json().map((m: { email: string }) => m.email)).toContain(
                 'editor@example.com'

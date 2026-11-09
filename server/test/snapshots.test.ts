@@ -146,12 +146,19 @@ describe('published snapshots', () => {
         expect(list.json().map((v: { version: number }) => v.version)).toEqual([
             2, 1,
         ]);
+        // who published is for people who can edit, so a viewer gets no email
         expect(list.json()[1]).toMatchObject({
             version: 1,
             note: 'first cut',
-            publishedBy: 'editor@example.com',
+            publishedBy: null,
         });
+        expect(list.body).not.toContain('@');
         expect(list.json()[0]).not.toHaveProperty('content');
+        const asEditor = await ctx.app.inject({
+            url: `/diagrams/${id}/versions`,
+            headers: as(editor),
+        });
+        expect(asEditor.json()[1].publishedBy).toBe('editor@example.com');
 
         const one = await ctx.app.inject({
             url: `/diagrams/${id}/versions/1`,
