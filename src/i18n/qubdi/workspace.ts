@@ -202,13 +202,4 @@ export const workspace = {
         notNull: 'Not null',
         noFields: 'No fields',
     },
-    typeLegend: {
-        button: 'Type colors',
-        text: 'Text / other',
-        number: 'Number',
-        time: 'Date & time',
-        id: 'Identifier',
-        bool: 'Boolean',
-        json: 'JSON / XML',
-    },
 };
