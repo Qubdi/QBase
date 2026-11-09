@@ -26,10 +26,6 @@ export function sizeFor(
         : guess;
 }
 
-export function boxOf(entity: Entity, size: Size): Box {
-    return { x: entity.x, y: entity.y, ...size };
-}
-
 export function intersects(a: Box, b: Box): boolean {
     return (
         a.x < b.x + b.width &&
@@ -92,16 +88,6 @@ export function clampWidth(width: number): number {
 export function toggledWidth(current: number | undefined): number {
     const now = current ?? TABLE_WIDTH.default;
     return now >= TABLE_WIDTH.max ? TABLE_WIDTH.min : TABLE_WIDTH.max;
-}
-
-/** The smallest box around all the given boxes, or undefined for none. */
-export function enclosing(boxes: readonly Box[]): Box | undefined {
-    if (boxes.length === 0) return undefined;
-    const left = Math.min(...boxes.map((b) => b.x));
-    const top = Math.min(...boxes.map((b) => b.y));
-    const right = Math.max(...boxes.map((b) => b.x + b.width));
-    const bottom = Math.max(...boxes.map((b) => b.y + b.height));
-    return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
 export interface View {

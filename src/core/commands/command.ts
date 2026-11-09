@@ -112,8 +112,6 @@ export type Command =
     | ItemCommand<'regions'>
     | ItemCommand<'memos'>;
 
-export type CommandType = Command['type'];
-
 export type FailureReason = 'read-only' | 'not-found' | 'invalid' | 'duplicate';
 
 export type ApplyResult =

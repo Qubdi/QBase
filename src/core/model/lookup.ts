@@ -1,4 +1,4 @@
-import { getItem, hasItem } from './collection';
+import { getItem } from './collection';
 import type { Column } from './column';
 import type { Design } from './design';
 import type { Entity } from './entity';
@@ -49,10 +49,6 @@ export function hasColumn(design: Design, entityId: Id, columnId: Id): boolean {
         entity.columnIds.includes(columnId) &&
         Object.prototype.hasOwnProperty.call(design.columns, columnId)
     );
-}
-
-export function hasEntity(design: Design, id: Id): boolean {
-    return hasItem(design.entities, id);
 }
 
 /** Every link that has the entity at either end. */
