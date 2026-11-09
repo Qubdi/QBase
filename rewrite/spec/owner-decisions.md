@@ -102,7 +102,7 @@ Sign-off = reply per section: accept, or name the IDs to change. Open questions 
 
 ## Open questions by spec
 
-- [Data format](spec/data-format.md): see the final section "Open questions".
-- [Editor](spec/editor.md): see the final section "Open questions".
-- [Import and export](spec/import-export.md): see the final section "Open questions".
-- [App shell and QBase](spec/app-shell.md): see the final section "Open questions".
+- [Data format](data-format.md): see the final section "Open questions".
+- [Editor](editor.md): see the final section "Open questions".
+- [Import and export](import-export.md): see the final section "Open questions".
+- [App shell and QBase](app-shell.md): see the final section "Open questions".
