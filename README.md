@@ -106,7 +106,7 @@ QBase listens on `127.0.0.1` only. To reach it from other machines, set `APP_BIN
 
 ### Option B: Docker, with your own existing PostgreSQL
 
-QBase then does not start a database of its own. You need PostgreSQL 16 or newer.
+QBase then does not start a database of its own. You need PostgreSQL 16 or newer. CI runs the server tests on 18; the whole suite was also run on 16.15 on 2026-11-09.
 
 1. **Create an empty database and a role that owns it**, on your PostgreSQL:
 
