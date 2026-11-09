@@ -94,7 +94,8 @@ export const POSTGRES_QUERIES = {
         CROSS JOIN LATERAL unnest(con.conkey, con.confkey) WITH ORDINALITY AS k(attnum, fattnum, ord)
         JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = k.attnum
         JOIN pg_attribute fa ON fa.attrelid = fc.oid AND fa.attnum = k.fattnum
-        WHERE con.contype = 'f' AND NOT c.relispartition AND ${USER_SCHEMA('n')}
+        WHERE con.contype = 'f' AND NOT c.relispartition AND con.conparentid = 0
+          AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname, con.conname, k.ord`,
 
     indexes: `

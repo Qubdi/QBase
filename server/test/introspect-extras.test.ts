@@ -44,6 +44,13 @@ CREATE TABLE sales.events (
   CONSTRAINT events_recent CHECK (at > DATE '2000-01-01')
 ) PARTITION BY RANGE (at);
 CREATE TABLE sales.events_2024 PARTITION OF sales.events FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+CREATE TABLE sales.events_2025 PARTITION OF sales.events FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');
+CREATE TABLE sales.event_notes (
+  event_id integer,
+  at date,
+  note text,
+  CONSTRAINT event_notes_event FOREIGN KEY (event_id, at) REFERENCES sales.events (id, at)
+);
 `;
 
 describe('PostgreSQL introspection: checks, custom types, domains, generated columns, index details', () => {
@@ -138,8 +145,16 @@ describe('PostgreSQL introspection: checks, custom types, domains, generated col
         expect(meta.indexes.some((i) => i.name === 'customers_live')).toBe(true);
     });
 
+    it('lists a foreign key to a partitioned table once, not once per partition', () => {
+        const rows = meta.fk_info.filter((f) => f.table === 'event_notes');
+        expect(rows.map((r) => [r.column, r.reference_table, r.reference_column])).toEqual([
+            ['event_id', 'events', 'id'],
+            ['at', 'events', 'at'],
+        ]);
+    });
+
     it('hides a partition behind its parent, like the client script', () => {
-        expect(meta.tables.map((t) => t.table).sort()).toEqual(['customers', 'events']);
+        expect(meta.tables.map((t) => t.table).sort()).toEqual(['customers', 'event_notes', 'events']);
         expect(meta.columns.some((c) => c.table === 'events_2024')).toBe(false);
         expect(meta.check_constraints!.filter((c) => c.table === 'events')).toHaveLength(1);
     });
