@@ -29,8 +29,7 @@ HTML is generated *from* `audit.md`. Never put a finding in HTML that is not in 
 ## SCOPE
 
 In scope: `server/`, `shared/`, `src/` (except the data folders below), `public/`, `.github/`,
-`.husky/`, `Dockerfile`, `server/Dockerfile`, `docker-compose.yml`, `default.conf.template`,
-`entrypoint.sh`, `.dockerignore`, `.gitignore`, `.nvmrc`, build and lint config
+`.husky/`, `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.gitignore`, `.nvmrc`, build and lint config
 (`package.json`, `server/package.json`, `vite.config.ts`, `vitest.config.ts`, `eslint.config.mjs`,
 `tsconfig*.json`), `README.md`, `CONTRIBUTING.md`, `TODO.md`, `QBase-build-tasks.md`.
 
@@ -127,7 +126,7 @@ multi-row writes; pool size vs replicas vs `max_connections`, statement and idle
 retention and cleanup of sessions, snapshots, audit, drift rows (job exists, bounded, indexed);
 growth per user action, measured on a seeded throwaway instance; introspection drivers
 (`server/src/introspect/`) — read-only guard, timeouts, Postgres and SQL Server parity;
-`db/postgres/Dockerfile` pin; backup and restore documented.
+Postgres image pin in compose and CI; backup and restore documented.
 
 **Client** — autosave and sync (`src/lib/qubdi/`, `src/components/qubdi/`); API error and 401
 handling; stubs and dead features left from the fork; hard-coded hosts; lint/TS suppressions
