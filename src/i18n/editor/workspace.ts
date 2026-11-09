@@ -22,6 +22,11 @@ export const workspaceStrings = {
             title: "Something's missing.",
             body: "Sorry, we can't find that page. You'll find lots to explore on the home page.",
         },
+        problem: {
+            title: 'Something went wrong.',
+            body: 'The page could not be shown. Reload to try again; your saved diagrams are not affected.',
+            reload: 'Reload',
+        },
         colorPicker: {
             change: 'Change color',
             use: 'Use',

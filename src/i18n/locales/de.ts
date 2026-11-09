@@ -27,6 +27,11 @@ export const de = {
                     title: 'Hier fehlt etwas.',
                     body: 'Die gesuchte Seite wurde nicht gefunden. Sie wurde möglicherweise verschoben oder der Link ist falsch.',
                 },
+                problem: {
+                    title: 'Etwas ist schiefgelaufen.',
+                    body: 'Die Seite konnte nicht angezeigt werden. Laden Sie neu und versuchen Sie es erneut; Ihre gespeicherten Diagramme sind nicht betroffen.',
+                    reload: 'Neu laden',
+                },
                 colorPicker: {
                     change: 'Farbe ändern',
                     use: 'Verwenden',

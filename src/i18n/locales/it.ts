@@ -26,6 +26,11 @@ export const it = {
                     title: 'Manca qualcosa.',
                     body: 'Non è stato possibile trovare la pagina cercata. Potrebbe essere stata spostata oppure il link potrebbe essere errato.',
                 },
+                problem: {
+                    title: 'Qualcosa è andato storto.',
+                    body: 'Non è stato possibile mostrare la pagina. Ricarica per riprovare; i diagrammi salvati non sono interessati.',
+                    reload: 'Ricarica',
+                },
                 colorPicker: {
                     change: 'Cambia colore',
                     use: 'Usa',

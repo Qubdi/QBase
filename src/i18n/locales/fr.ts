@@ -26,6 +26,11 @@ export const fr = {
                     title: 'Il manque quelque chose.',
                     body: "Nous n'avons pas trouvé la page demandée. Elle a peut-être été déplacée, ou le lien est incorrect.",
                 },
+                problem: {
+                    title: 'Un problème est survenu.',
+                    body: 'La page n’a pas pu s’afficher. Rechargez pour réessayer ; vos diagrammes enregistrés ne sont pas affectés.',
+                    reload: 'Recharger',
+                },
                 colorPicker: {
                     change: 'Changer la couleur',
                     use: 'Utiliser',
