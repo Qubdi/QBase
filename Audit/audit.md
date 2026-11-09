@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 15 · **date** 2026-11-09
+**rev** 16 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 33 | 0 | 0 | 0 | 0 |
-| Repository | 30 | 0 | 1 | 26 | 0 |
+| Repository | 12 | 0 | 1 | 44 | 0 |
 | Server | 36 | 0 | 4 | 0 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 40 | 0 | 2 | 54 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 158 | 0 | 7 | 119 | 1 |
+| **Total** | 140 | 0 | 7 | 137 | 1 |
 
 ## Act first
 
@@ -81,25 +81,7 @@
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
 | REPO-027 | Med | Load run.sh never fails on a k6 threshold; README says it gates CI | `server/load/run.sh:58`, `server/load/run.sh:69`, `server/load/README.md:18` | Return k6run status from run_one |
 | REPO-028 | Med | README feature line says only a share-token hash is stored; code also encrypts token | `README.md:21`, `server/src/share/routes.ts:167` | Reword feature line to hash plus encrypted token |
-| REPO-039 | Low | PLAN says branch does not build; TODO says build, lint, tests pass | `rewrite/PLAN.md:74`, `rewrite/PLAN.md:143` | Mark build-state notes as history |
-| REPO-041 | Low | e2e visual scripts hard-code `/home/qubdi/ui-reference` output path | `tools/e2e/visual/run.mjs:24`, `tools/e2e/visual/run-new.sh:10`, `tools/e2e/visual/run-run.sh:11` | Default to a temp or `$HOME` path |
-| REPO-042 | Low | Committed briefs and specs embed an absolute personal home path | `rewrite/phase8-brief.md:3`, `rewrite/translation-brief.md:3`, `rewrite/spec/visual-shell.md:10`, `rewrite/spec/visual-canvas.md:8`, `rewrite/provenance-audit/README.md:145`, `rewrite/provenance-audit/scan-transcripts.py:3` | Use repo-relative wording |
-| REPO-043 | Low | run-new.sh waits a fixed 4 s for vite preview instead of polling | `tools/e2e/visual/run-new.sh:17` | Poll BASE_URL until it answers |
-| REPO-044 | Low | `.dockerignore` omits rewrite/, tools/, server/load; 1.7 MB enters build context | `.dockerignore:26`, `Dockerfile:15` | Ignore rewrite/, tools/ and server/load/ |
-| REPO-045 | Low | licences.mjs treats any parenthesised licence expression as permissive | `tools/licences.mjs:46` | Match explicit SPDX ids inside parentheses |
-| REPO-046 | Low | package.json lacks repository, bugs and homepage fields | `package.json:2` | Add repository, bugs and homepage |
-| REPO-048 | Low | `server/load` scripts ignored by both eslint configs; never linted | `server/eslint.config.mjs:5`, `eslint.config.mjs:60` | Lint load/ in the server eslint config |
-| REPO-049 | Low | Eslint comment cites TODO.md for React Compiler migration; TODO.md lists none | `eslint.config.mjs:51`, `TODO.md:5` | Add migration item to TODO.md or drop reference |
-| REPO-050 | Low | Dockerfile says .dockerignore drops tests; 74 co-located `*.test.ts(x)` still copied | `Dockerfile:20`, `.dockerignore:27` | Add `**/*.test.ts` and `**/*.test.tsx` to .dockerignore |
-| REPO-051 | Low | Licence inventory marks runtime dep `@fastify/static` NOT INSTALLED, unreviewed | `rewrite/inventory/third-party-licences.csv:80` | Rerun tools/licences.mjs with server deps installed |
-| REPO-052 | Low | NOTICE limits ChartDB content to allow-list; 22 copied logo PNGs not listed | `NOTICE:12`, `NOTICE:72`, `rewrite/similarity-allow.txt:1` | List copied logos in allow-list and NOTICE acknowledgement |
-| REPO-053 | Low | Docs say other test DB credentials fail; TEST_PG_USER and TEST_PG_PASSWORD override them | `CONTRIBUTING.md:52`, `README.md:320`, `server/test/helpers.ts:11` | Document TEST_PG_USER and TEST_PG_PASSWORD |
-| REPO-054 | Low | Load compose always passes VUS=50, DURATION=2m; script defaults and README disagree | `server/load/docker-compose.yml:114`, `server/load/docker-compose.yml:115`, `server/load/share-read.js:7`, `server/load/README.md:70` | Align compose, script and README defaults |
-| REPO-055 | Low | Load README cites README section "Run one server process"; no such section | `server/load/README.md:63` | Point at README "Notes" and "Scaling" |
-| REPO-056 | Low | index.html says container writes config.js at start; server answers it per request | `index.html:13`, `server/src/web.ts:39` | Reword comment: server serves /config.js |
-| REPO-057 | Low | run-server-flows reuses any existing `qbtest-app` image, testing stale code | `tools/e2e/run-server-flows.sh:40` | Rebuild the image on every run |
-| REPO-058 | Low | `.env.example` says remove db service from compose; README uses `--no-deps app` | `.env.example:42`, `README.md:150` | Point .env.example at README Option B |
-| REPO-059 | Low | README claims PostgreSQL 16+ support; CI tests only PostgreSQL 18 | `README.md:109`, `.github/workflows/ci.yaml:58` | Add a PostgreSQL 16 leg to the server CI job |
+| REPO-059 | Low | CI tests only PostgreSQL 18, though README says 16 or newer | `.github/workflows/ci.yaml:57` | Add a PostgreSQL 16 leg to the server CI job |
 
 ### Server
 
@@ -204,7 +186,7 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| DEAD-001 | Med | `VITE_HOST_URL`, `VITE_APP_URL` baked at build, no reader; README claims they work | `.env.example:87`, `.env.example:91`, `Dockerfile:10`, `Dockerfile:11`, `Dockerfile:18`, `docker-compose.build.yml:18`, `docker-compose.build.yml:19`, `run.sh:92`, `run.sh:93`, `src/vite-env.d.ts:5`, `src/vite-env.d.ts:6`, `README.md:224` | Remove both variables and README sentence |
+| DEAD-001 | Med | `VITE_HOST_URL`, `VITE_APP_URL` baked at build, no reader; README claims they work | `.env.example:88`, `.env.example:92`, `Dockerfile:10`, `Dockerfile:11`, `Dockerfile:18`, `docker-compose.build.yml:18`, `docker-compose.build.yml:19`, `run.sh:92`, `run.sh:93`, `src/vite-env.d.ts:5`, `src/vite-env.d.ts:6`, `README.md:224` | Remove both variables and README sentence |
 | DEAD-002 | Med | `qubdi.viewerPage.pageTitle` missing from en; title shows raw key, test asserts same key | `src/pages/share-viewer-page/share-viewer-page.tsx:343`, `src/i18n/qubdi/workspace.ts:181`, `src/helmet/__tests__/p8-shl-title.test.tsx:97` | Use `qubdi.workspace.viewerPage.pageTitle` in the page |
 | DEAD-007 | Low | Unused en key `menu.actions.save`; read only by i18n tests | `src/i18n/qubdi/workspace.ts:57`, `src/i18n/qubdi/workspace.ts:60`, `src/i18n/qubdi/workspace.ts:63`, `src/i18n/locales/en.ts:24` | Delete keys |
 | DEAD-011 | Low | Exports referenced only by tests; production-dead | `src/core/commands/plan-visual.ts:120` (planMove), `src/core/model/ids.ts:49` (looksLikeGeneratedId), `src/canvas/geometry.ts:13` (snapTo), `src/canvas/geometry.ts:49` (overlappingIds), `src/canvas/geometry.ts:88` (toggledWidth), `src/formats/image/export-options.ts:112` (outputSize), `src/features/filters/filter-tree.ts:47` (isFilterActive), `src/lib/export-import-utils.ts:10` (diagramToJSONOutput), `src/lib/custom-colors.ts:58` (readSavedColors), `src/lib/qubdi/diagram-summary.ts:5` (toDatabaseType), `src/lib/qubdi/diagram-summary.ts:12` (toDatabaseEdition), `src/lib/qubdi/project-path.ts:19` (findProjectBySlug), `src/lib/qubdi/local-data.ts:59` (adoptLegacyLocalData), `src/store/selectors.ts:14` (selectDirty), `src/store/selectors.ts:36` (selectVisibleEntities), `src/qbase/diagram-types.ts:222` (databasesWithSchemas), `src/qbase/sql-adapters.ts:16` (exportDiagramSql), `src/dialects/registry.ts:26` (listDialects), `shared/reconcile.ts:575` (isEmpty), `shared/reconcile.ts:578` (countByKind) | Delete exports and their tests |
@@ -222,6 +204,24 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| REPO-039 | Repository | PLAN says branch does not build; TODO says build, lint, tests pass |
+| REPO-041 | Repository | e2e visual scripts hard-code `/home/qubdi/ui-reference` output path |
+| REPO-042 | Repository | Committed briefs and specs embed an absolute personal home path |
+| REPO-043 | Repository | run-new.sh waits a fixed 4 s for vite preview instead of polling |
+| REPO-044 | Repository | `.dockerignore` omits rewrite/, tools/, server/load; 1.7 MB enters build context |
+| REPO-045 | Repository | licences.mjs treats any parenthesised licence expression as permissive |
+| REPO-046 | Repository | package.json lacks repository, bugs and homepage fields |
+| REPO-048 | Repository | `server/load` scripts ignored by both eslint configs; never linted |
+| REPO-049 | Repository | Eslint comment cites TODO.md for React Compiler migration; TODO.md lists none |
+| REPO-050 | Repository | Dockerfile says .dockerignore drops tests; 74 co-located `*.test.ts(x)` still copied |
+| REPO-051 | Repository | Licence inventory marks runtime dep `@fastify/static` NOT INSTALLED, unreviewed |
+| REPO-052 | Repository | NOTICE limits ChartDB content to allow-list; 22 copied logo PNGs not listed |
+| REPO-053 | Repository | Docs say other test DB credentials fail; TEST_PG_USER and TEST_PG_PASSWORD override them |
+| REPO-054 | Repository | Load compose always passes VUS=50, DURATION=2m; script defaults and README disagree |
+| REPO-055 | Repository | Load README cites README section "Run one server process"; no such section |
+| REPO-056 | Repository | index.html says container writes config.js at start; server answers it per request |
+| REPO-057 | Repository | run-server-flows reuses any existing `qbtest-app` image, testing stale code |
+| REPO-058 | Repository | `.env.example` says remove db service from compose; README uses `--no-deps app` |
 | REPO-020 | Repository | Workflows set no `timeout-minutes` or `concurrency` |
 | REPO-021 | Repository | Publish does not check tag matches package.json version |
 | REPO-023 | Repository | `.gitignore` carries unused Next, Nuxt, Gatsby, vuepress, Firebase entries |
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 16 | 2026-11-09 | 18 fixed, 1 narrowed (REPO-059); repository lens low batch 3, anchors remapped |
 | 15 | 2026-11-09 | 15 fixed, 1 dropped (REPO-026); repository lens low batch 2, anchors remapped |
 | 14 | 2026-11-09 | 11 fixed, 1 narrowed (REPO-013); repository lens low batch 1, anchors remapped |
 | 13 | 2026-11-09 | 10 fixed, 1 accepted (DB-013); database lens low batch, anchors remapped |

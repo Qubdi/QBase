@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 15</b></div>
-  <h1>30 open (0 Crit, 1 High).</h1>
+  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 16</b></div>
+  <h1>12 open (0 Crit, 1 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -32,7 +32,7 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">30 open &middot; 26 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">12 open &middot; 44 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -48,25 +48,7 @@
         <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CODEOWNERS lists a personal email, no team; single point of review</td><td class="wrap-cell"><code>.github/CODEOWNERS:5</code></td><td class="wrap-cell">Use a verified <code>@org/team</code> owner</td></tr>
         <tr><td class="svc-name">REPO-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Load run.sh never fails on a k6 threshold; README says it gates CI</td><td class="wrap-cell"><code>server/load/run.sh:58</code>, <code>server/load/run.sh:69</code>, <code>server/load/README.md:18</code></td><td class="wrap-cell">Return k6run status from run_one</td></tr>
         <tr><td class="svc-name">REPO-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README feature line says only a share-token hash is stored; code also encrypts token</td><td class="wrap-cell"><code>README.md:21</code>, <code>server/src/share/routes.ts:167</code></td><td class="wrap-cell">Reword feature line to hash plus encrypted token</td></tr>
-        <tr><td class="svc-name">REPO-039</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">PLAN says branch does not build; TODO says build, lint, tests pass</td><td class="wrap-cell"><code>rewrite/PLAN.md:74</code>, <code>rewrite/PLAN.md:143</code></td><td class="wrap-cell">Mark build-state notes as history</td></tr>
-        <tr><td class="svc-name">REPO-041</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">e2e visual scripts hard-code <code>/home/qubdi/ui-reference</code> output path</td><td class="wrap-cell"><code>tools/e2e/visual/run.mjs:24</code>, <code>tools/e2e/visual/run-new.sh:10</code>, <code>tools/e2e/visual/run-run.sh:11</code></td><td class="wrap-cell">Default to a temp or <code>$HOME</code> path</td></tr>
-        <tr><td class="svc-name">REPO-042</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Committed briefs and specs embed an absolute personal home path</td><td class="wrap-cell"><code>rewrite/phase8-brief.md:3</code>, <code>rewrite/translation-brief.md:3</code>, <code>rewrite/spec/visual-shell.md:10</code>, <code>rewrite/spec/visual-canvas.md:8</code>, <code>rewrite/provenance-audit/README.md:145</code>, <code>rewrite/provenance-audit/scan-transcripts.py:3</code></td><td class="wrap-cell">Use repo-relative wording</td></tr>
-        <tr><td class="svc-name">REPO-043</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">run-new.sh waits a fixed 4 s for vite preview instead of polling</td><td class="wrap-cell"><code>tools/e2e/visual/run-new.sh:17</code></td><td class="wrap-cell">Poll BASE_URL until it answers</td></tr>
-        <tr><td class="svc-name">REPO-044</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>.dockerignore</code> omits rewrite/, tools/, server/load; 1.7 MB enters build context</td><td class="wrap-cell"><code>.dockerignore:26</code>, <code>Dockerfile:15</code></td><td class="wrap-cell">Ignore rewrite/, tools/ and server/load/</td></tr>
-        <tr><td class="svc-name">REPO-045</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">licences.mjs treats any parenthesised licence expression as permissive</td><td class="wrap-cell"><code>tools/licences.mjs:46</code></td><td class="wrap-cell">Match explicit SPDX ids inside parentheses</td></tr>
-        <tr><td class="svc-name">REPO-046</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">package.json lacks repository, bugs and homepage fields</td><td class="wrap-cell"><code>package.json:2</code></td><td class="wrap-cell">Add repository, bugs and homepage</td></tr>
-        <tr><td class="svc-name">REPO-048</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>server/load</code> scripts ignored by both eslint configs; never linted</td><td class="wrap-cell"><code>server/eslint.config.mjs:5</code>, <code>eslint.config.mjs:60</code></td><td class="wrap-cell">Lint load/ in the server eslint config</td></tr>
-        <tr><td class="svc-name">REPO-049</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Eslint comment cites TODO.md for React Compiler migration; TODO.md lists none</td><td class="wrap-cell"><code>eslint.config.mjs:51</code>, <code>TODO.md:5</code></td><td class="wrap-cell">Add migration item to TODO.md or drop reference</td></tr>
-        <tr><td class="svc-name">REPO-050</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Dockerfile says .dockerignore drops tests; 74 co-located <code>*.test.ts(x)</code> still copied</td><td class="wrap-cell"><code>Dockerfile:20</code>, <code>.dockerignore:27</code></td><td class="wrap-cell">Add <code>**/*.test.ts</code> and <code>**/*.test.tsx</code> to .dockerignore</td></tr>
-        <tr><td class="svc-name">REPO-051</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Licence inventory marks runtime dep <code>@fastify/static</code> NOT INSTALLED, unreviewed</td><td class="wrap-cell"><code>rewrite/inventory/third-party-licences.csv:80</code></td><td class="wrap-cell">Rerun tools/licences.mjs with server deps installed</td></tr>
-        <tr><td class="svc-name">REPO-052</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">NOTICE limits ChartDB content to allow-list; 22 copied logo PNGs not listed</td><td class="wrap-cell"><code>NOTICE:12</code>, <code>NOTICE:72</code>, <code>rewrite/similarity-allow.txt:1</code></td><td class="wrap-cell">List copied logos in allow-list and NOTICE acknowledgement</td></tr>
-        <tr><td class="svc-name">REPO-053</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Docs say other test DB credentials fail; TEST_PG_USER and TEST_PG_PASSWORD override them</td><td class="wrap-cell"><code>CONTRIBUTING.md:52</code>, <code>README.md:320</code>, <code>server/test/helpers.ts:11</code></td><td class="wrap-cell">Document TEST_PG_USER and TEST_PG_PASSWORD</td></tr>
-        <tr><td class="svc-name">REPO-054</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Load compose always passes VUS=50, DURATION=2m; script defaults and README disagree</td><td class="wrap-cell"><code>server/load/docker-compose.yml:114</code>, <code>server/load/docker-compose.yml:115</code>, <code>server/load/share-read.js:7</code>, <code>server/load/README.md:70</code></td><td class="wrap-cell">Align compose, script and README defaults</td></tr>
-        <tr><td class="svc-name">REPO-055</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Load README cites README section "Run one server process"; no such section</td><td class="wrap-cell"><code>server/load/README.md:63</code></td><td class="wrap-cell">Point at README "Notes" and "Scaling"</td></tr>
-        <tr><td class="svc-name">REPO-056</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">index.html says container writes config.js at start; server answers it per request</td><td class="wrap-cell"><code>index.html:13</code>, <code>server/src/web.ts:39</code></td><td class="wrap-cell">Reword comment: server serves /config.js</td></tr>
-        <tr><td class="svc-name">REPO-057</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">run-server-flows reuses any existing <code>qbtest-app</code> image, testing stale code</td><td class="wrap-cell"><code>tools/e2e/run-server-flows.sh:40</code></td><td class="wrap-cell">Rebuild the image on every run</td></tr>
-        <tr><td class="svc-name">REPO-058</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>.env.example</code> says remove db service from compose; README uses <code>--no-deps app</code></td><td class="wrap-cell"><code>.env.example:42</code>, <code>README.md:150</code></td><td class="wrap-cell">Point .env.example at README Option B</td></tr>
-        <tr><td class="svc-name">REPO-059</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">README claims PostgreSQL 16+ support; CI tests only PostgreSQL 18</td><td class="wrap-cell"><code>README.md:109</code>, <code>.github/workflows/ci.yaml:58</code></td><td class="wrap-cell">Add a PostgreSQL 16 leg to the server CI job</td></tr>
+        <tr><td class="svc-name">REPO-059</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CI tests only PostgreSQL 18, though README says 16 or newer</td><td class="wrap-cell"><code>.github/workflows/ci.yaml:57</code></td><td class="wrap-cell">Add a PostgreSQL 16 leg to the server CI job</td></tr>
       </tbody>
     </table>
   </div>
@@ -74,11 +56,29 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (26)</summary>
+  <details><summary>Fixed (44)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-039</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">PLAN says branch does not build; TODO says build, lint, tests pass</td></tr>
+        <tr><td class="svc-name">REPO-041</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">e2e visual scripts hard-code <code>/home/qubdi/ui-reference</code> output path</td></tr>
+        <tr><td class="svc-name">REPO-042</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Committed briefs and specs embed an absolute personal home path</td></tr>
+        <tr><td class="svc-name">REPO-043</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">run-new.sh waits a fixed 4 s for vite preview instead of polling</td></tr>
+        <tr><td class="svc-name">REPO-044</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>.dockerignore</code> omits rewrite/, tools/, server/load; 1.7 MB enters build context</td></tr>
+        <tr><td class="svc-name">REPO-045</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">licences.mjs treats any parenthesised licence expression as permissive</td></tr>
+        <tr><td class="svc-name">REPO-046</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">package.json lacks repository, bugs and homepage fields</td></tr>
+        <tr><td class="svc-name">REPO-048</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>server/load</code> scripts ignored by both eslint configs; never linted</td></tr>
+        <tr><td class="svc-name">REPO-049</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Eslint comment cites TODO.md for React Compiler migration; TODO.md lists none</td></tr>
+        <tr><td class="svc-name">REPO-050</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dockerfile says .dockerignore drops tests; 74 co-located <code>*.test.ts(x)</code> still copied</td></tr>
+        <tr><td class="svc-name">REPO-051</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Licence inventory marks runtime dep <code>@fastify/static</code> NOT INSTALLED, unreviewed</td></tr>
+        <tr><td class="svc-name">REPO-052</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">NOTICE limits ChartDB content to allow-list; 22 copied logo PNGs not listed</td></tr>
+        <tr><td class="svc-name">REPO-053</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Docs say other test DB credentials fail; TEST_PG_USER and TEST_PG_PASSWORD override them</td></tr>
+        <tr><td class="svc-name">REPO-054</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Load compose always passes VUS=50, DURATION=2m; script defaults and README disagree</td></tr>
+        <tr><td class="svc-name">REPO-055</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Load README cites README section "Run one server process"; no such section</td></tr>
+        <tr><td class="svc-name">REPO-056</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">index.html says container writes config.js at start; server answers it per request</td></tr>
+        <tr><td class="svc-name">REPO-057</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">run-server-flows reuses any existing <code>qbtest-app</code> image, testing stale code</td></tr>
+        <tr><td class="svc-name">REPO-058</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>.env.example</code> says remove db service from compose; README uses <code>--no-deps app</code></td></tr>
         <tr><td class="svc-name">REPO-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Workflows set no <code>timeout-minutes</code> or <code>concurrency</code></td></tr>
         <tr><td class="svc-name">REPO-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish does not check tag matches package.json version</td></tr>
         <tr><td class="svc-name">REPO-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>.gitignore</code> carries unused Next, Nuxt, Gatsby, vuepress, Firebase entries</td></tr>
