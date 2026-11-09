@@ -2,6 +2,11 @@
 
 Eight tasks, each written as a prompt you can paste into a coding agent. Build them in order; later tasks depend on earlier ones.
 
+> **These prompts are the history of how QBase was built, not its current behaviour.** The
+> code has moved on: for example, snapshots are pruned to `SNAPSHOT_KEEP` per diagram, not kept
+> forever, and a share link's token is stored as a hash and also encrypted (so the link can be
+> shown again), not as a hash alone. The [README](README.md) describes what QBase does now.
+
 Order: 1 Auth → 2 Snapshots → 3 Share links → 4 Comments → 5 Direct import → 6 Re-sync → 7 Drift detection → 8 Schema lint
 
 ## Shared context (paste at the top of every task)
