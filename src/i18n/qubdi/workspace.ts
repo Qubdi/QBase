@@ -52,16 +52,6 @@ export const workspace = {
         relationship_one: '{{count}} relationship',
         relationship_other: '{{count}} relationships',
     },
-    // messages of the editor's own screens that sit outside the Qubdi dialogs
-    editorToasts: {
-        fieldTypesIncompatibleTitle: 'Field types are not compatible',
-        fieldTypesIncompatibleBody:
-            'Relationships can only be created between compatible field types',
-        alreadyConnectedTitle: 'Already connected',
-        alreadyConnectedBody:
-            'These two fields already have a relationship between them',
-        deleteDiagramFailed: 'Could not delete the diagram',
-    },
     accessBanner: {
         getLatest: 'Get latest and edit',
         moveAria: 'Project to move this diagram into',
