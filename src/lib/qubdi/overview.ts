@@ -50,9 +50,6 @@ export function compactNumber(value: number): string {
     }).format(value);
 }
 
-export const plural = (n: number, word: string, many = `${word}s`): string =>
-    `${compactNumber(n)} ${n === 1 ? word : many}`;
-
 export interface DayLabel {
     /** "Mon" */
     weekday: string;

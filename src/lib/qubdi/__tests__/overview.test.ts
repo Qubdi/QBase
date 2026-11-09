@@ -6,7 +6,6 @@ import {
     heightPercent,
     MIN_AXIS_MAX,
     niceCeil,
-    plural,
     scaleFor,
 } from '../overview';
 
@@ -90,16 +89,6 @@ describe('compactNumber', () => {
         [1_200_000, '1.2M'],
     ])('%i is %s', (value, expected) => {
         expect(compactNumber(value)).toBe(expected);
-    });
-});
-
-describe('plural', () => {
-    it('counts and names', () => {
-        expect(plural(1, 'admin')).toBe('1 admin');
-        expect(plural(2, 'admin')).toBe('2 admins');
-        expect(plural(0, 'admin')).toBe('0 admins');
-        expect(plural(12_900, 'user')).toBe('12.9K users');
-        expect(plural(2, 'person', 'people')).toBe('2 people');
     });
 });
 
