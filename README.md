@@ -317,8 +317,9 @@ A fresh install needs none of this. If you use your own Postgres (`POSTGRES_HOST
 
 ```bash
 npx vitest run                 # editor and shared logic
-cd server && npx vitest run    # backend (needs the database up with POSTGRES_PASSWORD=qbase:
-                               # the tests connect as qbase/qbase on port 5433)
+cd server && npx vitest run    # backend (needs the database up; by default the tests connect as
+                               # qbase/qbase on port 5433: set TEST_PG_PORT, TEST_PG_USER and
+                               # TEST_PG_PASSWORD for another port, user or password)
 ```
 
 The SQL Server tests need the optional container and skip cleanly without it. Choose a
