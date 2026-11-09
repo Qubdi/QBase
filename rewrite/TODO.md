@@ -8,7 +8,8 @@ ships and note the commit. Last reviewed 2026-11-07.
 > ChartDB-derived code is kept, read-only, on `main-old`. Below, "`main`" as the old code
 > means `main-old`.
 
-Do not publish the repository or change the licence until the last item is ticked.
+The licence was changed to Elastic License 2.0 on 2026-11-08 (Phase 9). Do not publish the repository until
+the last item is ticked.
 The ChartDB-derived code is already deleted on this branch; read it from `main`
 (see section 5 of the plan).
 
