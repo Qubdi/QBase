@@ -29,17 +29,19 @@ export function createFailureThrottle(options: {
             const f = live(key, now);
             return f && f.count >= max ? Math.ceil((f.resetAt - now) / 1000) : 0;
         },
-        recordFailure(key: string, now = Date.now()) {
+        /** Counts one failure; true when this one is the one that locks the key. */
+        recordFailure(key: string, now = Date.now()): boolean {
             const f = live(key, now);
             if (f) {
                 f.count++;
-                return;
+                return f.count === max;
             }
             if (failures.size >= maxKeys) {
                 // Map keeps insertion order: drop the oldest entry
                 failures.delete(failures.keys().next().value as string);
             }
             failures.set(key, { count: 1, resetAt: now + windowMs });
+            return max === 1;
         },
         reset(key: string) {
             failures.delete(key);

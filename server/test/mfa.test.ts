@@ -124,6 +124,13 @@ describe('two-factor sign-in', () => {
             expect((await ctx.app.inject({ url: '/auth/mfa' })).statusCode).toBe(401);
         });
 
+        it('records that a secret was set up', async () => {
+            const user = await registerUser(ctx.app, `mfa${++counter}@example.com`);
+            await post('/auth/mfa/setup', {}, user);
+            const rows = await ctx.db.select().from(auditLog).where(eq(auditLog.userId, user.id));
+            expect(rows.filter((r) => r.action === 'mfa.setup')).toHaveLength(1);
+        });
+
         it('returns the address for the QR code and the key to type, and stays off until a code is checked', async () => {
             const user = await registerUser(ctx.app, `mfa${++counter}@example.com`);
             const res = await post('/auth/mfa/setup', {}, user);

@@ -125,7 +125,12 @@ describe('describeActivity', () => {
                 'user.password_check_failed',
                 'anna@corp.io typed a wrong current password',
             ],
+            [
+                'user.locked',
+                'anna@corp.io was locked out for too many failed attempts',
+            ],
             ['user.password_change', 'anna@corp.io changed their password'],
+            ['mfa.setup', 'anna@corp.io started setting up two-factor sign-in'],
             ['mfa.enable', 'anna@corp.io turned on two-factor sign-in'],
             ['mfa.disable', 'anna@corp.io turned off two-factor sign-in'],
             ['mfa.recovery_used', 'anna@corp.io used a recovery code'],

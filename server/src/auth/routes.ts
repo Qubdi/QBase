@@ -104,8 +104,9 @@ export const authRoutes =
                 return true;
             },
             fail(req, userId) {
-                failures.recordFailure(`mfa:${userId}:${req.ip}`);
-                accountFailures.recordFailure(`mfa:${userId}`);
+                const addressLocked = failures.recordFailure(`mfa:${userId}:${req.ip}`);
+                const accountLocked = accountFailures.recordFailure(`mfa:${userId}`);
+                return addressLocked || accountLocked;
             },
             reset(req, userId) {
                 failures.reset(`mfa:${userId}:${req.ip}`);
@@ -251,8 +252,8 @@ export const authRoutes =
             // a disabled account is answered like a wrong password, so a correct
             // password cannot confirm that the account exists but is switched off
             if (!user || !user.isActive || !ok) {
-                failures.recordFailure(key);
-                accountFailures.recordFailure(accountKey);
+                const addressLocked = failures.recordFailure(key);
+                const accountLocked = accountFailures.recordFailure(accountKey);
                 reply.code(401).send({ error: 'invalid_credentials' });
                 // The row is written after the answer has gone out, and only for
                 // an account that exists (guesses at made-up emails would fill the
@@ -264,6 +265,10 @@ export const authRoutes =
                             userId: user.id,
                             action: 'user.sign_in_failed',
                         });
+                        // the failure that tripped a lockout is worth its own row
+                        if (addressLocked || accountLocked) {
+                            await audit(db, { userId: user.id, action: 'user.locked' });
+                        }
                     } catch (err) {
                         req.log.error({ err }, 'sign-in failure was not logged');
                     }

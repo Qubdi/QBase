@@ -16,7 +16,8 @@ type Failures = ReturnType<typeof createFailureThrottle>;
 export interface MfaGuard {
     /** answers 429 and returns true while this address or the account is locked out */
     locked: (reply: FastifyReply, req: FastifyRequest, userId: string) => boolean;
-    fail: (req: FastifyRequest, userId: string) => void;
+    /** counts a wrong code; true when this one tripped a lockout */
+    fail: (req: FastifyRequest, userId: string) => boolean;
     reset: (req: FastifyRequest, userId: string) => void;
 }
 
@@ -115,8 +116,9 @@ export const mfaRoutes =
             }
             const used = await checkFactor(user.id, body);
             if (!used) {
-                mfaGuard.fail(req, user.id);
+                const tripped = mfaGuard.fail(req, user.id);
                 await audit(db, { userId: user.id, action: 'mfa.failed' });
+                if (tripped) await audit(db, { userId: user.id, action: 'user.locked' });
                 return reply.code(401).send({ error: 'invalid_code' });
             }
             // one use: a parallel request with the same ticket loses here
@@ -166,6 +168,7 @@ export const mfaRoutes =
             }
             const secret = generateSecret();
             await mfa.storePendingSecret(req.user.id, secret);
+            await audit(db, { userId: req.user.id, action: 'mfa.setup' });
             return {
                 // shown once, for typing into an app that cannot scan
                 secret,

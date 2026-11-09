@@ -242,6 +242,22 @@ describe('auth throttling', () => {
         }
     });
 
+    it('records the lockout once, on the failure that caused it', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 3 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            for (let i = 0; i < 5; i++) await attempt(ctx, 'a@example.com', 'wrong-password');
+            // the rows are written after the answer has gone out
+            await vi.waitFor(async () => {
+                const rows = await ctx.db.select({ action: auditLog.action }).from(auditLog);
+                expect(rows.filter((r) => r.action === 'user.sign_in_failed')).toHaveLength(3);
+                expect(rows.filter((r) => r.action === 'user.locked')).toHaveLength(1);
+            });
+        } finally {
+            await ctx.close();
+        }
+    });
+
     it('locks out the address that failed, not the account for everyone', async () => {
         const ctx = await createTestApp({ authMaxFailures: 3 });
         try {
