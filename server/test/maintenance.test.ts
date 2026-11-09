@@ -95,9 +95,11 @@ describe('maintenance', () => {
 
     it('deletes expired second-step challenges and keeps live ones', async () => {
         await ctx.db.delete(mfaChallenges);
+        // one pending challenge per account, so the two belong to two people
+        const other = (await registerUser(ctx.app, 'b@example.com')).id;
         await ctx.db.insert(mfaChallenges).values([
             { id: 'old', userId, expiresAt: daysAgo(1) },
-            { id: 'new', userId, expiresAt: new Date(now.getTime() + 1000) },
+            { id: 'new', userId: other, expiresAt: new Date(now.getTime() + 1000) },
         ]);
         expect(await purgeExpiredMfaChallenges(ctx.db, now)).toBe(1);
         const left = await ctx.db.select().from(mfaChallenges);
