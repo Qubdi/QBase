@@ -8,7 +8,7 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 13</b></div>
+  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 14</b></div>
   <h1>8 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
@@ -128,7 +128,7 @@
         <tr><td class="wrap-cell">Pool</td><td class="wrap-cell">max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts</td><td class="wrap-cell"><code>server/src/db/client.ts:22</code></td></tr>
         <tr><td class="wrap-cell">Postgres introspection</td><td class="wrap-cell">READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:162</code></td></tr>
         <tr><td class="wrap-cell">Read-only guard</td><td class="wrap-cell">Single SELECT/WITH, denylist after stripping literals</td><td class="wrap-cell"><code>server/src/introspect/readonly-guard.ts:102</code></td></tr>
-        <tr><td class="wrap-cell">Postgres image and backups</td><td class="wrap-cell">Digest-pinned in compose and CI; dump and restore documented</td><td class="wrap-cell"><code>docker-compose.yml:14</code></td></tr>
+        <tr><td class="wrap-cell">Postgres image and backups</td><td class="wrap-cell">Digest-pinned in compose and CI; dump and restore documented</td><td class="wrap-cell"><code>docker-compose.yml:15</code></td></tr>
       </tbody>
     </table>
   </div>

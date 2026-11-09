@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 13 · **date** 2026-11-09
+**rev** 14 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 33 | 0 | 0 | 0 | 0 |
-| Repository | 57 | 0 | 1 | 0 | 0 |
+| Repository | 46 | 0 | 1 | 11 | 0 |
 | Server | 36 | 0 | 4 | 0 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 40 | 0 | 2 | 54 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 185 | 0 | 7 | 93 | 1 |
+| **Total** | 174 | 0 | 7 | 104 | 1 |
 
 ## Act first
 
@@ -35,7 +35,7 @@
 | SEC-001 | Med | Old remote history still holds a literal SQL Server SA password | `.gitleaks.toml:4` | Delete stale remote refs and purge their objects |
 | SEC-002 | Med | MFA lockout never checked before enable, disable, recovery-renew code guesses | `server/src/auth/mfa-routes.ts:188`, `server/src/auth/mfa-routes.ts:274` | Call `locked()` on the `mfa:` key before checking codes |
 | SEC-003 | Med | Introspection connections default to plaintext (`ssl` false) | `server/src/introspect/routes.ts:46`, `server/src/introspect/postgres.ts:354`, `server/src/introspect/sqlserver.ts:469` | Default `ssl` to true; require explicit opt-out |
-| SEC-004 | Med | Cookie `Secure` stays off behind TLS proxy unless TRUST_PROXY is set | `server/src/config.ts:222`, `server/src/auth/routes.ts:82`, `docker-compose.yml:73` | Warn at start when COOKIE_SECURE=auto without TRUST_PROXY |
+| SEC-004 | Med | Cookie `Secure` stays off behind TLS proxy unless TRUST_PROXY is set | `server/src/config.ts:222`, `server/src/auth/routes.ts:82`, `docker-compose.yml:74` | Warn at start when COOKIE_SECURE=auto without TRUST_PROXY |
 | SEC-005 | Med | No rate limit on authenticated routes (50 MB saves, share, admin) | `server/src/app.ts:120` | Add global per-user rate limit with route overrides |
 | SEC-006 | Low | Fastify sets no requestTimeout or connectionTimeout (slow-body hold) | `server/src/app.ts:84` | Set requestTimeout and connectionTimeout in Fastify options |
 | SEC-007 | Low | Disabled account answers 403 after correct password, confirming it | `server/src/auth/routes.ts:229` | Return generic 401 for disabled accounts |
@@ -53,10 +53,10 @@
 | SEC-020 | Low | Viewers can list every project member's email | `server/src/members/routes.ts:23`, `server/src/diagrams/routes.ts:140`, `server/src/diagrams/routes.ts:544` | Return member emails to writers only |
 | SEC-021 | Low | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked | `server/src/config.ts:241`, `server/src/introspect/net-guard.ts:136` | Validate entries; reject `/0` to `/7` ranges |
 | SEC-022 | Low | Editor CSP allows inline styles (`style-src 'unsafe-inline'`) | `server/src/web.ts:16` | Move inline styles to nonce or hashed styles |
-| SEC-023 | Low | App container lacks `no-new-privileges`, `cap_drop`, `read_only` | `docker-compose.yml:49` | Add `security_opt`, `cap_drop: [ALL]`, `read_only: true` |
-| SEC-024 | Low | Compose default image tag `latest`, unpinned | `docker-compose.yml:53` | Require QBASE_VERSION; drop the `latest` default |
+| SEC-023 | Low | App container lacks `no-new-privileges`, `cap_drop`, `read_only` | `docker-compose.yml:50` | Add `security_opt`, `cap_drop: [ALL]`, `read_only: true` |
+| SEC-024 | Low | Compose default image tag `latest`, unpinned | `docker-compose.yml:54` | Require QBASE_VERSION; drop the `latest` default |
 | SEC-025 | Low | `.gitignore` lacks key and certificate patterns (`*.pem`, `*.key`) | `.gitignore:70` | Ignore `*.pem`, `*.key`, `*.p12`, `*.pfx` |
-| SEC-026 | Low | Load stack hard-codes DB password, encryption key and admin password | `server/load/docker-compose.yml:62`, `server/load/docker-compose.yml:63`, `server/load/seed.mjs:10` | Generate load-test secrets per run |
+| SEC-026 | Low | Load stack hard-codes DB password, encryption key and admin password | `server/load/docker-compose.yml:65`, `server/load/docker-compose.yml:66`, `server/load/seed.mjs:10` | Generate load-test secrets per run |
 | SEC-027 | Med | Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it | `server/src/lib/rate-key.ts:14`, `server/src/lint/routes.ts:53` | Count in preHandler after session lookup, like sharedUserLimit |
 | SEC-028 | Low | No Strict-Transport-Security header on API or editor responses | `server/src/web.ts:14`, `server/src/lib/security-headers.ts:6` | Send HSTS when cookies are secure or request is https |
 | SEC-029 | Low | CORS_ORIGIN unvalidated; `*` or trailing slash silently breaks credentialed requests | `server/src/config.ts:210` | Require exact origin; reject `*` and paths at startup |
@@ -73,21 +73,11 @@
 | REPO-001 | Med | `bootstrap-sha` commit is not an ancestor of main | `release-please-config.json:4` | Set bootstrap-sha to a commit in main |
 | REPO-002 | Med | `latest` tag moves on every `v*` tag, including prereleases | `.github/workflows/publish.yaml:134`, `run.sh:84` | Tag latest only for non-prerelease versions |
 | REPO-003 | Med | Similarity check runs only on `rewrite/clean-room`, never on main | `.github/workflows/similarity.yaml:11`, `.github/workflows/similarity.yaml:13` | Add main to similarity triggers |
-| REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:7`, `rewrite/TODO.md:7`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
+| REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:7`, `rewrite/TODO.md:11`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
 | REPO-005 | High | CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored | `.gitleaksignore:3`, `server/test/share-token-copy.test.ts:25`, `.github/workflows/ci.yaml:118`, `.github/workflows/publish.yaml:87` | Regenerate ignore fingerprints from main history; rerun scan |
 | REPO-006 | Med | npm version updates paused; both npm entries have limit 0 | `.github/dependabot.yml:11`, `.github/dependabot.yml:25` | Restore limit to 5 or document accepted pause |
-| REPO-008 | Low | Dependabot ignore comments cite TODO.md for majors; TODO.md lists none | `.github/dependabot.yml:16`, `.github/dependabot.yml:30` | List pending majors in TODO.md or drop reference |
-| REPO-009 | Low | PLAN calls main the read-only ChartDB reference; main now holds the rewrite | `rewrite/PLAN.md:3`, `rewrite/TODO.md:8` | Update rewrite docs to current branch roles |
-| REPO-010 | Low | Clean-checkout script hard-requires branch `rewrite/clean-room` | `tools/make-clean-checkout.sh:23` | Drop or update branch guard |
-| REPO-011 | Low | Manual `run.sh push` bypasses verify gate; compose says tag workflow only | `run.sh:14`, `docker-compose.yml:2` | Remove push from run.sh or fix comment |
-| REPO-012 | Low | Load-test compose pins no digest: postgres, node, `grafana/k6:latest` | `server/load/docker-compose.yml:12`, `server/load/docker-compose.yml:40`, `server/load/docker-compose.yml:104` | Pin images by digest |
-| REPO-013 | Low | Playwright image tag unpinned by digest; npm installs at run time | `tools/e2e/run-smoke.sh:16`, `tools/e2e/run-smoke.sh:17` | Pin image digest and playwright via lockfile |
-| REPO-014 | Low | Audit prompt scope names files that do not exist | `Audit/Prompt.md:32`, `Audit/Prompt.md:33`, `Audit/Prompt.md:130` | Remove server/Dockerfile, default.conf.template, entrypoint.sh, db/postgres |
+| REPO-013 | Low | Playwright npm package installed at run time without a lockfile | `tools/e2e/run-smoke.sh:18` | Install Playwright from a committed lockfile |
 | REPO-015 | Low | 1.1 MB `audit-ui-differences.html` tracked, not an owned audit file | `Audit/audit-ui-differences.html:1` | Untrack or move out of Audit/ |
-| REPO-016 | Low | CONTRIBUTING omits CONNECTION_KEY that `docker compose up -d db` requires | `CONTRIBUTING.md:49`, `docker-compose.yml:63` | Add CONNECTION_KEY to the test setup note |
-| REPO-017 | Low | README licence paragraph has no heading, sits inside Scaling | `README.md:396` | Add a `## License` heading |
-| REPO-018 | Low | Code of Conduct enforcement contact is not actionable | `CODE_OF_CONDUCT.md:62` | Name an email address for reports |
-| REPO-019 | Low | QBase-build-tasks says hashed share tokens and keep-all versions; both differ now | `QBase-build-tasks.md:62`, `QBase-build-tasks.md:46`, `QBase-build-tasks.md:5` | Mark tasks as history or update them |
 | REPO-020 | Low | Workflows set no `timeout-minutes` or `concurrency` | `.github/workflows/ci.yaml:14`, `.github/workflows/publish.yaml:17` | Add timeout-minutes and concurrency groups |
 | REPO-021 | Low | Publish does not check tag matches package.json version | `.github/workflows/publish.yaml:5` | Add step comparing tag to package.json |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
@@ -102,13 +92,12 @@
 | REPO-031 | Low | Empty upstream index still reports "No checked file is over the limits" | `tools/similarity.mjs:344` | Exit 1 when upstream index has zero runs |
 | REPO-032 | Low | Non-numeric `--threshold`, `--max-run`, `--run` become NaN and checks pass | `tools/similarity.mjs:117`, `tools/spec-check.mjs:94` | Reject NaN option values |
 | REPO-033 | Low | owner-decisions links `spec/...` resolve to rewrite/spec/spec/ and break | `rewrite/spec/owner-decisions.md:105` | Drop the `spec/` prefix from the four links |
-| REPO-034 | Low | TODO says EDT-250 is open; parity checklist ticks it, browser-driven | `rewrite/TODO.md:66`, `rewrite/TODO.md:80`, `rewrite/parity-checklist.md:389` | Update TODO counts to 684 ticked, 3 partial |
-| REPO-035 | Low | TODO says seven languages ship; only en, de, fr, it, ru exist | `rewrite/TODO.md:60` | Correct language list or add ka and zh |
-| REPO-036 | Low | Rewrite docs cite audit IDs REPO-005, REPO-069, REPO-045 that now mean other things | `rewrite/TODO.md:76`, `rewrite/TODO.md:81`, `rewrite/PLAN.md:295` | Drop audit IDs from rewrite docs |
-| REPO-037 | Low | TODO forbids changing licence while Elastic-2.0 is already applied | `rewrite/TODO.md:7`, `rewrite/TODO.md:74` | Reword line 7 to match applied licence |
+| REPO-034 | Low | TODO says EDT-250 is open; parity checklist ticks it, browser-driven | `rewrite/TODO.md:70`, `rewrite/TODO.md:84`, `rewrite/parity-checklist.md:389` | Update TODO counts to 684 ticked, 3 partial |
+| REPO-035 | Low | TODO says seven languages ship; only en, de, fr, it, ru exist | `rewrite/TODO.md:64` | Correct language list or add ka and zh |
+| REPO-036 | Low | Rewrite docs cite audit IDs REPO-005, REPO-069, REPO-045 that now mean other things | `rewrite/TODO.md:80`, `rewrite/TODO.md:85`, `rewrite/PLAN.md:300` | Drop audit IDs from rewrite docs |
+| REPO-037 | Low | TODO forbids changing licence while Elastic-2.0 is already applied | `rewrite/TODO.md:11`, `rewrite/TODO.md:78` | Reword line 7 to match applied licence |
 | REPO-038 | Low | NOTICE and allow-list name separator.tsx, which no longer exists | `NOTICE:36`, `rewrite/similarity-allow.txt:34` | Remove separator from both lists |
-| REPO-039 | Low | PLAN says branch does not build; TODO says build, lint, tests pass | `rewrite/PLAN.md:69`, `rewrite/PLAN.md:138` | Mark build-state notes as history |
-| REPO-040 | Low | make-clean-checkout comment cites rewrite/clean-author-brief.md, which does not exist | `tools/make-clean-checkout.sh:15` | Point at clean-author-brief-phase*.md |
+| REPO-039 | Low | PLAN says branch does not build; TODO says build, lint, tests pass | `rewrite/PLAN.md:74`, `rewrite/PLAN.md:143` | Mark build-state notes as history |
 | REPO-041 | Low | e2e visual scripts hard-code `/home/qubdi/ui-reference` output path | `tools/e2e/visual/run.mjs:24`, `tools/e2e/visual/run-new.sh:10`, `tools/e2e/visual/run-run.sh:11` | Default to a temp or `$HOME` path |
 | REPO-042 | Low | Committed briefs and specs embed an absolute personal home path | `rewrite/phase8-brief.md:3`, `rewrite/translation-brief.md:3`, `rewrite/spec/visual-shell.md:10`, `rewrite/spec/visual-canvas.md:8`, `rewrite/provenance-audit/README.md:145`, `rewrite/provenance-audit/scan-transcripts.py:3` | Use repo-relative wording |
 | REPO-043 | Low | run-new.sh waits a fixed 4 s for vite preview instead of polling | `tools/e2e/visual/run-new.sh:17` | Poll BASE_URL until it answers |
@@ -121,7 +110,7 @@
 | REPO-051 | Low | Licence inventory marks runtime dep `@fastify/static` NOT INSTALLED, unreviewed | `rewrite/inventory/third-party-licences.csv:80` | Rerun tools/licences.mjs with server deps installed |
 | REPO-052 | Low | NOTICE limits ChartDB content to allow-list; 22 copied logo PNGs not listed | `NOTICE:12`, `NOTICE:72`, `rewrite/similarity-allow.txt:1` | List copied logos in allow-list and NOTICE acknowledgement |
 | REPO-053 | Low | Docs say other test DB credentials fail; TEST_PG_USER and TEST_PG_PASSWORD override them | `CONTRIBUTING.md:52`, `README.md:320`, `server/test/helpers.ts:11` | Document TEST_PG_USER and TEST_PG_PASSWORD |
-| REPO-054 | Low | Load compose always passes VUS=50, DURATION=2m; script defaults and README disagree | `server/load/docker-compose.yml:111`, `server/load/docker-compose.yml:112`, `server/load/share-read.js:7`, `server/load/README.md:70` | Align compose, script and README defaults |
+| REPO-054 | Low | Load compose always passes VUS=50, DURATION=2m; script defaults and README disagree | `server/load/docker-compose.yml:114`, `server/load/docker-compose.yml:115`, `server/load/share-read.js:7`, `server/load/README.md:70` | Align compose, script and README defaults |
 | REPO-055 | Low | Load README cites README section "Run one server process"; no such section | `server/load/README.md:63` | Point at README "Notes" and "Scaling" |
 | REPO-056 | Low | index.html says container writes config.js at start; server answers it per request | `index.html:13`, `server/src/web.ts:39` | Reword comment: server serves /config.js |
 | REPO-057 | Low | run-server-flows reuses any existing `qbtest-app` image, testing stale code | `tools/e2e/run-server-flows.sh:40` | Rebuild the image on every run |
@@ -249,6 +238,17 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| REPO-008 | Repository | Dependabot ignore comments cite TODO.md for majors; TODO.md lists none |
+| REPO-009 | Repository | PLAN calls main the read-only ChartDB reference; main now holds the rewrite |
+| REPO-010 | Repository | Clean-checkout script hard-requires branch `rewrite/clean-room` |
+| REPO-011 | Repository | Manual `run.sh push` bypasses verify gate; compose says tag workflow only |
+| REPO-012 | Repository | Load-test compose pins no digest: postgres, node, `grafana/k6:latest` |
+| REPO-014 | Repository | Audit prompt scope names files that do not exist |
+| REPO-016 | Repository | CONTRIBUTING omits CONNECTION_KEY that `docker compose up -d db` requires |
+| REPO-017 | Repository | README licence paragraph has no heading, sits inside Scaling |
+| REPO-018 | Repository | Code of Conduct enforcement contact is not actionable |
+| REPO-019 | Repository | QBase-build-tasks says hashed share tokens and keep-all versions; both differ now |
+| REPO-040 | Repository | make-clean-checkout comment cites rewrite/clean-author-brief.md, which does not exist |
 | DB-008 | Database | One pending MFA ticket per account is not enforced; concurrent logins leave two |
 | DB-009 | Database | Audit rows are written after, not inside, the transaction of the change |
 | DB-010 | Database | Backups section omits saving CONNECTION_KEY and SECRETS_KEY with the dump |
@@ -402,7 +402,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 | Pool | max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts | `server/src/db/client.ts:22` |
 | Postgres introspection | READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address | `server/src/introspect/postgres.ts:162` |
 | Read-only guard | Single SELECT/WITH, denylist after stripping literals | `server/src/introspect/readonly-guard.ts:102` |
-| Postgres image and backups | Digest-pinned in compose and CI; dump and restore documented | `docker-compose.yml:14` |
+| Postgres image and backups | Digest-pinned in compose and CI; dump and restore documented | `docker-compose.yml:15` |
 
 ---
 
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 14 | 2026-11-09 | 11 fixed, 1 narrowed (REPO-013); repository lens low batch 1, anchors remapped |
 | 13 | 2026-11-09 | 10 fixed, 1 accepted (DB-013); database lens low batch, anchors remapped |
 | 12 | 2026-11-09 | 5 fixed, 2 narrowed (CLI-018, CLI-065); client low batch 6, anchors remapped |
 | 11 | 2026-11-09 | 9 fixed (client low batch 5), anchors remapped |
