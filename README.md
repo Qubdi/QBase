@@ -393,6 +393,8 @@ and 21 KB of WAL on a laptop. To go further:
   saved connections and share-link URLs cannot be read and people with two-factor on cannot
   sign in. After a restore, start the server with the same values.
 
+## License
+
 QBase is licensed under the [Elastic License 2.0](LICENSE): free to use, modify and self-host, for personal and commercial use alike, including inside a company. The one thing it does not allow is offering QBase to others as a hosted or managed service (a SaaS) without a separate licence from Qubdi.
 
 ## Supported browsers
