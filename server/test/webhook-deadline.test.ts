@@ -1,7 +1,7 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
-import { postJson } from '../src/drift/webhook.js';
+import { parseWebhookUrl, postJson } from '../src/drift/webhook.js';
 
 const servers: http.Server[] = [];
 const listen = async (handler: http.RequestListener) => {
@@ -43,5 +43,23 @@ describe('postJson deadline', () => {
         );
         expect(r).toEqual({ ok: false, error: 'timed out' });
         expect(Date.now() - started).toBeLessThan(2000);
+    });
+});
+
+describe('webhook URL scheme', () => {
+    it('takes https, and plain http only for an allow-listed host', () => {
+        expect(parseWebhookUrl('https://hooks.example.com/x')).toHaveProperty('url');
+        expect(parseWebhookUrl('http://hooks.example.com/x')).toHaveProperty('error');
+        expect(parseWebhookUrl('http://hooks.example.com/x', ['other.example.com'])).toHaveProperty('error');
+        expect(parseWebhookUrl('http://hooks.example.com/x', ['hooks.example.com'])).toHaveProperty('url');
+        expect(parseWebhookUrl('http://10.1.2.3/x', ['10.0.0.0/8'])).toHaveProperty('url');
+        expect(parseWebhookUrl('http://[::1]:8080/x', ['::1'])).toHaveProperty('url');
+        expect(parseWebhookUrl('ftp://hooks.example.com/x', ['hooks.example.com'])).toHaveProperty('error');
+    });
+
+    it('refuses to send over http to a host the list does not name', async () => {
+        const r = await postJson('http://127.0.0.1:9/h', {}, { allow: [] });
+        expect(r.ok).toBe(false);
+        expect(r.error).toMatch(/https/);
     });
 });

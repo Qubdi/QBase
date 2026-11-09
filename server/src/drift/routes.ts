@@ -118,7 +118,7 @@ export const driftRoutes =
             const body = settingsBody.parse(req.body);
 
             if (body.webhookUrl) {
-                const parsed = parseWebhookUrl(body.webhookUrl);
+                const parsed = parseWebhookUrl(body.webhookUrl, deps.config.webhookAllowHosts);
                 if ('error' in parsed) {
                     return reply
                         .code(400)

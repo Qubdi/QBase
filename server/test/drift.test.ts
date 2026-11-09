@@ -188,6 +188,7 @@ describe('drift detection', () => {
             expect((await put(owner, settings({ webhookUrl: 'ftp://x.example.com' }))).json().error).toBe('invalid_webhook');
             expect((await put(owner, settings({ webhookUrl: 'not a url' }))).statusCode).toBe(400);
             expect((await put(owner, settings({ webhookUrl: 'https://user:pw@x.example.com/h' }))).statusCode).toBe(400);
+            expect((await put(owner, settings({ webhookUrl: 'http://x.example.com/h' }))).json().error).toBe('invalid_webhook');
             expect((await put(owner, settings({ connectionId: '00000000-0000-4000-8000-000000000000' }))).json().error).toBe('connection_not_found');
         });
 
@@ -896,7 +897,7 @@ describe('drift webhooks', () => {
                 method: 'PUT',
                 url: `/diagrams/${id}/drift`,
                 headers: as(u),
-                payload: { connectionId: cid, webhookUrl: `http://127.0.0.1:${port}/hook` },
+                payload: { connectionId: cid, webhookUrl: `https://127.0.0.1:${port}/hook` },
             });
             drift('phone');
             const res = await strict.app.inject({ method: 'POST', url: `/diagrams/${id}/drift/check`, headers: as(u) });
@@ -951,7 +952,7 @@ describe('drift webhooks and the database allow-list', () => {
             method: 'PUT',
             url: `/diagrams/${diagramId}/drift`,
             headers: as(owner),
-            payload: { connectionId, webhookUrl: `http://127.0.0.1:${port}/hook` },
+            payload: { connectionId, webhookUrl: `https://127.0.0.1:${port}/hook` },
         });
         expect(put.statusCode).toBe(200);
         // a first check records the baseline; the second sees the change and would post

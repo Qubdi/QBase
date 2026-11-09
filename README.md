@@ -239,7 +239,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `MFA_ENABLED` | `true` | `false` removes two-factor sign-in completely: no endpoints, no screens |
 | `MFA_WINDOW_STEPS` | `1` | 30-second steps a code is accepted either side of now (0 to 5) |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default. A bad entry stops the server at start, and a range wider than `/8` is refused |
-| `WEBHOOK_ALLOW_HOSTS` | empty | Same format, for drift webhooks only: hosts, IPs or IPv4 CIDRs a webhook may POST to even if private. A database allow-list does not open webhook targets, and the other way round |
+| `WEBHOOK_ALLOW_HOSTS` | empty | Same format, for drift webhooks only: hosts, IPs or IPv4 CIDRs a webhook may POST to even if private, and the only hosts that may use plain `http://` (every other webhook must be `https://`). A database allow-list does not open webhook targets, and the other way round |
 | `DB_POOL_MAX` | `10` | Most connections one server process opens to its database |
 | `DB_STATEMENT_TIMEOUT_SECONDS` | `120` | Seconds a statement may run before the database cancels it; `0` for no limit |
 | `SNAPSHOT_KEEP` | `200` | Newest snapshots kept per diagram; `0` keeps them all |

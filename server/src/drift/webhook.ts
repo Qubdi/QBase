@@ -1,8 +1,10 @@
 import http from 'node:http';
 import https from 'node:https';
+import net from 'node:net';
 import type { CryptoBox } from '../introspect/crypto-box.js';
 import {
     ForbiddenTargetError,
+    matchesIpEntry,
     resolveAllowedTarget,
     type LookupAll,
 } from '../introspect/net-guard.js';
@@ -49,8 +51,26 @@ export const webhookHost = (box: CryptoBox | null, stored: string | null) => {
     }
 };
 
-/** http(s) only, no credentials in the URL; returns the parsed URL or an error. */
-export function parseWebhookUrl(raw: string): { url: URL } | { error: string } {
+/** True when the allow-list names this host: the exact name, or an address an entry covers. */
+const hostAllowListed = (hostname: string, allow: string[]) => {
+    const host = hostname.replace(/^\[(.*)\]$/, '$1').toLowerCase();
+    return allow.some(
+        (entry) =>
+            (!entry.includes('/') && entry.toLowerCase() === host) ||
+            (net.isIP(host) !== 0 && matchesIpEntry(host, entry))
+    );
+};
+
+/**
+ * https, or http only to a host the webhook allow-list names (a service on the
+ * private network that has no certificate); no credentials in the URL. The URL
+ * can carry a token and the body drift details, so they do not cross a network
+ * unencrypted by default. Returns the parsed URL or an error.
+ */
+export function parseWebhookUrl(
+    raw: string,
+    allow: string[] = []
+): { url: URL } | { error: string } {
     let url: URL;
     try {
         url = new URL(raw);
@@ -58,7 +78,12 @@ export function parseWebhookUrl(raw: string): { url: URL } | { error: string } {
         return { error: 'not a valid URL' };
     }
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-        return { error: 'must be an http or https URL' };
+        return { error: 'must be an https URL' };
+    }
+    if (url.protocol === 'http:' && !hostAllowListed(url.hostname, allow)) {
+        return {
+            error: 'must be an https URL (plain http is only for hosts in WEBHOOK_ALLOW_HOSTS)',
+        };
     }
     if (url.username || url.password) {
         return { error: 'must not contain credentials' };
@@ -76,7 +101,7 @@ export async function postJson(
     payload: unknown,
     opts: { allow: string[]; lookup?: LookupAll; deadlineMs?: number }
 ): Promise<WebhookResult> {
-    const parsed = parseWebhookUrl(rawUrl);
+    const parsed = parseWebhookUrl(rawUrl, opts.allow);
     if ('error' in parsed) return { ok: false, error: parsed.error };
     const { url } = parsed;
 
