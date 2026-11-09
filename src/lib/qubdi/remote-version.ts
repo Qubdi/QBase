@@ -1,18 +1,13 @@
 // The server's `updatedAt` for the copy each local diagram was last in sync
 // with. It is sent with every save so the server can tell whether someone else
 // saved in between. Kept per browser, like the remote id map.
+import { readJsonMap } from './local-map';
+
 const KEY = 'qbase.remote-version';
 
 type Versions = Record<string, string>;
 
-const read = (): Versions => {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-        return {};
-    }
-};
+const read = (): Versions => readJsonMap<string>(KEY);
 
 // kept in memory too, so a browser without usable storage still gets the
 // protection for the length of the session

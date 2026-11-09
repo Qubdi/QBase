@@ -1,4 +1,5 @@
 import { normalizeConfig, type LintConfig } from '../../../shared/lint';
+import { readJsonMap } from './local-map';
 
 // Lint settings live in the browser per diagram, so linting works offline.
 // When the diagram is on a server they are also pushed there, so the API and
@@ -7,14 +8,7 @@ const KEY = 'qbase.lint-config';
 
 type All = Record<string, unknown>;
 
-const readAll = (): All => {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-        return {};
-    }
-};
+const readAll = (): All => readJsonMap<unknown>(KEY);
 
 export const getLintConfig = (diagramId: string): LintConfig =>
     normalizeConfig(readAll()[diagramId]);

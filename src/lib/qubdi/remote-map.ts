@@ -1,5 +1,6 @@
 import { clearBaseUpdatedAt } from './remote-version';
 import { clearSyncedContent } from './sent-content';
+import { readJsonMap } from './local-map';
 
 // Remembers which server diagram a local (Dexie) diagram is synced to.
 // Per-browser convenience only; the server stays the source of truth.
@@ -7,14 +8,7 @@ const KEY = 'qbase.remote-map';
 
 type RemoteMap = Record<string, string>;
 
-const read = (): RemoteMap => {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-        return {};
-    }
-};
+const read = (): RemoteMap => readJsonMap<string>(KEY);
 
 export const getRemoteId = (localId: string): string | undefined =>
     read()[localId];
@@ -53,14 +47,7 @@ export const findLocalId = (remoteId: string): string | undefined =>
 // the server decides access, this only saves a round trip.
 const PROJECT_KEY = 'qbase.remote-project';
 
-const readProjects = (): RemoteMap => {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(PROJECT_KEY) ?? '{}');
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-        return {};
-    }
-};
+const readProjects = (): RemoteMap => readJsonMap<string>(PROJECT_KEY);
 
 export const getProjectId = (localId: string): string | undefined =>
     readProjects()[localId];
