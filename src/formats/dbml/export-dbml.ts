@@ -88,7 +88,14 @@ export function exportDbml(
         fields: { column: Column; name: string }[];
     }[] = [];
     for (const entity of listOf(design.entities)) {
-        if (entity.kind === 'view') continue;
+        if (entity.kind === 'view') {
+            // DBML has no views: say so instead of leaving one out silently
+            diagnostics.push({
+                severity: 'warning',
+                message: `View ${entity.name} was left out: DBML has no views.`,
+            });
+            continue;
+        }
         const id = `${entity.schema ?? ''}.${entity.name}`;
         if (seen.has(id)) {
             diagnostics.push({
@@ -251,6 +258,11 @@ export function exportDbml(
             if (key.distinct) attrs.push('unique');
             if (key.algorithm) attrs.push(`type: ${key.algorithm}`);
             if (key.note) attrs.push(`note: ${str(key.note)}`);
+            if (key.where)
+                diagnostics.push({
+                    severity: 'warning',
+                    message: `Index ${key.label || '(unnamed)'}: DBML has no partial indexes, so its WHERE condition was left out.`,
+                });
             const list =
                 cols.length === 1
                     ? q(nameFor(cols[0]))

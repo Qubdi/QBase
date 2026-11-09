@@ -109,3 +109,45 @@ describe('DBML export of a many-to-many relationship', () => {
         ]);
     });
 });
+
+describe('DBML export of what DBML cannot hold', () => {
+    it('names each view and each partial-index condition it leaves out', () => {
+        const b = new DesignBuilder({
+            databaseType: 'postgresql',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'users',
+            columns: [
+                { name: 'id', typeName: 'int', nullable: false },
+                { name: 'active', typeName: 'boolean', nullable: false },
+            ],
+            indexes: [
+                {
+                    name: 'only_active',
+                    unique: false,
+                    columns: ['id'],
+                    where: 'active',
+                },
+            ],
+            checks: [],
+        });
+        b.addTable({
+            name: 'active_users',
+            view: true,
+            columns: [{ name: 'id', typeName: 'int', nullable: false }],
+            indexes: [],
+            checks: [],
+        });
+        const messages = exportDbml(b.build()).diagnostics.map(
+            (d) => d.message
+        );
+        expect(messages).toEqual([
+            'View active_users was left out: DBML has no views.',
+            expect.stringContaining('only_active'),
+        ]);
+    });
+});
