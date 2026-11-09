@@ -1,4 +1,4 @@
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { auditLog } from '../db/schema.js';
 
@@ -163,8 +163,17 @@ export async function auditDiagramSave(
     entry: { userId: string; diagramId: string },
     everyMinutes: number
 ) {
-    if (everyMinutes > 0) {
-        const recent = await db
+    if (everyMinutes === 0) {
+        await audit(db, { ...entry, action: 'diagram.update' });
+        return;
+    }
+    // look and write under one lock per person and diagram: two saves at the
+    // same moment would both find no recent row and each write one
+    await db.transaction(async (tx) => {
+        await tx.execute(
+            sql`select pg_advisory_xact_lock(hashtextextended(${`audit-save:${entry.userId}:${entry.diagramId}`}, 0))`
+        );
+        const recent = await tx
             .select({ id: auditLog.id })
             .from(auditLog)
             .where(
@@ -172,16 +181,12 @@ export async function auditDiagramSave(
                     eq(auditLog.diagramId, entry.diagramId),
                     eq(auditLog.userId, entry.userId),
                     eq(auditLog.action, 'diagram.update'),
-                    gt(
-                        auditLog.at,
-                        new Date(Date.now() - everyMinutes * 60_000)
-                    )
+                    gt(auditLog.at, new Date(Date.now() - everyMinutes * 60_000))
                 )
             )
             .limit(1);
-        if (recent.length > 0) return;
-    }
-    await audit(db, { ...entry, action: 'diagram.update' });
+        if (recent.length === 0) await audit(tx, { ...entry, action: 'diagram.update' });
+    });
 }
 
 /** Several rows in one statement, for an action done to many things at once. */
