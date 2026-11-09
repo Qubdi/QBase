@@ -313,6 +313,10 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 >
                     {t('qubdi.workspace.share.create')}
                 </Button>
+                {/* the button text swaps to "Copied"; a live region says so aloud */}
+                <span role="status" className="sr-only">
+                    {copied ? t('qubdi.workspace.share.copied') : ''}
+                </span>
             </DialogContent>
         </Dialog>
     );
