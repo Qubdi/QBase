@@ -179,7 +179,8 @@ function tableText(table: ExportTable): string {
         if (rule.expression.trim())
             parts.push(`    CHECK (${rule.expression})`);
     const header = entity.comments
-        ? `/**\n${entity.comments.replace(/\*\//g, '* /')}\n*/\n`
+        ? // SQL Server nests block comments: a `/*` in the text must not open one
+          `/**\n${entity.comments.replace(/\*\//g, '* /').replace(/\/\*/g, '/ *')}\n*/\n`
         : '';
     let text = `${header}CREATE TABLE ${qualified} (\n${parts.join(',\n')}\n);\n`;
     const indexes = indexStatements(table, qualified);

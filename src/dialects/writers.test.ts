@@ -428,3 +428,27 @@ describe('SQL Server index names', () => {
         expect(names.every((n) => n.length > 0)).toBe(true);
     });
 });
+
+describe('SQL Server table comments', () => {
+    it('cannot open or close a block comment from inside the text', () => {
+        const b = new DesignBuilder({
+            databaseType: 'sql_server',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'courses',
+            comment: 'see /* later */ and /* never closed',
+            columns: [{ name: 'a', typeName: 'int', nullable: true }],
+            indexes: [],
+            checks: [],
+        });
+        const { text } = exportSql(b.build(), 'sql_server');
+        const header = text.slice(0, text.indexOf('CREATE TABLE'));
+        // one opener and one closer: the comment's own
+        expect(header.match(/\/\*/g)).toHaveLength(1);
+        expect(header.match(/\*\//g)).toHaveLength(1);
+    });
+});
