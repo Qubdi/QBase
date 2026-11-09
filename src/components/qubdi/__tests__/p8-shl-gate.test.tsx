@@ -150,6 +150,8 @@ describe('the project editor gate (SHL-016, SHL-111)', () => {
         api.getDiagramSummary.mockRejectedValue(new ApiError(404, 'gone'));
         show('/billing/diagrams/r1');
         expect(await screen.findByText('Diagram not found')).toBeTruthy();
+        // nothing to retry: the diagram is gone
+        expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
         expect(
             screen.getByRole('link', { name: 'Back to projects' })
         ).toBeTruthy();
@@ -164,6 +166,8 @@ describe('the project editor gate (SHL-016, SHL-111)', () => {
             await screen.findByText('Could not open this diagram')
         ).toBeTruthy();
         expect(screen.getByText('server down')).toBeTruthy();
+        // a failure may be passing (a dropped connection): offer to try again
+        expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
         expect(
             screen.getByRole('link', { name: 'Back to projects' })
         ).toBeTruthy();

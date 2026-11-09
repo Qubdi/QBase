@@ -63,10 +63,12 @@ const SignInRequired: React.FC = () => (
     </Centered>
 );
 
-const Problem: React.FC<{ title: string; detail: string }> = ({
-    title,
-    detail,
-}) => {
+const Problem: React.FC<{
+    title: string;
+    detail: string;
+    /** offered when trying again can help, such as a dropped connection */
+    onRetry?: () => void;
+}> = ({ title, detail, onRetry }) => {
     const { t } = useTranslation();
     return (
         <Centered>
@@ -77,6 +79,11 @@ const Problem: React.FC<{ title: string; detail: string }> = ({
                     {detail}
                 </p>
             </div>
+            {onRetry ? (
+                <Button onClick={onRetry}>
+                    {t('qubdi.workspace.diagramAccess.retry')}
+                </Button>
+            ) : null}
             <Button asChild variant="outline">
                 <Link to="/">
                     {t('qubdi.workspace.diagramAccess.backToProjects')}
@@ -234,6 +241,7 @@ const WorkspaceGate: React.FC<GateProps> = ({ children, fallback }) => {
                 <Problem
                     title={t('qubdi.workspace.diagramAccess.openFailed')}
                     detail={resolution.message}
+                    onRetry={refresh}
                 />
             );
     }
