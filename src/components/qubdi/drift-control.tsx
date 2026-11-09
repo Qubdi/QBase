@@ -35,7 +35,9 @@ export const DriftControl: React.FC = () => {
             return;
         }
         try {
-            setBadge((await api.getDrift(remoteId)).badge);
+            const { badge: next } = await api.getDrift(remoteId);
+            // the person may have moved to another diagram while it ran
+            if (shownRemoteId.current === remoteId) setBadge(next);
         } catch {
             // keep the last known badge; the dialog reports real errors
         }

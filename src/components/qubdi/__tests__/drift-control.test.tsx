@@ -148,6 +148,20 @@ describe('DriftControl when a diagram is opened', () => {
         expect(checkDrift.mock.calls.map((c) => c[0])).toEqual(['r1', 'r2']);
     });
 
+    it('ignores a stored badge that arrives after another diagram was opened', async () => {
+        let answerFirst!: (v: DriftOverview) => void;
+        getDrift
+            .mockReset()
+            .mockReturnValueOnce(new Promise((r) => (answerFirst = r)))
+            .mockResolvedValue(configured());
+        const { rerender } = render(tree());
+        currentId = 'local-2';
+        rerender(tree());
+        await settle();
+        await act(async () => answerFirst(configured({ badge })));
+        expect(screen.queryByTestId('drift-badge')).toBeNull();
+    });
+
     it('keeps the stored badge when the check cannot run', async () => {
         getDrift.mockResolvedValue(configured({ badge }));
         checkDrift.mockRejectedValue(new Error('offline'));
