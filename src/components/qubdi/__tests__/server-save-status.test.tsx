@@ -68,12 +68,15 @@ describe('ServerSaveStatus', () => {
         expect(saveNow).toHaveBeenCalledTimes(1);
     });
 
-    it('is a lone icon: the words live in the tooltip and the label', () => {
+    it('is a lone icon: the words live in the tooltip, the label and screen-reader text', () => {
         show();
         act(() => setSaveStatus('pending', vi.fn()));
         expect(screen.getByRole('button').textContent).toBe('');
         act(() => setSaveStatus('saved', vi.fn()));
-        expect(screen.getByRole('status').textContent).toBe('');
+        const status = screen.getByRole('status');
+        // the live region has text, so a change to it is announced
+        expect(status.textContent).toBe('Saved to project');
+        expect(status.querySelector('.sr-only')).not.toBeNull();
     });
 
     it('shows saving, saved and failure states', () => {
