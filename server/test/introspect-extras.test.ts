@@ -35,6 +35,7 @@ CREATE TABLE sales.customers (
   CONSTRAINT score_nonneg CHECK (score >= 0),
   CONSTRAINT name_len CHECK (length(first_name) < 100)
 );
+CREATE VIEW sales."Odd View" AS SELECT id AS "odd id" FROM sales.customers;
 CREATE INDEX customers_score_desc ON sales.customers (score DESC, id);
 CREATE INDEX customers_live ON sales.customers (last_name) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX customers_email_live ON sales.customers (email) WHERE deleted_at IS NULL;
@@ -148,6 +149,12 @@ describe('PostgreSQL introspection: checks, custom types, domains, generated col
         expect(meta.indexes.some((i) => i.name === 'customers_live')).toBe(true);
     });
 
+    it('quotes the names in a view definition, so odd ones stay one identifier', () => {
+        const view = meta.views.find((v) => v.view_name === 'Odd View')!;
+        const text = Buffer.from(view.view_definition!, 'base64').toString('utf8');
+        expect(text).toMatch(/^CREATE VIEW sales\."Odd View" AS /);
+    });
+
     it('lists a foreign table with its columns, as SQL Server lists an external table', () => {
         expect(meta.tables.find((t) => t.table === 'price_list')).toMatchObject({ schema: 'sales', type: 'BASE TABLE' });
         expect(meta.columns.filter((c) => c.table === 'price_list').map((c) => c.name)).toEqual(['sku', 'price']);
@@ -162,7 +169,7 @@ describe('PostgreSQL introspection: checks, custom types, domains, generated col
     });
 
     it('hides a partition behind its parent, like the client script', () => {
-        expect(meta.tables.map((t) => t.table).sort()).toEqual(['customers', 'event_notes', 'events', 'price_list']);
+        expect(meta.tables.map((t) => t.table).sort()).toEqual(['Odd View', 'customers', 'event_notes', 'events', 'price_list']);
         expect(meta.columns.some((c) => c.table === 'events_2024')).toBe(false);
         expect(meta.check_constraints!.filter((c) => c.table === 'events')).toHaveLength(1);
     });
