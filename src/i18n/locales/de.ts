@@ -41,8 +41,6 @@ export const de = {
             },
             workspace: {
                 frame: {
-                    canvasPlaceholder: 'Hier erscheint die Diagrammfläche',
-                    panelPlaceholder: 'Hier erscheint die Seitenleiste',
                     resizePanel: 'Größe der Seitenleiste ändern',
                     openPanel: 'Bearbeitungsleiste öffnen',
                 },
@@ -91,7 +89,6 @@ export const de = {
                     diagram: {
                         label: 'Diagramm',
                         import: 'Importieren aus',
-                        examples: 'Beispiele',
                         importFile: 'Diagrammdatei (.json)',
                         importSql: 'SQL-Skript',
                         importDbml: 'DBML-Text',

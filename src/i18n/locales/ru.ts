@@ -40,8 +40,6 @@ export const ru = {
             },
             workspace: {
                 frame: {
-                    canvasPlaceholder: 'Здесь появится поверхность диаграммы',
-                    panelPlaceholder: 'Здесь появится боковая панель',
                     resizePanel: 'Изменить ширину боковой панели',
                     openPanel: 'Открыть панель редактирования',
                 },
@@ -93,7 +91,6 @@ export const ru = {
                     diagram: {
                         label: 'Диаграмма',
                         import: 'Импортировать из',
-                        examples: 'Примеры',
                         importFile: 'Файл диаграммы (.json)',
                         importSql: 'Скрипт SQL',
                         importDbml: 'Текст DBML',

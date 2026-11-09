@@ -41,8 +41,6 @@ export const fr = {
             },
             workspace: {
                 frame: {
-                    canvasPlaceholder: 'La zone du diagramme apparaît ici',
-                    panelPlaceholder: 'Le panneau latéral apparaît ici',
                     resizePanel: 'Redimensionner le panneau latéral',
                     openPanel: "Ouvrir le panneau d'édition",
                 },
@@ -92,7 +90,6 @@ export const fr = {
                     diagram: {
                         label: 'Diagramme',
                         import: 'Importer depuis',
-                        examples: 'Exemples',
                         importFile: 'Fichier de diagramme (.json)',
                         importSql: 'Script SQL',
                         importDbml: 'Texte DBML',

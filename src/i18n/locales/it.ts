@@ -41,9 +41,6 @@ export const it = {
             },
             workspace: {
                 frame: {
-                    canvasPlaceholder:
-                        'Qui compare la superficie del diagramma',
-                    panelPlaceholder: 'Qui compare il pannello laterale',
                     resizePanel: 'Ridimensiona il pannello laterale',
                     openPanel: 'Apri il pannello di modifica',
                 },
@@ -93,7 +90,6 @@ export const it = {
                     diagram: {
                         label: 'Diagramma',
                         import: 'Importa da',
-                        examples: 'Esempi',
                         importFile: 'File di diagramma (.json)',
                         importSql: 'Script SQL',
                         importDbml: 'Testo DBML',
