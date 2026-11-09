@@ -31,7 +31,7 @@ export const POSTGRES_QUERIES = {
                obj_description(c.oid, 'pg_class') AS comment
         FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relkind IN ('r', 'p') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
+        WHERE c.relkind IN ('r', 'p', 'f') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname`,
 
     views: `
@@ -66,7 +66,7 @@ export const POSTGRES_QUERIES = {
         LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
         LEFT JOIN pg_collation co ON co.oid = a.attcollation AND a.attcollation <> t.typcollation
         WHERE a.attnum > 0 AND NOT a.attisdropped
-          AND c.relkind IN ('r', 'p', 'v', 'm') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
+          AND c.relkind IN ('r', 'p', 'f', 'v', 'm') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname, a.attnum`,
 
     primaryKeys: `

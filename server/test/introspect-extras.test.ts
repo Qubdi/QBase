@@ -15,6 +15,9 @@ const URL = `postgres://${encodeURIComponent(PG_USER)}:${encodeURIComponent(PG_P
 
 const DDL = `
 CREATE SCHEMA sales;
+CREATE EXTENSION file_fdw;
+CREATE SERVER csv_files FOREIGN DATA WRAPPER file_fdw;
+CREATE FOREIGN TABLE sales.price_list (sku text, price numeric(10,2)) SERVER csv_files OPTIONS (filename '/dev/null', format 'csv');
 CREATE TYPE sales.status AS ENUM ('new', 'paid', 'shipped');
 CREATE TYPE sales.money_pair AS (amount numeric(12,2), currency char(3));
 CREATE DOMAIN sales.email AS varchar(120) CHECK (VALUE LIKE '%@%');
@@ -145,6 +148,11 @@ describe('PostgreSQL introspection: checks, custom types, domains, generated col
         expect(meta.indexes.some((i) => i.name === 'customers_live')).toBe(true);
     });
 
+    it('lists a foreign table with its columns, as SQL Server lists an external table', () => {
+        expect(meta.tables.find((t) => t.table === 'price_list')).toMatchObject({ schema: 'sales', type: 'BASE TABLE' });
+        expect(meta.columns.filter((c) => c.table === 'price_list').map((c) => c.name)).toEqual(['sku', 'price']);
+    });
+
     it('lists a foreign key to a partitioned table once, not once per partition', () => {
         const rows = meta.fk_info.filter((f) => f.table === 'event_notes');
         expect(rows.map((r) => [r.column, r.reference_table, r.reference_column])).toEqual([
@@ -154,7 +162,7 @@ describe('PostgreSQL introspection: checks, custom types, domains, generated col
     });
 
     it('hides a partition behind its parent, like the client script', () => {
-        expect(meta.tables.map((t) => t.table).sort()).toEqual(['customers', 'event_notes', 'events']);
+        expect(meta.tables.map((t) => t.table).sort()).toEqual(['customers', 'event_notes', 'events', 'price_list']);
         expect(meta.columns.some((c) => c.table === 'events_2024')).toBe(false);
         expect(meta.check_constraints!.filter((c) => c.table === 'events')).toHaveLength(1);
     });
