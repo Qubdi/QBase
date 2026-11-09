@@ -54,7 +54,7 @@ export const GetLatestDialog: React.FC<GetLatestDialogProps> = ({
                 remoteId: workspace.remoteDiagramId,
                 projectSlug: workspace.project.slug,
                 deleteLocal: deleteDiagram,
-                beforeReload: discardUnsavedChanges,
+                beforeDelete: discardUnsavedChanges,
             });
         } catch {
             toast({

@@ -35,26 +35,27 @@ describe('getLatestFromServer', () => {
         expect(assign).toHaveBeenCalledWith('/Qubdi/diagrams/r1');
     });
 
-    it('lets the caller stop pending saves just before the reload', async () => {
+    it('lets the caller stop pending saves before the local copy is touched', async () => {
         const order: string[] = [];
         assign.mockImplementation(() => order.push('reload'));
         await getLatestFromServer(
             args({
                 deleteLocal: async () => void order.push('delete'),
-                beforeReload: () => order.push('before'),
+                beforeDelete: () => order.push('before'),
             })
         );
-        expect(order).toEqual(['delete', 'before', 'reload']);
+        expect(order).toEqual(['before', 'delete', 'reload']);
     });
 
-    it('waits for a save that is already on its way before it reloads', async () => {
+    it('waits for a save that is already on its way before it deletes the copy', async () => {
         const order: string[] = [];
         assign.mockImplementation(() => order.push('reload'));
         let settle!: () => void;
         const running = new Promise<void>((r) => (settle = r));
         const done = getLatestFromServer(
             args({
-                beforeReload: () =>
+                deleteLocal: async () => void order.push('delete'),
+                beforeDelete: () =>
                     running.then(() => void order.push('saved')),
             })
         );
@@ -62,7 +63,7 @@ describe('getLatestFromServer', () => {
         expect(order).toEqual([]);
         settle();
         await done;
-        expect(order).toEqual(['saved', 'reload']);
+        expect(order).toEqual(['saved', 'delete', 'reload']);
     });
 
     it('hands the database source on to the copy that will be downloaded', async () => {
@@ -93,17 +94,17 @@ describe('getLatestFromServer', () => {
         expect(getSyncState('local-2')).toBeUndefined();
     });
 
-    it('keeps the page and the saves when the copy cannot be deleted', async () => {
-        const beforeReload = vi.fn();
+    it('keeps the page when the copy cannot be deleted', async () => {
+        const beforeDelete = vi.fn();
         await expect(
             getLatestFromServer(
                 args({
                     deleteLocal: vi.fn().mockRejectedValue(new Error('nope')),
-                    beforeReload,
+                    beforeDelete,
                 })
             )
         ).rejects.toThrow('nope');
-        expect(beforeReload).not.toHaveBeenCalled();
+        expect(beforeDelete).toHaveBeenCalledTimes(1);
         expect(assign).not.toHaveBeenCalled();
     });
 });

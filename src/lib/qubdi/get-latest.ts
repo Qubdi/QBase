@@ -8,8 +8,11 @@ export interface GetLatestArgs {
     remoteId: string;
     projectSlug: string;
     deleteLocal: (localId: string) => Promise<void>;
-    /** runs once the local copy is gone, right before the page reloads; the reload waits for it */
-    beforeReload?: () => Promise<void> | void;
+    /**
+     * runs first, before the local copy is touched: the caller stops pending
+     * saves here, so none can send what the copy held; the rest waits for it
+     */
+    beforeDelete?: () => Promise<void> | void;
 }
 
 /**
@@ -18,11 +21,11 @@ export interface GetLatestArgs {
  * page itself is reloaded.
  */
 export async function getLatestFromServer(args: GetLatestArgs): Promise<void> {
+    await args.beforeDelete?.();
     await args.deleteLocal(args.localId);
     // the new copy gets a new local id: what it remembers about its database moves along
     handOffSyncState(args.localId, args.remoteId);
     clearSyncState(args.localId);
     clearRemoteId(args.localId);
-    await args.beforeReload?.();
     window.location.assign(projectDiagramPath(args.projectSlug, args.remoteId));
 }
