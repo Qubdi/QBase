@@ -273,6 +273,23 @@ describe('IMP-064 the table picker', () => {
         ).toBeNull();
         expect(last?.analysis.counts.tables).toBe(50);
     });
+    it('settles when its parent keeps what it reports in state, as the dialog does', () => {
+        let renders = 0;
+        const Parent = () => {
+            const [, setState] = React.useState<ImportBoxState>();
+            renders++;
+            if (renders > 500) throw new Error('render loop');
+            return <ImportBox databaseType="postgresql" onChange={setState} />;
+        };
+        render(<Parent />);
+        type(doc(51));
+        settle();
+        // a new default selection on every render made this loop for ever
+        expect(renders).toBeLessThan(50);
+        expect(
+            screen.getByRole('region', { name: /Choose what/ }).textContent
+        ).toContain('51 of 51 chosen');
+    });
     it('opens for 51 tables with all selected; unticking one narrows the design', () => {
         render(<ImportBox databaseType="postgresql" onChange={onChange} />);
         type(doc(51));

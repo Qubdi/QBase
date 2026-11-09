@@ -205,9 +205,12 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
         [base.metadata]
     );
     const needsPicker = rows.length > PICKER_THRESHOLD;
-    const picked = needsPicker
-        ? (selection ?? defaultSelection(rows))
-        : undefined;
+    // memoised: a new Set on every render would rebuild the analysis, which the
+    // parent stores in state, which renders again, without end
+    const picked = useMemo(
+        () => (needsPicker ? (selection ?? defaultSelection(rows)) : undefined),
+        [needsPicker, selection, rows]
+    );
     // narrowing the selection rebuilds the design from the same document
     const analysis = useMemo<Analysis>(() => {
         if (!base.metadata || !picked) return base;
