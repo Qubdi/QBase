@@ -42,6 +42,26 @@ describe('auto arrange', () => {
         expect(overlappingIds(boxes).size).toBe(0);
     });
 
+    it('EDT-051: a repeated or reversed link changes nothing about the layout', () => {
+        const tile = (id: string) => ({ id, width: 224, height: 80 });
+        const tiles = ['a', 'b', 'c', 'd'].map(tile);
+        const pairs: [string, string][] = [
+            ['a', 'b'],
+            ['b', 'c'],
+            ['b', 'd'],
+        ];
+        const noisy: [string, string][] = [
+            ...pairs,
+            ['a', 'b'],
+            ['b', 'a'],
+            ['d', 'b'],
+            ['c', 'c'],
+        ];
+        expect([...layoutTiles(tiles, noisy).positions]).toEqual([
+            ...layoutTiles(tiles, pairs).positions,
+        ]);
+    });
+
     it('EDT-051: tables joined by a link sit in the same or neighbouring columns; far ends of a chain are further apart', () => {
         const tile = (id: string) => ({ id, width: 224, height: 80 });
         const layout = layoutTiles(['a', 'b', 'c', 'd', 'e'].map(tile), [

@@ -40,22 +40,23 @@ export function layoutTiles(
     pairs: ReadonlyArray<readonly [Id, Id]>
 ): Layout {
     const byId = new Map(tiles.map((t) => [t.id, t]));
-    const near = new Map<Id, Id[]>(tiles.map((t) => [t.id, []]));
+    // a Set per tile: a Set keeps first-seen order, and `has` is not a scan
+    const near = new Map<Id, Set<Id>>(tiles.map((t) => [t.id, new Set()]));
     for (const [a, b] of pairs) {
         if (a === b || !byId.has(a) || !byId.has(b)) continue;
-        if (!near.get(a)!.includes(b)) near.get(a)!.push(b);
-        if (!near.get(b)!.includes(a)) near.get(b)!.push(a);
+        near.get(a)!.add(b);
+        near.get(b)!.add(a);
     }
 
     const placed = new Set<Id>();
     const groups: Tile[][][] = [];
     const lonely: Tile[] = [];
     const order = [...tiles].sort(
-        (p, q) => near.get(q.id)!.length - near.get(p.id)!.length
+        (p, q) => near.get(q.id)!.size - near.get(p.id)!.size
     );
     for (const start of order) {
         if (placed.has(start.id)) continue;
-        if (near.get(start.id)!.length === 0) {
+        if (near.get(start.id)!.size === 0) {
             placed.add(start.id);
             lonely.push(start);
             continue;
