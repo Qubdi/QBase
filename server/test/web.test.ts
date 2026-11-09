@@ -33,7 +33,7 @@ beforeAll(async () => {
         ...loadConfig({ DATABASE_URL: 'postgres://x', LOG_LEVEL: 'silent' }),
         webDir: dir,
     };
-    app = buildApp({ config, db: {} as Db });
+    app = buildApp({ config, db: { execute: async () => [] } as unknown as Db });
     await app.ready();
 });
 

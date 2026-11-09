@@ -120,6 +120,7 @@ describe('audit meta: what an action was done to', () => {
             targetId = created.json().id;
             expect((await latest('user.create')).meta).toEqual({
                 targetUserId: targetId,
+                isAdmin: false,
             });
         });
 
