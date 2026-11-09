@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 5 · **date** 2026-11-09
+**rev** 6 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -11,8 +11,8 @@
 | Server | 36 | 0 | 4 | 0 | 0 |
 | Database | 19 | 0 | 0 | 0 | 0 |
 | Client | 95 | 0 | 2 | 0 | 0 |
-| Dead code | 21 | 0 | 0 | 19 | 0 |
-| **Total** | 261 | 0 | 7 | 19 | 0 |
+| Dead code | 11 | 0 | 0 | 29 | 0 |
+| **Total** | 251 | 0 | 7 | 29 | 0 |
 
 ## Act first
 
@@ -301,23 +301,13 @@
 | DEAD-002 | Med | `qubdi.viewerPage.pageTitle` missing from en; title shows raw key, test asserts same key | `src/pages/share-viewer-page/share-viewer-page.tsx:343`, `src/i18n/qubdi/workspace.ts:178`, `src/helmet/__tests__/p8-shl-title.test.tsx:97` | Use `qubdi.workspace.viewerPage.pageTitle` in the page |
 | DEAD-007 | Low | Unused en key `menu.actions.save`; read only by i18n tests | `src/i18n/qubdi/workspace.ts:57`, `src/i18n/qubdi/workspace.ts:60`, `src/i18n/qubdi/workspace.ts:63`, `src/i18n/locales/en.ts:24` | Delete keys |
 | DEAD-011 | Low | Exports referenced only by tests; production-dead | `src/core/commands/plan-visual.ts:120` (planMove), `src/core/model/ids.ts:49` (looksLikeGeneratedId), `src/canvas/geometry.ts:13` (snapTo), `src/canvas/geometry.ts:49` (overlappingIds), `src/canvas/geometry.ts:88` (toggledWidth), `src/formats/image/export-options.ts:111` (outputSize), `src/features/filters/filter-tree.ts:47` (isFilterActive), `src/lib/export-import-utils.ts:10` (diagramToJSONOutput), `src/lib/custom-colors.ts:58` (readSavedColors), `src/lib/qubdi/diagram-summary.ts:5` (toDatabaseType), `src/lib/qubdi/diagram-summary.ts:12` (toDatabaseEdition), `src/lib/qubdi/project-path.ts:19` (findProjectBySlug), `src/lib/qubdi/local-data.ts:59` (adoptLegacyLocalData), `src/store/selectors.ts:14` (selectDirty), `src/store/selectors.ts:36` (selectVisibleEntities), `src/qbase/diagram-types.ts:222` (databasesWithSchemas), `src/qbase/sql-adapters.ts:16` (exportDiagramSql), `src/dialects/registry.ts:26` (listDialects), `shared/reconcile.ts:575` (isEmpty), `shared/reconcile.ts:578` (countByKind) | Delete exports and their tests |
-| DEAD-022 | Low | Unused en keys: canvas.entity openInPanel, narrow; region.colour; memo.colour; clipboard.failed | `src/i18n/canvas-strings.ts:52`, `src/i18n/canvas-strings.ts:53`, `src/i18n/canvas-strings.ts:93`, `src/i18n/canvas-strings.ts:98`, `src/i18n/canvas-strings.ts:131` | Delete keys |
-| DEAD-023 | Low | `qubdi.workspace.typeLegend` block unused; type legend reads `canvas.legend` | `src/i18n/qubdi/workspace.ts:205`, `src/canvas/type-legend.tsx:65` | Delete typeLegend object |
 | DEAD-024 | Low | Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts, forgetClipboard | `src/hooks/use-custom-colors.ts:55`, `src/hooks/use-password-min-length.ts:24`, `src/platform/toast/use-toast.ts:88`, `src/canvas/clipboard.ts:23` | Move resets into test helpers |
 | DEAD-025 | Low | `GET /diagrams/:id/versions` and `/versions/:version` have no client caller | `server/src/diagrams/routes.ts:532`, `server/src/diagrams/routes.ts:551` | Remove routes or document as public API |
 | DEAD-026 | Low | `GET /:id/drift/reports` list has no client caller; client fetches one report | `server/src/drift/routes.ts:253`, `src/lib/qubdi/api.ts:923` | Remove route or document as public API |
 | DEAD-027 | Low | `GET /lint/rules` has no client caller and no README mention | `server/src/lint/routes.ts:62` | Remove route or document it |
-| DEAD-028 | Low | `postcss` devDependency redundant; `@tailwindcss/postcss` already depends on it, no import | `package.json:93`, `postcss.config.js:1` | Remove postcss devDependency |
 | DEAD-029 | Low | Three rewrite briefs referenced by no file or tool | `rewrite/phase8-brief.md`, `rewrite/translation-brief.md`, `rewrite/decisions-phase6a.md` | Delete unreferenced notes or archive off tree |
 | DEAD-032 | Low | Unused en keys `editor.sidePanel`: common.more/rename, tables.color, fields.foreignKey, visuals.colour, hover.*, clipboard copied/pasted | `src/i18n/editor/side-panel.ts:10`, `src/i18n/editor/side-panel.ts:11`, `src/i18n/editor/side-panel.ts:43`, `src/i18n/editor/side-panel.ts:91`, `src/i18n/editor/side-panel.ts:215`, `src/i18n/editor/side-panel.ts:231`, `src/i18n/editor/side-panel.ts:246`, `src/i18n/editor/side-panel.ts:247`, `src/i18n/editor/side-panel.ts:248`, `src/i18n/editor/side-panel.ts:249` | Delete keys and whole hover block |
 | DEAD-033 | Low | Unused UI component bodies: DropdownMenu SubTrigger/SubContent/CheckboxItem/RadioItem, SelectLabel/Separator, TableFooter/Caption, MenubarCheckboxItem | `src/platform/ui/dropdown-menu.tsx:14`, `src/platform/ui/dropdown-menu.tsx:36`, `src/platform/ui/dropdown-menu.tsx:77`, `src/platform/ui/dropdown-menu.tsx:97`, `src/platform/ui/select.tsx:99`, `src/platform/ui/select.tsx:133`, `src/platform/ui/table.tsx:39`, `src/platform/ui/table.tsx:99`, `src/workspace/navbar/menubar-parts.tsx:100` | Delete components and export entries |
-| DEAD-035 | Low | Server tsconfig `@/*` path alias unused; no server file imports `@/` | `server/tsconfig.json:12`, `server/tsconfig.build.json:10` | Remove `paths` from both server tsconfigs |
-| DEAD-036 | Low | Root `preview` script has no caller; e2e tools run `npx vite preview` | `package.json:15`, `tools/e2e/visual/run-new.sh:17` | Remove script or use it in tools |
-| DEAD-037 | Low | Same localStorage JSON-map reader copied in four modules | `src/lib/qubdi/lint-config-store.ts:10`, `src/lib/qubdi/remote-version.ts:8`, `src/lib/qubdi/remote-map.ts:10`, `src/lib/qubdi/sync-state.ts:28` | Extract one shared readJsonMap(key) helper |
-| DEAD-038 | Low | Two 25-char id generators; `generateId` duplicates `newId`, modulo-biased; `newDesignId` same body | `src/lib/utils/utils.ts:12`, `src/lib/utils/utils.ts:20`, `src/core/model/ids.ts:25`, `src/core/model/ids.ts:35`, `src/core/model/ids.ts:44` | Keep `newId`; route `generateId` callers to it |
-| DEAD-039 | Low | `timeOf` helper duplicated in two admin panels | `src/pages/admin-page/activity-panel.tsx:30`, `src/pages/admin-page/overview-panel.tsx:22` | Move to one shared admin formatting module |
-| DEAD-040 | Low | `isRecord` guard duplicated in viewer model | `src/core/wire/record-reader.ts:6`, `src/lib/qubdi/viewer-model.ts:38` | Import `isRecord` from record-reader |
-| DEAD-041 | Low | Header comment cites `side-panel-register.ts`, which does not exist | `src/i18n/editor/side-panel.ts:4` | Drop the stale sentence |
 
 ---
 
@@ -325,6 +315,16 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| DEAD-022 | Dead code | Unused en keys: canvas.entity openInPanel, narrow; region.colour; memo.colour; clipboard.failed |
+| DEAD-023 | Dead code | `qubdi.workspace.typeLegend` block unused; type legend reads `canvas.legend` |
+| DEAD-028 | Dead code | `postcss` devDependency redundant; `@tailwindcss/postcss` already depends on it, no import |
+| DEAD-035 | Dead code | Server tsconfig `@/*` path alias unused; no server file imports `@/` |
+| DEAD-036 | Dead code | Root `preview` script has no caller; e2e tools run `npx vite preview` |
+| DEAD-037 | Dead code | Same localStorage JSON-map reader copied in four modules |
+| DEAD-038 | Dead code | Two 25-char id generators; `generateId` duplicates `newId`, modulo-biased; `newDesignId` same body |
+| DEAD-039 | Dead code | `timeOf` helper duplicated in two admin panels |
+| DEAD-040 | Dead code | `isRecord` guard duplicated in viewer model |
+| DEAD-041 | Dead code | Header comment cites `side-panel-register.ts`, which does not exist |
 | DEAD-010 | Dead code | Eight selectors in `selectors.ts` have zero references |
 | DEAD-013 | Dead code | Server script `test:watch` has no caller or doc reference |
 | DEAD-014 | Dead code | Tailwind keyframes/animations accordion-down, accordion-up, scale, scale-2, blink never used |
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 6 | 2026-11-09 | 10 fixed (dead-code low batch 3), anchors refreshed |
 | 5 | 2026-11-09 | 10 fixed (dead-code low batch 2), anchors refreshed |
 | 4 | 2026-11-09 | 9 fixed, 1 narrowed (DEAD-007), anchors refreshed; low dead-code fixes batch 1 |
 | 3 | 2026-11-09 | 75 new, 0 fixed, 3 dropped; deep sweep, server tests and gitleaks re-run |
