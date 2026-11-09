@@ -218,6 +218,7 @@ export const introspectRoutes =
                 }
             } catch (err) {
                 if (err instanceof ForbiddenTargetError) {
+                    reply.log.warn({ reason: err.message }, 'introspection target blocked');
                     reply
                         .code(400)
                         .send({
@@ -225,11 +226,17 @@ export const introspectRoutes =
                             message: err.message,
                         });
                 } else if (err instanceof UnsafeSqlError) {
+                    // a bug in a catalog query, not the caller's doing: the log is
+                    // the only place it shows
+                    reply.log.error({ err }, 'introspection query refused by the read-only guard');
                     reply.code(500).send({ error: 'internal_error' });
                 } else {
+                    // the same redacted text the caller gets: never the password
+                    const message = safeMessage(err, [params.password]);
+                    reply.log.warn({ reason: message }, 'introspection connection failed');
                     reply.code(502).send({
                         error: 'connection_failed',
-                        message: safeMessage(err, [params.password]),
+                        message,
                     });
                 }
                 return null;

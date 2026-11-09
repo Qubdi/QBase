@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { SESSION_COOKIE } from '../src/auth/sessions.js';
 import { auditLog, savedConnections } from '../src/db/schema.js';
 import { CryptoBox } from '../src/introspect/crypto-box.js';
@@ -298,6 +298,32 @@ describe('introspect HTTP layer (fake driver)', () => {
             } finally {
                 await leaky.close();
             }
+        });
+    });
+
+    describe('failures are logged', () => {
+        it('writes a connection failure to the log, without the password', async () => {
+            const logged: string[] = [];
+            const write = vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array) => {
+                logged.push(String(chunk));
+                return true;
+            });
+            const noisy = await createTestApp(
+                { logLevel: 'warn' },
+                { factory: fakeFactory([], { failWith: new Error('login failed password=p@ss-w0rd-SECRET') }) },
+                false
+            );
+            try {
+                const u = await registerUser(noisy.app, 'noisy@example.com');
+                await grant(noisy.app, u, 'editor');
+                await noisy.app.inject({ method: 'POST', url: '/introspect/catalog', headers: as(u), payload: { connection: conn() } });
+            } finally {
+                write.mockRestore();
+                await noisy.close();
+            }
+            const log = logged.join('');
+            expect(log).toContain('introspection connection failed');
+            expect(log).not.toContain('p@ss-w0rd-SECRET');
         });
     });
 
