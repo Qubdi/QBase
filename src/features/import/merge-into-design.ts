@@ -2,6 +2,7 @@ import type { Design } from '@/core/model/design';
 import { traitsOf } from '@/core/model/database';
 import { TABLE_WIDTH } from '@/core/model/entity';
 import { listOf } from '@/core/model/collection';
+import { minBy } from '@/core/model/extent';
 
 /** Space between the existing tables and the imported ones, in pixels (IMP-075). */
 export const IMPORT_GAP = 150;
@@ -40,7 +41,7 @@ export function mergeImported(
               ...existing.map((e) => e.x + (e.width ?? TABLE_WIDTH.default))
           )
         : 0;
-    const left = incoming.length ? Math.min(...incoming.map((e) => e.x)) : 0;
+    const left = incoming.length ? minBy(incoming, (e) => e.x) : 0;
     const dx = existing.length ? right + IMPORT_GAP - left : 0;
 
     const taken = new Set(existing.map((e) => nameKey(e.schema, e.name)));

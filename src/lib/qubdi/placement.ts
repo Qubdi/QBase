@@ -1,3 +1,5 @@
+import { minBy, maxBy } from '@/core/model/extent';
+
 export interface Box {
     x: number;
     y: number;
@@ -53,8 +55,8 @@ export function findFreeSpot(
 
     if (anchors.length === 0) {
         if (occupied.length === 0) return { x: 0, y: 0 };
-        const right = Math.max(...occupied.map((o) => o.x + o.width));
-        const top = Math.min(...occupied.map((o) => o.y));
+        const right = maxBy(occupied, (o) => o.x + o.width);
+        const top = minBy(occupied, (o) => o.y);
         let y = top;
         while (!free(right + GAP, y)) y += size.height + GAP;
         return { x: right + GAP, y };
@@ -83,6 +85,6 @@ export function findFreeSpot(
         }
     }
     // pathological layouts: fall back to the right edge
-    const right = Math.max(...occupied.map((o) => o.x + o.width));
+    const right = maxBy(occupied, (o) => o.x + o.width);
     return { x: right + GAP, y: anchors[0].y };
 }

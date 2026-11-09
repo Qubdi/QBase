@@ -7,6 +7,7 @@ import type { Id } from '@/core/model/id';
 import { entityList } from '@/core/model/lookup';
 import type { Size } from '@/core/model/region-membership';
 import type { Point } from './flow-model';
+import { maxBy } from '@/core/model/extent';
 
 export interface Tile {
     id: Id;
@@ -89,7 +90,7 @@ export function layoutTiles(
                 y += tile.height + GAP_Y;
             }
             tallest = Math.max(tallest, y - top - GAP_Y);
-            left += Math.max(...column.map((t) => t.width)) + GAP_X;
+            left += maxBy(column, (t) => t.width) + GAP_X;
         }
         usedWidth = Math.max(usedWidth, left - GAP_X);
         top += tallest + BLOCK_GAP;
@@ -100,7 +101,7 @@ export function layoutTiles(
     if (lonely.length > 0) {
         const across = Math.ceil(Math.sqrt(lonely.length));
         const x0 = groups.length > 0 ? usedWidth + BLOCK_GAP : 0;
-        const cell = Math.max(...lonely.map((t) => t.width)) + GAP_X;
+        const cell = maxBy(lonely, (t) => t.width) + GAP_X;
         let y = 0;
         let right = x0;
         for (let i = 0; i < lonely.length; i += across) {
@@ -109,7 +110,7 @@ export function layoutTiles(
                 positions.set(tile.id, { x: x0 + k * cell, y });
                 right = Math.max(right, x0 + k * cell + tile.width);
             });
-            y += Math.max(...row.map((t) => t.height)) + GAP_Y;
+            y += maxBy(row, (t) => t.height) + GAP_Y;
         }
         width = right;
         height = Math.max(height, y - GAP_Y);

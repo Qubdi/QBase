@@ -9,6 +9,7 @@ import { analyzeImport } from '@/features/import/analyze-import';
 import { parseColumn } from './spec';
 import type { Domain, TableSpec } from './spec';
 import { writeScript } from './write-script';
+import { maxBy } from '@/core/model/extent';
 
 const COLUMN_GAP = 64;
 const ROW_GAP = 56;
@@ -46,7 +47,7 @@ function layoutArea(domain: Domain, areaId: string): Block {
     let y = AREA_TITLE;
     for (let i = 0; i < tables.length; i += perRow) {
         const row = tables.slice(i, i + perRow);
-        const tall = Math.max(...row.map((t) => cardHeight(t.columns.length)));
+        const tall = maxBy(row, (t) => cardHeight(t.columns.length));
         row.forEach((table, k) =>
             places.push({
                 table,

@@ -9,6 +9,7 @@ import type { EntityParts } from '../model/entity-parts';
 import type { Id } from '../model/id';
 import { entityOf, partsOf } from '../model/lookup';
 import type { Command } from './command';
+import { minBy } from '../model/extent';
 
 export interface PlanOptions {
     now?: number;
@@ -155,7 +156,7 @@ export function planPaste(
         taken.set(e.schema ?? '', bucket);
     }
 
-    const left = Math.min(...clip.entities.map((p) => p.entity.x));
+    const left = minBy(clip.entities, (p) => p.entity.x);
     const right = Math.max(
         ...clip.entities.map(
             (p) => p.entity.x + (p.entity.width ?? TABLE_WIDTH.default)
