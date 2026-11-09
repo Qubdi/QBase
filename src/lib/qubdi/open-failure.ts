@@ -1,3 +1,4 @@
+import { i18n } from '@/i18n/i18n';
 import { ApiError, errorMessage } from './api';
 import { UnpublishedDiagramError } from './open-remote';
 
@@ -12,14 +13,16 @@ export type OpenFailure =
  * not the user's.
  */
 export function openFailureOf(e: unknown): OpenFailure {
+    const unpublished = (): OpenFailure => ({
+        kind: 'failed',
+        message: i18n.t('qubdi.workspace.diagramAccess.unpublished'),
+    });
     if (e instanceof ApiError && e.status === 404) {
         return e.code === 'not_published'
-            ? { kind: 'failed', message: new UnpublishedDiagramError().message }
+            ? unpublished()
             : { kind: 'diagram_missing' };
     }
-    return {
-        kind: 'failed',
-        message:
-            e instanceof UnpublishedDiagramError ? e.message : errorMessage(e),
-    };
+    return e instanceof UnpublishedDiagramError
+        ? unpublished()
+        : { kind: 'failed', message: errorMessage(e) };
 }

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../api';
 import { openFailureOf } from '../open-failure';
+import { i18n } from '@/i18n/i18n';
 import { UnpublishedDiagramError } from '../open-remote';
 
-const NOT_PUBLISHED = new UnpublishedDiagramError().message;
+// the screen's own wording, looked up, not the error's English text
+const NOT_PUBLISHED = i18n.t('qubdi.workspace.diagramAccess.unpublished');
 
 describe('openFailureOf', () => {
     it('tells a viewer a diagram with nothing published is not published yet', () => {

@@ -69,6 +69,8 @@ export const workspace = {
         diagramNotFoundDetail:
             'It is not in this project, or you do not have access to it.',
         openFailed: 'Could not open this diagram',
+        unpublished:
+            'This diagram has not been published yet. Ask an editor to publish it.',
     },
     newDiagram: {
         defaultName: 'Untitled diagram',
