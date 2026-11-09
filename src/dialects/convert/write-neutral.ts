@@ -215,14 +215,27 @@ export function writeNeutral(
         case 'binary':
             if (isPg) return out('bytea');
             if (flavour === 'sqlite') return out('BLOB');
-            if (isMy)
+            if (isMy) {
+                if (n.length === undefined)
+                    return out(n.varying ? 'LONGBLOB' : 'BLOB');
+                // BINARY holds 255 bytes at most, VARBINARY 65535
+                if (!n.varying && n.length > 255)
+                    return out(`VARBINARY(${n.length})`, [
+                        'BINARY holds at most 255 bytes, so it became VARBINARY',
+                    ]);
+                if (n.varying && n.length > 65535)
+                    return out('LONGBLOB', [
+                        'VARBINARY holds at most 65535 bytes, so it became LONGBLOB',
+                    ]);
                 return out(
-                    n.length === undefined
-                        ? n.varying
-                            ? 'LONGBLOB'
-                            : 'BLOB'
-                        : `${n.varying ? 'VARBINARY' : 'BINARY'}(${n.length})`
+                    `${n.varying ? 'VARBINARY' : 'BINARY'}(${n.length})`
                 );
+            }
+            if (n.length !== undefined && n.length > 8000)
+                // SQL Server's BINARY and VARBINARY stop at 8000 bytes
+                return out('VARBINARY(MAX)', [
+                    'longer than 8000 bytes, so it became VARBINARY(MAX)',
+                ]);
             return out(
                 n.length === undefined
                     ? 'VARBINARY(MAX)'

@@ -113,10 +113,10 @@ export const readPostgres = makeReader(PROFILE, RULES);
 
 /** Repairs the two errors the validator marks as fixable. */
 export function fixPostgres(text: string): string {
-    return text
-        .replace(/:[ \t]+:/g, '::')
-        .replace(
-            /\b(DECIMAL|NUMERIC)(\s*)\(\s*(\d+)\s*,\s*\n\s*(\d+)\s*\)/gi,
-            '$1$2($3, $4)'
-        );
+    return text.replace(/:[ \t]+:/g, '::').replace(
+        // `[^\S\n]*` is whitespace but not a newline: with `\s*` on both sides of
+        // the `\n` a long run of blank lines is tried at every split (quadratic)
+        /\b(DECIMAL|NUMERIC)(\s*)\(\s*(\d+)\s*,[^\S\n]*\n\s*(\d+)\s*\)/gi,
+        '$1$2($3, $4)'
+    );
 }

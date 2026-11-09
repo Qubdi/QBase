@@ -99,6 +99,9 @@ export function createMfa(
     const replaceCodes = async (userId: string) => {
         const codes = generateRecoveryCodes();
         await db.transaction(async (tx) => {
+            // one renewal at a time per user: a second one waits here, then
+            // deletes the first one's codes, so two sets are never valid at once
+            await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update');
             await tx.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, userId));
             await tx
                 .insert(mfaRecoveryCodes)
@@ -202,15 +205,16 @@ export function createMfa(
 
         async createChallenge(userId) {
             const ticket = randomBytes(32).toString('base64url');
-            await db.transaction(async (tx) => {
-                // one pending sign-in per account
-                await tx.delete(mfaChallenges).where(eq(mfaChallenges.userId, userId));
-                await tx.insert(mfaChallenges).values({
-                    id: hashTicket(ticket),
-                    userId,
-                    expiresAt: new Date(Date.now() + CHALLENGE_MINUTES * 60_000),
+            // one pending sign-in per account: a new one replaces the old, in one
+            // statement, so two logins at once cannot leave two
+            const expiresAt = new Date(Date.now() + CHALLENGE_MINUTES * 60_000);
+            await db
+                .insert(mfaChallenges)
+                .values({ id: hashTicket(ticket), userId, expiresAt })
+                .onConflictDoUpdate({
+                    target: mfaChallenges.userId,
+                    set: { id: hashTicket(ticket), expiresAt, attempts: 0 },
                 });
-            });
             return ticket;
         },
 

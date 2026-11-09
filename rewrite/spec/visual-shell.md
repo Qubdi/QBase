@@ -7,7 +7,7 @@ source maps were read. Colours are written as the browser reports them (rgb) wit
 value in brackets where the old page exposes one. "px" values are CSS pixels at 100% zoom. The harness
 that reproduces every number is in `tools/e2e/visual/` (scene names are given in the last column of the
 section tables so a number can be re-measured with `node run.mjs <scene>`); reference captures live
-outside the repo in `/home/qubdi/ui-reference/old`.
+outside the repo in `~/ui-reference/old`.
 
 Scope: everything outside the canvas surface (the canvas, tables on it, links, areas, notes, minimap,
 canvas toolbar and canvas menus are covered by another spec). Text wording is in `visual-copy.md`.

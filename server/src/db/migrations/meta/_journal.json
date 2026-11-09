@@ -176,6 +176,13 @@
       "when": 1793961567335,
       "tag": "0024_snapshot_auto_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794219569107,
+      "tag": "0025_mfa_challenge_per_user",
+      "breakpoints": true
     }
   ]
 }

@@ -1,12 +1,18 @@
 import { unwrapOnce } from '../shared/defaults';
 import type { Flavour, Neutral } from './contract';
 
+/** One element of `ARRAY[...]`: a number is written bare, anything else as text. */
+interface ListItem {
+    text: string;
+    number: boolean;
+}
+
 type Parsed =
     | { k: 'now' | 'date' | 'time' | 'uuid' | 'null' | 'numbering' }
     | { k: 'bool'; v: boolean }
     | { k: 'number'; v: string }
     | { k: 'string'; v: string }
-    | { k: 'list'; v: string }
+    | { k: 'list'; items: ListItem[] }
     | { k: 'raw' };
 
 const NOW =
@@ -41,13 +47,72 @@ function parse(raw: string): Parsed {
     if (/^-?\d+(?:\.\d+)?$/.test(text)) return { k: 'number', v: text };
     const str = /^(?:N)?'((?:[^']|'')*)'$/is.exec(text);
     if (str) return { k: 'string', v: str[1].replace(/''/g, "'") };
-    if (/^ARRAY\s*\[/i.test(text))
-        return {
-            k: 'list',
-            v: text.replace(/^ARRAY\s*/i, '').replace(/'/g, '"'),
-        };
+    if (/^ARRAY\s*\[/i.test(text)) {
+        const items = arrayItems(text);
+        if (items) return { k: 'list', items };
+    }
     return { k: 'raw' };
 }
+
+/**
+ * The elements of `ARRAY['a', 'it''s', 3]`, with a trailing `::type[]` cast
+ * ignored; undefined when the text is not a plain list of literals.
+ */
+function arrayItems(text: string): ListItem[] | undefined {
+    const body =
+        /^ARRAY\s*\[(.*?)\]\s*(?:::\s*[\w\s."]+(?:\(\d+(?:,\s*\d+)?\))?(?:\[\])*)?$/is.exec(
+            text
+        );
+    if (!body) return undefined;
+    const parts: string[] = [];
+    let current = '';
+    let quoted = false;
+    const inner = body[1];
+    for (let i = 0; i < inner.length; i++) {
+        const ch = inner[i];
+        if (ch === "'") {
+            // a doubled quote inside a string is one quote
+            if (quoted && inner[i + 1] === "'") {
+                current += "''";
+                i++;
+                continue;
+            }
+            quoted = !quoted;
+        }
+        if (ch === ',' && !quoted) {
+            parts.push(current);
+            current = '';
+        } else current += ch;
+    }
+    if (quoted) return undefined;
+    parts.push(current);
+    const items: ListItem[] = [];
+    for (const raw of parts) {
+        const part = raw.trim();
+        if (part === '') continue;
+        const str = /^'((?:[^']|'')*)'(?:\s*::\s*[\w\s."]+)?$/s.exec(part);
+        if (str)
+            items.push({ text: str[1].replace(/''/g, "'"), number: false });
+        else if (/^-?\d+(?:\.\d+)?$/.test(part))
+            items.push({ text: part, number: true });
+        else return undefined;
+    }
+    return items;
+}
+
+/** The list as JSON text: `["a", "it's", 3]`. */
+const listAsJson = (items: ListItem[]): string =>
+    `[${items.map((i) => (i.number ? i.text : JSON.stringify(i.text))).join(', ')}]`;
+
+/** The list as a PostgreSQL array literal body: `{a,"it's",3}`. */
+const listAsPgArray = (items: ListItem[]): string =>
+    `{${items
+        .map((i) =>
+            i.number || /^[\w.-]+$/.test(i.text)
+                ? i.text
+                : `"${i.text.replace(/[\\"]/g, '\\$&')}"`
+        )
+        .join(',')}}`;
 
 export interface DefaultOut {
     text?: string;
@@ -134,7 +199,9 @@ export function convertDefault(
                     .map((x) =>
                         /^-?\d+(\.\d+)?$/.test(x) ? x : JSON.stringify(x)
                     );
-                return wrap(`'[${items.join(', ')}]'`);
+                // the JSON text sits inside a quoted literal of the target
+                const json = `[${items.join(', ')}]`.replace(/'/g, "''");
+                return wrap(`'${isMy ? json.replace(/\\/g, '\\\\') : json}'`);
             }
             const body = d.v.replace(/'/g, "''");
             const text = isMy ? body.replace(/\\/g, '\\\\') : body;
@@ -180,9 +247,11 @@ export function convertDefault(
             return { text: SQLITE_UUID };
         case 'list':
             if (neutral.kind === 'array' && target === 'postgres')
-                return { text: `'{${d.v.slice(1, -1).replace(/"/g, '')}}'` };
+                return {
+                    text: `'${listAsPgArray(d.items).replace(/'/g, "''")}'`,
+                };
             if (neutral.kind === 'array' || neutral.kind === 'json')
-                return wrap(`'${d.v.replace(/'/g, "''")}'`);
+                return wrap(`'${listAsJson(d.items).replace(/'/g, "''")}'`);
             return drop('a list on a column that is not a list');
         case 'raw':
             return drop('not understood');

@@ -1,6 +1,11 @@
 # Rewrite plan: replace the ChartDB-derived editor with original code
 
 Branch: `rewrite/clean-room` (its own history, no parent; `main` is the read-only reference).
+
+> **Branch names have changed since this was written.** The rewrite now lives on `main`.
+> The ChartDB-derived code is kept, read-only, on `main-old`. Below, "`main`" as the old code
+> means `main-old`, and "this branch" means the rewrite. The records and briefs keep their
+> original wording on purpose.
 Last reviewed: 2026-11-07. Measured against ChartDB commit `ee95448` (2026-11-01).
 
 Not legal advice. A lawyer should review the process early (Phase 2) and the result at the
@@ -135,7 +140,7 @@ ChartDB is not copying; copying its code is. Re-run `node tools/licences.mjs` in
   history, which contains ChartDB code, so Phase 10 still ends in a fresh repository.
 - Pull requests into `main` are not possible (unrelated histories). Work lands directly on
   this branch; protect it and review changes before merging.
-- The branch does not build until the foundations exist (Phase 3). That is expected; the
+- (History: at the start) The branch does not build until the foundations exist (Phase 3). That is expected; the
   similarity check is the CI gate until then.
 - Never copy a file back from `main` (`git checkout main -- <path>`).
 
@@ -292,7 +297,7 @@ Done when:
   reasoned entries in `rewrite/similarity-allow.txt`.
 - Every **keep** line in `rewrite/parity-checklist.md` is ticked.
 - Dependencies were re-audited; `NOTICE` lists third-party licences.
-- Audit findings REPO-045, REPO-049 and REPO-069 are updated.
+- The audit findings that name these files are updated.
 - A lawyer has reviewed the finished result and the records.
 
 ### Phase 10: Release
@@ -342,7 +347,7 @@ to the schedule are SQL import and export, and reaching parity on the canvas.
 ## 11. Risks
 
 - The process is judged too weak: mitigate with the lawyer review in Phase 2 and clean authors.
-- The branch cannot build for a long time: mitigate by making Phase 3 small and early.
+- (History: it builds, lints and passes its tests now, see TODO.md.) The branch cannot build for a long time: mitigate by making Phase 3 small and early.
 - The rewrite drifts from `main` behaviour: mitigate with the parity checklist and sign-off.
 - The public image keeps circulating: see section 2.
 - Contributors read `main` while writing clean modules: mitigate with `rewrite/provenance.md`.

@@ -115,9 +115,9 @@ describe('GetLatestControl', () => {
             projectSlug: 'Qubdi',
             deleteLocal,
         });
-        // the page leaving must not send the edits that were just discarded
+        // pending saves are dropped before the local copy is deleted
         expect(discard).not.toHaveBeenCalled();
-        args.beforeReload();
+        args.beforeDelete();
         expect(discard).toHaveBeenCalledTimes(1);
     });
 

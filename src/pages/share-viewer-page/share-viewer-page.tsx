@@ -45,6 +45,8 @@ const nodeTypes = { viewerTable: ViewerTableNode };
 
 const RECONNECT_MIN_MS = 2_000;
 const RECONNECT_MAX_MS = 60_000;
+// a burst of published versions is folded into one reload
+const RELOAD_DEBOUNCE_MS = 300;
 
 /**
  * Read-only view of a published diagram. It deliberately renders no editing UI
@@ -88,6 +90,8 @@ const ViewerBody: React.FC = () => {
         if (!live) return;
         let source: EventSource | null = null;
         let retry: ReturnType<typeof setTimeout> | undefined;
+        // several versions in a burst cost one reload, not one each
+        let reload: ReturnType<typeof setTimeout> | undefined;
         let delay = RECONNECT_MIN_MS;
         // versions published while the stream was down are never replayed
         let missed = false;
@@ -97,7 +101,10 @@ const ViewerBody: React.FC = () => {
                 { withCredentials: true }
             );
             source = next;
-            next.addEventListener('version', () => void load());
+            next.addEventListener('version', () => {
+                clearTimeout(reload);
+                reload = setTimeout(() => void load(), RELOAD_DEBOUNCE_MS);
+            });
             next.addEventListener('open', () => {
                 delay = RECONNECT_MIN_MS;
                 if (missed) {
@@ -118,6 +125,7 @@ const ViewerBody: React.FC = () => {
         connect();
         return () => {
             clearTimeout(retry);
+            clearTimeout(reload);
             source?.close();
         };
     }, [live, token, load]);
@@ -207,7 +215,7 @@ const ViewerBody: React.FC = () => {
     if (state.kind === 'loading') {
         return (
             <Centered>
-                <p>{tr('qubdi.workspace.viewerPage.loading')}</p>
+                <p role="status">{tr('qubdi.workspace.viewerPage.loading')}</p>
             </Centered>
         );
     }
@@ -254,7 +262,7 @@ const ViewerBody: React.FC = () => {
     if (state.kind === 'error') {
         return (
             <Centered>
-                <p>{tr('qubdi.workspace.viewerPage.error')}</p>
+                <p role="alert">{tr('qubdi.workspace.viewerPage.error')}</p>
                 <Button onClick={() => void load()}>
                     {tr('qubdi.workspace.viewerPage.retry')}
                 </Button>
@@ -270,7 +278,7 @@ const ViewerBody: React.FC = () => {
         >
             <header className="flex items-center gap-3 border-b px-4 py-2">
                 <span className="font-semibold tracking-tight">QBase</span>
-                <span className="truncate" data-testid="viewer-title">
+                <span className="min-w-0 truncate" data-testid="viewer-title">
                     {share.title}
                 </span>
                 <span className="text-xs text-muted-foreground">
@@ -282,7 +290,7 @@ const ViewerBody: React.FC = () => {
                     )}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
-                    <div className="w-64">
+                    <div className="w-32 sm:w-64">
                         <Input
                             type="search"
                             placeholder={tr(

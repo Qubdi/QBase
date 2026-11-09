@@ -36,8 +36,6 @@ export const workspaceStrings = {
     },
     workspace: {
         frame: {
-            canvasPlaceholder: 'The diagram surface appears here',
-            panelPlaceholder: 'The side panel appears here',
             resizePanel: 'Resize the side panel',
             openPanel: 'Open the editing panel',
         },
@@ -85,7 +83,6 @@ export const workspaceStrings = {
             diagram: {
                 label: 'Actions',
                 import: 'Import',
-                examples: 'Examples',
                 importFile: '.json',
                 importSql: 'SQL',
                 importDbml: 'DBML',

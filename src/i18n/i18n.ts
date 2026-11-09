@@ -57,7 +57,8 @@ i18n.on('languageChanged', (lng) => {
     setDocumentLanguage(lng);
     void ensureLocale(lng)
         .then(async (added) => {
-            if (added) await i18n.changeLanguage(lng);
+            // a later pick wins over a language whose file arrived late
+            if (added && i18n.language === lng) await i18n.changeLanguage(lng);
         })
         .catch(() => undefined);
 });

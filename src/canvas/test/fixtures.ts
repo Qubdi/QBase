@@ -126,5 +126,3 @@ export function withMemo(
         memoId: memo.id,
     };
 }
-
-export { run as applyTo };

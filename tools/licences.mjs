@@ -5,6 +5,7 @@
 //   node tools/licences.mjs
 // Output: rewrite/inventory/third-party-licences.csv
 import fs from 'node:fs';
+import { isPermissive } from './permissive.mjs';
 
 const rows = [];
 for (const [scope, dir] of [
@@ -42,12 +43,10 @@ for (const [scope, dir] of [
         }
     }
 }
-const permissive =
-    /^(MIT|ISC|BSD-[23]-Clause|Apache-2\.0|0BSD|BlueOak-1\.0\.0|Unlicense|CC0-1\.0|Python-2\.0|MIT-0|\(.*\))$/;
 const header = 'scope,group,package,version,license,needs_review';
 const lines = rows.map((row) => {
     const review =
-        permissive.test(row.license) &&
+        isPermissive(row.license) &&
         !/GPL|SSPL|BUSL|UNKNOWN|NOT INSTALLED/.test(row.license)
             ? 'no'
             : 'yes';

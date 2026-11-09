@@ -80,6 +80,13 @@ const show = async () => {
     return view;
 };
 
+/** A published version, then the pause after which the page reloads. */
+const publish = (stream: FakeEventSource) =>
+    act(async () => {
+        stream.emit('version');
+        await vi.advanceTimersByTimeAsync(300);
+    });
+
 describe('ShareViewerPage live stream', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -154,6 +161,21 @@ describe('ShareViewerPage reloads', () => {
         return { ...r, share: { ...r.share, title } };
     };
 
+    it('folds a burst of published versions into one reload', async () => {
+        const view = await show();
+        const stream = FakeEventSource.instances[0];
+        getPublicShare.mockClear();
+        getPublicShare.mockResolvedValue(titled('Version 4', 4));
+        await act(async () => {
+            stream.emit('version');
+            stream.emit('version');
+            stream.emit('version');
+            await vi.advanceTimersByTimeAsync(300);
+        });
+        expect(getPublicShare).toHaveBeenCalledTimes(1);
+        expect(view.getByTestId('viewer-title').textContent).toBe('Version 4');
+    });
+
     it('keeps the newest version when an older reload answers last', async () => {
         const view = await show();
         const stream = FakeEventSource.instances[0];
@@ -162,8 +184,8 @@ describe('ShareViewerPage reloads', () => {
         getPublicShare
             .mockReturnValueOnce(new Promise((r) => (answerOld = r)))
             .mockReturnValueOnce(new Promise((r) => (answerNew = r)));
-        act(() => stream.emit('version'));
-        act(() => stream.emit('version'));
+        await publish(stream);
+        await publish(stream);
 
         await act(async () => answerNew(titled('Version 3', 3)));
         expect(view.getByTestId('viewer-title').textContent).toBe('Version 3');
@@ -206,12 +228,12 @@ describe('ShareViewerPage selection', () => {
         expect(selected()).toEqual(['a']);
 
         getPublicShare.mockResolvedValue(withTables(['b'], 2));
-        await act(async () => FakeEventSource.instances[0].emit('version'));
+        await publish(FakeEventSource.instances[0]);
         expect(flow.props!.nodes.map((n) => n.id)).toEqual(['b']);
         expect(selected()).toEqual([]);
 
         getPublicShare.mockResolvedValue(withTables(['a', 'b'], 3));
-        await act(async () => FakeEventSource.instances[0].emit('version'));
+        await publish(FakeEventSource.instances[0]);
         expect(selected()).toEqual([]);
     });
 
@@ -220,7 +242,7 @@ describe('ShareViewerPage selection', () => {
         await show();
         act(() => flow.props!.onNodeClick({}, { id: 'b' }));
         getPublicShare.mockResolvedValue(withTables(['a', 'b'], 2));
-        await act(async () => FakeEventSource.instances[0].emit('version'));
+        await publish(FakeEventSource.instances[0]);
         expect(selected()).toEqual(['b']);
     });
 });

@@ -26,8 +26,3 @@ export function dialectFor(id: string): Dialect {
 export function listDialects(): readonly Dialect[] {
     return MODULES;
 }
-
-/** Dialects that can write SQL. */
-export function writableDialects(): Dialect[] {
-    return MODULES.filter((d) => d.sql.write);
-}

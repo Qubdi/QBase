@@ -15,6 +15,9 @@ const URL = `postgres://${encodeURIComponent(PG_USER)}:${encodeURIComponent(PG_P
 
 const DDL = `
 CREATE SCHEMA sales;
+CREATE EXTENSION file_fdw;
+CREATE SERVER csv_files FOREIGN DATA WRAPPER file_fdw;
+CREATE FOREIGN TABLE sales.price_list (sku text, price numeric(10,2)) SERVER csv_files OPTIONS (filename '/dev/null', format 'csv');
 CREATE TYPE sales.status AS ENUM ('new', 'paid', 'shipped');
 CREATE TYPE sales.money_pair AS (amount numeric(12,2), currency char(3));
 CREATE DOMAIN sales.email AS varchar(120) CHECK (VALUE LIKE '%@%');
@@ -32,9 +35,13 @@ CREATE TABLE sales.customers (
   CONSTRAINT score_nonneg CHECK (score >= 0),
   CONSTRAINT name_len CHECK (length(first_name) < 100)
 );
+CREATE VIEW sales."Odd View" AS SELECT id AS "odd id" FROM sales.customers;
+CREATE MATERIALIZED VIEW sales.customer_totals AS SELECT state, count(*) AS n FROM sales.customers GROUP BY state;
 CREATE INDEX customers_score_desc ON sales.customers (score DESC, id);
 CREATE INDEX customers_live ON sales.customers (last_name) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX customers_email_live ON sales.customers (email) WHERE deleted_at IS NULL;
+CREATE INDEX customers_half_built ON sales.customers (first_name);
+UPDATE pg_index SET indisvalid = false WHERE indexrelid = 'sales.customers_half_built'::regclass;
 CREATE TABLE sales.events (
   id serial,
   at date NOT NULL,
@@ -42,6 +49,13 @@ CREATE TABLE sales.events (
   CONSTRAINT events_recent CHECK (at > DATE '2000-01-01')
 ) PARTITION BY RANGE (at);
 CREATE TABLE sales.events_2024 PARTITION OF sales.events FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+CREATE TABLE sales.events_2025 PARTITION OF sales.events FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');
+CREATE TABLE sales.event_notes (
+  event_id integer,
+  at date,
+  note text,
+  CONSTRAINT event_notes_event FOREIGN KEY (event_id, at) REFERENCES sales.events (id, at)
+);
 `;
 
 describe('PostgreSQL introspection: checks, custom types, domains, generated columns, index details', () => {
@@ -130,8 +144,40 @@ describe('PostgreSQL introspection: checks, custom types, domains, generated col
         ]);
     });
 
+    it('leaves out an index that a failed CONCURRENTLY build left invalid', () => {
+        // the catalog still lists it, but no query can use it
+        expect(meta.indexes.some((i) => i.name === 'customers_half_built')).toBe(false);
+        expect(meta.indexes.some((i) => i.name === 'customers_live')).toBe(true);
+    });
+
+    it('quotes the names in a view definition, so odd ones stay one identifier', () => {
+        const view = meta.views.find((v) => v.view_name === 'Odd View')!;
+        const text = Buffer.from(view.view_definition!, 'base64').toString('utf8');
+        expect(text).toMatch(/^CREATE VIEW sales\."Odd View" AS /);
+    });
+
+    it('says a materialized view is one, so it is not read back as a plain view', () => {
+        const text = (name: string) =>
+            Buffer.from(meta.views.find((v) => v.view_name === name)!.view_definition!, 'base64').toString('utf8');
+        expect(text('customer_totals')).toMatch(/^CREATE MATERIALIZED VIEW sales\.customer_totals AS /);
+        expect(text('Odd View')).toMatch(/^CREATE VIEW /);
+    });
+
+    it('lists a foreign table with its columns, as SQL Server lists an external table', () => {
+        expect(meta.tables.find((t) => t.table === 'price_list')).toMatchObject({ schema: 'sales', type: 'BASE TABLE' });
+        expect(meta.columns.filter((c) => c.table === 'price_list').map((c) => c.name)).toEqual(['sku', 'price']);
+    });
+
+    it('lists a foreign key to a partitioned table once, not once per partition', () => {
+        const rows = meta.fk_info.filter((f) => f.table === 'event_notes');
+        expect(rows.map((r) => [r.column, r.reference_table, r.reference_column])).toEqual([
+            ['event_id', 'events', 'id'],
+            ['at', 'events', 'at'],
+        ]);
+    });
+
     it('hides a partition behind its parent, like the client script', () => {
-        expect(meta.tables.map((t) => t.table).sort()).toEqual(['customers', 'events']);
+        expect(meta.tables.map((t) => t.table).sort()).toEqual(['Odd View', 'customer_totals', 'customers', 'event_notes', 'events', 'price_list']);
         expect(meta.columns.some((c) => c.table === 'events_2024')).toBe(false);
         expect(meta.check_constraints!.filter((c) => c.table === 'events')).toHaveLength(1);
     });

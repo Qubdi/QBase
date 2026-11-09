@@ -176,11 +176,12 @@ const Body: React.FC<{ desktop: boolean }> = ({ desktop }) => {
 };
 
 const PageTitle: React.FC = () => {
+    const { t } = useTranslation();
     const name = useEditorStore((s) => s.design.name);
     return (
         <Helmet>
             <title>
-                {name ? `QBase - ${name}` : 'QBase - Database schema diagrams'}
+                {name ? `QBase - ${name}` : t('editor.common.app.title')}
             </title>
         </Helmet>
     );

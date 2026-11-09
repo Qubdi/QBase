@@ -140,6 +140,13 @@ describe('editor store: view state', () => {
         expect(store.getState().ui.zoom).toBe(5);
     });
 
+    it('ignores a zoom that is not a number', () => {
+        const store = createEditorStore({ design: blank() });
+        store.getState().setZoom(2);
+        store.getState().setZoom(NaN);
+        expect(store.getState().ui.zoom).toBe(2);
+    });
+
     it('opens the panel on Tables with the entity expanded (A7)', () => {
         const store = createEditorStore({ design: blank(), panelOpen: false });
         store.getState().showEntityInPanel('t1');

@@ -1,4 +1,5 @@
 import type { Box } from '@/core/model/region';
+import { minBy, maxBy } from '@/core/model/extent';
 
 export interface Shift {
     dx: number;
@@ -39,10 +40,10 @@ export function findFreeShift(
     const none = { dx: 0, dy: 0 };
     if (group.length === 0 || !collides(group, others, none, gap)) return none;
 
-    const left = Math.min(...group.map((b) => b.x));
-    const top = Math.min(...group.map((b) => b.y));
-    const right = Math.max(...group.map((b) => b.x + b.width));
-    const bottom = Math.max(...group.map((b) => b.y + b.height));
+    const left = minBy(group, (b) => b.x);
+    const top = minBy(group, (b) => b.y);
+    const right = maxBy(group, (b) => b.x + b.width);
+    const bottom = maxBy(group, (b) => b.y + b.height);
 
     const options: Shift[] = [];
     for (const o of others) {
@@ -53,10 +54,10 @@ export function findFreeShift(
             { dx: 0, dy: o.y - gap - bottom }
         );
     }
-    const farRight = Math.max(...others.map((o) => o.x + o.width));
-    const farLeft = Math.min(...others.map((o) => o.x));
-    const farDown = Math.max(...others.map((o) => o.y + o.height));
-    const farUp = Math.min(...others.map((o) => o.y));
+    const farRight = maxBy(others, (o) => o.x + o.width);
+    const farLeft = minBy(others, (o) => o.x);
+    const farDown = maxBy(others, (o) => o.y + o.height);
+    const farUp = minBy(others, (o) => o.y);
     options.push(
         { dx: farRight + gap - left, dy: 0 },
         { dx: farLeft - gap - right, dy: 0 },

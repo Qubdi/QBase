@@ -41,8 +41,6 @@ export const de = {
             },
             workspace: {
                 frame: {
-                    canvasPlaceholder: 'Hier erscheint die Diagrammfläche',
-                    panelPlaceholder: 'Hier erscheint die Seitenleiste',
                     resizePanel: 'Größe der Seitenleiste ändern',
                     openPanel: 'Bearbeitungsleiste öffnen',
                 },
@@ -91,7 +89,6 @@ export const de = {
                     diagram: {
                         label: 'Diagramm',
                         import: 'Importieren aus',
-                        examples: 'Beispiele',
                         importFile: 'Diagrammdatei (.json)',
                         importSql: 'SQL-Skript',
                         importDbml: 'DBML-Text',
@@ -199,7 +196,6 @@ export const de = {
                     import: 'Aus Text erstellen',
                     failed: 'Das Diagramm konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
                 },
-                examplesSize: '{{tables}} Tabellen · {{areas}} Bereiche',
                 examples: {
                     clinic: 'Patienten, Ärzte und Fachgebiete, mit Terminen und den dabei verschriebenen Medikamenten.',
                     bookshop:
@@ -405,6 +401,7 @@ export const de = {
                     invalid:
                         'Diese Datei ist kein aus QBase gespeichertes Diagramm, daher wurde nichts importiert.',
                     failed: 'Die Datei konnte nicht importiert werden. Bitte versuchen Sie es erneut.',
+                    tooLarge: 'Die Datei ist zu groß (höchstens 50 MB).',
                 },
                 box: {
                     method: {
@@ -808,7 +805,6 @@ export const de = {
                     createToStart: 'Erstellen Sie eine Tabelle, um zu beginnen',
                     noSchema: 'Kein Schema',
                     noArea: 'Kein Bereich',
-                    showAllShort: 'Alle Tabellen anzeigen',
                 },
                 hover: {
                     type: 'Typ',
@@ -827,7 +823,6 @@ export const de = {
                 clipboard: {
                     copied: 'Tabelle kopiert',
                     copiedMany: '{{count}} Tabellen kopiert',
-                    pasteHint: 'Drücken Sie {{key}}, um sie einzufügen.',
                     pasted: 'Tabelle eingefügt',
                     pastedMany: '{{count}} Tabellen eingefügt',
                 },
@@ -898,8 +893,6 @@ export const de = {
                 arrange: 'Diagramm automatisch anordnen',
                 undo: 'Rückgängig ({{shortcut}})',
                 redo: 'Wiederholen ({{shortcut}})',
-                fullScreen: 'Vollbild',
-                exitFullScreen: 'Vollbild beenden',
             },
             showAllPill: 'Alle anzeigen',
             hiddenAll: {
@@ -917,9 +910,6 @@ export const de = {
                 fieldCount_other: '{{count}} Felder',
                 fieldCount_one: '{{count}} Feld',
                 focus: 'Auf der Zeichenfläche anzeigen',
-                openInPanel: 'In der Seitenleiste öffnen',
-                widen: 'Breiter machen',
-                narrow: 'Schmaler machen',
                 showMore: 'Mehr anzeigen',
                 showLess: 'Weniger anzeigen',
                 edit: 'Tabelle bearbeiten',
@@ -961,13 +951,11 @@ export const de = {
             },
             region: {
                 rename: 'Bereichsname',
-                colour: 'Bereichsfarbe',
             },
             memo: {
                 placeholder: 'Leere Notiz',
                 edit: 'Notiztext',
                 editNote: 'Notiz bearbeiten',
-                colour: 'Notizfarbe',
             },
             menu: {
                 newTable: 'Neue Tabelle',
@@ -1000,14 +988,9 @@ export const de = {
                 hint: 'Drücken Sie {{key}}, um sie einzufügen.',
                 pastedOne: 'Tabelle eingefügt',
                 pastedMany: '{{count}} Tabellen eingefügt',
-                failed: 'Kopieren fehlgeschlagen',
             },
             drawing: {
                 hint: 'Klicken Sie auf die Tabelle, die den Fremdschlüssel enthält',
-            },
-            keys: {
-                mod: 'Ctrl',
-                modMac: '⌘',
             },
         },
     },

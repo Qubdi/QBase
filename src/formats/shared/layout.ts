@@ -1,4 +1,5 @@
 import { COLLAPSED_COLUMNS, TABLE_WIDTH } from '@/core/model/entity';
+import { maxBy } from '@/core/model/extent';
 
 /** One box to place: its size and which boxes it is linked to. */
 export interface LayoutNode {
@@ -110,7 +111,7 @@ function layoutGroup(
     for (let i = 0; i < alone.length; i += perRow) {
         const row = alone.slice(i, i + perRow);
         row.forEach((node, k) => put(node, left + k * (w + GAP), rowTop));
-        const tallest = Math.max(...row.map((n) => cardHeight(n.columnCount)));
+        const tallest = maxBy(row, (n) => cardHeight(n.columnCount));
         bottom = Math.max(bottom, rowTop + tallest);
         rowTop += tallest + GAP;
     }

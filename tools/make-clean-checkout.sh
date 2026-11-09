@@ -12,7 +12,7 @@
 #
 # Put the destination OUTSIDE the QBase folders (for example ~/clean-room/qbase-phase4) and,
 # while the clean session runs, move the `main` worktree and any ChartDB clone out of reach
-# (see "Residual risk" in rewrite/clean-author-brief.md hand-off notes printed at the end).
+# (see "Residual risk" in rewrite/clean-author-brief-phase*.md hand-off notes printed at the end).
 set -euo pipefail
 
 phase="${1:-}"; dest="${2:-}"
@@ -20,12 +20,13 @@ case "$phase" in 4|5|6) ;; *) echo "usage: $0 <phase: 4|5|6> <destination-dir>" 
 [ -n "$dest" ] || { echo "usage: $0 <phase: 4|5|6> <destination-dir>" >&2; exit 2; }
 src="$(git rev-parse --show-toplevel)"
 branch="$(git -C "$src" rev-parse --abbrev-ref HEAD)"
-[ "$branch" = "rewrite/clean-room" ] || { echo "run this on rewrite/clean-room (on: $branch)" >&2; exit 1; }
+# the rewrite lives on main now; rewrite/clean-room is the same lineage under its old name
+case "$branch" in main|rewrite/clean-room) ;; *) echo "run this on main or rewrite/clean-room (on: $branch)" >&2; exit 1;; esac
 [ -z "$(git -C "$src" status --porcelain)" ] || { echo "commit your changes first: the checkout is built from HEAD" >&2; exit 1; }
 [ ! -e "$dest" ] || { echo "$dest already exists" >&2; exit 1; }
 case "$(realpath -m "$dest")/" in "$src"/*) echo "destination must be outside $src" >&2; exit 1;; esac
 
-git clone --quiet --depth 1 --single-branch --branch rewrite/clean-room "file://$src" "$dest"
+git clone --quiet --depth 1 --single-branch --branch "$branch" "file://$src" "$dest"
 cd "$dest"
 git remote remove origin
 git reflog expire --expire=now --all

@@ -106,7 +106,7 @@ QBase listens on `127.0.0.1` only. To reach it from other machines, set `APP_BIN
 
 ### Option B: Docker, with your own existing PostgreSQL
 
-QBase then does not start a database of its own. You need PostgreSQL 16 or newer.
+QBase then does not start a database of its own. You need PostgreSQL 16 or newer. CI runs the server tests on 18; the whole suite was also run on 16.15 on 2026-11-09.
 
 1. **Create an empty database and a role that owns it**, on your PostgreSQL:
 
@@ -317,8 +317,9 @@ A fresh install needs none of this. If you use your own Postgres (`POSTGRES_HOST
 
 ```bash
 npx vitest run                 # editor and shared logic
-cd server && npx vitest run    # backend (needs the database up with POSTGRES_PASSWORD=qbase:
-                               # the tests connect as qbase/qbase on port 5433)
+cd server && npx vitest run    # backend (needs the database up; by default the tests connect as
+                               # qbase/qbase on port 5433: set TEST_PG_PORT, TEST_PG_USER and
+                               # TEST_PG_PASSWORD for another port, user or password)
 ```
 
 The SQL Server tests need the optional container and skip cleanly without it. Choose a
@@ -328,6 +329,23 @@ password of your own and give it to both the container and the tests:
 export MSSQL_SA_PASSWORD='<a strong password>'
 docker compose -f docker-compose.mssql.yml up -d
 ```
+
+### Browser checks (not run in CI)
+
+`tools/e2e/` holds real-browser checks of the built app. They run in a pinned Playwright
+Docker image, so Node is not needed on the host, and no workflow runs them: run them by hand
+before a release.
+
+| Script | What it does |
+|--------|--------------|
+| `tools/e2e/run-smoke.sh` | Smoke test of the built editor in local-only mode |
+| `tools/e2e/run-flows.sh` | Real-browser flows of the built editor (`ONLY=F1,F3` runs some) |
+| `tools/e2e/run-server-flows.sh` | Flows of server mode against a throwaway database (needs Docker; builds the image of this checkout) |
+| `tools/e2e/run-a11y.sh` | Accessibility audit (axe-core and keyboard checks) |
+| `tools/e2e/run-perf.sh` | Timings on large diagrams (`SIZES=50,200`) |
+
+The scripts in `tools/e2e/visual/` compare screens of two running builds and are for the
+rewrite work only.
 
 ## Schema lint in CI
 
@@ -356,6 +374,12 @@ The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
   `0022`) rewrites the whole `diagrams` table under an exclusive lock: about 11 seconds for
   320 MB of diagrams here, and reads and writes of diagrams wait meanwhile. Start the new
   version in a quiet moment on a large installation.
+- Upgrading from a version older than migration `0015` rewrites the whole `audit_log` table
+  under an exclusive lock (its `id` becomes a `bigint`) and builds its indexes without
+  `CONCURRENTLY`, so every action that writes an audit row (saves, sign-ins, admin changes)
+  waits meanwhile. The time grows with the number of rows.
+  It happens once; do it in a quiet moment, and lower `AUDIT_RETENTION_DAYS` and let the
+  clean-up run first if the log is very large.
 
 ## Scaling
 
@@ -381,6 +405,13 @@ and 21 KB of WAL on a laptop. To go further:
   `docker compose exec -T db pg_restore -U qbase -d qbase --no-owner < qbase-2026-01-01.dump`
   (add `--clean --if-exists` to replace what is already there). For point-in-time recovery use WAL archiving
   (`archive_mode`, `archive_command`) or a managed Postgres.
+  **Keep `CONNECTION_KEY` (and `SECRETS_KEY`, if you set it) with the backup, in a separate
+  secret store, not inside the dump.** The dump holds saved database passwords, share-link
+  tokens and authenticator secrets only in encrypted form. Restored with a different key,
+  saved connections and share-link URLs cannot be read and people with two-factor on cannot
+  sign in. After a restore, start the server with the same values.
+
+## License
 
 QBase is licensed under the [Elastic License 2.0](LICENSE): free to use, modify and self-host, for personal and commercial use alike, including inside a company. The one thing it does not allow is offering QBase to others as a hosted or managed service (a SaaS) without a separate licence from Qubdi.
 

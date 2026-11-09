@@ -244,6 +244,8 @@ const StatusIcon: React.FC<StatusIconProps> = ({
             className={`flex size-8 items-center justify-center rounded-md text-muted-foreground [&_svg]:size-4 ${className ?? ''}`}
         >
             {children}
+            {/* a live region announces changes to its text, not to its icon */}
+            <span className="sr-only">{label}</span>
         </span>
     );
 

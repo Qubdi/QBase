@@ -104,20 +104,29 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
     const syncState = open ? getSyncState(currentDiagram.id) : undefined;
     const projectId = workspace?.project.id ?? getProjectId(currentDiagram.id);
 
+    // only the newest load may set state: a slow reply for an earlier opening
+    // or another diagram must not show here
+    const newestLoad = useRef(0);
+    const cancelLoad = useCallback(() => {
+        newestLoad.current += 1;
+    }, []);
     const load = useCallback(async () => {
+        const request = ++newestLoad.current;
+        const current = () => request === newestLoad.current;
         const remoteId = remoteIdFor(currentDiagram.id);
         setError(null);
         try {
-            setConnections(
-                projectId
-                    ? await api.listSavedConnections(projectId).catch(() => [])
-                    : []
-            );
+            const list = projectId
+                ? await api.listSavedConnections(projectId).catch(() => [])
+                : [];
+            if (!current()) return;
+            setConnections(list);
             if (!remoteId) {
                 setReport(null);
                 return;
             }
             const o = await api.getDrift(remoteId);
+            if (!current()) return;
             onBadgeChange(o.badge);
             serverScope.current = o.settings
                 ? {
@@ -134,13 +143,13 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
             } else if (syncState?.source.kind === 'saved') {
                 setConnectionId(syncState.source.savedConnectionId);
             }
-            setReport(
-                o.latest
-                    ? await api.getDriftReport(remoteId, o.latest.id)
-                    : null
-            );
+            const latest = o.latest
+                ? await api.getDriftReport(remoteId, o.latest.id)
+                : null;
+            if (!current()) return;
+            setReport(latest);
         } catch (e) {
-            setError(errorMessage(e));
+            if (current()) setError(errorMessage(e));
         }
     }, [currentDiagram.id, projectId, remoteIdFor, onBadgeChange, syncState]);
 
@@ -160,8 +169,13 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
     const loadRef = useRef(load);
     loadRef.current = load;
     useEffect(() => {
-        if (open) void loadRef.current();
-    }, [open]);
+        if (!open) return;
+        // nothing of the last opening shows while this one loads
+        setReport(null);
+        setConnections([]);
+        void loadRef.current();
+        return cancelLoad;
+    }, [open, cancelLoad]);
 
     const run = async (fn: (remoteId: string) => Promise<void>) => {
         setBusy(true);

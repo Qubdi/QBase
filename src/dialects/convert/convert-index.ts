@@ -10,8 +10,6 @@ export interface IndexOut {
     between: string;
     /** after the column list: MySQL's ` USING HASH` */
     tail: string;
-    /** the index is not unique after all */
-    droppedUnique: boolean;
     /** the type was not kept: the index is a regular one */
     regular: boolean;
     /** what to tell the reader */
@@ -63,7 +61,6 @@ export function convertIndex(
         head: u,
         between: '',
         tail: '',
-        droppedUnique: false,
         regular: true,
         ...(note ? { note } : {}),
     });
@@ -90,7 +87,6 @@ export function convertIndex(
                 head: '',
                 between: ` USING ${asked.toUpperCase()}`,
                 tail: '',
-                droppedUnique: false,
                 regular: false,
             };
         case 'mysql':
@@ -99,7 +95,6 @@ export function convertIndex(
                     head: u,
                     between: '',
                     tail: ' USING HASH',
-                    droppedUnique: false,
                     regular: false,
                 };
             if (unique)
@@ -108,7 +103,6 @@ export function convertIndex(
                 head: `${asked.toUpperCase()} `,
                 between: '',
                 tail: '',
-                droppedUnique: false,
                 regular: false,
             };
         case 'sqlserver':
@@ -118,7 +112,6 @@ export function convertIndex(
                           head: `${u}CLUSTERED `,
                           between: '',
                           tail: '',
-                          droppedUnique: false,
                           regular: false,
                       }
                     : refuses(
@@ -131,7 +124,6 @@ export function convertIndex(
                           head: 'NONCLUSTERED COLUMNSTORE ',
                           between: '',
                           tail: '',
-                          droppedUnique: false,
                           regular: false,
                       };
             // xml
@@ -147,7 +139,6 @@ export function convertIndex(
                 head: 'PRIMARY XML ',
                 between: '',
                 tail: '',
-                droppedUnique: false,
                 regular: false,
             };
         case 'oracle':
@@ -157,7 +148,6 @@ export function convertIndex(
                       head: 'BITMAP ',
                       between: '',
                       tail: '',
-                      droppedUnique: false,
                       regular: false,
                   };
         default:

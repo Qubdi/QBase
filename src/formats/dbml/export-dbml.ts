@@ -24,8 +24,9 @@ export interface DbmlExportResult {
 
 const q = (name: string): string =>
     `"${name.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+// a line break is written as `\n`, which the DBML parser reads back as one
 const str = (text: string): string =>
-    `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' ')}'`;
+    `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n')}'`;
 const qualified = (schema: string | undefined, name: string): string =>
     schema ? `${q(schema)}.${q(name)}` : q(name);
 
@@ -43,7 +44,15 @@ function typeText(c: Column): string {
     return (bare ? name : q(name)) + array;
 }
 
-function defaultText(raw: string, postgres: boolean): string {
+/** DBML cannot hold a backtick inside a backtick expression, so they are dropped. */
+const withoutBackticks = (text: string): string => text.replace(/`/g, '');
+
+function defaultText(
+    raw: string,
+    postgres: boolean,
+    /** told when the text lost a backtick */
+    onStripped?: () => void
+): string {
     let text = dropCast(raw.trim());
     const wrapped = /^\(\s*'now'\s*\)$/i.exec(text);
     if (wrapped) text = 'now()';
@@ -55,7 +64,8 @@ function defaultText(raw: string, postgres: boolean): string {
     if (isNumberText(text) || /^(?:true|false|null)$/i.test(text))
         return text.toLowerCase() === text ? text : text.toLowerCase();
     if (isKeywordDefault(text) && /^CURRENT_/i.test(text)) return `\`${text}\``;
-    return `\`${text.replace(/`/g, '')}\``;
+    if (text.includes('`')) onStripped?.();
+    return `\`${withoutBackticks(text)}\``;
 }
 
 function symbolOf(link: Link): string {
@@ -79,7 +89,14 @@ export function exportDbml(
         fields: { column: Column; name: string }[];
     }[] = [];
     for (const entity of listOf(design.entities)) {
-        if (entity.kind === 'view') continue;
+        if (entity.kind === 'view') {
+            // DBML has no views: say so instead of leaving one out silently
+            diagnostics.push({
+                severity: 'warning',
+                message: `View ${entity.name} was left out: DBML has no views.`,
+            });
+            continue;
+        }
         const id = `${entity.schema ?? ''}.${entity.name}`;
         if (seen.has(id)) {
             diagnostics.push({
@@ -119,12 +136,20 @@ export function exportDbml(
         });
         usable.push({ entity, fields });
     }
+    // maps built once: a scan per link makes a diagram with many links quadratic
+    const byEntity = new Map(
+        usable.map((u) => [
+            u.entity.id,
+            {
+                entity: u.entity,
+                names: new Map(u.fields.map((f) => [f.column.id, f.name])),
+            },
+        ])
+    );
     const nameOf = (entityId: string, columnId: string): string | undefined =>
-        usable
-            .find((u) => u.entity.id === entityId)
-            ?.fields.find((f) => f.column.id === columnId)?.name;
+        byEntity.get(entityId)?.names.get(columnId);
     const tableOf = (entityId: string): Entity | undefined =>
-        usable.find((u) => u.entity.id === entityId)?.entity;
+        byEntity.get(entityId)?.entity;
 
     // relationships that survive, each pair of columns once
     const links: Link[] = [];
@@ -142,6 +167,16 @@ export function exportDbml(
         if (pairs.has(`${a}|${b}`) || pairs.has(`${b}|${a}`)) continue;
         pairs.add(`${a}|${b}`);
         links.push(link);
+        // DBML's `<>` is not read back by the importer, so it is written as
+        // one-to-many: say so instead of changing the relationship silently
+        if (
+            link.sourceCardinality === 'many' &&
+            link.targetCardinality === 'many'
+        )
+            diagnostics.push({
+                severity: 'warning',
+                message: `Relationship ${link.name || '(unnamed)'}: many-to-many was written as one-to-many.`,
+            });
     }
     const endpoint = (entityId: string, columnId: string): string => {
         const e = tableOf(entityId)!;
@@ -190,7 +225,14 @@ export function exportDbml(
             if (!column.nullable) attrs.push('not null');
             if (column.increment) attrs.push('increment');
             if (column.default && !/identity|nextval/i.test(column.default))
-                attrs.push(`default: ${defaultText(column.default, postgres)}`);
+                attrs.push(
+                    `default: ${defaultText(column.default, postgres, () =>
+                        diagnostics.push({
+                            severity: 'warning',
+                            message: `Table ${entity.name}, field ${column.name}: a backtick in the default expression was removed, as DBML cannot hold one.`,
+                        })
+                    )}`
+                );
             if (column.comments) attrs.push(`note: ${str(column.comments)}`);
             attrs.push(...(inlineRefs.get(`${entity.id}.${column.id}`) ?? []));
             return `  ${q(name)} ${typeText(column)}${attrs.length ? ` [${attrs.join(', ')}]` : ''}`;
@@ -217,6 +259,11 @@ export function exportDbml(
             if (key.distinct) attrs.push('unique');
             if (key.algorithm) attrs.push(`type: ${key.algorithm}`);
             if (key.note) attrs.push(`note: ${str(key.note)}`);
+            if (key.where)
+                diagnostics.push({
+                    severity: 'warning',
+                    message: `Index ${key.label || '(unnamed)'}: DBML has no partial indexes, so its WHERE condition was left out.`,
+                });
             const list =
                 cols.length === 1
                     ? q(nameFor(cols[0]))
@@ -228,11 +275,17 @@ export function exportDbml(
         const checks = entity.ruleIds
             .map((id) => design.rules[id]?.expression)
             .filter((e): e is string => !!e && e.trim() !== '');
-        if (checks.length > 0)
+        if (checks.length > 0) {
+            if (checks.some((c) => c.includes('`')))
+                diagnostics.push({
+                    severity: 'warning',
+                    message: `Table ${entity.name}: a backtick in a CHECK expression was removed, as DBML cannot hold one.`,
+                });
             body.push(
                 '',
-                `  checks {\n${checks.map((c) => `    \`${c.replace(/`/g, '')}\``).join('\n')}\n  }`
+                `  checks {\n${checks.map((c) => `    \`${withoutBackticks(c)}\``).join('\n')}\n  }`
             );
+        }
         if (entity.comments) body.push('', `  Note: ${str(entity.comments)}`);
         blocks.push(
             `Table ${qualified(entity.schema, entity.name)} {\n${body.join('\n')}\n}`

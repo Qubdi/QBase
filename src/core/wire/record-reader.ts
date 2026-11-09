@@ -85,7 +85,14 @@ export class RecordReader {
         let any = false;
         for (const key of Object.keys(this.raw)) {
             if (!this.known.has(key)) {
-                out[key] = this.raw[key];
+                // defined, not assigned: `out['__proto__'] = x` would swap the
+                // prototype of the result instead of keeping the key
+                Object.defineProperty(out, key, {
+                    value: this.raw[key],
+                    enumerable: true,
+                    writable: true,
+                    configurable: true,
+                });
                 any = true;
             }
         }

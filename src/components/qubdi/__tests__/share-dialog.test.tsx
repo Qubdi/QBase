@@ -14,7 +14,13 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     },
 }));
 // the list has its own tests
-vi.mock('../share-link-list', () => ({ ShareLinkList: () => null }));
+vi.mock('../share-link-list', () => ({
+    ShareLinkList: ({ links }: { links: { id: string }[] | null }) => (
+        <div data-testid="link-ids">
+            {(links ?? []).map((l) => l.id).join()}
+        </div>
+    ),
+}));
 
 const settle = () =>
     act(async () => {
@@ -51,6 +57,29 @@ describe('ShareDialog loading', () => {
             await settle();
         }
         expect(listShareLinks).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores a slow reply from an earlier opening', async () => {
+        let answerFirst!: (v: unknown) => void;
+        listShareLinks
+            .mockReset()
+            .mockReturnValueOnce(new Promise((r) => (answerFirst = r)))
+            .mockResolvedValue([{ id: 'second' }]);
+        const ensure = async () => 'r1';
+        const tree = (open: boolean) => (
+            <ShareDialog
+                open={open}
+                onOpenChange={() => undefined}
+                ensureRemoteId={ensure}
+            />
+        );
+        const view = render(tree(true));
+        await settle();
+        view.rerender(tree(false));
+        view.rerender(tree(true));
+        await settle();
+        await act(async () => answerFirst([{ id: 'first' }]));
+        expect(screen.getByTestId('link-ids').textContent).toBe('second');
     });
 
     it('does nothing while closed, and loads again the next time it opens', async () => {

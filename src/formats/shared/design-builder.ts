@@ -97,6 +97,9 @@ export function typeIdOf(name: string): string {
 /** Collects tables, links and types, then produces a laid-out Design. */
 export class DesignBuilder {
     private readonly tables: Built[] = [];
+    // the tables by folded name, in the order they were added: a lookup scans
+    // the few that share the name, not every table (import was quadratic)
+    private readonly byFoldedName = new Map<string, Built[]>();
     private readonly types: UserType[] = [];
     private readonly pendingDependencies: { reads: Built; view: Built }[] = [];
     private readonly pendingLinks: { link: LinkSpec; id: string }[] = [];
@@ -119,10 +122,8 @@ export class DesignBuilder {
     /** True when a table with this name exists in exactly this schema. */
     hasTable(schema: string | undefined, name: string): boolean {
         const ws = (schema ?? '').toLowerCase();
-        return this.tables.some(
-            (t) =>
-                sameName(t.entity.name, name) &&
-                (t.entity.schema ?? '').toLowerCase() === ws
+        return (this.byFoldedName.get(name.toLowerCase()) ?? []).some(
+            (t) => (t.entity.schema ?? '').toLowerCase() === ws
         );
     }
 
@@ -137,7 +138,12 @@ export class DesignBuilder {
     }
 
     private resolve(schema: string | undefined, name: string) {
-        return resolveTable(this.tables, (t) => t.entity, { schema, name });
+        // only a table whose name matches can win, so the candidates are enough
+        return resolveTable(
+            this.byFoldedName.get(name.toLowerCase()) ?? [],
+            (t) => t.entity,
+            { schema, name }
+        );
     }
 
     private find(schema: string | undefined, name: string): Built | undefined {
@@ -177,7 +183,13 @@ export class DesignBuilder {
         const columns: Column[] = [];
         const byName = new Map<string, Column>();
         for (const c of spec.columns) {
-            if (byName.has(c.name)) continue;
+            if (byName.has(c.name)) {
+                this.diagnostics.push({
+                    severity: 'warning',
+                    message: `Table ${spec.name}: a second field named ${c.name} was left out.`,
+                });
+                continue;
+            }
             const lower = c.typeName.toLowerCase();
             const asUser = enumNames.has(c.typeName);
             const column: Column = {
@@ -273,7 +285,12 @@ export class DesignBuilder {
         if (spec.view && spec.materialized) entity.materialized = true;
         if (spec.schema) entity.schema = spec.schema;
         if (spec.comment) entity.comments = spec.comment;
-        this.tables.push({ entity, columns, keys, rules, byName, spec });
+        const built = { entity, columns, keys, rules, byName, spec };
+        this.tables.push(built);
+        const folded = entity.name.toLowerCase();
+        const same = this.byFoldedName.get(folded);
+        if (same) same.push(built);
+        else this.byFoldedName.set(folded, [built]);
     }
 
     /** Adds a foreign key between two tables already added; false if an end is missing. */
@@ -375,9 +392,16 @@ export class DesignBuilder {
                     (c.primaryKey &&
                         t.columns.filter((x) => x.primaryKey).length === 1),
             });
+            const manyToMany =
+                link.cardinality?.source === 'many' &&
+                link.cardinality.target === 'many';
+            if (manyToMany)
+                this.diagnostics.push({
+                    severity: 'warning',
+                    message: `Relationship ${link.name || '(unnamed)'}: many-to-many is not supported, so it became one-to-many.`,
+                });
             const card = link.cardinality
-                ? link.cardinality.source === 'many' &&
-                  link.cardinality.target === 'many'
+                ? manyToMany
                     ? { source: 'one' as const, target: 'many' as const }
                     : link.cardinality
                 : cardinalityOf(facts(a, from), facts(b, to));
@@ -398,15 +422,16 @@ export class DesignBuilder {
         });
 
         const neighbours = new Map<string, string[]>();
+        // pushed onto the list the map already holds: copying it for every
+        // link makes a table with many links quadratic
+        const addNeighbour = (id: string, other: string) => {
+            const list = neighbours.get(id);
+            if (list) list.push(other);
+            else neighbours.set(id, [other]);
+        };
         for (const l of links) {
-            neighbours.set(l.sourceEntityId, [
-                ...(neighbours.get(l.sourceEntityId) ?? []),
-                l.targetEntityId,
-            ]);
-            neighbours.set(l.targetEntityId, [
-                ...(neighbours.get(l.targetEntityId) ?? []),
-                l.sourceEntityId,
-            ]);
+            addNeighbour(l.sourceEntityId, l.targetEntityId);
+            addNeighbour(l.targetEntityId, l.sourceEntityId);
         }
         const spots = layoutTables(
             entities.map((e) => ({

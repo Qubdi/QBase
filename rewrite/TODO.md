@@ -4,7 +4,12 @@ Tasks for the clean-room rewrite. The reasoning, rules and "done when" criteria 
 phase are in [PLAN.md](PLAN.md); this file is only the checklist. Tick an item when it
 ships and note the commit. Last reviewed 2026-11-07.
 
-Do not publish the repository or change the licence until the last item is ticked.
+> **Branch names have changed since this was written.** The rewrite now lives on `main`; the
+> ChartDB-derived code is kept, read-only, on `main-old`. Below, "`main`" as the old code
+> means `main-old`.
+
+The licence was changed to Elastic License 2.0 on 2026-11-08 (Phase 9). Do not publish the repository until
+the last item is ticked.
 The ChartDB-derived code is already deleted on this branch; read it from `main`
 (see section 5 of the plan).
 
@@ -57,14 +62,15 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
 8. [x] **Phase 7: data and content** (English only; done 2026-11-07, commit c04551d). No templates,
    examples, fixtures or thumbnails are left; all UI text and engine messages go through i18n; wording
    unified; a test fails on hard-coded UI text (`src/i18n/__tests__/hard-coded-text.test.ts`).
-   Seven languages ship (owner decision 2026-11-08): English, Russian, Georgian, German, Italian, French and
-   Chinese (Simplified and Traditional); translated by model (notes in `phase7/`) and reviewed by native
+   Seven languages were decided (owner decision 2026-11-08): English, Russian, Georgian, German, Italian, French and
+   Chinese (Simplified and Traditional). Five ship today (English, Russian, German, Italian, French: `src/i18n/locales/`);
+   Georgian and Chinese are still to add. Translated by model (notes in `phase7/`) and reviewed by native
    speakers (owner states, 2026-11-08; the reviewers' changes, if any, are not in this repository). The other
    16 locales were removed.
    Open for the owner: `src/lib/data/**` keeps its old folder layout (rename is optional).
-9. [x] **Phase 8: tests**, written from the spec (2026-11-07): 683 of 687 parity rows ticked with a named
-   test, 3 partly (IMP-003, IMP-056, IMP-059: SQL Server scripts not run on a live server), 1 open (EDT-250,
-   the re-sync dialog in a browser, being run). Results per slice in `phase8/`.
+9. [x] **Phase 8: tests**, written from the spec (2026-11-07): 684 of 687 parity rows ticked with a named
+   test, 3 partly (IMP-003, IMP-056, IMP-059: SQL Server scripts not run on a live server). EDT-250 (the
+   re-sync dialog) was ticked after a run in a real browser. Results per slice in `phase8/`.
 10. [~] **Phase 9: cleanup and verification** (2026-11-07 to 2026-11-08). Done: similarity clean on every
     checked file (867), licences re-audited and `NOTICE` updated (fonts), unused files and 23 unused
     dependencies removed, old-layout migration tested with hand-built fixtures, relationship direction
@@ -73,12 +79,12 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
     live-database checks (`phase9/*.md`), provenance record and transcript audit
     (`provenance.md`, `provenance-audit/`). Licence chosen 2026-11-08: Elastic License 2.0, applied.
     Owner items closed on the owner's word, 2026-11-08 (see `decisions-owner-2026-11-08.md`): the lawyer's
-    written confirmation, SEC-001 secrets rotation, branch protection (REPO-005), the peer sessions'
+    written confirmation, SEC-001 secrets rotation, branch protection, the peer sessions'
     declarations, the native-speaker review of the translations, the Docker Hub release secrets.
     Still open: GitHub still lists 71 old pull-request refs (`git ls-remote origin 'refs/pull/*/head'`,
     2026-11-08), so the purge part of SEC-001 is not confirmed; "run the similarity workflow once on
-    GitHub"; the re-sync dialog in a real browser (EDT-250); SQL Server on a live server (needs a licence
-    acceptance); the fresh-repository release (Phase 10, which also closes REPO-069).
+    GitHub"; SQL Server on a live server (needs a licence
+    acceptance); the fresh-repository release (Phase 10).
 11. [ ] **Phase 10: release.** Fresh repository with new history, chosen licence applied,
     old Docker Hub tags replaced or removed, new image published.
 

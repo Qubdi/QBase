@@ -5,7 +5,7 @@ sign-in) at 1280 x 800 (desktop) and 390 x 844 (phone), in light and dark theme.
 source code: every value is a computed style, a box, an SVG attribute, a class name, a screenshot or a
 timing sample of the running page. The scenes that produced the numbers are in
 `tools/e2e/visual/canvas-scenes.mjs` (103 scenes); the reference screenshots and the raw numbers per scene
-are in `/home/qubdi/ui-reference/old/` (not in the repository). Navbar, rail, side panel, dialogs, tokens
+are in `~/ui-reference/old/` (not in the repository). Navbar, rail, side panel, dialogs, tokens
 and wording belong to the shell spec, not to this file.
 
 Conventions. Sizes are CSS pixels at 100 % zoom (canvas units), not screen pixels at the zoom the page

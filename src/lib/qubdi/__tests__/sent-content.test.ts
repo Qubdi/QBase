@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     confirmSentContent,
     isLastSentContent,
+    markSyncedContent,
     rememberSentContent,
 } from '../sent-content';
 
@@ -51,5 +52,30 @@ describe('sent content', () => {
     it('is separate for each diagram', () => {
         rememberSentContent('d1', { a: 1 });
         expect(isLastSentContent('d2', { a: 1 })).toBe(false);
+    });
+
+    describe('one save, one fingerprint', () => {
+        afterEach(() => vi.restoreAllMocks());
+
+        // the sorted-key write-out is the one that takes a replacer function
+        const sortedWriteOuts = (calls: unknown[][]) =>
+            calls.filter((args) => typeof args[1] === 'function').length;
+
+        it('writes the content out once for remember, confirm and mark synced', () => {
+            const content = { a: 1, b: { c: 2 } };
+            const stringify = vi.spyOn(JSON, 'stringify');
+            rememberSentContent('d1', content);
+            confirmSentContent('d1', content);
+            markSyncedContent('d1', content);
+            expect(sortedWriteOuts(stringify.mock.calls)).toBe(1);
+        });
+
+        it('still tells different content apart', () => {
+            rememberSentContent('d1', { a: 1 });
+            const second = { a: 2 };
+            expect(isLastSentContent('d1', second)).toBe(false);
+            rememberSentContent('d1', second);
+            expect(isLastSentContent('d1', { a: 2 })).toBe(true);
+        });
     });
 });

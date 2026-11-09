@@ -51,7 +51,7 @@ describe('qubdi.workspace keys', () => {
     });
 });
 
-describe('editor toasts', () => {
+describe('editor toast wording', () => {
     const english = {
         fieldTypesIncompatibleTitle: 'Field types are not compatible',
         fieldTypesIncompatibleBody:
@@ -61,12 +61,6 @@ describe('editor toasts', () => {
             'These two fields already have a relationship between them',
         deleteDiagramFailed: 'Could not delete the diagram',
     };
-
-    it('say what the editor used to hard-code', () => {
-        for (const [key, text] of Object.entries(english)) {
-            expect(i18n.t(`qubdi.workspace.editorToasts.${key}`)).toBe(text);
-        }
-    });
 
     it('are looked up, not written out, in the canvas and the menu', () => {
         const canvasFiles = readdirSync('src/canvas', { recursive: true })

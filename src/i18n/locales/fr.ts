@@ -41,8 +41,6 @@ export const fr = {
             },
             workspace: {
                 frame: {
-                    canvasPlaceholder: 'La zone du diagramme apparaît ici',
-                    panelPlaceholder: 'Le panneau latéral apparaît ici',
                     resizePanel: 'Redimensionner le panneau latéral',
                     openPanel: "Ouvrir le panneau d'édition",
                 },
@@ -92,7 +90,6 @@ export const fr = {
                     diagram: {
                         label: 'Diagramme',
                         import: 'Importer depuis',
-                        examples: 'Exemples',
                         importFile: 'Fichier de diagramme (.json)',
                         importSql: 'Script SQL',
                         importDbml: 'Texte DBML',
@@ -201,7 +198,6 @@ export const fr = {
                     import: 'Créer à partir du texte',
                     failed: "Le diagramme n'a pas pu être créé. Veuillez réessayer.",
                 },
-                examplesSize: '{{tables}} tables · {{areas}} zones',
                 examples: {
                     clinic: 'Patients, médecins et spécialités, avec les rendez-vous et les médicaments prescrits lors de ceux-ci.',
                     bookshop:
@@ -416,6 +412,8 @@ export const fr = {
                     invalid:
                         "Ce fichier n'est pas un diagramme enregistré depuis QBase, rien n'a donc été importé.",
                     failed: "Le fichier n'a pas pu être importé. Veuillez réessayer.",
+                    tooLarge:
+                        'Le fichier est trop volumineux (50 Mo au maximum).',
                 },
                 box: {
                     method: {
@@ -828,7 +826,6 @@ export const fr = {
                     createToStart: 'Créez une table pour commencer',
                     noSchema: 'Aucun schéma',
                     noArea: 'Aucune zone',
-                    showAllShort: 'Afficher toutes les tables',
                 },
                 hover: {
                     type: 'type',
@@ -847,7 +844,6 @@ export const fr = {
                 clipboard: {
                     copied: 'Table copiée',
                     copiedMany: '{{count}} tables copiées',
-                    pasteHint: 'Appuyez sur {{key}} pour la coller.',
                     pasted: 'Table collée',
                     pastedMany: '{{count}} tables collées',
                 },
@@ -919,8 +915,6 @@ export const fr = {
                 arrange: 'Organiser le diagramme automatiquement',
                 undo: 'Annuler ({{shortcut}})',
                 redo: 'Rétablir ({{shortcut}})',
-                fullScreen: 'Plein écran',
-                exitFullScreen: 'Quitter le plein écran',
             },
             showAllPill: 'Tout afficher',
             hiddenAll: {
@@ -939,9 +933,6 @@ export const fr = {
                 fieldCount_many: '{{count}} champs',
                 fieldCount_one: '{{count}} champ',
                 focus: 'Centrer sur le canevas',
-                openInPanel: 'Ouvrir dans le panneau latéral',
-                widen: 'Élargir',
-                narrow: 'Rétrécir',
                 showMore: 'Afficher plus',
                 showLess: 'Afficher moins',
                 edit: 'Modifier la table',
@@ -983,13 +974,11 @@ export const fr = {
             },
             region: {
                 rename: 'Nom de la zone',
-                colour: 'Couleur de la zone',
             },
             memo: {
                 placeholder: 'Note vide',
                 edit: 'Texte de la note',
                 editNote: 'Modifier la note',
-                colour: 'Couleur de la note',
             },
             menu: {
                 newTable: 'Nouvelle table',
@@ -1022,14 +1011,9 @@ export const fr = {
                 hint: 'Appuyez sur {{key}} pour la coller.',
                 pastedOne: 'Table collée',
                 pastedMany: '{{count}} tables collées',
-                failed: 'Échec de la copie',
             },
             drawing: {
                 hint: 'Cliquez sur la table qui contient la clé étrangère',
-            },
-            keys: {
-                mod: 'Ctrl',
-                modMac: '⌘',
             },
         },
     },

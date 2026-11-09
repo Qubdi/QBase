@@ -35,6 +35,7 @@ import {
     hasUnsavedChanges,
 } from '@/lib/qubdi/save-status-store';
 import { i18n } from '@/i18n/i18n';
+import { toast } from '@/platform/toast/use-toast';
 import { releaseHeldLocks } from '@/components/qubdi/use-edit-lock';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/qbase/diagram-types';
@@ -122,7 +123,21 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         }
         // give the edit lock back while the session can still do it
         await releaseHeldLocks().catch(() => undefined);
-        await api.logout().catch(() => undefined);
+        // the session cookie can only be ended by the server: when it could
+        // not be (offline, an error), stay signed in with the data intact and
+        // say so, rather than showing a signed-out page that is still signed in
+        try {
+            await api.logout();
+        } catch (e) {
+            // 401: the session was already over, which is what was wanted
+            if (!(e instanceof ApiError && e.status === 401)) {
+                toast({
+                    title: i18n.t('qubdi.account.accountMenu.signOutFailed'),
+                    variant: 'destructive',
+                });
+                return;
+            }
+        }
         resetAdminLanding();
         setSessionEnded(false);
         setUser(null);

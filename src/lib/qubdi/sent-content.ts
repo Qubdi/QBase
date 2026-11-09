@@ -25,7 +25,21 @@ const canonical = (value: unknown): string =>
             : v
     );
 
+// One save fingerprints the same content three times (remember, confirm,
+// mark synced), and each time writes out the whole diagram with its keys
+// sorted: the result is kept per content object. A content object is not
+// changed after it is handed over, so its print cannot go stale.
+const printed = new WeakMap<Record<string, unknown>, string>();
+
 const fingerprint = (content: Record<string, unknown>): string => {
+    const known = printed.get(content);
+    if (known !== undefined) return known;
+    const print = computeFingerprint(content);
+    printed.set(content, print);
+    return print;
+};
+
+const computeFingerprint = (content: Record<string, unknown>): string => {
     const rest = { ...content };
     delete rest.updatedAt;
     const text = canonical(rest);

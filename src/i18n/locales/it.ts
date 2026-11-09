@@ -41,9 +41,6 @@ export const it = {
             },
             workspace: {
                 frame: {
-                    canvasPlaceholder:
-                        'Qui compare la superficie del diagramma',
-                    panelPlaceholder: 'Qui compare il pannello laterale',
                     resizePanel: 'Ridimensiona il pannello laterale',
                     openPanel: 'Apri il pannello di modifica',
                 },
@@ -93,7 +90,6 @@ export const it = {
                     diagram: {
                         label: 'Diagramma',
                         import: 'Importa da',
-                        examples: 'Esempi',
                         importFile: 'File di diagramma (.json)',
                         importSql: 'Script SQL',
                         importDbml: 'Testo DBML',
@@ -201,7 +197,6 @@ export const it = {
                     import: 'Genera dal testo',
                     failed: 'Non è stato possibile creare il diagramma. Riprovare.',
                 },
-                examplesSize: '{{tables}} tabelle · {{areas}} aree',
                 examples: {
                     clinic: 'Pazienti, medici e specialità, con appuntamenti e farmaci prescritti.',
                     bookshop:
@@ -412,6 +407,7 @@ export const it = {
                     invalid:
                         'Questo file non è un diagramma salvato da QBase, quindi non è stato importato nulla.',
                     failed: 'Non è stato possibile importare il file. Riprovare.',
+                    tooLarge: 'Il file è troppo grande (massimo 50 MB).',
                 },
                 box: {
                     method: {
@@ -824,7 +820,6 @@ export const it = {
                     createToStart: 'Creare una tabella per iniziare',
                     noSchema: 'Nessuno schema',
                     noArea: 'Nessuna area',
-                    showAllShort: 'Mostra tutte le tabelle',
                 },
                 hover: {
                     type: 'tipo',
@@ -843,7 +838,6 @@ export const it = {
                 clipboard: {
                     copied: 'Tabella copiata',
                     copiedMany: '{{count}} tabelle copiate',
-                    pasteHint: 'Premere {{key}} per incollarla.',
                     pasted: 'Tabella incollata',
                     pastedMany: '{{count}} tabelle incollate',
                 },
@@ -915,8 +909,6 @@ export const it = {
                 arrange: 'Disponi automaticamente il diagramma',
                 undo: 'Annulla ({{shortcut}})',
                 redo: 'Ripeti ({{shortcut}})',
-                fullScreen: 'Schermo intero',
-                exitFullScreen: 'Esci da schermo intero',
             },
             showAllPill: 'Mostra tutto',
             hiddenAll: {
@@ -935,9 +927,6 @@ export const it = {
                 fieldCount_many: '{{count}} di campi',
                 fieldCount_other: '{{count}} campi',
                 focus: 'Metti a fuoco sul canvas',
-                openInPanel: 'Apri nel pannello laterale',
-                widen: 'Allarga',
-                narrow: 'Restringi',
                 showMore: 'Mostra di più',
                 showLess: 'Mostra meno',
                 edit: 'Modifica tabella',
@@ -979,13 +968,11 @@ export const it = {
             },
             region: {
                 rename: "Nome dell'area",
-                colour: "Colore dell'area",
             },
             memo: {
                 placeholder: 'Nota vuota',
                 edit: 'Testo della nota',
                 editNote: 'Modifica nota',
-                colour: 'Colore della nota',
             },
             menu: {
                 newTable: 'Nuova tabella',
@@ -1018,14 +1005,9 @@ export const it = {
                 hint: 'Premere {{key}} per incollarla.',
                 pastedOne: 'Tabella incollata',
                 pastedMany: '{{count}} tabelle incollate',
-                failed: 'Copia non riuscita',
             },
             drawing: {
                 hint: 'Fare clic sulla tabella che contiene la chiave esterna',
-            },
-            keys: {
-                mod: 'Ctrl',
-                modMac: '⌘',
             },
         },
     },

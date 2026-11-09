@@ -33,6 +33,14 @@ export function oneLine(text: string): string {
     return text.replace(/\s+/g, ' ').trim();
 }
 
+/** Comment text with its line breaks kept (as `\n`) and blanks at the ends of lines trimmed. */
+export function keepLines(text: string): string {
+    return linesOf(text)
+        .map((l) => l.trimEnd())
+        .join('\n')
+        .trim();
+}
+
 /** Text split into the lines of a comment. */
 export function linesOf(text: string): string[] {
     return text.split(/\r\n|\r|\n/);

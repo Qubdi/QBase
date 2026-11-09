@@ -34,7 +34,7 @@ import { weakPassword } from '../auth/password-rules.js';
 import type { Config } from '../config.js';
 import { isForeignKeyViolation, isUniqueViolation } from '../lib/pg-errors.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
-import type { Db } from '../db/client.js';
+import type { Db, Tx } from '../db/client.js';
 import { emitLinkChanged } from '../events.js';
 import {
     containsPattern,
@@ -133,8 +133,6 @@ const withAdminSetLock = <T>(db: Db, fn: (tx: Tx) => Promise<T>) =>
         await tx.execute(sql`select pg_advisory_xact_lock(${ADMIN_SET_LOCK})`);
         return fn(tx);
     });
-
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 /**
  * Deletes accounts. Their diagrams do not go with them (owner_id would
@@ -468,6 +466,12 @@ export const adminRoutes =
                     return { error: 'last_admin' as const };
                 }
                 await removeUsers(tx, [id], req.user!.id);
+                // in the same transaction: no account is gone without its row
+                await audit(tx, {
+                    userId: req.user!.id,
+                    action: 'user.delete',
+                    meta: { targetUserId: id },
+                });
                 return {};
             });
             if (outcome.error === 'not_found') {
@@ -476,11 +480,6 @@ export const adminRoutes =
             if (outcome.error === 'last_admin') {
                 return reply.code(400).send({ error: 'last_admin' });
             }
-            await audit(db, {
-                userId: req.user!.id,
-                action: 'user.delete',
-                meta: { targetUserId: id },
-            });
             return reply.code(204).send();
         });
 
@@ -564,19 +563,20 @@ export const adminRoutes =
                 } else {
                     await removeUsers(tx, changingIds, self);
                 }
+                // in the same transaction: no account changes without its rows
+                await auditMany(
+                    tx,
+                    changingIds.map((targetUserId) => ({
+                        userId: self,
+                        action: BULK_AUDIT_ACTION[body.action],
+                        meta: { targetUserId },
+                    }))
+                );
                 return { changed: changingIds };
             });
             if ('error' in outcome) {
                 return reply.code(400).send({ error: outcome.error });
             }
-            await auditMany(
-                db,
-                outcome.changed.map((targetUserId) => ({
-                    userId: self,
-                    action: BULK_AUDIT_ACTION[body.action],
-                    meta: { targetUserId },
-                }))
-            );
             return {
                 changed: outcome.changed.length,
                 unchanged: ids.length - outcome.changed.length,

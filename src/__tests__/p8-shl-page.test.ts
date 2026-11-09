@@ -134,6 +134,10 @@ describe('page shell (SHL-004 to SHL-007)', () => {
             expect(main).toContain(`@fontsource/manrope/${weight}.css`);
     });
 
+    it('says why the page is blank when JavaScript is off', () => {
+        expect(html).toMatch(/<main id="root">\s*(<!--.*?-->\s*)?<noscript>/s);
+    });
+
     it('SHL-007: noindex, robots.txt disallows all, empty favicon, device-width viewport', () => {
         expect(html).toMatch(/<meta name="robots" content="[^"]*noindex/);
         expect(html).toContain('<link href="data:," rel="icon" />');

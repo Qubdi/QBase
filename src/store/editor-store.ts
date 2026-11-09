@@ -300,6 +300,8 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
             },
 
             setZoom(zoom) {
+                // NaN survives the clamp and would wreck the view
+                if (Number.isNaN(zoom)) return;
                 const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom));
                 set((s) => ({ ui: { ...s.ui, zoom: clamped } }));
             },

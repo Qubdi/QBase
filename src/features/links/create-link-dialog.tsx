@@ -91,7 +91,7 @@ export const CreateLinkDialog: React.FC<{
 
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
-            <DialogContent>
+            <DialogContent aria-describedby={undefined}>
                 <DialogHeader>
                     <DialogTitle>{text('refs.dialog.title')}</DialogTitle>
                 </DialogHeader>

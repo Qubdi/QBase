@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { listOf } from '@/core/model/collection';
-import { loadFromDatabaseMetadata } from '@/lib/data/import-metadata/import';
-import { createRelationshipsFromMetadata } from '@/lib/data/import-metadata/import/relationships';
+import { loadFromDatabaseMetadata } from './load';
+import { createRelationshipsFromMetadata } from './relationships';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import {
     parseMetadataText,

@@ -348,6 +348,12 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                             ))}
                         </ul>
                         <div className="flex gap-2">
+                            {/* the button text swaps to "Copied"; a live region says so aloud */}
+                            <span role="status" className="sr-only">
+                                {copied
+                                    ? t('qubdi.account.twoFactor.copied')
+                                    : ''}
+                            </span>
                             <Button
                                 type="button"
                                 variant="outline"

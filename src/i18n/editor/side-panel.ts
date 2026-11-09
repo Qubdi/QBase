@@ -1,7 +1,6 @@
 // English text of the side panel: the tables list, the field, index and check
 // editors, relationships, custom types, areas, notes and the filter panel.
-// The owner merges this object into `locales/en.ts` under `editor.sidePanel`;
-// `side-panel-register.ts` adds it to i18next until then.
+// The owner merges this object into `locales/en.ts` under `editor.sidePanel`.
 export const sidePanelStrings = {
     common: {
         filter: 'Filter',
@@ -227,7 +226,6 @@ export const sidePanelStrings = {
         createToStart: 'Create a table to get started',
         noSchema: 'No schema',
         noArea: 'Ungrouped',
-        showAllShort: 'Show all tables',
     },
     hover: {
         type: 'type',
@@ -246,7 +244,6 @@ export const sidePanelStrings = {
     clipboard: {
         copied: 'Table copied',
         copiedMany: '{{count}} tables copied',
-        pasteHint: 'Press {{key}} to paste it.',
         pasted: 'Table pasted',
         pastedMany: '{{count}} tables pasted',
     },

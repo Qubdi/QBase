@@ -10,11 +10,16 @@
         <script src="/browser-check.js"></script>
         <!-- runs before first paint so the saved theme does not flash -->
         <script src="/theme-init.js"></script>
-        <!-- runtime settings written by the container at start -->
+        <!-- runtime settings, answered by the server itself at /config.js -->
         <script src="/config.js"></script>
     </head>
     <body>
-        <main id="root"></main>
+        <main id="root">
+            <!-- replaced when the app starts; shown only without JavaScript -->
+            <noscript>
+                <p>QBase needs JavaScript. Turn it on and reload the page.</p>
+            </noscript>
+        </main>
         <script src="/src/main.tsx" type="module"></script>
     </body>
 </html>

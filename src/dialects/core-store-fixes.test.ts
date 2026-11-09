@@ -268,3 +268,24 @@ describe('review core-store 7: PostgreSQL user types', () => {
         expect(text).toContain('"b" "app"."Other"');
     });
 });
+
+describe('pasted text with a very long run of blank lines', () => {
+    const blank = '\n'.repeat(80_000);
+
+    it('is repaired and checked in well under a second', async () => {
+        const { fixPostgres } = await import('./postgresql/read');
+        const start = Date.now();
+        fixPostgres(`DECIMAL(1,${blank}x`);
+        expect(Date.now() - start).toBeLessThan(500);
+        expect(fixPostgres('DECIMAL(10,\n  2)')).toBe('DECIMAL(10, 2)');
+    });
+
+    it('is classified by the paste detector in well under a second', async () => {
+        const { methodForPaste } =
+            await import('@/features/import/import-method');
+        const start = Date.now();
+        expect(methodForPaste(`${blank}x`)).toBeUndefined();
+        expect(Date.now() - start).toBeLessThan(500);
+        expect(methodForPaste('\n\n  Table users {\n id int\n}')).toBe('dbml');
+    });
+});

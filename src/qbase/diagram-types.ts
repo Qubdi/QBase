@@ -56,8 +56,6 @@ export type Cardinality = z.infer<typeof cardinality>;
 // ---- what lives inside a table
 
 const fieldType = z.object({ id, name: z.string() });
-export type DBFieldType = z.infer<typeof fieldType>;
-
 const field = z.object({
     id,
     name: z.string(),
@@ -105,8 +103,6 @@ const checkConstraint = z.object({
     expression: z.string(),
     createdAt: stamp,
 });
-export type DBCheckConstraint = z.infer<typeof checkConstraint>;
-
 const table = z.object({
     id,
     name: z.string(),
@@ -152,8 +148,6 @@ const dependency = z.object({
     dependentSchema: text,
     createdAt: stamp,
 });
-export type DBDependency = z.infer<typeof dependency>;
-
 const customType = z.object({
     id,
     name: z.string(),
@@ -163,8 +157,6 @@ const customType = z.object({
     fields: maybe(z.array(z.object({ field: z.string(), type: z.string() }))),
     order: maybe(z.number()),
 });
-export type DBCustomType = z.infer<typeof customType>;
-
 const area = z.object({
     id,
     name: z.string(),

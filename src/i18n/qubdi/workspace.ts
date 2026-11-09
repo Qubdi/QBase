@@ -52,16 +52,6 @@ export const workspace = {
         relationship_one: '{{count}} relationship',
         relationship_other: '{{count}} relationships',
     },
-    // messages of the editor's own screens that sit outside the Qubdi dialogs
-    editorToasts: {
-        fieldTypesIncompatibleTitle: 'Field types are not compatible',
-        fieldTypesIncompatibleBody:
-            'Relationships can only be created between compatible field types',
-        alreadyConnectedTitle: 'Already connected',
-        alreadyConnectedBody:
-            'These two fields already have a relationship between them',
-        deleteDiagramFailed: 'Could not delete the diagram',
-    },
     accessBanner: {
         getLatest: 'Get latest and edit',
         moveAria: 'Project to move this diagram into',
@@ -79,6 +69,9 @@ export const workspace = {
         diagramNotFoundDetail:
             'It is not in this project, or you do not have access to it.',
         openFailed: 'Could not open this diagram',
+        retry: 'Try again',
+        unpublished:
+            'This diagram has not been published yet. Ask an editor to publish it.',
     },
     newDiagram: {
         defaultName: 'Untitled diagram',
@@ -211,14 +204,5 @@ export const workspace = {
         uniqueShort: 'UQ',
         notNull: 'Not null',
         noFields: 'No fields',
-    },
-    typeLegend: {
-        button: 'Type colors',
-        text: 'Text / other',
-        number: 'Number',
-        time: 'Date & time',
-        id: 'Identifier',
-        bool: 'Boolean',
-        json: 'JSON / XML',
     },
 };

@@ -33,9 +33,12 @@ export class DexieStorageAdapter implements StorageAdapter {
     private announce(): void {
         for (const listener of [...this.listeners]) listener();
         try {
-            const channel = new BroadcastChannel(this.channelName);
+            // a channel does not hear its own posts, but a second channel of
+            // this tab would: post on the listening one so the tab is told once
+            const channel =
+                this.channel ?? new BroadcastChannel(this.channelName);
             channel.postMessage('changed');
-            channel.close();
+            if (channel !== this.channel) channel.close();
         } catch {
             // no cross-tab channel in this browser: only this tab is told
         }
@@ -122,11 +125,15 @@ export class DexieStorageAdapter implements StorageAdapter {
     }
 
     async writeSettings(patch: Partial<LocalSettings>): Promise<void> {
-        const current = await this.db.config.get(CONFIG_ID);
-        await this.db.config.put({
-            ...(current ?? { defaultDiagramId: '' }),
-            ...patch,
-            id: CONFIG_ID,
+        // read and write in one transaction: two tabs patching at once must
+        // not each overwrite the other's change
+        await this.db.transaction('rw', this.db.config, async () => {
+            const current = await this.db.config.get(CONFIG_ID);
+            await this.db.config.put({
+                ...(current ?? { defaultDiagramId: '' }),
+                ...patch,
+                id: CONFIG_ID,
+            });
         });
     }
 

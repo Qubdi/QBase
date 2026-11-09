@@ -97,6 +97,8 @@ export const account = {
         changePassword: 'Change password',
         twoFactor: 'Two-factor authentication',
         signOut: 'Sign out',
+        signOutFailed:
+            'Could not sign out. Check your connection and try again.',
         signOutUnsaved:
             'Some changes could not be saved to the server. Signing out deletes the copy kept in this browser, so they will be lost. Sign out anyway?',
     },
@@ -110,6 +112,8 @@ export const account = {
         newPassword: 'New password',
         factor: 'Authenticator or recovery code',
         done: 'Password changed. Other devices were signed out.',
+        refreshFailed:
+            'Your password was changed, but this page could not update. Reload the page to continue.',
         submit: 'Change password',
         signOut: 'Sign out',
     },

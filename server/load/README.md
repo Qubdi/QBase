@@ -21,7 +21,7 @@ non-zero when a threshold fails, so it can gate CI.
 
 | Scenario | What it does | Fails when |
 | --- | --- | --- |
-| `login-storm` | `RATE` sign-ins per second for a minute, while `/health` is pinged | login p95 > 1.5 s, errors > 1%, or `/health` p95 > 200 ms (hashing starves the server) |
+| `login-storm` | `RATE` sign-ins per second for `DURATION`, while `/health` is pinged | login p95 > 1.5 s, errors > 1%, or `/health` p95 > 200 ms (hashing starves the server) |
 | `mixed` | `VUS` editors: list, open, save 1-3 times, publish now and then, with think time | p95 of list > 500 ms, open > 800 ms, save > 1 s, publish > 1.5 s, errors > 1% |
 | `share-read` | `VUS` anonymous viewers hammering `GET /s/<token>` | p95 > 300 ms, p99 > 800 ms |
 | `sse` | `VIEWERS` live viewers on one link, `PUBLISHES` publishes: time until each viewer hears of the new version, then the snapshot re-read all of them do at once | a viewer never hears, or p95 > `SSE_P95_MS` (2 s) |
@@ -60,13 +60,13 @@ change one setting at a time.
   listener connection, so this points at the Postgres LISTEN/NOTIFY bridge or
   at a closed stream.
 - Run it with 2 replicas behind a proxy before trusting the in-memory rate
-  limiters: they are per process (see "Run one server process" in the README).
+  limiters: they are per process (see "Notes" and "Scaling" in the main README).
 
 ## Sizes
 
 `npm run load -- sizes` repeats `share-read` and `sse` with 5, 35 and 100 tables
 per diagram and writes a comparison to `results/sizes.txt`. Cost grows with the
 size of the diagram (it is read, serialised and sent whole), so test with the
-size your users have. The `share-read` thresholds are set for the default 100
-users; with `VUS=500` and no pause between requests it is a stress test, and
+size your users have. The `share-read` thresholds apply at the default load
+(`VUS=50`); with `VUS=500` and no pause between requests it is a stress test, and
 the server's throughput, not the thresholds, is the number to read.

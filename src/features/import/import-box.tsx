@@ -257,9 +257,12 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
         changeText(target === 'metadata' ? prettyJson(merged) : merged);
     };
 
+    const repairTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    useEffect(() => () => clearTimeout(repairTimer.current), []);
     const repair = () => {
         setRepairing(true);
-        setTimeout(() => {
+        clearTimeout(repairTimer.current);
+        repairTimer.current = setTimeout(() => {
             setText((current) => repairText(current, method, databaseType));
             setRepairing(false);
             setRepaired(true);

@@ -1,6 +1,8 @@
 // What the admin Overview shows, and how its numbers and axis are written.
 // Plain functions, no React.
 
+import { i18n } from '@/i18n/i18n';
+import { localeTag } from '@/i18n/locale-tag';
 import type { AdminStats } from './api';
 
 export type ActivityDay = AdminStats['activity']['days'][number];
@@ -41,17 +43,21 @@ export function scaleFor(values: number[]): ChartScale {
 export const heightPercent = (value: number, scale: ChartScale): number =>
     scale.max === 0 ? 0 : Math.min(100, (value / scale.max) * 100);
 
+/** The chosen language's number conventions; English when it names none. */
+const numberLocale = (): string => localeTag(i18n.language) ?? 'en-US';
+
+/** 1,284: a whole count written the way the chosen language writes it. */
+export const formatNumber = (value: number): string =>
+    value.toLocaleString(numberLocale());
+
 /** 1,284 below ten thousand, then 12.9K and 4.2M: a tile's value or an axis tick. */
 export function compactNumber(value: number): string {
-    if (Math.abs(value) < 10_000) return value.toLocaleString('en-US');
-    return new Intl.NumberFormat('en-US', {
+    if (Math.abs(value) < 10_000) return formatNumber(value);
+    return new Intl.NumberFormat(numberLocale(), {
         notation: 'compact',
         maximumFractionDigits: 1,
     }).format(value);
 }
-
-export const plural = (n: number, word: string, many = `${word}s`): string =>
-    `${compactNumber(n)} ${n === 1 ? word : many}`;
 
 export interface DayLabel {
     /** "Mon" */

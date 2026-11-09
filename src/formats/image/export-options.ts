@@ -1,4 +1,5 @@
 // The pure part of image export. The DOM capture itself is Phase 6.
+import { minBy, maxBy } from '@/core/model/extent';
 
 export type ImageFormat = 'png' | 'jpeg' | 'svg';
 export type ImageTheme = 'light' | 'dark';
@@ -95,10 +96,10 @@ export function diagramBounds(
     margin = 50
 ): Rect | undefined {
     if (rects.length === 0) return undefined;
-    const left = Math.min(...rects.map((r) => r.x));
-    const top = Math.min(...rects.map((r) => r.y));
-    const right = Math.max(...rects.map((r) => r.x + r.width));
-    const bottom = Math.max(...rects.map((r) => r.y + r.height));
+    const left = minBy(rects, (r) => r.x);
+    const top = minBy(rects, (r) => r.y);
+    const right = maxBy(rects, (r) => r.x + r.width);
+    const bottom = maxBy(rects, (r) => r.y + r.height);
     return {
         x: left - margin,
         y: top - margin,

@@ -2,6 +2,7 @@
 // read-only viewer draws. Pure and defensive: malformed input never throws.
 
 import { i18n } from '@/i18n/i18n';
+import { isRecord } from '@/core/wire/record-reader';
 
 export interface ViewerField {
     id: string;
@@ -35,8 +36,6 @@ export interface ViewerGraph {
     edges: ViewerEdge[];
 }
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-    typeof v === 'object' && v !== null && !Array.isArray(v);
 const str = (v: unknown, fallback = ''): string =>
     typeof v === 'string' ? v : fallback;
 const num = (v: unknown, fallback: number): number =>

@@ -6,8 +6,7 @@
         // the server imports ../shared, so the output keeps both folders
         "rootDir": "..",
         "sourceMap": true,
-        "declaration": false,
-        "paths": {}
+        "declaration": false
     },
     "include": ["src", "../shared/*.ts"],
     "exclude": ["../shared/__tests__"]

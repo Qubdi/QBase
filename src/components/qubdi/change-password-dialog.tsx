@@ -26,8 +26,8 @@ export interface ChangePasswordDialogProps {
      * offers signing out instead.
      */
     forced?: boolean;
-    /** called once the password was changed */
-    onChanged?: () => void;
+    /** called once the password was changed; a failure is shown to the person */
+    onChanged?: () => void | Promise<void>;
 }
 
 export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
@@ -67,12 +67,18 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             setCurrent('');
             setNext('');
             setFactor('');
-            onChanged?.();
         } catch (err) {
             setError(errorMessage(err));
+            return;
         } finally {
             sending.current = false;
             setBusy(false);
+        }
+        // the password is changed for good: what follows must not look like it failed
+        try {
+            await onChanged?.();
+        } catch {
+            setError(t('qubdi.account.changePassword.refreshFailed'));
         }
     };
 
@@ -111,6 +117,9 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                     <Input
                         type="password"
                         placeholder={t(
+                            'qubdi.account.changePassword.currentPassword'
+                        )}
+                        aria-label={t(
                             'qubdi.account.changePassword.currentPassword'
                         )}
                         autoComplete="current-password"

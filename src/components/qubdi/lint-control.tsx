@@ -143,11 +143,19 @@ export const LintControl: React.FC = () => {
         'tableId' in f.target ? f.target.tableId : undefined;
 
     // Opens the table in the left panel, ready to edit, and zooms to it.
+    const focusTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    useEffect(() => () => clearTimeout(focusTimer.current), []);
     const showTable = (tableId: string) => {
         openTableFromSidebar(tableId);
         // a hidden panel is still growing and moving the canvas for a moment
         if (isSidePanelShowed) focusOnTable(tableId);
-        else setTimeout(() => focusOnTable(tableId), SIDE_PANEL_SETTLE_MS);
+        else {
+            clearTimeout(focusTimer.current);
+            focusTimer.current = setTimeout(
+                () => focusOnTable(tableId),
+                SIDE_PANEL_SETTLE_MS
+            );
+        }
     };
 
     return (

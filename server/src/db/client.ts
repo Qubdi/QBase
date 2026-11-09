@@ -4,6 +4,8 @@ import pg from 'pg';
 import * as schema from './schema.js';
 
 export type Db = ReturnType<typeof createDb>['db'];
+/** What a `db.transaction` callback receives: the same queries, inside that transaction. */
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 export interface PoolOptions {
     /** most connections the pool opens at once */

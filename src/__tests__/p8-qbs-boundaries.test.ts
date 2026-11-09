@@ -265,7 +265,7 @@ describe('QBS-020 i18n works outside React and locale files keep their shape', (
         }
     });
 
-    it('English merges the six qubdi files under the qubdi key', async () => {
+    it('English merges the five qubdi files under the qubdi key', async () => {
         const { en } = await import('@/i18n/locales/en');
         expect(Object.keys(en.translation.qubdi).sort()).toEqual(
             [
@@ -273,7 +273,6 @@ describe('QBS-020 i18n works outside React and locale files keep their shape', (
                 'adminProjects',
                 'adminUsers',
                 'database',
-                'sidePanel',
                 'workspace',
             ].sort()
         );
@@ -281,6 +280,6 @@ describe('QBS-020 i18n works outside React and locale files keep their shape', (
             readdirSync(join(ROOT, 'i18n/qubdi')).filter((f) =>
                 f.endsWith('.ts')
             )
-        ).toHaveLength(6);
+        ).toHaveLength(5);
     });
 });

@@ -1,4 +1,3 @@
-import { removeItem } from '@/core/model/collection';
 import type { DatabaseType } from '@/core/model/database';
 import type { Design } from '@/core/model/design';
 import { isVisible } from '@/core/model/visibility-filter';
@@ -42,10 +41,24 @@ export function applyFilter(
             order: next.entities.order.filter((id) => !gone.has(id)),
         },
     };
-    for (const id of design.links.order) {
-        const l = design.links.byId[id];
-        if (gone.has(l.sourceEntityId) || gone.has(l.targetEntityId))
-            next = { ...next, links: removeItem(next.links, id) };
+    // one pass over the links: removing them one at a time copies the whole
+    // collection for each (quadratic for a diagram with many hidden links)
+    const dropped = new Set(
+        design.links.order.filter((id) => {
+            const l = design.links.byId[id];
+            return gone.has(l.sourceEntityId) || gone.has(l.targetEntityId);
+        })
+    );
+    if (dropped.size > 0) {
+        const byId = { ...next.links.byId };
+        for (const id of dropped) delete byId[id];
+        next = {
+            ...next,
+            links: {
+                byId,
+                order: next.links.order.filter((id) => !dropped.has(id)),
+            },
+        };
     }
     return next;
 }
@@ -53,13 +66,24 @@ export function applyFilter(
 const family = (id: DatabaseType): DatabaseType =>
     dialectFor(id).variantOf ?? id;
 
-/** What the target's own writer cannot say: MySQL and MariaDB have no partial indexes. */
+/**
+ * What the target's own writer cannot say: it writes tables only, and MySQL
+ * and MariaDB have no partial indexes. The converter reports the same views.
+ */
 function unkeptByWriter(
     design: Design,
     targetFamily: DatabaseType
 ): Diagnostic[] {
-    if (targetFamily !== 'mysql') return [];
     const out: Diagnostic[] = [];
+    const views = design.entities.order.filter(
+        (id) => design.entities.byId[id].kind === 'view'
+    ).length;
+    if (views > 0)
+        out.push({
+            severity: 'warning',
+            message: `${views} view${views === 1 ? '' : 's'} not exported: only tables are written`,
+        });
+    if (targetFamily !== 'mysql') return out;
     for (const id of design.entities.order)
         for (const keyId of design.entities.byId[id].keyIds) {
             const key = design.keys[keyId];

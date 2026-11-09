@@ -14,7 +14,7 @@ export const ForcedPasswordChange: React.FC = () => {
             open={user?.mustChangePassword === true}
             onOpenChange={() => undefined}
             forced
-            onChanged={() => void refreshUser().catch(() => undefined)}
+            onChanged={() => refreshUser()}
         />
     );
 };

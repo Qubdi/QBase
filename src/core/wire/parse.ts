@@ -417,6 +417,7 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
     // ---- links
     const links: Link[] = [];
     const linkIds = new Set<Id>();
+    const entityById = new Map(entities.map((e) => [e.id, e]));
     (json.relationships as unknown[]).forEach((raw, i) => {
         const path = `relationships[${i}]`;
         if (!isRecord(raw)) return warn(path, 'not an object; skipped');
@@ -439,7 +440,7 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
                 'relationship points at a table or column that does not exist; dropped'
             );
         }
-        const sourceEnt = entities.find((e) => e.id === sourceEntity);
+        const sourceEnt = entityById.get(sourceEntity);
         const id = uniqueId(rd.str('id'), linkIds, path, warn, random);
         const link: Link = {
             id,

@@ -1,6 +1,10 @@
 import json,glob,re,os,sys
 D=os.environ['TRANSCRIPTS']+'/'
-ALLOWED=('/home/qubdi/Desktop/Qubdi/QBase/','/tmp/','/home/qubdi/clean-room/','/home/qubdi/.claude/')
+# the paths a session may touch: this checkout (REPO, default the current folder), the temporary
+# folder, the clean-room copy and the tool's own folder under the home directory
+HOME=os.path.expanduser('~')
+REPO=os.environ.get('REPO',os.getcwd()).rstrip('/')
+ALLOWED=(REPO+'/','/tmp/',HOME+'/clean-room/',HOME+'/.claude/')
 MAIN=re.compile(r'(git\s+(-C\s+\S+\s+)?(show|diff|log|checkout|switch|cat-file|ls-tree|archive|worktree|restore|grep|rev-parse|branch|merge-base|blame)\b[^\n|;&]*\b(main|origin/main)\b)|(\bmain:)|QBase-main',re.I)
 CHART=re.compile(r'chartdb|ee95448',re.I)
 rows=[]

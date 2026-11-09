@@ -1,4 +1,5 @@
 import type { ConnectionRef, DbConnectionInput } from './api';
+import { readJsonMap } from './local-map';
 
 /**
  * What the browser remembers about where a diagram came from, so re-sync is
@@ -25,14 +26,7 @@ const KEY = 'qbase.sync-state';
 
 type All = Record<string, SyncState>;
 
-const readAll = (): All => {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-        return {};
-    }
-};
+const readAll = (): All => readJsonMap<SyncState>(KEY);
 
 export const getSyncState = (diagramId: string): SyncState | undefined =>
     readAll()[diagramId];

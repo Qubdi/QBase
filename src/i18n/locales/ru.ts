@@ -40,8 +40,6 @@ export const ru = {
             },
             workspace: {
                 frame: {
-                    canvasPlaceholder: 'Здесь появится поверхность диаграммы',
-                    panelPlaceholder: 'Здесь появится боковая панель',
                     resizePanel: 'Изменить ширину боковой панели',
                     openPanel: 'Открыть панель редактирования',
                 },
@@ -93,7 +91,6 @@ export const ru = {
                     diagram: {
                         label: 'Диаграмма',
                         import: 'Импортировать из',
-                        examples: 'Примеры',
                         importFile: 'Файл диаграммы (.json)',
                         importSql: 'Скрипт SQL',
                         importDbml: 'Текст DBML',
@@ -201,7 +198,6 @@ export const ru = {
                     import: 'Построить из текста',
                     failed: 'Не удалось создать диаграмму. Повторите попытку.',
                 },
-                examplesSize: '{{tables}} таблиц · {{areas}} областей',
                 examples: {
                     clinic: 'Пациенты, врачи и специальности, с приёмами и назначенными на них лекарствами.',
                     bookshop:
@@ -416,6 +412,7 @@ export const ru = {
                     invalid:
                         'Этот файл не является диаграммой, сохранённой из QBase, поэтому ничего не импортировано.',
                     failed: 'Не удалось импортировать файл. Повторите попытку.',
+                    tooLarge: 'Файл слишком большой (не более 50 МБ).',
                 },
                 box: {
                     method: {
@@ -826,7 +823,6 @@ export const ru = {
                     createToStart: 'Создайте таблицу, чтобы начать',
                     noSchema: 'Без схемы',
                     noArea: 'Без области',
-                    showAllShort: 'Показать все таблицы',
                 },
                 hover: {
                     type: 'тип',
@@ -845,7 +841,6 @@ export const ru = {
                 clipboard: {
                     copied: 'Таблица скопирована',
                     copiedMany: 'Скопировано таблиц: {{count}}',
-                    pasteHint: 'Нажмите {{key}}, чтобы вставить.',
                     pasted: 'Таблица вставлена',
                     pastedMany: 'Вставлено таблиц: {{count}}',
                 },
@@ -916,8 +911,6 @@ export const ru = {
                 arrange: 'Автоматически упорядочить диаграмму',
                 undo: 'Отменить ({{shortcut}})',
                 redo: 'Повторить ({{shortcut}})',
-                fullScreen: 'Во весь экран',
-                exitFullScreen: 'Выйти из полноэкранного режима',
             },
             showAllPill: 'Показать все',
             hiddenAll: {
@@ -937,9 +930,6 @@ export const ru = {
                 fieldCount_few: '{{count}} поля',
                 fieldCount_many: '{{count}} полей',
                 focus: 'Перейти к холсту',
-                openInPanel: 'Открыть в боковой панели',
-                widen: 'Расширить',
-                narrow: 'Сузить',
                 showMore: 'Показать больше',
                 showLess: 'Показать меньше',
                 edit: 'Изменить таблицу',
@@ -981,13 +971,11 @@ export const ru = {
             },
             region: {
                 rename: 'Название области',
-                colour: 'Цвет области',
             },
             memo: {
                 placeholder: 'Пустая заметка',
                 edit: 'Текст заметки',
                 editNote: 'Изменить заметку',
-                colour: 'Цвет заметки',
             },
             menu: {
                 newTable: 'Новая таблица',
@@ -1020,14 +1008,9 @@ export const ru = {
                 hint: 'Нажмите {{key}}, чтобы вставить.',
                 pastedOne: 'Таблица вставлена',
                 pastedMany: 'Вставлено таблиц: {{count}}',
-                failed: 'Не удалось скопировать',
             },
             drawing: {
                 hint: 'Щёлкните таблицу, в которой находится внешний ключ',
-            },
-            keys: {
-                mod: 'Ctrl',
-                modMac: '⌘',
             },
         },
     },

@@ -27,11 +27,6 @@ export function isKeyMethod(value: unknown): value is KeyMethod {
     );
 }
 
-/** The methods one database family offers, or none for an unknown family. */
-export function methodsOfFamily(family: keyof Families): readonly KeyMethod[] {
-    return METHODS_BY_FAMILY[family];
-}
-
 /**
  * An index over some columns of one entity. `label` may be empty: on the
  * automatic primary-key index that means the database picks the name.

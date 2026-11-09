@@ -1,5 +1,5 @@
 // Visual scene runner. Usage:
-//   BASE_URL=http://127.0.0.1:18090 OUT=/home/qubdi/ui-reference/old node run.mjs [scene-name-filter]
+//   BASE_URL=http://127.0.0.1:18090 OUT=~/ui-reference/old node run.mjs [scene-name-filter]
 // Loads every *-scenes.mjs file next to this file that exports
 //   scenes = [{ name, viewport: {width, height}, theme: 'light'|'dark', async run(page) }]
 // and runs each scene in a fresh browser context at its viewport, with the theme saved in
@@ -11,6 +11,7 @@ import process from 'node:process';
 import { createRequire } from 'node:module';
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import os from 'node:os';
 import path from 'node:path';
 import { autoMeasure, collectStrings } from './measure.mjs';
 import { dumpElements } from './elements.mjs';
@@ -21,7 +22,7 @@ const BASE = (process.env.BASE_URL || 'http://127.0.0.1:18090').replace(
     /\/$/,
     ''
 );
-const OUT = process.env.OUT || '/home/qubdi/ui-reference/new';
+const OUT = process.env.OUT || path.join(os.homedir(), 'ui-reference', 'new');
 const filterArg = process.argv[2];
 const filter = !filterArg
     ? () => true

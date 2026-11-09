@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { shop } from './test/fixtures';
 import { renderCanvas } from './test/render';
@@ -107,12 +107,38 @@ describe('review ui 7: header actions are reachable without a hover', () => {
 
 describe('review ui 13: field card on touch', () => {
     it('an emulated mouseenter right after a touch does not open the field card', async () => {
-        const { design, orderUser } = shop();
-        renderCanvas(design);
-        const row = screen.getByTestId(`field-${orderUser}`);
-        fireEvent.touchStart(row);
-        fireEvent.mouseEnter(row);
-        await new Promise((r) => setTimeout(r, 600));
-        expect(screen.queryByRole('tooltip', { hidden: true })).toBeNull();
+        vi.useFakeTimers();
+        try {
+            const { design, orderUser } = shop();
+            renderCanvas(design);
+            const row = screen.getByTestId(`field-${orderUser}`);
+            fireEvent.touchStart(row);
+            fireEvent.mouseEnter(row);
+            // past the card's hover delay, without waiting for it in real time
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(600);
+            });
+            expect(screen.queryByRole('tooltip', { hidden: true })).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('a plain mouseenter does open it, so the touch case above proves something', async () => {
+        vi.useFakeTimers();
+        try {
+            const { design, orderUser } = shop();
+            renderCanvas(design);
+            const row = screen.getByTestId(`field-${orderUser}`);
+            fireEvent.mouseEnter(row);
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(600);
+            });
+            expect(
+                screen.queryByRole('tooltip', { hidden: true })
+            ).not.toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

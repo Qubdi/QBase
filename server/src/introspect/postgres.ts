@@ -31,11 +31,13 @@ export const POSTGRES_QUERIES = {
                obj_description(c.oid, 'pg_class') AS comment
         FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relkind IN ('r', 'p') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
+        WHERE c.relkind IN ('r', 'p', 'f') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname`,
 
     views: `
         SELECT n.nspname AS schema, c.relname AS view_name,
+               format('%I.%I', n.nspname, c.relname) AS qualified_name,
+               c.relkind = 'm' AS materialized,
                pg_get_viewdef(c.oid, true) AS view_definition
         FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -66,7 +68,7 @@ export const POSTGRES_QUERIES = {
         LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
         LEFT JOIN pg_collation co ON co.oid = a.attcollation AND a.attcollation <> t.typcollation
         WHERE a.attnum > 0 AND NOT a.attisdropped
-          AND c.relkind IN ('r', 'p', 'v', 'm') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
+          AND c.relkind IN ('r', 'p', 'f', 'v', 'm') AND NOT c.relispartition AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname, a.attnum`,
 
     primaryKeys: `
@@ -94,7 +96,8 @@ export const POSTGRES_QUERIES = {
         CROSS JOIN LATERAL unnest(con.conkey, con.confkey) WITH ORDINALITY AS k(attnum, fattnum, ord)
         JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = k.attnum
         JOIN pg_attribute fa ON fa.attrelid = fc.oid AND fa.attnum = k.fattnum
-        WHERE con.contype = 'f' AND NOT c.relispartition AND ${USER_SCHEMA('n')}
+        WHERE con.contype = 'f' AND NOT c.relispartition AND con.conparentid = 0
+          AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, c.relname, con.conname, k.ord`,
 
     indexes: `
@@ -111,7 +114,8 @@ export const POSTGRES_QUERIES = {
         JOIN pg_am am ON am.oid = i.relam
         CROSS JOIN LATERAL generate_series(1, ix.indnkeyatts) AS k(pos)
         LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ix.indkey[k.pos - 1]
-        WHERE t.relkind IN ('r', 'p', 'm') AND NOT t.relispartition AND ${USER_SCHEMA('n')}
+        WHERE t.relkind IN ('r', 'p', 'm') AND NOT t.relispartition AND ix.indisvalid
+          AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, t.relname, i.relname, k.pos`,
 
     checks: `
@@ -246,7 +250,7 @@ export class PostgresIntrospector implements Introspector {
                     // full CREATE VIEW statement to find what a view depends on
                     view_definition: v.view_definition
                         ? encodeViewDefinition(
-                              `CREATE VIEW ${v.schema}.${v.view_name} AS ${String(
+                              `CREATE ${v.materialized ? 'MATERIALIZED ' : ''}VIEW ${String(v.qualified_name)} AS ${String(
                                   v.view_definition
                               )
                                   .trim()

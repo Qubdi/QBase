@@ -10,6 +10,7 @@ import { entityList } from '@/core/model/lookup';
 import type { Rule } from '@/core/model/rule';
 import type { DesignDiff } from './diff-designs';
 import { tableKey } from './diff-designs';
+import { minBy } from '@/core/model/extent';
 
 export type Mark = 'added' | 'removed' | 'changed';
 
@@ -50,7 +51,7 @@ function freePlaces(current: Design, added: readonly Entity[]) {
         (m, e) => Math.max(m, e.x + (e.width ?? TABLE_WIDTH.default)),
         0
     );
-    let y = all.length ? Math.min(...all.map((e) => e.y)) : 0;
+    let y = all.length ? minBy(all, (e) => e.y) : 0;
     const x = all.length ? right + GAP_X : 0;
     return added.map((e) => {
         const at = { x, y };

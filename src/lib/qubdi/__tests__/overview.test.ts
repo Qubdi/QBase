@@ -1,12 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { i18n } from '@/i18n/i18n';
 import {
     busiestDay,
     compactNumber,
+    formatNumber,
     dayLabel,
     heightPercent,
     MIN_AXIS_MAX,
     niceCeil,
-    plural,
     scaleFor,
 } from '../overview';
 
@@ -93,16 +94,6 @@ describe('compactNumber', () => {
     });
 });
 
-describe('plural', () => {
-    it('counts and names', () => {
-        expect(plural(1, 'admin')).toBe('1 admin');
-        expect(plural(2, 'admin')).toBe('2 admins');
-        expect(plural(0, 'admin')).toBe('0 admins');
-        expect(plural(12_900, 'user')).toBe('12.9K users');
-        expect(plural(2, 'person', 'people')).toBe('2 people');
-    });
-});
-
 describe('dayLabel', () => {
     it("names a day by its own parts, whatever the viewer's zone", () => {
         const label = dayLabel('2026-10-16', '2026-10-16');
@@ -150,5 +141,18 @@ describe('busiestDay', () => {
             ])
         ).toBeNull();
         expect(busiestDay([])).toBeNull();
+    });
+});
+
+describe('number formatting follows the chosen language', () => {
+    afterEach(async () => {
+        await i18n.changeLanguage('en');
+    });
+
+    it('writes a count with the separators of the language', async () => {
+        expect(formatNumber(1284)).toBe('1,284');
+        await i18n.changeLanguage('de');
+        expect(formatNumber(1284)).toBe('1.284');
+        expect(compactNumber(1284)).toBe('1.284');
     });
 });

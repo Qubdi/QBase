@@ -144,3 +144,17 @@ describe('review core-store 16: wire edge cases', () => {
         expect(() => JSON.stringify(out)).not.toThrow();
     });
 });
+
+describe('RecordReader extras', () => {
+    it('keeps a __proto__ key as data and leaves the prototype alone', async () => {
+        const { RecordReader } = await import('./record-reader');
+        const raw = JSON.parse('{"a":1,"__proto__":{"polluted":true}}');
+        const reader = new RecordReader(raw, 'x', () => undefined);
+        reader.str('a');
+        const extras = reader.extras()!;
+        expect(Object.getPrototypeOf(extras)).toBe(Object.prototype);
+        expect(Object.keys(extras)).toEqual(['__proto__']);
+        expect((extras as any).polluted).toBeUndefined();
+        expect(({} as any).polluted).toBeUndefined();
+    });
+});

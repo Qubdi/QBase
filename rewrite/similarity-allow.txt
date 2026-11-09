@@ -31,7 +31,6 @@ src/platform/ui/dialog.tsx
 src/platform/ui/scroll-area.tsx
 src/platform/ui/input.tsx
 src/platform/ui/checkbox.tsx
-src/platform/ui/separator.tsx
 src/platform/ui/badge.tsx
 src/platform/ui/button.tsx
 src/platform/ui/popover.tsx

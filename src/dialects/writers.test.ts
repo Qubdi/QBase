@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { seededRandom } from '@/core/model/ids';
+import { DesignBuilder } from '@/formats/shared/design-builder';
 import { exportSql } from '@/formats/sql/export-sql';
 import { sampleS1, sampleS2, sampleS3 } from './testing/sample-designs';
 
@@ -361,5 +363,175 @@ describe('EXP-032 to EXP-036 SQLite export', () => {
                 ''
             )
         );
+    });
+});
+
+describe('PostgreSQL index comments', () => {
+    it('name the index in the schema of its table', () => {
+        const b = new DesignBuilder({
+            databaseType: 'postgresql',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'courses',
+            schema: 'school',
+            columns: [{ name: 'code', typeName: 'varchar', nullable: true }],
+            indexes: [
+                {
+                    name: 'idx_courses_code',
+                    unique: false,
+                    columns: ['code'],
+                    comment: 'Looks a course up',
+                },
+            ],
+            checks: [],
+        });
+        const { text } = exportSql(b.build(), 'postgresql');
+        expect(text).toContain(
+            `COMMENT ON INDEX "school"."courses_idx_courses_code" IS 'Looks a course up';`
+        );
+    });
+});
+
+describe('SQL Server index names', () => {
+    it('stay distinct within a table, also when a label is empty', () => {
+        const b = new DesignBuilder({
+            databaseType: 'sql_server',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'courses',
+            columns: [
+                { name: 'a', typeName: 'int', nullable: true },
+                { name: 'b', typeName: 'int', nullable: true },
+            ],
+            indexes: [
+                { name: 'idx', unique: false, columns: ['a'] },
+                { name: 'idx', unique: false, columns: ['b'] },
+                { name: '', unique: false, columns: ['a', 'b'] },
+            ],
+            checks: [],
+        });
+        const names = [
+            ...exportSql(b.build(), 'sql_server').text.matchAll(
+                /CREATE (?:UNIQUE )?INDEX \[([^\]]+)\]/g
+            ),
+        ].map((m) => m[1]);
+        expect(names).toHaveLength(3);
+        expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(3);
+        expect(names.every((n) => n.length > 0)).toBe(true);
+    });
+});
+
+describe('SQL Server table comments', () => {
+    it('cannot open or close a block comment from inside the text', () => {
+        const b = new DesignBuilder({
+            databaseType: 'sql_server',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'courses',
+            comment: 'see /* later */ and /* never closed',
+            columns: [{ name: 'a', typeName: 'int', nullable: true }],
+            indexes: [],
+            checks: [],
+        });
+        const { text } = exportSql(b.build(), 'sql_server');
+        const header = text.slice(0, text.indexOf('CREATE TABLE'));
+        // one opener and one closer: the comment's own
+        expect(header.match(/\/\*/g)).toHaveLength(1);
+        expect(header.match(/\*\//g)).toHaveLength(1);
+    });
+});
+
+describe('SQLite tables that share a name across schemas', () => {
+    it('are written under distinct names, also in foreign keys and indexes', () => {
+        const b = new DesignBuilder({
+            databaseType: 'sqlite',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        for (const schema of ['app', 'audit'])
+            b.addTable({
+                name: 'users',
+                schema,
+                columns: [
+                    {
+                        name: 'id',
+                        typeName: 'int',
+                        primary: true,
+                        nullable: false,
+                    },
+                    { name: 'email', typeName: 'text', nullable: true },
+                ],
+                indexes: [
+                    { name: 'idx_email', unique: false, columns: ['email'] },
+                ],
+                checks: [],
+            });
+        b.addTable({
+            name: 'orders',
+            schema: 'audit',
+            columns: [
+                { name: 'id', typeName: 'int', primary: true, nullable: false },
+                { name: 'user_id', typeName: 'int', nullable: true },
+            ],
+            indexes: [],
+            checks: [],
+        });
+        b.addLink({
+            name: 'fk',
+            from: { schema: 'audit', table: 'orders', column: 'user_id' },
+            to: { schema: 'audit', table: 'users', column: 'id' },
+        });
+        const { text } = exportSql(b.build(), 'sqlite');
+        expect(text).toContain('CREATE TABLE IF NOT EXISTS "app_users"');
+        expect(text).toContain('CREATE TABLE IF NOT EXISTS "audit_users"');
+        expect(text).toContain('REFERENCES "audit_users"("id")');
+        expect(text).toContain('ON "audit_users" ("email")');
+        expect(text).toContain('ON "app_users" ("email")');
+        expect(text).toContain('CREATE TABLE IF NOT EXISTS "orders"');
+    });
+});
+
+describe('PostgreSQL comments with line breaks', () => {
+    it('keep their lines in COMMENT ON', () => {
+        const b = new DesignBuilder({
+            databaseType: 'postgresql',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'users',
+            comment: 'first line\nsecond line',
+            columns: [
+                {
+                    name: 'id',
+                    typeName: 'int',
+                    nullable: false,
+                    comment: 'a\nb',
+                },
+            ],
+            indexes: [],
+            checks: [],
+        });
+        const { text } = exportSql(b.build(), 'postgresql');
+        expect(text).toContain(
+            `COMMENT ON TABLE "users" IS 'first line\nsecond line';`
+        );
+        expect(text).toContain(`COMMENT ON COLUMN "users"."id" IS 'a\nb';`);
     });
 });

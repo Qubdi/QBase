@@ -222,8 +222,3 @@ export function indexColumnText(
 export function sortedStatements(statements: string[]): string[] {
     return statements.slice().sort(byText);
 }
-
-/** `fk_<table>_<cols>` style names, columns joined by an underscore. */
-export function joinedColumnNames(columns: Column[]): string {
-    return columns.map((c) => c.name).join('_');
-}

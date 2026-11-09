@@ -115,8 +115,9 @@ export const mfaChallenges = pgTable(
         attempts: smallint('attempts').notNull().default(0),
     },
     (t) => [
-        // a new challenge replaces the user's older ones; also the cascade
-        index('mfa_challenges_user_idx').on(t.userId),
+        // one pending sign-in per account, enforced here: a second login that
+        // races the first replaces it instead of leaving two; also the cascade
+        uniqueIndex('mfa_challenges_user_idx').on(t.userId),
         // the hourly purge of expired rows
         index('mfa_challenges_expires_idx').on(t.expiresAt),
         check('mfa_challenges_attempts_nonneg', sql`${t.attempts} >= 0`),
