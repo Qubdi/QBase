@@ -1,3 +1,4 @@
+import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import {
     and,
     count,
@@ -897,7 +898,8 @@ export const adminRoutes =
                 .from(projectMembers)
                 .innerJoin(users, eq(users.id, projectMembers.userId))
                 .where(eq(projectMembers.projectId, id))
-                .orderBy(users.email);
+                .orderBy(users.email)
+                .limit(MAX_UNPAGED_ROWS);
         });
 
         // assign a user, or change their role if already assigned

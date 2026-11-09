@@ -1,3 +1,4 @@
+import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import { and, eq, ne } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
@@ -303,7 +304,9 @@ export const introspectRoutes =
             const rows = await db
                 .select()
                 .from(savedConnections)
-                .where(eq(savedConnections.projectId, projectId));
+                .where(eq(savedConnections.projectId, projectId))
+                .orderBy(savedConnections.createdAt)
+                .limit(MAX_UNPAGED_ROWS);
             return rows.map(summarize);
         });
 

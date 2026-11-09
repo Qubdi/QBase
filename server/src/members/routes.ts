@@ -1,3 +1,4 @@
+import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import { eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
@@ -34,6 +35,8 @@ export const memberRoutes =
                 })
                 .from(projectMembers)
                 .innerJoin(users, eq(users.id, projectMembers.userId))
-                .where(eq(projectMembers.projectId, projectId));
+                .where(eq(projectMembers.projectId, projectId))
+                .orderBy(users.email)
+                .limit(MAX_UNPAGED_ROWS);
         });
     };

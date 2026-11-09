@@ -1,3 +1,4 @@
+import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -20,8 +21,6 @@ import { diagramHash } from '../lib/hash.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { pgDate } from '../lib/pg-date.js';
 
-/** `limit` stand-in when the list is not paged (Postgres' largest integer). */
-const NO_LIMIT = 2_147_483_647;
 /**
  * A list not narrowed to one project is cut to this many diagrams unless the
  * caller asks for another page size: it would read, sort and send every
@@ -170,7 +169,7 @@ export const diagramRoutes =
                           .leftJoin(users, eq(users.id, diagrams.ownerId))
                           .where(only)
                           .orderBy(...order)
-                          .limit(opts.limit ?? NO_LIMIT)
+                          .limit(opts.limit ?? MAX_UNPAGED_ROWS)
                           .offset(opts.offset)
                   ).map((d) => ({
                       ...d,
@@ -194,7 +193,7 @@ export const diagramRoutes =
                       // a viewer sees the published time (below), so the list is
                       // ordered by that, not by the working copy's own edits
                       .orderBy(viewerOrder, diagrams.id)
-                      .limit(opts.limit ?? NO_LIMIT)
+                      .limit(opts.limit ?? MAX_UNPAGED_ROWS)
                       .offset(opts.offset);
             // viewers must not learn about unpublished renames
             const latest = await latestSnapshotListing(
