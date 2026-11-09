@@ -356,6 +356,12 @@ The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
   `0022`) rewrites the whole `diagrams` table under an exclusive lock: about 11 seconds for
   320 MB of diagrams here, and reads and writes of diagrams wait meanwhile. Start the new
   version in a quiet moment on a large installation.
+- Upgrading from a version older than migration `0015` rewrites the whole `audit_log` table
+  under an exclusive lock (its `id` becomes a `bigint`) and builds its indexes without
+  `CONCURRENTLY`, so every action that writes an audit row (saves, sign-ins, admin changes)
+  waits meanwhile. The time grows with the number of rows.
+  It happens once; do it in a quiet moment, and lower `AUDIT_RETENTION_DAYS` and let the
+  clean-up run first if the log is very large.
 
 ## Scaling
 
