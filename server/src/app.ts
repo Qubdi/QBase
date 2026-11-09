@@ -83,11 +83,20 @@ function hostOf(origin: string): string | null {
     }
 }
 
+// receiving one whole request, up to a 50 MB body, must finish within this
+export const REQUEST_TIMEOUT_MS = 120_000;
+// an idle socket is closed after this; SSE heartbeats (25 s by default) keep a live stream busy
+export const CONNECTION_TIMEOUT_MS = 120_000;
+
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const prefix = config.webDir ? API_PREFIX : '';
     const app = Fastify({
         // closing the server also ends open SSE streams instead of waiting on them
         forceCloseConnections: true,
+        // a client that trickles its request in is cut off instead of holding a socket open;
+        // the timeouts cover receiving the request, so a live SSE stream is not affected
+        requestTimeout: REQUEST_TIMEOUT_MS,
+        connectionTimeout: CONNECTION_TIMEOUT_MS,
         // behind a reverse proxy req.ip is the proxy's, unless it is trusted
         trustProxy:
             typeof config.trustProxy === 'number'
