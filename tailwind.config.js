@@ -15,12 +15,7 @@ const surface = (name) => ({
 const sidebarTokens = {
     DEFAULT: token('sidebar-background'),
     foreground: token('sidebar-foreground'),
-    primary: token('sidebar-primary'),
-    'primary-foreground': token('sidebar-primary-foreground'),
     accent: token('sidebar-accent'),
-    'accent-foreground': token('sidebar-accent-foreground'),
-    border: token('sidebar-border'),
-    ring: token('sidebar-ring'),
 };
 
 /** @type {import('tailwindcss').Config} */

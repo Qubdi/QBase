@@ -42,12 +42,7 @@
     /* rail, large tabs */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 173 82% 29%;
-    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 5% 96%;
-    --sidebar-accent-foreground: 240 6% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217 91% 60%;
     --rail-hover: 240 5% 91%;
     --rail-selected-text: 173 100% 24%;
     --tab-active: 202 100% 38%;
@@ -80,12 +75,7 @@
 
     --sidebar-background: 200 26% 8%;
     --sidebar-foreground: 240 5% 96%;
-    --sidebar-primary: 172 66% 46%;
-    --sidebar-primary-foreground: 200 40% 6%;
     --sidebar-accent: 221 39% 11%;
-    --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 240 4% 16%;
-    --sidebar-ring: 217 91% 60%;
     --rail-hover: 221 39% 11%;
     --rail-selected-text: 175 100% 42%;
     --tab-active: 200 100% 48%;
