@@ -1,3 +1,4 @@
+import { createSseWriter } from '../lib/sse-write.js';
 import { and, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
@@ -466,6 +467,10 @@ export const publicShareRoutes =
                 raw.end();
             };
 
+            // one place for writes: a viewer that cannot keep up is cut off
+            // instead of buffering events in memory for ever
+            const send = createSseWriter(raw, close);
+
             // still allowed? (revoked, expired, access changed, live turned off,
             // or the token was regenerated so this URL is no longer the real one)
             const stillValid = async (fresh = false) =>
@@ -479,9 +484,7 @@ export const publicShareRoutes =
                     if (closed || changedDiagramId !== diagramId) return;
                     try {
                         if (!(await stillValid())) return close();
-                        raw.write(
-                            `event: version\ndata: ${JSON.stringify({ version })}\n\n`
-                        );
+                        send(`event: version\ndata: ${JSON.stringify({ version })}\n\n`);
                     } catch (err) {
                         req.log.error(
                             { err },
@@ -529,7 +532,7 @@ export const publicShareRoutes =
                     req.log.error({ err }, 'share events: heartbeat check failed');
                     return close();
                 }
-                if (!closed) raw.write(': ping\n\n');
+                if (!closed) send(': ping\n\n');
             }, config.sseHeartbeatSeconds * 1000);
             cleanup.push(() => clearInterval(heartbeat));
 
