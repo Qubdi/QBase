@@ -66,13 +66,24 @@ export function applyFilter(
 const family = (id: DatabaseType): DatabaseType =>
     dialectFor(id).variantOf ?? id;
 
-/** What the target's own writer cannot say: MySQL and MariaDB have no partial indexes. */
+/**
+ * What the target's own writer cannot say: it writes tables only, and MySQL
+ * and MariaDB have no partial indexes. The converter reports the same views.
+ */
 function unkeptByWriter(
     design: Design,
     targetFamily: DatabaseType
 ): Diagnostic[] {
-    if (targetFamily !== 'mysql') return [];
     const out: Diagnostic[] = [];
+    const views = design.entities.order.filter(
+        (id) => design.entities.byId[id].kind === 'view'
+    ).length;
+    if (views > 0)
+        out.push({
+            severity: 'warning',
+            message: `${views} view${views === 1 ? '' : 's'} not exported: only tables are written`,
+        });
+    if (targetFamily !== 'mysql') return out;
     for (const id of design.entities.order)
         for (const keyId of design.entities.byId[id].keyIds) {
             const key = design.keys[keyId];

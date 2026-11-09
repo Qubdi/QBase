@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { seededRandom } from '@/core/model/ids';
 import { DesignBuilder } from '@/formats/shared/design-builder';
-import { applyFilter } from './export-sql';
+import { applyFilter, exportSql } from './export-sql';
 
 const design = () => {
     const b = new DesignBuilder({
@@ -56,5 +56,33 @@ describe('applyFilter', () => {
     it('returns the same design when nothing is hidden', () => {
         const d = design();
         expect(applyFilter(d, { tableIds: [...d.entities.order] })).toBe(d);
+    });
+});
+
+describe('exportSql in the same dialect', () => {
+    it('says how many views it did not write', () => {
+        const b = new DesignBuilder({
+            databaseType: 'postgresql',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        for (const [name, view] of [
+            ['t', false],
+            ['v1', true],
+            ['v2', true],
+        ] as const)
+            b.addTable({
+                name,
+                view,
+                columns: [{ name: 'id', typeName: 'int', nullable: false }],
+                indexes: [],
+                checks: [],
+            });
+        const { diagnostics } = exportSql(b.build(), 'postgresql');
+        expect(diagnostics.map((d) => d.message)).toEqual([
+            '2 views not exported: only tables are written',
+        ]);
     });
 });
