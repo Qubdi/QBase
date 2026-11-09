@@ -152,11 +152,21 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                             </span>
                             {f.nullable ? null : (
                                 <span
-                                    className="size-1 shrink-0 rounded-full bg-muted-foreground"
+                                    className="shrink-0"
                                     title={t(
                                         'qubdi.workspace.viewerNode.notNull'
                                     )}
-                                />
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className="block size-1 rounded-full bg-muted-foreground"
+                                    />
+                                    <span className="sr-only">
+                                        {t(
+                                            'qubdi.workspace.viewerNode.notNull'
+                                        )}
+                                    </span>
+                                </span>
                             )}
                         </span>
                     </li>
