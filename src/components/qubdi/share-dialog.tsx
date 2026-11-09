@@ -64,16 +64,23 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         setError(null);
         setCopied(null);
         setLinks(null);
+        // closing, or opening for another diagram, makes a slow reply stale
+        let stale = false;
         void (async () => {
             try {
                 const id = await ensureRef.current();
+                if (stale) return;
                 setRemoteId(id);
-                await reload(id);
+                const list = await api.listShareLinks(id);
+                if (!stale) setLinks(list);
             } catch (e) {
-                setError(errorMessage(e));
+                if (!stale) setError(errorMessage(e));
             }
         })();
-    }, [open, reload]);
+        return () => {
+            stale = true;
+        };
+    }, [open]);
 
     // "Copied" is a brief confirmation, not a state the button stays in
     useEffect(() => {
