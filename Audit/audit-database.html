@@ -8,7 +8,7 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 17</b></div>
+  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 18</b></div>
   <h1>8 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
@@ -35,7 +35,7 @@
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">DB-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout</td><td class="wrap-cell"><code>server/src/maintenance.ts:100</code>, <code>server/src/maintenance.ts:116</code>, <code>server/src/server.ts:38</code></td><td class="wrap-cell">Batch both deletes like purgeAuditLog</td></tr>
+        <tr><td class="svc-name">DB-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout</td><td class="wrap-cell"><code>server/src/maintenance.ts:100</code>, <code>server/src/maintenance.ts:116</code>, <code>server/src/server.ts:35</code></td><td class="wrap-cell">Batch both deletes like purgeAuditLog</td></tr>
         <tr><td class="svc-name">DB-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns</td><td class="wrap-cell"><code>server/src/diagrams/service.ts:58</code>, <code>server/src/diagrams/summary.ts:51</code></td><td class="wrap-cell">Add generated stat columns to snapshots, as diagrams have</td></tr>
         <tr><td class="svc-name">DB-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Size checks serialise whole jsonb with <code>octet_length(content::text)</code>; 50 MB costs about 0.8 s</td><td class="wrap-cell"><code>server/src/lint/routes.ts:95</code>, <code>server/src/lint/routes.ts:116</code>, <code>server/src/drift/service.ts:236</code></td><td class="wrap-cell">Use pg_column_size or a stored size column</td></tr>
         <tr><td class="svc-name">DB-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL Server introspection drops columnstore, XML and spatial indexes; import maps them</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:105</code>, <code>src/formats/metadata/load.ts:41</code></td><td class="wrap-cell">Drop key_ordinal filter for non-key index types</td></tr>
@@ -121,9 +121,9 @@
         <tr><td class="wrap-cell">Boot migration lock</td><td class="wrap-cell">Session advisory lock, lock_timeout retry, 2-connection pool</td><td class="wrap-cell"><code>server/src/db/client.ts:111</code></td></tr>
         <tr><td class="wrap-cell">FK ON DELETE</td><td class="wrap-cell">Every FK states cascade, restrict or set null</td><td class="wrap-cell"><code>server/src/db/schema.ts:205</code></td></tr>
         <tr><td class="wrap-cell">Check-then-write</td><td class="wrap-cell">Unique index or lock backs each: email, project, connection, snapshot version, share cap; not MFA (DB-008, DB-016)</td><td class="wrap-cell"><code>server/src/diagrams/service.ts:218</code></td></tr>
-        <tr><td class="wrap-cell">Autosave</td><td class="wrap-cell">Compare-and-write in one UPDATE; content not returned</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:387</code></td></tr>
-        <tr><td class="wrap-cell">Lists</td><td class="wrap-cell">Paged, offset capped, content never selected; one project list unpaged (SRV-013)</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:125</code></td></tr>
-        <tr><td class="wrap-cell">Audit reads</td><td class="wrap-cell">Keyset cursor, indexed filters, name lookups by PK</td><td class="wrap-cell"><code>server/src/audit/activity.ts:133</code></td></tr>
+        <tr><td class="wrap-cell">Autosave</td><td class="wrap-cell">Compare-and-write in one UPDATE; content not returned</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:396</code></td></tr>
+        <tr><td class="wrap-cell">Lists</td><td class="wrap-cell">Paged, offset capped, content never selected; one project list unpaged (SRV-013)</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:134</code></td></tr>
+        <tr><td class="wrap-cell">Audit reads</td><td class="wrap-cell">Keyset cursor, indexed filters, name lookups by PK</td><td class="wrap-cell"><code>server/src/audit/activity.ts:140</code></td></tr>
         <tr><td class="wrap-cell">Audit retention</td><td class="wrap-cell">Batched 5000, indexed on <code>at</code></td><td class="wrap-cell"><code>server/src/maintenance.ts:71</code></td></tr>
         <tr><td class="wrap-cell">Pool</td><td class="wrap-cell">max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts</td><td class="wrap-cell"><code>server/src/db/client.ts:22</code></td></tr>
         <tr><td class="wrap-cell">Postgres introspection</td><td class="wrap-cell">READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:162</code></td></tr>
