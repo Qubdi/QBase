@@ -97,4 +97,34 @@ describe('tools/similarity.mjs', () => {
         expect(res.out).toContain('nothing was indexed');
         expect(res.out).not.toContain('No checked file is over the limits');
     });
+
+    it('rejects a number option that is not a number', () => {
+        for (const flag of ['--threshold', '--max-run', '--shingle']) {
+            const res = run(...base, '--all', flag, 'abc');
+            expect(res.code).not.toBe(0);
+            expect(res.out).toContain(`${flag} needs a number`);
+        }
+    });
+
+    it('rejects a negative number option', () => {
+        expect(run(...base, '--all', '--threshold', '-5').code).not.toBe(0);
+    });
+
+    it('spec-check rejects a --run that is not a number', () => {
+        const res = spawnSync(
+            process.execPath,
+            [
+                path.resolve('tools/spec-check.mjs'),
+                '--dir',
+                'work',
+                '--upstream',
+                'up',
+                '--run',
+                'abc',
+            ],
+            { cwd: dir, encoding: 'utf8' }
+        );
+        expect(res.status).not.toBe(0);
+        expect(res.stdout + res.stderr).toContain('--run needs a number');
+    });
 });

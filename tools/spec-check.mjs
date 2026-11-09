@@ -91,8 +91,16 @@ function parseArguments(argv) {
         };
         if (flag === '--dir') options.dir = value();
         else if (flag === '--upstream') options.upstream = value();
-        else if (flag === '--run') options.run = Number(value());
-        else throw new Error(`Unknown option ${flag}`);
+        else if (flag === '--run') {
+            // NaN would make every comparison false and the check pass
+            const raw = value();
+            const parsed = Number(raw);
+            if (raw.trim() === '' || !Number.isFinite(parsed) || parsed < 0)
+                throw new Error(
+                    `--run needs a number of 0 or more (got "${raw}")`
+                );
+            options.run = parsed;
+        } else throw new Error(`Unknown option ${flag}`);
     }
     return options;
 }

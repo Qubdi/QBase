@@ -91,6 +91,17 @@ function parseArguments(argv) {
             if (next === undefined) throw new Error(`${flag} needs a value`);
             return next;
         };
+        // a mistyped number becomes NaN, and every comparison with NaN is
+        // false: the check would pass for any file
+        const number = () => {
+            const raw = value();
+            const parsed = Number(raw);
+            if (raw.trim() === '' || !Number.isFinite(parsed) || parsed < 0)
+                throw new Error(
+                    `${flag} needs a number of 0 or more (got "${raw}")`
+                );
+            return parsed;
+        };
         switch (flag) {
             case '--upstream':
                 options.upstream = value();
@@ -114,10 +125,10 @@ function parseArguments(argv) {
                 options.csv = value();
                 break;
             case '--threshold':
-                options.threshold = Number(value());
+                options.threshold = number();
                 break;
             case '--max-run':
-                options.maxRun = Number(value());
+                options.maxRun = number();
                 break;
             case '--check':
                 options.check = true;
@@ -129,7 +140,7 @@ function parseArguments(argv) {
                 options.rewritten = value();
                 break;
             case '--shingle':
-                options.shingle = Number(value());
+                options.shingle = number();
                 break;
             default:
                 throw new Error(`Unknown option ${flag}`);
