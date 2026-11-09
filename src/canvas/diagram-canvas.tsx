@@ -843,6 +843,8 @@ function Surface({
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
             if (hasMod(event) && event.key === '0') {
+                // typing in an input, or an open dialog, keeps the key
+                if (!canvasKeysAllowed(event)) return;
                 event.preventDefault();
                 controls.fit();
                 return;

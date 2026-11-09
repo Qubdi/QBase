@@ -25,6 +25,24 @@ describe('p8 EDT-022, EDT-025', () => {
         expect(camera.fit).toHaveBeenCalled();
     });
 
+    it('Mod+0 leaves the key to a text field that has the focus', () => {
+        camera.fit.mockClear();
+        renderCanvas(shop().design);
+        const input = document.createElement('input');
+        document.body.append(input);
+        input.focus();
+        const event = new KeyboardEvent('keydown', {
+            key: '0',
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+        });
+        input.dispatchEvent(event);
+        input.remove();
+        expect(camera.fit).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
     it('EDT-025: clicking a table selects it and clicking the background clears the selection', () => {
         const s = shop();
         const { container, store } = renderCanvas(s.design);
