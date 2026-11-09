@@ -1,6 +1,6 @@
 # Translation brief (Phase 7, other languages)
 
-Work in /home/qubdi/Desktop/Qubdi/QBase on branch `rewrite/clean-room`. Never read `main` or
+Work in the repository folder on branch `rewrite/clean-room`. Never read `main` or
 ChartDB sources or any old translation (`git show main:...`): translate from the English in this tree only.
 Do not commit, push or switch branches. Edit only your own locale files `src/i18n/locales/<code>.ts`
 and write `rewrite/phase7/<code>-notes.md` (glossary + doubts). Node via

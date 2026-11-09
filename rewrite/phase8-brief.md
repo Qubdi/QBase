@@ -1,6 +1,6 @@
 # Phase 8 brief: tests written from the spec
 
-Work in /home/qubdi/Desktop/Qubdi/QBase on branch `rewrite/clean-room`.
+Work in the repository folder on branch `rewrite/clean-room`.
 Never read, check out or diff `main` or any ChartDB source. Use this tree and `rewrite/spec/`.
 Do not commit, push or switch branches. Several agents work at once, each on its own
 slice of rows: edit only test files you create (unique names) and, for real bugs, the

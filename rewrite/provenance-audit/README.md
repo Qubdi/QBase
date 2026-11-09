@@ -142,7 +142,7 @@ Notes for this round:
   the repository.
 - The three restyling sessions had not seen the old editor's code; they worked from those
   measurements and the screenshots. The only paths outside the repository and the temporary
-  folder that any of them touched are `/home/qubdi/ui-reference/` (screenshots of the old and the
+  folder that any of them touched are `~/ui-reference/` (screenshots of the old and the
   new editor).
 - The similarity gate over the result: 883 files checked, none over the limits, 0 identical,
   97.6 percent of lines original.
