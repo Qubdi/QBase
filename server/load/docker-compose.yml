@@ -1,0 +1,117 @@
+# Throwaway stack for load tests: its own PostgreSQL and a QBase server run from
+# this checkout, so nothing touches a real database. Driven by run.sh.
+#
+# The per-address limiters (login, share, live viewers) are raised: every
+# virtual user comes from one address, so the stock limits would only measure
+# themselves. Everything that decides capacity (DB_POOL_MAX, CPU, memory) stays
+# at its real default and can be changed from the environment, see README.md.
+name: qbase-load
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: qbase
+      POSTGRES_PASSWORD: load
+      POSTGRES_DB: qbase
+    shm_size: 256mb
+    # the same settings as the shipped docker-compose.yml
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=8MB
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qbase"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    image: node:24-slim
+    working_dir: /app
+    # installs the server's dependencies from its lockfile in a copy of this
+    # checkout, so the host's node_modules (and its OS) do not matter
+    command:
+      - sh
+      - -c
+      - >
+        mkdir -p /app && cd /repo &&
+        tar cf - --exclude=node_modules --exclude=dist --exclude=load server shared | tar xf - -C /app &&
+        cd /app/server && npm ci --no-audit --no-fund --loglevel=error &&
+        exec node_modules/.bin/tsx src/server.ts
+    volumes:
+      - ../..:/repo:ro
+      - npm-cache:/npm-cache
+    depends_on:
+      db:
+        condition: service_healthy
+    cpus: ${LOAD_APP_CPUS:-2}
+    mem_limit: ${LOAD_APP_MEM:-1g}
+    environment:
+      npm_config_cache: /npm-cache
+      DATABASE_URL: postgres://qbase:load@db:5432/qbase
+      CONNECTION_KEY: load-test-connection-key-0123456789abcdef
+      HOST: 0.0.0.0
+      PORT: "3001"
+      LOG_LEVEL: warn
+      MFA_ENABLED: "false"
+      COOKIE_SECURE: "false"
+      # raised on purpose, see the header
+      AUTH_RATE_LIMIT: "1000000"
+      AUTH_MAX_FAILURES: "1000000"
+      SHARE_RATE_LIMIT: "1000000"
+      LINT_RATE_LIMIT: "1000000"
+      SSE_MAX_PER_LINK: "20000"
+      SSE_MAX_PER_IP: "20000"
+      # every save is audited and published, as in a busy editor session
+      AUDIT_SAVE_MINUTES: "0"
+      # the real defaults, overridable
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      SNAPSHOT_KEEP: ${SNAPSHOT_KEEP:-200}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      start_period: 20s
+      interval: 3s
+      timeout: 3s
+      retries: 60
+
+  # one-off helpers, started with `docker compose run`
+  seed:
+    image: node:24-slim
+    profiles: ["tools"]
+    working_dir: /load
+    volumes:
+      - ./:/load
+    environment:
+      BASE_URL: http://app:3001
+      LOAD_USERS: ${LOAD_USERS:-200}
+      LOAD_TABLES: ${LOAD_TABLES:-35}
+      VIEWERS: ${VIEWERS:-500}
+      PUBLISHES: ${PUBLISHES:-5}
+      SSE_P95_MS: ${SSE_P95_MS:-2000}
+
+  k6:
+    image: grafana/k6:latest
+    profiles: ["tools"]
+    working_dir: /load
+    volumes:
+      - ./:/load
+    environment:
+      BASE_URL: http://app:3001
+      VUS: ${VUS:-50}
+      DURATION: ${DURATION:-2m}
+      RATE: ${RATE:-100}
+
+volumes:
+  # kept between runs (the database is in memory, nothing else needs a volume)
+  npm-cache:

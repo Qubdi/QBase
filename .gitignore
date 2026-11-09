@@ -164,3 +164,7 @@ dev.env
 qbase-backup*.sql
 # ...and the ones the README's cron backup writes
 qbase-*.dump
+
+# load test output
+server/load/.seed.json
+server/load/results/

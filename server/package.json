@@ -18,7 +18,8 @@
         "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
         "db:generate": "drizzle-kit generate",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "load": "bash load/run.sh"
     },
     "dependencies": {
         "@fastify/cookie": "^11.1.5",
