@@ -15,15 +15,10 @@ import { ActivityChart } from './activity-chart';
 import { ActivitySentence } from './activity-sentence';
 import { adminPath } from './admin-sections';
 import { StatTile } from './stat-tile';
+import { timeOf } from './time-of';
 
 /** How many of the latest events the Overview lists; the Activity page has the rest. */
 export const RECENT_EVENTS = 8;
-
-const timeOf = (iso: string) =>
-    new Date(iso).toLocaleTimeString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
 
 const dayOf = (iso: string) =>
     new Date(iso).toLocaleDateString(undefined, {
