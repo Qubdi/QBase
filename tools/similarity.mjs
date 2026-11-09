@@ -269,8 +269,15 @@ function trackedFiles(exclude) {
         .filter((file) => !exclude.some((prefix) => file.startsWith(prefix)));
 }
 
-function readPathList(file) {
-    if (!file || !fs.existsSync(file)) return [];
+/** Ends the run with an error: a check that cannot do what was asked must not pass. */
+function die(message) {
+    console.error(`similarity: ${message}`);
+    process.exit(2);
+}
+
+function readPathList(file, option) {
+    if (!file) return [];
+    if (!fs.existsSync(file)) die(`${option} file not found: ${file}`);
     return fs
         .readFileSync(file, 'utf8')
         .replace(/\r/g, '')
@@ -376,7 +383,13 @@ function main() {
     if (options.all) for (const row of rows) toCheck.add(row.file);
     if (options.base)
         for (const file of addedFiles(options.base)) toCheck.add(file);
-    for (const entry of readPathList(options.rewritten)) toCheck.add(entry);
+    const listed = readPathList(options.rewritten, '--rewritten');
+    const gone = listed.filter((entry) => !fs.existsSync(entry));
+    if (gone.length > 0)
+        die(
+            `--rewritten lists paths that do not exist:\n  ${gone.join('\n  ')}`
+        );
+    for (const entry of listed) toCheck.add(entry);
 
     // Listed paths that were not in the measured set are measured now.
     const measured = new Set(rows.map((row) => row.file));
@@ -386,7 +399,7 @@ function main() {
             checked.push(measureFile(entry));
         }
     }
-    const allowed = new Set(readPathList(options.allow));
+    const allowed = new Set(readPathList(options.allow, '--allow'));
     const failures = checked.filter(
         (row) =>
             !allowed.has(row.file) &&
