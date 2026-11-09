@@ -93,7 +93,7 @@ export const ServerAutosave: React.FC = () => {
                     current.status === 'editor';
                 // "Overwrite": take the server's current version as the base,
                 // so the next save goes on top of it
-                const overwrite =
+                const overwrite: (() => void) | null =
                     conflict && current.status === 'editor'
                         ? () =>
                               void api
@@ -102,7 +102,17 @@ export const ServerAutosave: React.FC = () => {
                                       setBaseUpdatedAt(diagramId, d.updatedAt);
                                       return saver.flush();
                                   })
-                                  .catch(() => undefined)
+                                  .catch(() => {
+                                      // the server's version could not be read:
+                                      // say so and keep the button, instead of a
+                                      // click that does nothing
+                                      if (!disposed)
+                                          setSaveStatus(
+                                              status,
+                                              retry,
+                                              overwrite
+                                          );
+                                  })
                         : null;
                 if (conflict && current.status === 'editor') {
                     // a save of ours that landed without its reply is not a

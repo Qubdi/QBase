@@ -247,6 +247,30 @@ describe('QBS-039 a 409 shows the conflict with Overwrite; a save that landed un
         view.unmount();
     });
 
+    it('when Overwrite cannot read the server version, the failure shows and the button stays', async () => {
+        setBaseUpdatedAt('local-1', 'v1');
+        remote = { updatedAt: 'v9', content: { tables: ['theirs'] } };
+        const sync = vi
+            .fn<QubdiContext['syncDiagram']>()
+            .mockRejectedValueOnce(new ApiError(409, 'changed'))
+            .mockResolvedValue('r1');
+        const view = await openAndEdit(sync);
+        await act(() => flushPendingSave());
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 40));
+        });
+        getDiagram.mockRejectedValueOnce(new Error('offline'));
+        await act(async () => {
+            held.seen!.overwrite!();
+            await new Promise((r) => setTimeout(r, 40));
+        });
+        // it is told again that the save failed, and can be tried again
+        expect(held.seen!.status).toBe('error');
+        expect(held.seen!.overwrite).toBeTypeOf('function');
+        expect(sync).toHaveBeenCalledTimes(1);
+        view.unmount();
+    });
+
     it('when the server holds exactly what was sent, it takes that version and saves again, with no conflict', async () => {
         setBaseUpdatedAt('local-1', 'v1');
         const sync = vi
