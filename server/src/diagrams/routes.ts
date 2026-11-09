@@ -17,6 +17,7 @@ import {
     presentSaved,
     publishSnapshot,
 } from './service.js';
+import { exceedsDepth } from '../lib/depth.js';
 import { diagramHash } from '../lib/hash.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { pgDate } from '../lib/pg-date.js';
@@ -46,6 +47,9 @@ const versionParam = z.object({
     version: z.coerce.number().int().positive().max(2147483647),
 });
 
+/** The deepest nesting a saved diagram may have. */
+const MAX_CONTENT_DEPTH = 100;
+
 /**
  * A diagram's content is the editor's own JSON, so unknown keys pass through.
  * What the server relies on is checked: the known collections are arrays and
@@ -64,7 +68,12 @@ const diagramContent = z
         customTypes: z.array(z.unknown()).optional(),
         notes: z.array(z.unknown()).optional(),
     })
-    .passthrough();
+    .passthrough()
+    // a real diagram nests a handful of levels; far deeper is an attempt to
+    // overflow the recursive hash, so it is refused as a bad request
+    .refine((content) => !exceedsDepth(content, MAX_CONTENT_DEPTH), {
+        message: `content nests deeper than ${MAX_CONTENT_DEPTH} levels`,
+    });
 
 const createBody = z.object({
     title: z.string().trim().min(1).max(200),
