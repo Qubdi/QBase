@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Database, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import {
@@ -74,11 +74,21 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
         null
     );
 
+    // only the newest load may set state: a slow reply for an earlier opening
+    // or another project must not show here
+    const newestLoad = useRef(0);
+    const cancelLoad = useCallback(() => {
+        newestLoad.current += 1;
+    }, []);
     const load = useCallback(async () => {
+        const request = ++newestLoad.current;
         try {
-            setConnections(await api.listSavedConnections(project.id));
+            const list = await api.listSavedConnections(project.id);
+            if (request !== newestLoad.current) return;
+            setConnections(list);
             setError(null);
         } catch (e) {
+            if (request !== newestLoad.current) return;
             setConnections([]);
             setError(errorMessage(e));
         }
@@ -95,7 +105,8 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
             .then((c) => setCanStore(c.savedConnections))
             // an older server cannot say; let the attempt report any problem
             .catch(() => setCanStore(true));
-    }, [open, load]);
+        return cancelLoad;
+    }, [open, load, cancelLoad]);
 
     const set = <K extends keyof ConnectionForm>(
         key: K,

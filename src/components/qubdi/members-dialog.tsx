@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Dialog,
@@ -25,21 +25,30 @@ export const MembersDialog: React.FC<MembersDialogProps> = ({
     const [members, setMembers] = useState<RemoteMember[]>([]);
     const [error, setError] = useState<string | null>(null);
 
+    // only the newest load may set state: a slow reply for an earlier opening
+    // or another diagram must not show here
+    const newestLoad = useRef(0);
+    const cancelLoad = useCallback(() => {
+        newestLoad.current += 1;
+    }, []);
     const reload = useCallback(async () => {
         if (!remoteId) return;
+        const request = ++newestLoad.current;
         try {
-            setMembers(await api.listMembers(remoteId));
+            const list = await api.listMembers(remoteId);
+            if (request === newestLoad.current) setMembers(list);
         } catch (e) {
-            setError(errorMessage(e));
+            if (request === newestLoad.current) setError(errorMessage(e));
         }
     }, [remoteId]);
 
     useEffect(() => {
-        if (open) {
-            setError(null);
-            void reload();
-        }
-    }, [open, reload]);
+        if (!open) return;
+        setError(null);
+        setMembers([]);
+        void reload();
+        return cancelLoad;
+    }, [open, reload, cancelLoad]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
