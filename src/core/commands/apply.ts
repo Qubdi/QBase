@@ -569,6 +569,24 @@ function removeEntity(design: Design, id: Id): Step {
  * inverses as removing them one by one: every part map and list is copied once
  * instead of once per table.
  */
+/** How many of the first `n` positions have been marked removed (a Fenwick tree). */
+class RemovedCounter {
+    private readonly tree: number[];
+    constructor(size: number) {
+        this.tree = new Array<number>(size + 1).fill(0);
+    }
+    add(position: number): void {
+        for (let i = position + 1; i < this.tree.length; i += i & -i)
+            this.tree[i]++;
+    }
+    /** removed positions strictly before `position` */
+    before(position: number): number {
+        let sum = 0;
+        for (let i = position; i > 0; i -= i & -i) sum += this.tree[i];
+        return sum;
+    }
+}
+
 function removeEntities(design: Design, ids: readonly Id[]): Step {
     const gone = new Set<Id>();
     for (const id of ids) {
@@ -578,10 +596,15 @@ function removeEntities(design: Design, ids: readonly Id[]): Step {
     }
     // positions are those of the moment each table is removed, so the
     // inverses (run last to first) put everything back where it was
-    const entityOrder = design.entities.order.slice();
-    const linkOrder = design.links.order.slice();
+    // an item's position at that moment is its original one minus the removed
+    // items before it: counted with a tree, not found by scanning a list
+    // that is spliced after every removal
+    const entitySlot = new Map(design.entities.order.map((id, i) => [id, i]));
+    const linkSlot = new Map(design.links.order.map((id, i) => [id, i]));
+    const entitiesRemoved = new RemovedCounter(design.entities.order.length);
+    const linksRemoved = new RemovedCounter(design.links.order.length);
     const linkEnds = new Map<Id, Id[]>();
-    for (const linkId of linkOrder) {
+    for (const linkId of design.links.order) {
         const link = design.links.byId[linkId];
         for (const end of new Set([link.sourceEntityId, link.targetEntityId])) {
             const list = linkEnds.get(end);
@@ -594,19 +617,22 @@ function removeEntities(design: Design, ids: readonly Id[]): Step {
     const inverses: Command[] = [];
     for (const id of ids) {
         const parts = partsFor(design, id);
-        const at = entityOrder.indexOf(id);
-        entityOrder.splice(at, 1);
+        const slot = entitySlot.get(id)!;
+        const at = slot - entitiesRemoved.before(slot);
+        entitiesRemoved.add(slot);
         const links: Placed<Link>[] = [];
         const here = (linkEnds.get(id) ?? []).filter(
             (linkId) => !droppedLinks.has(linkId)
         );
-        for (const linkId of here)
+        for (const linkId of here) {
+            const linkAt = linkSlot.get(linkId)!;
             links.push({
                 item: design.links.byId[linkId],
-                index: linkOrder.indexOf(linkId),
+                index: linkAt - linksRemoved.before(linkAt),
             });
+        }
         for (const linkId of here) {
-            linkOrder.splice(linkOrder.indexOf(linkId), 1);
+            linksRemoved.add(linkSlot.get(linkId)!);
             droppedLinks.add(linkId);
         }
         const placed: Placed<(typeof design.dependencies)[number]>[] = [];
@@ -642,11 +668,17 @@ function removeEntities(design: Design, ids: readonly Id[]): Step {
     return {
         design: {
             ...design,
-            entities: { byId, order: entityOrder },
+            entities: {
+                byId,
+                order: design.entities.order.filter((id) => !gone.has(id)),
+            },
             columns,
             keys,
             rules,
-            links: { byId: linkById, order: linkOrder },
+            links: {
+                byId: linkById,
+                order: design.links.order.filter((id) => !droppedLinks.has(id)),
+            },
             dependencies,
         },
         inverse: { type: 'group', commands: inverses },
