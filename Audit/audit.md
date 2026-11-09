@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 12 · **date** 2026-11-09
+**rev** 13 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -9,10 +9,10 @@
 | Security & secrets | 33 | 0 | 0 | 0 | 0 |
 | Repository | 57 | 0 | 1 | 0 | 0 |
 | Server | 36 | 0 | 4 | 0 | 0 |
-| Database | 19 | 0 | 0 | 0 | 0 |
+| Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 40 | 0 | 2 | 54 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 196 | 0 | 7 | 83 | 0 |
+| **Total** | 185 | 0 | 7 | 93 | 1 |
 
 ## Act first
 
@@ -34,23 +34,23 @@
 |----|-----|---------|-------|-----|
 | SEC-001 | Med | Old remote history still holds a literal SQL Server SA password | `.gitleaks.toml:4` | Delete stale remote refs and purge their objects |
 | SEC-002 | Med | MFA lockout never checked before enable, disable, recovery-renew code guesses | `server/src/auth/mfa-routes.ts:188`, `server/src/auth/mfa-routes.ts:274` | Call `locked()` on the `mfa:` key before checking codes |
-| SEC-003 | Med | Introspection connections default to plaintext (`ssl` false) | `server/src/introspect/routes.ts:46`, `server/src/introspect/postgres.ts:350`, `server/src/introspect/sqlserver.ts:469` | Default `ssl` to true; require explicit opt-out |
+| SEC-003 | Med | Introspection connections default to plaintext (`ssl` false) | `server/src/introspect/routes.ts:46`, `server/src/introspect/postgres.ts:354`, `server/src/introspect/sqlserver.ts:469` | Default `ssl` to true; require explicit opt-out |
 | SEC-004 | Med | Cookie `Secure` stays off behind TLS proxy unless TRUST_PROXY is set | `server/src/config.ts:222`, `server/src/auth/routes.ts:82`, `docker-compose.yml:73` | Warn at start when COOKIE_SECURE=auto without TRUST_PROXY |
 | SEC-005 | Med | No rate limit on authenticated routes (50 MB saves, share, admin) | `server/src/app.ts:120` | Add global per-user rate limit with route overrides |
 | SEC-006 | Low | Fastify sets no requestTimeout or connectionTimeout (slow-body hold) | `server/src/app.ts:84` | Set requestTimeout and connectionTimeout in Fastify options |
 | SEC-007 | Low | Disabled account answers 403 after correct password, confirming it | `server/src/auth/routes.ts:229` | Return generic 401 for disabled accounts |
 | SEC-008 | Low | Lockout key includes address; spread guesses on one account unthrottled | `server/src/auth/routes.ts:199` | Add per-account failure counter across addresses |
 | SEC-009 | Low | MFA lockout key has no address; password holder locks victim's second step | `server/src/auth/mfa-routes.ts:98` | Key second-step lockout by account and address |
-| SEC-010 | Low | Unkeyed sha256 recovery-code hashes still accepted | `server/src/auth/mfa.ts:164`, `server/src/auth/totp.ts:172` | Migrate legacy hashes, then drop legacy lookup |
+| SEC-010 | Low | Unkeyed sha256 recovery-code hashes still accepted | `server/src/auth/mfa.ts:167`, `server/src/auth/totp.ts:172` | Migrate legacy hashes, then drop legacy lookup |
 | SEC-011 | Low | Encryption keys accept any 16 characters; scrypt salt is fixed | `server/src/config.ts:128`, `server/src/introspect/crypto-box.ts:11` | Require 32+ chars; add per-value random salt |
 | SEC-012 | Low | Legacy shared-key fallback lets any purpose box open unpurposed ciphertext | `server/src/introspect/crypto-box.ts:81` | Re-seal legacy values, then remove fallback |
 | SEC-013 | Low | Read-only guard is a denylist missing `pg_read_binary_file`, `sp_executesql`, `xp_dirtree` | `server/src/introspect/readonly-guard.ts:15` | Allowlist query ids instead of keyword denylist |
 | SEC-014 | Low | SQL Server session not read-only; `readOnlyIntent` is only a routing hint | `server/src/introspect/sqlserver.ts:473` | Document least-privilege login; refuse `db_owner` logins |
-| SEC-016 | Low | `user.create` audit omits whether the new account was made admin | `server/src/admin/routes.ts:346` | Add `isAdmin` to `user.create` audit meta |
+| SEC-016 | Low | `user.create` audit omits whether the new account was made admin | `server/src/admin/routes.ts:344` | Add `isAdmin` to `user.create` audit meta |
 | SEC-017 | Low | Lockouts and MFA secret setup leave no audit row | `server/src/auth/routes.ts:71`, `server/src/auth/mfa-routes.ts:153`, `server/src/audit/audit.ts:18` | Add `auth.locked` and `mfa.setup` audit actions |
-| SEC-018 | Low | Admin can reset another admin's password and MFA with no step-up | `server/src/admin/routes.ts:370`, `server/src/admin/routes.ts:593` | Require admin password and code for reset actions |
+| SEC-018 | Low | Admin can reset another admin's password and MFA with no step-up | `server/src/admin/routes.ts:368`, `server/src/admin/routes.ts:593` | Require admin password and code for reset actions |
 | SEC-019 | Low | First-run register open to any caller who reaches an empty server | `server/src/auth/routes.ts:130`, `server/src/auth/routes.ts:142` | Require a setup token printed in server log |
-| SEC-020 | Low | Viewers can list every project member's email | `server/src/members/routes.ts:23`, `server/src/diagrams/routes.ts:140`, `server/src/diagrams/routes.ts:541` | Return member emails to writers only |
+| SEC-020 | Low | Viewers can list every project member's email | `server/src/members/routes.ts:23`, `server/src/diagrams/routes.ts:140`, `server/src/diagrams/routes.ts:544` | Return member emails to writers only |
 | SEC-021 | Low | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked | `server/src/config.ts:241`, `server/src/introspect/net-guard.ts:136` | Validate entries; reject `/0` to `/7` ranges |
 | SEC-022 | Low | Editor CSP allows inline styles (`style-src 'unsafe-inline'`) | `server/src/web.ts:16` | Move inline styles to nonce or hashed styles |
 | SEC-023 | Low | App container lacks `no-new-privileges`, `cap_drop`, `read_only` | `docker-compose.yml:49` | Add `security_opt`, `cap_drop: [ALL]`, `read_only: true` |
@@ -85,7 +85,7 @@
 | REPO-014 | Low | Audit prompt scope names files that do not exist | `Audit/Prompt.md:32`, `Audit/Prompt.md:33`, `Audit/Prompt.md:130` | Remove server/Dockerfile, default.conf.template, entrypoint.sh, db/postgres |
 | REPO-015 | Low | 1.1 MB `audit-ui-differences.html` tracked, not an owned audit file | `Audit/audit-ui-differences.html:1` | Untrack or move out of Audit/ |
 | REPO-016 | Low | CONTRIBUTING omits CONNECTION_KEY that `docker compose up -d db` requires | `CONTRIBUTING.md:49`, `docker-compose.yml:63` | Add CONNECTION_KEY to the test setup note |
-| REPO-017 | Low | README licence paragraph has no heading, sits inside Scaling | `README.md:385` | Add a `## License` heading |
+| REPO-017 | Low | README licence paragraph has no heading, sits inside Scaling | `README.md:396` | Add a `## License` heading |
 | REPO-018 | Low | Code of Conduct enforcement contact is not actionable | `CODE_OF_CONDUCT.md:62` | Name an email address for reports |
 | REPO-019 | Low | QBase-build-tasks says hashed share tokens and keep-all versions; both differ now | `QBase-build-tasks.md:62`, `QBase-build-tasks.md:46`, `QBase-build-tasks.md:5` | Mark tasks as history or update them |
 | REPO-020 | Low | Workflows set no `timeout-minutes` or `concurrency` | `.github/workflows/ci.yaml:14`, `.github/workflows/publish.yaml:17` | Add timeout-minutes and concurrency groups |
@@ -137,7 +137,7 @@
 | SRV-003 | Med | Audit insert after committed write throws, returning 500 for a done action | `server/src/audit/audit.ts:152`, `server/src/diagrams/routes.ts:428`, `server/src/auth/routes.ts:244`, `server/src/share/routes.ts:187` | Write audit in same transaction or swallow and log |
 | SRV-004 | Med | Link revoke/update emits live-viewer event after audit; audit failure leaves viewers connected | `server/src/share/routes.ts:277`, `server/src/share/routes.ts:289`, `server/src/share/routes.ts:248`, `server/src/share/routes.ts:254`, `server/src/admin/routes.ts:711`, `server/src/admin/routes.ts:722` | Emit link event before audit, or in finally |
 | SRV-006 | Med | LISTEN connection has no TCP keepalive; a silently dropped link is never noticed | `server/src/events.ts:108` | Set keepAlive true on the pg.Client |
-| SRV-007 | Med | No rate limit on publish; each call stores a snapshot up to 50 MB | `server/src/diagrams/routes.ts:506` | Add perUserLimit to /:id/publish |
+| SRV-007 | Med | No rate limit on publish; each call stores a snapshot up to 50 MB | `server/src/diagrams/routes.ts:509` | Add perUserLimit to /:id/publish |
 | SRV-008 | Med | Limiters, lockout, viewer caps and drift-running guard are per process, not per cluster | `server/src/lib/rate-key.ts:53`, `server/src/lib/failure-throttle.ts:15`, `server/src/share/routes.ts:346`, `server/src/share/routes.ts:348`, `server/src/drift/service.ts:74` | Move counters and running guard to Postgres or advisory locks |
 | SRV-009 | Med | Default 50 MB diagram body parsed by zod and hashed synchronously on event loop | `server/src/config.ts:219`, `server/src/diagrams/routes.ts:281`, `server/src/diagrams/routes.ts:384` | Lower default limit or hash in worker thread |
 | SRV-010 | Low | Share link PATCH answers too_many_links when link vanished instead of 404 | `server/src/share/routes.ts:245` | Return 404 when update returns no row |
@@ -145,7 +145,7 @@
 | SRV-012 | Low | /health answers ok without touching the database | `server/src/app.ts:116` | Run select 1 in /health with short timeout |
 | SRV-013 | Low | Unpaged lists: members, one project's diagrams, admin members, saved connections | `server/src/members/routes.ts:29`, `server/src/diagrams/routes.ts:231`, `server/src/admin/routes.ts:891`, `server/src/introspect/routes.ts:303` | Add limit to each list |
 | SRV-014 | Low | Save-audit throttle is check-then-insert; concurrent saves write duplicate rows | `server/src/audit/audit.ts:167`, `server/src/audit/audit.ts:184` | Insert conditionally in one statement |
-| SRV-015 | Low | MFA enable replaces codes and sets enabled_at in separate statements | `server/src/auth/mfa.ts:174`, `server/src/auth/mfa.ts:175` | Wrap both writes in one transaction |
+| SRV-015 | Low | MFA enable replaces codes and sets enabled_at in separate statements | `server/src/auth/mfa.ts:177`, `server/src/auth/mfa.ts:178` | Wrap both writes in one transaction |
 | SRV-016 | Low | Drift webhook sent before report insert; insert failure resends next check | `server/src/drift/service.ts:343`, `server/src/drift/service.ts:375` | Insert report first, then send webhook |
 | SRV-017 | Low | Introspection connection errors and UnsafeSqlError are replied without being logged | `server/src/introspect/routes.ts:226`, `server/src/introspect/routes.ts:229` | Call req.log.error before replying |
 | SRV-018 | Low | Drift dismiss writes audit row even when nothing was dismissed | `server/src/drift/routes.ts:290`, `server/src/drift/routes.ts:296` | Audit only when an update changed a row |
@@ -155,7 +155,7 @@
 | SRV-022 | Low | Same quadratic `(\[\])+$` on type text returned by remote database | `server/src/introspect/typmod.ts:74` | Strip trailing `[]` with a loop |
 | SRV-023 | Med | SSE_HEARTBEAT_SECONDS above 2147483 overflows setInterval to 1 ms ticks | `server/src/config.ts:233`, `server/src/share/routes.ts:511` | Cap SSE_HEARTBEAT_SECONDS at 3600 in `int()` |
 | SRV-024 | Low | SESSION_DAYS has no maximum; large value makes expiry Invalid Date, sign-in 500s | `server/src/config.ts:212`, `server/src/auth/sessions.ts:41` | Pass a max, such as 3650, to `int()` |
-| SRV-025 | Med | pg.Client for introspection has no error listener; dropped target connection can crash process | `server/src/introspect/postgres.ts:362` | Add `client.on('error', ...)` that ignores or logs |
+| SRV-025 | Med | pg.Client for introspection has no error listener; dropped target connection can crash process | `server/src/introspect/postgres.ts:366` | Add `client.on('error', ...)` that ignores or logs |
 | SRV-026 | Med | mssql ConnectionPool for introspection has no error listener | `server/src/introspect/sqlserver.ts:458` | Add `pool.on('error', ...)` handler |
 | SRV-027 | Low | Lint-config GET and PUT have no rate limit unlike /lint | `server/src/lint/routes.ts:140`, `server/src/lint/routes.ts:152` | Add `...limit` to both routes |
 | SRV-028 | Low | SSE writes ignore backpressure; a slow viewer buffers events without bound | `server/src/share/routes.ts:480`, `server/src/share/routes.ts:530` | Close stream when `raw.write` returns false and buffer grows |
@@ -178,20 +178,9 @@
 | DB-003 | Med | Size checks serialise whole jsonb with `octet_length(content::text)`; 50 MB costs about 0.8 s | `server/src/lint/routes.ts:95`, `server/src/lint/routes.ts:116`, `server/src/drift/service.ts:236` | Use pg_column_size or a stored size column |
 | DB-004 | Med | SQL Server introspection drops columnstore, XML and spatial indexes; import maps them | `server/src/introspect/sqlserver.ts:105`, `src/formats/metadata/load.ts:41` | Drop key_ordinal filter for non-key index types |
 | DB-006 | Low | SQL Server returns no custom types; PostgreSQL returns enums and composites | `server/src/introspect/sqlserver.ts:380` | Read alias types from sys.types where is_user_defined |
-| DB-007 | Low | Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out | `server/src/db/schema.ts:272`, `server/src/db/schema.ts:168`, `server/src/db/schema.ts:372`, `server/src/db/schema.ts:400`, `server/src/db/schema.ts:445`, `server/src/auth/sessions.ts:50` | Index diagram_locks.user_id; index the rest if tables grow |
-| DB-008 | Low | One pending MFA ticket per account is not enforced; concurrent logins leave two | `server/src/db/schema.ts:119`, `server/src/auth/mfa.ts:207` | Make mfa_challenges_user_idx unique; upsert on conflict |
-| DB-009 | Low | Audit rows are written after, not inside, the transaction of the change | `server/src/admin/routes.ts:481`, `server/src/admin/routes.ts:572`, `server/src/diagrams/routes.ts:497` | Insert the audit row inside the same transaction |
-| DB-010 | Low | Backups section omits saving CONNECTION_KEY and SECRETS_KEY with the dump | `README.md:378` | Add key backup to backup and restore steps |
-| DB-011 | Low | View definition spliced unquoted into CREATE VIEW; odd schema or view names break the text | `server/src/introspect/postgres.ts:249` | Quote schema and view names as identifiers |
+| DB-007 | Low | Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out | `server/src/db/schema.ts:273`, `server/src/db/schema.ts:169`, `server/src/db/schema.ts:373`, `server/src/db/schema.ts:401`, `server/src/db/schema.ts:446`, `server/src/auth/sessions.ts:50` | Index diagram_locks.user_id; index the rest if tables grow |
 | DB-012 | Low | Generated stat columns re-parse whole jsonb on every content autosave | `server/src/db/migrations/0022_diagram_stats.sql:2` | Compute stats in app; store as plain columns |
-| DB-013 | Low | Migrations build audit_log indexes without CONCURRENTLY, blocking audit writes | `server/src/db/migrations/0012_wakeful_squadron_supreme.sql:1`, `server/src/db/migrations/0015_model_review.sql:63` | Create large-table indexes CONCURRENTLY outside transaction |
-| DB-014 | Low | Migration 0015 rewrites audit_log under exclusive lock to widen id to bigint | `server/src/db/migrations/0015_model_review.sql:33` | Document downtime; batch-copy into new table for big logs |
-| DB-015 | Med | FK query lacks `conparentid = 0`; FKs to partitioned tables repeat per partition | `server/src/introspect/postgres.ts:97`, `server/src/introspect/filter.ts:12`, `shared/schema-desc.ts:253`, `src/formats/metadata/load.ts:271` | Add `AND con.conparentid = 0` to the foreign key query |
-| DB-016 | Low | Recovery-code renewals unserialised; concurrent renews leave both code sets valid | `server/src/auth/mfa.ts:101`, `server/src/auth/mfa.ts:102`, `server/src/db/schema.ts:98` | Lock the user row FOR UPDATE inside replaceCodes |
-| DB-017 | Low | Postgres introspection skips foreign tables; SQL Server lists external tables | `server/src/introspect/postgres.ts:34`, `server/src/introspect/postgres.ts:69`, `server/src/introspect/sqlserver.ts:33` | Include relkind 'f' in tables and columns queries |
-| DB-018 | Low | Materialized views reported as plain views; definition rebuilt as CREATE VIEW | `server/src/introspect/postgres.ts:42`, `server/src/introspect/postgres.ts:239`, `server/src/introspect/postgres.ts:249` | Emit CREATE MATERIALIZED VIEW for relkind m |
-| DB-019 | Low | SQL Server returns collation on every text column; Postgres only non-default ones | `server/src/introspect/sqlserver.ts:53`, `server/src/introspect/postgres.ts:67` | Return collation only when it differs from database default |
-| DB-020 | Low | Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones | `server/src/introspect/postgres.ts:114` | Filter on `ix.indisvalid` in the index query |
+| DB-019 | Low | SQL Server returns collation on every text column; Postgres only non-default ones | `server/src/introspect/sqlserver.ts:53`, `server/src/introspect/postgres.ts:69` | Return collation only when it differs from database default |
 
 ### Client
 
@@ -247,7 +236,7 @@
 | DEAD-007 | Low | Unused en key `menu.actions.save`; read only by i18n tests | `src/i18n/qubdi/workspace.ts:57`, `src/i18n/qubdi/workspace.ts:60`, `src/i18n/qubdi/workspace.ts:63`, `src/i18n/locales/en.ts:24` | Delete keys |
 | DEAD-011 | Low | Exports referenced only by tests; production-dead | `src/core/commands/plan-visual.ts:120` (planMove), `src/core/model/ids.ts:49` (looksLikeGeneratedId), `src/canvas/geometry.ts:13` (snapTo), `src/canvas/geometry.ts:49` (overlappingIds), `src/canvas/geometry.ts:88` (toggledWidth), `src/formats/image/export-options.ts:112` (outputSize), `src/features/filters/filter-tree.ts:47` (isFilterActive), `src/lib/export-import-utils.ts:10` (diagramToJSONOutput), `src/lib/custom-colors.ts:58` (readSavedColors), `src/lib/qubdi/diagram-summary.ts:5` (toDatabaseType), `src/lib/qubdi/diagram-summary.ts:12` (toDatabaseEdition), `src/lib/qubdi/project-path.ts:19` (findProjectBySlug), `src/lib/qubdi/local-data.ts:59` (adoptLegacyLocalData), `src/store/selectors.ts:14` (selectDirty), `src/store/selectors.ts:36` (selectVisibleEntities), `src/qbase/diagram-types.ts:222` (databasesWithSchemas), `src/qbase/sql-adapters.ts:16` (exportDiagramSql), `src/dialects/registry.ts:26` (listDialects), `shared/reconcile.ts:575` (isEmpty), `shared/reconcile.ts:578` (countByKind) | Delete exports and their tests |
 | DEAD-024 | Low | Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts, forgetClipboard | `src/hooks/use-custom-colors.ts:55`, `src/hooks/use-password-min-length.ts:24`, `src/platform/toast/use-toast.ts:88`, `src/canvas/clipboard.ts:23` | Move resets into test helpers |
-| DEAD-025 | Low | `GET /diagrams/:id/versions` and `/versions/:version` have no client caller | `server/src/diagrams/routes.ts:532`, `server/src/diagrams/routes.ts:551` | Remove routes or document as public API |
+| DEAD-025 | Low | `GET /diagrams/:id/versions` and `/versions/:version` have no client caller | `server/src/diagrams/routes.ts:535`, `server/src/diagrams/routes.ts:554` | Remove routes or document as public API |
 | DEAD-026 | Low | `GET /:id/drift/reports` list has no client caller; client fetches one report | `server/src/drift/routes.ts:253`, `src/lib/qubdi/api.ts:923` | Remove route or document as public API |
 | DEAD-027 | Low | `GET /lint/rules` has no client caller and no README mention | `server/src/lint/routes.ts:62` | Remove route or document it |
 | DEAD-029 | Low | Three rewrite briefs referenced by no file or tool | `rewrite/phase8-brief.md`, `rewrite/translation-brief.md`, `rewrite/decisions-phase6a.md` | Delete unreferenced notes or archive off tree |
@@ -260,6 +249,16 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| DB-008 | Database | One pending MFA ticket per account is not enforced; concurrent logins leave two |
+| DB-009 | Database | Audit rows are written after, not inside, the transaction of the change |
+| DB-010 | Database | Backups section omits saving CONNECTION_KEY and SECRETS_KEY with the dump |
+| DB-011 | Database | View definition spliced unquoted into CREATE VIEW; odd schema or view names break the text |
+| DB-014 | Database | Migration 0015 rewrites audit_log under exclusive lock to widen id to bigint |
+| DB-015 | Database | FK query lacks `conparentid = 0`; FKs to partitioned tables repeat per partition |
+| DB-016 | Database | Recovery-code renewals unserialised; concurrent renews leave both code sets valid |
+| DB-017 | Database | Postgres introspection skips foreign tables; SQL Server lists external tables |
+| DB-018 | Database | Materialized views reported as plain views; definition rebuilt as CREATE VIEW |
+| DB-020 | Database | Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones |
 | CLI-038 | Client | Array default conversion swaps every `'` for `"`, mangling items with quotes |
 | CLI-091 | Client | SQLite writer drops schema; same-named tables collapse via IF NOT EXISTS silently |
 | CLI-094 | Client | DBML export drops views and partial-index WHERE with no diagnostic |
@@ -350,6 +349,7 @@
 
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
+| DB-013 | Database | Migrations build audit_log indexes without CONCURRENTLY, blocking audit writes | Applied migrations cannot be edited; the one-off lock is documented in README under DB-014 |
 
 ---
 
@@ -392,15 +392,15 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 | Area | Result | Where |
 |------|--------|-------|
 | Schema vs migrations | drizzle-kit empty diff; journal ordered, no gaps | `server/src/db/migrations/meta/_journal.json` |
-| Boot migration lock | Session advisory lock, lock_timeout retry, 2-connection pool | `server/src/db/client.ts:109` |
-| FK ON DELETE | Every FK states cascade, restrict or set null | `server/src/db/schema.ts:204` |
+| Boot migration lock | Session advisory lock, lock_timeout retry, 2-connection pool | `server/src/db/client.ts:111` |
+| FK ON DELETE | Every FK states cascade, restrict or set null | `server/src/db/schema.ts:205` |
 | Check-then-write | Unique index or lock backs each: email, project, connection, snapshot version, share cap; not MFA (DB-008, DB-016) | `server/src/diagrams/service.ts:218` |
 | Autosave | Compare-and-write in one UPDATE; content not returned | `server/src/diagrams/routes.ts:388` |
 | Lists | Paged, offset capped, content never selected; one project list unpaged (SRV-013) | `server/src/diagrams/routes.ts:126` |
 | Audit reads | Keyset cursor, indexed filters, name lookups by PK | `server/src/audit/activity.ts:133` |
 | Audit retention | Batched 5000, indexed on `at` | `server/src/maintenance.ts:71` |
-| Pool | max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts | `server/src/db/client.ts:20` |
-| Postgres introspection | READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address | `server/src/introspect/postgres.ts:158` |
+| Pool | max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts | `server/src/db/client.ts:22` |
+| Postgres introspection | READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address | `server/src/introspect/postgres.ts:162` |
 | Read-only guard | Single SELECT/WITH, denylist after stripping literals | `server/src/introspect/readonly-guard.ts:102` |
 | Postgres image and backups | Digest-pinned in compose and CI; dump and restore documented | `docker-compose.yml:14` |
 
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 13 | 2026-11-09 | 10 fixed, 1 accepted (DB-013); database lens low batch, anchors remapped |
 | 12 | 2026-11-09 | 5 fixed, 2 narrowed (CLI-018, CLI-065); client low batch 6, anchors remapped |
 | 11 | 2026-11-09 | 9 fixed (client low batch 5), anchors remapped |
 | 10 | 2026-11-09 | 10 fixed (client low batch 4: conversion safety and speed), anchors remapped |
