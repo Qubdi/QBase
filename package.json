@@ -12,7 +12,6 @@
         "build": "npm run lint && tsc -b && vite build",
         "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
         "lint:fix": "npm run lint -- --fix",
-        "preview": "vite preview",
         "prepare": "husky",
         "test": "vitest",
         "test:ci": "vitest run --reporter=verbose --bail=1",
