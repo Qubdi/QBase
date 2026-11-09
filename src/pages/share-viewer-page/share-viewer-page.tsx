@@ -215,7 +215,7 @@ const ViewerBody: React.FC = () => {
     if (state.kind === 'loading') {
         return (
             <Centered>
-                <p>{tr('qubdi.workspace.viewerPage.loading')}</p>
+                <p role="status">{tr('qubdi.workspace.viewerPage.loading')}</p>
             </Centered>
         );
     }
@@ -262,7 +262,7 @@ const ViewerBody: React.FC = () => {
     if (state.kind === 'error') {
         return (
             <Centered>
-                <p>{tr('qubdi.workspace.viewerPage.error')}</p>
+                <p role="alert">{tr('qubdi.workspace.viewerPage.error')}</p>
                 <Button onClick={() => void load()}>
                     {tr('qubdi.workspace.viewerPage.retry')}
                 </Button>
