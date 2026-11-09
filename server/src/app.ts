@@ -91,8 +91,10 @@ export const CONNECTION_TIMEOUT_MS = 120_000;
 export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
     const prefix = config.webDir ? API_PREFIX : '';
     const app = Fastify({
-        // closing the server also ends open SSE streams instead of waiting on them
-        forceCloseConnections: true,
+        // closing the server drops idle connections only: a request being answered
+        // finishes first (the open SSE streams are ended by the share routes' own
+        // preClose hook), and the shutdown's own timer is the limit on waiting
+        forceCloseConnections: 'idle',
         // a client that trickles its request in is cut off instead of holding a socket open;
         // the timeouts cover receiving the request, so a live SSE stream is not affected
         requestTimeout: REQUEST_TIMEOUT_MS,

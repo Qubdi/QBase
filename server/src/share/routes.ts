@@ -345,6 +345,14 @@ export const publicShareRoutes =
         const snapshots = createSnapshotCache(db);
         app.addHook('onClose', async () => snapshots.close());
 
+        // every open live stream's close, so shutting the app down ends them: an
+        // open stream would otherwise keep the server from closing for ever
+        const openStreams = new Set<() => void>();
+        // preClose runs before the server waits for its connections to end
+        app.addHook('preClose', async () => {
+            for (const closeStream of [...openStreams]) closeStream();
+        });
+
         // open live viewers per link, so one link cannot hold unlimited sockets
         const viewers = new Map<string, number>();
         // ...and per client address over all links, so one address cannot take every slot
@@ -457,6 +465,7 @@ export const publicShareRoutes =
             const close = () => {
                 if (closed) return;
                 closed = true;
+                openStreams.delete(close);
                 const left = (viewers.get(linkId) ?? 1) - 1;
                 if (left > 0) viewers.set(linkId, left);
                 else viewers.delete(linkId);
@@ -466,6 +475,8 @@ export const publicShareRoutes =
                 cleanup.forEach((fn) => fn());
                 raw.end();
             };
+
+            openStreams.add(close);
 
             // one place for writes: a viewer that cannot keep up is cut off
             // instead of buffering events in memory for ever
