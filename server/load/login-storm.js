@@ -19,7 +19,7 @@ export const options = {
             maxVUs: 500,
             stages: [
                 { target: RATE, duration: '30s' },
-                { target: RATE, duration: __ENV.DURATION || '1m' },
+                { target: RATE, duration: __ENV.DURATION || '2m' },
                 { target: 0, duration: '10s' },
             ],
         },

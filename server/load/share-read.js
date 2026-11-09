@@ -4,7 +4,7 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { seed, BASE } from './lib.js';
 
-const VUS = Number(__ENV.VUS || 100);
+const VUS = Number(__ENV.VUS || 50);
 
 export const options = {
     scenarios: {
@@ -13,7 +13,7 @@ export const options = {
             startVUs: 0,
             stages: [
                 { target: VUS, duration: '20s' },
-                { target: VUS, duration: __ENV.DURATION || '1m' },
+                { target: VUS, duration: __ENV.DURATION || '2m' },
                 { target: 0, duration: '10s' },
             ],
         },
