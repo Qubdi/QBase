@@ -31,6 +31,8 @@ docker-compose.yml
 **/__tests__/
 **/test/
 **/tests/
+**/*.test.ts
+**/*.test.tsx
 **/spec/
 *.md
 
