@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 22 · **date** 2026-11-09
+**rev** 23 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 1 | 44 | 0 |
 | Server | 16 | 0 | 4 | 20 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
-| Client | 40 | 0 | 2 | 54 | 0 |
+| Client | 22 | 0 | 0 | 72 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 106 | 0 | 7 | 171 | 1 |
+| **Total** | 88 | 0 | 5 | 189 | 1 |
 
 ## Act first
 
@@ -21,8 +21,6 @@
 - `SRV-002` — Error handler logs Drizzle error whose message embeds all query params
 - `SRV-021` — Quadratic regex on field type name hangs event loop; 100k chars takes 9 s
 - `SRV-031` — Quadratic drift rename pairing blocks event loop 8 s at 4000 tables
-- `CLI-001` — No error boundary or route `errorElement`; a render or chunk-load error blanks the app
-- `CLI-101` — Import dialog hangs on metadata with more than 50 tables
 
 ---
 
@@ -107,9 +105,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-001 | High | No error boundary or route `errorElement`; a render or chunk-load error blanks the app | `src/app.tsx:17`, `src/platform/router/router.tsx:18` | Add root error boundary and route errorElement with reload |
-| CLI-002 | Med | Startup `api.me()` failure of any kind (timeout, 5xx) shows user as signed out | `src/context/qubdi-context/qubdi-provider.tsx:69` | Only clear user on 401; keep state and retry otherwise |
-| CLI-003 | Med | "Overwrite" conflict action swallows fetch errors; click does nothing visibly | `src/components/qubdi/server-autosave.tsx:105` | Surface failure through setSaveStatus error state |
 | CLI-005 | Med | Final-save keepalive silently dropped above 60 KB; larger diagrams rely on beforeunload prompt only | `src/lib/qubdi/api.ts:455` | Use sendBeacon or chunked fallback for large final saves |
 | CLI-006 | Med | API responses cast `as T`, never validated at runtime | `src/lib/qubdi/api.ts:476` | Parse responses with zod schemas per endpoint |
 | CLI-007 | Med | Four React Compiler hook rules disabled repo-wide; refs written during render | `eslint.config.mjs:52`, `src/components/qubdi/server-autosave.tsx:49` | Migrate components; re-enable rules |
@@ -119,34 +114,19 @@
 | CLI-015 | Low | Favicon is empty `data:,`; no app icon in tabs | `index.html:8` | Link real favicon from public/ |
 | CLI-018 | Low | No tests import `ProjectCreateDialog`, `NewProjectDialog`, `ProjectSettings` | `src/components/qubdi/project-create-dialog.tsx:1` | Add unit tests for the three dialogs |
 | CLI-019 | Low | Eslint-disable `exhaustive-deps` count 13 in src; two files carry `no-explicit-any` file-wide | `src/canvas/diagram-canvas.tsx:330`, `src/core/wire/wire.test.ts:1` | Narrow suppressions; type fixtures |
-| CLI-020 | Med | Type-declaration regex backtracks cubically; 200 spaces take 1.5 s, 800 take 32 s | `src/core/model/type-declaration.ts:31` | Rewrite regex without overlapping space classes; cap input length |
-| CLI-021 | Med | CRLF DBML skips array and check preparation because `.` stops at `\r` | `src/formats/dbml/prepare.ts:67` | Split on `/\r?\n/` |
-| CLI-022 | Med | DBML array and check keys use table name only; same-named tables in two schemas collide | `src/formats/dbml/import-dbml.ts:177`, `src/formats/dbml/prepare.ts:79` | Key by schema plus table plus field |
-| CLI-023 | Med | Any `name(...)` default passes as function call; `;` and extra statements emitted verbatim | `src/dialects/shared/defaults.ts:27` | Reject top-level `;` and unbalanced parentheses |
-| CLI-024 | Med | CHECK, generated and WHERE expressions written raw into DDL, no statement-break guard | `src/dialects/postgresql/write.ts:262`, `src/dialects/mysql/write.ts:196`, `src/dialects/sql-server/write.ts:180`, `src/dialects/sqlite/write.ts:210`, `src/dialects/oracle/write.ts:117` | Run `checkExpression` before writing; refuse unbalanced text |
 | CLI-025 | Med | Index conversion keeps fulltext, spatial, gin without checking column types; DDL fails | `src/dialects/convert/convert-index.ts:84`, `src/dialects/convert/convert-index.ts:96` | Call `methodProblem` with column kinds before keeping type |
 | CLI-026 | Med | Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram | `src/persistence/dexie-adapter.ts:84` | Check store row or broadcast removals across tabs |
 | CLI-027 | Low | `save` clears removed flag, so an in-flight autosave resurrects a just-deleted diagram | `src/persistence/dexie-adapter.ts:69` | Keep flag; clear it only on explicit create |
 | CLI-028 | Med | Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s | `src/formats/shared/layout.ts:89` | Use spatial grid or per-column cursor for hub neighbours |
 | CLI-039 | Low | Metadata import names primary key after any unique index on same columns | `src/formats/metadata/load.ts:177` | Use primary flag from metadata, not column match |
 | CLI-045 | Low | Every edit serialises the whole design before section reuse check | `src/qbase/diagram-convert.ts:83` | Serialise only changed sections |
-| CLI-050 | Med | Sign-in email and password inputs have placeholder only, no label | `src/components/qubdi/auth-dialog.tsx:210`, `src/components/qubdi/auth-dialog.tsx:219` | Add aria-label matching the placeholder |
-| CLI-052 | Med | Viewer primary-key icon has no accessible name; meaning is icon-only | `src/pages/share-viewer-page/viewer-table-node.tsx:118` | Add aria-label or visually hidden text |
 | CLI-054 | Low | Viewer header brand name is hard-coded English | `src/pages/share-viewer-page/share-viewer-page.tsx:280` | Use a translated string or shared logo |
-| CLI-057 | Med | Dates use browser default locale, not the chosen language, despite `localeTag` | `src/lib/qubdi/when.ts:23`, `src/lib/qubdi/diagram-summary.ts:23`, `src/components/qubdi/drift-dialog.tsx:359`, `src/components/qubdi/resync-dialog.tsx:195`, `src/pages/admin-page/activity-panel.tsx:321`, `src/pages/admin-page/overview-panel.tsx:252` | Pass localeTag(i18n.language) to formatters |
 | CLI-065 | Low | Test waits a fixed 50 ms for a save that must not happen | `src/qbase/p8-qbs-contract.test.tsx:189` | Use fake timers past the autosave delay |
-| CLI-066 | Med | Turning on 2FA in editor refreshes user, remounts gate; one-time recovery codes vanish | `src/components/qubdi/two-factor-dialog.tsx:142`, `src/context/qubdi-context/qubdi-provider.tsx:151`, `src/components/qubdi/diagram-access.tsx:190`, `src/components/qubdi/diagram-access.tsx:220` | Key gate effects on `user?.id`, not the user object |
-| CLI-067 | Med | Publish badge refetches full diagram content after every autosave | `src/components/qubdi/publish-control.tsx:70`, `src/components/qubdi/publish-control.tsx:89` | Return publish status from summary or save reply |
 | CLI-068 | Med | Editor chunk 2.87 MB (561 kB gzip) bundles full all-dialect node-sql-parser | `src/formats/metadata/view-sources.ts:1`, `vite.config.ts:16` | Import per-dialect parser build lazily inside metadata import |
 | CLI-069 | Low | DBML chunk 15.6 MB (2.75 MB gzip) fetched on first DBML view | `src/formats/dbml/import-dbml.ts:1`, `vite.config.ts:16` | Split @dbml/core parser; load exporter without importer |
 | CLI-071 | Low | No `supportedLngs`; unsupported browser language sets `<html lang>` over English text | `src/i18n/i18n.ts:50`, `src/i18n/i18n.ts:70` | Set supportedLngs and nonExplicitSupportedLngs in init |
-| CLI-081 | Med | DBML enum with capitalised name not linked; field lower-cased into unknown type | `src/formats/dbml/import-dbml.ts:192`, `src/formats/shared/design-builder.ts:194` | Match user types case-insensitively before lower-casing type name |
-| CLI-082 | Med | Default text containing identity, autoincrement or nextval treated as numbering; value dropped | `src/dialects/convert/convert-default.ts:37`, `src/dialects/shared/defaults.ts:53`, `src/dialects/sql-server/write.ts:96` | Test markers on unquoted text only, anchored |
-| CLI-085 | Med | PostgreSQL default containing `nextval` written raw; sequence name raw in CREATE SEQUENCE | `src/dialects/postgresql/write.ts:51`, `src/dialects/postgresql/write.ts:394` | Anchor nextval form; quote sequence name as identifier |
-| CLI-086 | Med | Column type name written raw into DDL by every writer | `src/dialects/postgresql/write.ts:92`, `src/dialects/mysql/write.ts:84`, `src/dialects/sql-server/write.ts:61`, `src/dialects/oracle/write.ts:38`, `src/dialects/sqlite/write.ts:87` | Refuse type text outside word, space, parentheses, digits, comma |
 | CLI-087 | Low | MySQL writer keeps quoted defaults verbatim; a backslash escapes the closing quote | `src/dialects/mysql/write.ts:108` | Re-quote string defaults with MySQL `asStringLiteral` |
 | CLI-093 | Low | Column collation imported and saved but no SQL writer emits it | `src/formats/metadata/load.ts:141`, `src/dialects/postgresql/write.ts:151` | Write COLLATE in same-dialect export; note it in conversion |
-| CLI-101 | High | Metadata over 50 tables: new default Set each render loops onChange forever; dialog hangs | `src/features/import/import-box.tsx:209`, `src/features/import/import-box.tsx:225`, `src/dialogs/import-database-dialog/import-database-dialog.tsx:45` | Memoise defaultSelection(rows) with useMemo on rows |
 
 ### Dead code
 
@@ -341,6 +321,24 @@
 | SEC-033 | Security & secrets | Webhook accepts plain `http:`; token-bearing URL and drift details sent unencrypted |
 | SEC-034 | Security & secrets | API responses lack `Cache-Control: no-store`; GET share-links returns live tokens |
 | SRV-037 | Server | `forceCloseConnections: true` destroys in-flight requests on shutdown, not only SSE |
+| CLI-001 | Client | No error boundary or route `errorElement`; a render or chunk-load error blanks the app |
+| CLI-002 | Client | Startup `api.me()` failure of any kind (timeout, 5xx) shows user as signed out |
+| CLI-003 | Client | "Overwrite" conflict action swallows fetch errors; click does nothing visibly |
+| CLI-020 | Client | Type-declaration regex backtracks cubically; 200 spaces take 1.5 s, 800 take 32 s |
+| CLI-021 | Client | CRLF DBML skips array and check preparation because `.` stops at `\r` |
+| CLI-022 | Client | DBML array and check keys use table name only; same-named tables in two schemas collide |
+| CLI-023 | Client | Any `name(...)` default passes as function call; `;` and extra statements emitted verbatim |
+| CLI-024 | Client | CHECK, generated and WHERE expressions written raw into DDL, no statement-break guard |
+| CLI-050 | Client | Sign-in email and password inputs have placeholder only, no label |
+| CLI-052 | Client | Viewer primary-key icon has no accessible name; meaning is icon-only |
+| CLI-057 | Client | Dates use browser default locale, not the chosen language, despite `localeTag` |
+| CLI-066 | Client | Turning on 2FA in editor refreshes user, remounts gate; one-time recovery codes vanish |
+| CLI-067 | Client | Publish badge refetches full diagram content after every autosave |
+| CLI-081 | Client | DBML enum with capitalised name not linked; field lower-cased into unknown type |
+| CLI-082 | Client | Default text containing identity, autoincrement or nextval treated as numbering; value dropped |
+| CLI-085 | Client | PostgreSQL default containing `nextval` written raw; sequence name raw in CREATE SEQUENCE |
+| CLI-086 | Client | Column type name written raw into DDL by every writer |
+| CLI-101 | Client | Metadata over 50 tables: new default Set each render loops onChange forever; dialog hangs |
 
 ---
 
@@ -410,6 +408,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 23 | 2026-11-09 | 18 fixed (client batch 1: CLI-001, 002, 003, 020, 021, 022, 023, 024, 050, 052, 057, 066, 067, 081, 082, 085, 086, 101), 2 High cleared; anchors not remapped |
 | 22 | 2026-11-09 | 1 fixed (SRV-037); anchors not remapped |
 | 21 | 2026-11-09 | 11 fixed (security low batch 1: SEC-006, 007, 008, 009, 017, 020, 028, 029, 032, 033, 034); anchors not remapped |
 | 20 | 2026-11-09 | 3 fixed (SEC-016, SEC-021, SEC-025), anchors remapped |
