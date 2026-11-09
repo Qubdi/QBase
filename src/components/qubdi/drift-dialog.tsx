@@ -30,6 +30,7 @@ import {
 import { getSyncState } from '@/lib/qubdi/sync-state';
 import { ConnectionsDialog } from './connections-dialog';
 import { useWorkspace } from './workspace-context';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 export interface DriftDialogProps {
     open: boolean;
@@ -356,7 +357,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                     >
                         <p className="text-sm">
                             {t('qubdi.database.drift.lastCheck', {
-                                date: new Date(report.runAt).toLocaleString(),
+                                date: new Date(report.runAt).toLocaleString(
+                                    uiLocale()
+                                ),
                             })}{' '}
                             <strong data-testid="drift-status">
                                 {report.status === 'clean'

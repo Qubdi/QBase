@@ -1,5 +1,6 @@
 import { i18n } from '@/i18n/i18n';
 import { DatabaseEdition, DatabaseType } from '@/qbase/diagram-types';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 /** The database a server diagram is for; anything unknown is PostgreSQL. */
 export const toDatabaseType = (
@@ -20,7 +21,7 @@ export const toDatabaseEdition = (
 export function formatWhen(value: string | null | undefined): string {
     if (!value) return '—';
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(uiLocale());
 }
 
 /** "3 tables" style label for screen readers and tooltips. */

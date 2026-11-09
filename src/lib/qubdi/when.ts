@@ -1,5 +1,6 @@
 import { format, register } from 'timeago.js';
 import { i18n } from '@/i18n/i18n';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 const UNITS = ['second', 'minute', 'hour', 'day', 'week', 'month', 'year'];
 
@@ -20,4 +21,4 @@ export const ago = (iso: string, now: Date = new Date()): string =>
 
 /** The exact time in the viewer's own format, for a tooltip. */
 export const exactTime = (iso: string): string =>
-    new Date(iso).toLocaleString();
+    new Date(iso).toLocaleString(uiLocale());

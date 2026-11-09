@@ -16,12 +16,13 @@ import { ActivitySentence } from './activity-sentence';
 import { adminPath } from './admin-sections';
 import { StatTile } from './stat-tile';
 import { timeOf } from './time-of';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 /** How many of the latest events the Overview lists; the Activity page has the rest. */
 export const RECENT_EVENTS = 8;
 
 const dayOf = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, {
+    new Date(iso).toLocaleDateString(uiLocale(), {
         day: 'numeric',
         month: 'short',
     });
@@ -249,7 +250,9 @@ export const OverviewPanel: React.FC = () => {
                                 <ActivitySentence item={item} />
                                 <time
                                     dateTime={item.at}
-                                    title={new Date(item.at).toLocaleString()}
+                                    title={new Date(item.at).toLocaleString(
+                                        uiLocale()
+                                    )}
                                     className="shrink-0 text-xs text-muted-foreground"
                                 >
                                     {t(

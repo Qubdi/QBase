@@ -33,6 +33,7 @@ import {
 } from '@/lib/qubdi/sync-state';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import type { ChangeSet } from '../../../shared/reconcile';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 export interface ResyncDialogProps {
     open: boolean;
@@ -192,7 +193,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                             {t('qubdi.database.resync.lastSynced', {
                                 date: new Date(
                                     state.lastSyncedAt
-                                ).toLocaleString(),
+                                ).toLocaleString(uiLocale()),
                             })}
                         </p>
                         {needsPassword(state) ||

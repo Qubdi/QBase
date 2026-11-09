@@ -24,6 +24,7 @@ import { useToast } from '@/platform/toast/use-toast';
 import { cn } from '@/lib/utils';
 import { ActivitySentence, type Named } from './activity-sentence';
 import { timeOf } from './time-of';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 const PAGE_SIZE = 30;
 const NO_USERS: ReadonlySet<string> = new Set();
@@ -318,7 +319,7 @@ export const ActivityPanel: React.FC = () => {
                                             dateTime={item.at}
                                             title={new Date(
                                                 item.at
-                                            ).toLocaleString()}
+                                            ).toLocaleString(uiLocale())}
                                             className="shrink-0 text-xs tabular-nums text-muted-foreground"
                                         >
                                             {timeOf(item.at)}

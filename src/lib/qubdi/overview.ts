@@ -4,6 +4,7 @@
 import { i18n } from '@/i18n/i18n';
 import { localeTag } from '@/i18n/locale-tag';
 import type { AdminStats } from './api';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 export type ActivityDay = AdminStats['activity']['days'][number];
 
@@ -74,7 +75,7 @@ export function dayLabel(day: string, today: string): DayLabel {
     const [year, month, date] = day.split('-').map(Number);
     const when = new Date(year, month - 1, date);
     const part = (options: Intl.DateTimeFormatOptions) =>
-        when.toLocaleDateString(undefined, options);
+        when.toLocaleDateString(uiLocale(), options);
     return {
         weekday: part({ weekday: 'short' }),
         date: part({ day: 'numeric', month: 'short' }),
