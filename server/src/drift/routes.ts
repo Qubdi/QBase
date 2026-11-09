@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -288,16 +288,21 @@ export const driftRoutes =
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const latest = await latestReportSummary(db, id);
             if (latest && !latest.dismissedAt) {
-                await db
+                // only a row this call changed is worth a log entry: two dismissals
+                // at once, or one of nothing, leave no trace of a second
+                const changed = await db
                     .update(driftReports)
                     .set({ dismissedAt: new Date() })
-                    .where(eq(driftReports.id, latest.id));
+                    .where(and(eq(driftReports.id, latest.id), isNull(driftReports.dismissedAt)))
+                    .returning({ id: driftReports.id });
+                if (changed.length > 0) {
+                    await audit(db, {
+                        userId: req.user!.id,
+                        action: 'drift.dismiss',
+                        diagramId: id,
+                    });
+                }
             }
-            await audit(db, {
-                userId: req.user!.id,
-                action: 'drift.dismiss',
-                diagramId: id,
-            });
             const after = await latestReportSummary(db, id);
             return {
                 latest: after ? summarizeReport(after) : null,

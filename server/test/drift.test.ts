@@ -496,6 +496,20 @@ describe('drift detection', () => {
             expect((await get()).json().latest.dismissedAt).toBeTruthy();
         });
 
+        it('logs a dismissal once, and not at all when there was nothing to dismiss', async () => {
+            const dismiss = () => ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/dismiss`, headers: as(owner) });
+            const dismissals = async () =>
+                (await ctx.db.select().from(auditLog)).filter((r) => r.diagramId === diagramId && r.action === 'drift.dismiss').length;
+            await ctx.db.delete(auditLog);
+            await dismiss(); // no report yet
+            expect(await dismissals()).toBe(0);
+            addColumn('phone');
+            await check();
+            await dismiss();
+            await dismiss(); // already dismissed
+            expect(await dismissals()).toBe(1);
+        });
+
         it('keeps drift dismissed while it stays the same, and raises it again when it changes', async () => {
             addColumn('phone');
             await check();
