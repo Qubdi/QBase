@@ -23,15 +23,10 @@ import { localDateStamp, saveBlob } from '@/lib/qubdi/save-blob';
 import { useToast } from '@/platform/toast/use-toast';
 import { cn } from '@/lib/utils';
 import { ActivitySentence, type Named } from './activity-sentence';
+import { timeOf } from './time-of';
 
 const PAGE_SIZE = 30;
 const NO_USERS: ReadonlySet<string> = new Set();
-
-const timeOf = (iso: string) =>
-    new Date(iso).toLocaleTimeString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
 
 /** Who did what and when, newest first, with filters and "Load more". */
 export const ActivityPanel: React.FC = () => {
