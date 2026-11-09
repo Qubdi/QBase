@@ -1,6 +1,7 @@
-# Runs the published image, qubdi/qbase from Docker Hub (built and pushed only by
-# the tag workflow, .github/workflows/publish.yaml, after its checks pass), with
-# the bundled PostgreSQL. To run an image built from this checkout instead, add
+# Runs the published image, qubdi/qbase from Docker Hub (built and pushed by the
+# tag workflow, .github/workflows/publish.yaml, after its checks pass; `bash run.sh
+# push` can also push by hand, and runs none of those checks), with the bundled
+# PostgreSQL. To run an image built from this checkout instead, add
 # docker-compose.build.yml; to work on the code itself, see "Option C" in the README.
 # Configuration comes from .env (see .env.example); the defaults suit local development.
 name: qbase
