@@ -13,8 +13,8 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
     ignore:
-      # majors are taken on purpose, one step at a time (see TODO.md), not by
-      # a bot's pull request
+      # majors are taken on purpose, one step at a time, not by a bot's pull
+      # request
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
@@ -27,8 +27,8 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
     ignore:
-      # majors are taken on purpose, one step at a time (see TODO.md), not by
-      # a bot's pull request
+      # majors are taken on purpose, one step at a time, not by a bot's pull
+      # request
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
