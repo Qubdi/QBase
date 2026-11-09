@@ -392,9 +392,16 @@ export class DesignBuilder {
                     (c.primaryKey &&
                         t.columns.filter((x) => x.primaryKey).length === 1),
             });
+            const manyToMany =
+                link.cardinality?.source === 'many' &&
+                link.cardinality.target === 'many';
+            if (manyToMany)
+                this.diagnostics.push({
+                    severity: 'warning',
+                    message: `Relationship ${link.name || '(unnamed)'}: many-to-many is not supported, so it became one-to-many.`,
+                });
             const card = link.cardinality
-                ? link.cardinality.source === 'many' &&
-                  link.cardinality.target === 'many'
+                ? manyToMany
                     ? { source: 'one' as const, target: 'many' as const }
                     : link.cardinality
                 : cardinalityOf(facts(a, from), facts(b, to));

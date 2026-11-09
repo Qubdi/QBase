@@ -77,4 +77,30 @@ describe('DesignBuilder diagnostics', () => {
             'Table users: a second field named id was left out.',
         ]);
     });
+
+    it('says when a many-to-many relationship became one-to-many', () => {
+        const b = builder();
+        for (const name of ['a', 'b'])
+            b.addTable({
+                name,
+                columns: [{ name: 'id', typeName: 'int', nullable: false }],
+                indexes: [],
+                checks: [],
+            });
+        b.addLink({
+            name: 'a_b',
+            cardinality: { source: 'many', target: 'many' },
+            from: { table: 'a', column: 'id' },
+            to: { table: 'b', column: 'id' },
+        });
+        const design = b.build();
+        const link = design.links.byId[design.links.order[0]];
+        expect([link.sourceCardinality, link.targetCardinality]).toEqual([
+            'one',
+            'many',
+        ]);
+        expect(b.diagnostics.map((d) => d.message)).toEqual([
+            'Relationship a_b: many-to-many is not supported, so it became one-to-many.',
+        ]);
+    });
 });
