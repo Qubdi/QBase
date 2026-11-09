@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config.js';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
@@ -794,6 +794,26 @@ describe('drift webhooks', () => {
         });
         expect((received[0].body.changes as Array<{ summary: string }>)[0].summary).toMatch(/phone/);
         expect(report.webhook).toMatch(/^sent \(200\)/);
+    });
+
+    it('posts nothing when the report cannot be stored, so the next check does not post it twice', async () => {
+        drift('phone');
+        await ctx.db.execute(sql`
+            create function refuse_report() returns trigger language plpgsql as
+            $$ begin raise exception 'refused'; end $$`);
+        await ctx.db.execute(sql`
+            create trigger refuse_report before insert on drift_reports
+            for each row execute function refuse_report()`);
+        try {
+            expect((await check()).statusCode).toBe(500);
+            expect(received).toHaveLength(0);
+        } finally {
+            await ctx.db.execute(sql`drop trigger refuse_report on drift_reports`);
+            await ctx.db.execute(sql`drop function refuse_report()`);
+        }
+        // the change is still news to the next check, which posts it once
+        expect((await check()).statusCode).toBe(200);
+        expect(received).toHaveLength(1);
     });
 
     it('does not post for a clean database', async () => {

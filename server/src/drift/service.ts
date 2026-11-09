@@ -326,7 +326,6 @@ export async function runDriftCheck(
         // a dismissed report stays dismissed until the drift actually changes
         const dismissedAt = sameAsBefore ? (previous?.dismissedAt ?? null) : null;
 
-        let webhookNote: string | null = null;
         const webhookUrl = settings.webhookUrl
             ? openWebhookUrl(
                   deps.config.secretsKey
@@ -335,6 +334,30 @@ export async function runDriftCheck(
                   settings.webhookUrl
               )
             : null;
+        // there is a webhook, but it cannot be opened (the key changed, or the
+        // value is damaged): say so in the report instead of staying silent
+        const unreadableNote =
+            settings.webhookUrl && !webhookUrl && outcome.status !== 'clean' && !sameAsBefore
+                ? UNREADABLE_WEBHOOK_NOTE
+                : null;
+
+        const [report] = await db
+            .insert(driftReports)
+            .values({
+                diagramId,
+                runAt: now,
+                status: outcome.status,
+                trigger: 'manual',
+                changes: items,
+                renameHints: outcome.status === 'error' ? [] : outcome.hints,
+                counts,
+                error: outcome.status === 'error' ? outcome.message : null,
+                signature,
+                dismissedAt,
+                webhook: unreadableNote,
+            })
+            .returning();
+
         if (outcome.status !== 'clean' && !sameAsBefore && webhookUrl) {
             const diagramRow = await db
                 .select({ title: diagrams.title })
@@ -358,36 +381,14 @@ export async function runDriftCheck(
                 },
                 { allow: deps.config.introspectAllowHosts, lookup: deps.lookup }
             );
-            webhookNote = result.ok
+            // the report is already stored, so a failed insert cannot make the
+            // next check send this change again
+            const note = result.ok
                 ? `sent (${result.status})`
                 : `failed: ${result.error ?? `HTTP ${result.status}`}`;
-        } else if (
-            settings.webhookUrl &&
-            !webhookUrl &&
-            outcome.status !== 'clean' &&
-            !sameAsBefore
-        ) {
-            // there is a webhook, but it cannot be opened (the key changed, or
-            // the value is damaged): say so in the report instead of staying silent
-            webhookNote = UNREADABLE_WEBHOOK_NOTE;
+            await db.update(driftReports).set({ webhook: note }).where(eq(driftReports.id, report.id));
+            report.webhook = note;
         }
-
-        const [report] = await db
-            .insert(driftReports)
-            .values({
-                diagramId,
-                runAt: now,
-                status: outcome.status,
-                trigger: 'manual',
-                changes: items,
-                renameHints: outcome.status === 'error' ? [] : outcome.hints,
-                counts,
-                error: outcome.status === 'error' ? outcome.message : null,
-                signature,
-                dismissedAt,
-                webhook: webhookNote,
-            })
-            .returning();
 
         return report;
     } finally {
