@@ -1,3 +1,4 @@
+import { newId } from '@/core/model/ids';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -6,18 +7,8 @@ export function cn(...inputs: ClassValue[]): string {
     return twMerge(clsx(inputs));
 }
 
-const ID_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
-
-/** Random text of `length` characters from 0-9a-z, drawn from the browser's CSPRNG. */
-const randomText = (length: number): string => {
-    const bytes = crypto.getRandomValues(new Uint8Array(length));
-    let text = '';
-    for (const byte of bytes) text += ID_ALPHABET[byte % ID_ALPHABET.length];
-    return text;
-};
-
 /** An opaque id for a table, field, index, relationship and the like: 25 characters. */
-export const generateId = (): string => randomText(25);
+export const generateId = (): string => newId();
 
 export type OperatingSystem = 'mac' | 'windows' | 'linux' | 'other';
 

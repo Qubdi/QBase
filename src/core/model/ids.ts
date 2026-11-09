@@ -42,7 +42,7 @@ export function newId(random?: RandomInt): string {
  * ids are opened unchanged).
  */
 export function newDesignId(random?: RandomInt): string {
-    return randomText(ID_LENGTH, random);
+    return newId(random);
 }
 
 /** True when `id` has the shape that `newId` produces. */
