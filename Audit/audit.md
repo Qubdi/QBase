@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 18 · **date** 2026-11-09
+**rev** 19 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 33 | 0 | 0 | 0 | 0 |
 | Repository | 12 | 0 | 1 | 44 | 0 |
-| Server | 19 | 0 | 4 | 17 | 0 |
+| Server | 17 | 0 | 4 | 19 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 40 | 0 | 2 | 54 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 123 | 0 | 7 | 154 | 1 |
+| **Total** | 121 | 0 | 7 | 156 | 1 |
 
 ## Act first
 
@@ -64,7 +64,7 @@
 | SEC-031 | Low | Driver error text and address class returned; refused, timeout, private-host answers map networks | `server/src/introspect/routes.ts:226`, `server/src/introspect/routes.ts:231`, `server/src/introspect/net-guard.ts:192` | Return fixed error codes; log driver text server-side only |
 | SEC-032 | Low | Webhooks reuse INTROSPECT_ALLOW_HOSTS; a database allow-list also permits internal HTTP POSTs | `server/src/drift/service.ts:382`, `server/src/drift/webhook.ts:85` | Add a separate WEBHOOK_ALLOW_HOSTS list for webhooks |
 | SEC-033 | Low | Webhook accepts plain `http:`; token-bearing URL and drift details sent unencrypted | `server/src/drift/webhook.ts:60` | Require https unless host is allow-listed |
-| SEC-034 | Low | API responses lack `Cache-Control: no-store`; GET share-links returns live tokens | `server/src/lib/security-headers.ts:6`, `server/src/share/routes.ts:141` | Add `cache-control: no-store` to API_SECURITY_HEADERS |
+| SEC-034 | Low | API responses lack `Cache-Control: no-store`; GET share-links returns live tokens | `server/src/lib/security-headers.ts:6`, `server/src/share/routes.ts:142` | Add `cache-control: no-store` to API_SECURITY_HEADERS |
 
 ### Repository
 
@@ -80,7 +80,7 @@
 | REPO-015 | Low | 1.1 MB `audit-ui-differences.html` tracked, not an owned audit file | `Audit/audit-ui-differences.html:1` | Untrack or move out of Audit/ |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
 | REPO-027 | Med | Load run.sh never fails on a k6 threshold; README says it gates CI | `server/load/run.sh:58`, `server/load/run.sh:69`, `server/load/README.md:18` | Return k6run status from run_one |
-| REPO-028 | Med | README feature line says only a share-token hash is stored; code also encrypts token | `README.md:21`, `server/src/share/routes.ts:167` | Reword feature line to hash plus encrypted token |
+| REPO-028 | Med | README feature line says only a share-token hash is stored; code also encrypts token | `README.md:21`, `server/src/share/routes.ts:168` | Reword feature line to hash plus encrypted token |
 | REPO-059 | Low | CI tests only PostgreSQL 18, though README says 16 or newer | `.github/workflows/ci.yaml:57` | Add a PostgreSQL 16 leg to the server CI job |
 
 ### Server
@@ -89,22 +89,20 @@
 |----|-----|---------|-------|-----|
 | SRV-001 | High | Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first | `server/src/diagrams/routes.ts:123`, `server/src/diagrams/routes.ts:260`, `server/src/diagrams/routes.ts:349`, `server/src/config.ts:219` | Check session cookie in onRequest before body parsing |
 | SRV-002 | High | Error handler logs Drizzle error whose message embeds all query params | `server/src/app.ts:207` | Log err.cause and query name only, never params |
-| SRV-003 | Med | Audit insert after committed write throws, returning 500 for a done action | `server/src/audit/audit.ts:152`, `server/src/diagrams/routes.ts:436`, `server/src/auth/routes.ts:244`, `server/src/share/routes.ts:187` | Write audit in same transaction or swallow and log |
-| SRV-004 | Med | Link revoke/update emits live-viewer event after audit; audit failure leaves viewers connected | `server/src/share/routes.ts:279`, `server/src/share/routes.ts:291`, `server/src/share/routes.ts:250`, `server/src/share/routes.ts:256`, `server/src/admin/routes.ts:712`, `server/src/admin/routes.ts:723` | Emit link event before audit, or in finally |
+| SRV-003 | Med | Audit insert after committed write throws, returning 500 for a done action | `server/src/audit/audit.ts:152`, `server/src/diagrams/routes.ts:436`, `server/src/auth/routes.ts:244`, `server/src/share/routes.ts:188` | Write audit in same transaction or swallow and log |
+| SRV-004 | Med | Link revoke/update emits live-viewer event after audit; audit failure leaves viewers connected | `server/src/share/routes.ts:280`, `server/src/share/routes.ts:292`, `server/src/share/routes.ts:251`, `server/src/share/routes.ts:257`, `server/src/admin/routes.ts:712`, `server/src/admin/routes.ts:723` | Emit link event before audit, or in finally |
 | SRV-006 | Med | LISTEN connection has no TCP keepalive; a silently dropped link is never noticed | `server/src/events.ts:108` | Set keepAlive true on the pg.Client |
 | SRV-007 | Med | No rate limit on publish; each call stores a snapshot up to 50 MB | `server/src/diagrams/routes.ts:517` | Add perUserLimit to /:id/publish |
-| SRV-008 | Med | Limiters, lockout, viewer caps and drift-running guard are per process, not per cluster | `server/src/lib/rate-key.ts:53`, `server/src/lib/failure-throttle.ts:15`, `server/src/share/routes.ts:348`, `server/src/share/routes.ts:350`, `server/src/drift/service.ts:74` | Move counters and running guard to Postgres or advisory locks |
+| SRV-008 | Med | Limiters, lockout, viewer caps and drift-running guard are per process, not per cluster | `server/src/lib/rate-key.ts:53`, `server/src/lib/failure-throttle.ts:15`, `server/src/share/routes.ts:349`, `server/src/share/routes.ts:351`, `server/src/drift/service.ts:74` | Move counters and running guard to Postgres or advisory locks |
 | SRV-009 | Med | Default 50 MB diagram body parsed by zod and hashed synchronously on event loop | `server/src/config.ts:219`, `server/src/diagrams/routes.ts:289`, `server/src/diagrams/routes.ts:392` | Lower default limit or hash in worker thread |
 | SRV-019 | Low | Publishes during a LISTEN outage are never replayed to live viewers | `server/src/events.ts:33`, `server/src/events.ts:97` | Send current version in each heartbeat ping |
 | SRV-020 | Low | No test references reseal.ts, snapshot-cache.ts or server.ts | `server/src/drift/reseal.ts:13`, `server/src/share/snapshot-cache.ts:15`, `server/src/server.ts:1` | Add unit tests for reseal and snapshot cache |
 | SRV-021 | High | Quadratic regex on field type name hangs event loop; 100k chars takes 9 s | `shared/schema-desc.ts:95`, `shared/schema-desc.ts:315` | Strip trailing `[]` with a loop, not `(\[\])+$` |
-| SRV-023 | Med | SSE_HEARTBEAT_SECONDS above 2147483 overflows setInterval to 1 ms ticks | `server/src/config.ts:233`, `server/src/share/routes.ts:513` | Cap SSE_HEARTBEAT_SECONDS at 3600 in `int()` |
+| SRV-023 | Med | SSE_HEARTBEAT_SECONDS above 2147483 overflows setInterval to 1 ms ticks | `server/src/config.ts:233`, `server/src/share/routes.ts:516` | Cap SSE_HEARTBEAT_SECONDS at 3600 in `int()` |
 | SRV-025 | Med | pg.Client for introspection has no error listener; dropped target connection can crash process | `server/src/introspect/postgres.ts:366` | Add `client.on('error', ...)` that ignores or logs |
 | SRV-026 | Med | mssql ConnectionPool for introspection has no error listener | `server/src/introspect/sqlserver.ts:458` | Add `pool.on('error', ...)` handler |
-| SRV-028 | Low | SSE writes ignore backpressure; a slow viewer buffers events without bound | `server/src/share/routes.ts:482`, `server/src/share/routes.ts:532` | Close stream when `raw.write` returns false and buffer grows |
 | SRV-030 | Low | SQL Server tests silently skip when container is absent, so CI never runs them | `server/test/introspect-sqlserver.test.ts:20` | Fail in CI when MSSQL is unreachable |
 | SRV-031 | High | Drift rename pairing is quadratic; 4000 vs 4000 tables blocks event loop 8 s | `shared/reconcile.ts:432`, `shared/reconcile.ts:433`, `shared/reconcile.ts:187`, `server/src/drift/service.ts:296` | Bucket rename candidates by column signature; cap pair count |
-| SRV-036 | Low | Shutdown awaits running maintenance before closing app; long prune hits forced exit | `server/src/shutdown.ts:39`, `server/src/shutdown.ts:40` | Close app first, or stop maintenance in parallel |
 | SRV-037 | Low | `forceCloseConnections: true` destroys in-flight requests on shutdown, not only SSE | `server/src/app.ts:90` | Use `'idle'` and end SSE streams in an onClose hook |
 
 ### Database
@@ -150,7 +148,7 @@
 | CLI-050 | Med | Sign-in email and password inputs have placeholder only, no label | `src/components/qubdi/auth-dialog.tsx:210`, `src/components/qubdi/auth-dialog.tsx:219` | Add aria-label matching the placeholder |
 | CLI-052 | Med | Viewer primary-key icon has no accessible name; meaning is icon-only | `src/pages/share-viewer-page/viewer-table-node.tsx:118` | Add aria-label or visually hidden text |
 | CLI-054 | Low | Viewer header brand name is hard-coded English | `src/pages/share-viewer-page/share-viewer-page.tsx:280` | Use a translated string or shared logo |
-| CLI-057 | Med | Dates use browser default locale, not the chosen language, despite `localeTag` | `src/lib/qubdi/when.ts:23`, `src/lib/qubdi/diagram-summary.ts:23`, `src/components/qubdi/drift-dialog.tsx:359`, `src/components/qubdi/resync-dialog.tsx:195`, `src/pages/admin-page/activity-panel.tsx:326`, `src/pages/admin-page/overview-panel.tsx:257` | Pass localeTag(i18n.language) to formatters |
+| CLI-057 | Med | Dates use browser default locale, not the chosen language, despite `localeTag` | `src/lib/qubdi/when.ts:23`, `src/lib/qubdi/diagram-summary.ts:23`, `src/components/qubdi/drift-dialog.tsx:359`, `src/components/qubdi/resync-dialog.tsx:195`, `src/pages/admin-page/activity-panel.tsx:321`, `src/pages/admin-page/overview-panel.tsx:252` | Pass localeTag(i18n.language) to formatters |
 | CLI-065 | Low | Test waits a fixed 50 ms for a save that must not happen | `src/qbase/p8-qbs-contract.test.tsx:189` | Use fake timers past the autosave delay |
 | CLI-066 | Med | Turning on 2FA in editor refreshes user, remounts gate; one-time recovery codes vanish | `src/components/qubdi/two-factor-dialog.tsx:142`, `src/context/qubdi-context/qubdi-provider.tsx:151`, `src/components/qubdi/diagram-access.tsx:190`, `src/components/qubdi/diagram-access.tsx:220` | Key gate effects on `user?.id`, not the user object |
 | CLI-067 | Med | Publish badge refetches full diagram content after every autosave | `src/components/qubdi/publish-control.tsx:70`, `src/components/qubdi/publish-control.tsx:89` | Return publish status from summary or save reply |
@@ -187,6 +185,8 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SRV-028 | Server | SSE writes ignore backpressure; a slow viewer buffers events without bound |
+| SRV-036 | Server | Shutdown awaits running maintenance before closing app; long prune hits forced exit |
 | SRV-032 | Server | Deeply nested content (10 KB, depth 5000) overflows recursive stableStringify; answers 500 |
 | SRV-033 | Server | Forged activity cursor with Feb 31 passes Date.parse, Postgres cast fails, 500 |
 | SRV-034 | Server | mfa-reset CLI never loads server/.env; README source-checkout command fails |
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 19 | 2026-11-09 | 2 fixed (SRV-028, SRV-036), anchors remapped |
 | 18 | 2026-11-09 | 5 fixed (server low batch 2), anchors remapped |
 | 17 | 2026-11-09 | 13 fixed (server low batch 1), anchors remapped |
 | 16 | 2026-11-09 | 18 fixed, 1 narrowed (REPO-059); repository lens low batch 3, anchors remapped |

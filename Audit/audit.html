@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 18</b></div>
-  <h1>123 open across six lenses.</h1>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 19</b></div>
+  <h1>121 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -36,11 +36,11 @@
       <tbody>
         <tr><td>Security &amp; secrets</td><td>33</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
         <tr><td>Repository</td><td>12</td><td>0</td><td>1</td><td>44</td><td>0</td></tr>
-        <tr><td>Server</td><td>19</td><td>0</td><td>4</td><td>17</td><td>0</td></tr>
+        <tr><td>Server</td><td>17</td><td>0</td><td>4</td><td>19</td><td>0</td></tr>
         <tr><td>Database</td><td>8</td><td>0</td><td>0</td><td>10</td><td>1</td></tr>
         <tr><td>Client</td><td>40</td><td>0</td><td>2</td><td>54</td><td>0</td></tr>
         <tr><td>Dead code</td><td>11</td><td>0</td><td>0</td><td>29</td><td>0</td></tr>
-        <tr><td>Total</td><td>123</td><td>0</td><td>7</td><td>154</td><td>1</td></tr>
+        <tr><td>Total</td><td>121</td><td>0</td><td>7</td><td>156</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -60,8 +60,8 @@
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
-    <p>19 open findings.</p>
-    <p class="lbl">19 open &middot; 0 Crit &middot; 4 High &middot; 17 fixed &middot; 0 accepted</p>
+    <p>17 open findings.</p>
+    <p class="lbl">17 open &middot; 0 Crit &middot; 4 High &middot; 19 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-database.html">
     <h3>Database &amp; scale</h3>
@@ -86,6 +86,7 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
+        <tr><td>19</td><td>2026-11-09</td><td class="wrap-cell">2 fixed (SRV-028, SRV-036), anchors remapped</td></tr>
         <tr><td>18</td><td>2026-11-09</td><td class="wrap-cell">5 fixed (server low batch 2), anchors remapped</td></tr>
         <tr><td>17</td><td>2026-11-09</td><td class="wrap-cell">13 fixed (server low batch 1), anchors remapped</td></tr>
         <tr><td>16</td><td>2026-11-09</td><td class="wrap-cell">18 fixed, 1 narrowed (REPO-059); repository lens low batch 3, anchors remapped</td></tr>

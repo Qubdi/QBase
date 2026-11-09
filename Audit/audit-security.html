@@ -8,7 +8,7 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 18</b></div>
+  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 19</b></div>
   <h1>33 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
@@ -67,7 +67,7 @@
         <tr><td class="svc-name">SEC-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Driver error text and address class returned; refused, timeout, private-host answers map networks</td><td class="wrap-cell"><code>server/src/introspect/routes.ts:226</code>, <code>server/src/introspect/routes.ts:231</code>, <code>server/src/introspect/net-guard.ts:192</code></td><td class="wrap-cell">Return fixed error codes; log driver text server-side only</td></tr>
         <tr><td class="svc-name">SEC-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Webhooks reuse INTROSPECT_ALLOW_HOSTS; a database allow-list also permits internal HTTP POSTs</td><td class="wrap-cell"><code>server/src/drift/service.ts:382</code>, <code>server/src/drift/webhook.ts:85</code></td><td class="wrap-cell">Add a separate WEBHOOK_ALLOW_HOSTS list for webhooks</td></tr>
         <tr><td class="svc-name">SEC-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Webhook accepts plain <code>http:</code>; token-bearing URL and drift details sent unencrypted</td><td class="wrap-cell"><code>server/src/drift/webhook.ts:60</code></td><td class="wrap-cell">Require https unless host is allow-listed</td></tr>
-        <tr><td class="svc-name">SEC-034</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">API responses lack <code>Cache-Control: no-store</code>; GET share-links returns live tokens</td><td class="wrap-cell"><code>server/src/lib/security-headers.ts:6</code>, <code>server/src/share/routes.ts:141</code></td><td class="wrap-cell">Add <code>cache-control: no-store</code> to API_SECURITY_HEADERS</td></tr>
+        <tr><td class="svc-name">SEC-034</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">API responses lack <code>Cache-Control: no-store</code>; GET share-links returns live tokens</td><td class="wrap-cell"><code>server/src/lib/security-headers.ts:6</code>, <code>server/src/share/routes.ts:142</code></td><td class="wrap-cell">Add <code>cache-control: no-store</code> to API_SECURITY_HEADERS</td></tr>
       </tbody>
     </table>
   </div>

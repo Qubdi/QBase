@@ -8,7 +8,7 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 18</b></div>
+  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 19</b></div>
   <h1>12 open (0 Crit, 1 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
@@ -47,7 +47,7 @@
         <tr><td class="svc-name">REPO-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">1.1 MB <code>audit-ui-differences.html</code> tracked, not an owned audit file</td><td class="wrap-cell"><code>Audit/audit-ui-differences.html:1</code></td><td class="wrap-cell">Untrack or move out of Audit/</td></tr>
         <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CODEOWNERS lists a personal email, no team; single point of review</td><td class="wrap-cell"><code>.github/CODEOWNERS:5</code></td><td class="wrap-cell">Use a verified <code>@org/team</code> owner</td></tr>
         <tr><td class="svc-name">REPO-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Load run.sh never fails on a k6 threshold; README says it gates CI</td><td class="wrap-cell"><code>server/load/run.sh:58</code>, <code>server/load/run.sh:69</code>, <code>server/load/README.md:18</code></td><td class="wrap-cell">Return k6run status from run_one</td></tr>
-        <tr><td class="svc-name">REPO-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README feature line says only a share-token hash is stored; code also encrypts token</td><td class="wrap-cell"><code>README.md:21</code>, <code>server/src/share/routes.ts:167</code></td><td class="wrap-cell">Reword feature line to hash plus encrypted token</td></tr>
+        <tr><td class="svc-name">REPO-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README feature line says only a share-token hash is stored; code also encrypts token</td><td class="wrap-cell"><code>README.md:21</code>, <code>server/src/share/routes.ts:168</code></td><td class="wrap-cell">Reword feature line to hash plus encrypted token</td></tr>
         <tr><td class="svc-name">REPO-059</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CI tests only PostgreSQL 18, though README says 16 or newer</td><td class="wrap-cell"><code>.github/workflows/ci.yaml:57</code></td><td class="wrap-cell">Add a PostgreSQL 16 leg to the server CI job</td></tr>
       </tbody>
     </table>
