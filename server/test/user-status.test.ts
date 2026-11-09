@@ -71,10 +71,10 @@ describe('user status (active / disabled)', () => {
             );
         });
 
-        it('refuses to sign them in, telling them why', async () => {
+        it('refuses to sign them in, with the same answer as a wrong password', async () => {
             const res = await login('member@example.com');
-            expect(res.statusCode).toBe(403);
-            expect(res.json().error).toBe('account_disabled');
+            expect(res.statusCode).toBe(401);
+            expect(res.json().error).toBe('invalid_credentials');
             expect(res.cookies.find((c) => c.name === 'qbase_session')).toBeUndefined();
         });
 

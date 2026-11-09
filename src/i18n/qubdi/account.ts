@@ -47,8 +47,6 @@ export const account = {
         cannot_disable_self: 'You cannot disable your own account.',
         cannot_sign_out_self:
             'You cannot sign yourself out here. Use Sign out in the account menu.',
-        account_disabled:
-            'This account has been disabled. Ask an admin to enable it.',
         invalid_name:
             'Use letters or numbers in the project name; it becomes its web address.',
         reserved_name:

@@ -205,7 +205,9 @@ export const authRoutes =
             const ok = user
                 ? await verifyPassword(user.passwordHash, body.password)
                 : await verifyAgainstNobody(body.password);
-            if (!user || !ok) {
+            // a disabled account is answered like a wrong password, so a correct
+            // password cannot confirm that the account exists but is switched off
+            if (!user || !user.isActive || !ok) {
                 failures.recordFailure(key);
                 reply.code(401).send({ error: 'invalid_credentials' });
                 // The row is written after the answer has gone out, and only for
@@ -225,9 +227,6 @@ export const authRoutes =
                 return reply;
             }
             failures.reset(key);
-            if (!user.isActive) {
-                return reply.code(403).send({ error: 'account_disabled' });
-            }
             // password right, but there is a second step: no cookie yet, only
             // a ticket for POST /auth/login/mfa
             if (config.mfaEnabled && user.mfaEnabledAt) {
