@@ -37,6 +37,7 @@ export const POSTGRES_QUERIES = {
     views: `
         SELECT n.nspname AS schema, c.relname AS view_name,
                format('%I.%I', n.nspname, c.relname) AS qualified_name,
+               c.relkind = 'm' AS materialized,
                pg_get_viewdef(c.oid, true) AS view_definition
         FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -249,7 +250,7 @@ export class PostgresIntrospector implements Introspector {
                     // full CREATE VIEW statement to find what a view depends on
                     view_definition: v.view_definition
                         ? encodeViewDefinition(
-                              `CREATE VIEW ${String(v.qualified_name)} AS ${String(
+                              `CREATE ${v.materialized ? 'MATERIALIZED ' : ''}VIEW ${String(v.qualified_name)} AS ${String(
                                   v.view_definition
                               )
                                   .trim()
