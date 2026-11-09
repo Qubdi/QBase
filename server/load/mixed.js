@@ -3,7 +3,7 @@
 // one account working on its own diagram.
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { seed, BASE, signIn, userFor, json } from './lib.js';
+import { BASE, signIn, userFor, json } from './lib.js';
 
 const VUS = Number(__ENV.VUS || 50);
 
