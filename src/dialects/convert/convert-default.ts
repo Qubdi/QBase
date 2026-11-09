@@ -134,7 +134,9 @@ export function convertDefault(
                     .map((x) =>
                         /^-?\d+(\.\d+)?$/.test(x) ? x : JSON.stringify(x)
                     );
-                return wrap(`'[${items.join(', ')}]'`);
+                // the JSON text sits inside a quoted literal of the target
+                const json = `[${items.join(', ')}]`.replace(/'/g, "''");
+                return wrap(`'${isMy ? json.replace(/\\/g, '\\\\') : json}'`);
             }
             const body = d.v.replace(/'/g, "''");
             const text = isMy ? body.replace(/\\/g, '\\\\') : body;
