@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 7 · **date** 2026-11-09
+**rev** 8 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 57 | 0 | 1 | 0 | 0 |
 | Server | 36 | 0 | 4 | 0 | 0 |
 | Database | 19 | 0 | 0 | 0 | 0 |
-| Client | 85 | 0 | 2 | 10 | 0 |
+| Client | 75 | 0 | 2 | 20 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 241 | 0 | 7 | 39 | 0 |
+| **Total** | 231 | 0 | 7 | 49 | 0 |
 
 ## Act first
 
@@ -219,9 +219,9 @@
 | CLI-023 | Med | Any `name(...)` default passes as function call; `;` and extra statements emitted verbatim | `src/dialects/shared/defaults.ts:27` | Reject top-level `;` and unbalanced parentheses |
 | CLI-024 | Med | CHECK, generated and WHERE expressions written raw into DDL, no statement-break guard | `src/dialects/postgresql/write.ts:257`, `src/dialects/mysql/write.ts:196`, `src/dialects/sql-server/write.ts:172`, `src/dialects/sqlite/write.ts:202`, `src/dialects/oracle/write.ts:117` | Run `checkExpression` before writing; refuse unbalanced text |
 | CLI-025 | Med | Index conversion keeps fulltext, spatial, gin without checking column types; DDL fails | `src/dialects/convert/convert-index.ts:84`, `src/dialects/convert/convert-index.ts:96` | Call `methodProblem` with column kinds before keeping type |
-| CLI-026 | Med | Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram | `src/persistence/dexie-adapter.ts:81` | Check store row or broadcast removals across tabs |
-| CLI-027 | Low | `save` clears removed flag, so an in-flight autosave resurrects a just-deleted diagram | `src/persistence/dexie-adapter.ts:66` | Keep flag; clear it only on explicit create |
-| CLI-028 | Med | Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s | `src/formats/shared/layout.ts:88` | Use spatial grid or per-column cursor for hub neighbours |
+| CLI-026 | Med | Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram | `src/persistence/dexie-adapter.ts:84` | Check store row or broadcast removals across tabs |
+| CLI-027 | Low | `save` clears removed flag, so an in-flight autosave resurrects a just-deleted diagram | `src/persistence/dexie-adapter.ts:69` | Keep flag; clear it only on explicit create |
+| CLI-028 | Med | Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s | `src/formats/shared/layout.ts:89` | Use spatial grid or per-column cursor for hub neighbours |
 | CLI-029 | Low | Builder copies neighbour array per link; hub table is quadratic | `src/formats/shared/design-builder.ts:402` | Push into the existing array |
 | CLI-030 | Low | `hasTable` and `resolveTable` scan all tables per call; import is quadratic | `src/formats/shared/design-builder.ts:122` | Index tables by lower-cased schema and name |
 | CLI-031 | Low | DBML export finds tables and columns by linear scan per link | `src/formats/dbml/export-dbml.ts:123` | Build id-to-name maps once |
@@ -232,19 +232,15 @@
 | CLI-037 | Low | Many-to-many cardinality silently coerced to one-to-many on import | `src/formats/shared/design-builder.ts:379` | Warn when coercing |
 | CLI-038 | Low | Array default conversion swaps every `'` for `"`, mangling items with quotes | `src/dialects/convert/convert-default.ts:47` | Parse list items; re-quote per target |
 | CLI-039 | Low | Metadata import names primary key after any unique index on same columns | `src/formats/metadata/load.ts:177` | Use primary flag from metadata, not column match |
-| CLI-041 | Low | Link-pair lookup uses `includes` per pair; hub arrange is quadratic | `src/canvas/auto-arrange.ts:45` | Use Set per tile |
-| CLI-042 | Low | `Math.min(...array)` spreads overflow the stack on very large diagrams | `src/canvas/geometry.ts:100`, `src/formats/image/export-options.ts:98` | Use `reduce` loops |
-| CLI-043 | Low | File import reads whole file with no size cap before parse | `src/lib/export-import-utils.ts:17` | Refuse files above a set byte limit |
-| CLI-044 | Low | Settings write reads then puts outside a transaction; tabs lose updates | `src/persistence/dexie-adapter.ts:124` | Wrap in `db.transaction('rw', config)` |
+| CLI-041 | Low | Link-pair lookup uses `includes` per pair; hub arrange is quadratic | `src/canvas/auto-arrange.ts:46` | Use Set per tile |
 | CLI-045 | Low | Every edit serialises the whole design before section reuse check | `src/qbase/diagram-convert.ts:83` | Serialise only changed sections |
 | CLI-050 | Med | Sign-in email and password inputs have placeholder only, no label | `src/components/qubdi/auth-dialog.tsx:210`, `src/components/qubdi/auth-dialog.tsx:219` | Add aria-label matching the placeholder |
 | CLI-052 | Med | Viewer primary-key icon has no accessible name; meaning is icon-only | `src/pages/share-viewer-page/viewer-table-node.tsx:118` | Add aria-label or visually hidden text |
 | CLI-054 | Low | Viewer header brand name is hard-coded English | `src/pages/share-viewer-page/share-viewer-page.tsx:280` | Use a translated string or shared logo |
-| CLI-057 | Med | Dates use browser default locale, not the chosen language, despite `localeTag` | `src/lib/qubdi/when.ts:23`, `src/lib/qubdi/diagram-summary.ts:23`, `src/components/qubdi/drift-dialog.tsx:345`, `src/components/qubdi/resync-dialog.tsx:195`, `src/pages/admin-page/activity-panel.tsx:326`, `src/pages/admin-page/overview-panel.tsx:257` | Pass localeTag(i18n.language) to formatters |
+| CLI-057 | Med | Dates use browser default locale, not the chosen language, despite `localeTag` | `src/lib/qubdi/when.ts:23`, `src/lib/qubdi/diagram-summary.ts:23`, `src/components/qubdi/drift-dialog.tsx:359`, `src/components/qubdi/resync-dialog.tsx:195`, `src/pages/admin-page/activity-panel.tsx:326`, `src/pages/admin-page/overview-panel.tsx:257` | Pass localeTag(i18n.language) to formatters |
 | CLI-058 | Low | Numbers hard-coded to en-US in admin tiles and chart table | `src/lib/qubdi/overview.ts:46`, `src/pages/admin-page/activity-chart.tsx:242` | Format with the active language's locale |
-| CLI-059 | Low | Share dialog load effect has no cancel; late reply from old diagram overwrites links | `src/components/qubdi/share-dialog.tsx:62` | Add stale flag cleared in effect cleanup |
-| CLI-060 | Low | "Copied" label swap is not announced to screen readers | `src/components/qubdi/share-dialog.tsx:173`, `src/components/qubdi/two-factor-dialog.tsx:360` | Add aria-live region for copy confirmation |
-| CLI-061 | Low | Share and 2FA copy bypass `copyText`; no unsupported-clipboard message | `src/components/qubdi/share-dialog.tsx:108`, `src/components/qubdi/two-factor-dialog.tsx:173` | Use copyText helper for both |
+| CLI-060 | Low | "Copied" label swap is not announced to screen readers | `src/components/qubdi/share-dialog.tsx:180`, `src/components/qubdi/two-factor-dialog.tsx:360` | Add aria-live region for copy confirmation |
+| CLI-061 | Low | Share and 2FA copy bypass `copyText`; no unsupported-clipboard message | `src/components/qubdi/share-dialog.tsx:115`, `src/components/qubdi/two-factor-dialog.tsx:173` | Use copyText helper for both |
 | CLI-062 | Low | Open-failed screen offers only "back to projects"; no retry for transient errors | `src/components/qubdi/diagram-access.tsx:66`, `src/components/qubdi/diagram-access.tsx:232` | Add Retry button for failed state |
 | CLI-064 | Low | index.html has no noscript fallback; JS-off users see blank page | `index.html:17` | Add translated noscript notice in main |
 | CLI-065 | Low | Tests wait on fixed timers (600 ms, 50 ms) instead of conditions | `src/canvas/review-ui.test.tsx:115`, `src/qbase/p8-qbs-contract.test.tsx:189` | Use waitFor or fake timers |
@@ -254,13 +250,7 @@
 | CLI-069 | Low | DBML chunk 15.6 MB (2.75 MB gzip) fetched on first DBML view | `src/formats/dbml/import-dbml.ts:1`, `vite.config.ts:16` | Split @dbml/core parser; load exporter without importer |
 | CLI-071 | Low | No `supportedLngs`; unsupported browser language sets `<html lang>` over English text | `src/i18n/i18n.ts:50`, `src/i18n/i18n.ts:70` | Set supportedLngs and nonExplicitSupportedLngs in init |
 | CLI-072 | Low | `UnpublishedDiagramError` English text shown on open-failed screen | `src/lib/qubdi/open-remote.ts:46`, `src/lib/qubdi/open-failure.ts:17`, `src/components/qubdi/diagram-access.tsx:236` | Map to a translated key in openFailureOf |
-| CLI-073 | Low | Editor tab title hard-coded English, bypasses `editor.common.app.title` | `src/workspace/editor-frame.tsx:183` | Build title with t() |
-| CLI-074 | Low | Pages render `<main>` inside index.html `<main id="root">`; nested main landmarks | `index.html:17`, `src/pages/home-page/home-page.tsx:39`, `src/pages/admin-page/admin-page.tsx:87`, `src/platform/router/not-found-page.tsx:10` | Make root a `<div>` |
 | CLI-075 | Low | Get latest deletes local copy before discarding autosaver; pending save can still send | `src/lib/qubdi/get-latest.ts:21`, `src/lib/qubdi/get-latest.ts:26` | Discard unsaved changes before deleteLocal |
-| CLI-076 | Low | Drift badge refresh has no stale check; old diagram's reply sets badge | `src/components/qubdi/drift-control.tsx:38` | Compare remoteId with shownRemoteId before setBadge |
-| CLI-077 | Low | Members, connections, drift dialog loads lack cancel; old list shows on reopen | `src/components/qubdi/members-dialog.tsx:37`, `src/components/qubdi/connections-dialog.tsx:87`, `src/components/qubdi/drift-dialog.tsx:163` | Clear state on open; ignore replies after cleanup |
-| CLI-079 | Low | Save status live region holds only an icon; state changes unannounced | `src/components/qubdi/server-autosave.tsx:240` | Put the label in sr-only text inside the status |
-| CLI-080 | Low | Each local save opens a BroadcastChannel; same-tab listener fires twice | `src/persistence/dexie-adapter.ts:36`, `src/persistence/dexie-adapter.ts:158` | Post on the long-lived channel; skip own-tab echo |
 | CLI-081 | Med | DBML enum with capitalised name not linked; field lower-cased into unknown type | `src/formats/dbml/import-dbml.ts:192`, `src/formats/shared/design-builder.ts:182` | Match user types case-insensitively before lower-casing type name |
 | CLI-082 | Med | Default text containing identity, autoincrement or nextval treated as numbering; value dropped | `src/dialects/convert/convert-default.ts:31`, `src/dialects/shared/defaults.ts:53`, `src/dialects/sql-server/write.ts:96` | Test markers on unquoted text only, anchored |
 | CLI-083 | Low | Array default converted to JSON leaves inner `'` unescaped; literal breaks | `src/dialects/convert/convert-default.ts:137` | Double single quotes in JSON text before wrapping |
@@ -290,7 +280,7 @@
 | DEAD-001 | Med | `VITE_HOST_URL`, `VITE_APP_URL` baked at build, no reader; README claims they work | `.env.example:87`, `.env.example:91`, `Dockerfile:10`, `Dockerfile:11`, `Dockerfile:18`, `docker-compose.build.yml:18`, `docker-compose.build.yml:19`, `run.sh:92`, `run.sh:93`, `src/vite-env.d.ts:5`, `src/vite-env.d.ts:6`, `README.md:224` | Remove both variables and README sentence |
 | DEAD-002 | Med | `qubdi.viewerPage.pageTitle` missing from en; title shows raw key, test asserts same key | `src/pages/share-viewer-page/share-viewer-page.tsx:343`, `src/i18n/qubdi/workspace.ts:178`, `src/helmet/__tests__/p8-shl-title.test.tsx:97` | Use `qubdi.workspace.viewerPage.pageTitle` in the page |
 | DEAD-007 | Low | Unused en key `menu.actions.save`; read only by i18n tests | `src/i18n/qubdi/workspace.ts:57`, `src/i18n/qubdi/workspace.ts:60`, `src/i18n/qubdi/workspace.ts:63`, `src/i18n/locales/en.ts:24` | Delete keys |
-| DEAD-011 | Low | Exports referenced only by tests; production-dead | `src/core/commands/plan-visual.ts:120` (planMove), `src/core/model/ids.ts:49` (looksLikeGeneratedId), `src/canvas/geometry.ts:13` (snapTo), `src/canvas/geometry.ts:49` (overlappingIds), `src/canvas/geometry.ts:88` (toggledWidth), `src/formats/image/export-options.ts:111` (outputSize), `src/features/filters/filter-tree.ts:47` (isFilterActive), `src/lib/export-import-utils.ts:10` (diagramToJSONOutput), `src/lib/custom-colors.ts:58` (readSavedColors), `src/lib/qubdi/diagram-summary.ts:5` (toDatabaseType), `src/lib/qubdi/diagram-summary.ts:12` (toDatabaseEdition), `src/lib/qubdi/project-path.ts:19` (findProjectBySlug), `src/lib/qubdi/local-data.ts:59` (adoptLegacyLocalData), `src/store/selectors.ts:14` (selectDirty), `src/store/selectors.ts:36` (selectVisibleEntities), `src/qbase/diagram-types.ts:222` (databasesWithSchemas), `src/qbase/sql-adapters.ts:16` (exportDiagramSql), `src/dialects/registry.ts:26` (listDialects), `shared/reconcile.ts:575` (isEmpty), `shared/reconcile.ts:578` (countByKind) | Delete exports and their tests |
+| DEAD-011 | Low | Exports referenced only by tests; production-dead | `src/core/commands/plan-visual.ts:120` (planMove), `src/core/model/ids.ts:49` (looksLikeGeneratedId), `src/canvas/geometry.ts:13` (snapTo), `src/canvas/geometry.ts:49` (overlappingIds), `src/canvas/geometry.ts:88` (toggledWidth), `src/formats/image/export-options.ts:112` (outputSize), `src/features/filters/filter-tree.ts:47` (isFilterActive), `src/lib/export-import-utils.ts:10` (diagramToJSONOutput), `src/lib/custom-colors.ts:58` (readSavedColors), `src/lib/qubdi/diagram-summary.ts:5` (toDatabaseType), `src/lib/qubdi/diagram-summary.ts:12` (toDatabaseEdition), `src/lib/qubdi/project-path.ts:19` (findProjectBySlug), `src/lib/qubdi/local-data.ts:59` (adoptLegacyLocalData), `src/store/selectors.ts:14` (selectDirty), `src/store/selectors.ts:36` (selectVisibleEntities), `src/qbase/diagram-types.ts:222` (databasesWithSchemas), `src/qbase/sql-adapters.ts:16` (exportDiagramSql), `src/dialects/registry.ts:26` (listDialects), `shared/reconcile.ts:575` (isEmpty), `shared/reconcile.ts:578` (countByKind) | Delete exports and their tests |
 | DEAD-024 | Low | Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts, forgetClipboard | `src/hooks/use-custom-colors.ts:55`, `src/hooks/use-password-min-length.ts:24`, `src/platform/toast/use-toast.ts:88`, `src/canvas/clipboard.ts:23` | Move resets into test helpers |
 | DEAD-025 | Low | `GET /diagrams/:id/versions` and `/versions/:version` have no client caller | `server/src/diagrams/routes.ts:532`, `server/src/diagrams/routes.ts:551` | Remove routes or document as public API |
 | DEAD-026 | Low | `GET /:id/drift/reports` list has no client caller; client fetches one report | `server/src/drift/routes.ts:253`, `src/lib/qubdi/api.ts:923` | Remove route or document as public API |
@@ -305,6 +295,16 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| CLI-042 | Client | `Math.min(...array)` spreads overflow the stack on very large diagrams |
+| CLI-043 | Client | File import reads whole file with no size cap before parse |
+| CLI-044 | Client | Settings write reads then puts outside a transaction; tabs lose updates |
+| CLI-059 | Client | Share dialog load effect has no cancel; late reply from old diagram overwrites links |
+| CLI-073 | Client | Editor tab title hard-coded English, bypasses `editor.common.app.title` |
+| CLI-074 | Client | Pages render `<main>` inside index.html `<main id="root">`; nested main landmarks |
+| CLI-076 | Client | Drift badge refresh has no stale check; old diagram's reply sets badge |
+| CLI-077 | Client | Members, connections, drift dialog loads lack cancel; old list shows on reopen |
+| CLI-079 | Client | Save status live region holds only an icon; state changes unannounced |
+| CLI-080 | Client | Each local save opens a BroadcastChannel; same-tab listener fires twice |
 | CLI-014 | Client | Dialog has no Description; Radix warns, no aria-describedby |
 | CLI-016 | Client | Share viewer reloads full share on every `version` event, no debounce |
 | CLI-033 | Client | `setZoom(NaN)` stores NaN; clamp passes it through |
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 8 | 2026-11-09 | 10 fixed (client low batch 2), anchors remapped through the diff |
 | 7 | 2026-11-09 | 10 fixed (client low batch 1), anchors refreshed |
 | 6 | 2026-11-09 | 10 fixed (dead-code low batch 3), anchors refreshed |
 | 5 | 2026-11-09 | 10 fixed (dead-code low batch 2), anchors refreshed |

@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 7</b></div>
-  <h1>241 open across six lenses.</h1>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 8</b></div>
+  <h1>231 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -38,9 +38,9 @@
         <tr><td>Repository</td><td>57</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
         <tr><td>Server</td><td>36</td><td>0</td><td>4</td><td>0</td><td>0</td></tr>
         <tr><td>Database</td><td>19</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>Client</td><td>85</td><td>0</td><td>2</td><td>10</td><td>0</td></tr>
+        <tr><td>Client</td><td>75</td><td>0</td><td>2</td><td>20</td><td>0</td></tr>
         <tr><td>Dead code</td><td>11</td><td>0</td><td>0</td><td>29</td><td>0</td></tr>
-        <tr><td>Total</td><td>241</td><td>0</td><td>7</td><td>39</td><td>0</td></tr>
+        <tr><td>Total</td><td>231</td><td>0</td><td>7</td><td>49</td><td>0</td></tr>
       </tbody>
     </table>
   </div>
@@ -70,8 +70,8 @@
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
-    <p>85 open findings.</p>
-    <p class="lbl">85 open &middot; 0 Crit &middot; 2 High &middot; 10 fixed &middot; 0 accepted</p>
+    <p>75 open findings.</p>
+    <p class="lbl">75 open &middot; 0 Crit &middot; 2 High &middot; 20 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-deadcode.html">
     <h3>Dead code</h3>
@@ -86,6 +86,7 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
+        <tr><td>8</td><td>2026-11-09</td><td class="wrap-cell">10 fixed (client low batch 2), anchors remapped through the diff</td></tr>
         <tr><td>7</td><td>2026-11-09</td><td class="wrap-cell">10 fixed (client low batch 1), anchors refreshed</td></tr>
         <tr><td>6</td><td>2026-11-09</td><td class="wrap-cell">10 fixed (dead-code low batch 3), anchors refreshed</td></tr>
         <tr><td>5</td><td>2026-11-09</td><td class="wrap-cell">10 fixed (dead-code low batch 2), anchors refreshed</td></tr>
