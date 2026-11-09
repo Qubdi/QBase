@@ -78,12 +78,12 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
     live-database checks (`phase9/*.md`), provenance record and transcript audit
     (`provenance.md`, `provenance-audit/`). Licence chosen 2026-11-08: Elastic License 2.0, applied.
     Owner items closed on the owner's word, 2026-11-08 (see `decisions-owner-2026-11-08.md`): the lawyer's
-    written confirmation, SEC-001 secrets rotation, branch protection (REPO-005), the peer sessions'
+    written confirmation, SEC-001 secrets rotation, branch protection, the peer sessions'
     declarations, the native-speaker review of the translations, the Docker Hub release secrets.
     Still open: GitHub still lists 71 old pull-request refs (`git ls-remote origin 'refs/pull/*/head'`,
     2026-11-08), so the purge part of SEC-001 is not confirmed; "run the similarity workflow once on
     GitHub"; SQL Server on a live server (needs a licence
-    acceptance); the fresh-repository release (Phase 10, which also closes REPO-069).
+    acceptance); the fresh-repository release (Phase 10).
 11. [ ] **Phase 10: release.** Fresh repository with new history, chosen licence applied,
     old Docker Hub tags replaced or removed, new image published.
 

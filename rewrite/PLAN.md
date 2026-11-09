@@ -297,7 +297,7 @@ Done when:
   reasoned entries in `rewrite/similarity-allow.txt`.
 - Every **keep** line in `rewrite/parity-checklist.md` is ticked.
 - Dependencies were re-audited; `NOTICE` lists third-party licences.
-- Audit findings REPO-045, REPO-049 and REPO-069 are updated.
+- The audit findings that name these files are updated.
 - A lawyer has reviewed the finished result and the records.
 
 ### Phase 10: Release
