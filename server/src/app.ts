@@ -2,6 +2,7 @@ import { API_SECURITY_HEADERS } from './lib/security-headers.js';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { sql } from 'drizzle-orm';
 import { ZodError } from 'zod';
 import { authRoutes } from './auth/routes.js';
 import {
@@ -68,6 +69,9 @@ export function redactShareToken(url: string): string {
     return url.replace(/^((?:\/api)?\/s\/)[^/?#]+/, '$1[redacted]');
 }
 
+/** how long /health waits for the database before it says no */
+const HEALTH_DB_TIMEOUT_MS = 2000;
+
 const MUTATING_METHODS: ReadonlySet<string> = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /** The host (with port) an Origin header names; null for the opaque `null` origin or junk. */
@@ -113,7 +117,22 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
         routerOptions: { maxParamLength: 1000 },
     });
 
-    app.get('/health', async () => ({ ok: true }));
+    // answers ok only when the database does: a server that cannot reach it is
+    // not healthy, whatever its own process is doing
+    app.get('/health', async (_req, reply) => {
+        try {
+            await Promise.race([
+                db.execute(sql`select 1`),
+                new Promise((_resolve, reject) =>
+                    setTimeout(() => reject(new Error('database timeout')), HEALTH_DB_TIMEOUT_MS).unref()
+                ),
+            ]);
+            return { ok: true };
+        } catch (err) {
+            app.log.warn({ err }, 'health check: the database did not answer');
+            return reply.code(503).send({ ok: false });
+        }
+    });
 
     const mountApi = (api: FastifyInstance) => {
     api.register(cookie);
