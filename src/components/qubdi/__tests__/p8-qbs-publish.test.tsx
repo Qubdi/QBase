@@ -11,13 +11,13 @@ import { resetToasts } from '@/platform/toast/use-toast';
 import { DiagramAccessContext } from '../diagram-access-context';
 import { PublishControl } from '../publish-control';
 
-const getDiagram = vi.fn();
+const getPublishStatus = vi.fn();
 const publish = vi.fn();
 const syncDiagram = vi.fn(async () => 'r1');
 vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     api: {
-        getDiagram: (...a: unknown[]) => getDiagram(...a),
+        getPublishStatus: (...a: unknown[]) => getPublishStatus(...a),
         publish: (...a: unknown[]) => publish(...a),
         updateDiagram: vi.fn(),
     },
@@ -69,9 +69,9 @@ const publishWithNote = async (note?: string) => {
 
 beforeEach(() => {
     resetToasts();
-    getDiagram.mockReset();
+    getPublishStatus.mockReset();
     publish.mockReset();
-    getDiagram.mockResolvedValue({
+    getPublishStatus.mockResolvedValue({
         publishedVersion: 1,
         unpublishedChanges: true,
         autoPublish: false,

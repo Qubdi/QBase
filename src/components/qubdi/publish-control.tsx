@@ -67,7 +67,7 @@ export const PublishControl: React.FC = () => {
             return;
         }
         try {
-            const d = await api.getDiagram(remoteId);
+            const d = await api.getPublishStatus(remoteId);
             setStatus({
                 synced: true,
                 publishedVersion: d.publishedVersion,

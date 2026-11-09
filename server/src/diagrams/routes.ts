@@ -14,6 +14,7 @@ import {
     AUTO_PUBLISH_NOTE,
     latestSnapshotListing,
     presentDiagram,
+    presentPublishStatus,
     presentSaved,
     publishSnapshot,
 } from './service.js';
@@ -329,6 +330,26 @@ export const diagramRoutes =
                 throw err;
             }
         };
+
+        // the publish badge's own read: no content, so refreshing it after
+        // every save does not download the diagram
+        app.get('/:id/publish-status', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const role = await getRole(db, id, req.user!.id);
+            if (!role) return reply.code(404).send({ error: 'not_found' });
+            if (!canWrite(role)) return reply.code(403).send({ error: 'forbidden' });
+            const [d] = await db
+                .select({
+                    id: diagrams.id,
+                    title: diagrams.title,
+                    contentHash: diagrams.contentHash,
+                    autoPublish: diagrams.autoPublish,
+                })
+                .from(diagrams)
+                .where(eq(diagrams.id, id));
+            if (!d) return reply.code(404).send({ error: 'not_found' });
+            return presentPublishStatus(db, d);
+        });
 
         app.get('/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);

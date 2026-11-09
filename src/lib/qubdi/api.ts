@@ -727,6 +727,17 @@ export function createApi(
                 'GET',
                 `/diagrams/${encodeURIComponent(id)}`
             ),
+        /** The publish badge's read: no content, so it is cheap after every save. */
+        getPublishStatus: (id: string) =>
+            request<
+                Pick<
+                    RemoteDiagram,
+                    | 'publishedVersion'
+                    | 'publishedAt'
+                    | 'unpublishedChanges'
+                    | 'autoPublish'
+                >
+            >('GET', `/diagrams/${encodeURIComponent(id)}/publish-status`),
         updateDiagram: (
             id: string,
             patch: {

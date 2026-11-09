@@ -135,6 +135,25 @@ export async function presentSaved(db: Db, d: SavedDiagram, role: Role) {
     };
 }
 
+/**
+ * What the publish badge needs: the newest version, whether the working copy
+ * differs from it, and the auto-publish switch. Never the content, so the badge
+ * can be refreshed after every save without moving the whole diagram.
+ */
+export async function presentPublishStatus(
+    db: Db,
+    d: Pick<DiagramRow, 'id' | 'title' | 'contentHash' | 'autoPublish'>
+) {
+    const last = await latestSnapshotMeta(db, d.id);
+    return {
+        publishedVersion: last?.version ?? null,
+        publishedAt: last?.publishedAt ?? null,
+        autoPublish: d.autoPublish,
+        unpublishedChanges:
+            !last || last.contentHash !== (await currentHash(db, d)),
+    };
+}
+
 export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
     const common = { id: d.id, ownerId: d.ownerId, projectId: d.projectId, role };
     if (canWrite(role)) {
