@@ -70,6 +70,12 @@ web_modules/
 .env.*
 !.env.example
 
+# private keys and certificates, so one is never committed by accident
+*.pem
+*.key
+*.p12
+*.pfx
+
 # build output and caches
 .cache
 dist
