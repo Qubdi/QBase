@@ -8,7 +8,7 @@ import {
     type RouteObject,
 } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { buildRoutes } from '../router';
+import { buildRoutes } from '@/platform/router/router';
 
 /** The route pattern a path is served by (the first matched route that has a path). */
 /** The page element a lazy route resolves to. */

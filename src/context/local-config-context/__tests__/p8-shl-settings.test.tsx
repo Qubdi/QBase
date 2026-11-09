@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildRoutes } from '@/router';
+import { buildRoutes } from '@/platform/router/router';
 import { ThemeProvider } from '@/platform/theme/theme-provider';
 import { useTheme } from '@/platform/theme/theme-context';
 import { LocalConfigContext } from '../local-config-context';

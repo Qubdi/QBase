@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RouteObject } from 'react-router-dom';
-import { buildRoutes } from '../router';
+import { buildRoutes } from '@/platform/router/router';
 
 const paths = (routes: RouteObject[]) => routes.map((r) => r.path);
 
