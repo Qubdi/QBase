@@ -301,3 +301,38 @@ describe('default text that only mentions a numbering word is a value (CLI-082)'
         expect(isNumberingMarker('AUTOINCREMENT')).toBe(true);
     });
 });
+
+describe('PostgreSQL nextval defaults are written only in their real form (CLI-085)', () => {
+    const withDefault = async (text: string) => {
+        const { sampleS1 } = await import('./testing/sample-designs');
+        const { exportSql } = await import('@/formats/sql/export-sql');
+        const design = sampleS1('postgresql');
+        const column = Object.values(design.columns).find(
+            (c) => c.name === 'full_name'
+        )!;
+        column.default = text;
+        return exportSql(design, 'postgresql').text;
+    };
+
+    it('keeps a real nextval call and creates the sequence under a quoted name', async () => {
+        const text = await withDefault("nextval('Public.Orders_Seq')");
+        expect(text).toContain("DEFAULT nextval('Public.Orders_Seq')");
+        expect(text).toContain(
+            'CREATE SEQUENCE IF NOT EXISTS "public"."orders_seq";'
+        );
+    });
+
+    it('does not pass text that only contains the word through as SQL', async () => {
+        const text = await withDefault("x'); DROP TABLE customers; -- nextval");
+        expect(text).not.toMatch(/DEFAULT x'\)/);
+        expect(text).not.toContain('CREATE SEQUENCE');
+        expect(text).toContain(
+            "DEFAULT 'x''); DROP TABLE customers; -- nextval'"
+        );
+    });
+
+    it('does not make a sequence out of a name that is not a plain reference', async () => {
+        const text = await withDefault("nextval('a b; DROP TABLE t')");
+        expect(text).not.toContain('CREATE SEQUENCE');
+    });
+});
