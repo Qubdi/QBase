@@ -45,7 +45,6 @@ export default {
                 ring: token('ring'),
                 background: token('background'),
                 foreground: token('foreground'),
-                subtitle: token('subtitle'),
                 'rail-hover': token('rail-hover'),
                 'rail-selected': token('rail-selected-text'),
                 'tab-active': surface('tab-active'),
