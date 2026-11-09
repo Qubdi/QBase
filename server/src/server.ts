@@ -3,15 +3,12 @@ import { ConfigError, loadConfig } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
 import { resealPlaintextWebhooks } from './drift/reseal.js';
 import { startEventBridge } from './events.js';
+import { loadEnvFile } from './lib/env-file.js';
 import { startMaintenance } from './maintenance.js';
 import { createShutdown } from './shutdown.js';
 
 // Settings live in server/.env (see .env.example); real environment variables win
-try {
-    process.loadEnvFile();
-} catch {
-    // no .env file: use the environment as is
-}
+loadEnvFile();
 
 let config: ReturnType<typeof loadConfig>;
 try {

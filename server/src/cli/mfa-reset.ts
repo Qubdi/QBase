@@ -10,6 +10,7 @@
 import { sql } from 'drizzle-orm';
 import { audit } from '../audit/audit.js';
 import { createMfa } from '../auth/mfa.js';
+import { loadEnvFile } from '../lib/env-file.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import { loadConfig, type Config } from '../config.js';
 import { createDb, type Db } from '../db/client.js';
@@ -51,6 +52,8 @@ export async function main(argv: string[]): Promise<number> {
         process.stderr.write(USAGE);
         return 2;
     }
+    // the same server/.env the server reads: run from a source checkout the settings are there
+    loadEnvFile();
     const config = loadConfig();
     const { db, pool } = createDb(config.databaseUrl);
     try {
