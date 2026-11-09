@@ -203,6 +203,7 @@ export const PublishControl: React.FC = () => {
                     >
                         <Input
                             placeholder={t('qubdi.workspace.publish.note')}
+                            aria-label={t('qubdi.workspace.publish.note')}
                             maxLength={500}
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
