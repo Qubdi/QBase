@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 14 · **date** 2026-11-09
+**rev** 15 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 33 | 0 | 0 | 0 | 0 |
-| Repository | 46 | 0 | 1 | 11 | 0 |
+| Repository | 30 | 0 | 1 | 26 | 0 |
 | Server | 36 | 0 | 4 | 0 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 40 | 0 | 2 | 54 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 174 | 0 | 7 | 104 | 1 |
+| **Total** | 158 | 0 | 7 | 119 | 1 |
 
 ## Act first
 
@@ -71,32 +71,16 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | REPO-001 | Med | `bootstrap-sha` commit is not an ancestor of main | `release-please-config.json:4` | Set bootstrap-sha to a commit in main |
-| REPO-002 | Med | `latest` tag moves on every `v*` tag, including prereleases | `.github/workflows/publish.yaml:134`, `run.sh:84` | Tag latest only for non-prerelease versions |
+| REPO-002 | Med | `latest` tag moves on every `v*` tag, including prereleases | `.github/workflows/publish.yaml:154`, `run.sh:84` | Tag latest only for non-prerelease versions |
 | REPO-003 | Med | Similarity check runs only on `rewrite/clean-room`, never on main | `.github/workflows/similarity.yaml:11`, `.github/workflows/similarity.yaml:13` | Add main to similarity triggers |
 | REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:7`, `rewrite/TODO.md:11`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
-| REPO-005 | High | CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored | `.gitleaksignore:3`, `server/test/share-token-copy.test.ts:25`, `.github/workflows/ci.yaml:118`, `.github/workflows/publish.yaml:87` | Regenerate ignore fingerprints from main history; rerun scan |
+| REPO-005 | High | CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored | `.gitleaksignore:3`, `server/test/share-token-copy.test.ts:25`, `.github/workflows/ci.yaml:126`, `.github/workflows/publish.yaml:106` | Regenerate ignore fingerprints from main history; rerun scan |
 | REPO-006 | Med | npm version updates paused; both npm entries have limit 0 | `.github/dependabot.yml:11`, `.github/dependabot.yml:25` | Restore limit to 5 or document accepted pause |
 | REPO-013 | Low | Playwright npm package installed at run time without a lockfile | `tools/e2e/run-smoke.sh:18` | Install Playwright from a committed lockfile |
 | REPO-015 | Low | 1.1 MB `audit-ui-differences.html` tracked, not an owned audit file | `Audit/audit-ui-differences.html:1` | Untrack or move out of Audit/ |
-| REPO-020 | Low | Workflows set no `timeout-minutes` or `concurrency` | `.github/workflows/ci.yaml:14`, `.github/workflows/publish.yaml:17` | Add timeout-minutes and concurrency groups |
-| REPO-021 | Low | Publish does not check tag matches package.json version | `.github/workflows/publish.yaml:5` | Add step comparing tag to package.json |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
-| REPO-023 | Low | `.gitignore` carries unused Next, Nuxt, Gatsby, vuepress, Firebase entries | `.gitignore:77`, `.gitignore:81`, `.gitignore:86`, `.gitignore:119` | Trim to ecosystems this repo uses |
-| REPO-024 | Low | `.prettierrc.json` closing brace indented 2 spaces; `.editorconfig` says 4 | `.prettierrc.json:7`, `.editorconfig:9` | Reindent closing brace to match editorconfig |
-| REPO-025 | Low | e2e tools in `tools/e2e` run in no workflow and appear in no doc | `tools/e2e/run-smoke.sh:1`, `README.md:316` | Document e2e scripts or add CI job |
-| REPO-026 | Low | Husky pre-commit skips server lint silently when server deps absent | `.husky/pre-commit:4` | Fail, or run server lint in CI only |
 | REPO-027 | Med | Load run.sh never fails on a k6 threshold; README says it gates CI | `server/load/run.sh:58`, `server/load/run.sh:69`, `server/load/README.md:18` | Return k6run status from run_one |
 | REPO-028 | Med | README feature line says only a share-token hash is stored; code also encrypts token | `README.md:21`, `server/src/share/routes.ts:167` | Reword feature line to hash plus encrypted token |
-| REPO-029 | Low | Postgres digest check passes when one file has no pin at all | `.github/scripts/check-postgres-digest.sh:9` | Fail when any listed file lacks a pin |
-| REPO-030 | Low | Missing `--rewritten` or `--allow` file or path is silently ignored | `tools/similarity.mjs:273`, `tools/similarity.mjs:385` | Error on missing list file or listed path |
-| REPO-031 | Low | Empty upstream index still reports "No checked file is over the limits" | `tools/similarity.mjs:344` | Exit 1 when upstream index has zero runs |
-| REPO-032 | Low | Non-numeric `--threshold`, `--max-run`, `--run` become NaN and checks pass | `tools/similarity.mjs:117`, `tools/spec-check.mjs:94` | Reject NaN option values |
-| REPO-033 | Low | owner-decisions links `spec/...` resolve to rewrite/spec/spec/ and break | `rewrite/spec/owner-decisions.md:105` | Drop the `spec/` prefix from the four links |
-| REPO-034 | Low | TODO says EDT-250 is open; parity checklist ticks it, browser-driven | `rewrite/TODO.md:70`, `rewrite/TODO.md:84`, `rewrite/parity-checklist.md:389` | Update TODO counts to 684 ticked, 3 partial |
-| REPO-035 | Low | TODO says seven languages ship; only en, de, fr, it, ru exist | `rewrite/TODO.md:64` | Correct language list or add ka and zh |
-| REPO-036 | Low | Rewrite docs cite audit IDs REPO-005, REPO-069, REPO-045 that now mean other things | `rewrite/TODO.md:80`, `rewrite/TODO.md:85`, `rewrite/PLAN.md:300` | Drop audit IDs from rewrite docs |
-| REPO-037 | Low | TODO forbids changing licence while Elastic-2.0 is already applied | `rewrite/TODO.md:11`, `rewrite/TODO.md:78` | Reword line 7 to match applied licence |
-| REPO-038 | Low | NOTICE and allow-list name separator.tsx, which no longer exists | `NOTICE:36`, `rewrite/similarity-allow.txt:34` | Remove separator from both lists |
 | REPO-039 | Low | PLAN says branch does not build; TODO says build, lint, tests pass | `rewrite/PLAN.md:74`, `rewrite/PLAN.md:143` | Mark build-state notes as history |
 | REPO-041 | Low | e2e visual scripts hard-code `/home/qubdi/ui-reference` output path | `tools/e2e/visual/run.mjs:24`, `tools/e2e/visual/run-new.sh:10`, `tools/e2e/visual/run-run.sh:11` | Default to a temp or `$HOME` path |
 | REPO-042 | Low | Committed briefs and specs embed an absolute personal home path | `rewrite/phase8-brief.md:3`, `rewrite/translation-brief.md:3`, `rewrite/spec/visual-shell.md:10`, `rewrite/spec/visual-canvas.md:8`, `rewrite/provenance-audit/README.md:145`, `rewrite/provenance-audit/scan-transcripts.py:3` | Use repo-relative wording |
@@ -115,7 +99,7 @@
 | REPO-056 | Low | index.html says container writes config.js at start; server answers it per request | `index.html:13`, `server/src/web.ts:39` | Reword comment: server serves /config.js |
 | REPO-057 | Low | run-server-flows reuses any existing `qbtest-app` image, testing stale code | `tools/e2e/run-server-flows.sh:40` | Rebuild the image on every run |
 | REPO-058 | Low | `.env.example` says remove db service from compose; README uses `--no-deps app` | `.env.example:42`, `README.md:150` | Point .env.example at README Option B |
-| REPO-059 | Low | README claims PostgreSQL 16+ support; CI tests only PostgreSQL 18 | `README.md:109`, `.github/workflows/ci.yaml:51` | Add a PostgreSQL 16 leg to the server CI job |
+| REPO-059 | Low | README claims PostgreSQL 16+ support; CI tests only PostgreSQL 18 | `README.md:109`, `.github/workflows/ci.yaml:58` | Add a PostgreSQL 16 leg to the server CI job |
 
 ### Server
 
@@ -238,6 +222,21 @@
 
 | ID | Lens | Finding |
 |----|------|---------|
+| REPO-020 | Repository | Workflows set no `timeout-minutes` or `concurrency` |
+| REPO-021 | Repository | Publish does not check tag matches package.json version |
+| REPO-023 | Repository | `.gitignore` carries unused Next, Nuxt, Gatsby, vuepress, Firebase entries |
+| REPO-024 | Repository | `.prettierrc.json` closing brace indented 2 spaces; `.editorconfig` says 4 |
+| REPO-025 | Repository | e2e tools in `tools/e2e` run in no workflow and appear in no doc |
+| REPO-029 | Repository | Postgres digest check passes when one file has no pin at all |
+| REPO-030 | Repository | Missing `--rewritten` or `--allow` file or path is silently ignored |
+| REPO-031 | Repository | Empty upstream index still reports "No checked file is over the limits" |
+| REPO-032 | Repository | Non-numeric `--threshold`, `--max-run`, `--run` become NaN and checks pass |
+| REPO-033 | Repository | owner-decisions links `spec/...` resolve to rewrite/spec/spec/ and break |
+| REPO-034 | Repository | TODO says EDT-250 is open; parity checklist ticks it, browser-driven |
+| REPO-035 | Repository | TODO says seven languages ship; only en, de, fr, it, ru exist |
+| REPO-036 | Repository | Rewrite docs cite audit IDs REPO-005, REPO-069, REPO-045 that now mean other things |
+| REPO-037 | Repository | TODO forbids changing licence while Elastic-2.0 is already applied |
+| REPO-038 | Repository | NOTICE and allow-list name separator.tsx, which no longer exists |
 | REPO-008 | Repository | Dependabot ignore comments cite TODO.md for majors; TODO.md lists none |
 | REPO-009 | Repository | PLAN calls main the read-only ChartDB reference; main now holds the rewrite |
 | REPO-010 | Repository | Clean-checkout script hard-requires branch `rewrite/clean-room` |
@@ -357,6 +356,7 @@
 
 | ID | Finding | Reason |
 |----|---------|--------|
+| REPO-026 | Husky pre-commit skips server lint silently when server deps absent | Wrong: the hook prints a skip notice, and CI runs the server lint |
 | CLI-061 | Share and 2FA copy bypass `copyText`; no unsupported-clipboard message | Wrong: both catch a missing clipboard and show a tailored copy-failed message |
 | CLI-063 | `plural` helper in overview.ts has no production caller, English-only suffix | Dead code; moved to DEAD-031 |
 | REPO-007 | Gitleaks config cites SEC-001 which does not exist at rev 0 | SEC-001 now exists; reference valid |
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 15 | 2026-11-09 | 15 fixed, 1 dropped (REPO-026); repository lens low batch 2, anchors remapped |
 | 14 | 2026-11-09 | 11 fixed, 1 narrowed (REPO-013); repository lens low batch 1, anchors remapped |
 | 13 | 2026-11-09 | 10 fixed, 1 accepted (DB-013); database lens low batch, anchors remapped |
 | 12 | 2026-11-09 | 5 fixed, 2 narrowed (CLI-018, CLI-065); client low batch 6, anchors remapped |
