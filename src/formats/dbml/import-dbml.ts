@@ -13,7 +13,7 @@ import type {
     TableSpec,
 } from '../shared/design-builder';
 import { checkExpression } from '../sql/check-expression';
-import { prepareDbml } from './prepare';
+import { fieldKey, prepareDbml } from './prepare';
 
 export interface DbmlImportOptions {
     now?: number;
@@ -98,7 +98,7 @@ export function importDbml(
 
     for (const [key, at] of prepared.arrayFields) {
         if (dialect.capabilities.arrayColumns) continue;
-        const field = key.slice(key.indexOf('.') + 1);
+        const field = key.slice(key.lastIndexOf('.') + 1);
         return failure([
             {
                 severity: 'error',
@@ -180,7 +180,7 @@ export function importDbml(
         s.tables.map((t) => ({ t, schema: s.name }))
     );
     for (const { t, schema } of allTables) {
-        const key = (f: string): string => `${t.name}.${f}`;
+        const key = (f: string): string => fieldKey(schema, t.name, f);
         const primary = new Set(
             t.fields.filter((f) => f.pk).map((f) => f.name)
         );

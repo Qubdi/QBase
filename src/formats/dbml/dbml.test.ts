@@ -208,6 +208,21 @@ describe('IMP-045 to IMP-055 DBML import and round trip', () => {
         const types = Object.values(d.userTypes.byId);
         expect(types.map((t) => t.name)).toEqual(['Status']);
     });
+    it('keeps array and check settings apart for same-named tables in two schemas', () => {
+        const r = importDbml(
+            'Table a.t {\n  tags text[]\n  n int [check: `n > 0`]\n}\nTable b.t {\n  tags text\n  n int\n}\n',
+            'postgresql'
+        );
+        const d = r.design!;
+        const tagsOf = (schema: string) =>
+            Object.values(d.entities.byId)
+                .filter((e) => e.schema === schema)
+                .flatMap((e) => e.columnIds.map((id) => d.columns[id]))
+                .find((c) => c.name === 'tags')!;
+        expect(tagsOf('a').isArray).toBe(true);
+        expect(tagsOf('b').isArray).toBeUndefined();
+        expect(Object.values(d.rules)).toHaveLength(1);
+    });
     it('IMP-048 checks from the field setting and the checks block', () => {
         const r = importDbml(
             "Table a {\n  n int [check: `n > 0`]\n  m int\n  checks {\n    `m < 9` [name: 'c']\n  }\n}\n",
