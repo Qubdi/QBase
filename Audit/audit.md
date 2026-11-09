@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 21 · **date** 2026-11-09
+**rev** 22 · **date** 2026-11-09
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 19 | 0 | 0 | 14 | 0 |
 | Repository | 12 | 0 | 1 | 44 | 0 |
-| Server | 17 | 0 | 4 | 19 | 0 |
+| Server | 16 | 0 | 4 | 20 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 40 | 0 | 2 | 54 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 107 | 0 | 7 | 170 | 1 |
+| **Total** | 106 | 0 | 7 | 171 | 1 |
 
 ## Act first
 
@@ -89,7 +89,6 @@
 | SRV-026 | Med | mssql ConnectionPool for introspection has no error listener | `server/src/introspect/sqlserver.ts:458` | Add `pool.on('error', ...)` handler |
 | SRV-030 | Low | SQL Server tests silently skip when container is absent, so CI never runs them | `server/test/introspect-sqlserver.test.ts:20` | Fail in CI when MSSQL is unreachable |
 | SRV-031 | High | Drift rename pairing is quadratic; 4000 vs 4000 tables blocks event loop 8 s | `shared/reconcile.ts:432`, `shared/reconcile.ts:433`, `shared/reconcile.ts:187`, `server/src/drift/service.ts:296` | Bucket rename candidates by column signature; cap pair count |
-| SRV-037 | Low | `forceCloseConnections: true` destroys in-flight requests on shutdown, not only SSE | `server/src/app.ts:90` | Use `'idle'` and end SSE streams in an onClose hook |
 
 ### Database
 
@@ -341,6 +340,7 @@
 | SEC-032 | Security & secrets | Webhooks reuse INTROSPECT_ALLOW_HOSTS; a database allow-list also permits internal HTTP POSTs |
 | SEC-033 | Security & secrets | Webhook accepts plain `http:`; token-bearing URL and drift details sent unencrypted |
 | SEC-034 | Security & secrets | API responses lack `Cache-Control: no-store`; GET share-links returns live tokens |
+| SRV-037 | Server | `forceCloseConnections: true` destroys in-flight requests on shutdown, not only SSE |
 
 ---
 
@@ -410,6 +410,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 22 | 2026-11-09 | 1 fixed (SRV-037); anchors not remapped |
 | 21 | 2026-11-09 | 11 fixed (security low batch 1: SEC-006, 007, 008, 009, 017, 020, 028, 029, 032, 033, 034); anchors not remapped |
 | 20 | 2026-11-09 | 3 fixed (SEC-016, SEC-021, SEC-025), anchors remapped |
 | 19 | 2026-11-09 | 2 fixed (SRV-028, SRV-036), anchors remapped |
