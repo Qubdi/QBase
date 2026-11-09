@@ -13,7 +13,7 @@ export const ALL_METHODS: readonly ImportMethod[] = ['metadata', 'sql', 'dbml'];
  */
 export function methodForPaste(text: string): ImportMethod | undefined {
     const dbml =
-        /^\s*(?:Table\s+\S|Ref\s*[:\s]|Enum\s+\S|TableGroup\b|Note\s+\S+\s*\{)/im;
+        /^[ \t]*(?:Table\s+\S|Ref\s*[:\s]|Enum\s+\S|TableGroup\b|Note\s+\S+\s*\{)/im;
     if (
         dbml.test(text) ||
         /\[\s*pk\s*\]/i.test(text) ||
