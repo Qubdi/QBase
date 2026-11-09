@@ -452,3 +452,55 @@ describe('SQL Server table comments', () => {
         expect(header.match(/\*\//g)).toHaveLength(1);
     });
 });
+
+describe('SQLite tables that share a name across schemas', () => {
+    it('are written under distinct names, also in foreign keys and indexes', () => {
+        const b = new DesignBuilder({
+            databaseType: 'sqlite',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        for (const schema of ['app', 'audit'])
+            b.addTable({
+                name: 'users',
+                schema,
+                columns: [
+                    {
+                        name: 'id',
+                        typeName: 'int',
+                        primary: true,
+                        nullable: false,
+                    },
+                    { name: 'email', typeName: 'text', nullable: true },
+                ],
+                indexes: [
+                    { name: 'idx_email', unique: false, columns: ['email'] },
+                ],
+                checks: [],
+            });
+        b.addTable({
+            name: 'orders',
+            schema: 'audit',
+            columns: [
+                { name: 'id', typeName: 'int', primary: true, nullable: false },
+                { name: 'user_id', typeName: 'int', nullable: true },
+            ],
+            indexes: [],
+            checks: [],
+        });
+        b.addLink({
+            name: 'fk',
+            from: { schema: 'audit', table: 'orders', column: 'user_id' },
+            to: { schema: 'audit', table: 'users', column: 'id' },
+        });
+        const { text } = exportSql(b.build(), 'sqlite');
+        expect(text).toContain('CREATE TABLE IF NOT EXISTS "app_users"');
+        expect(text).toContain('CREATE TABLE IF NOT EXISTS "audit_users"');
+        expect(text).toContain('REFERENCES "audit_users"("id")');
+        expect(text).toContain('ON "audit_users" ("email")');
+        expect(text).toContain('ON "app_users" ("email")');
+        expect(text).toContain('CREATE TABLE IF NOT EXISTS "orders"');
+    });
+});

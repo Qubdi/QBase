@@ -145,23 +145,26 @@ function columnLine(column: Column, inlineKey: Column | undefined): string {
     return `${notes}    ${line}`;
 }
 
-function indexStatements(table: ExportTable, used: Set<string>): string[] {
-    const { entity } = table;
+function indexStatements(
+    table: ExportTable,
+    used: Set<string>,
+    tableName: string
+): string[] {
     const out = indexKeys(table, { byColumns: true }).map(
         ({ key, columns }) => {
             // index names are unique per database: a clash gets a suffix
             const name = claimName(
                 used,
                 toIdentifier(
-                    key.label.startsWith(`${entity.name}_`)
+                    key.label.startsWith(`${tableName}_`)
                         ? key.label
-                        : `${entity.name}_${key.label}`
+                        : `${tableName}_${key.label}`
                 ),
                 60
             );
             return `CREATE ${key.distinct ? 'UNIQUE ' : ''}INDEX IF NOT EXISTS ${quoteDouble(
                 name
-            )}\nON ${quoteDouble(entity.name)} (${commaList(
+            )}\nON ${quoteDouble(tableName)} (${commaList(
                 columns.map((c) => indexColumnText(key, c, quoteDouble))
             )})${key.where ? ` WHERE ${key.where}` : ''};`;
         }
@@ -169,20 +172,25 @@ function indexStatements(table: ExportTable, used: Set<string>): string[] {
     return sortedStatements(out);
 }
 
-function foreignKeyLine(fk: ExportForeignKey): string {
+function foreignKeyLine(
+    fk: ExportForeignKey,
+    names: Map<string, string>
+): string {
     return `    FOREIGN KEY(${commaList(
         fk.columns.map((c) => quoteDouble(c.name))
-    )}) REFERENCES ${quoteDouble(fk.referenced.name)}(${commaList(
-        fk.referencedColumns.map((c) => quoteDouble(c.name))
-    )})`;
+    )}) REFERENCES ${quoteDouble(
+        names.get(fk.referenced.id) ?? fk.referenced.name
+    )}(${commaList(fk.referencedColumns.map((c) => quoteDouble(c.name)))})`;
 }
 
 function tableText(
     table: ExportTable,
     held: ExportForeignKey[],
-    usedIndexNames: Set<string>
+    usedIndexNames: Set<string>,
+    names: Map<string, string>
 ): string {
     const { entity } = table;
+    const tableName = names.get(entity.id) ?? entity.name;
     if (SYSTEM_TABLES.has(entity.name.toLowerCase()))
         return `-- Skipping SQLite system table: ${oneLine(quoteDouble(entity.name))}\n`;
     const single =
@@ -200,7 +208,7 @@ function tableText(
     for (const rule of table.rules)
         if (rule.expression.trim())
             parts.push(`    CHECK (${rule.expression})`);
-    for (const fk of held) parts.push(foreignKeyLine(fk));
+    for (const fk of held) parts.push(foreignKeyLine(fk, names));
 
     let head = '';
     if (entity.schema)
@@ -210,11 +218,35 @@ function tableText(
             .map((l) => `-- ${l}\n`)
             .join('');
     let text = `${head}CREATE TABLE IF NOT EXISTS ${quoteDouble(
-        entity.name
+        tableName
     )} (\n${parts.join(',\n')}\n);\n`;
-    const indexes = indexStatements(table, usedIndexNames);
+    const indexes = indexStatements(table, usedIndexNames, tableName);
     if (indexes.length > 0) text += `\n-- Indexes\n${indexes.join('\n')}`;
     return `${text}\n`;
+}
+
+/**
+ * SQLite has no schemas, so tables of different schemas that share a name
+ * would collapse into one (`IF NOT EXISTS` skips the second): such tables are
+ * written as `<schema>_<name>`, and a still-clashing name gets a suffix.
+ */
+function tableNames(tables: ExportTable[]): Map<string, string> {
+    const count = new Map<string, number>();
+    for (const t of tables) {
+        const key = t.entity.name.toLowerCase();
+        count.set(key, (count.get(key) ?? 0) + 1);
+    }
+    const used = new Set<string>();
+    const names = new Map<string, string>();
+    for (const t of tables) {
+        const { name, schema } = t.entity;
+        const clash = (count.get(name.toLowerCase()) ?? 0) > 1;
+        names.set(
+            t.entity.id,
+            claimName(used, clash && schema ? `${schema}_${name}` : name)
+        );
+    }
+    return names;
 }
 
 /** SQLite script for a design (EXP-032 to EXP-036). */
@@ -225,9 +257,15 @@ export function writeSqlite(design: Design): string {
     if (model.linkCount > 0) out += 'PRAGMA foreign_keys = ON;\n\n';
     out += 'BEGIN TRANSACTION;\n';
     const usedIndexNames = new Set<string>();
+    const names = tableNames(model.tables);
     out += model.tables
         .map((t) =>
-            tableText(t, foreignKeysHeldBy(model, t.entity), usedIndexNames)
+            tableText(
+                t,
+                foreignKeysHeldBy(model, t.entity),
+                usedIndexNames,
+                names
+            )
         )
         .join('\n');
     return `${out}\nCOMMIT;\n`;
