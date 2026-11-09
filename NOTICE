@@ -10,8 +10,9 @@ QBase is inspired by ChartDB (https://github.com/chartdb/chartdb), an open
 source database diagram editor under the AGPL-3.0 licence. The QBase editor was
 written anew from a description of how such an editor behaves; it does not
 contain ChartDB's source code, apart from a few generic boilerplate files that
-come from the same upstream (see rewrite/similarity-allow.txt). Thank you to the
-ChartDB authors and contributors.
+come from the same upstream (see rewrite/similarity-allow.txt) and the database
+logo images, which were copied from it (see "Database logos" below). Thank you
+to the ChartDB authors and contributors.
 
 QBase is licensed under the Elastic License 2.0 (see the LICENSE file for the
 full text). In short: you may use, copy, modify and redistribute it, including
