@@ -112,14 +112,19 @@ export async function getSessionUser(
 
 export async function destroySession(db: Db, token: string | undefined) {
     if (!token) return;
-    const ended = await db
-        .delete(sessions)
-        .where(eq(sessions.id, hashToken(token)))
-        .returning({ userId: sessions.userId });
-    // signing out lets go of the diagrams the user was editing
-    for (const { userId } of ended) {
-        await db.delete(diagramLocks).where(eq(diagramLocks.userId, userId));
-    }
+    // the session and the locks go together: if letting go of the locks fails,
+    // the person is still signed in and can try again, rather than signed out
+    // with diagrams still held
+    await db.transaction(async (tx) => {
+        const ended = await tx
+            .delete(sessions)
+            .where(eq(sessions.id, hashToken(token)))
+            .returning({ userId: sessions.userId });
+        // signing out lets go of the diagrams the user was editing
+        for (const { userId } of ended) {
+            await tx.delete(diagramLocks).where(eq(diagramLocks.userId, userId));
+        }
+    });
 }
 
 /**
