@@ -159,6 +159,16 @@ export function exportDbml(
         if (pairs.has(`${a}|${b}`) || pairs.has(`${b}|${a}`)) continue;
         pairs.add(`${a}|${b}`);
         links.push(link);
+        // DBML's `<>` is not read back by the importer, so it is written as
+        // one-to-many: say so instead of changing the relationship silently
+        if (
+            link.sourceCardinality === 'many' &&
+            link.targetCardinality === 'many'
+        )
+            diagnostics.push({
+                severity: 'warning',
+                message: `Relationship ${link.name || '(unnamed)'}: many-to-many was written as one-to-many.`,
+            });
     }
     const endpoint = (entityId: string, columnId: string): string => {
         const e = tableOf(entityId)!;

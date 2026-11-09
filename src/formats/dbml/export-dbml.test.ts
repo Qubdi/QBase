@@ -65,3 +65,47 @@ describe('DBML export of an expression with backticks', () => {
         expect(exportDbml(b.build()).diagnostics).toEqual([]);
     });
 });
+
+describe('DBML export of a many-to-many relationship', () => {
+    it('writes it as one-to-many and says so', () => {
+        const b = new DesignBuilder({
+            databaseType: 'postgresql',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        for (const name of ['a', 'b'])
+            b.addTable({
+                name,
+                columns: [{ name: 'id', typeName: 'int', nullable: false }],
+                indexes: [],
+                checks: [],
+            });
+        b.addLink({
+            name: 'a_b',
+            from: { table: 'a', column: 'id' },
+            to: { table: 'b', column: 'id' },
+        });
+        const built = b.build();
+        // the builder never makes one; a design opened from a file can hold it
+        const id = built.links.order[0];
+        const design = {
+            ...built,
+            links: {
+                ...built.links,
+                byId: {
+                    [id]: {
+                        ...built.links.byId[id],
+                        sourceCardinality: 'many' as const,
+                        targetCardinality: 'many' as const,
+                    },
+                },
+            },
+        };
+        const { diagnostics } = exportDbml(design);
+        expect(diagnostics.map((d) => d.message)).toEqual([
+            expect.stringContaining('many-to-many was written as one-to-many'),
+        ]);
+    });
+});
