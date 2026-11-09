@@ -61,8 +61,9 @@ The ChartDB-derived code is already deleted on this branch; read it from `main`
 8. [x] **Phase 7: data and content** (English only; done 2026-11-07, commit c04551d). No templates,
    examples, fixtures or thumbnails are left; all UI text and engine messages go through i18n; wording
    unified; a test fails on hard-coded UI text (`src/i18n/__tests__/hard-coded-text.test.ts`).
-   Seven languages ship (owner decision 2026-11-08): English, Russian, Georgian, German, Italian, French and
-   Chinese (Simplified and Traditional); translated by model (notes in `phase7/`) and reviewed by native
+   Seven languages were decided (owner decision 2026-11-08): English, Russian, Georgian, German, Italian, French and
+   Chinese (Simplified and Traditional). Five ship today (English, Russian, German, Italian, French: `src/i18n/locales/`);
+   Georgian and Chinese are still to add. Translated by model (notes in `phase7/`) and reviewed by native
    speakers (owner states, 2026-11-08; the reviewers' changes, if any, are not in this repository). The other
    16 locales were removed.
    Open for the owner: `src/lib/data/**` keeps its old folder layout (rename is optional).
