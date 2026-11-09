@@ -1,25 +1,28 @@
 # QBase — Audit
 
-**rev** 2 · **date** 2026-11-09
-**method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, npm advisory lookup via registry (no node on host) · server vitest not run (deps missing) · srvaudit-pg throwaway, read-only · no secret read
+**rev** 3 · **date** 2026-11-09
+**method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 29 | 0 | 0 | 0 | 0 |
-| Repository | 45 | 0 | 0 | 0 | 0 |
-| Server | 29 | 0 | 3 | 0 | 0 |
-| Database | 14 | 0 | 0 | 0 | 0 |
-| Client | 59 | 0 | 1 | 0 | 0 |
-| Dead code | 30 | 0 | 0 | 0 | 0 |
-| **Total** | 206 | 0 | 4 | 0 | 0 |
+| Security & secrets | 33 | 0 | 0 | 0 | 0 |
+| Repository | 57 | 0 | 1 | 0 | 0 |
+| Server | 36 | 0 | 4 | 0 | 0 |
+| Database | 19 | 0 | 0 | 0 | 0 |
+| Client | 95 | 0 | 2 | 0 | 0 |
+| Dead code | 40 | 0 | 0 | 0 | 0 |
+| **Total** | 280 | 0 | 7 | 0 | 0 |
 
 ## Act first
 
+- `REPO-005` — CI secret scan fails on main; publish `verify` job blocked
 - `SRV-001` — Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first
 - `SRV-002` — Error handler logs Drizzle error whose message embeds all query params
 - `SRV-021` — Quadratic regex on field type name hangs event loop; 100k chars takes 9 s
+- `SRV-031` — Quadratic drift rename pairing blocks event loop 8 s at 4000 tables
 - `CLI-001` — No error boundary or route `errorElement`; a render or chunk-load error blanks the app
+- `CLI-101` — Import dialog hangs on metadata with more than 50 tables
 
 ---
 
@@ -47,17 +50,21 @@
 | SEC-017 | Low | Lockouts and MFA secret setup leave no audit row | `server/src/auth/routes.ts:71`, `server/src/auth/mfa-routes.ts:153`, `server/src/audit/audit.ts:18` | Add `auth.locked` and `mfa.setup` audit actions |
 | SEC-018 | Low | Admin can reset another admin's password and MFA with no step-up | `server/src/admin/routes.ts:370`, `server/src/admin/routes.ts:593` | Require admin password and code for reset actions |
 | SEC-019 | Low | First-run register open to any caller who reaches an empty server | `server/src/auth/routes.ts:130`, `server/src/auth/routes.ts:142` | Require a setup token printed in server log |
-| SEC-020 | Low | Viewers can list every project member's email | `server/src/members/routes.ts:23` | Return member emails to writers only |
-| SEC-021 | Low | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked | `server/src/config.ts:241` | Validate entries; reject `/0` to `/7` ranges |
+| SEC-020 | Low | Viewers can list every project member's email | `server/src/members/routes.ts:23`, `server/src/diagrams/routes.ts:140`, `server/src/diagrams/routes.ts:541` | Return member emails to writers only |
+| SEC-021 | Low | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked | `server/src/config.ts:241`, `server/src/introspect/net-guard.ts:136` | Validate entries; reject `/0` to `/7` ranges |
 | SEC-022 | Low | Editor CSP allows inline styles (`style-src 'unsafe-inline'`) | `server/src/web.ts:16` | Move inline styles to nonce or hashed styles |
 | SEC-023 | Low | App container lacks `no-new-privileges`, `cap_drop`, `read_only` | `docker-compose.yml:49` | Add `security_opt`, `cap_drop: [ALL]`, `read_only: true` |
 | SEC-024 | Low | Compose default image tag `latest`, unpinned | `docker-compose.yml:53` | Require QBASE_VERSION; drop the `latest` default |
 | SEC-025 | Low | `.gitignore` lacks key and certificate patterns (`*.pem`, `*.key`) | `.gitignore:70` | Ignore `*.pem`, `*.key`, `*.p12`, `*.pfx` |
 | SEC-026 | Low | Load stack hard-codes DB password, encryption key and admin password | `server/load/docker-compose.yml:62`, `server/load/docker-compose.yml:63`, `server/load/seed.mjs:10` | Generate load-test secrets per run |
-| SEC-027 | Med | Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it | `server/src/lib/rate-key.ts:19`, `server/src/lint/routes.ts:53` | Count in preHandler after session lookup, like sharedUserLimit |
-| SEC-028 | Low | No Strict-Transport-Security header on API or editor responses | `server/src/web.ts:426`, `server/src/lib/security-headers.ts:235` | Send HSTS when cookies are secure or request is https |
+| SEC-027 | Med | Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it | `server/src/lib/rate-key.ts:14`, `server/src/lint/routes.ts:53` | Count in preHandler after session lookup, like sharedUserLimit |
+| SEC-028 | Low | No Strict-Transport-Security header on API or editor responses | `server/src/web.ts:14`, `server/src/lib/security-headers.ts:6` | Send HSTS when cookies are secure or request is https |
 | SEC-029 | Low | CORS_ORIGIN unvalidated; `*` or trailing slash silently breaks credentialed requests | `server/src/config.ts:210` | Require exact origin; reject `*` and paths at startup |
-| SEC-030 | Low | Session cookie lacks `__Host-` prefix | `server/src/auth/routes.ts:80`, `server/src/auth/sessions.ts:7` | Rename to `__Host-` cookie when secure |
+| SEC-030 | Low | Session cookie lacks `__Host-` prefix | `server/src/auth/routes.ts:97`, `server/src/auth/sessions.ts:7` | Rename to `__Host-` cookie when secure |
+| SEC-031 | Low | Driver error text and address class returned; refused, timeout, private-host answers map networks | `server/src/introspect/routes.ts:224`, `server/src/introspect/routes.ts:231`, `server/src/introspect/net-guard.ts:192` | Return fixed error codes; log driver text server-side only |
+| SEC-032 | Low | Webhooks reuse INTROSPECT_ALLOW_HOSTS; a database allow-list also permits internal HTTP POSTs | `server/src/drift/service.ts:359`, `server/src/drift/webhook.ts:85` | Add a separate WEBHOOK_ALLOW_HOSTS list for webhooks |
+| SEC-033 | Low | Webhook accepts plain `http:`; token-bearing URL and drift details sent unencrypted | `server/src/drift/webhook.ts:60` | Require https unless host is allow-listed |
+| SEC-034 | Low | API responses lack `Cache-Control: no-store`; GET share-links returns live tokens | `server/src/lib/security-headers.ts:6`, `server/src/share/routes.ts:141` | Add `cache-control: no-store` to API_SECURITY_HEADERS |
 
 ### Repository
 
@@ -67,10 +74,10 @@
 | REPO-002 | Med | `latest` tag moves on every `v*` tag, including prereleases | `.github/workflows/publish.yaml:134`, `run.sh:84` | Tag latest only for non-prerelease versions |
 | REPO-003 | Med | Similarity check runs only on `rewrite/clean-room`, never on main | `.github/workflows/similarity.yaml:11`, `.github/workflows/similarity.yaml:13` | Add main to similarity triggers |
 | REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:7`, `rewrite/TODO.md:7`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
-| REPO-005 | Med | Gitleaks ignore fingerprint names a commit absent from main history | `.gitleaksignore:3` | Regenerate fingerprint from main history commit |
+| REPO-005 | High | CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored | `.gitleaksignore:3`, `server/test/share-token-copy.test.ts:25`, `.github/workflows/ci.yaml:118`, `.github/workflows/publish.yaml:87` | Regenerate ignore fingerprints from main history; rerun scan |
 | REPO-006 | Med | npm version updates paused; both npm entries have limit 0 | `.github/dependabot.yml:11`, `.github/dependabot.yml:25` | Restore limit to 5 or document accepted pause |
 | REPO-008 | Low | Dependabot ignore comments cite TODO.md for majors; TODO.md lists none | `.github/dependabot.yml:16`, `.github/dependabot.yml:30` | List pending majors in TODO.md or drop reference |
-| REPO-009 | Low | PLAN calls main the read-only ChartDB reference; main now holds the rewrite | `rewrite/PLAN.md:3`, `rewrite/TODO.md:9` | Update rewrite docs to current branch roles |
+| REPO-009 | Low | PLAN calls main the read-only ChartDB reference; main now holds the rewrite | `rewrite/PLAN.md:3`, `rewrite/TODO.md:8` | Update rewrite docs to current branch roles |
 | REPO-010 | Low | Clean-checkout script hard-requires branch `rewrite/clean-room` | `tools/make-clean-checkout.sh:23` | Drop or update branch guard |
 | REPO-011 | Low | Manual `run.sh push` bypasses verify gate; compose says tag workflow only | `run.sh:14`, `docker-compose.yml:2` | Remove push from run.sh or fix comment |
 | REPO-012 | Low | Load-test compose pins no digest: postgres, node, `grafana/k6:latest` | `server/load/docker-compose.yml:12`, `server/load/docker-compose.yml:40`, `server/load/docker-compose.yml:104` | Pin images by digest |
@@ -80,16 +87,16 @@
 | REPO-016 | Low | CONTRIBUTING omits CONNECTION_KEY that `docker compose up -d db` requires | `CONTRIBUTING.md:49`, `docker-compose.yml:63` | Add CONNECTION_KEY to the test setup note |
 | REPO-017 | Low | README licence paragraph has no heading, sits inside Scaling | `README.md:385` | Add a `## License` heading |
 | REPO-018 | Low | Code of Conduct enforcement contact is not actionable | `CODE_OF_CONDUCT.md:62` | Name an email address for reports |
-| REPO-019 | Low | QBase-build-tasks says hashed share tokens and keep-all versions; both differ now | `QBase-build-tasks.md:62`, `QBase-build-tasks.md:46`, `README.md:237` | Mark tasks as history or update them |
+| REPO-019 | Low | QBase-build-tasks says hashed share tokens and keep-all versions; both differ now | `QBase-build-tasks.md:62`, `QBase-build-tasks.md:46`, `QBase-build-tasks.md:5` | Mark tasks as history or update them |
 | REPO-020 | Low | Workflows set no `timeout-minutes` or `concurrency` | `.github/workflows/ci.yaml:14`, `.github/workflows/publish.yaml:17` | Add timeout-minutes and concurrency groups |
 | REPO-021 | Low | Publish does not check tag matches package.json version | `.github/workflows/publish.yaml:5` | Add step comparing tag to package.json |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
 | REPO-023 | Low | `.gitignore` carries unused Next, Nuxt, Gatsby, vuepress, Firebase entries | `.gitignore:77`, `.gitignore:81`, `.gitignore:86`, `.gitignore:119` | Trim to ecosystems this repo uses |
-| REPO-024 | Low | `.prettierrc.json` indents 2 spaces; `.editorconfig` says 4 | `.prettierrc.json:3`, `.editorconfig:9` | Reindent prettierrc to 4 spaces |
+| REPO-024 | Low | `.prettierrc.json` closing brace indented 2 spaces; `.editorconfig` says 4 | `.prettierrc.json:7`, `.editorconfig:9` | Reindent closing brace to match editorconfig |
 | REPO-025 | Low | e2e tools in `tools/e2e` run in no workflow and appear in no doc | `tools/e2e/run-smoke.sh:1`, `README.md:316` | Document e2e scripts or add CI job |
 | REPO-026 | Low | Husky pre-commit skips server lint silently when server deps absent | `.husky/pre-commit:4` | Fail, or run server lint in CI only |
 | REPO-027 | Med | Load run.sh never fails on a k6 threshold; README says it gates CI | `server/load/run.sh:58`, `server/load/run.sh:69`, `server/load/README.md:18` | Return k6run status from run_one |
-| REPO-028 | Med | README says only a share-token hash is stored; code also stores encrypted token | `README.md:21`, `README.md:237`, `server/src/share/routes.ts:168` | Reword feature line to hash plus encrypted token |
+| REPO-028 | Med | README feature line says only a share-token hash is stored; code also encrypts token | `README.md:21`, `server/src/share/routes.ts:167` | Reword feature line to hash plus encrypted token |
 | REPO-029 | Low | Postgres digest check passes when one file has no pin at all | `.github/scripts/check-postgres-digest.sh:9` | Fail when any listed file lacks a pin |
 | REPO-030 | Low | Missing `--rewritten` or `--allow` file or path is silently ignored | `tools/similarity.mjs:273`, `tools/similarity.mjs:385` | Error on missing list file or listed path |
 | REPO-031 | Low | Empty upstream index still reports "No checked file is over the limits" | `tools/similarity.mjs:344` | Exit 1 when upstream index has zero runs |
@@ -103,11 +110,23 @@
 | REPO-039 | Low | PLAN says branch does not build; TODO says build, lint, tests pass | `rewrite/PLAN.md:69`, `rewrite/PLAN.md:138` | Mark build-state notes as history |
 | REPO-040 | Low | make-clean-checkout comment cites rewrite/clean-author-brief.md, which does not exist | `tools/make-clean-checkout.sh:15` | Point at clean-author-brief-phase*.md |
 | REPO-041 | Low | e2e visual scripts hard-code `/home/qubdi/ui-reference` output path | `tools/e2e/visual/run.mjs:24`, `tools/e2e/visual/run-new.sh:10`, `tools/e2e/visual/run-run.sh:11` | Default to a temp or `$HOME` path |
-| REPO-042 | Low | Committed briefs and specs embed an absolute personal home path | `rewrite/phase8-brief.md:3`, `rewrite/translation-brief.md:3`, `rewrite/spec/visual-shell.md:10` | Use repo-relative wording |
+| REPO-042 | Low | Committed briefs and specs embed an absolute personal home path | `rewrite/phase8-brief.md:3`, `rewrite/translation-brief.md:3`, `rewrite/spec/visual-shell.md:10`, `rewrite/spec/visual-canvas.md:8`, `rewrite/provenance-audit/README.md:145`, `rewrite/provenance-audit/scan-transcripts.py:3` | Use repo-relative wording |
 | REPO-043 | Low | run-new.sh waits a fixed 4 s for vite preview instead of polling | `tools/e2e/visual/run-new.sh:17` | Poll BASE_URL until it answers |
-| REPO-044 | Low | `.dockerignore` omits rewrite/, tools/, server/load; 1.7 MB enters build context | `.dockerignore:25`, `Dockerfile:15` | Ignore rewrite/, tools/ and server/load/ |
+| REPO-044 | Low | `.dockerignore` omits rewrite/, tools/, server/load; 1.7 MB enters build context | `.dockerignore:26`, `Dockerfile:15` | Ignore rewrite/, tools/ and server/load/ |
 | REPO-045 | Low | licences.mjs treats any parenthesised licence expression as permissive | `tools/licences.mjs:46` | Match explicit SPDX ids inside parentheses |
 | REPO-046 | Low | package.json lacks repository, bugs and homepage fields | `package.json:2` | Add repository, bugs and homepage |
+| REPO-048 | Low | `server/load` scripts ignored by both eslint configs; never linted | `server/eslint.config.mjs:5`, `eslint.config.mjs:60` | Lint load/ in the server eslint config |
+| REPO-049 | Low | Eslint comment cites TODO.md for React Compiler migration; TODO.md lists none | `eslint.config.mjs:51`, `TODO.md:5` | Add migration item to TODO.md or drop reference |
+| REPO-050 | Low | Dockerfile says .dockerignore drops tests; 74 co-located `*.test.ts(x)` still copied | `Dockerfile:20`, `.dockerignore:27` | Add `**/*.test.ts` and `**/*.test.tsx` to .dockerignore |
+| REPO-051 | Low | Licence inventory marks runtime dep `@fastify/static` NOT INSTALLED, unreviewed | `rewrite/inventory/third-party-licences.csv:80` | Rerun tools/licences.mjs with server deps installed |
+| REPO-052 | Low | NOTICE limits ChartDB content to allow-list; 22 copied logo PNGs not listed | `NOTICE:12`, `NOTICE:72`, `rewrite/similarity-allow.txt:1` | List copied logos in allow-list and NOTICE acknowledgement |
+| REPO-053 | Low | Docs say other test DB credentials fail; TEST_PG_USER and TEST_PG_PASSWORD override them | `CONTRIBUTING.md:52`, `README.md:320`, `server/test/helpers.ts:11` | Document TEST_PG_USER and TEST_PG_PASSWORD |
+| REPO-054 | Low | Load compose always passes VUS=50, DURATION=2m; script defaults and README disagree | `server/load/docker-compose.yml:111`, `server/load/docker-compose.yml:112`, `server/load/share-read.js:7`, `server/load/README.md:70` | Align compose, script and README defaults |
+| REPO-055 | Low | Load README cites README section "Run one server process"; no such section | `server/load/README.md:63` | Point at README "Notes" and "Scaling" |
+| REPO-056 | Low | index.html says container writes config.js at start; server answers it per request | `index.html:13`, `server/src/web.ts:39` | Reword comment: server serves /config.js |
+| REPO-057 | Low | run-server-flows reuses any existing `qbtest-app` image, testing stale code | `tools/e2e/run-server-flows.sh:40` | Rebuild the image on every run |
+| REPO-058 | Low | `.env.example` says remove db service from compose; README uses `--no-deps app` | `.env.example:42`, `README.md:150` | Point .env.example at README Option B |
+| REPO-059 | Low | README claims PostgreSQL 16+ support; CI tests only PostgreSQL 18 | `README.md:109`, `.github/workflows/ci.yaml:51` | Add a PostgreSQL 16 leg to the server CI job |
 
 ### Server
 
@@ -142,6 +161,13 @@
 | SRV-028 | Low | SSE writes ignore backpressure; a slow viewer buffers events without bound | `server/src/share/routes.ts:480`, `server/src/share/routes.ts:530` | Close stream when `raw.write` returns false and buffer grows |
 | SRV-029 | Low | Session end deletes sessions and locks in separate statements, not one transaction | `server/src/auth/sessions.ts:115`, `server/src/auth/sessions.ts:121` | Wrap delete and lock release in db.transaction |
 | SRV-030 | Low | SQL Server tests silently skip when container is absent, so CI never runs them | `server/test/introspect-sqlserver.test.ts:20` | Fail in CI when MSSQL is unreachable |
+| SRV-031 | High | Drift rename pairing is quadratic; 4000 vs 4000 tables blocks event loop 8 s | `shared/reconcile.ts:432`, `shared/reconcile.ts:433`, `shared/reconcile.ts:187`, `server/src/drift/service.ts:296` | Bucket rename candidates by column signature; cap pair count |
+| SRV-032 | Low | Deeply nested content (10 KB, depth 5000) overflows recursive stableStringify; answers 500 | `server/src/lib/hash.ts:9`, `server/src/diagrams/routes.ts:281` | Cap content nesting depth in zod; map RangeError to 400 |
+| SRV-033 | Low | Forged activity cursor with Feb 31 passes Date.parse, Postgres cast fails, 500 | `server/src/audit/activity.ts:40`, `server/src/audit/activity.ts:146` | Round-trip check: `new Date(at).toISOString()` must match input |
+| SRV-034 | Low | mfa-reset CLI never loads server/.env; README source-checkout command fails | `server/src/cli/mfa-reset.ts:54`, `server/src/server.ts:11`, `README.md:292` | Call process.loadEnvFile() before loadConfig in the CLI |
+| SRV-035 | Low | Lint CLI crashes with TypeError (exit 1) on nameless field or non-array tables | `server/src/cli/lint.ts:113`, `server/src/cli/lint.ts:144` | Validate shape fully; wrap lint call, exit 2 on error |
+| SRV-036 | Low | Shutdown awaits running maintenance before closing app; long prune hits forced exit | `server/src/shutdown.ts:38`, `server/src/shutdown.ts:39` | Close app first, or stop maintenance in parallel |
+| SRV-037 | Low | `forceCloseConnections: true` destroys in-flight requests on shutdown, not only SSE | `server/src/app.ts:86` | Use `'idle'` and end SSE streams in an onClose hook |
 
 ### Database
 
@@ -151,7 +177,6 @@
 | DB-002 | Med | Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns | `server/src/diagrams/service.ts:58`, `server/src/diagrams/summary.ts:51` | Add generated stat columns to snapshots, as diagrams have |
 | DB-003 | Med | Size checks serialise whole jsonb with `octet_length(content::text)`; 50 MB costs about 0.8 s | `server/src/lint/routes.ts:95`, `server/src/lint/routes.ts:116`, `server/src/drift/service.ts:236` | Use pg_column_size or a stored size column |
 | DB-004 | Med | SQL Server introspection drops columnstore, XML and spatial indexes; import maps them | `server/src/introspect/sqlserver.ts:105`, `src/formats/metadata/load.ts:41` | Drop key_ordinal filter for non-key index types |
-| DB-005 | Low | SQL Server introspection has no database-level read-only guard; only the text check | `server/src/introspect/sqlserver.ts:473`, `server/src/introspect/sqlserver.ts:246` | Check login lacks write rights via HAS_PERMS_BY_NAME |
 | DB-006 | Low | SQL Server returns no custom types; PostgreSQL returns enums and composites | `server/src/introspect/sqlserver.ts:380` | Read alias types from sys.types where is_user_defined |
 | DB-007 | Low | Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out | `server/src/db/schema.ts:272`, `server/src/db/schema.ts:168`, `server/src/db/schema.ts:372`, `server/src/db/schema.ts:400`, `server/src/db/schema.ts:445`, `server/src/auth/sessions.ts:50` | Index diagram_locks.user_id; index the rest if tables grow |
 | DB-008 | Low | One pending MFA ticket per account is not enforced; concurrent logins leave two | `server/src/db/schema.ts:119`, `server/src/auth/mfa.ts:207` | Make mfa_challenges_user_idx unique; upsert on conflict |
@@ -161,13 +186,19 @@
 | DB-012 | Low | Generated stat columns re-parse whole jsonb on every content autosave | `server/src/db/migrations/0022_diagram_stats.sql:2` | Compute stats in app; store as plain columns |
 | DB-013 | Low | Migrations build audit_log indexes without CONCURRENTLY, blocking audit writes | `server/src/db/migrations/0012_wakeful_squadron_supreme.sql:1`, `server/src/db/migrations/0015_model_review.sql:63` | Create large-table indexes CONCURRENTLY outside transaction |
 | DB-014 | Low | Migration 0015 rewrites audit_log under exclusive lock to widen id to bigint | `server/src/db/migrations/0015_model_review.sql:33` | Document downtime; batch-copy into new table for big logs |
+| DB-015 | Med | FK query lacks `conparentid = 0`; FKs to partitioned tables repeat per partition | `server/src/introspect/postgres.ts:97`, `server/src/introspect/filter.ts:12`, `shared/schema-desc.ts:253`, `src/formats/metadata/load.ts:271` | Add `AND con.conparentid = 0` to the foreign key query |
+| DB-016 | Low | Recovery-code renewals unserialised; concurrent renews leave both code sets valid | `server/src/auth/mfa.ts:101`, `server/src/auth/mfa.ts:102`, `server/src/db/schema.ts:98` | Lock the user row FOR UPDATE inside replaceCodes |
+| DB-017 | Low | Postgres introspection skips foreign tables; SQL Server lists external tables | `server/src/introspect/postgres.ts:34`, `server/src/introspect/postgres.ts:69`, `server/src/introspect/sqlserver.ts:33` | Include relkind 'f' in tables and columns queries |
+| DB-018 | Low | Materialized views reported as plain views; definition rebuilt as CREATE VIEW | `server/src/introspect/postgres.ts:42`, `server/src/introspect/postgres.ts:239`, `server/src/introspect/postgres.ts:249` | Emit CREATE MATERIALIZED VIEW for relkind m |
+| DB-019 | Low | SQL Server returns collation on every text column; Postgres only non-default ones | `server/src/introspect/sqlserver.ts:53`, `server/src/introspect/postgres.ts:67` | Return collation only when it differs from database default |
+| DB-020 | Low | Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones | `server/src/introspect/postgres.ts:114` | Filter on `ix.indisvalid` in the index query |
 
 ### Client
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-001 | High | No error boundary or route `errorElement`; a render or chunk-load error blanks the app | `src/app.tsx:17`, `src/platform/router/router.tsx:15` | Add root error boundary and route errorElement with reload |
-| CLI-002 | Med | Startup `api.me()` failure of any kind (timeout, 5xx) shows user as signed out | `src/context/qubdi-context/qubdi-provider.tsx:66` | Only clear user on 401; keep state and retry otherwise |
+| CLI-001 | High | No error boundary or route `errorElement`; a render or chunk-load error blanks the app | `src/app.tsx:17`, `src/platform/router/router.tsx:18` | Add root error boundary and route errorElement with reload |
+| CLI-002 | Med | Startup `api.me()` failure of any kind (timeout, 5xx) shows user as signed out | `src/context/qubdi-context/qubdi-provider.tsx:68` | Only clear user on 401; keep state and retry otherwise |
 | CLI-003 | Med | "Overwrite" conflict action swallows fetch errors; click does nothing visibly | `src/components/qubdi/server-autosave.tsx:105` | Surface failure through setSaveStatus error state |
 | CLI-005 | Med | Final-save keepalive silently dropped above 60 KB; larger diagrams rely on beforeunload prompt only | `src/lib/qubdi/api.ts:455` | Use sendBeacon or chunked fallback for large final saves |
 | CLI-006 | Med | API responses cast `as T`, never validated at runtime | `src/lib/qubdi/api.ts:476` | Parse responses with zod schemas per endpoint |
@@ -177,33 +208,33 @@
 | CLI-010 | Low | `refreshUser` failure after forced password change swallowed; dialog stays with no feedback | `src/components/qubdi/forced-password-change.tsx:17` | Show error or retry on refresh failure |
 | CLI-011 | Low | Timers without cleanup: fake 1 s repair delay, focus delay, URL revoke at 0 ms | `src/features/import/import-box.tsx:262`, `src/components/qubdi/lint-control.tsx:150`, `src/lib/qubdi/save-blob.ts:11` | Clear on unmount; revoke URL after delay |
 | CLI-012 | Low | Diagnostics matched by English message text, not code | `src/features/export/export-sql-dialog.tsx:85`, `src/features/import/import-box.tsx:296` | Add `code` field to diagnostics; compare codes |
-| CLI-013 | Low | Server `detail` text shown raw, bypasses i18n | `src/lib/qubdi/api.ts:948` | Map server codes to translated strings only |
+| CLI-013 | Low | Server `detail` text shown raw, bypasses i18n | `src/lib/qubdi/api.ts:948`, `src/lib/qubdi/api.ts:953` | Map server codes to translated strings only |
 | CLI-014 | Low | Dialog has no Description; Radix warns, no aria-describedby | `src/features/links/create-link-dialog.tsx:94` | Add DialogDescription or `aria-describedby={undefined}` |
 | CLI-015 | Low | Favicon is empty `data:,`; no app icon in tabs | `index.html:8` | Link real favicon from public/ |
 | CLI-016 | Low | Share viewer reloads full share on every `version` event, no debounce | `src/pages/share-viewer-page/share-viewer-page.tsx:100` | Debounce load on version events |
-| CLI-017 | Low | Every save fingerprints full content several times (sorted-key stringify each) | `src/lib/qubdi/sent-content.ts:30` | Fingerprint once per save; reuse result |
-| CLI-018 | Low | No tests import `createRevisionTracker`, `CodeField`, `ListPager`, `SearchInput`, `ProjectCreateDialog`, `NewProjectDialog`, `ProjectSettings`, `NotFoundPage`, `RouteFallback` | `src/lib/qubdi/revision.ts:1`, `src/components/qubdi/list-pager.tsx:1` | Add unit tests, revision tracker first |
-| CLI-019 | Low | Eslint-disable `exhaustive-deps` count 14 in src; two files carry `no-explicit-any` file-wide | `src/canvas/diagram-canvas.tsx:330`, `src/core/wire/wire.test.ts:1` | Narrow suppressions; type fixtures |
-| CLI-020 | Med | Type-declaration regex backtracks cubically; 400 spaces take 1.3 s, 2000 never finish | `src/core/model/type-declaration.ts:31` | Rewrite regex without overlapping space classes; cap input length |
+| CLI-017 | Low | Every save fingerprints full content several times (sorted-key stringify each) | `src/lib/qubdi/sent-content.ts:28`, `src/context/qubdi-context/qubdi-provider.tsx:154` | Fingerprint once per save; reuse result |
+| CLI-018 | Low | No tests import `createRevisionTracker`, `CodeField`, `ListPager`, `SearchInput`, `ProjectCreateDialog`, `NewProjectDialog`, `ProjectSettings`, `NotFoundPage`, `RouteFallback` | `src/lib/qubdi/revision.ts:22`, `src/components/qubdi/list-pager.tsx:1` | Add unit tests, revision tracker first |
+| CLI-019 | Low | Eslint-disable `exhaustive-deps` count 13 in src; two files carry `no-explicit-any` file-wide | `src/canvas/diagram-canvas.tsx:330`, `src/core/wire/wire.test.ts:1` | Narrow suppressions; type fixtures |
+| CLI-020 | Med | Type-declaration regex backtracks cubically; 200 spaces take 1.5 s, 800 take 32 s | `src/core/model/type-declaration.ts:31` | Rewrite regex without overlapping space classes; cap input length |
 | CLI-021 | Med | CRLF DBML skips array and check preparation because `.` stops at `\r` | `src/formats/dbml/prepare.ts:67` | Split on `/\r?\n/` |
 | CLI-022 | Med | DBML array and check keys use table name only; same-named tables in two schemas collide | `src/formats/dbml/import-dbml.ts:177`, `src/formats/dbml/prepare.ts:79` | Key by schema plus table plus field |
 | CLI-023 | Med | Any `name(...)` default passes as function call; `;` and extra statements emitted verbatim | `src/dialects/shared/defaults.ts:27` | Reject top-level `;` and unbalanced parentheses |
-| CLI-024 | Med | CHECK, generated and WHERE expressions written raw into DDL, no statement-break guard | `src/dialects/postgresql/write.ts:257`, `src/dialects/mysql/write.ts:196` | Run `checkExpression` before writing; refuse unbalanced text |
+| CLI-024 | Med | CHECK, generated and WHERE expressions written raw into DDL, no statement-break guard | `src/dialects/postgresql/write.ts:257`, `src/dialects/mysql/write.ts:196`, `src/dialects/sql-server/write.ts:172`, `src/dialects/sqlite/write.ts:202`, `src/dialects/oracle/write.ts:117` | Run `checkExpression` before writing; refuse unbalanced text |
 | CLI-025 | Med | Index conversion keeps fulltext, spatial, gin without checking column types; DDL fails | `src/dialects/convert/convert-index.ts:84`, `src/dialects/convert/convert-index.ts:96` | Call `methodProblem` with column kinds before keeping type |
 | CLI-026 | Med | Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram | `src/persistence/dexie-adapter.ts:81` | Check store row or broadcast removals across tabs |
 | CLI-027 | Low | `save` clears removed flag, so an in-flight autosave resurrects a just-deleted diagram | `src/persistence/dexie-adapter.ts:66` | Keep flag; clear it only on explicit create |
-| CLI-028 | Med | Layout probe loop scans all placed boxes per step; hub with many links is cubic | `src/formats/shared/layout.ts:88` | Use spatial grid or per-column cursor for hub neighbours |
+| CLI-028 | Med | Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s | `src/formats/shared/layout.ts:88` | Use spatial grid or per-column cursor for hub neighbours |
 | CLI-029 | Low | Builder copies neighbour array per link; hub table is quadratic | `src/formats/shared/design-builder.ts:402` | Push into the existing array |
 | CLI-030 | Low | `hasTable` and `resolveTable` scan all tables per call; import is quadratic | `src/formats/shared/design-builder.ts:122` | Index tables by lower-cased schema and name |
 | CLI-031 | Low | DBML export finds tables and columns by linear scan per link | `src/formats/dbml/export-dbml.ts:123` | Build id-to-name maps once |
 | CLI-032 | Low | Bulk remove still does `indexOf` and `splice` per table and link | `src/core/commands/apply.ts:597`, `src/core/commands/apply.ts:609` | Compute positions in one pass with a Set |
 | CLI-033 | Low | `setZoom(NaN)` stores NaN; clamp passes it through | `src/store/editor-store.ts:303` | Ignore non-finite zoom |
 | CLI-034 | Low | DBML export strips backticks from defaults and checks, corrupting MySQL expressions | `src/formats/dbml/export-dbml.ts:58`, `src/formats/dbml/export-dbml.ts:234` | Escape backticks instead of removing them |
-| CLI-035 | Low | DBML export writes many-to-many link as `<`, silently becoming one-to-many | `src/formats/dbml/export-dbml.ts:66` | Add diagnostic or emit `<>` |
+| CLI-035 | Low | DBML export writes many-to-many link as `<`, silently becoming one-to-many | `src/formats/dbml/export-dbml.ts:66`, `src/formats/dbml/export-dbml.ts:167` | Add diagnostic or emit `<>` |
 | CLI-036 | Low | Builder drops duplicate column names silently, no diagnostic | `src/formats/shared/design-builder.ts:180` | Push warning naming table and column |
 | CLI-037 | Low | Many-to-many cardinality silently coerced to one-to-many on import | `src/formats/shared/design-builder.ts:379` | Warn when coercing |
 | CLI-038 | Low | Array default conversion swaps every `'` for `"`, mangling items with quotes | `src/dialects/convert/convert-default.ts:47` | Parse list items; re-quote per target |
-| CLI-039 | Low | Metadata import names primary key after any unique index on same columns | `src/formats/metadata/load.ts:178` | Use primary flag from metadata, not column match |
+| CLI-039 | Low | Metadata import names primary key after any unique index on same columns | `src/formats/metadata/load.ts:177` | Use primary flag from metadata, not column match |
 | CLI-040 | Low | Unknown-key capture assigns `__proto__` as prototype; extras inherit attacker keys then drop | `src/core/wire/record-reader.ts:88` | Use `Object.create(null)` or skip `__proto__` |
 | CLI-041 | Low | Link-pair lookup uses `includes` per pair; hub arrange is quadratic | `src/canvas/auto-arrange.ts:45` | Use Set per tile |
 | CLI-042 | Low | `Math.min(...array)` spreads overflow the stack on very large diagrams | `src/canvas/geometry.ts:100`, `src/formats/image/export-options.ts:98` | Use `reduce` loops |
@@ -217,31 +248,67 @@
 | CLI-054 | Low | Viewer header brand name is hard-coded English | `src/pages/share-viewer-page/share-viewer-page.tsx:272` | Use a translated string or shared logo |
 | CLI-055 | Low | Viewer search box fixed at 16 rem; crowds the header on phones | `src/pages/share-viewer-page/share-viewer-page.tsx:285` | Use responsive width such as w-full sm:w-64 |
 | CLI-056 | Low | Viewer loading text is not a live region; error and loading unannounced | `src/pages/share-viewer-page/share-viewer-page.tsx:210` | Add role="status" or role="alert" |
-| CLI-057 | Med | Dates use browser default locale, not the chosen language, despite `localeTag` | `src/lib/qubdi/when.ts:23`, `src/lib/qubdi/diagram-summary.ts:23` | Pass localeTag(i18n.language) to formatters |
+| CLI-057 | Med | Dates use browser default locale, not the chosen language, despite `localeTag` | `src/lib/qubdi/when.ts:23`, `src/lib/qubdi/diagram-summary.ts:23`, `src/components/qubdi/drift-dialog.tsx:345`, `src/components/qubdi/resync-dialog.tsx:195`, `src/pages/admin-page/activity-panel.tsx:326`, `src/pages/admin-page/overview-panel.tsx:257` | Pass localeTag(i18n.language) to formatters |
 | CLI-058 | Low | Numbers hard-coded to en-US in admin tiles and chart table | `src/lib/qubdi/overview.ts:46`, `src/pages/admin-page/activity-chart.tsx:242` | Format with the active language's locale |
 | CLI-059 | Low | Share dialog load effect has no cancel; late reply from old diagram overwrites links | `src/components/qubdi/share-dialog.tsx:62` | Add stale flag cleared in effect cleanup |
-| CLI-060 | Low | "Copied" label swap is not announced to screen readers | `src/components/qubdi/share-dialog.tsx:173`, `src/components/qubdi/two-factor-dialog.tsx:359` | Add aria-live region for copy confirmation |
+| CLI-060 | Low | "Copied" label swap is not announced to screen readers | `src/components/qubdi/share-dialog.tsx:173`, `src/components/qubdi/two-factor-dialog.tsx:360` | Add aria-live region for copy confirmation |
 | CLI-061 | Low | Share and 2FA copy bypass `copyText`; no unsupported-clipboard message | `src/components/qubdi/share-dialog.tsx:108`, `src/components/qubdi/two-factor-dialog.tsx:173` | Use copyText helper for both |
 | CLI-062 | Low | Open-failed screen offers only "back to projects"; no retry for transient errors | `src/components/qubdi/diagram-access.tsx:66`, `src/components/qubdi/diagram-access.tsx:232` | Add Retry button for failed state |
-| CLI-064 | Low | index.html has no noscript fallback; JS-off users see blank page | `index.html:15` | Add translated noscript notice in main |
+| CLI-064 | Low | index.html has no noscript fallback; JS-off users see blank page | `index.html:17` | Add translated noscript notice in main |
 | CLI-065 | Low | Tests wait on fixed timers (600 ms, 50 ms) instead of conditions | `src/canvas/review-ui.test.tsx:115`, `src/qbase/p8-qbs-contract.test.tsx:189` | Use waitFor or fake timers |
+| CLI-066 | Med | Turning on 2FA in editor refreshes user, remounts gate; one-time recovery codes vanish | `src/components/qubdi/two-factor-dialog.tsx:142`, `src/context/qubdi-context/qubdi-provider.tsx:136`, `src/components/qubdi/diagram-access.tsx:183`, `src/components/qubdi/diagram-access.tsx:213` | Key gate effects on `user?.id`, not the user object |
+| CLI-067 | Med | Publish badge refetches full diagram content after every autosave | `src/components/qubdi/publish-control.tsx:70`, `src/components/qubdi/publish-control.tsx:89` | Return publish status from summary or save reply |
+| CLI-068 | Med | Editor chunk 2.87 MB (561 kB gzip) bundles full all-dialect node-sql-parser | `src/formats/metadata/view-sources.ts:1`, `vite.config.ts:16` | Import per-dialect parser build lazily inside metadata import |
+| CLI-069 | Low | DBML chunk 15.6 MB (2.75 MB gzip) fetched on first DBML view | `src/formats/dbml/import-dbml.ts:1`, `vite.config.ts:16` | Split @dbml/core parser; load exporter without importer |
+| CLI-070 | Low | Late locale load calls changeLanguage, reverting a newer language pick | `src/i18n/i18n.ts:60` | Switch only if `lng` still equals `i18n.language` |
+| CLI-071 | Low | No `supportedLngs`; unsupported browser language sets `<html lang>` over English text | `src/i18n/i18n.ts:50`, `src/i18n/i18n.ts:69` | Set supportedLngs and nonExplicitSupportedLngs in init |
+| CLI-072 | Low | `UnpublishedDiagramError` English text shown on open-failed screen | `src/lib/qubdi/open-remote.ts:46`, `src/lib/qubdi/open-failure.ts:17`, `src/components/qubdi/diagram-access.tsx:236` | Map to a translated key in openFailureOf |
+| CLI-073 | Low | Editor tab title hard-coded English, bypasses `editor.common.app.title` | `src/workspace/editor-frame.tsx:183` | Build title with t() |
+| CLI-074 | Low | Pages render `<main>` inside index.html `<main id="root">`; nested main landmarks | `index.html:17`, `src/pages/home-page/home-page.tsx:39`, `src/pages/admin-page/admin-page.tsx:87`, `src/platform/router/not-found-page.tsx:10` | Make root a `<div>` |
+| CLI-075 | Low | Get latest deletes local copy before discarding autosaver; pending save can still send | `src/lib/qubdi/get-latest.ts:21`, `src/lib/qubdi/get-latest.ts:26` | Discard unsaved changes before deleteLocal |
+| CLI-076 | Low | Drift badge refresh has no stale check; old diagram's reply sets badge | `src/components/qubdi/drift-control.tsx:38` | Compare remoteId with shownRemoteId before setBadge |
+| CLI-077 | Low | Members, connections, drift dialog loads lack cancel; old list shows on reopen | `src/components/qubdi/members-dialog.tsx:37`, `src/components/qubdi/connections-dialog.tsx:87`, `src/components/qubdi/drift-dialog.tsx:163` | Clear state on open; ignore replies after cleanup |
+| CLI-078 | Low | Publish note input has placeholder only, no accessible name | `src/components/qubdi/publish-control.tsx:205` | Add aria-label to the note input |
+| CLI-079 | Low | Save status live region holds only an icon; state changes unannounced | `src/components/qubdi/server-autosave.tsx:240` | Put the label in sr-only text inside the status |
+| CLI-080 | Low | Each local save opens a BroadcastChannel; same-tab listener fires twice | `src/persistence/dexie-adapter.ts:36`, `src/persistence/dexie-adapter.ts:158` | Post on the long-lived channel; skip own-tab echo |
+| CLI-081 | Med | DBML enum with capitalised name not linked; field lower-cased into unknown type | `src/formats/dbml/import-dbml.ts:192`, `src/formats/shared/design-builder.ts:182` | Match user types case-insensitively before lower-casing type name |
+| CLI-082 | Med | Default text containing identity, autoincrement or nextval treated as numbering; value dropped | `src/dialects/convert/convert-default.ts:31`, `src/dialects/shared/defaults.ts:53`, `src/dialects/sql-server/write.ts:96` | Test markers on unquoted text only, anchored |
+| CLI-083 | Low | Array default converted to JSON leaves inner `'` unescaped; literal breaks | `src/dialects/convert/convert-default.ts:137` | Double single quotes in JSON text before wrapping |
+| CLI-084 | Low | Check conversion passes `--`, `/*` and a stray `'` through as safe | `src/dialects/convert/convert-check.ts:78` | Reject comment openers and unmatched quotes |
+| CLI-085 | Med | PostgreSQL default containing `nextval` written raw; sequence name raw in CREATE SEQUENCE | `src/dialects/postgresql/write.ts:50`, `src/dialects/postgresql/write.ts:389` | Anchor nextval form; quote sequence name as identifier |
+| CLI-086 | Med | Column type name written raw into DDL by every writer | `src/dialects/postgresql/write.ts:91`, `src/dialects/mysql/write.ts:84`, `src/dialects/sql-server/write.ts:61`, `src/dialects/oracle/write.ts:38`, `src/dialects/sqlite/write.ts:87` | Refuse type text outside word, space, parentheses, digits, comma |
+| CLI-087 | Low | MySQL writer keeps quoted defaults verbatim; a backslash escapes the closing quote | `src/dialects/mysql/write.ts:108` | Re-quote string defaults with MySQL `asStringLiteral` |
+| CLI-088 | Low | `COMMENT ON INDEX` unqualified; fails for index in non-search-path schema | `src/dialects/postgresql/write.ts:234` | Qualify index name with table schema |
+| CLI-089 | Low | SQL Server index names never deduplicated; empty or repeated labels collide | `src/dialects/sql-server/write.ts:124` | Use claimName per table like other writers |
+| CLI-090 | Low | SQL Server table comment in block comment; nested `/*` swallows rest of script | `src/dialects/sql-server/write.ts:174` | Write comment as `--` lines |
+| CLI-091 | Low | SQLite writer drops schema; same-named tables collapse via IF NOT EXISTS silently | `src/dialects/sqlite/write.ts:212`, `src/dialects/sqlite/write.ts:175` | Prefix schema like converter, or warn |
+| CLI-092 | Low | Binary length not capped: MySQL BINARY over 255, SQL Server over 8000 | `src/dialects/convert/write-neutral.ts:224`, `src/dialects/convert/write-neutral.ts:229` | Fall back to BLOB or VARBINARY(MAX) above limits |
+| CLI-093 | Low | Column collation imported and saved but no SQL writer emits it | `src/formats/metadata/load.ts:141`, `src/dialects/postgresql/write.ts:150` | Write COLLATE in same-dialect export; note it in conversion |
+| CLI-094 | Low | DBML export drops views and partial-index WHERE with no diagnostic | `src/formats/dbml/export-dbml.ts:82`, `src/formats/dbml/export-dbml.ts:216` | Push a warning per dropped view and condition |
+| CLI-095 | Low | Same-dialect SQL export drops views silently; converter path notes them | `src/formats/sql/export-sql.ts:104`, `src/dialects/shared/export-model.ts:172` | Add view-count warning in unkeptByWriter |
+| CLI-096 | Low | Multi-line comments flattened to one line in DBML notes and COMMENT ON | `src/formats/dbml/export-dbml.ts:28`, `src/dialects/postgresql/write.ts:267` | Use `'''` notes and E-strings with newlines |
+| CLI-097 | Low | Paste-detect and decimal-repair regexes quadratic: 80k newlines take 4 s | `src/features/import/import-method.ts:16`, `src/dialects/postgresql/read.ts:119` | Use `[ \t]*` and drop overlapping `\s*` around `\n` |
+| CLI-098 | Low | Export filter removes hidden links one by one, copying collection each time | `src/formats/sql/export-sql.ts:48` | Filter links once with the gone set |
+| CLI-099 | Low | File parse finds source table by linear scan per relationship | `src/core/wire/parse.ts:442` | Build id-to-entity map once |
+| CLI-100 | Low | Mod+0 fit runs before typing and dialog checks; steals key in inputs | `src/canvas/diagram-canvas.tsx:845` | Check canvasKeysAllowed before handling Mod+0 |
+| CLI-101 | High | Metadata over 50 tables: new default Set each render loops onChange forever; dialog hangs | `src/features/import/import-box.tsx:209`, `src/features/import/import-box.tsx:225`, `src/dialogs/import-database-dialog/import-database-dialog.tsx:45` | Memoise defaultSelection(rows) with useMemo on rows |
 
 ### Dead code
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | DEAD-001 | Med | `VITE_HOST_URL`, `VITE_APP_URL` baked at build, no reader; README claims they work | `.env.example:87`, `.env.example:91`, `Dockerfile:10`, `Dockerfile:11`, `Dockerfile:18`, `docker-compose.build.yml:18`, `docker-compose.build.yml:19`, `run.sh:92`, `run.sh:93`, `src/vite-env.d.ts:5`, `src/vite-env.d.ts:6`, `README.md:224` | Remove both variables and README sentence |
-| DEAD-002 | Med | `t('qubdi.viewerPage.pageTitle')` key missing from en; share page title shows raw key | `src/pages/share-viewer-page/share-viewer-page.tsx:343`, `src/i18n/qubdi/workspace.ts` | Use `qubdi.workspace.viewerPage.pageTitle` in the page |
+| DEAD-002 | Med | `qubdi.viewerPage.pageTitle` missing from en; title shows raw key, test asserts same key | `src/pages/share-viewer-page/share-viewer-page.tsx:343`, `src/i18n/qubdi/workspace.ts:189`, `src/helmet/__tests__/p8-shl-title.test.tsx:97` | Use `qubdi.workspace.viewerPage.pageTitle` in the page |
 | DEAD-003 | Low | Unused i18n keys in `qubdi.sidePanel` (whole object); no `t()` reader | `src/i18n/qubdi/side-panel.ts:3`, `src/i18n/locales/en.ts:6`, `src/i18n/locales/en.ts:38` | Delete file and its en.ts wiring |
-| DEAD-004 | Low | Unused en keys: workspace frame placeholders, link errors, examples menu | `src/i18n/editor/workspace.ts:39`, `src/i18n/editor/workspace.ts:40`, `src/i18n/editor/workspace.ts:63`, `src/i18n/editor/workspace.ts:64`, `src/i18n/editor/workspace.ts:65`, `src/i18n/editor/workspace.ts:88` | Delete keys |
+| DEAD-004 | Low | Unused en keys: workspace frame placeholders, examples menu | `src/i18n/editor/workspace.ts:39`, `src/i18n/editor/workspace.ts:40`, `src/i18n/editor/workspace.ts:88` | Delete keys |
 | DEAD-005 | Low | Unused en keys: examplesSize, showAllShort, pasteHint | `src/i18n/editor/designs.ts:22`, `src/i18n/editor/side-panel.ts:230`, `src/i18n/editor/side-panel.ts:249` | Delete keys |
 | DEAD-006 | Low | Unused en keys: canvas fullScreen, exitFullScreen, widen, keys.mod, keys.modMac | `src/i18n/canvas-strings.ts:35`, `src/i18n/canvas-strings.ts:36`, `src/i18n/canvas-strings.ts:55`, `src/i18n/canvas-strings.ts:137` | Delete keys |
 | DEAD-007 | Low | Unused en keys: editorToasts incompatible/alreadyConnected/deleteDiagramFailed; `menu.actions.save` | `src/i18n/qubdi/workspace.ts:57`, `src/i18n/qubdi/workspace.ts:60`, `src/i18n/qubdi/workspace.ts:63`, `src/i18n/locales/en.ts:24` | Delete keys |
 | DEAD-008 | Low | `persistence/local-data.ts` and `custom-colours.ts` imported only by tests; production-dead | `src/persistence/local-data.ts:1`, `src/persistence/custom-colours.ts:1`, `src/persistence/persistence.test.ts:9` | Delete both files and their tests |
-| DEAD-009 | Low | Exports with zero references anywhere | `src/core/commands/command.ts` (CommandType), `src/core/model/key.ts` (methodsOfFamily), `src/core/model/lookup.ts` (hasEntity), `src/canvas/geometry.ts` (boxOf, enclosing), `src/platform/config/backend.ts:4` (BACKEND_URL), `src/qbase/diagram-types.ts` (DBFieldType, DBCheckConstraint, DBDependency, DBCustomType), `src/dialects/registry.ts` (writableDialects), `src/dialects/shared/export-model.ts` (joinedColumnNames) | Delete exports |
-| DEAD-010 | Low | Eight selectors in `selectors.ts` have zero references | `src/store/selectors.ts` (selectDesignId, selectEntities, selectLinks, selectUi, selectSelection, selectFocus, selectSession, selectLocation) | Delete unused selectors |
-| DEAD-011 | Low | Exports referenced only by tests; production-dead | `src/core/commands/plan-visual.ts` (planMove), `src/core/model/ids.ts` (looksLikeGeneratedId), `src/canvas/geometry.ts` (snapTo, overlappingIds, toggledWidth), `src/formats/image/export-options.ts` (outputSize), `src/features/filters/filter-tree.ts` (isFilterActive), `src/lib/export-import-utils.ts` (diagramToJSONOutput), `src/lib/custom-colors.ts:58` (readSavedColors), `src/lib/qubdi/diagram-summary.ts` (toDatabaseType, toDatabaseEdition), `src/lib/qubdi/project-path.ts` (findProjectBySlug), `src/lib/qubdi/local-data.ts` (adoptLegacyLocalData), `src/store/selectors.ts` (selectDirty, selectVisibleEntities), `src/qbase/diagram-types.ts` (databasesWithSchemas), `src/qbase/sql-adapters.ts` (exportDiagramSql), `src/dialects/registry.ts` (listDialects), `shared/reconcile.ts:575`, `shared/reconcile.ts:578` (isEmpty, countByKind) | Delete exports and their tests |
-| DEAD-013 | Low | Script `test:watch` has no caller or doc reference | `package.json` (scripts) | Remove script or document it |
+| DEAD-009 | Low | Exports with zero references anywhere | `src/core/commands/command.ts:115` (CommandType), `src/core/model/key.ts:31` (methodsOfFamily), `src/core/model/lookup.ts:54` (hasEntity), `src/canvas/geometry.ts:29` (boxOf), `src/canvas/geometry.ts:98` (enclosing), `src/platform/config/backend.ts:4` (BACKEND_URL), `src/qbase/diagram-types.ts:59` (DBFieldType), `src/qbase/diagram-types.ts:108` (DBCheckConstraint), `src/qbase/diagram-types.ts:155` (DBDependency), `src/qbase/diagram-types.ts:166` (DBCustomType), `src/dialects/registry.ts:31` (writableDialects), `src/dialects/shared/export-model.ts:227` (joinedColumnNames) | Delete exports |
+| DEAD-010 | Low | Eight selectors in `selectors.ts` have zero references | `src/store/selectors.ts:9` (selectDesignId), `src/store/selectors.ts:11` (selectEntities), `src/store/selectors.ts:12` (selectLinks), `src/store/selectors.ts:13` (selectUi), `src/store/selectors.ts:14` (selectSelection), `src/store/selectors.ts:18` (selectFocus), `src/store/selectors.ts:19` (selectSession), `src/store/selectors.ts:22` (selectLocation) | Delete unused selectors |
+| DEAD-011 | Low | Exports referenced only by tests; production-dead | `src/core/commands/plan-visual.ts:120` (planMove), `src/core/model/ids.ts:49` (looksLikeGeneratedId), `src/canvas/geometry.ts:13` (snapTo), `src/canvas/geometry.ts:53` (overlappingIds), `src/canvas/geometry.ts:92` (toggledWidth), `src/formats/image/export-options.ts:111` (outputSize), `src/features/filters/filter-tree.ts:47` (isFilterActive), `src/lib/export-import-utils.ts:10` (diagramToJSONOutput), `src/lib/custom-colors.ts:58` (readSavedColors), `src/lib/qubdi/diagram-summary.ts:5` (toDatabaseType), `src/lib/qubdi/diagram-summary.ts:12` (toDatabaseEdition), `src/lib/qubdi/project-path.ts:19` (findProjectBySlug), `src/lib/qubdi/local-data.ts:59` (adoptLegacyLocalData), `src/store/selectors.ts:21` (selectDirty), `src/store/selectors.ts:44` (selectVisibleEntities), `src/qbase/diagram-types.ts:230` (databasesWithSchemas), `src/qbase/sql-adapters.ts:16` (exportDiagramSql), `src/dialects/registry.ts:26` (listDialects), `shared/reconcile.ts:575` (isEmpty), `shared/reconcile.ts:578` (countByKind) | Delete exports and their tests |
+| DEAD-013 | Low | Server script `test:watch` has no caller or doc reference | `server/package.json:21` | Remove script or document it |
 | DEAD-030 | Low | `droppedUnique` is always false and never read | `src/dialects/convert/convert-index.ts:14` | Remove field and its assignments |
 | DEAD-031 | Low | `plural` helper in overview.ts has no production caller, English-only suffix | `src/lib/qubdi/overview.ts:53` | Delete it and its test |
 | DEAD-014 | Low | Tailwind keyframes/animations accordion-down, accordion-up, scale, scale-2, blink never used | `tailwind.config.js:27`, `tailwind.config.js:32`, `tailwind.config.js:75`, `tailwind.config.js:83`, `tailwind.config.js:85`, `tailwind.config.js:91` | Delete keyframes, animations, pulseOnce, radixHeight |
@@ -259,7 +326,17 @@
 | DEAD-026 | Low | `GET /:id/drift/reports` list has no client caller; client fetches one report | `server/src/drift/routes.ts:253`, `src/lib/qubdi/api.ts:923` | Remove route or document as public API |
 | DEAD-027 | Low | `GET /lint/rules` has no client caller and no README mention | `server/src/lint/routes.ts:62` | Remove route or document it |
 | DEAD-028 | Low | `postcss` devDependency redundant; `@tailwindcss/postcss` already depends on it, no import | `package.json:93`, `postcss.config.js:1` | Remove postcss devDependency |
-| DEAD-029 | Low | Phase notes under `rewrite/` referenced by no file or tool | `rewrite/phase7`, `rewrite/phase8`, `rewrite/phase9`, `rewrite/review`, `rewrite/phase8-brief.md`, `rewrite/translation-brief.md`, `rewrite/decisions-phase6a.md` | Delete unreferenced notes or archive off tree |
+| DEAD-029 | Low | Three rewrite briefs referenced by no file or tool | `rewrite/phase8-brief.md`, `rewrite/translation-brief.md`, `rewrite/decisions-phase6a.md` | Delete unreferenced notes or archive off tree |
+| DEAD-032 | Low | Unused en keys `editor.sidePanel`: common.more/rename, tables.color, fields.foreignKey, visuals.colour, hover.*, clipboard copied/pasted | `src/i18n/editor/side-panel.ts:10`, `src/i18n/editor/side-panel.ts:11`, `src/i18n/editor/side-panel.ts:43`, `src/i18n/editor/side-panel.ts:91`, `src/i18n/editor/side-panel.ts:215`, `src/i18n/editor/side-panel.ts:232`, `src/i18n/editor/side-panel.ts:247`, `src/i18n/editor/side-panel.ts:248`, `src/i18n/editor/side-panel.ts:250`, `src/i18n/editor/side-panel.ts:251` | Delete keys and whole hover block |
+| DEAD-033 | Low | Unused UI component bodies: DropdownMenu SubTrigger/SubContent/CheckboxItem/RadioItem, SelectLabel/Separator, TableFooter/Caption, MenubarCheckboxItem | `src/platform/ui/dropdown-menu.tsx:19`, `src/platform/ui/dropdown-menu.tsx:41`, `src/platform/ui/dropdown-menu.tsx:82`, `src/platform/ui/dropdown-menu.tsx:102`, `src/platform/ui/select.tsx:101`, `src/platform/ui/select.tsx:135`, `src/platform/ui/table.tsx:39`, `src/platform/ui/table.tsx:99`, `src/workspace/navbar/menubar-parts.tsx:100` | Delete components and export entries |
+| DEAD-034 | Low | `key-value-store.ts` reached only from production-dead DEAD-008 files and tests | `src/persistence/key-value-store.ts:2`, `src/persistence/custom-colours.ts:1`, `src/persistence/local-data.ts:6` | Delete with DEAD-008 files |
+| DEAD-035 | Low | Server tsconfig `@/*` path alias unused; no server file imports `@/` | `server/tsconfig.json:12`, `server/tsconfig.build.json:10` | Remove `paths` from both server tsconfigs |
+| DEAD-036 | Low | Root `preview` script has no caller; e2e tools run `npx vite preview` | `package.json:15`, `tools/e2e/visual/run-new.sh:17` | Remove script or use it in tools |
+| DEAD-037 | Low | Same localStorage JSON-map reader copied in four modules | `src/lib/qubdi/lint-config-store.ts:10`, `src/lib/qubdi/remote-version.ts:8`, `src/lib/qubdi/remote-map.ts:10`, `src/lib/qubdi/sync-state.ts:28` | Extract one shared readJsonMap(key) helper |
+| DEAD-038 | Low | Two 25-char id generators; `generateId` duplicates `newId`, modulo-biased; `newDesignId` same body | `src/lib/utils/utils.ts:12`, `src/lib/utils/utils.ts:20`, `src/core/model/ids.ts:25`, `src/core/model/ids.ts:35`, `src/core/model/ids.ts:44` | Keep `newId`; route `generateId` callers to it |
+| DEAD-039 | Low | `timeOf` helper duplicated in two admin panels | `src/pages/admin-page/activity-panel.tsx:30`, `src/pages/admin-page/overview-panel.tsx:22` | Move to one shared admin formatting module |
+| DEAD-040 | Low | `isRecord` guard duplicated in viewer model | `src/core/wire/record-reader.ts:6`, `src/lib/qubdi/viewer-model.ts:38` | Import `isRecord` from record-reader |
+| DEAD-041 | Low | Header comment cites `side-panel-register.ts`, which does not exist | `src/i18n/editor/side-panel.ts:4` | Drop the stale sentence |
 
 ---
 
@@ -286,13 +363,16 @@
 | SEC-015 | Audit row written after commit, outside the action's transaction | Duplicate of DB-009 |
 | SRV-005 | MFA disable, enable and recovery renew never check the mfa lockout key | Duplicate of SEC-002 |
 | DEAD-012 | `similarity.yaml` triggers only on `rewrite/clean-room`; never runs on main | Duplicate of REPO-003 |
+| DB-005 | SQL Server introspection has no database-level read-only guard; only the text check | Duplicate of SEC-014 |
+| SEC-035 | Gitleaks flags two TOTP test secrets in two-factor test | CI-pinned gitleaks v8.30.1 does not flag them |
+| REPO-047 | Gitleaks flags two-factor test lines; secret scan fails | CI-pinned gitleaks v8.30.1 does not flag them; root cause is REPO-005 |
 | CLI-004 | Vitest: 4 files fail, `fake-indexeddb` declared but missing from node_modules; tsc reports 4 errors | Local install gap, not a repo defect |
 
 ---
 
 ## Database scale check
 
-Measurements below are from an earlier pass and were not re-run in rev 1.
+Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 ### Measured
 
@@ -312,17 +392,17 @@ Measurements below are from an earlier pass and were not re-run in rev 1.
 | Area | Result | Where |
 |------|--------|-------|
 | Schema vs migrations | drizzle-kit empty diff; journal ordered, no gaps | `server/src/db/migrations/meta/_journal.json` |
-| Boot migration lock | Session advisory lock, lock_timeout retry, 2-connection pool | `server/src/db/client.ts:111` |
+| Boot migration lock | Session advisory lock, lock_timeout retry, 2-connection pool | `server/src/db/client.ts:109` |
 | FK ON DELETE | Every FK states cascade, restrict or set null | `server/src/db/schema.ts:204` |
-| Check-then-write | Unique index or lock backs each: email, project, connection, snapshot version, share cap | `server/src/diagrams/service.ts:218` |
+| Check-then-write | Unique index or lock backs each: email, project, connection, snapshot version, share cap; not MFA (DB-008, DB-016) | `server/src/diagrams/service.ts:218` |
 | Autosave | Compare-and-write in one UPDATE; content not returned | `server/src/diagrams/routes.ts:388` |
-| Lists | Paged, offset capped, content never selected | `server/src/diagrams/routes.ts:126` |
+| Lists | Paged, offset capped, content never selected; one project list unpaged (SRV-013) | `server/src/diagrams/routes.ts:126` |
 | Audit reads | Keyset cursor, indexed filters, name lookups by PK | `server/src/audit/activity.ts:133` |
 | Audit retention | Batched 5000, indexed on `at` | `server/src/maintenance.ts:71` |
-| Pool | max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts | `server/src/db/client.ts:17` |
+| Pool | max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts | `server/src/db/client.ts:20` |
 | Postgres introspection | READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address | `server/src/introspect/postgres.ts:158` |
 | Read-only guard | Single SELECT/WITH, denylist after stripping literals | `server/src/introspect/readonly-guard.ts:102` |
-| Postgres image and backups | Digest-pinned in compose and CI; dump and restore documented | `docker-compose.yml:15` |
+| Postgres image and backups | Digest-pinned in compose and CI; dump and restore documented | `docker-compose.yml:14` |
 
 ---
 
@@ -330,5 +410,6 @@ Measurements below are from an earlier pass and were not re-run in rev 1.
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 3 | 2026-11-09 | 75 new, 0 fixed, 3 dropped; deep sweep, server tests and gitleaks re-run |
 | 2 | 2026-11-09 | 97 new, 0 fixed, 1 dropped; second full sweep |
 | 1 | 2026-11-09 | 109 new, 0 fixed, 5 dropped; first full pass |

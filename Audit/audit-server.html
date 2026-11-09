@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 2</b></div>
-  <h1>29 open (0 Crit, 3 High).</h1>
+  <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 3</b></div>
+  <h1>36 open (0 Crit, 4 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, npm advisory lookup via registry (no node on host) · server vitest not run (deps missing) · srvaudit-pg throwaway, read-only · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -28,11 +28,11 @@
 </header>
 
 <main id="main">
-<div class="note crit"><span class="pill crit">Act first</span><span><b>SRV-001</b> Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first; <b>SRV-002</b> Error handler logs Drizzle error whose message embeds all query params; <b>SRV-021</b> Quadratic regex on field type name hangs event loop; 100k chars takes 9 s</span></div>
+<div class="note crit"><span class="pill crit">Act first</span><span><b>SRV-001</b> Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first; <b>SRV-002</b> Error handler logs Drizzle error whose message embeds all query params; <b>SRV-021</b> Quadratic regex on field type name hangs event loop; 100k chars takes 9 s; <b>SRV-031</b> Quadratic drift rename pairing blocks event loop 8 s at 4000 tables</span></div>
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">29 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">36 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -66,6 +66,13 @@
         <tr><td class="svc-name">SRV-028</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SSE writes ignore backpressure; a slow viewer buffers events without bound</td><td class="wrap-cell"><code>server/src/share/routes.ts:480</code>, <code>server/src/share/routes.ts:530</code></td><td class="wrap-cell">Close stream when <code>raw.write</code> returns false and buffer grows</td></tr>
         <tr><td class="svc-name">SRV-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Session end deletes sessions and locks in separate statements, not one transaction</td><td class="wrap-cell"><code>server/src/auth/sessions.ts:115</code>, <code>server/src/auth/sessions.ts:121</code></td><td class="wrap-cell">Wrap delete and lock release in db.transaction</td></tr>
         <tr><td class="svc-name">SRV-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server tests silently skip when container is absent, so CI never runs them</td><td class="wrap-cell"><code>server/test/introspect-sqlserver.test.ts:20</code></td><td class="wrap-cell">Fail in CI when MSSQL is unreachable</td></tr>
+        <tr><td class="svc-name">SRV-031</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Drift rename pairing is quadratic; 4000 vs 4000 tables blocks event loop 8 s</td><td class="wrap-cell"><code>shared/reconcile.ts:432</code>, <code>shared/reconcile.ts:433</code>, <code>shared/reconcile.ts:187</code>, <code>server/src/drift/service.ts:296</code></td><td class="wrap-cell">Bucket rename candidates by column signature; cap pair count</td></tr>
+        <tr><td class="svc-name">SRV-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Deeply nested content (10 KB, depth 5000) overflows recursive stableStringify; answers 500</td><td class="wrap-cell"><code>server/src/lib/hash.ts:9</code>, <code>server/src/diagrams/routes.ts:281</code></td><td class="wrap-cell">Cap content nesting depth in zod; map RangeError to 400</td></tr>
+        <tr><td class="svc-name">SRV-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Forged activity cursor with Feb 31 passes Date.parse, Postgres cast fails, 500</td><td class="wrap-cell"><code>server/src/audit/activity.ts:40</code>, <code>server/src/audit/activity.ts:146</code></td><td class="wrap-cell">Round-trip check: <code>new Date(at).toISOString()</code> must match input</td></tr>
+        <tr><td class="svc-name">SRV-034</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">mfa-reset CLI never loads server/.env; README source-checkout command fails</td><td class="wrap-cell"><code>server/src/cli/mfa-reset.ts:54</code>, <code>server/src/server.ts:11</code>, <code>README.md:292</code></td><td class="wrap-cell">Call process.loadEnvFile() before loadConfig in the CLI</td></tr>
+        <tr><td class="svc-name">SRV-035</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lint CLI crashes with TypeError (exit 1) on nameless field or non-array tables</td><td class="wrap-cell"><code>server/src/cli/lint.ts:113</code>, <code>server/src/cli/lint.ts:144</code></td><td class="wrap-cell">Validate shape fully; wrap lint call, exit 2 on error</td></tr>
+        <tr><td class="svc-name">SRV-036</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Shutdown awaits running maintenance before closing app; long prune hits forced exit</td><td class="wrap-cell"><code>server/src/shutdown.ts:38</code>, <code>server/src/shutdown.ts:39</code></td><td class="wrap-cell">Close app first, or stop maintenance in parallel</td></tr>
+        <tr><td class="svc-name">SRV-037</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>forceCloseConnections: true</code> destroys in-flight requests on shutdown, not only SSE</td><td class="wrap-cell"><code>server/src/app.ts:86</code></td><td class="wrap-cell">Use <code>'idle'</code> and end SSE streams in an onClose hook</td></tr>
       </tbody>
     </table>
   </div>

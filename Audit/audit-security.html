@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 2</b></div>
-  <h1>29 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 3</b></div>
+  <h1>33 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, npm advisory lookup via registry (no node on host) · server vitest not run (deps missing) · srvaudit-pg throwaway, read-only · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -30,7 +30,7 @@
 <main id="main">
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">29 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">33 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -53,17 +53,21 @@
         <tr><td class="svc-name">SEC-017</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lockouts and MFA secret setup leave no audit row</td><td class="wrap-cell"><code>server/src/auth/routes.ts:71</code>, <code>server/src/auth/mfa-routes.ts:153</code>, <code>server/src/audit/audit.ts:18</code></td><td class="wrap-cell">Add <code>auth.locked</code> and <code>mfa.setup</code> audit actions</td></tr>
         <tr><td class="svc-name">SEC-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Admin can reset another admin's password and MFA with no step-up</td><td class="wrap-cell"><code>server/src/admin/routes.ts:370</code>, <code>server/src/admin/routes.ts:593</code></td><td class="wrap-cell">Require admin password and code for reset actions</td></tr>
         <tr><td class="svc-name">SEC-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">First-run register open to any caller who reaches an empty server</td><td class="wrap-cell"><code>server/src/auth/routes.ts:130</code>, <code>server/src/auth/routes.ts:142</code></td><td class="wrap-cell">Require a setup token printed in server log</td></tr>
-        <tr><td class="svc-name">SEC-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Viewers can list every project member's email</td><td class="wrap-cell"><code>server/src/members/routes.ts:23</code></td><td class="wrap-cell">Return member emails to writers only</td></tr>
-        <tr><td class="svc-name">SEC-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">INTROSPECT_ALLOW_HOSTS accepts <code>0.0.0.0/0</code> and junk entries unchecked</td><td class="wrap-cell"><code>server/src/config.ts:241</code></td><td class="wrap-cell">Validate entries; reject <code>/0</code> to <code>/7</code> ranges</td></tr>
+        <tr><td class="svc-name">SEC-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Viewers can list every project member's email</td><td class="wrap-cell"><code>server/src/members/routes.ts:23</code>, <code>server/src/diagrams/routes.ts:140</code>, <code>server/src/diagrams/routes.ts:541</code></td><td class="wrap-cell">Return member emails to writers only</td></tr>
+        <tr><td class="svc-name">SEC-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">INTROSPECT_ALLOW_HOSTS accepts <code>0.0.0.0/0</code> and junk entries unchecked</td><td class="wrap-cell"><code>server/src/config.ts:241</code>, <code>server/src/introspect/net-guard.ts:136</code></td><td class="wrap-cell">Validate entries; reject <code>/0</code> to <code>/7</code> ranges</td></tr>
         <tr><td class="svc-name">SEC-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Editor CSP allows inline styles (<code>style-src 'unsafe-inline'</code>)</td><td class="wrap-cell"><code>server/src/web.ts:16</code></td><td class="wrap-cell">Move inline styles to nonce or hashed styles</td></tr>
         <tr><td class="svc-name">SEC-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">App container lacks <code>no-new-privileges</code>, <code>cap_drop</code>, <code>read_only</code></td><td class="wrap-cell"><code>docker-compose.yml:49</code></td><td class="wrap-cell">Add <code>security_opt</code>, <code>cap_drop: [ALL]</code>, <code>read_only: true</code></td></tr>
         <tr><td class="svc-name">SEC-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Compose default image tag <code>latest</code>, unpinned</td><td class="wrap-cell"><code>docker-compose.yml:53</code></td><td class="wrap-cell">Require QBASE_VERSION; drop the <code>latest</code> default</td></tr>
         <tr><td class="svc-name">SEC-025</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>.gitignore</code> lacks key and certificate patterns (<code>*.pem</code>, <code>*.key</code>)</td><td class="wrap-cell"><code>.gitignore:70</code></td><td class="wrap-cell">Ignore <code>*.pem</code>, <code>*.key</code>, <code>*.p12</code>, <code>*.pfx</code></td></tr>
         <tr><td class="svc-name">SEC-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Load stack hard-codes DB password, encryption key and admin password</td><td class="wrap-cell"><code>server/load/docker-compose.yml:62</code>, <code>server/load/docker-compose.yml:63</code>, <code>server/load/seed.mjs:10</code></td><td class="wrap-cell">Generate load-test secrets per run</td></tr>
-        <tr><td class="svc-name">SEC-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it</td><td class="wrap-cell"><code>server/src/lib/rate-key.ts:19</code>, <code>server/src/lint/routes.ts:53</code></td><td class="wrap-cell">Count in preHandler after session lookup, like sharedUserLimit</td></tr>
-        <tr><td class="svc-name">SEC-028</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No Strict-Transport-Security header on API or editor responses</td><td class="wrap-cell"><code>server/src/web.ts:426</code>, <code>server/src/lib/security-headers.ts:235</code></td><td class="wrap-cell">Send HSTS when cookies are secure or request is https</td></tr>
+        <tr><td class="svc-name">SEC-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it</td><td class="wrap-cell"><code>server/src/lib/rate-key.ts:14</code>, <code>server/src/lint/routes.ts:53</code></td><td class="wrap-cell">Count in preHandler after session lookup, like sharedUserLimit</td></tr>
+        <tr><td class="svc-name">SEC-028</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No Strict-Transport-Security header on API or editor responses</td><td class="wrap-cell"><code>server/src/web.ts:14</code>, <code>server/src/lib/security-headers.ts:6</code></td><td class="wrap-cell">Send HSTS when cookies are secure or request is https</td></tr>
         <tr><td class="svc-name">SEC-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CORS_ORIGIN unvalidated; <code>*</code> or trailing slash silently breaks credentialed requests</td><td class="wrap-cell"><code>server/src/config.ts:210</code></td><td class="wrap-cell">Require exact origin; reject <code>*</code> and paths at startup</td></tr>
-        <tr><td class="svc-name">SEC-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Session cookie lacks <code>__Host-</code> prefix</td><td class="wrap-cell"><code>server/src/auth/routes.ts:80</code>, <code>server/src/auth/sessions.ts:7</code></td><td class="wrap-cell">Rename to <code>__Host-</code> cookie when secure</td></tr>
+        <tr><td class="svc-name">SEC-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Session cookie lacks <code>__Host-</code> prefix</td><td class="wrap-cell"><code>server/src/auth/routes.ts:97</code>, <code>server/src/auth/sessions.ts:7</code></td><td class="wrap-cell">Rename to <code>__Host-</code> cookie when secure</td></tr>
+        <tr><td class="svc-name">SEC-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Driver error text and address class returned; refused, timeout, private-host answers map networks</td><td class="wrap-cell"><code>server/src/introspect/routes.ts:224</code>, <code>server/src/introspect/routes.ts:231</code>, <code>server/src/introspect/net-guard.ts:192</code></td><td class="wrap-cell">Return fixed error codes; log driver text server-side only</td></tr>
+        <tr><td class="svc-name">SEC-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Webhooks reuse INTROSPECT_ALLOW_HOSTS; a database allow-list also permits internal HTTP POSTs</td><td class="wrap-cell"><code>server/src/drift/service.ts:359</code>, <code>server/src/drift/webhook.ts:85</code></td><td class="wrap-cell">Add a separate WEBHOOK_ALLOW_HOSTS list for webhooks</td></tr>
+        <tr><td class="svc-name">SEC-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Webhook accepts plain <code>http:</code>; token-bearing URL and drift details sent unencrypted</td><td class="wrap-cell"><code>server/src/drift/webhook.ts:60</code></td><td class="wrap-cell">Require https unless host is allow-listed</td></tr>
+        <tr><td class="svc-name">SEC-034</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">API responses lack <code>Cache-Control: no-store</code>; GET share-links returns live tokens</td><td class="wrap-cell"><code>server/src/lib/security-headers.ts:6</code>, <code>server/src/share/routes.ts:141</code></td><td class="wrap-cell">Add <code>cache-control: no-store</code> to API_SECURITY_HEADERS</td></tr>
       </tbody>
     </table>
   </div>
@@ -89,12 +93,13 @@
     </table>
   </div>
   </details>
-  <details><summary>Dropped (1)</summary>
+  <details><summary>Dropped (2)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Reason</th></tr></thead>
       <tbody>
         <tr><td class="svc-name">SEC-015</td><td class="wrap-cell">Audit row written after commit, outside the action's transaction</td><td class="wrap-cell">Duplicate of DB-009</td></tr>
+        <tr><td class="svc-name">SEC-035</td><td class="wrap-cell">Gitleaks flags two TOTP test secrets in two-factor test</td><td class="wrap-cell">CI-pinned gitleaks v8.30.1 does not flag them</td></tr>
       </tbody>
     </table>
   </div>

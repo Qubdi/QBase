@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 2</b></div>
-  <h1>14 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 3</b></div>
+  <h1>19 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-09</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, npm advisory lookup via registry (no node on host) · server vitest not run (deps missing) · srvaudit-pg throwaway, read-only · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -30,7 +30,7 @@
 <main id="main">
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Database &amp; scale</h2></div>
-  <p class="section-note">14 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">19 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -39,7 +39,6 @@
         <tr><td class="svc-name">DB-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns</td><td class="wrap-cell"><code>server/src/diagrams/service.ts:58</code>, <code>server/src/diagrams/summary.ts:51</code></td><td class="wrap-cell">Add generated stat columns to snapshots, as diagrams have</td></tr>
         <tr><td class="svc-name">DB-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Size checks serialise whole jsonb with <code>octet_length(content::text)</code>; 50 MB costs about 0.8 s</td><td class="wrap-cell"><code>server/src/lint/routes.ts:95</code>, <code>server/src/lint/routes.ts:116</code>, <code>server/src/drift/service.ts:236</code></td><td class="wrap-cell">Use pg_column_size or a stored size column</td></tr>
         <tr><td class="svc-name">DB-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL Server introspection drops columnstore, XML and spatial indexes; import maps them</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:105</code>, <code>src/formats/metadata/load.ts:41</code></td><td class="wrap-cell">Drop key_ordinal filter for non-key index types</td></tr>
-        <tr><td class="svc-name">DB-005</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server introspection has no database-level read-only guard; only the text check</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:473</code>, <code>server/src/introspect/sqlserver.ts:246</code></td><td class="wrap-cell">Check login lacks write rights via HAS_PERMS_BY_NAME</td></tr>
         <tr><td class="svc-name">DB-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server returns no custom types; PostgreSQL returns enums and composites</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:380</code></td><td class="wrap-cell">Read alias types from sys.types where is_user_defined</td></tr>
         <tr><td class="svc-name">DB-007</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out</td><td class="wrap-cell"><code>server/src/db/schema.ts:272</code>, <code>server/src/db/schema.ts:168</code>, <code>server/src/db/schema.ts:372</code>, <code>server/src/db/schema.ts:400</code>, <code>server/src/db/schema.ts:445</code>, <code>server/src/auth/sessions.ts:50</code></td><td class="wrap-cell">Index diagram_locks.user_id; index the rest if tables grow</td></tr>
         <tr><td class="svc-name">DB-008</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">One pending MFA ticket per account is not enforced; concurrent logins leave two</td><td class="wrap-cell"><code>server/src/db/schema.ts:119</code>, <code>server/src/auth/mfa.ts:207</code></td><td class="wrap-cell">Make mfa_challenges_user_idx unique; upsert on conflict</td></tr>
@@ -49,6 +48,12 @@
         <tr><td class="svc-name">DB-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Generated stat columns re-parse whole jsonb on every content autosave</td><td class="wrap-cell"><code>server/src/db/migrations/0022_diagram_stats.sql:2</code></td><td class="wrap-cell">Compute stats in app; store as plain columns</td></tr>
         <tr><td class="svc-name">DB-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Migrations build audit_log indexes without CONCURRENTLY, blocking audit writes</td><td class="wrap-cell"><code>server/src/db/migrations/0012_wakeful_squadron_supreme.sql:1</code>, <code>server/src/db/migrations/0015_model_review.sql:63</code></td><td class="wrap-cell">Create large-table indexes CONCURRENTLY outside transaction</td></tr>
         <tr><td class="svc-name">DB-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Migration 0015 rewrites audit_log under exclusive lock to widen id to bigint</td><td class="wrap-cell"><code>server/src/db/migrations/0015_model_review.sql:33</code></td><td class="wrap-cell">Document downtime; batch-copy into new table for big logs</td></tr>
+        <tr><td class="svc-name">DB-015</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">FK query lacks <code>conparentid = 0</code>; FKs to partitioned tables repeat per partition</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:97</code>, <code>server/src/introspect/filter.ts:12</code>, <code>shared/schema-desc.ts:253</code>, <code>src/formats/metadata/load.ts:271</code></td><td class="wrap-cell">Add <code>AND con.conparentid = 0</code> to the foreign key query</td></tr>
+        <tr><td class="svc-name">DB-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Recovery-code renewals unserialised; concurrent renews leave both code sets valid</td><td class="wrap-cell"><code>server/src/auth/mfa.ts:101</code>, <code>server/src/auth/mfa.ts:102</code>, <code>server/src/db/schema.ts:98</code></td><td class="wrap-cell">Lock the user row FOR UPDATE inside replaceCodes</td></tr>
+        <tr><td class="svc-name">DB-017</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Postgres introspection skips foreign tables; SQL Server lists external tables</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:34</code>, <code>server/src/introspect/postgres.ts:69</code>, <code>server/src/introspect/sqlserver.ts:33</code></td><td class="wrap-cell">Include relkind 'f' in tables and columns queries</td></tr>
+        <tr><td class="svc-name">DB-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Materialized views reported as plain views; definition rebuilt as CREATE VIEW</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:42</code>, <code>server/src/introspect/postgres.ts:239</code>, <code>server/src/introspect/postgres.ts:249</code></td><td class="wrap-cell">Emit CREATE MATERIALIZED VIEW for relkind m</td></tr>
+        <tr><td class="svc-name">DB-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server returns collation on every text column; Postgres only non-default ones</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:53</code>, <code>server/src/introspect/postgres.ts:67</code></td><td class="wrap-cell">Return collation only when it differs from database default</td></tr>
+        <tr><td class="svc-name">DB-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:114</code></td><td class="wrap-cell">Filter on <code>ix.indisvalid</code> in the index query</td></tr>
       </tbody>
     </table>
   </div>
@@ -74,11 +79,21 @@
     </table>
   </div>
   </details>
+  <details><summary>Dropped (1)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Reason</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">DB-005</td><td class="wrap-cell">SQL Server introspection has no database-level read-only guard; only the text check</td><td class="wrap-cell">Duplicate of SEC-014</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
 </section>
 
 <section id="scale-3" class="dev-sector">
   <div class="section-head"><span class="snum">03</span><h2>Measured</h2></div>
-  <p class="section-note">Earlier pass; not re-run in rev 2.</p>
+  <p class="section-note">Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th class="wrap-cell">Item</th><th class="wrap-cell">Value</th></tr></thead>
@@ -103,17 +118,17 @@
       <thead><tr><th class="wrap-cell">Area</th><th class="wrap-cell">Result</th><th>Where</th></tr></thead>
       <tbody>
         <tr><td class="wrap-cell">Schema vs migrations</td><td class="wrap-cell">drizzle-kit empty diff; journal ordered, no gaps</td><td class="wrap-cell"><code>server/src/db/migrations/meta/_journal.json</code></td></tr>
-        <tr><td class="wrap-cell">Boot migration lock</td><td class="wrap-cell">Session advisory lock, lock_timeout retry, 2-connection pool</td><td class="wrap-cell"><code>server/src/db/client.ts:111</code></td></tr>
+        <tr><td class="wrap-cell">Boot migration lock</td><td class="wrap-cell">Session advisory lock, lock_timeout retry, 2-connection pool</td><td class="wrap-cell"><code>server/src/db/client.ts:109</code></td></tr>
         <tr><td class="wrap-cell">FK ON DELETE</td><td class="wrap-cell">Every FK states cascade, restrict or set null</td><td class="wrap-cell"><code>server/src/db/schema.ts:204</code></td></tr>
-        <tr><td class="wrap-cell">Check-then-write</td><td class="wrap-cell">Unique index or lock backs each: email, project, connection, snapshot version, share cap</td><td class="wrap-cell"><code>server/src/diagrams/service.ts:218</code></td></tr>
+        <tr><td class="wrap-cell">Check-then-write</td><td class="wrap-cell">Unique index or lock backs each: email, project, connection, snapshot version, share cap; not MFA (DB-008, DB-016)</td><td class="wrap-cell"><code>server/src/diagrams/service.ts:218</code></td></tr>
         <tr><td class="wrap-cell">Autosave</td><td class="wrap-cell">Compare-and-write in one UPDATE; content not returned</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:388</code></td></tr>
-        <tr><td class="wrap-cell">Lists</td><td class="wrap-cell">Paged, offset capped, content never selected</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:126</code></td></tr>
+        <tr><td class="wrap-cell">Lists</td><td class="wrap-cell">Paged, offset capped, content never selected; one project list unpaged (SRV-013)</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:126</code></td></tr>
         <tr><td class="wrap-cell">Audit reads</td><td class="wrap-cell">Keyset cursor, indexed filters, name lookups by PK</td><td class="wrap-cell"><code>server/src/audit/activity.ts:133</code></td></tr>
         <tr><td class="wrap-cell">Audit retention</td><td class="wrap-cell">Batched 5000, indexed on <code>at</code></td><td class="wrap-cell"><code>server/src/maintenance.ts:71</code></td></tr>
-        <tr><td class="wrap-cell">Pool</td><td class="wrap-cell">max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts</td><td class="wrap-cell"><code>server/src/db/client.ts:17</code></td></tr>
+        <tr><td class="wrap-cell">Pool</td><td class="wrap-cell">max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts</td><td class="wrap-cell"><code>server/src/db/client.ts:20</code></td></tr>
         <tr><td class="wrap-cell">Postgres introspection</td><td class="wrap-cell">READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:158</code></td></tr>
         <tr><td class="wrap-cell">Read-only guard</td><td class="wrap-cell">Single SELECT/WITH, denylist after stripping literals</td><td class="wrap-cell"><code>server/src/introspect/readonly-guard.ts:102</code></td></tr>
-        <tr><td class="wrap-cell">Postgres image and backups</td><td class="wrap-cell">Digest-pinned in compose and CI; dump and restore documented</td><td class="wrap-cell"><code>docker-compose.yml:15</code></td></tr>
+        <tr><td class="wrap-cell">Postgres image and backups</td><td class="wrap-cell">Digest-pinned in compose and CI; dump and restore documented</td><td class="wrap-cell"><code>docker-compose.yml:14</code></td></tr>
       </tbody>
     </table>
   </div>
