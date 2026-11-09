@@ -7,8 +7,8 @@
 #   tools/e2e/run-server-flows.sh [shots-dir]
 #   ONLY=S3,S5 tools/e2e/run-server-flows.sh     (run some flows only)
 # Needs the images postgres:18-alpine and mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2
-# (docker pull once). The app image qbtest-app is built if it is missing and
-# removed again when this script built it (KEEP_IMAGE=1 keeps it).
+# (docker pull once). The app image qbtest-app is built from this checkout on every run and
+# removed again at the end (KEEP_IMAGE=1 keeps it; REUSE=<id> reuses the image and the stack).
 # SQL Server is not started (its image needs an accepted EULA).
 set -u
 cd "$(dirname "$0")/../.."
@@ -37,7 +37,9 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT TERM
 
-if ! docker image inspect qbtest-app >/dev/null 2>&1; then
+# built from this checkout on every run, so the flows test the code as it is now (Docker's
+# layer cache makes an unchanged tree quick); only REUSE of a running stack keeps the image
+if [ -z "${REUSE:-}" ] || ! docker image inspect qbtest-app >/dev/null 2>&1; then
     BUILT=1
     docker build -q -t qbtest-app . >/dev/null || exit 1
 fi
