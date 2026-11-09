@@ -27,12 +27,16 @@ export function parseTypeDeclaration(
         'character varying',
     ]
 ): TypeDeclaration | undefined {
+    // no two neighbouring parts may match the same spaces, or a long run of
+    // spaces is tried in every split (cubic time): words are joined by spaces
+    // that must be followed by a word, and each gap is read by exactly one part
     const match =
-        /^\s*([A-Za-z_][A-Za-z0-9_ ]*?)\s*(?:\(\s*([^)]*?)\s*\))?\s*(\[\])?\s*$/.exec(
+        /^\s*([A-Za-z_][A-Za-z0-9_]*(?: +[A-Za-z0-9_]+)*)\s*(?:\(([^)]*)\)\s*)?(?:(\[\])\s*)?$/.exec(
             text
         );
     if (!match) return undefined;
-    const [, rawName, args, brackets] = match;
+    const [, rawName, rawArgs, brackets] = match;
+    const args = rawArgs?.trim();
     const name = rawName.trim().replace(/\s+/g, ' ');
     const out: TypeDeclaration = { name };
     if (brackets) out.isArray = true;

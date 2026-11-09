@@ -606,3 +606,31 @@ describe('DAT-059 / DAT-060 ids', () => {
         expect(listOf(blank().entities)).toEqual([]);
     });
 });
+
+describe('parseTypeDeclaration on long runs of spaces', () => {
+    it('answers in milliseconds, not seconds (no catastrophic backtracking)', () => {
+        for (const text of [
+            `a${' '.repeat(5000)}!`,
+            `varchar${' '.repeat(5000)}(`,
+            `varchar(1)${' '.repeat(5000)}x`,
+            `a b${' '.repeat(5000)}[`,
+        ]) {
+            const started = performance.now();
+            expect(parseTypeDeclaration(text)).toBeUndefined();
+            expect(performance.now() - started).toBeLessThan(200);
+        }
+    });
+
+    it('still reads names with spaces, lengths and brackets', () => {
+        expect(parseTypeDeclaration('  character varying ( 10 ) [] ')).toEqual({
+            name: 'character varying',
+            length: 10,
+            isArray: true,
+        });
+        expect(parseTypeDeclaration('decimal(10, 2)')).toEqual({
+            name: 'decimal',
+            precision: 10,
+            scale: 2,
+        });
+    });
+});
