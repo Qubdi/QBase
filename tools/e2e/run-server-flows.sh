@@ -6,7 +6,7 @@
 # port and is removed at the end, also on failure or Ctrl-C.
 #   tools/e2e/run-server-flows.sh [shots-dir]
 #   ONLY=S3,S5 tools/e2e/run-server-flows.sh     (run some flows only)
-# Needs the images postgres:18-alpine and mcr.microsoft.com/playwright:v1.49.1-noble
+# Needs the images postgres:18-alpine and mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2
 # (docker pull once). The app image qbtest-app is built if it is missing and
 # removed again when this script built it (KEEP_IMAGE=1 keeps it).
 # SQL Server is not started (its image needs an accepted EULA).
@@ -79,7 +79,7 @@ docker run --rm --ipc=host --network "$NET" -u "$(id -u)" -e HOME=/tmp -e SHOTS=
     -e SRC_PASSWORD="$SRC_PW" -e SRC_DB=shop -e ADMIN_PASSWORD="$ADMIN_PW" \
     -e ONLY="${ONLY:-}" -e SCRIPT="${SCRIPT:-tools/e2e/server-flows.mjs}" \
     -v "$PWD":/w:ro -v "$SHOTS":/shots -v "$PW_CACHE":/tmp/pw -w /w \
-    mcr.microsoft.com/playwright:v1.49.1-noble \
+    mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2 \
     sh -c '[ -d /tmp/pw/node_modules/playwright ] || (cd /tmp/pw && npm i --no-save --no-audit --no-fund playwright@1.49.1 pg@8 >/dev/null); cd /w && node "$SCRIPT"'
 STATUS=$?
 echo "app container log (last lines):"
