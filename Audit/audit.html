@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 0</b></div>
-  <h1>0 open across six lenses.</h1>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 2</b></div>
+  <h1>206 open across six lenses.</h1>
   <div class="meta-row">
-    <span><b>audit date</b> –</span>
-    <span><b>method</b> none yet: no audit pass has been run</span>
+    <span><b>audit date</b> 2026-11-09</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, npm advisory lookup via registry (no node on host) · server vitest not run (deps missing) · srvaudit-pg throwaway, read-only · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -28,20 +28,19 @@
 </header>
 
 <main id="main">
-
 <section id="summary">
   <div class="section-head"><span class="snum">01</span><h2>Summary</h2></div>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
-        <tr><td>Security &amp; secrets</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>Repository</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>Total</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Security &amp; secrets</td><td>29</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Repository</td><td>45</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Server</td><td>29</td><td>0</td><td>3</td><td>0</td><td>0</td></tr>
+        <tr><td>Database</td><td>14</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Client</td><td>59</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+        <tr><td>Dead code</td><td>30</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>Total</td><td>206</td><td>0</td><td>4</td><td>0</td><td>0</td></tr>
       </tbody>
     </table>
   </div>
@@ -51,33 +50,33 @@
   <div class="section-head"><span class="snum">02</span><h2>Lenses</h2></div>
   <a class="idx-card sec" href="audit-security.html">
     <h3>Security &amp; secrets</h3>
-    <p>No findings.</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p>29 open findings.</p>
+    <p class="lbl">29 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
-    <p>No findings.</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p>45 open findings.</p>
+    <p class="lbl">45 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
-    <p>No findings.</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p>29 open findings.</p>
+    <p class="lbl">29 open &middot; 0 Crit &middot; 3 High &middot; 0 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-database.html">
     <h3>Database &amp; scale</h3>
-    <p>No findings.</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p>14 open findings.</p>
+    <p class="lbl">14 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
-    <p>No findings.</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p>59 open findings.</p>
+    <p class="lbl">59 open &middot; 0 Crit &middot; 1 High &middot; 0 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-deadcode.html">
     <h3>Dead code</h3>
-    <p>No findings.</p>
-    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
+    <p>30 open findings.</p>
+    <p class="lbl">30 open &middot; 0 Crit &middot; 0 High &middot; 0 fixed &middot; 0 accepted</p>
   </a>
 </section>
 
@@ -87,7 +86,9 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
-        </tbody>
+        <tr><td>2</td><td>2026-11-09</td><td class="wrap-cell">97 new, 0 fixed, 1 dropped; second full sweep</td></tr>
+        <tr><td>1</td><td>2026-11-09</td><td class="wrap-cell">109 new, 0 fixed, 5 dropped; first full pass</td></tr>
+      </tbody>
     </table>
   </div>
 </section>

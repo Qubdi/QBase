@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 0</b></div>
-  <h1>0 open.</h1>
+  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 2</b></div>
+  <h1>45 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
-    <span><b>audit date</b> –</span>
-    <span><b>method</b> none yet: no audit pass has been run</span>
+    <span><b>audit date</b> 2026-11-09</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, npm advisory lookup via registry (no node on host) · server vitest not run (deps missing) · srvaudit-pg throwaway, read-only · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -28,14 +28,58 @@
 </header>
 
 <main id="main">
-
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">0 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">45 open &middot; 0 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>bootstrap-sha</code> commit is not an ancestor of main</td><td class="wrap-cell"><code>release-please-config.json:4</code></td><td class="wrap-cell">Set bootstrap-sha to a commit in main</td></tr>
+        <tr><td class="svc-name">REPO-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>latest</code> tag moves on every <code>v*</code> tag, including prereleases</td><td class="wrap-cell"><code>.github/workflows/publish.yaml:134</code>, <code>run.sh:84</code></td><td class="wrap-cell">Tag latest only for non-prerelease versions</td></tr>
+        <tr><td class="svc-name">REPO-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Similarity check runs only on <code>rewrite/clean-room</code>, never on main</td><td class="wrap-cell"><code>.github/workflows/similarity.yaml:11</code>, <code>.github/workflows/similarity.yaml:13</code></td><td class="wrap-cell">Add main to similarity triggers</td></tr>
+        <tr><td class="svc-name">REPO-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish workflow ships images while TODO says do not publish</td><td class="wrap-cell"><code>TODO.md:7</code>, <code>rewrite/TODO.md:7</code>, <code>.github/workflows/publish.yaml:5</code></td><td class="wrap-cell">Reconcile TODO with publish; gate publish on rewrite status</td></tr>
+        <tr><td class="svc-name">REPO-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Gitleaks ignore fingerprint names a commit absent from main history</td><td class="wrap-cell"><code>.gitleaksignore:3</code></td><td class="wrap-cell">Regenerate fingerprint from main history commit</td></tr>
+        <tr><td class="svc-name">REPO-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">npm version updates paused; both npm entries have limit 0</td><td class="wrap-cell"><code>.github/dependabot.yml:11</code>, <code>.github/dependabot.yml:25</code></td><td class="wrap-cell">Restore limit to 5 or document accepted pause</td></tr>
+        <tr><td class="svc-name">REPO-008</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Dependabot ignore comments cite TODO.md for majors; TODO.md lists none</td><td class="wrap-cell"><code>.github/dependabot.yml:16</code>, <code>.github/dependabot.yml:30</code></td><td class="wrap-cell">List pending majors in TODO.md or drop reference</td></tr>
+        <tr><td class="svc-name">REPO-009</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">PLAN calls main the read-only ChartDB reference; main now holds the rewrite</td><td class="wrap-cell"><code>rewrite/PLAN.md:3</code>, <code>rewrite/TODO.md:9</code></td><td class="wrap-cell">Update rewrite docs to current branch roles</td></tr>
+        <tr><td class="svc-name">REPO-010</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Clean-checkout script hard-requires branch <code>rewrite/clean-room</code></td><td class="wrap-cell"><code>tools/make-clean-checkout.sh:23</code></td><td class="wrap-cell">Drop or update branch guard</td></tr>
+        <tr><td class="svc-name">REPO-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Manual <code>run.sh push</code> bypasses verify gate; compose says tag workflow only</td><td class="wrap-cell"><code>run.sh:14</code>, <code>docker-compose.yml:2</code></td><td class="wrap-cell">Remove push from run.sh or fix comment</td></tr>
+        <tr><td class="svc-name">REPO-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Load-test compose pins no digest: postgres, node, <code>grafana/k6:latest</code></td><td class="wrap-cell"><code>server/load/docker-compose.yml:12</code>, <code>server/load/docker-compose.yml:40</code>, <code>server/load/docker-compose.yml:104</code></td><td class="wrap-cell">Pin images by digest</td></tr>
+        <tr><td class="svc-name">REPO-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Playwright image tag unpinned by digest; npm installs at run time</td><td class="wrap-cell"><code>tools/e2e/run-smoke.sh:16</code>, <code>tools/e2e/run-smoke.sh:17</code></td><td class="wrap-cell">Pin image digest and playwright via lockfile</td></tr>
+        <tr><td class="svc-name">REPO-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Audit prompt scope names files that do not exist</td><td class="wrap-cell"><code>Audit/Prompt.md:32</code>, <code>Audit/Prompt.md:33</code>, <code>Audit/Prompt.md:130</code></td><td class="wrap-cell">Remove server/Dockerfile, default.conf.template, entrypoint.sh, db/postgres</td></tr>
+        <tr><td class="svc-name">REPO-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">1.1 MB <code>audit-ui-differences.html</code> tracked, not an owned audit file</td><td class="wrap-cell"><code>Audit/audit-ui-differences.html:1</code></td><td class="wrap-cell">Untrack or move out of Audit/</td></tr>
+        <tr><td class="svc-name">REPO-016</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CONTRIBUTING omits CONNECTION_KEY that <code>docker compose up -d db</code> requires</td><td class="wrap-cell"><code>CONTRIBUTING.md:49</code>, <code>docker-compose.yml:63</code></td><td class="wrap-cell">Add CONNECTION_KEY to the test setup note</td></tr>
+        <tr><td class="svc-name">REPO-017</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">README licence paragraph has no heading, sits inside Scaling</td><td class="wrap-cell"><code>README.md:385</code></td><td class="wrap-cell">Add a <code>## License</code> heading</td></tr>
+        <tr><td class="svc-name">REPO-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Code of Conduct enforcement contact is not actionable</td><td class="wrap-cell"><code>CODE_OF_CONDUCT.md:62</code></td><td class="wrap-cell">Name an email address for reports</td></tr>
+        <tr><td class="svc-name">REPO-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">QBase-build-tasks says hashed share tokens and keep-all versions; both differ now</td><td class="wrap-cell"><code>QBase-build-tasks.md:62</code>, <code>QBase-build-tasks.md:46</code>, <code>README.md:237</code></td><td class="wrap-cell">Mark tasks as history or update them</td></tr>
+        <tr><td class="svc-name">REPO-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Workflows set no <code>timeout-minutes</code> or <code>concurrency</code></td><td class="wrap-cell"><code>.github/workflows/ci.yaml:14</code>, <code>.github/workflows/publish.yaml:17</code></td><td class="wrap-cell">Add timeout-minutes and concurrency groups</td></tr>
+        <tr><td class="svc-name">REPO-021</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Publish does not check tag matches package.json version</td><td class="wrap-cell"><code>.github/workflows/publish.yaml:5</code></td><td class="wrap-cell">Add step comparing tag to package.json</td></tr>
+        <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CODEOWNERS lists a personal email, no team; single point of review</td><td class="wrap-cell"><code>.github/CODEOWNERS:5</code></td><td class="wrap-cell">Use a verified <code>@org/team</code> owner</td></tr>
+        <tr><td class="svc-name">REPO-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>.gitignore</code> carries unused Next, Nuxt, Gatsby, vuepress, Firebase entries</td><td class="wrap-cell"><code>.gitignore:77</code>, <code>.gitignore:81</code>, <code>.gitignore:86</code>, <code>.gitignore:119</code></td><td class="wrap-cell">Trim to ecosystems this repo uses</td></tr>
+        <tr><td class="svc-name">REPO-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>.prettierrc.json</code> indents 2 spaces; <code>.editorconfig</code> says 4</td><td class="wrap-cell"><code>.prettierrc.json:3</code>, <code>.editorconfig:9</code></td><td class="wrap-cell">Reindent prettierrc to 4 spaces</td></tr>
+        <tr><td class="svc-name">REPO-025</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">e2e tools in <code>tools/e2e</code> run in no workflow and appear in no doc</td><td class="wrap-cell"><code>tools/e2e/run-smoke.sh:1</code>, <code>README.md:316</code></td><td class="wrap-cell">Document e2e scripts or add CI job</td></tr>
+        <tr><td class="svc-name">REPO-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Husky pre-commit skips server lint silently when server deps absent</td><td class="wrap-cell"><code>.husky/pre-commit:4</code></td><td class="wrap-cell">Fail, or run server lint in CI only</td></tr>
+        <tr><td class="svc-name">REPO-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Load run.sh never fails on a k6 threshold; README says it gates CI</td><td class="wrap-cell"><code>server/load/run.sh:58</code>, <code>server/load/run.sh:69</code>, <code>server/load/README.md:18</code></td><td class="wrap-cell">Return k6run status from run_one</td></tr>
+        <tr><td class="svc-name">REPO-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README says only a share-token hash is stored; code also stores encrypted token</td><td class="wrap-cell"><code>README.md:21</code>, <code>README.md:237</code>, <code>server/src/share/routes.ts:168</code></td><td class="wrap-cell">Reword feature line to hash plus encrypted token</td></tr>
+        <tr><td class="svc-name">REPO-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Postgres digest check passes when one file has no pin at all</td><td class="wrap-cell"><code>.github/scripts/check-postgres-digest.sh:9</code></td><td class="wrap-cell">Fail when any listed file lacks a pin</td></tr>
+        <tr><td class="svc-name">REPO-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Missing <code>--rewritten</code> or <code>--allow</code> file or path is silently ignored</td><td class="wrap-cell"><code>tools/similarity.mjs:273</code>, <code>tools/similarity.mjs:385</code></td><td class="wrap-cell">Error on missing list file or listed path</td></tr>
+        <tr><td class="svc-name">REPO-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Empty upstream index still reports "No checked file is over the limits"</td><td class="wrap-cell"><code>tools/similarity.mjs:344</code></td><td class="wrap-cell">Exit 1 when upstream index has zero runs</td></tr>
+        <tr><td class="svc-name">REPO-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Non-numeric <code>--threshold</code>, <code>--max-run</code>, <code>--run</code> become NaN and checks pass</td><td class="wrap-cell"><code>tools/similarity.mjs:117</code>, <code>tools/spec-check.mjs:94</code></td><td class="wrap-cell">Reject NaN option values</td></tr>
+        <tr><td class="svc-name">REPO-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">owner-decisions links <code>spec/...</code> resolve to rewrite/spec/spec/ and break</td><td class="wrap-cell"><code>rewrite/spec/owner-decisions.md:105</code></td><td class="wrap-cell">Drop the <code>spec/</code> prefix from the four links</td></tr>
+        <tr><td class="svc-name">REPO-034</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">TODO says EDT-250 is open; parity checklist ticks it, browser-driven</td><td class="wrap-cell"><code>rewrite/TODO.md:66</code>, <code>rewrite/TODO.md:80</code>, <code>rewrite/parity-checklist.md:389</code></td><td class="wrap-cell">Update TODO counts to 684 ticked, 3 partial</td></tr>
+        <tr><td class="svc-name">REPO-035</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">TODO says seven languages ship; only en, de, fr, it, ru exist</td><td class="wrap-cell"><code>rewrite/TODO.md:60</code></td><td class="wrap-cell">Correct language list or add ka and zh</td></tr>
+        <tr><td class="svc-name">REPO-036</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Rewrite docs cite audit IDs REPO-005, REPO-069, REPO-045 that now mean other things</td><td class="wrap-cell"><code>rewrite/TODO.md:76</code>, <code>rewrite/TODO.md:81</code>, <code>rewrite/PLAN.md:295</code></td><td class="wrap-cell">Drop audit IDs from rewrite docs</td></tr>
+        <tr><td class="svc-name">REPO-037</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">TODO forbids changing licence while Elastic-2.0 is already applied</td><td class="wrap-cell"><code>rewrite/TODO.md:7</code>, <code>rewrite/TODO.md:74</code></td><td class="wrap-cell">Reword line 7 to match applied licence</td></tr>
+        <tr><td class="svc-name">REPO-038</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">NOTICE and allow-list name separator.tsx, which no longer exists</td><td class="wrap-cell"><code>NOTICE:36</code>, <code>rewrite/similarity-allow.txt:34</code></td><td class="wrap-cell">Remove separator from both lists</td></tr>
+        <tr><td class="svc-name">REPO-039</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">PLAN says branch does not build; TODO says build, lint, tests pass</td><td class="wrap-cell"><code>rewrite/PLAN.md:69</code>, <code>rewrite/PLAN.md:138</code></td><td class="wrap-cell">Mark build-state notes as history</td></tr>
+        <tr><td class="svc-name">REPO-040</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">make-clean-checkout comment cites rewrite/clean-author-brief.md, which does not exist</td><td class="wrap-cell"><code>tools/make-clean-checkout.sh:15</code></td><td class="wrap-cell">Point at clean-author-brief-phase*.md</td></tr>
+        <tr><td class="svc-name">REPO-041</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">e2e visual scripts hard-code <code>/home/qubdi/ui-reference</code> output path</td><td class="wrap-cell"><code>tools/e2e/visual/run.mjs:24</code>, <code>tools/e2e/visual/run-new.sh:10</code>, <code>tools/e2e/visual/run-run.sh:11</code></td><td class="wrap-cell">Default to a temp or <code>$HOME</code> path</td></tr>
+        <tr><td class="svc-name">REPO-042</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Committed briefs and specs embed an absolute personal home path</td><td class="wrap-cell"><code>rewrite/phase8-brief.md:3</code>, <code>rewrite/translation-brief.md:3</code>, <code>rewrite/spec/visual-shell.md:10</code></td><td class="wrap-cell">Use repo-relative wording</td></tr>
+        <tr><td class="svc-name">REPO-043</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">run-new.sh waits a fixed 4 s for vite preview instead of polling</td><td class="wrap-cell"><code>tools/e2e/visual/run-new.sh:17</code></td><td class="wrap-cell">Poll BASE_URL until it answers</td></tr>
+        <tr><td class="svc-name">REPO-044</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>.dockerignore</code> omits rewrite/, tools/, server/load; 1.7 MB enters build context</td><td class="wrap-cell"><code>.dockerignore:25</code>, <code>Dockerfile:15</code></td><td class="wrap-cell">Ignore rewrite/, tools/ and server/load/</td></tr>
+        <tr><td class="svc-name">REPO-045</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">licences.mjs treats any parenthesised licence expression as permissive</td><td class="wrap-cell"><code>tools/licences.mjs:46</code></td><td class="wrap-cell">Match explicit SPDX ids inside parentheses</td></tr>
+        <tr><td class="svc-name">REPO-046</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">package.json lacks repository, bugs and homepage fields</td><td class="wrap-cell"><code>package.json:2</code></td><td class="wrap-cell">Add repository, bugs and homepage</td></tr>
       </tbody>
     </table>
   </div>
@@ -57,6 +101,16 @@
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Why</th></tr></thead>
       <tbody>
+      </tbody>
+    </table>
+  </div>
+  </details>
+  <details><summary>Dropped (1)</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Reason</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">REPO-007</td><td class="wrap-cell">Gitleaks config cites SEC-001 which does not exist at rev 0</td><td class="wrap-cell">SEC-001 now exists; reference valid</td></tr>
       </tbody>
     </table>
   </div>
