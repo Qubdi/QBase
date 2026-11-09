@@ -398,15 +398,16 @@ export class DesignBuilder {
         });
 
         const neighbours = new Map<string, string[]>();
+        // pushed onto the list the map already holds: copying it for every
+        // link makes a table with many links quadratic
+        const addNeighbour = (id: string, other: string) => {
+            const list = neighbours.get(id);
+            if (list) list.push(other);
+            else neighbours.set(id, [other]);
+        };
         for (const l of links) {
-            neighbours.set(l.sourceEntityId, [
-                ...(neighbours.get(l.sourceEntityId) ?? []),
-                l.targetEntityId,
-            ]);
-            neighbours.set(l.targetEntityId, [
-                ...(neighbours.get(l.targetEntityId) ?? []),
-                l.sourceEntityId,
-            ]);
+            addNeighbour(l.sourceEntityId, l.targetEntityId);
+            addNeighbour(l.targetEntityId, l.sourceEntityId);
         }
         const spots = layoutTables(
             entities.map((e) => ({
