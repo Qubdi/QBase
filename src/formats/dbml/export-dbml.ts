@@ -43,7 +43,15 @@ function typeText(c: Column): string {
     return (bare ? name : q(name)) + array;
 }
 
-function defaultText(raw: string, postgres: boolean): string {
+/** DBML cannot hold a backtick inside a backtick expression, so they are dropped. */
+const withoutBackticks = (text: string): string => text.replace(/`/g, '');
+
+function defaultText(
+    raw: string,
+    postgres: boolean,
+    /** told when the text lost a backtick */
+    onStripped?: () => void
+): string {
     let text = dropCast(raw.trim());
     const wrapped = /^\(\s*'now'\s*\)$/i.exec(text);
     if (wrapped) text = 'now()';
@@ -55,7 +63,8 @@ function defaultText(raw: string, postgres: boolean): string {
     if (isNumberText(text) || /^(?:true|false|null)$/i.test(text))
         return text.toLowerCase() === text ? text : text.toLowerCase();
     if (isKeywordDefault(text) && /^CURRENT_/i.test(text)) return `\`${text}\``;
-    return `\`${text.replace(/`/g, '')}\``;
+    if (text.includes('`')) onStripped?.();
+    return `\`${withoutBackticks(text)}\``;
 }
 
 function symbolOf(link: Link): string {
@@ -198,7 +207,14 @@ export function exportDbml(
             if (!column.nullable) attrs.push('not null');
             if (column.increment) attrs.push('increment');
             if (column.default && !/identity|nextval/i.test(column.default))
-                attrs.push(`default: ${defaultText(column.default, postgres)}`);
+                attrs.push(
+                    `default: ${defaultText(column.default, postgres, () =>
+                        diagnostics.push({
+                            severity: 'warning',
+                            message: `Table ${entity.name}, field ${column.name}: a backtick in the default expression was removed, as DBML cannot hold one.`,
+                        })
+                    )}`
+                );
             if (column.comments) attrs.push(`note: ${str(column.comments)}`);
             attrs.push(...(inlineRefs.get(`${entity.id}.${column.id}`) ?? []));
             return `  ${q(name)} ${typeText(column)}${attrs.length ? ` [${attrs.join(', ')}]` : ''}`;
@@ -236,11 +252,17 @@ export function exportDbml(
         const checks = entity.ruleIds
             .map((id) => design.rules[id]?.expression)
             .filter((e): e is string => !!e && e.trim() !== '');
-        if (checks.length > 0)
+        if (checks.length > 0) {
+            if (checks.some((c) => c.includes('`')))
+                diagnostics.push({
+                    severity: 'warning',
+                    message: `Table ${entity.name}: a backtick in a CHECK expression was removed, as DBML cannot hold one.`,
+                });
             body.push(
                 '',
-                `  checks {\n${checks.map((c) => `    \`${c.replace(/`/g, '')}\``).join('\n')}\n  }`
+                `  checks {\n${checks.map((c) => `    \`${withoutBackticks(c)}\``).join('\n')}\n  }`
             );
+        }
         if (entity.comments) body.push('', `  Note: ${str(entity.comments)}`);
         blocks.push(
             `Table ${qualified(entity.schema, entity.name)} {\n${body.join('\n')}\n}`
