@@ -28,6 +28,13 @@ describe('createShutdown', () => {
         expect(exit).toHaveBeenCalledExactlyOnceWith(0);
     });
 
+    it('closes in order after an unhandled error, but exits 1', async () => {
+        const { shutdown, order, exit } = setup();
+        await shutdown('unhandledRejection', true);
+        expect(order).toEqual(['maintenance', 'app', 'pool']);
+        expect(exit).toHaveBeenCalledExactlyOnceWith(1);
+    });
+
     it('runs once however many signals arrive', async () => {
         const { shutdown, order, exit } = setup();
         await Promise.all([shutdown('SIGTERM'), shutdown('SIGINT')]);

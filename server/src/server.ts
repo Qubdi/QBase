@@ -76,3 +76,13 @@ const shutdown = createShutdown({
 });
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
+// an error nobody handled: log it and close in order (streams, pool) instead of
+// dying half way, then exit with 1 so a process manager restarts the server
+process.on('unhandledRejection', (reason) => {
+    app.log.error({ err: reason }, 'unhandled rejection');
+    void shutdown('unhandledRejection', true);
+});
+process.on('uncaughtException', (err) => {
+    app.log.error({ err }, 'uncaught exception');
+    void shutdown('uncaughtException', true);
+});
