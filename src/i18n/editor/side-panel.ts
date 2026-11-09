@@ -227,7 +227,6 @@ export const sidePanelStrings = {
         createToStart: 'Create a table to get started',
         noSchema: 'No schema',
         noArea: 'Ungrouped',
-        showAllShort: 'Show all tables',
     },
     hover: {
         type: 'type',
@@ -246,7 +245,6 @@ export const sidePanelStrings = {
     clipboard: {
         copied: 'Table copied',
         copiedMany: '{{count}} tables copied',
-        pasteHint: 'Press {{key}} to paste it.',
         pasted: 'Table pasted',
         pastedMany: '{{count}} tables pasted',
     },

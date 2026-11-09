@@ -197,7 +197,6 @@ export const it = {
                     import: 'Genera dal testo',
                     failed: 'Non è stato possibile creare il diagramma. Riprovare.',
                 },
-                examplesSize: '{{tables}} tabelle · {{areas}} aree',
                 examples: {
                     clinic: 'Pazienti, medici e specialità, con appuntamenti e farmaci prescritti.',
                     bookshop:
@@ -820,7 +819,6 @@ export const it = {
                     createToStart: 'Creare una tabella per iniziare',
                     noSchema: 'Nessuno schema',
                     noArea: 'Nessuna area',
-                    showAllShort: 'Mostra tutte le tabelle',
                 },
                 hover: {
                     type: 'tipo',
@@ -839,7 +837,6 @@ export const it = {
                 clipboard: {
                     copied: 'Tabella copiata',
                     copiedMany: '{{count}} tabelle copiate',
-                    pasteHint: 'Premere {{key}} per incollarla.',
                     pasted: 'Tabella incollata',
                     pastedMany: '{{count}} tabelle incollate',
                 },

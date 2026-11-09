@@ -196,7 +196,6 @@ export const de = {
                     import: 'Aus Text erstellen',
                     failed: 'Das Diagramm konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
                 },
-                examplesSize: '{{tables}} Tabellen · {{areas}} Bereiche',
                 examples: {
                     clinic: 'Patienten, Ärzte und Fachgebiete, mit Terminen und den dabei verschriebenen Medikamenten.',
                     bookshop:
@@ -805,7 +804,6 @@ export const de = {
                     createToStart: 'Erstellen Sie eine Tabelle, um zu beginnen',
                     noSchema: 'Kein Schema',
                     noArea: 'Kein Bereich',
-                    showAllShort: 'Alle Tabellen anzeigen',
                 },
                 hover: {
                     type: 'Typ',
@@ -824,7 +822,6 @@ export const de = {
                 clipboard: {
                     copied: 'Tabelle kopiert',
                     copiedMany: '{{count}} Tabellen kopiert',
-                    pasteHint: 'Drücken Sie {{key}}, um sie einzufügen.',
                     pasted: 'Tabelle eingefügt',
                     pastedMany: '{{count}} Tabellen eingefügt',
                 },

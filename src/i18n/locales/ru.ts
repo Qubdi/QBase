@@ -198,7 +198,6 @@ export const ru = {
                     import: 'Построить из текста',
                     failed: 'Не удалось создать диаграмму. Повторите попытку.',
                 },
-                examplesSize: '{{tables}} таблиц · {{areas}} областей',
                 examples: {
                     clinic: 'Пациенты, врачи и специальности, с приёмами и назначенными на них лекарствами.',
                     bookshop:
@@ -823,7 +822,6 @@ export const ru = {
                     createToStart: 'Создайте таблицу, чтобы начать',
                     noSchema: 'Без схемы',
                     noArea: 'Без области',
-                    showAllShort: 'Показать все таблицы',
                 },
                 hover: {
                     type: 'тип',
@@ -842,7 +840,6 @@ export const ru = {
                 clipboard: {
                     copied: 'Таблица скопирована',
                     copiedMany: 'Скопировано таблиц: {{count}}',
-                    pasteHint: 'Нажмите {{key}}, чтобы вставить.',
                     pasted: 'Таблица вставлена',
                     pastedMany: 'Вставлено таблиц: {{count}}',
                 },

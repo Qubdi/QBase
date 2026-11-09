@@ -19,7 +19,6 @@ export const designsStrings = {
         import: 'Import',
         failed: 'The diagram could not be created. Please try again.',
     },
-    examplesSize: '{{tables}} tables · {{areas}} areas',
     examples: {
         clinic: 'Patients, doctors and specialties, with appointments and the medicines prescribed at them.',
         bookshop:
