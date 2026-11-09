@@ -119,12 +119,20 @@ export function exportDbml(
         });
         usable.push({ entity, fields });
     }
+    // maps built once: a scan per link makes a diagram with many links quadratic
+    const byEntity = new Map(
+        usable.map((u) => [
+            u.entity.id,
+            {
+                entity: u.entity,
+                names: new Map(u.fields.map((f) => [f.column.id, f.name])),
+            },
+        ])
+    );
     const nameOf = (entityId: string, columnId: string): string | undefined =>
-        usable
-            .find((u) => u.entity.id === entityId)
-            ?.fields.find((f) => f.column.id === columnId)?.name;
+        byEntity.get(entityId)?.names.get(columnId);
     const tableOf = (entityId: string): Entity | undefined =>
-        usable.find((u) => u.entity.id === entityId)?.entity;
+        byEntity.get(entityId)?.entity;
 
     // relationships that survive, each pair of columns once
     const links: Link[] = [];
