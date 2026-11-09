@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { seededRandom } from '@/core/model/ids';
+import { DesignBuilder } from '@/formats/shared/design-builder';
 import { exportSql } from '@/formats/sql/export-sql';
 import { sampleS1, sampleS2, sampleS3 } from './testing/sample-designs';
 
@@ -360,6 +362,36 @@ describe('EXP-032 to EXP-036 SQLite export', () => {
                 'COMMIT;',
                 ''
             )
+        );
+    });
+});
+
+describe('PostgreSQL index comments', () => {
+    it('name the index in the schema of its table', () => {
+        const b = new DesignBuilder({
+            databaseType: 'postgresql',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'courses',
+            schema: 'school',
+            columns: [{ name: 'code', typeName: 'varchar', nullable: true }],
+            indexes: [
+                {
+                    name: 'idx_courses_code',
+                    unique: false,
+                    columns: ['code'],
+                    comment: 'Looks a course up',
+                },
+            ],
+            checks: [],
+        });
+        const { text } = exportSql(b.build(), 'postgresql');
+        expect(text).toContain(
+            `COMMENT ON INDEX "school"."courses_idx_courses_code" IS 'Looks a course up';`
         );
     });
 });

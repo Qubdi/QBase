@@ -231,7 +231,11 @@ function indexComments(
         .filter(({ key }) => key.note)
         .map(
             ({ key }) =>
-                `COMMENT ON INDEX ${quoteDouble(
+                // an index lives in its table's schema: name it there, or the
+                // statement only works when that schema is on the search path
+                `COMMENT ON INDEX ${qualify(
+                    quoteDouble,
+                    table.entity.schema,
                     names.get(key.id)!
                 )} IS ${sqlString(oneLine(key.note ?? ''))};`
         );
