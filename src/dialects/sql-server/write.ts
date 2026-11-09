@@ -114,6 +114,9 @@ function columnLine(column: Column): string {
 
 function indexStatements(table: ExportTable, qualified: string): string[] {
     const { entity } = table;
+    // index names are unique within a table: a repeated or empty label
+    // would otherwise produce a script that fails
+    const taken = new Set<string>();
     const out = indexKeys(table, { byColumns: false }).map(
         ({ key, columns }) => {
             const used = columns.slice(0, MAX_INDEX_COLUMNS);
@@ -121,10 +124,15 @@ function indexStatements(table: ExportTable, qualified: string): string[] {
                 columns.length > MAX_INDEX_COLUMNS
                     ? `/* WARNING: This index originally had ${columns.length} columns. It has been truncated to ${MAX_INDEX_COLUMNS} columns due to SQL Server's index column limit. */\n`
                     : '';
-            const name =
-                entity.schema && !key.label.startsWith(`${entity.schema}_`)
-                    ? `${entity.schema}_${key.label}`
-                    : key.label;
+            const label =
+                key.label.trim() === '' ? `IX_${entity.name}` : key.label;
+            const name = claimName(
+                taken,
+                entity.schema && !label.startsWith(`${entity.schema}_`)
+                    ? `${entity.schema}_${label}`
+                    : label,
+                128
+            );
             // columnstore and xml indexes have no order of their own
             const ordered =
                 key.algorithm !== 'columnstore' && key.algorithm !== 'xml';

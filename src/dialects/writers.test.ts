@@ -395,3 +395,36 @@ describe('PostgreSQL index comments', () => {
         );
     });
 });
+
+describe('SQL Server index names', () => {
+    it('stay distinct within a table, also when a label is empty', () => {
+        const b = new DesignBuilder({
+            databaseType: 'sql_server',
+            name: 'sample',
+            now: Date.UTC(2026, 10, 7, 12, 0, 0),
+            random: seededRandom(5),
+            sort: false,
+        });
+        b.addTable({
+            name: 'courses',
+            columns: [
+                { name: 'a', typeName: 'int', nullable: true },
+                { name: 'b', typeName: 'int', nullable: true },
+            ],
+            indexes: [
+                { name: 'idx', unique: false, columns: ['a'] },
+                { name: 'idx', unique: false, columns: ['b'] },
+                { name: '', unique: false, columns: ['a', 'b'] },
+            ],
+            checks: [],
+        });
+        const names = [
+            ...exportSql(b.build(), 'sql_server').text.matchAll(
+                /CREATE (?:UNIQUE )?INDEX \[([^\]]+)\]/g
+            ),
+        ].map((m) => m[1]);
+        expect(names).toHaveLength(3);
+        expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(3);
+        expect(names.every((n) => n.length > 0)).toBe(true);
+    });
+});
