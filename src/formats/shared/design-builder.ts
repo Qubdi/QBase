@@ -97,6 +97,9 @@ export function typeIdOf(name: string): string {
 /** Collects tables, links and types, then produces a laid-out Design. */
 export class DesignBuilder {
     private readonly tables: Built[] = [];
+    // the tables by folded name, in the order they were added: a lookup scans
+    // the few that share the name, not every table (import was quadratic)
+    private readonly byFoldedName = new Map<string, Built[]>();
     private readonly types: UserType[] = [];
     private readonly pendingDependencies: { reads: Built; view: Built }[] = [];
     private readonly pendingLinks: { link: LinkSpec; id: string }[] = [];
@@ -119,10 +122,8 @@ export class DesignBuilder {
     /** True when a table with this name exists in exactly this schema. */
     hasTable(schema: string | undefined, name: string): boolean {
         const ws = (schema ?? '').toLowerCase();
-        return this.tables.some(
-            (t) =>
-                sameName(t.entity.name, name) &&
-                (t.entity.schema ?? '').toLowerCase() === ws
+        return (this.byFoldedName.get(name.toLowerCase()) ?? []).some(
+            (t) => (t.entity.schema ?? '').toLowerCase() === ws
         );
     }
 
@@ -137,7 +138,12 @@ export class DesignBuilder {
     }
 
     private resolve(schema: string | undefined, name: string) {
-        return resolveTable(this.tables, (t) => t.entity, { schema, name });
+        // only a table whose name matches can win, so the candidates are enough
+        return resolveTable(
+            this.byFoldedName.get(name.toLowerCase()) ?? [],
+            (t) => t.entity,
+            { schema, name }
+        );
     }
 
     private find(schema: string | undefined, name: string): Built | undefined {
@@ -273,7 +279,12 @@ export class DesignBuilder {
         if (spec.view && spec.materialized) entity.materialized = true;
         if (spec.schema) entity.schema = spec.schema;
         if (spec.comment) entity.comments = spec.comment;
-        this.tables.push({ entity, columns, keys, rules, byName, spec });
+        const built = { entity, columns, keys, rules, byName, spec };
+        this.tables.push(built);
+        const folded = entity.name.toLowerCase();
+        const same = this.byFoldedName.get(folded);
+        if (same) same.push(built);
+        else this.byFoldedName.set(folded, [built]);
     }
 
     /** Adds a foreign key between two tables already added; false if an end is missing. */

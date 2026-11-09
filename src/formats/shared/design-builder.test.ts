@@ -1,0 +1,56 @@
+import { describe, expect, it } from 'vitest';
+import { seededRandom } from '@/core/model/ids';
+import { DesignBuilder } from './design-builder';
+
+const builder = () =>
+    new DesignBuilder({
+        databaseType: 'postgresql',
+        name: 'sample',
+        now: Date.UTC(2026, 10, 7, 12, 0, 0),
+        random: seededRandom(5),
+        sort: false,
+    });
+const table = (name: string, schema?: string) => ({
+    name,
+    schema,
+    columns: [{ name: 'id', typeName: 'int', nullable: false }],
+    indexes: [],
+    checks: [],
+});
+
+describe('DesignBuilder table lookup', () => {
+    it('matches a name ignoring case, in exactly the schema asked for', () => {
+        const b = builder();
+        b.addTable(table('Users', 'app'));
+        b.addTable(table('users', 'audit'));
+        expect(b.hasTable('app', 'USERS')).toBe(true);
+        expect(b.hasTable('audit', 'users')).toBe(true);
+        expect(b.hasTable('other', 'users')).toBe(false);
+        expect(b.hasTable(undefined, 'users')).toBe(false);
+        expect(b.hasTable('app', 'orders')).toBe(false);
+    });
+
+    it('resolves an unqualified name over several schemas and flags it', () => {
+        const b = builder();
+        b.addTable(table('users', 'app'));
+        b.addTable(table('users', 'audit'));
+        b.addTable(table('orders', 'app'));
+        expect(b.resolves(undefined, 'Users')).toBe(true);
+        expect(b.isAmbiguous(undefined, 'users')).toBe(true);
+        expect(b.isAmbiguous('app', 'users')).toBe(false);
+        expect(b.isAmbiguous(undefined, 'orders')).toBe(false);
+        expect(b.resolves('audit', 'orders')).toBe(false);
+        expect(b.resolves(undefined, 'missing')).toBe(false);
+    });
+
+    it('stays fast with tens of thousands of tables', () => {
+        const b = builder();
+        const start = Date.now();
+        for (let i = 0; i < 20000; i++) {
+            b.addTable(table(`t${i}`));
+            b.hasTable(undefined, `t${i}`);
+            b.resolves(undefined, `t${i}`);
+        }
+        expect(Date.now() - start).toBeLessThan(5000);
+    });
+});
