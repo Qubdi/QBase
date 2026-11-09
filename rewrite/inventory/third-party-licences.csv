@@ -77,7 +77,7 @@ client,dev,vite,8.3.5,MIT,no
 client,dev,vitest,5.0.5,MIT,no
 server,runtime,@fastify/cookie,11.1.5,MIT,no
 server,runtime,@fastify/rate-limit,11.2.1,MIT,no
-server,runtime,@fastify/static,?,NOT INSTALLED,yes
+server,runtime,@fastify/static,10.1.10,MIT,no
 server,runtime,@node-rs/argon2,2.2.2,MIT,no
 server,runtime,drizzle-orm,0.45.4,Apache-2.0,no
 server,runtime,fastify,5.12.7,MIT,no
