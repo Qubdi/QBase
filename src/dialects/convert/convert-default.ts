@@ -1,4 +1,4 @@
-import { unwrapOnce } from '../shared/defaults';
+import { isNumberingMarker, unwrapOnce } from '../shared/defaults';
 import type { Flavour, Neutral } from './contract';
 
 /** One element of `ARRAY[...]`: a number is written bare, anything else as text. */
@@ -34,8 +34,7 @@ function parse(raw: string): Parsed {
             text
         );
     if (cast) text = cast[1];
-    if (/^nextval\(|\.nextval$|identity|autoincrement/i.test(text))
-        return { k: 'numbering' };
+    if (isNumberingMarker(text)) return { k: 'numbering' };
     if (/^null$/i.test(text)) return { k: 'null' };
     if (/^true$/i.test(text)) return { k: 'bool', v: true };
     if (/^false$/i.test(text)) return { k: 'bool', v: false };

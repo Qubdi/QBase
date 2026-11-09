@@ -50,7 +50,13 @@ export function isQuotedText(text: string): boolean {
 
 /** True when the text names an automatic number rather than a value. */
 export function isNumberingMarker(text: string | undefined): boolean {
-    return text !== undefined && /identity|autoincrement|nextval/i.test(text);
+    // a quoted value ('my identity') is a value, and the words must stand alone
+    // (not `identity_card`), so only a real marker counts
+    return (
+        text !== undefined &&
+        !isQuotedText(text.trim()) &&
+        /\b(?:identity|autoincrement|nextval)\b/i.test(text)
+    );
 }
 
 /** `'x'::character varying(10)` becomes `'x'`; other text is unchanged. */

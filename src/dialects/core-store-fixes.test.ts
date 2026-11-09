@@ -289,3 +289,15 @@ describe('pasted text with a very long run of blank lines', () => {
         expect(methodForPaste('\n\n  Table users {\n id int\n}')).toBe('dbml');
     });
 });
+
+describe('default text that only mentions a numbering word is a value (CLI-082)', () => {
+    it('does not treat quoted or compound text as automatic numbering', async () => {
+        const { isNumberingMarker } = await import('./shared/defaults');
+        expect(isNumberingMarker("'my identity'")).toBe(false);
+        expect(isNumberingMarker("'autoincrement'")).toBe(false);
+        expect(isNumberingMarker('identity_card')).toBe(false);
+        expect(isNumberingMarker("nextval('s')")).toBe(true);
+        expect(isNumberingMarker('IDENTITY(1,1)')).toBe(true);
+        expect(isNumberingMarker('AUTOINCREMENT')).toBe(true);
+    });
+});
