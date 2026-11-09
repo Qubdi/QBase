@@ -35,6 +35,8 @@ CREATE TABLE sales.customers (
 CREATE INDEX customers_score_desc ON sales.customers (score DESC, id);
 CREATE INDEX customers_live ON sales.customers (last_name) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX customers_email_live ON sales.customers (email) WHERE deleted_at IS NULL;
+CREATE INDEX customers_half_built ON sales.customers (first_name);
+UPDATE pg_index SET indisvalid = false WHERE indexrelid = 'sales.customers_half_built'::regclass;
 CREATE TABLE sales.events (
   id serial,
   at date NOT NULL,
@@ -128,6 +130,12 @@ describe('PostgreSQL introspection: checks, custom types, domains, generated col
             ['score', 'DESC', null],
             ['id', 'ASC', null],
         ]);
+    });
+
+    it('leaves out an index that a failed CONCURRENTLY build left invalid', () => {
+        // the catalog still lists it, but no query can use it
+        expect(meta.indexes.some((i) => i.name === 'customers_half_built')).toBe(false);
+        expect(meta.indexes.some((i) => i.name === 'customers_live')).toBe(true);
     });
 
     it('hides a partition behind its parent, like the client script', () => {

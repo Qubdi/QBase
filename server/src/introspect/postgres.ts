@@ -111,7 +111,8 @@ export const POSTGRES_QUERIES = {
         JOIN pg_am am ON am.oid = i.relam
         CROSS JOIN LATERAL generate_series(1, ix.indnkeyatts) AS k(pos)
         LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ix.indkey[k.pos - 1]
-        WHERE t.relkind IN ('r', 'p', 'm') AND NOT t.relispartition AND ${USER_SCHEMA('n')}
+        WHERE t.relkind IN ('r', 'p', 'm') AND NOT t.relispartition AND ix.indisvalid
+          AND ${USER_SCHEMA('n')}
         ORDER BY n.nspname, t.relname, i.relname, k.pos`,
 
     checks: `
