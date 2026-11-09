@@ -122,11 +122,15 @@ export class DexieStorageAdapter implements StorageAdapter {
     }
 
     async writeSettings(patch: Partial<LocalSettings>): Promise<void> {
-        const current = await this.db.config.get(CONFIG_ID);
-        await this.db.config.put({
-            ...(current ?? { defaultDiagramId: '' }),
-            ...patch,
-            id: CONFIG_ID,
+        // read and write in one transaction: two tabs patching at once must
+        // not each overwrite the other's change
+        await this.db.transaction('rw', this.db.config, async () => {
+            const current = await this.db.config.get(CONFIG_ID);
+            await this.db.config.put({
+                ...(current ?? { defaultDiagramId: '' }),
+                ...patch,
+                id: CONFIG_ID,
+            });
         });
     }
 
