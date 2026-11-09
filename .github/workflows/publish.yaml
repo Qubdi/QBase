@@ -58,6 +58,19 @@ jobs:
             package-lock.json
             server/package-lock.json
 
+      # an image tagged v1.2.3 must come from a tree that says 1.2.3: a tag
+      # pushed on the wrong commit would otherwise ship under the wrong version
+      - name: Check the tag matches the package versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          for file in package.json server/package.json; do
+            version="$(node -p "require('./$file').version")"
+            if [ "$version" != "$tag" ]; then
+              echo "::error::tag $GITHUB_REF_NAME does not match $file version $version"
+              exit 1
+            fi
+          done
+
       - name: Install editor dependencies
         run: npm ci
 
