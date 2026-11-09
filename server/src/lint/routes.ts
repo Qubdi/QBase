@@ -137,7 +137,7 @@ export const lintRoutes =
             return { source, findings, summary: summarizeFindings(findings), config };
         });
 
-        app.get('/diagrams/:id/lint-config', async (req, reply) => {
+        app.get('/diagrams/:id/lint-config', limit, async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
@@ -149,7 +149,7 @@ export const lintRoutes =
             return normalizeConfig(d.lintConfig);
         });
 
-        app.put('/diagrams/:id/lint-config', async (req, reply) => {
+        app.put('/diagrams/:id/lint-config', limit, async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });

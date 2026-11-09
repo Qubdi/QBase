@@ -14,6 +14,7 @@ import {
     type TestCtx,
     withBase,
     type TestUser,
+    createDiagram,
     grant,
     projectFor,
 } from './helpers.js';
@@ -377,6 +378,29 @@ describe('lint route limits', () => {
             expect(codes).toEqual([200, 200, 429]);
             // another user from the same address has their own allowance
             expect((await post(ctx, b, { tables: [] })).statusCode).toBe(200);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('limits each lint-config route with the per-user allowance', async () => {
+        const ctx = await createTestApp({ lintRateLimit: 2 });
+        try {
+            const user = await registerUser(ctx.app, 'a@example.com');
+            const id = await createDiagram(ctx.app, user, 'Linted');
+            for (const method of ['GET', 'PUT'] as const) {
+                const codes: number[] = [];
+                for (let i = 0; i < 3; i++) {
+                    const res = await ctx.app.inject({
+                        method,
+                        url: `/diagrams/${id}/lint-config`,
+                        headers: as(user),
+                        ...(method === 'PUT' ? { payload: { config: {} } } : {}),
+                    });
+                    codes.push(res.statusCode);
+                }
+                expect(codes, method).toEqual([200, 200, 429]);
+            }
         } finally {
             await ctx.close();
         }
