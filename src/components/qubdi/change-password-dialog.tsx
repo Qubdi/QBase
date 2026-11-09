@@ -113,6 +113,9 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                         placeholder={t(
                             'qubdi.account.changePassword.currentPassword'
                         )}
+                        aria-label={t(
+                            'qubdi.account.changePassword.currentPassword'
+                        )}
                         autoComplete="current-password"
                         value={current}
                         onChange={(e) => setCurrent(e.target.value)}
