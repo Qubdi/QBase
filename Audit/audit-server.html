@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 30</b></div>
-  <h1>16 open (0 Crit, 4 High).</h1>
+  <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 31</b></div>
+  <h1>3 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -28,31 +28,17 @@
 </header>
 
 <main id="main">
-<div class="note crit"><span class="pill crit">Act first</span><span><b>SRV-001</b> Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first; <b>SRV-002</b> Error handler logs Drizzle error whose message embeds all query params; <b>SRV-021</b> Quadratic regex on field type name hangs event loop; 100k chars takes 9 s; <b>SRV-031</b> Quadratic drift rename pairing blocks event loop 8 s at 4000 tables</span></div>
 
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">17 open &middot; 19 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">3 open &middot; 33 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">SRV-001</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:123</code>, <code>server/src/diagrams/routes.ts:260</code>, <code>server/src/diagrams/routes.ts:349</code>, <code>server/src/config.ts:228</code></td><td class="wrap-cell">Check session cookie in onRequest before body parsing</td></tr>
-        <tr><td class="svc-name">SRV-002</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Error handler logs Drizzle error whose message embeds all query params</td><td class="wrap-cell"><code>server/src/app.ts:207</code></td><td class="wrap-cell">Log err.cause and query name only, never params</td></tr>
-        <tr><td class="svc-name">SRV-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Audit insert after committed write throws, returning 500 for a done action</td><td class="wrap-cell"><code>server/src/audit/audit.ts:152</code>, <code>server/src/diagrams/routes.ts:436</code>, <code>server/src/auth/routes.ts:244</code>, <code>server/src/share/routes.ts:188</code></td><td class="wrap-cell">Write audit in same transaction or swallow and log</td></tr>
-        <tr><td class="svc-name">SRV-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Link revoke/update emits live-viewer event after audit; audit failure leaves viewers connected</td><td class="wrap-cell"><code>server/src/share/routes.ts:280</code>, <code>server/src/share/routes.ts:292</code>, <code>server/src/share/routes.ts:251</code>, <code>server/src/share/routes.ts:257</code>, <code>server/src/admin/routes.ts:714</code>, <code>server/src/admin/routes.ts:725</code></td><td class="wrap-cell">Emit link event before audit, or in finally</td></tr>
-        <tr><td class="svc-name">SRV-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">LISTEN connection has no TCP keepalive; a silently dropped link is never noticed</td><td class="wrap-cell"><code>server/src/events.ts:108</code></td><td class="wrap-cell">Set keepAlive true on the pg.Client</td></tr>
-        <tr><td class="svc-name">SRV-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No rate limit on publish; each call stores a snapshot up to 50 MB</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:517</code></td><td class="wrap-cell">Add perUserLimit to /:id/publish</td></tr>
-        <tr><td class="svc-name">SRV-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Limiters, lockout, viewer caps and drift-running guard are per process, not per cluster</td><td class="wrap-cell"><code>server/src/lib/rate-key.ts:53</code>, <code>server/src/lib/failure-throttle.ts:15</code>, <code>server/src/share/routes.ts:349</code>, <code>server/src/share/routes.ts:351</code>, <code>server/src/drift/service.ts:74</code></td><td class="wrap-cell">Move counters and running guard to Postgres or advisory locks</td></tr>
-        <tr><td class="svc-name">SRV-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Default 50 MB diagram body parsed by zod and hashed synchronously on event loop</td><td class="wrap-cell"><code>server/src/config.ts:228</code>, <code>server/src/diagrams/routes.ts:289</code>, <code>server/src/diagrams/routes.ts:392</code></td><td class="wrap-cell">Lower default limit or hash in worker thread</td></tr>
-        <tr><td class="svc-name">SRV-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Publishes during a LISTEN outage are never replayed to live viewers</td><td class="wrap-cell"><code>server/src/events.ts:33</code>, <code>server/src/events.ts:97</code></td><td class="wrap-cell">Send current version in each heartbeat ping</td></tr>
-        <tr><td class="svc-name">SRV-020</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No test references reseal.ts, snapshot-cache.ts or server.ts</td><td class="wrap-cell"><code>server/src/drift/reseal.ts:13</code>, <code>server/src/share/snapshot-cache.ts:15</code>, <code>server/src/server.ts:1</code></td><td class="wrap-cell">Add unit tests for reseal and snapshot cache</td></tr>
-        <tr><td class="svc-name">SRV-021</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Quadratic regex on field type name hangs event loop; 100k chars takes 9 s</td><td class="wrap-cell"><code>shared/schema-desc.ts:95</code>, <code>shared/schema-desc.ts:315</code></td><td class="wrap-cell">Strip trailing <code>[]</code> with a loop, not <code>(\[\])+$</code></td></tr>
-        <tr><td class="svc-name">SRV-023</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SSE_HEARTBEAT_SECONDS above 2147483 overflows setInterval to 1 ms ticks</td><td class="wrap-cell"><code>server/src/config.ts:242</code>, <code>server/src/share/routes.ts:516</code></td><td class="wrap-cell">Cap SSE_HEARTBEAT_SECONDS at 3600 in <code>int()</code></td></tr>
-        <tr><td class="svc-name">SRV-025</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">pg.Client for introspection has no error listener; dropped target connection can crash process</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:366</code></td><td class="wrap-cell">Add <code>client.on('error', ...)</code> that ignores or logs</td></tr>
-        <tr><td class="svc-name">SRV-026</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">mssql ConnectionPool for introspection has no error listener</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:458</code></td><td class="wrap-cell">Add <code>pool.on('error', ...)</code> handler</td></tr>
-        <tr><td class="svc-name">SRV-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server tests silently skip when container is absent, so CI never runs them</td><td class="wrap-cell"><code>server/test/introspect-sqlserver.test.ts:20</code></td><td class="wrap-cell">Fail in CI when MSSQL is unreachable</td></tr>
-        <tr><td class="svc-name">SRV-031</td><td><span class="pill crit">High</span></td><td class="wrap-cell">Drift rename pairing is quadratic; 4000 vs 4000 tables blocks event loop 8 s</td><td class="wrap-cell"><code>shared/reconcile.ts:432</code>, <code>shared/reconcile.ts:433</code>, <code>shared/reconcile.ts:187</code>, <code>server/src/drift/service.ts:296</code></td><td class="wrap-cell">Bucket rename candidates by column signature; cap pair count</td></tr>
+        <tr><td class="svc-name">SRV-008</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Live-viewer caps (<code>SSE_MAX_PER_LINK</code>, <code>SSE_MAX_PER_IP</code>) are per process; limiters, lockout and drift guard now cluster-wide</td><td class="wrap-cell"><code>server/src/config.ts:341</code>, <code>server/src/config.ts:342</code>, <code>server/src/share/routes.ts:444</code></td><td class="wrap-cell">Count live viewers in Postgres with a heartbeat table</td></tr>
+        <tr><td class="svc-name">SRV-009</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">40 MB diagram body still blocks the event loop about 0.9 s in JSON.parse, depth check and write</td><td class="wrap-cell"><code>server/src/config.ts:329</code>, <code>server/src/diagrams/routes.ts:289</code></td><td class="wrap-cell">Parse in a worker thread or lower the default limit</td></tr>
+        <tr><td class="svc-name">SRV-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server tests skip in CI: <code>ci.yaml</code> has no SQL Server service</td><td class="wrap-cell"><code>server/test/introspect-sqlserver.test.ts:29</code>, <code>.github/workflows/ci.yaml:48</code></td><td class="wrap-cell">Add SQL Server service and MSSQL_SA_PASSWORD to the server job</td></tr>
       </tbody>
     </table>
   </div>
@@ -60,7 +46,7 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (20)</summary>
+  <details><summary>Fixed (33)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -85,6 +71,19 @@
         <tr><td class="svc-name">SRV-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lint-config GET and PUT have no rate limit unlike /lint</td></tr>
         <tr><td class="svc-name">SRV-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Session end deletes sessions and locks in separate statements, not one transaction</td></tr>
               <tr><td class="svc-name">SRV-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>forceCloseConnections: true</code> destroys in-flight requests on shutdown, not only SSE</td></tr>
+        <tr><td class="svc-name">SRV-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first</td></tr>
+        <tr><td class="svc-name">SRV-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Error handler logs Drizzle error whose message embeds all query params</td></tr>
+        <tr><td class="svc-name">SRV-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Audit insert after committed write throws, returning 500 for a done action</td></tr>
+        <tr><td class="svc-name">SRV-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Link revoke/update emits live-viewer event after audit; audit failure leaves viewers connected</td></tr>
+        <tr><td class="svc-name">SRV-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">LISTEN connection has no TCP keepalive; a silently dropped link is never noticed</td></tr>
+        <tr><td class="svc-name">SRV-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No rate limit on publish; each call stores a snapshot up to 50 MB</td></tr>
+        <tr><td class="svc-name">SRV-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publishes during a LISTEN outage are never replayed to live viewers</td></tr>
+        <tr><td class="svc-name">SRV-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No test references reseal.ts, snapshot-cache.ts or server.ts</td></tr>
+        <tr><td class="svc-name">SRV-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Quadratic regex on field type name hangs event loop; 100k chars takes 9 s</td></tr>
+        <tr><td class="svc-name">SRV-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SSE_HEARTBEAT_SECONDS above 2147483 overflows setInterval to 1 ms ticks</td></tr>
+        <tr><td class="svc-name">SRV-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">pg.Client for introspection has no error listener; dropped target connection can crash process</td></tr>
+        <tr><td class="svc-name">SRV-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">mssql ConnectionPool for introspection has no error listener</td></tr>
+        <tr><td class="svc-name">SRV-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift rename pairing is quadratic; 4000 vs 4000 tables blocks event loop 8 s</td></tr>
       </tbody>
     </table>
   </div>

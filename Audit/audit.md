@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 30 · **date** 2026-11-10
+**rev** 31 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -8,18 +8,15 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 1 | 0 | 0 | 32 | 0 |
 | Repository | 2 | 0 | 0 | 54 | 0 |
-| Server | 16 | 0 | 4 | 20 | 0 |
+| Server | 3 | 0 | 0 | 33 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 0 | 0 | 0 | 94 | 0 |
 | Dead code | 0 | 0 | 0 | 40 | 0 |
-| **Total** | 27 | 0 | 4 | 250 | 1 |
+| **Total** | 14 | 0 | 0 | 263 | 1 |
 
 ## Act first
 
-- `SRV-001` — Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first
-- `SRV-002` — Error handler logs Drizzle error whose message embeds all query params
-- `SRV-021` — Quadratic regex on field type name hangs event loop; 100k chars takes 9 s
-- `SRV-031` — Quadratic drift rename pairing blocks event loop 8 s at 4000 tables
+None.
 
 ---
 
@@ -42,22 +39,9 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SRV-001 | High | Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first | `server/src/diagrams/routes.ts:123`, `server/src/diagrams/routes.ts:260`, `server/src/diagrams/routes.ts:349`, `server/src/config.ts:228` | Check session cookie in onRequest before body parsing |
-| SRV-002 | High | Error handler logs Drizzle error whose message embeds all query params | `server/src/app.ts:207` | Log err.cause and query name only, never params |
-| SRV-003 | Med | Audit insert after committed write throws, returning 500 for a done action | `server/src/audit/audit.ts:152`, `server/src/diagrams/routes.ts:436`, `server/src/auth/routes.ts:244`, `server/src/share/routes.ts:188` | Write audit in same transaction or swallow and log |
-| SRV-004 | Med | Link revoke/update emits live-viewer event after audit; audit failure leaves viewers connected | `server/src/share/routes.ts:280`, `server/src/share/routes.ts:292`, `server/src/share/routes.ts:251`, `server/src/share/routes.ts:257`, `server/src/admin/routes.ts:714`, `server/src/admin/routes.ts:725` | Emit link event before audit, or in finally |
-| SRV-006 | Med | LISTEN connection has no TCP keepalive; a silently dropped link is never noticed | `server/src/events.ts:108` | Set keepAlive true on the pg.Client |
-| SRV-007 | Med | No rate limit on publish; each call stores a snapshot up to 50 MB | `server/src/diagrams/routes.ts:517` | Add perUserLimit to /:id/publish |
-| SRV-008 | Med | Limiters, lockout, viewer caps and drift-running guard are per process, not per cluster | `server/src/lib/rate-key.ts:53`, `server/src/lib/failure-throttle.ts:15`, `server/src/share/routes.ts:349`, `server/src/share/routes.ts:351`, `server/src/drift/service.ts:74` | Move counters and running guard to Postgres or advisory locks |
-| SRV-009 | Med | Default 50 MB diagram body parsed by zod and hashed synchronously on event loop | `server/src/config.ts:228`, `server/src/diagrams/routes.ts:289`, `server/src/diagrams/routes.ts:392` | Lower default limit or hash in worker thread |
-| SRV-019 | Low | Publishes during a LISTEN outage are never replayed to live viewers | `server/src/events.ts:33`, `server/src/events.ts:97` | Send current version in each heartbeat ping |
-| SRV-020 | Low | No test references reseal.ts, snapshot-cache.ts or server.ts | `server/src/drift/reseal.ts:13`, `server/src/share/snapshot-cache.ts:15`, `server/src/server.ts:1` | Add unit tests for reseal and snapshot cache |
-| SRV-021 | High | Quadratic regex on field type name hangs event loop; 100k chars takes 9 s | `shared/schema-desc.ts:95`, `shared/schema-desc.ts:315` | Strip trailing `[]` with a loop, not `(\[\])+$` |
-| SRV-023 | Med | SSE_HEARTBEAT_SECONDS above 2147483 overflows setInterval to 1 ms ticks | `server/src/config.ts:242`, `server/src/share/routes.ts:516` | Cap SSE_HEARTBEAT_SECONDS at 3600 in `int()` |
-| SRV-025 | Med | pg.Client for introspection has no error listener; dropped target connection can crash process | `server/src/introspect/postgres.ts:366` | Add `client.on('error', ...)` that ignores or logs |
-| SRV-026 | Med | mssql ConnectionPool for introspection has no error listener | `server/src/introspect/sqlserver.ts:458` | Add `pool.on('error', ...)` handler |
-| SRV-030 | Low | SQL Server tests silently skip when container is absent, so CI never runs them | `server/test/introspect-sqlserver.test.ts:20` | Fail in CI when MSSQL is unreachable |
-| SRV-031 | High | Drift rename pairing is quadratic; 4000 vs 4000 tables blocks event loop 8 s | `shared/reconcile.ts:432`, `shared/reconcile.ts:433`, `shared/reconcile.ts:187`, `server/src/drift/service.ts:296` | Bucket rename candidates by column signature; cap pair count |
+| SRV-008 | Med | Live-viewer caps (`SSE_MAX_PER_LINK`, `SSE_MAX_PER_IP`) are per process; limiters, lockout and drift guard now cluster-wide | `server/src/config.ts:341`, `server/src/config.ts:342`, `server/src/share/routes.ts:444` | Count live viewers in Postgres with a heartbeat table |
+| SRV-009 | Med | 40 MB diagram body still blocks the event loop about 0.9 s in JSON.parse, depth check and write | `server/src/config.ts:329`, `server/src/diagrams/routes.ts:289` | Parse in a worker thread or lower the default limit |
+| SRV-030 | Low | SQL Server tests skip in CI: `ci.yaml` has no SQL Server service | `server/test/introspect-sqlserver.test.ts:29`, `.github/workflows/ci.yaml:48` | Add SQL Server service and MSSQL_SA_PASSWORD to the server job |
 
 ### Database
 
@@ -298,6 +282,19 @@
 | SEC-024 | Security & secrets | Compose default image tag `latest`, unpinned |
 | SEC-031 | Security & secrets | Driver error text and address class returned; refused, timeout, private-host answers map networks |
 | SRV-037 | Server | `forceCloseConnections: true` destroys in-flight requests on shutdown, not only SSE |
+| SRV-001 | Server | Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first |
+| SRV-002 | Server | Error handler logs Drizzle error whose message embeds all query params |
+| SRV-003 | Server | Audit insert after committed write throws, returning 500 for a done action |
+| SRV-004 | Server | Link revoke/update emits live-viewer event after audit; audit failure leaves viewers connected |
+| SRV-006 | Server | LISTEN connection has no TCP keepalive; a silently dropped link is never noticed |
+| SRV-007 | Server | No rate limit on publish; each call stores a snapshot up to 50 MB |
+| SRV-019 | Server | Publishes during a LISTEN outage are never replayed to live viewers |
+| SRV-020 | Server | No test references reseal.ts, snapshot-cache.ts or server.ts |
+| SRV-021 | Server | Quadratic regex on field type name hangs event loop; 100k chars takes 9 s |
+| SRV-023 | Server | SSE_HEARTBEAT_SECONDS above 2147483 overflows setInterval to 1 ms ticks |
+| SRV-025 | Server | pg.Client for introspection has no error listener; dropped target connection can crash process |
+| SRV-026 | Server | mssql ConnectionPool for introspection has no error listener |
+| SRV-031 | Server | Drift rename pairing is quadratic; 4000 vs 4000 tables blocks event loop 8 s |
 | CLI-001 | Client | No error boundary or route `errorElement`; a render or chunk-load error blanks the app |
 | CLI-002 | Client | Startup `api.me()` failure of any kind (timeout, 5xx) shows user as signed out |
 | CLI-003 | Client | "Overwrite" conflict action swallows fetch errors; click does nothing visibly |
@@ -407,6 +404,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 31 | 2026-11-10 | 13 fixed (server batch: SRV-001, 002, 003, 004, 006, 007, 019, 020, 021, 023, 025, 026, 031), 3 narrowed (SRV-008, 009, 030), 4 High cleared; anchors not remapped |
 | 30 | 2026-11-10 | 10 fixed (repository batch: REPO-001, 002, 003, 005, 006, 013, 015, 027, 028, 059), 1 High cleared; anchors not remapped |
 | 29 | 2026-11-10 | 11 fixed (security batch 3: SEC-003, 010, 011, 012, 013, 014, 018, 019, 022, 024, 031), SEC-001 narrowed; anchors not remapped |
 | 28 | 2026-11-10 | 5 fixed (client batch 3: CLI-005, 006, 007, 039, 069); client lens has no open findings; anchors not remapped |
