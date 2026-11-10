@@ -231,7 +231,7 @@ export const driftRoutes =
                 ? await reusableReport(db, id, deps.config.driftCacheSeconds)
                 : null;
             if (reused) return presentCheck(reused);
-            const report = await runDriftCheck(deps, id);
+            const report = await runDriftCheck({ ...deps, log: req.log }, id);
             if (report === 'running') {
                 return reply.code(409).send({ error: 'already_running' });
             }

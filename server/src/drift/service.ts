@@ -43,6 +43,8 @@ export interface DriftDeps {
     config: Config;
     factory: IntrospectorFactory;
     lookup?: LookupAll;
+    /** where the reason of a refused or failed connection goes; reports get a fixed text */
+    log?: { warn: (obj: object, msg: string) => void };
     /** per-user allowance for checks */
     outboundLimit?: RequestHook;
 }
@@ -305,12 +307,18 @@ export async function runDriftCheck(
                 hints: renameHints(cs.possibleRenames),
             };
         } catch (err) {
+            if (err instanceof ForbiddenTargetError) {
+                // the reason names an address class: the log only, the report is fixed
+                deps.log?.warn({ reason: err.message }, 'drift check target blocked');
+            }
             outcome = {
                 status: 'error',
                 message:
-                    err instanceof DriftError || err instanceof ForbiddenTargetError
-                        ? err.message
-                        : safeMessage(err, secrets),
+                    err instanceof ForbiddenTargetError
+                        ? 'database address not allowed'
+                        : err instanceof DriftError
+                          ? err.message
+                          : safeMessage(err, secrets),
             };
         }
 
@@ -379,7 +387,12 @@ export async function runDriftCheck(
                     })),
                     at: now.toISOString(),
                 },
-                { allow: deps.config.webhookAllowHosts, lookup: deps.lookup }
+                {
+                    allow: deps.config.webhookAllowHosts,
+                    lookup: deps.lookup,
+                    onFailure: (reason) =>
+                        deps.log?.warn({ reason }, 'drift webhook failed'),
+                }
             );
             // the report is already stored, so a failed insert cannot make the
             // next check send this change again

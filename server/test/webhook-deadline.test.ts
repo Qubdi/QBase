@@ -1,7 +1,12 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
-import { parseWebhookUrl, postJson } from '../src/drift/webhook.js';
+import {
+    WEBHOOK_CONNECTION_FAILED,
+    WEBHOOK_HOST_REFUSED,
+    parseWebhookUrl,
+    postJson,
+} from '../src/drift/webhook.js';
 
 const servers: http.Server[] = [];
 const listen = async (handler: http.RequestListener) => {
@@ -61,5 +66,32 @@ describe('webhook URL scheme', () => {
         const r = await postJson('http://127.0.0.1:9/h', {}, { allow: [] });
         expect(r.ok).toBe(false);
         expect(r.error).toMatch(/https/);
+    });
+});
+
+describe('postJson failures answer with a fixed text', () => {
+    it('does not say which address class a refused host belongs to', async () => {
+        const reasons: string[] = [];
+        const r = await postJson(
+            'https://10.1.2.3/h',
+            {},
+            { allow: [], onFailure: (why) => reasons.push(why) }
+        );
+        expect(r).toEqual({ ok: false, error: WEBHOOK_HOST_REFUSED });
+        // the log gets the real reason
+        expect(reasons).toHaveLength(1);
+        expect(reasons[0]).not.toBe('');
+        expect(JSON.stringify(r)).not.toMatch(/10\.1\.2\.3|private|loopback/i);
+    });
+
+    it('does not pass on the driver text of a refused connection', async () => {
+        const reasons: string[] = [];
+        const r = await postJson(
+            'http://127.0.0.1:9/h',
+            {},
+            { allow: ['127.0.0.1'], onFailure: (why) => reasons.push(why) }
+        );
+        expect(r).toEqual({ ok: false, error: WEBHOOK_CONNECTION_FAILED });
+        expect(reasons.join(' ')).toMatch(/ECONNREFUSED/);
     });
 });

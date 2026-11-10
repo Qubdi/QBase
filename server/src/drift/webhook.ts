@@ -15,6 +15,11 @@ export interface WebhookResult {
     error?: string;
 }
 
+/** What a report says when the host is not allowed or does not resolve. */
+export const WEBHOOK_HOST_REFUSED = 'host not allowed';
+/** What a report says when the connection could not be made or broke. */
+export const WEBHOOK_CONNECTION_FAILED = 'connection failed';
+
 /** How long the connection may sit silent. A server that keeps trickling bytes resets it. */
 export const WEBHOOK_TIMEOUT_MS = 5000;
 /** How long a whole request may take, trickling or not. */
@@ -99,7 +104,13 @@ export function parseWebhookUrl(
 export async function postJson(
     rawUrl: string,
     payload: unknown,
-    opts: { allow: string[]; lookup?: LookupAll; deadlineMs?: number }
+    opts: {
+        allow: string[];
+        lookup?: LookupAll;
+        deadlineMs?: number;
+        /** Gets the real reason of a failure; the result carries only a fixed text. */
+        onFailure?: (reason: string) => void;
+    }
 ): Promise<WebhookResult> {
     const parsed = parseWebhookUrl(rawUrl, opts.allow);
     if ('error' in parsed) return { ok: false, error: parsed.error };
@@ -109,10 +120,10 @@ export async function postJson(
     try {
         target = await resolveAllowedTarget(url.hostname, opts.allow, opts.lookup);
     } catch (e) {
-        return {
-            ok: false,
-            error: e instanceof ForbiddenTargetError ? e.message : 'host did not resolve',
-        };
+        // the reason (an address class, "did not resolve") names what is on the
+        // internal network: it goes to the log, the report gets a fixed text
+        opts.onFailure?.(e instanceof ForbiddenTargetError ? e.message : 'host did not resolve');
+        return { ok: false, error: WEBHOOK_HOST_REFUSED };
     }
 
     const body = JSON.stringify(payload);
@@ -157,7 +168,15 @@ export async function postJson(
         }, opts.deadlineMs ?? WEBHOOK_DEADLINE_MS);
         deadline.unref();
         req.on('close', () => clearTimeout(deadline));
-        req.on('error', (err) => resolve({ ok: false, error: err.message.slice(0, 200) }));
+        req.on('error', (err) => {
+            // a refused, reset or unreachable connection tells refused from filtered
+            // from down: only the log gets it
+            opts.onFailure?.(err.message.slice(0, 200));
+            resolve({
+                ok: false,
+                error: err.message === 'timed out' ? 'timed out' : WEBHOOK_CONNECTION_FAILED,
+            });
+        });
         req.end(body);
     });
 }

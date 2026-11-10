@@ -442,7 +442,9 @@ describe('drift detection', () => {
             await ctx.db.update((await import('../src/db/schema.js')).savedConnections).set({ host: '10.0.0.5' });
             const body = (await check()).json();
             expect(body.status).toBe('error');
-            expect(body.error).toMatch(/blocked/);
+            // a fixed text: the address class stays in the log
+            expect(body.error).toBe('database address not allowed');
+            expect(body.error).not.toMatch(/private|loopback|10\.0\.0\.5/i);
             expect(factoryCalls).toBe(0);
             await ctx.db.update((await import('../src/db/schema.js')).savedConnections).set({ host: '93.184.216.34' });
         });
@@ -901,7 +903,8 @@ describe('drift webhooks', () => {
             });
             drift('phone');
             const res = await strict.app.inject({ method: 'POST', url: `/diagrams/${id}/drift/check`, headers: as(u) });
-            expect(res.json().webhook).toMatch(/blocked/);
+            // a fixed text: the address class stays in the log
+            expect(res.json().webhook).toBe('failed: host not allowed');
             expect(received).toHaveLength(0);
         } finally {
             await strict.close();
