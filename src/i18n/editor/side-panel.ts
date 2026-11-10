@@ -6,8 +6,6 @@ export const sidePanelStrings = {
         filter: 'Filter',
         clearFilter: 'Clear Filter',
         focus: 'Focus on the canvas',
-        more: 'More actions',
-        rename: 'Rename',
         saveName: 'Save name',
         dragHandle: 'Drag to reorder',
         cancel: 'Cancel',
@@ -39,7 +37,6 @@ export const sidePanelStrings = {
         checks: 'Check Constraints',
         description: 'Description',
         noDescription: 'No description',
-        color: 'Table color',
         duplicateName:
             'Another table in this schema is already named "{{name}}".',
         selectSchema: {
@@ -87,7 +84,6 @@ export const sidePanelStrings = {
         delete: 'Delete Field',
         addNote: 'Add Note',
         showComment: 'Show field description',
-        foreignKey: 'Foreign key',
         none: 'This table has no fields',
     },
     indexes: {
@@ -211,7 +207,6 @@ export const sidePanelStrings = {
         emptyNote: 'Empty note',
         noteActions: 'Note actions',
         deleteNote: 'Delete note',
-        colour: 'Color',
     },
     filters: {
         title: 'Filter Tables',
@@ -226,26 +221,6 @@ export const sidePanelStrings = {
         createToStart: 'Create a table to get started',
         noSchema: 'No schema',
         noArea: 'Ungrouped',
-    },
-    hover: {
-        type: 'type',
-        nullability: 'null',
-        nullable: 'nullable',
-        notNull: 'NOT NULL',
-        key: 'key',
-        primaryKey: 'primary key',
-        unique: 'unique',
-        autoIncrement: 'auto increment',
-        default: 'default',
-        check: 'check',
-        references: 'references',
-        referencedBy: 'referenced by',
-    },
-    clipboard: {
-        copied: 'Table copied',
-        copiedMany: '{{count}} tables copied',
-        pasted: 'Table pasted',
-        pastedMany: '{{count}} tables pasted',
     },
     dbml: {
         title: 'DBML',

@@ -601,8 +601,6 @@ export const ru = {
                     filter: 'Фильтр',
                     clearFilter: 'Сбросить фильтр',
                     focus: 'Перейти к холсту',
-                    more: 'Другие действия',
-                    rename: 'Переименовать',
                     saveName: 'Сохранить название',
                     dragHandle: 'Перетащите, чтобы изменить порядок',
                     cancel: 'Отмена',
@@ -634,7 +632,6 @@ export const ru = {
                     checks: 'Ограничения CHECK',
                     description: 'Описание',
                     noDescription: 'Нет описания',
-                    color: 'Цвет таблицы',
                     duplicateName:
                         'В этой схеме уже есть таблица с названием «{{name}}».',
                     selectSchema: {
@@ -682,7 +679,6 @@ export const ru = {
                     delete: 'Удалить поле',
                     addNote: 'Добавить заметку',
                     showComment: 'Показать описание поля',
-                    foreignKey: 'Внешний ключ',
                     none: 'В этой таблице нет полей',
                 },
                 indexes: {
@@ -808,7 +804,6 @@ export const ru = {
                     emptyNote: 'Пустая заметка',
                     noteActions: 'Действия с заметкой',
                     deleteNote: 'Удалить заметку',
-                    colour: 'Цвет',
                 },
                 filters: {
                     title: 'Фильтр таблиц',
@@ -823,26 +818,6 @@ export const ru = {
                     createToStart: 'Создайте таблицу, чтобы начать',
                     noSchema: 'Без схемы',
                     noArea: 'Без области',
-                },
-                hover: {
-                    type: 'тип',
-                    nullability: 'null',
-                    nullable: 'допускает null',
-                    notNull: 'NOT NULL',
-                    key: 'ключ',
-                    primaryKey: 'первичный ключ',
-                    unique: 'уникальное',
-                    autoIncrement: 'автоинкремент',
-                    default: 'по умолчанию',
-                    check: 'проверка',
-                    references: 'ссылается на',
-                    referencedBy: 'на неё ссылаются',
-                },
-                clipboard: {
-                    copied: 'Таблица скопирована',
-                    copiedMany: 'Скопировано таблиц: {{count}}',
-                    pasted: 'Таблица вставлена',
-                    pastedMany: 'Вставлено таблиц: {{count}}',
                 },
                 dbml: {
                     title: 'DBML',
