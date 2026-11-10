@@ -126,3 +126,6 @@ qbase-*.dump
 # load test output
 server/load/.seed.json
 server/load/results/
+
+# a generated comparison page, not one of the audit files
+Audit/audit-ui-differences.html
