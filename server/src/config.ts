@@ -72,6 +72,13 @@ export interface Config {
     introspectAllowHosts: string[];
     /** hostnames, IPs or IPv4 CIDRs that a drift webhook may reach even if private; separate from the database list */
     webhookAllowHosts: string[];
+    /**
+     * Token the first-run sign-up must send while no account exists, so whoever
+     * reaches an empty server cannot become its admin. SETUP_TOKEN; when it is
+     * unset the server makes a random one at start and prints it once (see
+     * server.ts). null = none required (tests, and the app once an account exists).
+     */
+    setupToken: string | null;
     /** secret for encrypting saved connection passwords; null disables saving */
     connectionKey: string | null;
     /**
@@ -171,6 +178,9 @@ export class ConfigError extends Error {
         this.name = 'ConfigError';
     }
 }
+
+/** Shortest SETUP_TOKEN: it is the only thing between a stranger and the first admin account. */
+const MIN_SETUP_TOKEN_LENGTH = 16;
 
 /** Shortest encryption key `CryptoBox` accepts. */
 const MIN_KEY_LENGTH = 16;
@@ -296,6 +306,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // no built-in fallback: a default credential would be a known password
     const databaseUrl = env.DATABASE_URL?.trim() ?? '';
     if (!databaseUrl) problems.push('DATABASE_URL is required');
+    const setupToken = env.SETUP_TOKEN?.trim() || null;
+    if (setupToken !== null && setupToken.length < MIN_SETUP_TOKEN_LENGTH) {
+        problems.push(`SETUP_TOKEN must be at least ${MIN_SETUP_TOKEN_LENGTH} characters`);
+    }
     const connectionKey = key('CONNECTION_KEY');
     const secretsKey = key('SECRETS_KEY') ?? connectionKey;
     const config: Config = {
@@ -336,6 +350,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
         introspectAllowHosts,
         webhookAllowHosts,
+        setupToken,
         connectionKey,
         secretsKey,
         mfaEnabled: env.MFA_ENABLED?.trim().toLowerCase() !== 'false',

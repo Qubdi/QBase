@@ -138,8 +138,8 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const register = useCallback(
-        async (email: string, password: string) => {
-            await adopt(await api.register(email, password));
+        async (email: string, password: string, setupToken?: string) => {
+            await adopt(await api.register(email, password, setupToken));
             setSessionEnded(false);
         },
         [adopt]

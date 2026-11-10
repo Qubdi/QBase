@@ -456,6 +456,8 @@ const setupStatusSchema = z.looseObject({
     needsSetup: z.boolean(),
     passwordMinLength: z.number(),
     mfaAvailable: z.boolean().optional(),
+    // the first-run form shows its setup-token field only when this is true
+    setupTokenRequired: z.boolean().optional(),
 });
 const mfaStatusSchema = z.looseObject({
     available: z.boolean(),
@@ -551,6 +553,8 @@ export function createApi(
                 passwordMinLength: number;
                 /** the server offers two-factor sign-in */
                 mfaAvailable?: boolean;
+                /** the first-run sign-up needs the setup token the server printed */
+                setupTokenRequired?: boolean;
             }>(
                 'GET',
                 '/auth/setup-status',
@@ -558,11 +562,14 @@ export function createApi(
                 undefined,
                 setupStatusSchema
             ),
-        register: (email: string, password: string) =>
+        register: (email: string, password: string, setupToken?: string) =>
             request<RemoteUser>(
                 'POST',
                 '/auth/register',
-                { email, password },
+                // the token is sent only when the server asked for one
+                setupToken
+                    ? { email, password, setupToken }
+                    : { email, password },
                 undefined,
                 remoteUserSchema
             ),

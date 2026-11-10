@@ -1,6 +1,8 @@
+import { randomBytes } from 'node:crypto';
 import { buildApp } from './app.js';
 import { ConfigError, loadConfig, startupWarnings } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
+import { users } from './db/schema.js';
 import { resealPlaintextWebhooks } from './drift/reseal.js';
 import { resealStoredSecrets } from './reseal.js';
 import { startEventBridge } from './events.js';
@@ -65,6 +67,20 @@ try {
     }
 } catch (err) {
     console.error('Could not re-seal stored secrets:', err instanceof Error ? err.message : err);
+}
+
+// On an empty server the first sign-up becomes the admin, so it needs a token:
+// SETUP_TOKEN, or one made now and printed once. Several replicas behind one
+// address need SETUP_TOKEN, since each would print a different one.
+if ((await db.select({ id: users.id }).from(users).limit(1)).length === 0) {
+    if (config.setupToken === null) {
+        config = { ...config, setupToken: randomBytes(18).toString('base64url') };
+        console.log(
+            `No account exists yet. Creating the first admin needs this setup token: ${config.setupToken}`
+        );
+    } else {
+        console.log('No account exists yet. Creating the first admin needs the SETUP_TOKEN you set.');
+    }
 }
 
 const app = buildApp({ config, db });

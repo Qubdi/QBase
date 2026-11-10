@@ -64,6 +64,7 @@ services:
       npm_config_cache: /npm-cache
       DATABASE_URL: postgres://qbase:${LOAD_DB_PASSWORD:?run this through run.sh}@db:5432/qbase
       CONNECTION_KEY: ${LOAD_CONNECTION_KEY:?run this through run.sh}
+      SETUP_TOKEN: ${LOAD_SETUP_TOKEN:?run this through run.sh}
       HOST: 0.0.0.0
       PORT: "3001"
       LOG_LEVEL: warn
@@ -98,6 +99,7 @@ services:
     environment:
       BASE_URL: http://app:3001
       # made fresh for each run by run.sh
+      LOAD_SETUP_TOKEN: ${LOAD_SETUP_TOKEN:?run this through run.sh}
       LOAD_PASSWORD: ${LOAD_PASSWORD:?run this through run.sh}
       LOAD_TEMP_PASSWORD: ${LOAD_TEMP_PASSWORD:?run this through run.sh}
       LOAD_USERS: ${LOAD_USERS:-200}

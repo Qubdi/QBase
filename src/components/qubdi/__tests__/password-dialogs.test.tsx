@@ -107,6 +107,59 @@ describe('password dialogs', () => {
             expect(button('Create admin account').disabled).toBe(false);
         });
 
+        it('asks for the setup token only when the server says it needs one, and sends it', async () => {
+            setupStatus.mockResolvedValue({
+                needsSetup: true,
+                setupTokenRequired: true,
+                passwordMinLength: 14,
+            });
+            register.mockResolvedValue(undefined);
+            render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
+            const token = await screen.findByLabelText('Setup token');
+            fireEvent.change(screen.getByPlaceholderText('Email'), {
+                target: { value: 'founder@corp.io' },
+            });
+            fireEvent.change(screen.getByLabelText('Password'), {
+                target: { value: 'Long-enough-pw-1!' },
+            });
+            fireEvent.change(token, {
+                target: { value: '  tok-from-the-log  ' },
+            });
+            fireEvent.click(button('Create admin account'));
+            await waitFor(() =>
+                expect(register).toHaveBeenCalledWith(
+                    'founder@corp.io',
+                    'Long-enough-pw-1!',
+                    'tok-from-the-log'
+                )
+            );
+        });
+
+        it('shows no token field when the server asks for none', async () => {
+            setupStatus.mockResolvedValue({
+                needsSetup: true,
+                setupTokenRequired: false,
+                passwordMinLength: 14,
+            });
+            register.mockResolvedValue(undefined);
+            render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
+            await screen.findByRole('button', { name: 'Create admin account' });
+            expect(screen.queryByLabelText('Setup token')).toBeNull();
+            fireEvent.change(screen.getByPlaceholderText('Email'), {
+                target: { value: 'founder@corp.io' },
+            });
+            fireEvent.change(screen.getByLabelText('Password'), {
+                target: { value: 'Long-enough-pw-1!' },
+            });
+            fireEvent.click(button('Create admin account'));
+            await waitFor(() =>
+                expect(register).toHaveBeenCalledWith(
+                    'founder@corp.io',
+                    'Long-enough-pw-1!'
+                )
+            );
+        });
+
         it('does not accept a password made from the email', async () => {
             render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
             await screen.findByText(/At least 14 characters/);

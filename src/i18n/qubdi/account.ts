@@ -7,6 +7,8 @@ export const account = {
         email_taken: 'That email is already registered.',
         signup_disabled:
             'Accounts are created by an admin. Ask yours for access.',
+        invalid_setup_token:
+            'That setup token is not right. Copy it from the server log or from SETUP_TOKEN.',
         invalid_request: 'Please check the values you entered.',
         wrong_password: 'Current password is incorrect.',
         invalid_code: 'That code is not right. Check the app and try again.',
@@ -88,6 +90,9 @@ export const account = {
             'This server has no users yet. The first account becomes its admin and can create everyone else.',
         email: 'Email',
         password: 'Password',
+        setupToken: 'Setup token',
+        setupTokenHint:
+            'The server printed this token in its log when it started (or it is the SETUP_TOKEN you set).',
     },
     accountMenu: {
         signIn: 'Sign in',

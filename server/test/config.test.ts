@@ -243,6 +243,15 @@ describe('boot-time validation', () => {
     });
 });
 
+describe('SETUP_TOKEN', () => {
+    it('is unset by default, trimmed when given, and at least 16 characters', () => {
+        expect(loadConfig({}).setupToken).toBeNull();
+        expect(loadConfig({ SETUP_TOKEN: '  ' }).setupToken).toBeNull();
+        expect(loadConfig({ SETUP_TOKEN: ' ' + 't'.repeat(16) + ' ' }).setupToken).toBe('t'.repeat(16));
+        expect(() => loadConfig({ SETUP_TOKEN: 'short' })).toThrow(/SETUP_TOKEN must be at least 16 characters/);
+    });
+});
+
 describe('connection and listening defaults', () => {
     it('has no built-in database URL', () => {
         expect(() => loadConfigFrom({})).toThrow(/DATABASE_URL is required/);

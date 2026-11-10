@@ -21,6 +21,8 @@ dc() { docker compose -f docker-compose.yml "$@"; }
 secret() { od -An -N"$1" -tx1 /dev/urandom | tr -d ' \n'; }
 export LOAD_DB_PASSWORD="${LOAD_DB_PASSWORD:-$(secret 16)}"
 export LOAD_CONNECTION_KEY="${LOAD_CONNECTION_KEY:-$(secret 24)}"
+# the first sign-up, which the seed makes, needs this token
+export LOAD_SETUP_TOKEN="${LOAD_SETUP_TOKEN:-$(secret 16)}"
 export LOAD_PASSWORD="${LOAD_PASSWORD:-Ld-$(secret 12)-1}"
 export LOAD_TEMP_PASSWORD="${LOAD_TEMP_PASSWORD:-Ld-$(secret 12)-2}"
 # helpers write into this folder: as the caller, not as root

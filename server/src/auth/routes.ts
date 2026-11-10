@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import type {
     FastifyPluginAsync,
@@ -42,7 +43,16 @@ const signIn = z.object({
 const newAccount = z.object({
     email: z.string().trim().toLowerCase().email(),
     password: z.string().max(200),
+    // only read by the first-run sign-up, and only when the server asks for one
+    setupToken: z.string().max(256).optional(),
 });
+
+/** Constant-time comparison: both sides are hashed first, so length does not leak either. */
+const sameToken = (given: string | undefined, expected: string) =>
+    timingSafeEqual(
+        createHash('sha256').update(given ?? '').digest(),
+        createHash('sha256').update(expected).digest()
+    );
 
 const changePassword = z.object({
     // as long as any password the server accepts: a hash of megabytes is a cheap attack
@@ -160,6 +170,8 @@ export const authRoutes =
             // the form needs the minimum length to tick its checklist as people type
             return {
                 needsSetup: anyUser.length === 0,
+                // the form shows its token field only while it is needed; the token itself is never sent
+                setupTokenRequired: anyUser.length === 0 && config.setupToken !== null,
                 passwordMinLength: config.passwordMinLength,
                 // whether the account menu offers two-factor at all
                 mfaAvailable: mfaAvailable(config),
@@ -186,6 +198,11 @@ export const authRoutes =
                 .limit(1);
             if (anyUser.length > 0) {
                 return reply.code(403).send({ error: 'signup_disabled' });
+            }
+            // While the server is empty, only whoever read the token in its log
+            // (or set SETUP_TOKEN) may create the admin. Checked before the slow hash.
+            if (config.setupToken !== null && !sameToken(body.setupToken, config.setupToken)) {
+                return reply.code(403).send({ error: 'invalid_setup_token' });
             }
             const passwordHash = await hashPassword(body.password);
             // Counting and inserting happen under one lock: two first-run

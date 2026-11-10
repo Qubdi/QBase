@@ -79,7 +79,7 @@ A secret in these steps means a long random string. Make one with `openssl rand 
 
    In PowerShell `curl` is a different command: open <http://localhost:8080/health> in a browser instead.
 
-6. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
+6. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. The form asks for a *setup token*, which the server prints once in its log (`docker compose logs app`) or which you chose with `SETUP_TOKEN`. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
 
 Day to day:
 
@@ -166,7 +166,7 @@ QBase then does not start a database of its own. You need PostgreSQL 16 or newer
    | `database "qbase" does not exist` | step 1 was skipped, or `POSTGRES_DB` is spelled differently |
    | `permission denied` | the role does not own the database (`ALTER DATABASE qbase OWNER TO qbase;`) |
 
-7. **Open the editor** at <http://localhost:8080> and create the first account, as in Option A.
+7. **Open the editor** at <http://localhost:8080> and create the first account, as in Option A (the setup token is in the server's log).
 
 The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the connection address from the five values above. If your database requires SSL, use Option C with `?sslmode=require` on `DATABASE_URL`.
 
@@ -215,7 +215,7 @@ The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the conne
 
    `.env` from step 2 already has `VITE_QUBDI_BACKEND_URL=http://localhost:3001`. Without that setting the editor runs in local-only mode and shows no account screens (schema lint works either way).
 
-5. **Open <http://localhost:5173>** and create the first account: it becomes the administrator.
+5. **Open <http://localhost:5173>** and create the first account: it becomes the administrator. The form asks for a setup token, which `npm run dev` of the server prints once at start (or set `SETUP_TOKEN` in `server/.env`).
 
 ### Configuration
 
@@ -237,6 +237,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `CONNECTION_KEY` | unset | Encrypts saved database passwords and the tokens of active share links (at least 32 characters; the server refuses a shorter one at start unless `ALLOW_SHORT_KEYS=1`, which keeps an older key of 16 to 31 characters working and is warned about). Saving connections, and with them drift checks and re-syncs, need it; without it a share link's URL is shown only once, when it is created or regenerated |
 | `SECRETS_KEY` | unset | Encrypts the secrets of authenticator apps (two-factor sign-in), at least 32 characters (same rule as `CONNECTION_KEY`). Unset = `CONNECTION_KEY` is used; with neither, two-factor sign-in is not offered. Do not lose it: people who turned it on could not sign in |
 | `ALLOW_SHORT_KEYS` | unset | `1` or `true` lets the server start with a `CONNECTION_KEY` or `SECRETS_KEY` of 16 to 31 characters (it is warned about at start). Without it such a key stops the server, because the key is the only entropy in every key derived from it. Keys under 16 characters are always refused |
+| `SETUP_TOKEN` | unset | The token the first sign-up needs while no account exists, so a stranger who reaches an empty server cannot become its administrator. At least 16 characters. Unset = the server makes a random one at start and prints it once in its log. Set it yourself with several server copies behind one address, since each would print a different one. Once an account exists it is no longer asked for |
 | `MFA_ENABLED` | `true` | `false` removes two-factor sign-in completely: no endpoints, no screens |
 | `MFA_WINDOW_STEPS` | `1` | 30-second steps a code is accepted either side of now (0 to 5) |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default. A bad entry stops the server at start, and a range wider than `/8` is refused |

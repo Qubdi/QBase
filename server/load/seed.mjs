@@ -85,7 +85,7 @@ console.log(`Seeding ${USERS} users, ${TABLES} tables per diagram on ${BASE}`);
 const admin = await ok(
     'register admin',
     call('POST', '/auth/register', {
-        body: { email: ADMIN, password: PASSWORD },
+        body: { email: ADMIN, password: PASSWORD, setupToken: process.env.LOAD_SETUP_TOKEN },
     })
 );
 const adminCookie = admin.cookie;
