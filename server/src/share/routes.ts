@@ -3,7 +3,7 @@ import { and, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
-import { SESSION_COOKIE, getSessionUser } from '../auth/sessions.js';
+import { sessionTokenOf, getSessionUser } from '../auth/sessions.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
@@ -534,7 +534,7 @@ export const publicShareRoutes =
                     if (now.access === 'signed_in' && req.user) {
                         const still = await getSessionUser(
                             db,
-                            req.cookies[SESSION_COOKIE],
+                            sessionTokenOf(req.cookies),
                             config.sessionIdleDays * 86_400
                         );
                         if (!still || still.id !== req.user.id) return close();

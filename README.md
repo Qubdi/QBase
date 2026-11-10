@@ -246,7 +246,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `AUTO_PUBLISH_COALESCE_SECONDS` | `300` | While auto-publish is on, a save rewrites the person's latest auto snapshot when it is younger than this, instead of adding a copy; `0` adds one every save |
 | `AUDIT_SAVE_MINUTES` | `60` | A save is logged once per person and diagram in this many minutes; `0` logs every save |
 | `SHARE_RATE_LIMIT` | `60` | Public share requests per minute per IP |
-| `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`, or the server warns at start that the cookie goes out without `Secure`) |
+| `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`, or the server warns at start that the cookie goes out without `Secure`). A Secure cookie is named `__Host-qbase_session`, otherwise `qbase_session`; either name is accepted |
 | `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
 | `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) from one address before it is locked out of an account; failures from all addresses together lock the account at five times this |
 | `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |

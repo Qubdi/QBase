@@ -6,6 +6,24 @@ import { diagramLocks, sessions, users } from '../db/schema.js';
 
 export const SESSION_COOKIE = 'qbase_session';
 
+/**
+ * The session cookie's name over https. The `__Host-` prefix makes a browser
+ * refuse the cookie unless it is Secure, set with Path=/ and has no Domain, so
+ * another site on a sibling subdomain cannot plant or replace it.
+ */
+export const SECURE_SESSION_COOKIE = '__Host-qbase_session';
+
+/**
+ * The session token a request carries: under the prefixed name when it has
+ * one, else under the plain name that every cookie issued before the prefix
+ * (and every one issued over plain http) still has. The plain name can be
+ * dropped from here once those sessions have all expired (SESSION_DAYS).
+ */
+export const sessionTokenOf = (
+    cookies: Record<string, string | undefined> | undefined
+): string | undefined =>
+    cookies?.[SECURE_SESSION_COOKIE] ?? cookies?.[SESSION_COOKIE];
+
 /** A session's last_seen_at is rewritten at most this often, not on every request. */
 export const LAST_SEEN_SECONDS = 5 * 60;
 

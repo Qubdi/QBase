@@ -7,7 +7,7 @@ import { ZodError } from 'zod';
 import { authRoutes } from './auth/routes.js';
 import {
     getSessionUser,
-    SESSION_COOKIE,
+    sessionTokenOf,
     type SessionUser,
 } from './auth/sessions.js';
 import type { Config } from './config.js';
@@ -212,7 +212,7 @@ export function buildApp({
     api.addHook('preHandler', async (req) => {
         req.user = await getSessionUser(
             db,
-            req.cookies[SESSION_COOKIE],
+            sessionTokenOf(req.cookies),
             config.sessionIdleDays * 86_400
         );
     });

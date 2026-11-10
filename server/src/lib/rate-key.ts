@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { SESSION_COOKIE } from '../auth/sessions.js';
+import { sessionTokenOf } from '../auth/sessions.js';
 
 // Every limiter here keeps its counts in this process's memory, so with several
 // server processes each counts on its own (see "Scaling" in the README).
@@ -11,7 +11,7 @@ import { SESSION_COOKIE } from '../auth/sessions.js';
  * client address is used.
  */
 export function userRateKey(req: FastifyRequest): string {
-    const token = req.cookies?.[SESSION_COOKIE];
+    const token = sessionTokenOf(req.cookies);
     return token
         ? `session:${createHash('sha256').update(token).digest('hex').slice(0, 24)}`
         : `ip:${req.ip}`;

@@ -435,6 +435,86 @@ describe('session cookie flags', () => {
         );
         expect(spoofed).not.toMatch(/Secure/i);
     });
+
+    describe('__Host- name', () => {
+        it('is used over https: Secure, Path=/, no Domain, and the plain-named cookie is cleared', async () => {
+            const ctx = await createTestApp({ cookieSecure: true });
+            try {
+                const res = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/register',
+                    payload: { email: 'a@example.com', password: 'Password-123!' },
+                });
+                const fresh = res.cookies.find((c) => c.name === '__Host-qbase_session')!;
+                expect(fresh).toBeDefined();
+                expect(fresh.secure).toBe(true);
+                expect(fresh.path).toBe('/');
+                expect(fresh.domain).toBeUndefined();
+                expect(fresh.httpOnly).toBe(true);
+                const old = res.cookies.find((c) => c.name === 'qbase_session')!;
+                // an expired value: the browser drops any plain-named cookie it holds
+                expect(old.value).toBe('');
+                expect(new Date(old.expires as Date).getTime()).toBeLessThan(Date.now());
+                // the new cookie is a session
+                const me = await ctx.app.inject({
+                    url: '/auth/me',
+                    headers: { cookie: `__Host-qbase_session=${fresh.value}` },
+                });
+                expect(me.statusCode).toBe(200);
+            } finally {
+                await ctx.close();
+            }
+        });
+
+        it('is not used over plain http, where a browser would refuse it', async () => {
+            const ctx = await createTestApp({ cookieSecure: false });
+            try {
+                const res = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/register',
+                    payload: { email: 'a@example.com', password: 'Password-123!' },
+                });
+                expect(res.cookies.map((c) => c.name)).toEqual(['qbase_session']);
+            } finally {
+                await ctx.close();
+            }
+        });
+
+        it('still accepts the plain name, so sessions from before the prefix keep working', async () => {
+            const ctx = await createTestApp({ cookieSecure: true });
+            try {
+                const res = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/register',
+                    payload: { email: 'a@example.com', password: 'Password-123!' },
+                });
+                const token = res.cookies.find((c) => c.name === '__Host-qbase_session')!.value;
+                const me = await ctx.app.inject({
+                    url: '/auth/me',
+                    headers: { cookie: `qbase_session=${token}` },
+                });
+                expect(me.statusCode).toBe(200);
+                // the plain-named copy is also ended by signing out, and both names are cleared
+                const out = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/logout',
+                    headers: { cookie: `qbase_session=${token}` },
+                });
+                expect(out.statusCode).toBe(200);
+                expect(out.cookies.map((c) => c.name).sort()).toEqual([
+                    '__Host-qbase_session',
+                    'qbase_session',
+                ]);
+                const after = await ctx.app.inject({
+                    url: '/auth/me',
+                    headers: { cookie: `qbase_session=${token}` },
+                });
+                expect(after.statusCode).toBe(401);
+            } finally {
+                await ctx.close();
+            }
+        });
+    });
 });
 
 describe('first-run sign-up', () => {

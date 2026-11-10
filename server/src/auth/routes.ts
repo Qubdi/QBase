@@ -24,6 +24,8 @@ import {
     destroyOtherSessions,
     destroySession,
     SESSION_COOKIE,
+    SECURE_SESSION_COOKIE,
+    sessionTokenOf,
 } from './sessions.js';
 
 // advisory-lock key for the first-run sign-up (distinct from the admin-set lock)
@@ -130,13 +132,20 @@ export const authRoutes =
                 config.sessionDays,
                 req.headers['user-agent']
             );
-            reply.setCookie(SESSION_COOKIE, token, {
+            const secure = cookieSecure(req);
+            // over https the cookie takes the `__Host-` name (a browser only
+            // keeps that one when it is Secure, Path=/ and has no Domain);
+            // over plain http it cannot, so it keeps the plain name
+            reply.setCookie(secure ? SECURE_SESSION_COOKIE : SESSION_COOKIE, token, {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: cookieSecure(req),
+                secure,
                 expires: expiresAt,
             });
+            // a plain-named cookie from before the prefix would otherwise sit
+            // beside the new one for the rest of its life
+            if (secure) reply.clearCookie(SESSION_COOKIE, { path: '/', secure });
         };
 
         const mfa = createMfa(db, config);
@@ -305,11 +314,10 @@ export const authRoutes =
             if (req.user) {
                 await audit(db, { userId: req.user.id, action: 'user.logout' });
             }
-            await destroySession(db, req.cookies[SESSION_COOKIE]);
-            reply.clearCookie(SESSION_COOKIE, {
-                path: '/',
-                secure: cookieSecure(req),
-            });
+            await destroySession(db, sessionTokenOf(req.cookies));
+            const secure = cookieSecure(req);
+            reply.clearCookie(SESSION_COOKIE, { path: '/', secure });
+            if (secure) reply.clearCookie(SECURE_SESSION_COOKIE, { path: '/', secure });
             return { ok: true };
         });
 
@@ -389,7 +397,7 @@ export const authRoutes =
             await destroyOtherSessions(
                 db,
                 user.id,
-                req.cookies[SESSION_COOKIE]
+                sessionTokenOf(req.cookies)
             );
             await audit(db, { userId: user.id, action: 'user.password_change' });
             return { ok: true };
