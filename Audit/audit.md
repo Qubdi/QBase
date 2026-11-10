@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 27 · **date** 2026-11-10
+**rev** 28 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 1 | 44 | 0 |
 | Server | 16 | 0 | 4 | 20 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
-| Client | 5 | 0 | 0 | 89 | 0 |
+| Client | 0 | 0 | 0 | 94 | 0 |
 | Dead code | 0 | 0 | 0 | 40 | 0 |
-| **Total** | 53 | 0 | 5 | 224 | 1 |
+| **Total** | 48 | 0 | 5 | 229 | 1 |
 
 ## Act first
 
@@ -98,11 +98,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-005 | Med | Final-save keepalive silently dropped above 60 KB; larger diagrams rely on beforeunload prompt only | `src/lib/qubdi/api.ts:455` | Needs a server change: sendBeacon only sends POST, saves use PUT; `beforeunload` prompt covers it meanwhile |
-| CLI-006 | Med | API responses cast `as T`, never validated at runtime; auth and member endpoints now parsed with zod | `src/lib/qubdi/api.ts:476` | Add zod schemas for the remaining endpoints |
-| CLI-007 | Med | Two React Compiler hook rules (`refs`, `set-state-in-effect`) still off for about 50 files; refs written during render | `eslint.config.mjs:52`, `src/components/qubdi/server-autosave.tsx:49` | Migrate those components; drop the per-file overrides |
-| CLI-039 | Low | Metadata import has no primary flag; key's own index picked by naming convention (`*_pkey`, `PRIMARY`, `PK_*`) | `src/formats/metadata/load.ts:177` | Carry a primary flag in the metadata format |
-| CLI-069 | Low | DBML chunk 15.6 MB (2.75 MB gzip) now fetched at first edit, not on view | `src/formats/dbml/import-dbml.ts:1`, `vite.config.ts:16` | Replace or split @dbml/core parser to shrink the chunk |
 
 ### Dead code
 
@@ -339,6 +334,11 @@
 | CLI-071 | Client | No `supportedLngs`; unsupported browser language sets `<html lang>` over English text |
 | CLI-087 | Client | MySQL writer keeps quoted defaults verbatim; a backslash escapes the closing quote |
 | CLI-093 | Client | Column collation imported and saved but no SQL writer emits it (Oracle writer not covered) |
+| CLI-005 | Client | Final-save keepalive silently dropped above 60 KB; larger diagrams rely on beforeunload prompt only |
+| CLI-006 | Client | API responses cast `as T`, never validated at runtime |
+| CLI-007 | Client | Four React Compiler hook rules disabled repo-wide; refs written during render (one line-level disable remains in `diagram-canvas.tsx`) |
+| CLI-039 | Client | Metadata import names primary key after any unique index on same columns |
+| CLI-069 | Client | DBML chunk 15.6 MB (2.75 MB gzip) fetched on first DBML view; now 484 kB |
 
 ---
 
@@ -408,6 +408,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 28 | 2026-11-10 | 5 fixed (client batch 3: CLI-005, 006, 007, 039, 069); client lens has no open findings; anchors not remapped |
 | 27 | 2026-11-10 | 1 fixed (DEAD-024, the three remaining reset hooks removed); anchors not remapped |
 | 26 | 2026-11-10 | 7 fixed (security batch 2: SEC-002, 004, 005, 023, 026, 027, 030), 5 narrowed (SEC-003, 011, 013, 014, 031); anchors not remapped |
 | 25 | 2026-11-10 | 10 fixed (dead-code batch: DEAD-001, 002, 007, 011, 025, 026, 027, 029, 032, 033), 1 narrowed (DEAD-024); anchors not remapped |
