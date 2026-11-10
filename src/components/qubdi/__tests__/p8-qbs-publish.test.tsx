@@ -100,12 +100,14 @@ describe('QBS-032 publishing: optional note, success toast, red failure with the
 
     it('a failure shows the server message in a destructive toast and keeps the dialog usable', async () => {
         publish.mockRejectedValue(
-            new ApiError(423, 'locked', 'Someone else is editing')
+            new ApiError(423, 'locked', 'raw server text')
         );
         show();
         await publishWithNote();
         expect(await screen.findByText('Publish failed')).toBeInTheDocument();
-        expect(screen.getByText('Someone else is editing')).toBeInTheDocument();
+        expect(
+            screen.getByText('Someone else is editing this diagram.')
+        ).toBeInTheDocument();
         expect(screen.queryByText('Published v2')).toBeNull();
     });
 });

@@ -209,13 +209,15 @@ describe('the project editor gate (SHL-016, SHL-111)', () => {
 
     it('SHL-111: any other failure shows the open-failed screen with the reason', async () => {
         api.getDiagramSummary.mockRejectedValue(
-            new ApiError(423, 'locked', 'server down')
+            new ApiError(423, 'locked', 'raw server text')
         );
         show('/billing/diagrams/r1');
         expect(
             await screen.findByText('Could not open this diagram')
         ).toBeTruthy();
-        expect(screen.getByText('server down')).toBeTruthy();
+        expect(
+            screen.getByText('Someone else is editing this diagram.')
+        ).toBeTruthy();
         // a failure may be passing (a dropped connection): offer to try again
         expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
         expect(

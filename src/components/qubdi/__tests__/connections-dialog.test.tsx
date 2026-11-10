@@ -266,8 +266,9 @@ describe('ConnectionsDialog', () => {
             await act(async () => {
                 fireEvent.click(testButton());
             });
+            // the server's own wording is not shown; the code is translated
             expect(screen.getByRole('alert').textContent).toBe(
-                'That host is not allowed.'
+                'This database address is not allowed. Ask an admin to allow its host.'
             );
         });
 

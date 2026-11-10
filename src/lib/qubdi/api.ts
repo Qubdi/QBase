@@ -954,14 +954,15 @@ export const api: QubdiApi = createApi();
 
 export const errorMessage = (e: unknown): string => {
     if (e instanceof ApiError) {
-        if (e.code === 'target_blocked' || e.code === 'connection_failed') {
-            return (
-                e.detail ??
-                i18n.t('qubdi.account.errors.requestFailed', { code: e.code })
-            );
-        }
         if (e.code === 'locked') {
-            return e.detail ?? i18n.t('qubdi.account.errors.locked');
+            // the server names the editor ("sam@corp.io is editing ..."): take
+            // the name and say the rest in the chosen language
+            const holder = /^(.+) is editing this diagram\.$/.exec(
+                e.detail ?? ''
+            )?.[1];
+            return holder
+                ? i18n.t('qubdi.account.errors.lockedBy', { holder })
+                : i18n.t('qubdi.account.errors.locked');
         }
         const key = `qubdi.account.errors.${e.code}`;
         // only server codes (word characters) are looked up; the fallback names the code

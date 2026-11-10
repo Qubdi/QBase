@@ -59,6 +59,11 @@ export const account = {
         // not server codes: fallbacks
         requestFailed: 'Request failed ({{code}}).',
         locked: 'Someone else is editing this diagram.',
+        lockedBy: '{{holder}} is editing this diagram.',
+        target_blocked:
+            'This database address is not allowed. Ask an admin to allow its host.',
+        connection_failed:
+            'Could not connect to the database. Check the address, port, name and credentials.',
         unreachable: 'Could not reach the server.',
         invalidDiagram: 'The server copy of this diagram could not be read.',
     },

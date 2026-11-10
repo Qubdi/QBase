@@ -360,6 +360,13 @@ describe('qubdi api client', () => {
                     )
                 )
             ).toBe('sam@corp.io is editing this diagram.');
+            // not a server message that is shown raw: the code decides the text
+            expect(
+                errorMessage(new ApiError(400, 'target_blocked', 'raw'))
+            ).not.toContain('raw');
+            expect(
+                errorMessage(new ApiError(423, 'locked', 'raw server text'))
+            ).toBe('Someone else is editing this diagram.');
             expect(errorMessage(new ApiError(423, 'locked'))).toBe(
                 'Someone else is editing this diagram.'
             );
