@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 40 · **date** 2026-11-10
+**rev** 41 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 3 | 0 | 0 | 42 | 0 |
 | Repository | 4 | 0 | 0 | 59 | 0 |
-| Server | 3 | 0 | 0 | 37 | 0 |
-| Database | 4 | 0 | 0 | 18 | 1 |
+| Server | 2 | 0 | 0 | 38 | 0 |
+| Database | 1 | 0 | 0 | 21 | 1 |
 | Client | 3 | 0 | 0 | 99 | 0 |
 | Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 17 | 0 | 0 | 296 | 1 |
+| **Total** | 13 | 0 | 0 | 300 | 1 |
 
 ## Act first
 
@@ -45,16 +45,12 @@ None.
 |----|-----|---------|-------|-----|
 | SRV-008 | Med | Live-viewer caps (`SSE_MAX_PER_LINK`, `SSE_MAX_PER_IP`) are per process; limiters, lockout and drift guard now cluster-wide | `server/src/config.ts:341`, `server/src/config.ts:342`, `server/src/share/routes.ts:444` | Count live viewers in Postgres with a heartbeat table |
 | SRV-009 | Med | 40 MB diagram body still blocks the event loop about 0.9 s in JSON.parse, depth check and write | `server/src/config.ts:329`, `server/src/diagrams/routes.ts:285` | Parse in a worker thread or lower the default limit |
-| SRV-030 | Low | SQL Server tests skip in CI: `ci.yaml` has no SQL Server service | `server/test/introspect-sqlserver.test.ts:24`, `.github/workflows/ci.yaml:48` | Add SQL Server service and MSSQL_SA_PASSWORD to the server job |
 
 ### Database
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| DB-004 | Med | SQL Server index query now returns columnstore, XML and spatial indexes; not run against a real SQL Server | `server/src/introspect/sqlserver.ts:111` | Run the SQL Server introspect tests in CI |
 | DB-006 | Low | SQL Server alias types arrive as column domain; no custom type list, as the metadata format has no slot | `server/src/introspect/sqlserver.ts:54`, `server/src/introspect/sqlserver.ts:56` | Add an alias-type list to the metadata format |
-| DB-019 | Low | SQL Server collation is returned only when it differs from the default; not run against a real SQL Server | `server/src/introspect/sqlserver.ts:62` | Run the SQL Server introspect tests in CI |
-| DB-021 | Med | Drift check holds a pooled connection for its whole run; 10 concurrent checks starve the pool | `server/src/drift/service.ts:91`, `server/src/drift/service.ts:267` | Cap concurrent drift checks well below pool max |
 
 ### Client
 
@@ -81,6 +77,7 @@ None.
 | SEC-016 | Security & secrets | `user.create` audit omits whether the new account was made admin |
 | SEC-021 | Security & secrets | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked |
 | SEC-025 | Security & secrets | `.gitignore` lacks key and certificate patterns (`*.pem`, `*.key`) |
+| SRV-030 | Server | SQL Server tests skip in CI: `ci.yaml` has no SQL Server service |
 | SRV-038 | Server | PATCH on a revoked share link returns 200, emits event, logs `share.update` |
 | SRV-039 | Server | Password reset and change commit before sessions are destroyed; failure leaves old sessions valid |
 | SRV-040 | Server | Raw Drizzle errors logged outside the handler; messages embed query params |
@@ -163,6 +160,9 @@ None.
 | REPO-027 | Repository | Load run.sh never fails on a k6 threshold; README says it gates CI |
 | REPO-028 | Repository | README feature line says only a share-token hash is stored; code also encrypts token |
 | REPO-059 | Repository | CI tests only PostgreSQL 18, though README says 16 or newer |
+| DB-021 | Database | Drift check holds a pooled connection for its whole run; 10 concurrent checks starve the pool |
+| DB-004 | Database | SQL Server index query returns columnstore, XML and spatial indexes; verified against SQL Server 2025 |
+| DB-019 | Database | SQL Server collation returned only when it differs from the default; verified against SQL Server 2025 |
 | DB-022 | Database | Migration tests end the pool with no error listener, then drop DB with force; 57P01 unhandled |
 | DB-023 | Database | Activity group filter with cursor walks `audit_log_at_id_idx`: 144 ms, 100k rows filtered |
 | DB-024 | Database | Stats backfill selects null stat rows with no index; seq-scans 503k snapshots hourly |
@@ -443,6 +443,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 41 | 2026-11-10 | 4 fixed (DB-004, DB-019: SQL Server introspect tests run against SQL Server 2025, 15 of 15 pass; all-schemas filter no longer runs OPENJSON on an empty string; DB-021: at most 3 drift checks at once, a fourth answers 429; SRV-030: SQL Server job added to CI); DB-006 left (metadata format change); 13 open, 0 Crit, 0 High; anchors not remapped |
 | 40 | 2026-11-10 | 4 fixed (server low batch: SRV-038, 039, 040, 041); SRV-030 left (SQL Server CI); 17 open, 0 Crit, 0 High; anchors not remapped |
 | 39 | 2026-11-10 | 3 fixed (database low batch: DB-022, 023, 024; one migration, 0029); DB-006 and DB-019 left (metadata format change; SQL Server CI); 21 open, 0 Crit, 0 High; anchors not remapped |
 | 38 | 2026-11-10 | 5 fixed (client low batch: CLI-102, 104, 105, 107, 108); CLI-109 re-attributed to `@dbml/core` Parser.parse; CLI-106 left (907 keys to translate); 24 open, 0 Crit, 0 High; anchors not remapped |
