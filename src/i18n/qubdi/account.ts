@@ -97,8 +97,11 @@ export const account = {
         signOut: 'Sign out',
         signOutFailed:
             'Could not sign out. Check your connection and try again.',
+        signOutUnsavedTitle: 'Sign out with unsaved changes?',
         signOutUnsaved:
             'Some changes could not be saved to the server. Signing out deletes the copy kept in this browser, so they will be lost. Sign out anyway?',
+        signOutAnyway: 'Sign out anyway',
+        signOutStay: 'Stay signed in',
     },
     changePassword: {
         forcedTitle: 'Choose your own password',

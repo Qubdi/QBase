@@ -39,6 +39,7 @@ import { toast } from '@/platform/toast/use-toast';
 import { releaseHeldLocks } from '@/components/qubdi/use-edit-lock';
 import { diagramToServerContent } from '@/lib/qubdi/content';
 import type { Diagram } from '@/qbase/diagram-types';
+import { ConfirmDialog } from '@/features/designs/confirm-dialog';
 
 /** Waits before each new try when the first look for a session fails without an answer. */
 const ME_RETRY_DELAYS_MS = [1000, 2000, 4000];
@@ -51,6 +52,10 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const [sessionEnded, setSessionEnded] = useState(false);
+    // the sign-out question waits here for the person's answer
+    const [askSignOut, setAskSignOut] = useState<
+        ((proceed: boolean) => void) | null
+    >(null);
     const signedIn = useRef(false);
     signedIn.current = !!user;
 
@@ -144,11 +149,12 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         await flushPendingSave();
         // an edit the server refused is still only in the local copy, which
         // is deleted below: let the person decide before it is gone
-        if (
-            hasUnsavedChanges() &&
-            !window.confirm(i18n.t('qubdi.account.accountMenu.signOutUnsaved'))
-        ) {
-            return;
+        if (hasUnsavedChanges()) {
+            const proceed = await new Promise<boolean>((resolve) =>
+                setAskSignOut(() => resolve)
+            );
+            setAskSignOut(null);
+            if (!proceed) return;
         }
         // give the edit lock back while the session can still do it
         await releaseHeldLocks().catch(() => undefined);
@@ -265,6 +271,18 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     return (
-        <qubdiContext.Provider value={value}>{children}</qubdiContext.Provider>
+        <qubdiContext.Provider value={value}>
+            {children}
+            <ConfirmDialog
+                open={askSignOut !== null}
+                destructive
+                title={i18n.t('qubdi.account.accountMenu.signOutUnsavedTitle')}
+                description={i18n.t('qubdi.account.accountMenu.signOutUnsaved')}
+                confirmLabel={i18n.t('qubdi.account.accountMenu.signOutAnyway')}
+                cancelLabel={i18n.t('qubdi.account.accountMenu.signOutStay')}
+                onConfirm={() => askSignOut?.(true)}
+                onCancel={() => askSignOut?.(false)}
+            />
+        </qubdiContext.Provider>
     );
 };
