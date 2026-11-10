@@ -367,6 +367,7 @@ Paths are relative to the API root (`/api` when the server also serves the edito
 |----------|-----|--------|
 | `GET /diagrams/:id/versions` | any member | Published versions, newest first: `version`, `note`, `publishedAt`, `publishedBy` (null for viewers). Capped by `SNAPSHOT_KEEP` |
 | `GET /diagrams/:id/versions/:version` | any member | One published version with its content |
+| `GET /diagrams/:id/drift/reports?limit=` | editors and owner | Past drift reports, newest first (`limit` 1 to 100, default 20): `id`, `runAt`, `status`, `trigger`, `counts`, `worst`, `error`, `dismissedAt`. Capped by `DRIFT_REPORT_KEEP` |
 
 ## Notes
 
