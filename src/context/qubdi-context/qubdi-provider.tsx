@@ -57,7 +57,9 @@ export const QubdiProvider: React.FC<React.PropsWithChildren> = ({
         ((proceed: boolean) => void) | null
     >(null);
     const signedIn = useRef(false);
-    signedIn.current = !!user;
+    useEffect(() => {
+        signedIn.current = !!user;
+    }, [user]);
 
     // Makes `next` the signed-in person. If the diagrams in this browser are
     // another account's (a session ended, or someone signed in without signing
