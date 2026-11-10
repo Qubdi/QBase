@@ -179,6 +179,7 @@ export const workspace = {
             'Anyone using this link loses access at once, including people watching it live. This cannot be undone.',
     },
     viewerPage: {
+        brand: 'QBase',
         pageTitle: 'QBase - Shared diagram',
         loading: 'Loading…',
         notPublishedTitle: 'Not published yet',

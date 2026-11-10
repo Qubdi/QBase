@@ -277,7 +277,9 @@ const ViewerBody: React.FC = () => {
             data-testid="viewer-readonly"
         >
             <header className="flex items-center gap-3 border-b px-4 py-2">
-                <span className="font-semibold tracking-tight">QBase</span>
+                <span className="font-semibold tracking-tight">
+                    {tr('qubdi.workspace.viewerPage.brand')}
+                </span>
                 <span className="min-w-0 truncate" data-testid="viewer-title">
                     {share.title}
                 </span>
