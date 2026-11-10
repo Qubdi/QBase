@@ -214,6 +214,18 @@ describe('review core-store 5: MySQL string literals', () => {
         expect(text).toContain("DEFAULT 'a\\\\b'");
         expect(text).toContain("COMMENT='T:\\\\'");
     });
+
+    it('re-quotes an already quoted default so a trailing backslash cannot escape the quote (CLI-087)', () => {
+        const d = build('mysql', [
+            table('t', [
+                col('a', 'varchar', { default: "'C:\\'" }),
+                col('b', 'varchar', { default: "'it''s'" }),
+            ]),
+        ]);
+        const text = exportSql(d, 'mysql').text;
+        expect(text).toContain("DEFAULT 'C:\\\\'");
+        expect(text).toContain("DEFAULT 'it''s'");
+    });
 });
 
 describe('review core-store 6: text in comments cannot leave the comment', () => {

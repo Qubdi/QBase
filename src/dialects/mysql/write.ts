@@ -104,10 +104,13 @@ export function mysqlDefault(raw: string): string {
         isKnownForm(text) ||
         isFunctionCall(text) ||
         isKeywordDefault(text) ||
-        isNumberText(text) ||
-        isQuotedText(text)
+        isNumberText(text)
     )
         return text;
+    // a quoted default is re-quoted for MySQL, where a backslash escapes (CLI-087)
+    const quoted = /^(N)?'([\s\S]*)'$/i.exec(text);
+    if (quoted && isQuotedText(text))
+        return `${quoted[1] ?? ''}${asStringLiteral(quoted[2].replace(/''/g, "'"))}`;
     return asStringLiteral(text);
 }
 
