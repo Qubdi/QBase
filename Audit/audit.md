@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 28 · **date** 2026-11-10
+**rev** 29 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 12 | 0 | 0 | 21 | 0 |
+| Security & secrets | 1 | 0 | 0 | 32 | 0 |
 | Repository | 12 | 0 | 1 | 44 | 0 |
 | Server | 16 | 0 | 4 | 20 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 0 | 0 | 0 | 94 | 0 |
 | Dead code | 0 | 0 | 0 | 40 | 0 |
-| **Total** | 48 | 0 | 5 | 229 | 1 |
+| **Total** | 37 | 0 | 5 | 240 | 1 |
 
 ## Act first
 
@@ -30,18 +30,7 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SEC-001 | Med | Old remote history still holds a literal SQL Server SA password | `.gitleaks.toml:4` | Delete stale remote refs and purge their objects |
-| SEC-003 | Med | Introspection API default is `ssl` true; editor form default and explicit `ssl: false` still allow plaintext | `server/src/introspect/routes.ts:48`, `server/src/introspect/postgres.ts:354`, `server/src/introspect/sqlserver.ts:469` | Default the editor form to ssl on; warn on plaintext |
-| SEC-010 | Low | Unkeyed sha256 recovery-code hashes still accepted | `server/src/auth/mfa.ts:167`, `server/src/auth/totp.ts:172` | Migrate legacy hashes, then drop legacy lookup |
-| SEC-011 | Low | Encryption keys under 32 characters only warn at start; scrypt salt is fixed | `server/src/config.ts:129`, `server/src/introspect/crypto-box.ts:31` | Refuse short keys; add versioned per-value salt |
-| SEC-012 | Low | Legacy shared-key fallback lets any purpose box open unpurposed ciphertext | `server/src/introspect/crypto-box.ts:81` | Re-seal legacy values, then remove fallback |
-| SEC-013 | Low | Read-only guard is still a denylist; file and shell functions added, allowlist not built | `server/src/introspect/readonly-guard.ts:15` | Allowlist query ids instead of keyword denylist |
-| SEC-014 | Low | SQL Server session not read-only; `readOnlyIntent` is only a routing hint; only documented | `server/src/introspect/sqlserver.ts:473` | Refuse `db_owner` and `sysadmin` logins; fix test login |
-| SEC-018 | Low | Admin can reset another admin's password and MFA with no step-up | `server/src/admin/routes.ts:371`, `server/src/admin/routes.ts:596` | Require admin password and code for reset actions |
-| SEC-019 | Low | First-run register open to any caller who reaches an empty server | `server/src/auth/routes.ts:130`, `server/src/auth/routes.ts:142` | Require a setup token printed in server log |
-| SEC-022 | Low | Editor CSP allows inline styles (`style-src 'unsafe-inline'`) | `server/src/web.ts:16` | Move inline styles to nonce or hashed styles |
-| SEC-024 | Low | Compose default image tag `latest`, unpinned | `docker-compose.yml:54` | Require QBASE_VERSION; drop the `latest` default |
-| SEC-031 | Low | Drift webhook send still returns address-class text for a refused host | `server/src/drift/webhook.ts:114` | Return a fixed error code; log text server-side only |
+| SEC-001 | Med | Remote `refs/pull/*` history not checked for the old literal SA password; local refs clean | `.gitleaks.toml:4` | Check pull refs; purge stale remote refs and objects if any hold it |
 
 ### Repository
 
@@ -298,6 +287,17 @@
 | SEC-026 | Security & secrets | Load stack hard-codes DB password, encryption key and admin password |
 | SEC-027 | Security & secrets | Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it |
 | SEC-030 | Security & secrets | Session cookie lacks `__Host-` prefix |
+| SEC-003 | Security & secrets | Introspection connections default to plaintext (`ssl` false) |
+| SEC-010 | Security & secrets | Unkeyed sha256 recovery-code hashes still accepted |
+| SEC-011 | Security & secrets | Encryption keys accept any 16 characters; scrypt salt is fixed |
+| SEC-012 | Security & secrets | Legacy shared-key fallback lets any purpose box open unpurposed ciphertext |
+| SEC-013 | Security & secrets | Read-only guard is a denylist missing `pg_read_binary_file`, `sp_executesql`, `xp_dirtree` |
+| SEC-014 | Security & secrets | SQL Server session not read-only; `readOnlyIntent` is only a routing hint |
+| SEC-018 | Security & secrets | Admin can reset another admin's password and MFA with no step-up |
+| SEC-019 | Security & secrets | First-run register open to any caller who reaches an empty server |
+| SEC-022 | Security & secrets | Editor CSP allows inline styles (`style-src 'unsafe-inline'`) |
+| SEC-024 | Security & secrets | Compose default image tag `latest`, unpinned |
+| SEC-031 | Security & secrets | Driver error text and address class returned; refused, timeout, private-host answers map networks |
 | SRV-037 | Server | `forceCloseConnections: true` destroys in-flight requests on shutdown, not only SSE |
 | CLI-001 | Client | No error boundary or route `errorElement`; a render or chunk-load error blanks the app |
 | CLI-002 | Client | Startup `api.me()` failure of any kind (timeout, 5xx) shows user as signed out |
@@ -408,6 +408,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 29 | 2026-11-10 | 11 fixed (security batch 3: SEC-003, 010, 011, 012, 013, 014, 018, 019, 022, 024, 031), SEC-001 narrowed; anchors not remapped |
 | 28 | 2026-11-10 | 5 fixed (client batch 3: CLI-005, 006, 007, 039, 069); client lens has no open findings; anchors not remapped |
 | 27 | 2026-11-10 | 1 fixed (DEAD-024, the three remaining reset hooks removed); anchors not remapped |
 | 26 | 2026-11-10 | 7 fixed (security batch 2: SEC-002, 004, 005, 023, 026, 027, 030), 5 narrowed (SEC-003, 011, 013, 014, 031); anchors not remapped |

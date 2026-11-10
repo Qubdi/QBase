@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 28</b></div>
-  <h1>12 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 29</b></div>
+  <h1>1 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -30,23 +30,12 @@
 <main id="main">
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">12 open &middot; 21 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 32 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">SEC-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Old remote history still holds a literal SQL Server SA password</td><td class="wrap-cell"><code>.gitleaks.toml:4</code></td><td class="wrap-cell">Delete stale remote refs and purge their objects</td></tr>
-        <tr><td class="svc-name">SEC-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Introspection API default is <code>ssl</code> true; editor form default and explicit <code>ssl: false</code> still allow plaintext</td><td class="wrap-cell"><code>server/src/introspect/routes.ts:48</code>, <code>server/src/introspect/postgres.ts:354</code>, <code>server/src/introspect/sqlserver.ts:469</code></td><td class="wrap-cell">Default the editor form to ssl on; warn on plaintext</td></tr>
-        <tr><td class="svc-name">SEC-010</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unkeyed sha256 recovery-code hashes still accepted</td><td class="wrap-cell"><code>server/src/auth/mfa.ts:167</code>, <code>server/src/auth/totp.ts:172</code></td><td class="wrap-cell">Migrate legacy hashes, then drop legacy lookup</td></tr>
-        <tr><td class="svc-name">SEC-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Encryption keys under 32 characters only warn at start; scrypt salt is fixed</td><td class="wrap-cell"><code>server/src/config.ts:129</code>, <code>server/src/introspect/crypto-box.ts:31</code></td><td class="wrap-cell">Refuse short keys; add versioned per-value salt</td></tr>
-        <tr><td class="svc-name">SEC-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Legacy shared-key fallback lets any purpose box open unpurposed ciphertext</td><td class="wrap-cell"><code>server/src/introspect/crypto-box.ts:81</code></td><td class="wrap-cell">Re-seal legacy values, then remove fallback</td></tr>
-        <tr><td class="svc-name">SEC-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Read-only guard is still a denylist; file and shell functions added, allowlist not built</td><td class="wrap-cell"><code>server/src/introspect/readonly-guard.ts:15</code></td><td class="wrap-cell">Allowlist query ids instead of keyword denylist</td></tr>
-        <tr><td class="svc-name">SEC-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server session not read-only; <code>readOnlyIntent</code> is only a routing hint; only documented</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:473</code></td><td class="wrap-cell">Refuse <code>db_owner</code> and <code>sysadmin</code> logins; fix test login</td></tr>
-        <tr><td class="svc-name">SEC-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Admin can reset another admin's password and MFA with no step-up</td><td class="wrap-cell"><code>server/src/admin/routes.ts:371</code>, <code>server/src/admin/routes.ts:596</code></td><td class="wrap-cell">Require admin password and code for reset actions</td></tr>
-        <tr><td class="svc-name">SEC-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">First-run register open to any caller who reaches an empty server</td><td class="wrap-cell"><code>server/src/auth/routes.ts:130</code>, <code>server/src/auth/routes.ts:142</code></td><td class="wrap-cell">Require a setup token printed in server log</td></tr>
-        <tr><td class="svc-name">SEC-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Editor CSP allows inline styles (<code>style-src 'unsafe-inline'</code>)</td><td class="wrap-cell"><code>server/src/web.ts:16</code></td><td class="wrap-cell">Move inline styles to nonce or hashed styles</td></tr>
-        <tr><td class="svc-name">SEC-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Compose default image tag <code>latest</code>, unpinned</td><td class="wrap-cell"><code>docker-compose.yml:54</code></td><td class="wrap-cell">Require QBASE_VERSION; drop the <code>latest</code> default</td></tr>
-        <tr><td class="svc-name">SEC-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Drift webhook send still returns address-class text for a refused host</td><td class="wrap-cell"><code>server/src/drift/webhook.ts:114</code></td><td class="wrap-cell">Return a fixed error code; log text server-side only</td></tr>
+        <tr><td class="svc-name">SEC-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Remote <code>refs/pull/*</code> history not checked for the old literal SA password; local refs clean</td><td class="wrap-cell"><code>.gitleaks.toml:4</code></td><td class="wrap-cell">Check pull refs; purge stale remote refs and objects if any hold it</td></tr>
       </tbody>
     </table>
   </div>
@@ -54,7 +43,7 @@
 
 <section id="closed" class="sec-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (21)</summary>
+  <details><summary>Fixed (32)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -80,6 +69,17 @@
         <tr><td class="svc-name">SEC-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Load stack hard-codes DB password, encryption key and admin password</td></tr>
         <tr><td class="svc-name">SEC-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it</td></tr>
         <tr><td class="svc-name">SEC-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Session cookie lacks <code>__Host-</code> prefix</td></tr>
+        <tr><td class="svc-name">SEC-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Introspection connections default to plaintext (<code>ssl</code> false)</td></tr>
+        <tr><td class="svc-name">SEC-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unkeyed sha256 recovery-code hashes still accepted</td></tr>
+        <tr><td class="svc-name">SEC-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Encryption keys accept any 16 characters; scrypt salt is fixed</td></tr>
+        <tr><td class="svc-name">SEC-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Legacy shared-key fallback lets any purpose box open unpurposed ciphertext</td></tr>
+        <tr><td class="svc-name">SEC-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Read-only guard is a denylist missing <code>pg_read_binary_file</code>, <code>sp_executesql</code>, <code>xp_dirtree</code></td></tr>
+        <tr><td class="svc-name">SEC-014</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL Server session not read-only; <code>readOnlyIntent</code> is only a routing hint</td></tr>
+        <tr><td class="svc-name">SEC-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Admin can reset another admin's password and MFA with no step-up</td></tr>
+        <tr><td class="svc-name">SEC-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">First-run register open to any caller who reaches an empty server</td></tr>
+        <tr><td class="svc-name">SEC-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Editor CSP allows inline styles (<code>style-src 'unsafe-inline'</code>)</td></tr>
+        <tr><td class="svc-name">SEC-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Compose default image tag <code>latest</code>, unpinned</td></tr>
+        <tr><td class="svc-name">SEC-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Driver error text and address class returned; refused, timeout, private-host answers map networks</td></tr>
       </tbody>
     </table>
   </div>
