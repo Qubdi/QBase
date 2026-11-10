@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 31</b></div>
-  <h1>8 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 32</b></div>
+  <h1>3 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -30,19 +30,14 @@
 <main id="main">
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Database &amp; scale</h2></div>
-  <p class="section-note">8 open &middot; 10 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">3 open &middot; 15 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">DB-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout</td><td class="wrap-cell"><code>server/src/maintenance.ts:100</code>, <code>server/src/maintenance.ts:116</code>, <code>server/src/server.ts:35</code></td><td class="wrap-cell">Batch both deletes like purgeAuditLog</td></tr>
-        <tr><td class="svc-name">DB-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns</td><td class="wrap-cell"><code>server/src/diagrams/service.ts:58</code>, <code>server/src/diagrams/summary.ts:51</code></td><td class="wrap-cell">Add generated stat columns to snapshots, as diagrams have</td></tr>
-        <tr><td class="svc-name">DB-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Size checks serialise whole jsonb with <code>octet_length(content::text)</code>; 50 MB costs about 0.8 s</td><td class="wrap-cell"><code>server/src/lint/routes.ts:95</code>, <code>server/src/lint/routes.ts:116</code>, <code>server/src/drift/service.ts:236</code></td><td class="wrap-cell">Use pg_column_size or a stored size column</td></tr>
-        <tr><td class="svc-name">DB-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL Server introspection drops columnstore, XML and spatial indexes; import maps them</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:105</code>, <code>src/formats/metadata/load.ts:41</code></td><td class="wrap-cell">Drop key_ordinal filter for non-key index types</td></tr>
-        <tr><td class="svc-name">DB-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server returns no custom types; PostgreSQL returns enums and composites</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:380</code></td><td class="wrap-cell">Read alias types from sys.types where is_user_defined</td></tr>
-        <tr><td class="svc-name">DB-007</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out</td><td class="wrap-cell"><code>server/src/db/schema.ts:273</code>, <code>server/src/db/schema.ts:169</code>, <code>server/src/db/schema.ts:373</code>, <code>server/src/db/schema.ts:401</code>, <code>server/src/db/schema.ts:446</code>, <code>server/src/auth/sessions.ts:50</code></td><td class="wrap-cell">Index diagram_locks.user_id; index the rest if tables grow</td></tr>
-        <tr><td class="svc-name">DB-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Generated stat columns re-parse whole jsonb on every content autosave</td><td class="wrap-cell"><code>server/src/db/migrations/0022_diagram_stats.sql:2</code></td><td class="wrap-cell">Compute stats in app; store as plain columns</td></tr>
-        <tr><td class="svc-name">DB-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server returns collation on every text column; Postgres only non-default ones</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:53</code>, <code>server/src/introspect/postgres.ts:69</code></td><td class="wrap-cell">Return collation only when it differs from database default</td></tr>
+        <tr><td class="svc-name">DB-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL Server index query now returns columnstore, XML and spatial indexes; not run against a real SQL Server</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:117</code></td><td class="wrap-cell">Run the SQL Server introspect tests in CI</td></tr>
+        <tr><td class="svc-name">DB-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server alias types arrive as column domain; no custom type list, as the metadata format has no slot</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:54</code>, <code>server/src/introspect/sqlserver.ts:69</code></td><td class="wrap-cell">Add an alias-type list to the metadata format</td></tr>
+        <tr><td class="svc-name">DB-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server collation is returned only when it differs from the default; not run against a real SQL Server</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:62</code></td><td class="wrap-cell">Run the SQL Server introspect tests in CI</td></tr>
       </tbody>
     </table>
   </div>
@@ -50,7 +45,7 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (10)</summary>
+  <details><summary>Fixed (15)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -65,6 +60,11 @@
         <tr><td class="svc-name">DB-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Postgres introspection skips foreign tables; SQL Server lists external tables</td></tr>
         <tr><td class="svc-name">DB-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Materialized views reported as plain views; definition rebuilt as CREATE VIEW</td></tr>
         <tr><td class="svc-name">DB-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones</td></tr>
+        <tr><td class="svc-name">DB-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout</td></tr>
+        <tr><td class="svc-name">DB-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns</td></tr>
+        <tr><td class="svc-name">DB-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Size checks serialise whole jsonb with <code>octet_length(content::text)</code>; 50 MB costs about 0.8 s</td></tr>
+        <tr><td class="svc-name">DB-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out</td></tr>
+        <tr><td class="svc-name">DB-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Generated stat columns re-parse whole jsonb on every content autosave</td></tr>
       </tbody>
     </table>
   </div>

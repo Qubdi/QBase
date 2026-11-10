@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 31 · **date** 2026-11-10
+**rev** 32 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -9,10 +9,10 @@
 | Security & secrets | 1 | 0 | 0 | 32 | 0 |
 | Repository | 2 | 0 | 0 | 54 | 0 |
 | Server | 3 | 0 | 0 | 33 | 0 |
-| Database | 8 | 0 | 0 | 10 | 1 |
+| Database | 3 | 0 | 0 | 15 | 1 |
 | Client | 0 | 0 | 0 | 94 | 0 |
 | Dead code | 0 | 0 | 0 | 40 | 0 |
-| **Total** | 14 | 0 | 0 | 263 | 1 |
+| **Total** | 9 | 0 | 0 | 268 | 1 |
 
 ## Act first
 
@@ -47,14 +47,9 @@ None.
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| DB-001 | Med | Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout | `server/src/maintenance.ts:100`, `server/src/maintenance.ts:116`, `server/src/server.ts:35` | Batch both deletes like purgeAuditLog |
-| DB-002 | Med | Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns | `server/src/diagrams/service.ts:58`, `server/src/diagrams/summary.ts:51` | Add generated stat columns to snapshots, as diagrams have |
-| DB-003 | Med | Size checks serialise whole jsonb with `octet_length(content::text)`; 50 MB costs about 0.8 s | `server/src/lint/routes.ts:95`, `server/src/lint/routes.ts:116`, `server/src/drift/service.ts:236` | Use pg_column_size or a stored size column |
-| DB-004 | Med | SQL Server introspection drops columnstore, XML and spatial indexes; import maps them | `server/src/introspect/sqlserver.ts:105`, `src/formats/metadata/load.ts:41` | Drop key_ordinal filter for non-key index types |
-| DB-006 | Low | SQL Server returns no custom types; PostgreSQL returns enums and composites | `server/src/introspect/sqlserver.ts:380` | Read alias types from sys.types where is_user_defined |
-| DB-007 | Low | Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out | `server/src/db/schema.ts:273`, `server/src/db/schema.ts:169`, `server/src/db/schema.ts:373`, `server/src/db/schema.ts:401`, `server/src/db/schema.ts:446`, `server/src/auth/sessions.ts:50` | Index diagram_locks.user_id; index the rest if tables grow |
-| DB-012 | Low | Generated stat columns re-parse whole jsonb on every content autosave | `server/src/db/migrations/0022_diagram_stats.sql:2` | Compute stats in app; store as plain columns |
-| DB-019 | Low | SQL Server returns collation on every text column; Postgres only non-default ones | `server/src/introspect/sqlserver.ts:53`, `server/src/introspect/postgres.ts:69` | Return collation only when it differs from database default |
+| DB-004 | Med | SQL Server index query now returns columnstore, XML and spatial indexes; not run against a real SQL Server | `server/src/introspect/sqlserver.ts:117` | Run the SQL Server introspect tests in CI |
+| DB-006 | Low | SQL Server alias types arrive as column domain; no custom type list, as the metadata format has no slot | `server/src/introspect/sqlserver.ts:54`, `server/src/introspect/sqlserver.ts:69` | Add an alias-type list to the metadata format |
+| DB-019 | Low | SQL Server collation is returned only when it differs from the default; not run against a real SQL Server | `server/src/introspect/sqlserver.ts:62` | Run the SQL Server introspect tests in CI |
 
 ### Client
 
@@ -343,6 +338,11 @@ None.
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
 | DB-013 | Database | Migrations build audit_log indexes without CONCURRENTLY, blocking audit writes | Applied migrations cannot be edited; the one-off lock is documented in README under DB-014 |
+| DB-001 | Database | Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout |
+| DB-002 | Database | Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns |
+| DB-003 | Database | Size checks serialise whole jsonb with `octet_length(content::text)`; 50 MB costs about 0.8 s |
+| DB-007 | Database | Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out |
+| DB-012 | Database | Generated stat columns re-parse whole jsonb on every content autosave |
 
 ---
 
@@ -404,6 +404,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 32 | 2026-11-10 | 5 fixed (database batch: DB-001, 002, 003, 007, 012), 3 narrowed (DB-004, 006, 019); anchors not remapped |
 | 31 | 2026-11-10 | 13 fixed (server batch: SRV-001, 002, 003, 004, 006, 007, 019, 020, 021, 023, 025, 026, 031), 3 narrowed (SRV-008, 009, 030), 4 High cleared; anchors not remapped |
 | 30 | 2026-11-10 | 10 fixed (repository batch: REPO-001, 002, 003, 005, 006, 013, 015, 027, 028, 059), 1 High cleared; anchors not remapped |
 | 29 | 2026-11-10 | 11 fixed (security batch 3: SEC-003, 010, 011, 012, 013, 014, 018, 019, 022, 024, 031), SEC-001 narrowed; anchors not remapped |
