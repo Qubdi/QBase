@@ -21,6 +21,7 @@ import { adminRoutes } from './admin/routes.js';
 import { diagramRoutes } from './diagrams/routes.js';
 import { projectRoutes } from './projects/routes.js';
 import { memberRoutes } from './members/routes.js';
+import { requestIds } from './audit/request-context.js';
 import { sharedUserLimit } from './lib/rate-key.js';
 import { registerWeb, API_PREFIX } from './web.js';
 import { publicShareRoutes, shareManagementRoutes } from './share/routes.js';
@@ -165,6 +166,9 @@ export function buildApp({
     api.register(cookie);
     api.register(rateLimit, { global: false });
     api.decorateRequest('user', null);
+
+    // lets code that has no request in hand (the audit helper) name it in a log line
+    api.addHook('onRequest', (req, _reply, done) => requestIds.run(req.id, done));
 
     api.addHook('onSend', async (req, reply) => {
         reply.headers(API_SECURITY_HEADERS);

@@ -1,6 +1,7 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { auditLog } from '../db/schema.js';
+import { requestIds } from './request-context.js';
 
 export const AUDIT_ACTIONS = [
     'user.register',
@@ -150,8 +151,35 @@ const toRow = (entry: AuditEntry) => ({
     meta: cleanMeta(entry.meta),
 });
 
+/** A transaction handle has `rollback`; the pool's `db` does not. */
+const inTransaction = (db: Db | Tx): boolean => 'rollback' in db;
+
+const logLost = (what: string, err: unknown) => {
+    const id = requestIds.getStore();
+    console.error(
+        `Audit row lost (${what})${id ? ` [request ${id}]` : ''}:`,
+        err instanceof Error ? err.message : err
+    );
+};
+
+/**
+ * Writes one audit row. The rule:
+ * - inside a transaction (`Tx`) the row is part of the action, so a failed
+ *   insert fails it and rolls the action back: the log is the point there;
+ * - on the plain `db` the action is already done, so a failed insert is logged
+ *   with the request id and the answer stays what the action earned, not a 500
+ *   for something that happened.
+ */
 export async function audit(db: Db | Tx, entry: AuditEntry) {
-    await db.insert(auditLog).values(toRow(entry));
+    if (inTransaction(db)) {
+        await db.insert(auditLog).values(toRow(entry));
+        return;
+    }
+    try {
+        await db.insert(auditLog).values(toRow(entry));
+    } catch (err) {
+        logLost(entry.action, err);
+    }
 }
 
 /**
@@ -171,28 +199,45 @@ export async function auditDiagramSave(
     }
     // look and write under one lock per person and diagram: two saves at the
     // same moment would both find no recent row and each write one
-    await db.transaction(async (tx) => {
-        await tx.execute(
-            sql`select pg_advisory_xact_lock(hashtextextended(${`audit-save:${entry.userId}:${entry.diagramId}`}, 0))`
-        );
-        const recent = await tx
-            .select({ id: auditLog.id })
-            .from(auditLog)
-            .where(
-                and(
-                    eq(auditLog.diagramId, entry.diagramId),
-                    eq(auditLog.userId, entry.userId),
-                    eq(auditLog.action, 'diagram.update'),
-                    gt(auditLog.at, new Date(Date.now() - everyMinutes * 60_000))
+    try {
+        await db.transaction(async (tx) => {
+            await tx.execute(
+                sql`select pg_advisory_xact_lock(hashtextextended(${`audit-save:${entry.userId}:${entry.diagramId}`}, 0))`
+            );
+            const recent = await tx
+                .select({ id: auditLog.id })
+                .from(auditLog)
+                .where(
+                    and(
+                        eq(auditLog.diagramId, entry.diagramId),
+                        eq(auditLog.userId, entry.userId),
+                        eq(auditLog.action, 'diagram.update'),
+                        gt(
+                            auditLog.at,
+                            new Date(Date.now() - everyMinutes * 60_000)
+                        )
+                    )
                 )
-            )
-            .limit(1);
-        if (recent.length === 0) await audit(tx, { ...entry, action: 'diagram.update' });
-    });
+                .limit(1);
+            if (recent.length === 0)
+                await audit(tx, { ...entry, action: 'diagram.update' });
+        });
+    } catch (err) {
+        // the save is already stored: its log row is not worth failing it for
+        logLost('diagram.update', err);
+    }
 }
 
 /** Several rows in one statement, for an action done to many things at once. */
 export async function auditMany(db: Db | Tx, entries: AuditEntry[]) {
     if (entries.length === 0) return;
-    await db.insert(auditLog).values(entries.map(toRow));
+    if (inTransaction(db)) {
+        await db.insert(auditLog).values(entries.map(toRow));
+        return;
+    }
+    try {
+        await db.insert(auditLog).values(entries.map(toRow));
+    } catch (err) {
+        logLost(`${entries[0].action} x${entries.length}`, err);
+    }
 }
