@@ -43,8 +43,44 @@ const overlaps = (a: Rect, b: Rect): boolean =>
     a.y < b.y + b.h + SPACING &&
     b.y < a.y + a.h + SPACING;
 
-function freeAt(rect: Rect, placed: Rect[]): boolean {
-    return rect.x >= 0 && rect.y >= 0 && !placed.some((p) => overlaps(rect, p));
+const CELL = 512;
+
+/** Placed boxes bucketed by grid cell, so a probe meets only its neighbours (CLI-028). */
+class Placement {
+    private readonly cells = new Map<string, Rect[]>();
+    all: Rect[] = [];
+
+    private span(r: Rect, pad: number): [number, number, number, number] {
+        return [
+            Math.floor((r.x - pad) / CELL),
+            Math.floor((r.x + r.w + pad) / CELL),
+            Math.floor((r.y - pad) / CELL),
+            Math.floor((r.y + r.h + pad) / CELL),
+        ];
+    }
+
+    add(r: Rect): void {
+        this.all.push(r);
+        const [x0, x1, y0, y1] = this.span(r, 0);
+        for (let cx = x0; cx <= x1; cx++)
+            for (let cy = y0; cy <= y1; cy++) {
+                const key = `${cx},${cy}`;
+                const list = this.cells.get(key);
+                if (list) list.push(r);
+                else this.cells.set(key, [r]);
+            }
+    }
+
+    free(rect: Rect): boolean {
+        if (rect.x < 0 || rect.y < 0) return false;
+        const [x0, x1, y0, y1] = this.span(rect, SPACING);
+        for (let cx = x0; cx <= x1; cx++)
+            for (let cy = y0; cy <= y1; cy++) {
+                const list = this.cells.get(`${cx},${cy}`);
+                if (list && list.some((p) => overlaps(rect, p))) return false;
+            }
+        return true;
+    }
 }
 
 /** Lays out one schema group, below `top`. Returns where each node went and the group's bottom edge. */
@@ -62,11 +98,11 @@ function layoutGroup(
         .filter((n) => degree(n) > 0)
         .sort((a, b) => degree(b) - degree(a));
     const alone = nodes.filter((n) => degree(n) === 0);
-    const placed: Rect[] = [];
+    const placed = new Placement();
     const put = (node: LayoutNode, x: number, y: number): void => {
         const rect = { x, y, w, h: cardHeight(node.columnCount) };
         spots.set(node.id, rect);
-        placed.push(rect);
+        placed.add(rect);
     };
 
     let frontier = left;
@@ -86,10 +122,10 @@ function layoutGroup(
             { x: a.x - w - GAP, y: a.y, w, h },
             { x: a.x, y: a.y - h - GAP, w, h },
         ];
-        let spot = tries.find((r) => freeAt(r, placed));
+        let spot = tries.find((r) => placed.free(r));
         for (let step = 1; !spot; step++) {
             const r = { x: a.x + a.w + GAP, y: a.y + step * (h + GAP), w, h };
-            if (freeAt(r, placed)) spot = r;
+            if (placed.free(r)) spot = r;
             else {
                 const left2 = {
                     x: a.x + (a.w + GAP) * (step + 1),
@@ -97,15 +133,15 @@ function layoutGroup(
                     w,
                     h,
                 };
-                if (freeAt(left2, placed)) spot = left2;
+                if (placed.free(left2)) spot = left2;
             }
         }
         put(node, Math.max(spot.x, 0), Math.max(spot.y, 0));
         frontier = Math.max(frontier, spot.x + w + GAP);
     }
 
-    let bottom = placed.reduce((m, r) => Math.max(m, r.y + r.h), top);
-    const startY = placed.length > 0 ? bottom + GAP : top;
+    let bottom = placed.all.reduce((m, r) => Math.max(m, r.y + r.h), top);
+    const startY = placed.all.length > 0 ? bottom + GAP : top;
     const perRow = 4;
     let rowTop = startY;
     for (let i = 0; i < alone.length; i += perRow) {
