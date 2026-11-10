@@ -1,14 +1,11 @@
-import { randomBytes } from 'node:crypto';
 import { buildApp } from './app.js';
 import { ConfigError, loadConfig, startupWarnings } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
-import { users } from './db/schema.js';
-import { resealPlaintextWebhooks } from './drift/reseal.js';
-import { resealStoredSecrets } from './reseal.js';
 import { startEventBridge } from './events.js';
 import { loadEnvFile } from './lib/env-file.js';
 import { startMaintenance } from './maintenance.js';
 import { createShutdown } from './shutdown.js';
+import { runStartupTasks } from './startup.js';
 
 // Settings live in server/.env (see .env.example); real environment variables win
 loadEnvFile();
@@ -39,49 +36,8 @@ const { db, pool } = createDb(config.databaseUrl, {
     statementTimeoutMs: config.dbStatementTimeoutSeconds * 1000,
 });
 
-// webhook URLs saved before encryption existed are sealed now. A failure here
-// leaves them readable as before; it must not stop the server from starting.
-if (config.secretsKey) {
-    try {
-        const sealed = await resealPlaintextWebhooks(db, config.secretsKey);
-        if (sealed > 0) console.log(`Encrypted ${sealed} saved webhook URL(s)`);
-    } catch (err) {
-        console.error(
-            'Could not encrypt saved webhook URLs:',
-            err instanceof Error ? err.message : err
-        );
-    }
-}
-
-// values sealed in the old format, or with the shared key from before purposes
-// existed, are written again in the current one, so no open path falls back to
-// the shared key. A failure leaves them as they were and does not stop the server.
-try {
-    for (const c of await resealStoredSecrets(db, config)) {
-        if (c.resealed > 0) console.log(`Re-sealed ${c.resealed} value(s) in ${c.column}`);
-        if (c.unreadable > 0) {
-            console.warn(
-                `Warning: ${c.unreadable} value(s) in ${c.column} could not be opened with the current key and were left as they are`
-            );
-        }
-    }
-} catch (err) {
-    console.error('Could not re-seal stored secrets:', err instanceof Error ? err.message : err);
-}
-
-// On an empty server the first sign-up becomes the admin, so it needs a token:
-// SETUP_TOKEN, or one made now and printed once. Several replicas behind one
-// address need SETUP_TOKEN, since each would print a different one.
-if ((await db.select({ id: users.id }).from(users).limit(1)).length === 0) {
-    if (config.setupToken === null) {
-        config = { ...config, setupToken: randomBytes(18).toString('base64url') };
-        console.log(
-            `No account exists yet. Creating the first admin needs this setup token: ${config.setupToken}`
-        );
-    } else {
-        console.log('No account exists yet. Creating the first admin needs the SETUP_TOKEN you set.');
-    }
-}
+// re-seals old secrets and, on an empty server, makes the first-run setup token
+config = await runStartupTasks(db, config);
 
 const app = buildApp({ config, db });
 await app.listen({ port: config.port, host: config.host });
