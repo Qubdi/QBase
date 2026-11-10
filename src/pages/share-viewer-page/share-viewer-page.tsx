@@ -48,6 +48,23 @@ const RECONNECT_MAX_MS = 60_000;
 // a burst of published versions is folded into one reload
 const RELOAD_DEBOUNCE_MS = 300;
 
+/** The version a heartbeat names; null for anything else (an older server sends no data). */
+function versionOfPing(data: unknown): number | null {
+    if (typeof data !== 'string') return null;
+    try {
+        const parsed: unknown = JSON.parse(data);
+        const version =
+            typeof parsed === 'object' && parsed !== null
+                ? (parsed as { version?: unknown }).version
+                : undefined;
+        return typeof version === 'number' && Number.isFinite(version)
+            ? version
+            : null;
+    } catch {
+        return null;
+    }
+}
+
 /**
  * Read-only view of a published diagram. It deliberately renders no editing UI
  * and uses none of the editor's providers.
@@ -86,6 +103,13 @@ const ViewerBody: React.FC = () => {
         void load();
     }, [load, user?.id]);
 
+    // the version on screen, read by the stream's ping handler (written in an
+    // effect, never during render)
+    const shownVersion = useRef<number | null>(null);
+    useEffect(() => {
+        shownVersion.current = state.kind === 'ok' ? state.share.version : null;
+    }, [state]);
+
     const live = state.kind === 'ok' && state.share.live;
     useEffect(() => {
         if (!live) return;
@@ -102,9 +126,20 @@ const ViewerBody: React.FC = () => {
                 { withCredentials: true }
             );
             source = next;
-            next.addEventListener('version', () => {
+            const scheduleReload = () => {
                 clearTimeout(reload);
                 reload = setTimeout(() => void load(), RELOAD_DEBOUNCE_MS);
+            };
+            next.addEventListener('version', scheduleReload);
+            // each heartbeat names the newest version: one the stream never
+            // announced (published while the server's listener was down) shows
+            // here as a number ahead of the one on screen
+            next.addEventListener('ping', (e) => {
+                const newest = versionOfPing((e as MessageEvent<string>).data);
+                const shown = shownVersion.current;
+                if (newest !== null && shown !== null && newest !== shown) {
+                    scheduleReload();
+                }
             });
             next.addEventListener('open', () => {
                 delay = RECONNECT_MIN_MS;

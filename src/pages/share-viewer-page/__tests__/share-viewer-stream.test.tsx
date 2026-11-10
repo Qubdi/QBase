@@ -39,15 +39,15 @@ class FakeEventSource {
     static instances: FakeEventSource[] = [];
     readyState = 0;
     closed = false;
-    listeners = new Map<string, Array<() => void>>();
+    listeners = new Map<string, Array<(e: { data?: string }) => void>>();
     constructor(public url: string) {
         FakeEventSource.instances.push(this);
     }
-    addEventListener(type: string, fn: () => void) {
+    addEventListener(type: string, fn: (e: { data?: string }) => void) {
         this.listeners.set(type, [...(this.listeners.get(type) ?? []), fn]);
     }
-    emit(type: string) {
-        this.listeners.get(type)?.forEach((fn) => fn());
+    emit(type: string, data?: string) {
+        this.listeners.get(type)?.forEach((fn) => fn({ data }));
     }
     close() {
         this.closed = true;
@@ -115,6 +115,43 @@ describe('ShareViewerPage live stream', () => {
         getPublicShare.mockResolvedValue(share(2));
         await act(async () => FakeEventSource.instances[1].emit('open'));
         expect(getPublicShare).toHaveBeenCalledTimes(2);
+    });
+
+    it('reloads when a heartbeat names a newer version than the one shown', async () => {
+        await show();
+        const stream = FakeEventSource.instances[0];
+        expect(getPublicShare).toHaveBeenCalledTimes(1);
+        // same version: nothing to fetch
+        await act(async () => {
+            stream.emit('ping', JSON.stringify({ version: 1 }));
+            await vi.advanceTimersByTimeAsync(300);
+        });
+        expect(getPublicShare).toHaveBeenCalledTimes(1);
+        // a version published while the server's listener was down
+        getPublicShare.mockResolvedValue(share(2));
+        await act(async () => {
+            stream.emit('ping', JSON.stringify({ version: 2 }));
+            await vi.advanceTimersByTimeAsync(300);
+        });
+        expect(getPublicShare).toHaveBeenCalledTimes(2);
+        // the page now shows 2: the next ping of 2 changes nothing
+        await act(async () => {
+            stream.emit('ping', JSON.stringify({ version: 2 }));
+            await vi.advanceTimersByTimeAsync(300);
+        });
+        expect(getPublicShare).toHaveBeenCalledTimes(2);
+    });
+
+    it('ignores a heartbeat without a readable version', async () => {
+        await show();
+        const stream = FakeEventSource.instances[0];
+        await act(async () => {
+            stream.emit('ping');
+            stream.emit('ping', 'not json');
+            stream.emit('ping', JSON.stringify({ version: 'two' }));
+            await vi.advanceTimersByTimeAsync(300);
+        });
+        expect(getPublicShare).toHaveBeenCalledTimes(1);
     });
 
     it('lets the browser reconnect a dropped stream by itself', async () => {

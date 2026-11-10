@@ -549,7 +549,19 @@ export const publicShareRoutes =
                     req.log.error({ err }, 'share events: heartbeat check failed');
                     return close();
                 }
-                if (!closed) send(': ping\n\n');
+                // The ping names the newest version: a publish that fell in a gap
+                // of the listening connection is never replayed, so a viewer
+                // that finds the number ahead of its own reloads. (A plain
+                // comment line would keep the socket open but say nothing.)
+                let version: number | undefined;
+                try {
+                    version = await snapshots.version(diagramId);
+                } catch (err) {
+                    req.log.error({ err }, 'share events: version read failed');
+                }
+                if (closed) return;
+                if (version === undefined) send(': ping\n\n');
+                else send(`event: ping\ndata: ${JSON.stringify({ version })}\n\n`);
             }, config.sseHeartbeatSeconds * 1000);
             cleanup.push(() => clearInterval(heartbeat));
 
