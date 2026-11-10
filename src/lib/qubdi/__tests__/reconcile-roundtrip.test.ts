@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import postgresSample from './fixtures/postgres-sample.json';
 import sqlserverSample from './fixtures/sqlserver-sample.json';
 import { metadataToDiagram } from '../import-from-db';
-import { isEmpty, reconcile } from '../../../../shared/reconcile';
+import { reconcile, type ChangeSet } from '../../../../shared/reconcile';
 import {
     diagramToDesc,
     metadataToDesc,
     type MetadataLike,
 } from '../../../../shared/schema-desc';
+
+const isEmpty = (cs: ChangeSet): boolean =>
+    cs.changes.length === 0 && cs.possibleRenames.length === 0;
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x));
 

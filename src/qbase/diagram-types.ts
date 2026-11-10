@@ -218,13 +218,6 @@ export type Diagram = z.infer<typeof diagramShape>;
 
 // ---- facts about databases
 
-/** Databases whose tables belong to schemas (spec C5). */
-export const databasesWithSchemas: DatabaseType[] = [
-    DatabaseType.POSTGRESQL,
-    DatabaseType.SQL_SERVER,
-    DatabaseType.ORACLE,
-];
-
 const LABELS: Record<DatabaseType, string> = {
     postgresql: 'PostgreSQL',
     mysql: 'MySQL',

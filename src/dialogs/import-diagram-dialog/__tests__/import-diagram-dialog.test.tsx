@@ -19,8 +19,14 @@ import {
 import type { MyProject } from '@/lib/qubdi/api';
 import { emptyDiagram } from '@/lib/qubdi/new-diagram';
 import { DatabaseType } from '@/qbase/diagram-types';
-import { diagramToJSONOutput } from '@/lib/export-import-utils';
+import { exportFileText } from '@/core/wire/file-export';
+import { diagramToDesign } from '@/qbase/diagram-convert';
+import type { Diagram } from '@/qbase/diagram-types';
 import { ImportDiagramDialog } from '../import-diagram-dialog';
+
+/** The text of a diagram file for a diagram in the saved shape. */
+const diagramToJSONOutput = (diagram: Diagram): string =>
+    exportFileText(diagramToDesign(diagram).design);
 
 let hugeFile = false;
 let badFile = false;

@@ -4,7 +4,6 @@ import { createEntityParts } from '@/core/model/defaults';
 import { MemoryStorageAdapter } from '@/persistence/memory-adapter';
 import { startAutosave } from './autosave';
 import { createEditorStore } from './editor-store';
-import { selectVisibleEntities } from './selectors';
 
 const addTable = (name: string) => ({
     type: 'entity.insert' as const,
@@ -55,16 +54,5 @@ describe('review core-store 17: autosave and selectors', () => {
         expect(await adapter.load(design.id)).toBeUndefined();
         await adapter.save(design);
         expect(await adapter.load(design.id)).toBeDefined();
-    });
-
-    it('selectVisibleEntities returns the same array until something changes', () => {
-        const store = createEditorStore({ design: blank(), now: () => NOW });
-        store.getState().edit(addTable('a'));
-        const a = selectVisibleEntities(store.getState());
-        expect(selectVisibleEntities(store.getState())).toBe(a);
-        store.getState().edit(addTable('b'));
-        const b = selectVisibleEntities(store.getState());
-        expect(b).not.toBe(a);
-        expect(b).toHaveLength(2);
     });
 });

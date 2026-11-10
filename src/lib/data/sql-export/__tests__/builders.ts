@@ -1,4 +1,6 @@
-import { exportDiagramSql } from '@/qbase/sql-adapters';
+import { exportSql } from '@/formats/sql/export-sql';
+import type { VisibilityFilter } from '@/core/model/visibility-filter';
+import { diagramToDesign } from '@/qbase/diagram-convert';
 import type {
     DatabaseType,
     DBField,
@@ -6,6 +8,18 @@ import type {
     DBTable,
     Diagram,
 } from '@/qbase/diagram-types';
+
+/** SQL for a wire-shaped diagram in a target dialect, with the writer's diagnostics. */
+export function exportDiagramSql(options: {
+    diagram: Diagram;
+    targetDatabaseType: DatabaseType;
+    filter?: VisibilityFilter;
+}) {
+    const { design } = diagramToDesign(options.diagram);
+    return exportSql(design, options.targetDatabaseType, {
+        filter: options.filter,
+    });
+}
 
 /** SQL text of a diagram for a target database (the writer's diagnostics are dropped). */
 export const exportBaseSQL = (

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applyOk, blank, NOW, rng, withTables } from '../testing/helpers';
+import {
+    applyOk,
+    blank,
+    looksLikeGeneratedId,
+    NOW,
+    rng,
+    withTables,
+} from '../testing/helpers';
 import { editionFits, traitsOf } from './database';
 import {
     createColumn,
@@ -14,13 +21,7 @@ import {
     schemaForNewEntity,
 } from './defaults';
 import { TABLE_COLOR, TABLE_WIDTH, VIEW_COLOR } from './entity';
-import {
-    idFromSeed,
-    looksLikeGeneratedId,
-    newDesignId,
-    newId,
-    seededRandom,
-} from './ids';
+import { idFromSeed, newDesignId, newId, seededRandom } from './ids';
 import { regionMembership } from './region-membership';
 import {
     initialFilter,

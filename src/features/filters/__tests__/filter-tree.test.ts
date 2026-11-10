@@ -5,7 +5,6 @@ import { isVisible } from '@/core/model/visibility-filter';
 import {
     buildTree,
     hidesEverything,
-    isFilterActive,
     setTableShown,
     setTablesShown,
     visibleIds,
@@ -120,7 +119,9 @@ describe('EDT-063 EDT-064 EDT-072 showing and hiding', () => {
         const filter = setTableShown(design, {}, users.id, false);
         expect(isVisible(filter, users)).toBe(false);
         expect(isVisible(filter, orders, 'public')).toBe(true);
-        expect(isFilterActive(design, filter)).toBe(true);
+        expect(visibleIds(design, filter).size).toBeLessThan(
+            design.entities.order.length
+        );
     });
 
     it('a schema whose tables are all ticked counts as the schema', () => {
@@ -140,7 +141,9 @@ describe('EDT-063 EDT-064 EDT-072 showing and hiding', () => {
         const hidden = setTableShown(design, {}, users.id, false);
         const back = setTableShown(design, hidden, users.id, true);
         expect(back).toEqual({});
-        expect(isFilterActive(design, back)).toBe(false);
+        expect(visibleIds(design, back).size).toBe(
+            design.entities.order.length
+        );
     });
 
     it('a group eye hides all of its tables', () => {

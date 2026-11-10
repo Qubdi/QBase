@@ -2,15 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { blank, NOW, withTables } from '@/core/testing/helpers';
 import { createEntityParts } from '@/core/model/defaults';
 import { MemoryStorageAdapter } from '@/persistence/memory-adapter';
+import { visibleIds } from '@/features/filters/filter-tree';
 import { startAutosave } from './autosave';
 import { createEditorStore } from './editor-store';
-import {
-    selectCanRedo,
-    selectCanUndo,
-    selectDirty,
-    selectLocked,
-    selectVisibleEntities,
-} from './selectors';
+import { selectCanRedo, selectCanUndo, selectLocked } from './selectors';
 
 const addTable = (name: string) => ({
     type: 'entity.insert' as const,
@@ -20,10 +15,10 @@ const addTable = (name: string) => ({
 describe('editor store: commands and history (EDT-219, EDT-220)', () => {
     it('applies a command, marks the session dirty and records an undo step', () => {
         const store = createEditorStore({ design: blank(), now: () => NOW });
-        expect(selectDirty(store.getState())).toBe(false);
+        expect(store.getState().session.dirty).toBe(false);
         expect(store.getState().edit(addTable('a')).ok).toBe(true);
         expect(store.getState().design.entities.order).toHaveLength(1);
-        expect(selectDirty(store.getState())).toBe(true);
+        expect(store.getState().session.dirty).toBe(true);
         expect(selectCanUndo(store.getState())).toBe(true);
     });
 
@@ -62,7 +57,7 @@ describe('editor store: read-only (EDT-014)', () => {
         const result = store.getState().edit(addTable('a'));
         expect(result).toMatchObject({ ok: false, reason: 'read-only' });
         expect(store.getState().design).toBe(design);
-        expect(selectDirty(store.getState())).toBe(false);
+        expect(store.getState().session.dirty).toBe(false);
         expect(selectLocked(store.getState())).toBe(true);
     });
 
@@ -114,7 +109,7 @@ describe('editor store: whole-design replace', () => {
         store.getState().edit(addTable('a'));
         store.getState().replaceDesign(withTables(['x']));
         expect(selectCanUndo(store.getState())).toBe(false);
-        expect(selectDirty(store.getState())).toBe(false);
+        expect(store.getState().session.dirty).toBe(false);
     });
 
     it('a pushed step undoes to the old design and redoes to the new one', () => {
@@ -177,17 +172,21 @@ describe('editor store: view state', () => {
             design: withTables(['a', 'b']),
             filter: { tableIds: [] },
         });
-        expect(selectVisibleEntities(store.getState())).toHaveLength(0);
+        expect(
+            visibleIds(store.getState().design, store.getState().ui.filter).size
+        ).toBe(0);
         const id = store.getState().design.entities.order[0];
         store.getState().setFilter({ tableIds: [id] });
-        expect(selectVisibleEntities(store.getState())).toHaveLength(1);
+        expect(
+            visibleIds(store.getState().design, store.getState().ui.filter).size
+        ).toBe(1);
     });
 
     it('changing the view does not make the design dirty (EDT-225)', () => {
         const store = createEditorStore({ design: blank() });
         store.getState().setZoom(2);
         store.getState().setFilter({});
-        expect(selectDirty(store.getState())).toBe(false);
+        expect(store.getState().session.dirty).toBe(false);
     });
 });
 
@@ -206,7 +205,7 @@ describe('autosave', () => {
         expect(save).not.toHaveBeenCalled();
         await vi.advanceTimersByTimeAsync(2);
         expect(save).toHaveBeenCalledTimes(1);
-        expect(selectDirty(store.getState())).toBe(false);
+        expect(store.getState().session.dirty).toBe(false);
         const loaded = await adapter.load(store.getState().design.id);
         expect(loaded?.design.entities.order).toHaveLength(2);
         autosave.dispose();
@@ -226,7 +225,7 @@ describe('autosave', () => {
         store.getState().edit(addTable('a'));
         await vi.advanceTimersByTimeAsync(20);
         expect(onError).toHaveBeenCalledTimes(1);
-        expect(selectDirty(store.getState())).toBe(true);
+        expect(store.getState().session.dirty).toBe(true);
         autosave.dispose();
     });
 
@@ -283,7 +282,7 @@ describe('editor store: highlighted custom type (EDT-196)', () => {
         expect(store.getState().ui.highlightedTypeId).toBe('b');
         expect(store.getState().design).toBe(before);
         expect(selectCanUndo(store.getState())).toBe(false);
-        expect(selectDirty(store.getState())).toBe(false);
+        expect(store.getState().session.dirty).toBe(false);
         store.getState().setHighlightedType(undefined);
         expect(store.getState().ui.highlightedTypeId).toBeUndefined();
     });

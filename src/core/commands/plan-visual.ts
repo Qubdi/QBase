@@ -10,8 +10,7 @@ import type { Region } from '../model/region';
 import { regionMembership } from '../model/region-membership';
 import type { Size } from '../model/region-membership';
 import type { UserType, UserTypeKind } from '../model/user-type';
-import { apply } from './apply';
-import type { Command, Move } from './command';
+import type { Command } from './command';
 import type { PlanOptions } from './plan-entity';
 
 export function planAddRegion(
@@ -111,25 +110,6 @@ export function planMembership(
     return commands.length === 0
         ? undefined
         : { type: 'group', commands, label: 'membership' };
-}
-
-/**
- * Moves tables and then re-reads which region each belongs to, as one step.
- * Used for a drag, Auto Arrange and Move to Area (EDT-224, EDT-052).
- */
-export function planMove(
-    design: Design,
-    moves: Move[],
-    measure?: (entity: Entity) => Size
-): Command {
-    const move: Command = { type: 'entity.move', moves };
-    const moved = apply(design, move, { now: 0 });
-    const follow = moved.ok ? planMembership(moved.design, measure) : undefined;
-    return {
-        type: 'group',
-        label: 'move',
-        commands: follow ? [move, follow] : [move],
-    };
 }
 
 /**

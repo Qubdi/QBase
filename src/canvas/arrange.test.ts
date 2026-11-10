@@ -4,7 +4,7 @@ import { entityList } from '@/core/model/lookup';
 import { planAddEntity } from '@/core/commands/plan-entity';
 import { arrangeDiagram, moveToArea } from './canvas-actions';
 import { layoutTiles, planArrange, planMoveToArea } from './auto-arrange';
-import { intersects, overlappingIds } from './geometry';
+import { intersects, overlapCounts } from './geometry';
 import { shop, withRegion } from './test/fixtures';
 import { sizeFor } from './geometry';
 
@@ -39,7 +39,7 @@ describe('auto arrange', () => {
             id,
             box: { ...p, width: 224, height: 80 },
         }));
-        expect(overlappingIds(boxes).size).toBe(0);
+        expect(overlapCounts(boxes).size).toBe(0);
     });
 
     it('EDT-051: a repeated or reversed link changes nothing about the layout', () => {
@@ -202,7 +202,7 @@ describe('move to area', () => {
             const e = state.entities.byId[id];
             return { id, box: { x: e.x, y: e.y, ...measure(e) } };
         });
-        expect(overlappingIds(boxes).size).toBe(0);
+        expect(overlapCounts(boxes).size).toBe(0);
         for (const { box: b } of boxes) {
             expect(b.x).toBeGreaterThanOrEqual(region.box.x);
             expect(b.x + b.width).toBeLessThanOrEqual(
@@ -285,15 +285,15 @@ describe('move to area', () => {
 
 describe('overlap', () => {
     it('EDT-038: tables whose boxes overlap are found', () => {
-        const hit = overlappingIds([
+        const hit = overlapCounts([
             box('a', 0, 0),
             box('b', 100, 20),
             box('c', 600, 0),
         ]);
-        expect([...hit].sort()).toEqual(['a', 'b']);
-        expect(overlappingIds([box('a', 0, 0), box('c', 600, 0)]).size).toBe(0);
+        expect([...hit.keys()].sort()).toEqual(['a', 'b']);
+        expect(overlapCounts([box('a', 0, 0), box('c', 600, 0)]).size).toBe(0);
         // touching edges are not an overlap
-        expect(overlappingIds([box('a', 0, 0), box('b', 224, 0)]).size).toBe(0);
+        expect(overlapCounts([box('a', 0, 0), box('b', 224, 0)]).size).toBe(0);
     });
 
     it('EDT-052: new tables from planAddEntity are arranged like any other', () => {

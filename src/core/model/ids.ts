@@ -45,11 +45,6 @@ export function newDesignId(random?: RandomInt): string {
     return newId(random);
 }
 
-/** True when `id` has the shape that `newId` produces. */
-export function looksLikeGeneratedId(id: string): boolean {
-    return /^[0-9a-z]{25}$/.test(id);
-}
-
 /**
  * A stable id derived from a seed string. Used where a command must create a
  * record without calling a random source, so that applying it twice gives the

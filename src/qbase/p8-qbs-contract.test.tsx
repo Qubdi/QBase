@@ -255,18 +255,14 @@ describe('QBS-006 saved string values do not change', () => {
     });
 });
 
-describe('QBS-007 label, schema and type facts are provided', () => {
-    it('labels every database type, lists the databases with schemas, and knows each database types', async () => {
-        const { DatabaseType, databaseTypeToLabelMap, databasesWithSchemas } =
+describe('QBS-007 label and type facts are provided', () => {
+    it('labels every database type and knows the types of each database', async () => {
+        const { DatabaseType, databaseTypeToLabelMap } =
             await import('./diagram-types');
         const { knownTypes } = await import('./type-catalogue');
         for (const t of Object.values(DatabaseType))
             expect(databaseTypeToLabelMap[t], t).toBeTruthy();
         expect(databaseTypeToLabelMap.sql_server).toBe('SQL Server');
-        expect(databasesWithSchemas).toEqual(
-            expect.arrayContaining(['postgresql', 'sql_server', 'oracle'])
-        );
-        expect(databasesWithSchemas).not.toContain('mysql');
         expect(knownTypes('postgresql').map((x) => x.name)).toContain(
             'integer'
         );

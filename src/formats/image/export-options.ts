@@ -108,17 +108,6 @@ export function diagramBounds(
     };
 }
 
-/** Size of the file in pixels (EXP-061, EXP-064: the whole diagram is fitted). */
-export function outputSize(
-    bounds: Pick<Rect, 'width' | 'height'>,
-    scale: number
-): { width: number; height: number } {
-    return {
-        width: Math.ceil(bounds.width * scale),
-        height: Math.ceil(bounds.height * scale),
-    };
-}
-
 export interface LogoPlacement {
     height: number;
     margin: number;

@@ -43,12 +43,6 @@ export function visibleIds(design: Design, filter: VisibilityFilter): Set<Id> {
     );
 }
 
-/** True when the filter hides at least one table (the toolbar button turns teal). */
-export function isFilterActive(design: Design, filter: VisibilityFilter) {
-    const all = design.entities.order.length;
-    return visibleIds(design, filter).size < all;
-}
-
 /** True when the diagram has tables and the filter hides every one (EDT-069). */
 export function hidesEverything(design: Design, filter: VisibilityFilter) {
     return (

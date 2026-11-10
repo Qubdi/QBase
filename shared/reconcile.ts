@@ -569,16 +569,3 @@ function diffRelationships(
     }
     return out;
 }
-
-// --- helpers ------------------------------------------------------------------
-
-export const isEmpty = (cs: ChangeSet): boolean =>
-    cs.changes.length === 0 && cs.possibleRenames.length === 0;
-
-export function countByKind(
-    cs: ChangeSet
-): Partial<Record<ChangeKind, number>> {
-    const counts: Partial<Record<ChangeKind, number>> = {};
-    for (const c of cs.changes) counts[c.kind] = (counts[c.kind] ?? 0) + 1;
-    return counts;
-}

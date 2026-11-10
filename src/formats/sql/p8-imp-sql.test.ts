@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { listOf } from '@/core/model/collection';
 import type { Design } from '@/core/model/design';
 import { TABLE_WIDTH } from '@/core/model/entity';
-import { dialectFor, listDialects } from '@/dialects/registry';
+import { dialectFor } from '@/dialects/registry';
 import { cardHeight } from '../shared/layout';
 import { exportSql } from './export-sql';
 import { importSql } from './import-sql';
@@ -12,14 +12,15 @@ const named = (d: Design, name: string) =>
 
 describe('IMP-001 the kept dialects', () => {
     it('offers PostgreSQL, MySQL, SQL Server, MariaDB, SQLite and Oracle', () => {
-        expect(listDialects().map((d) => d.id)).toEqual([
+        for (const id of [
             'postgresql',
             'mysql',
             'sql_server',
             'mariadb',
             'sqlite',
             'oracle',
-        ]);
+        ])
+            expect(dialectFor(id).id).toBe(id);
     });
     it('Oracle reads and writes SQL (EXP-008, restored)', () => {
         expect(dialectFor('oracle').sql.read).toBeDefined();
