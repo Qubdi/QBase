@@ -94,27 +94,39 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
             ) : null}
             {props.selected ? (
                 <EdgeLabelRenderer>
-                    <button
-                        type="button"
-                        aria-label={t('canvas.link.select')}
-                        title={t('canvas.link.select')}
-                        data-testid={`link-dot-${props.id}`}
-                        className="nodrag nopan pointer-events-auto absolute flex size-6 items-center justify-center rounded-full border-2 border-teal-600 bg-background text-teal-600 shadow-lg transition-colors hover:scale-110 hover:bg-teal-50"
+                    {/*
+                      The wrapper is moved to the line, the button only grows on
+                      hover. They must not be one element: Tailwind 4 applies
+                      `scale` outside an inline `transform`, so a hover scale on
+                      the element that carries `translate(labelX, labelY)` pushes
+                      it a tenth of that distance away from the origin, out from
+                      under the pointer, and the dot cannot be clicked.
+                    */}
+                    <div
+                        className="nodrag nopan pointer-events-none absolute"
                         style={{
                             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
                         }}
-                        onClick={(event) =>
-                            surface.openLinkPopover(props.id, {
-                                x: event.clientX,
-                                y: event.clientY,
-                            })
-                        }
                     >
-                        <Ellipsis
-                            className="size-4 text-teal-600"
-                            aria-hidden
-                        />
-                    </button>
+                        <button
+                            type="button"
+                            aria-label={t('canvas.link.select')}
+                            title={t('canvas.link.select')}
+                            data-testid={`link-dot-${props.id}`}
+                            className="nodrag nopan pointer-events-auto flex size-6 items-center justify-center rounded-full border-2 border-teal-600 bg-background text-teal-600 shadow-lg transition-all hover:scale-110 hover:bg-teal-50"
+                            onClick={(event) =>
+                                surface.openLinkPopover(props.id, {
+                                    x: event.clientX,
+                                    y: event.clientY,
+                                })
+                            }
+                        >
+                            <Ellipsis
+                                className="size-4 text-teal-600"
+                                aria-hidden
+                            />
+                        </button>
+                    </div>
                 </EdgeLabelRenderer>
             ) : null}
         </>

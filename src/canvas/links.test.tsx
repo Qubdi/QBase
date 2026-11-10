@@ -396,6 +396,20 @@ describe('how a link is drawn', () => {
         );
         expect(path.getAttribute('style')).toContain('stroke-dasharray');
     });
+
+    it('the dot is moved by a wrapper and only grows on hover, so it stays under the pointer', async () => {
+        const s = shop();
+        const { store } = renderCanvas(s.design);
+        act(() => store.getState().select([s.link]));
+        const dot = await screen.findByTestId(`link-dot-${s.link}`);
+        // Tailwind 4 puts `scale` outside an inline `transform`: on the element
+        // that is moved it pushes the dot away from the pointer on hover
+        expect(dot.style.transform).toBe('');
+        expect(dot.className).toContain('hover:scale-110');
+        const wrapper = dot.parentElement!;
+        expect(wrapper.style.transform).toContain('translate(');
+        expect(wrapper.className).not.toMatch(/scale-/);
+    });
 });
 
 describe('the line popover', () => {
