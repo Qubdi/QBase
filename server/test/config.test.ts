@@ -348,3 +348,18 @@ describe('startupWarnings', () => {
         ).toEqual([]);
     });
 });
+
+describe('SSE_HEARTBEAT_SECONDS', () => {
+    it('defaults to 25 and takes any value from 1 to 3600', () => {
+        expect(loadConfig({}).sseHeartbeatSeconds).toBe(25);
+        expect(loadConfig({ SSE_HEARTBEAT_SECONDS: '1' }).sseHeartbeatSeconds).toBe(1);
+        expect(loadConfig({ SSE_HEARTBEAT_SECONDS: '3600' }).sseHeartbeatSeconds).toBe(3600);
+    });
+
+    it('refuses a value that would overflow the timer behind it', () => {
+        // above 2147483 seconds setInterval turns the delay into 1 ms ticks
+        expect(() => loadConfig({ SSE_HEARTBEAT_SECONDS: '2147484' })).toThrow(ConfigError);
+        expect(() => loadConfig({ SSE_HEARTBEAT_SECONDS: '3601' })).toThrow(ConfigError);
+        expect(() => loadConfig({ SSE_HEARTBEAT_SECONDS: '0' })).toThrow(ConfigError);
+    });
+});

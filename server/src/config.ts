@@ -340,7 +340,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         ),
         sseMaxPerLink: int('SSE_MAX_PER_LINK', 100, 1),
         sseMaxPerIp: int('SSE_MAX_PER_IP', 20, 1),
-        sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1),
+        // the seconds go to setInterval in ms: above 2147483 it overflows to 1 ms ticks, so the cap is an hour
+        sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1, 3600),
         trustProxy,
         logLevel,
         dbPoolMax: int('DB_POOL_MAX', 10, 2),

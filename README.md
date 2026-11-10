@@ -267,7 +267,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `AUDIT_RETENTION_DAYS` | `365` | Audit rows older than this many days are deleted; `0` keeps them all |
 | `SSE_MAX_PER_LINK` | `100` | Most live viewers one share link may have at once |
 | `SSE_MAX_PER_IP` | `20` | Most live viewers one client address may have at once, over all links |
-| `SSE_HEARTBEAT_SECONDS` | `25` | Seconds between pings on a live stream; each re-checks a signed-in viewer's session |
+| `SSE_HEARTBEAT_SECONDS` | `25` | Seconds between pings on a live stream (1 to 3600); each re-checks a signed-in viewer's session and names the newest version |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 
 ### Passwords
