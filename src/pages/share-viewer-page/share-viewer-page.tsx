@@ -63,21 +63,22 @@ const ViewerBody: React.FC = () => {
 
     // replies can arrive out of order: only the newest request may set the state
     const newestLoad = useRef(0);
-    const load = useCallback(async () => {
+    const load = useCallback(() => {
         const request = ++newestLoad.current;
-        const res = await api.getPublicShare(token);
-        if (request !== newestLoad.current) return;
-        if (res.status === 'ok') {
-            setState({ kind: 'ok', share: res.share });
-        } else {
-            // a reload that failed (a dropped connection, a timeout) must not
-            // blank a diagram that is already on screen
-            setState((prev) =>
-                res.status === 'error' && prev.kind === 'ok'
-                    ? prev
-                    : { kind: res.status }
-            );
-        }
+        return api.getPublicShare(token).then((res) => {
+            if (request !== newestLoad.current) return;
+            if (res.status === 'ok') {
+                setState({ kind: 'ok', share: res.share });
+            } else {
+                // a reload that failed (a dropped connection, a timeout) must not
+                // blank a diagram that is already on screen
+                setState((prev) =>
+                    res.status === 'error' && prev.kind === 'ok'
+                        ? prev
+                        : { kind: res.status }
+                );
+            }
+        });
     }, [token]);
 
     // reload when the visitor signs in (signed_in links)
@@ -146,11 +147,9 @@ const ViewerBody: React.FC = () => {
                 : null,
         [graph.tables, selectedId]
     );
-    useEffect(() => {
-        if (selectedId && activeId === null) {
-            setSelectedId(null);
-        }
-    }, [selectedId, activeId]);
+    if (selectedId && activeId === null) {
+        setSelectedId(null);
+    }
 
     const matches = useMemo(
         () => searchTables(graph.tables, query),
