@@ -373,7 +373,17 @@ Paths are relative to the API root (`/api` when the server also serves the edito
 
 - Read-only import: every introspection query is a fixed catalog `SELECT`, checked by a guard
   before it is sent, and PostgreSQL runs inside a read-only transaction. SQL Server has no
-  read-only transaction, so use a login that only has read access.
+  read-only transaction, and the connection's `readOnlyIntent` only tells a cluster which
+  replica to use; it blocks nothing. So the login you give QBase is the real limit: make
+  one that can only read the catalog, and never use `sa` or a member of `sysadmin` or
+  `db_owner`. QBase does not check this for you.
+
+  ```sql
+  CREATE LOGIN qbase_reader WITH PASSWORD = '<a long random password>';
+  USE <database>;
+  CREATE USER qbase_reader FOR LOGIN qbase_reader;
+  GRANT VIEW DEFINITION TO qbase_reader;
+  ```
 - Drift checks compare the server's copy of the diagram, so the editor syncs it first.
 - Besides the limits above, one signed-in user is held to 600 calls a minute across the whole API (a fixed ceiling, not a setting; kept in each process's memory like the others).
 - Several server processes can share one database. Live share updates, the migrations at
