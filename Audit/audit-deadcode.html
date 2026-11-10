@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 32</b></div>
-  <h1>0 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 34</b></div>
+  <h1>2 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -30,11 +30,13 @@
 <main id="main">
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Dead code</h2></div>
-  <p class="section-note">0 open &middot; 40 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">2 open &middot; 39 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DEAD-037</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">JSON-map localStorage reader still copied beside shared <code>readJsonMap</code></td><td class="wrap-cell"><code>src/lib/qubdi/sent-content.ts:128</code>, <code>src/lib/qubdi/sync-state.ts:62</code></td><td class="wrap-cell">Call <code>readJsonMap</code> from local-map.ts in both</td></tr>
+        <tr><td class="svc-name">DEAD-042</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>isCurrentFormat</code> exported; zero references in src, server, shared, tools, CI</td><td class="wrap-cell"><code>server/src/introspect/crypto-box.ts:142</code></td><td class="wrap-cell">Delete the export</td></tr>
       </tbody>
     </table>
   </div>
@@ -42,7 +44,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (40)</summary>
+  <details><summary>Fixed (39)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -52,7 +54,6 @@
         <tr><td class="svc-name">DEAD-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>postcss</code> devDependency redundant; <code>@tailwindcss/postcss</code> already depends on it, no import</td></tr>
         <tr><td class="svc-name">DEAD-035</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server tsconfig <code>@/*</code> path alias unused; no server file imports <code>@/</code></td></tr>
         <tr><td class="svc-name">DEAD-036</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Root <code>preview</code> script has no caller; e2e tools run <code>npx vite preview</code></td></tr>
-        <tr><td class="svc-name">DEAD-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Same localStorage JSON-map reader copied in four modules</td></tr>
         <tr><td class="svc-name">DEAD-038</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Two 25-char id generators; <code>generateId</code> duplicates <code>newId</code>, modulo-biased; <code>newDesignId</code> same body</td></tr>
         <tr><td class="svc-name">DEAD-039</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>timeOf</code> helper duplicated in two admin panels</td></tr>
         <tr><td class="svc-name">DEAD-040</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>isRecord</code> guard duplicated in viewer model</td></tr>
