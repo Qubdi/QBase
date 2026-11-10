@@ -22,6 +22,7 @@ describe('migration 0026: recovery code hash prefix', () => {
         await admin.query(`drop database if exists ${DATABASE} with (force)`);
         await admin.query(`create database ${DATABASE}`);
         pool = new pg.Pool({ connectionString: urlFor(DATABASE) });
+        pool.on('error', () => undefined); // force-dropped later: the ended connection is expected
         const db = drizzle(pool);
         await migrate(db, { migrationsFolder: before });
         const { rows } = await pool.query(

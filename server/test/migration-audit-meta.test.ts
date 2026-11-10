@@ -35,6 +35,7 @@ describe('migration 0016: audit meta and sign-in tracking', () => {
         await admin.query(`drop database if exists ${DATABASE} with (force)`);
         await admin.query(`create database ${DATABASE}`);
         pool = new pg.Pool({ connectionString: urlFor(DATABASE) });
+        pool.on('error', () => undefined); // force-dropped later: the ended connection is expected
         const db = drizzle(pool);
 
         await migrate(db, { migrationsFolder: before });

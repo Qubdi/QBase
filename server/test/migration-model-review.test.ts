@@ -37,6 +37,7 @@ describe('migration 0015: model review', () => {
         await admin.query(`create database ${name}`);
         databases.push(name);
         const pool = new pg.Pool({ connectionString: urlFor(name) });
+        pool.on('error', () => undefined); // force-dropped later: the ended connection is expected
         pools.push(pool);
         const db = drizzle(pool);
         await migrate(db, { migrationsFolder: before });

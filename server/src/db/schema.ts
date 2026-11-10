@@ -311,6 +311,11 @@ export const snapshots = pgTable(
         // the biggest table: deleting a user sets published_by to null, and
         // without this index that scans every row of it
         index('snapshots_published_by_idx').on(t.publishedBy),
+        // the hourly stats fill looks for rows it has not filled yet; the index
+        // holds only those, so it is empty once the fill has caught up
+        index('snapshots_stats_pending_idx')
+            .on(t.id)
+            .where(sql`${t.statTableCount} is null`),
     ]
 );
 
@@ -346,10 +351,12 @@ export const auditLog = pgTable(
             t.at.desc().nullsFirst(),
             t.id.desc().nullsFirst()
         ),
-        // GET /admin/audit?action=
+        // GET /admin/audit?action= and ?group= (a keyset cursor compares at and
+        // id, so id is part of the index: the page walks it and stops)
         index('audit_log_action_at_idx').on(
             t.action,
-            t.at.desc().nullsFirst()
+            t.at.desc().nullsFirst(),
+            t.id.desc().nullsFirst()
         ),
         // GET /admin/audit?diagramId=
         index('audit_log_diagram_at_idx').on(t.diagramId, t.at),

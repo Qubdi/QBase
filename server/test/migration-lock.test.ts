@@ -30,6 +30,7 @@ describe('migrations at start-up', () => {
             await Promise.all(replicas.map((r) => r.pool.end()));
         }
         const check = new pg.Client({ connectionString: urlFor(name) });
+        check.on('error', () => undefined); // force-dropped later: the ended connection is expected
         await check.connect();
         try {
             const res = await check.query(

@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 38 · **date** 2026-11-10
+**rev** 39 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -9,10 +9,10 @@
 | Security & secrets | 3 | 0 | 0 | 42 | 0 |
 | Repository | 4 | 0 | 0 | 59 | 0 |
 | Server | 7 | 0 | 0 | 33 | 0 |
-| Database | 7 | 0 | 0 | 15 | 1 |
+| Database | 4 | 0 | 0 | 18 | 1 |
 | Client | 3 | 0 | 0 | 99 | 0 |
 | Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 24 | 0 | 0 | 289 | 1 |
+| **Total** | 21 | 0 | 0 | 292 | 1 |
 
 ## Act first
 
@@ -59,9 +59,6 @@ None.
 | DB-006 | Low | SQL Server alias types arrive as column domain; no custom type list, as the metadata format has no slot | `server/src/introspect/sqlserver.ts:54`, `server/src/introspect/sqlserver.ts:56` | Add an alias-type list to the metadata format |
 | DB-019 | Low | SQL Server collation is returned only when it differs from the default; not run against a real SQL Server | `server/src/introspect/sqlserver.ts:62` | Run the SQL Server introspect tests in CI |
 | DB-021 | Med | Drift check holds a pooled connection for its whole run; 10 concurrent checks starve the pool | `server/src/drift/service.ts:91`, `server/src/drift/service.ts:267` | Cap concurrent drift checks well below pool max |
-| DB-022 | Low | Migration tests end the pool with no error listener, then drop DB with force; 57P01 unhandled | `server/test/migration-two-factor.test.ts:36` | Add `pool.on('error')` noop, or drop without force |
-| DB-023 | Low | Activity group filter with cursor walks `audit_log_at_id_idx`: 144 ms, 100k rows filtered | `server/src/audit/activity.ts:145`, `server/src/db/schema.ts:350` | Add `id` to the `(action, at)` index |
-| DB-024 | Low | Stats backfill selects null stat rows with no index; seq-scans 503k snapshots hourly | `server/src/maintenance.ts:215` | Add a partial index on the null stat column |
 
 ### Client
 
@@ -166,6 +163,9 @@ None.
 | REPO-027 | Repository | Load run.sh never fails on a k6 threshold; README says it gates CI |
 | REPO-028 | Repository | README feature line says only a share-token hash is stored; code also encrypts token |
 | REPO-059 | Repository | CI tests only PostgreSQL 18, though README says 16 or newer |
+| DB-022 | Database | Migration tests end the pool with no error listener, then drop DB with force; 57P01 unhandled |
+| DB-023 | Database | Activity group filter with cursor walks `audit_log_at_id_idx`: 144 ms, 100k rows filtered |
+| DB-024 | Database | Stats backfill selects null stat rows with no index; seq-scans 503k snapshots hourly |
 | DB-008 | Database | One pending MFA ticket per account is not enforced; concurrent logins leave two |
 | DB-009 | Database | Audit rows are written after, not inside, the transaction of the change |
 | DB-010 | Database | Backups section omits saving CONNECTION_KEY and SECRETS_KEY with the dump |
@@ -443,6 +443,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 39 | 2026-11-10 | 3 fixed (database low batch: DB-022, 023, 024; one migration, 0029); DB-006 and DB-019 left (metadata format change; SQL Server CI); 21 open, 0 Crit, 0 High; anchors not remapped |
 | 38 | 2026-11-10 | 5 fixed (client low batch: CLI-102, 104, 105, 107, 108); CLI-109 re-attributed to `@dbml/core` Parser.parse; CLI-106 left (907 keys to translate); 24 open, 0 Crit, 0 High; anchors not remapped |
 | 37 | 2026-11-10 | 2 fixed (dead code lens: DEAD-037, DEAD-042); 29 open, 0 Crit, 0 High; anchors not remapped |
 | 36 | 2026-11-10 | 5 fixed (repository low batch: REPO-071, 072, 073, 075, 076; REPO-022 needs a team name from the org); 31 open, 0 Crit, 0 High; anchors not remapped |
