@@ -2,8 +2,6 @@
 
 interface ImportMetaEnv {
     readonly VITE_QUBDI_BACKEND_URL?: string;
-    readonly VITE_HOST_URL?: string;
-    readonly VITE_APP_URL?: string;
 }
 
 interface ImportMeta {

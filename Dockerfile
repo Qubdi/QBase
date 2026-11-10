@@ -7,15 +7,12 @@
 # runs the build (BUILDPLATFORM), and copied into each platform's image. Built
 # per platform, the arm64 copy would run under emulation, many times slower.
 FROM --platform=$BUILDPLATFORM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS web
-ARG VITE_HOST_URL
-ARG VITE_APP_URL
 WORKDIR /usr/src/app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 # The backend URL is not baked in: the server answers /config.js itself, pointing
 # the editor at its own /api.
-RUN printf 'VITE_HOST_URL=%s\nVITE_APP_URL=%s\n' "${VITE_HOST_URL}" "${VITE_APP_URL}" > .env
 # typecheck and bundle; no lint here: CI lints every change before an image is made.
 # .dockerignore leaves the tests out of the build, so the check skips them too
 # (tsconfig.image.json); CI checks them with `tsc -b`.

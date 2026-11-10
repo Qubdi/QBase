@@ -89,8 +89,6 @@ push() {
         set_version "$version"
         confirm "Build $(tag "$version") for amd64 and arm64 and push it to Docker Hub?" || return 1
         report docker buildx build --platform linux/amd64,linux/arm64 \
-            --build-arg "VITE_HOST_URL=${VITE_HOST_URL:-}" \
-            --build-arg "VITE_APP_URL=${VITE_APP_URL:-}" \
             -t "$IMAGE:$version" --push .
     else
         step "Push to Docker Hub"
