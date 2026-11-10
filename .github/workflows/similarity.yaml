@@ -1,16 +1,16 @@
 name: Upstream similarity
 
-# Part of the clean-room rewrite (see rewrite/PLAN.md). This branch must contain
-# only original code, so every file under src/, server/ and shared/ is checked,
+# Part of the clean-room rewrite (see rewrite/PLAN.md). The code on main and on
+# the rewrite branch must be original, so every file under src/, server/ and shared/ is checked,
 # plus the files listed in rewrite/rewritten.txt. It fails when a file is identical
 # to ChartDB, shares 30% or more of its lines, or has a run of more than 25
 # identical lines.
 
 on:
   pull_request:
-    branches: [rewrite/clean-room]
+    branches: [main, rewrite/clean-room]
   push:
-    branches: [rewrite/clean-room]
+    branches: [main, rewrite/clean-room]
 
 permissions:
   contents: read
