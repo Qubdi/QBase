@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Input } from '@/platform/ui/input';
 import { Textarea } from '@/platform/ui/textarea';
 
@@ -29,7 +29,9 @@ function useDebounced({
     const [text, setText] = useState(value);
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const latest = useRef({ value, onCommit, required, text });
-    latest.current = { value, onCommit, required, text };
+    useLayoutEffect(() => {
+        latest.current = { value, onCommit, required, text };
+    });
 
     const flush = () => {
         clearTimeout(timer.current);
@@ -54,9 +56,12 @@ function useDebounced({
         }
     };
 
-    useEffect(() => {
+    // the saved text changed from outside: the box follows it
+    const [seen, setSeen] = useState(value);
+    if (seen !== value) {
+        setSeen(value);
         setText(value);
-    }, [value]);
+    }
 
     // closing the form before the pause ends must not lose the typed text
     useEffect(

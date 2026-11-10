@@ -70,17 +70,25 @@ export const SortableRow: React.FC<{
     leading,
     children,
 }) => {
-    const sortable = useSortable({ id, disabled });
+    const {
+        setNodeRef,
+        setActivatorNodeRef,
+        transform,
+        transition,
+        isDragging,
+        attributes,
+        listeners,
+    } = useSortable({ id, disabled });
     return (
         <div
-            ref={sortable.setNodeRef}
+            ref={setNodeRef}
             style={{
-                transform: CSS.Transform.toString(sortable.transform),
-                transition: sortable.transition,
+                transform: CSS.Transform.toString(transform),
+                transition,
             }}
             className={cn(
                 'flex items-center gap-1',
-                sortable.isDragging && 'relative z-10 opacity-80',
+                isDragging && 'relative z-10 opacity-80',
                 className
             )}
         >
@@ -89,9 +97,9 @@ export const SortableRow: React.FC<{
                 <button
                     type="button"
                     aria-label={handleLabel}
-                    ref={sortable.setActivatorNodeRef}
-                    {...sortable.attributes}
-                    {...sortable.listeners}
+                    ref={setActivatorNodeRef}
+                    {...attributes}
+                    {...listeners}
                     className={cn(
                         'flex h-8 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground',
                         handleClassName
