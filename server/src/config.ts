@@ -124,7 +124,10 @@ export function parseTrustProxy(
  * operator expects. Printed once at start; none of them stops the server.
  */
 export function startupWarnings(
-    config: Pick<Config, 'cookieSecure' | 'trustProxy'>
+    config: Pick<
+        Config,
+        'cookieSecure' | 'trustProxy' | 'connectionKey' | 'secretsKey'
+    >
 ): string[] {
     const warnings: string[] = [];
     const noProxy =
@@ -141,6 +144,22 @@ export function startupWarnings(
                 'Set TRUST_PROXY to the number of proxies in front of the server, or COOKIE_SECURE=true.'
         );
     }
+    // the key is the only entropy in the derived encryption key, and old data
+    // is sealed with it, so a short key is warned about and not refused
+    for (const [name, value] of [
+        ['CONNECTION_KEY', config.connectionKey],
+        ['SECRETS_KEY', config.secretsKey],
+    ] as const) {
+        if (value === null) continue;
+        // SECRETS_KEY falls back to CONNECTION_KEY: one warning per value
+        if (name === 'SECRETS_KEY' && value === config.connectionKey) continue;
+        if (value.length < RECOMMENDED_KEY_LENGTH) {
+            warnings.push(
+                `${name} is ${value.length} characters; use at least ${RECOMMENDED_KEY_LENGTH} ` +
+                    '(for example `openssl rand -hex 24`). Changing it makes saved values unreadable, so re-enter them after a change.'
+            );
+        }
+    }
     return warnings;
 }
 
@@ -154,6 +173,9 @@ export class ConfigError extends Error {
 
 /** Shortest encryption key `CryptoBox` accepts. */
 const MIN_KEY_LENGTH = 16;
+
+/** Length from which a key is no longer warned about at start. */
+const RECOMMENDED_KEY_LENGTH = 32;
 
 /** The levels the logger knows; anything else makes it throw at start-up. */
 export const LOG_LEVELS = [

@@ -309,4 +309,21 @@ describe('startupWarnings', () => {
         expect(startupWarnings(loadConfig({ COOKIE_SECURE: 'true' }))).toEqual([]);
         expect(startupWarnings(loadConfig({ COOKIE_SECURE: 'false' }))).toEqual([]);
     });
+
+    it('warns about an encryption key shorter than 32 characters, once per value', () => {
+        const quiet = { COOKIE_SECURE: 'true' };
+        const short = 'k'.repeat(16);
+        const one = startupWarnings(loadConfig({ ...quiet, CONNECTION_KEY: short }));
+        expect(one).toHaveLength(1);
+        expect(one[0]).toMatch(/^CONNECTION_KEY is 16 characters; use at least 32/);
+        expect(one[0]).not.toContain(short);
+        const two = startupWarnings(
+            loadConfig({ ...quiet, CONNECTION_KEY: 'c'.repeat(40), SECRETS_KEY: short })
+        );
+        expect(two).toHaveLength(1);
+        expect(two[0]).toMatch(/^SECRETS_KEY is 16 characters/);
+        expect(
+            startupWarnings(loadConfig({ ...quiet, CONNECTION_KEY: 'c'.repeat(32) }))
+        ).toEqual([]);
+    });
 });
