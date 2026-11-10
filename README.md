@@ -391,14 +391,19 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   GRANT VIEW DEFINITION TO qbase_reader;
   ```
 - Drift checks compare the server's copy of the diagram, so the editor syncs it first.
-- Besides the limits above, one signed-in user is held to 600 calls a minute across the whole API (a fixed ceiling, not a setting; kept in each process's memory like the others).
-- Publishing a version is limited to 20 a minute per user, since each one stores a snapshot of the diagram.
+- Besides the limits above, one signed-in user is held to 600 calls a minute across the whole API (a fixed ceiling, not a setting; counted in the shared counters like the other limits).
 - Several server processes can share one database. Live share updates, the migrations at
-  start-up and the hourly clean-up are coordinated through Postgres. Rate limits, the
-  per-link live-viewer cap, the per-user allowance, the lint and outbound allowances and the guard against two
-  drift checks of one diagram at once are kept in the memory of each process, so with N
-  replicas each limit is N times as loose and two drift checks can overlap: keep the limiter at
-  the reverse proxy, or run one process (see "Scaling").
+  start-up and the hourly clean-up are coordinated through Postgres. So are the counts
+  behind the rate limits (per address and per user, including the lint and outbound
+  allowances), the sign-in and second-step lockouts, and the guard against two drift checks
+  of one diagram at once (a Postgres advisory lock): they hold across all replicas. The
+  counts live in the unlogged table `rate_counters`, one small write per limited request;
+  the hourly clean-up deletes closed windows. If Postgres cannot answer a count, that
+  request is counted in the memory of its own process instead (a warning is logged, at
+  most once a minute), so an outage neither turns requests away nor locks people out, and
+  the limits hold per process until it passes. One cap stays per process: the open
+  live-viewer caps per link and per address (`SSE_MAX_PER_LINK`, `SSE_MAX_PER_IP`) count the
+  connections that process holds, so with N replicas each is N times as loose.
 - The first start after upgrading to a version with the diagram-list columns (migration
   `0022`) rewrites the whole `diagrams` table under an exclusive lock: about 11 seconds for
   320 MB of diagrams here, and reads and writes of diagrams wait meanwhile. Start the new

@@ -1,9 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { sessionTokenOf } from '../auth/sessions.js';
-
-// Every limiter here keeps its counts in this process's memory, so with several
-// server processes each counts on its own (see "Scaling" in the README).
+import { createMemoryCounters, type CounterStore } from './counters.js';
 
 /**
  * Rate-limit bucket for a signed-in user: their session, hashed so the raw
@@ -32,29 +30,27 @@ export type RequestHook = (
  * earlier would key on whatever cookie a caller sends, so every junk cookie
  * would add an entry. A request without a user (the route's own check turns it
  * away first) falls back to its session or address.
+ *
+ * The calls are counted in the app's shared counters (`app.counters`), so the
+ * allowance holds across every server process; an app without them, or a
+ * database that does not answer, counts in this process's memory instead.
+ * `name` tells this allowance from another in the shared store, so give each
+ * allowance its own, the same in every process.
  */
 export function sharedUserLimit(
     max: number,
-    windowMs = 60_000
+    windowMs = 60_000,
+    name = `limit:${max}:${windowMs}`
 ): RequestHook {
-    // A window opens when its key is first seen and entries are only ever added
-    // at the end, so the map is in the order the windows close in.
-    const windows = new Map<string, { count: number; resetAt: number }>();
+    const own = createMemoryCounters();
     return async (req: FastifyRequest, reply: FastifyReply) => {
-        const now = Date.now();
-        // so only the entries that have closed are visited, not every one
-        for (const [key, w] of windows) {
-            if (w.resetAt > now) break;
-            windows.delete(key);
-        }
         const key = req.user ? `user:${req.user.id}` : userRateKey(req);
-        const w = windows.get(key) ?? { count: 0, resetAt: now + windowMs };
-        w.count++;
-        windows.set(key, w);
-        if (w.count > max) {
+        const store = (req.server as { counters?: CounterStore } | undefined)?.counters ?? own;
+        const { count, resetInMs } = await store.hit(`rate:${name}:${key}`, windowMs);
+        if (count > max) {
             return reply
                 .code(429)
-                .header('retry-after', Math.ceil((w.resetAt - now) / 1000))
+                .header('retry-after', Math.max(1, Math.ceil(resetInMs / 1000)))
                 .send({
                     statusCode: 429,
                     error: 'Too Many Requests',

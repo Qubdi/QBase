@@ -53,7 +53,9 @@ export const lintRoutes =
         // Counted in a preHandler, once the session is known, and per user: a
         // limit keyed at onRequest by the raw cookie lets a caller rotate junk
         // cookies for a fresh allowance on every call. Each route has its own.
-        const limit = () => ({ preHandler: sharedUserLimit(config.lintRateLimit) });
+        const limit = (name: string) => ({
+            preHandler: sharedUserLimit(config.lintRateLimit, 60_000, `lint:${name}`),
+        });
 
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -68,7 +70,7 @@ export const lintRoutes =
         app.post(
             '/lint',
             {
-                ...limit(),
+                ...limit('post'),
                 // linting runs synchronously, so the input is capped
                 bodyLimit: LINT_BODY_LIMIT,
             },
@@ -79,7 +81,7 @@ export const lintRoutes =
             return { findings, summary: summarizeFindings(findings) };
         });
 
-        app.get('/diagrams/:id/lint', limit(), async (req, reply) => {
+        app.get('/diagrams/:id/lint', limit('diagram'), async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const { source } = lintQuery.parse(req.query);
             const role = await getRole(db, id, req.user!.id);
@@ -140,7 +142,7 @@ export const lintRoutes =
             return { source, findings, summary: summarizeFindings(findings), config };
         });
 
-        app.get('/diagrams/:id/lint-config', limit(), async (req, reply) => {
+        app.get('/diagrams/:id/lint-config', limit('config-read'), async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
@@ -152,7 +154,7 @@ export const lintRoutes =
             return normalizeConfig(d.lintConfig);
         });
 
-        app.put('/diagrams/:id/lint-config', limit(), async (req, reply) => {
+        app.put('/diagrams/:id/lint-config', limit('config-write'), async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });

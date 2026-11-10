@@ -1,7 +1,13 @@
 import { and, isNotNull, lt, or, sql } from 'drizzle-orm';
 import type { Config } from './config.js';
 import { MAINTENANCE_LOCK, withAdvisoryLock, type Db } from './db/client.js';
-import { diagramLocks, mfaChallenges, shareLinks, sessions } from './db/schema.js';
+import {
+    diagramLocks,
+    mfaChallenges,
+    rateCounters,
+    shareLinks,
+    sessions,
+} from './db/schema.js';
 
 const DAY_MS = 86_400_000;
 
@@ -25,6 +31,21 @@ export async function purgeExpiredMfaChallenges(
     const res = await db
         .delete(mfaChallenges)
         .where(lt(mfaChallenges.expiresAt, now));
+    return res.rowCount ?? 0;
+}
+
+/**
+ * Deletes rate-limit and lockout counters whose window has closed. They are
+ * already ignored (a closed window starts again at one); this only keeps the
+ * table small.
+ */
+export async function purgeExpiredCounters(
+    db: Db,
+    now: Date = new Date()
+): Promise<number> {
+    const res = await db
+        .delete(rateCounters)
+        .where(lt(rateCounters.expiresAt, now));
     return res.rowCount ?? 0;
 }
 
@@ -142,6 +163,7 @@ export async function runMaintenance(
         sessions: () => purgeExpiredSessions(db, now),
         mfaChallenges: () => purgeExpiredMfaChallenges(db, now),
         locks: () => purgeExpiredLocks(db, now),
+        counters: () => purgeExpiredCounters(db, now),
         links: () => purgeDeadLinks(db, config.deadLinkKeepDays, now),
         audit: () => purgeAuditLog(db, config.auditRetentionDays, now),
         snapshots: () => pruneSnapshots(db, config.snapshotKeep),

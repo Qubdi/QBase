@@ -58,6 +58,9 @@ export async function createTestApp(
             'truncate table audit_log, sessions, project_members, projects, diagrams, saved_connections, drift_settings, drift_reports, users restart identity cascade'
         );
     }
+    // the limits count in the database, which a second app shares with the first;
+    // a new app starts with every allowance unspent, as one with its own memory did
+    await pool.query('delete from rate_counters');
     const app = buildApp({ config, db, introspect, userRateLimit });
     await app.ready();
     return {

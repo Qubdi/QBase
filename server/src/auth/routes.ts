@@ -217,8 +217,8 @@ export const authRoutes =
             // many addresses are held back by the per-address rate limit.)
             const key = `login:${body.email}:${req.ip}`;
             const accountKey = `login:${body.email}`;
-            if (locked(reply, key)) return;
-            const accountWait = accountFailures.blockedFor(accountKey);
+            if (await locked(reply, key)) return;
+            const accountWait = await accountFailures.blockedFor(accountKey);
             if (accountWait > 0) {
                 return reply
                     .code(429)
@@ -235,8 +235,8 @@ export const authRoutes =
             // a disabled account is answered like a wrong password, so a correct
             // password cannot confirm that the account exists but is switched off
             if (!user || !user.isActive || !ok) {
-                const addressLocked = failures.recordFailure(key);
-                const accountLocked = accountFailures.recordFailure(accountKey);
+                const addressLocked = await failures.recordFailure(key);
+                const accountLocked = await accountFailures.recordFailure(accountKey);
                 reply.code(401).send({ error: 'invalid_credentials' });
                 // The row is written after the answer has gone out, and only for
                 // an account that exists (guesses at made-up emails would fill the
@@ -258,8 +258,8 @@ export const authRoutes =
                 }
                 return reply;
             }
-            failures.reset(key);
-            accountFailures.reset(accountKey);
+            await failures.reset(key);
+            await accountFailures.reset(accountKey);
             // password right, but there is a second step: no cookie yet, only
             // a ticket for POST /auth/login/mfa
             if (config.mfaEnabled && user.mfaEnabledAt) {
@@ -312,7 +312,7 @@ export const authRoutes =
             }
             const body = changePassword.parse(req.body);
             const key = `password:${req.user.id}`;
-            if (locked(reply, key)) return;
+            if (await locked(reply, key)) return;
             const [user] = await db
                 .select()
                 .from(users)
@@ -320,7 +320,7 @@ export const authRoutes =
             if (
                 !(await verifyPassword(user.passwordHash, body.currentPassword))
             ) {
-                failures.recordFailure(key);
+                await failures.recordFailure(key);
                 // a signed-in person mistyping their password is not a sign-in attempt
                 await audit(db, {
                     userId: user.id,
@@ -344,22 +344,22 @@ export const authRoutes =
                 if (!config.secretsKey) {
                     return reply.code(503).send({ error: 'mfa_unavailable' });
                 }
-                if (mfaGuard.locked(reply, req, user.id)) return;
+                if (await mfaGuard.locked(reply, req, user.id)) return;
                 const ok =
                     body.code !== undefined
                         ? await mfa.checkCode(user.id, body.code)
                         : await mfa.spendRecoveryCode(user.id, body.recoveryCode!);
                 if (!ok) {
-                    mfaGuard.fail(req, user.id);
+                    await mfaGuard.fail(req, user.id);
                     await audit(db, { userId: user.id, action: 'mfa.failed' });
                     return reply.code(403).send({ error: 'invalid_code' });
                 }
-                mfaGuard.reset(req, user.id);
+                await mfaGuard.reset(req, user.id);
                 if (body.code === undefined) {
                     await audit(db, { userId: user.id, action: 'mfa.recovery_used' });
                 }
             }
-            failures.reset(key);
+            await failures.reset(key);
             await db
                 .update(users)
                 .set({

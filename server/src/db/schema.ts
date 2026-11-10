@@ -477,3 +477,18 @@ export const driftReports = pgTable(
     },
     (t) => [index('drift_reports_diagram_idx').on(t.diagramId, t.runAt)]
 );
+
+// Counters that every server process shares: rate limits, sign-in lockout.
+// One row per key; a window opens at the first hit and the row is dead once
+// `expires_at` has passed (the hourly maintenance deletes dead rows). Created
+// UNLOGGED by the migration: losing the counts in a crash only forgets some
+// recent attempts, and writes are cheaper without the WAL.
+export const rateCounters = pgTable(
+    'rate_counters',
+    {
+        key: text('key').primaryKey(),
+        count: integer('count').notNull(),
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    },
+    (t) => [index('rate_counters_expires_idx').on(t.expiresAt)]
+);

@@ -22,6 +22,8 @@ import { diagramRoutes } from './diagrams/routes.js';
 import { projectRoutes } from './projects/routes.js';
 import { memberRoutes } from './members/routes.js';
 import { requestIds } from './audit/request-context.js';
+import { createCounters } from './lib/counters.js';
+import { sharedRateLimitStore } from './lib/rate-limit-store.js';
 import { sharedUserLimit } from './lib/rate-key.js';
 import { safeError } from './lib/safe-error.js';
 import { registerWeb, API_PREFIX } from './web.js';
@@ -167,9 +169,15 @@ export function buildApp({
         }
     });
 
+    // rate limits and lockouts count here, in Postgres, so they hold across server processes
+    const counters = createCounters(db, (err) =>
+        app.log.warn({ err }, 'shared counters unavailable; counting in this process')
+    );
+    app.decorate('counters', counters);
+
     const mountApi = (api: FastifyInstance) => {
     api.register(cookie);
-    api.register(rateLimit, { global: false });
+    api.register(rateLimit, { global: false, store: sharedRateLimitStore(counters) });
     api.decorateRequest('user', null);
 
     // lets code that has no request in hand (the audit helper) name it in a log line
@@ -231,7 +239,7 @@ export function buildApp({
     // Every signed-in call draws on one allowance per user. Counting waits for
     // the session lookup above, so only a real user is counted (a made-up
     // cookie adds nothing); the routes open to anyone have limits of their own.
-    const userLimit = sharedUserLimit(userRateLimit);
+    const userLimit = sharedUserLimit(userRateLimit, 60_000, 'user');
     api.addHook('preHandler', async (req, reply) => {
         if (!req.user) return;
         return userLimit(req, reply);
@@ -266,14 +274,14 @@ export function buildApp({
     });
 
     // one set of failure counters, so a lockout reached through one door holds at the others
-    const guards = createAuthGuards(config);
+    const guards = createAuthGuards(config, counters);
     api.register(authRoutes(db, config, guards), { prefix: '/auth' });
     api.register(adminRoutes(db, config, guards), { prefix: '/admin' });
     api.register(projectRoutes(db), { prefix: '/projects' });
     api.register(diagramRoutes(db, config), { prefix: '/diagrams' });
     api.register(memberRoutes(db), { prefix: '/diagrams' });
     // introspection and manual drift checks draw from one allowance per user
-    const outboundLimit = sharedUserLimit(config.outboundRateLimit);
+    const outboundLimit = sharedUserLimit(config.outboundRateLimit, 60_000, 'outbound');
     api.register(
         introspectRoutes({ db, config, outboundLimit, ...introspect }),
         {

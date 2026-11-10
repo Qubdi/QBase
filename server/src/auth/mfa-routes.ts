@@ -15,10 +15,10 @@ type Failures = ReturnType<typeof createFailureThrottle>;
 /** the second-step lockout, keyed by account and address (see routes.ts) */
 export interface MfaGuard {
     /** answers 429 and returns true while this address or the account is locked out */
-    locked: (reply: FastifyReply, req: FastifyRequest, userId: string) => boolean;
+    locked: (reply: FastifyReply, req: FastifyRequest, userId: string) => Promise<boolean>;
     /** counts a wrong code; true when this one tripped a lockout */
-    fail: (req: FastifyRequest, userId: string) => boolean;
-    reset: (req: FastifyRequest, userId: string) => void;
+    fail: (req: FastifyRequest, userId: string) => Promise<boolean>;
+    reset: (req: FastifyRequest, userId: string) => Promise<void>;
 }
 
 export interface MfaRouteDeps {
@@ -27,7 +27,7 @@ export interface MfaRouteDeps {
     mfa: Mfa;
     failures: Failures;
     /** answers 429 and returns true while the key is locked out */
-    locked: (reply: FastifyReply, key: string) => boolean;
+    locked: (reply: FastifyReply, key: string) => Promise<boolean>;
     mfaGuard: MfaGuard;
     /** route options with the per-address rate limit */
     limit: object;
@@ -106,7 +106,7 @@ export const mfaRoutes =
                 return reply.code(401).send({ error: 'invalid_challenge' });
             }
             // guesses over several challenges count against the account too
-            if (mfaGuard.locked(reply, req, challenge.userId)) return;
+            if (await mfaGuard.locked(reply, req, challenge.userId)) return;
             const [user] = await db
                 .select()
                 .from(users)
@@ -116,7 +116,7 @@ export const mfaRoutes =
             }
             const used = await checkFactor(user.id, body);
             if (!used) {
-                const tripped = mfaGuard.fail(req, user.id);
+                const tripped = await mfaGuard.fail(req, user.id);
                 await audit(db, { userId: user.id, action: 'mfa.failed' });
                 if (tripped) await audit(db, { userId: user.id, action: 'user.locked' });
                 return reply.code(401).send({ error: 'invalid_code' });
@@ -125,7 +125,7 @@ export const mfaRoutes =
             if (!(await mfa.finishChallenge(challenge.id))) {
                 return reply.code(401).send({ error: 'invalid_challenge' });
             }
-            mfaGuard.reset(req, user.id);
+            await mfaGuard.reset(req, user.id);
             await startSession(req, reply, user.id);
             if (used === 'recovery') {
                 await audit(db, { userId: user.id, action: 'mfa.recovery_used' });
@@ -197,13 +197,13 @@ export const mfaRoutes =
             }
             // wrong codes are counted below; once they trip the lockout, no
             // further guess is checked
-            if (mfaGuard.locked(reply, req, req.user.id)) return;
+            if (await mfaGuard.locked(reply, req, req.user.id)) return;
             if (!(await mfa.checkCode(req.user.id, body.code))) {
-                mfaGuard.fail(req, req.user.id);
+                await mfaGuard.fail(req, req.user.id);
                 await audit(db, { userId: req.user.id, action: 'mfa.failed' });
                 return reply.code(400).send({ error: 'invalid_code' });
             }
-            mfaGuard.reset(req, req.user.id);
+            await mfaGuard.reset(req, req.user.id);
             const recoveryCodes = await mfa.enable(req.user.id);
             await audit(db, { userId: req.user.id, action: 'mfa.enable' });
             // the only time they are shown: only their hashes are kept
@@ -257,16 +257,16 @@ export const mfaRoutes =
             // session could otherwise lock the owner out of their own sign-in by
             // guessing passwords here (change-password counts under this key too)
             const key = `password:${userId}`;
-            if (locked(reply, key)) return null;
+            if (await locked(reply, key)) return null;
             const [user] = await db.select().from(users).where(eq(users.id, userId));
             if (!(await verifyPassword(user.passwordHash, password))) {
-                failures.recordFailure(key);
+                await failures.recordFailure(key);
                 // not a sign-in: the person is already signed in
                 await audit(db, { userId, action: 'user.password_check_failed' });
                 reply.code(403).send({ error: 'wrong_password' });
                 return null;
             }
-            failures.reset(key);
+            await failures.reset(key);
             return user;
         }
 
@@ -285,10 +285,10 @@ export const mfaRoutes =
             if (!user) return null;
             // the same lockout as signing in: a held-back address or account
             // gets no more guesses at the code
-            if (mfaGuard.locked(reply, req, userId)) return null;
+            if (await mfaGuard.locked(reply, req, userId)) return null;
             const used = await checkFactor(userId, body);
             if (!used) {
-                mfaGuard.fail(req, userId);
+                await mfaGuard.fail(req, userId);
                 await audit(db, { userId, action: 'mfa.failed' });
                 reply.code(403).send({ error: 'invalid_code' });
                 return null;
@@ -296,7 +296,7 @@ export const mfaRoutes =
             if (used === 'recovery') {
                 await audit(db, { userId, action: 'mfa.recovery_used' });
             }
-            mfaGuard.reset(req, userId);
+            await mfaGuard.reset(req, userId);
             return user;
         }
     };

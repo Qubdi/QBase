@@ -72,8 +72,55 @@ export interface SourceKeys {
     columns: Record<string, string>;
 }
 
-// diagrams with a check in progress; per process, like the rate limits
+// Diagrams with a check in progress in this process. It answers at once; the
+// advisory lock below is what keeps two server processes from checking the same
+// diagram at the same time.
 const running = new Set<string>();
+
+/**
+ * Takes a Postgres advisory lock on the diagram's drift check, on a connection
+ * held until the returned function is called (a crashed process drops it with
+ * its connection). Null when another server process holds it.
+ */
+export async function holdDriftLock(
+    db: Db,
+    diagramId: string
+): Promise<(() => Promise<void>) | null> {
+    const name = `drift:${diagramId}`;
+    const client = await db.$client.connect();
+    // a connection lost while the check runs would otherwise be an unhandled
+    // 'error' event on a checked-out client, which ends the process
+    const onError = () => undefined;
+    client.on('error', onError);
+    let held: boolean;
+    try {
+        const res = await client.query<{ ok: boolean }>(
+            'select pg_try_advisory_lock(hashtextextended($1, 0)) as ok',
+            [name]
+        );
+        held = res.rows[0]?.ok === true;
+    } catch (err) {
+        client.off('error', onError);
+        client.release(true);
+        throw err;
+    }
+    if (!held) {
+        client.off('error', onError);
+        client.release();
+        return null;
+    }
+    return async () => {
+        const released = await client
+            .query('select pg_advisory_unlock(hashtextextended($1, 0))', [name])
+            .then(
+                () => true,
+                () => false
+            );
+        client.off('error', onError);
+        // a connection that may still hold the lock must not go back to the pool
+        client.release(released ? undefined : true);
+    };
+}
 
 /** Compact view of a report, used for lists and the diagram badge. */
 export function summarizeReport(r: ReportSummaryRow) {
@@ -214,7 +261,10 @@ export async function runDriftCheck(
     const { db } = deps;
     if (running.has(diagramId)) return 'running';
     running.add(diagramId);
+    let release: (() => Promise<void>) | null = null;
     try {
+        release = await holdDriftLock(db, diagramId);
+        if (!release) return 'running';
         const [settings] = await db
             .select()
             .from(driftSettings)
@@ -406,5 +456,6 @@ export async function runDriftCheck(
         return report;
     } finally {
         running.delete(diagramId);
+        await release?.();
     }
 }

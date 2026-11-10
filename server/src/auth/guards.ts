@@ -1,5 +1,6 @@
 import type { FastifyReply } from 'fastify';
 import type { Config } from '../config.js';
+import type { CounterStore } from '../lib/counters.js';
 import { createFailureThrottle } from '../lib/failure-throttle.js';
 import type { MfaGuard } from './mfa-routes.js';
 
@@ -12,20 +13,25 @@ export interface AuthGuards {
     /** failures at one account from every address together */
     accountFailures: ReturnType<typeof createFailureThrottle>;
     /** answers 429 and returns true while the key is locked out */
-    locked: (reply: FastifyReply, key: string) => boolean;
+    locked: (reply: FastifyReply, key: string) => Promise<boolean>;
     mfaGuard: MfaGuard;
 }
 
 /**
  * One set per server. Everything that asks for a password or a code counts its
  * failures here, so a lockout reached through one door holds at the others.
+ * With a shared `store` (the app's database-backed counters) it holds on every
+ * server process too; without one the counts stay in this process.
  */
 export function createAuthGuards(
-    config: Pick<Config, 'authMaxFailures' | 'authLockoutMinutes'>
+    config: Pick<Config, 'authMaxFailures' | 'authLockoutMinutes'>,
+    store?: CounterStore
 ): AuthGuards {
     const failures = createFailureThrottle({
         max: config.authMaxFailures,
         windowMs: config.authLockoutMinutes * 60_000,
+        store,
+        name: 'address',
     });
     // Failures at one account from every address together. The ceiling is well
     // above the per-address one, so a stranger cannot cheaply keep the owner
@@ -33,9 +39,11 @@ export function createAuthGuards(
     const accountFailures = createFailureThrottle({
         max: config.authMaxFailures * ACCOUNT_FAILURE_FACTOR,
         windowMs: config.authLockoutMinutes * 60_000,
+        store,
+        name: 'account',
     });
-    const locked = (reply: FastifyReply, key: string) => {
-        const wait = failures.blockedFor(key);
+    const locked = async (reply: FastifyReply, key: string) => {
+        const wait = await failures.blockedFor(key);
         if (wait === 0) return false;
         reply
             .code(429)
@@ -49,9 +57,9 @@ export function createAuthGuards(
     // second step by failing it from elsewhere; codes guessed from many
     // addresses are held back by the all-addresses ceiling.
     const mfaGuard: MfaGuard = {
-        locked(reply, req, userId) {
-            if (locked(reply, `mfa:${userId}:${req.ip}`)) return true;
-            const wait = accountFailures.blockedFor(`mfa:${userId}`);
+        async locked(reply, req, userId) {
+            if (await locked(reply, `mfa:${userId}:${req.ip}`)) return true;
+            const wait = await accountFailures.blockedFor(`mfa:${userId}`);
             if (wait === 0) return false;
             reply
                 .code(429)
@@ -59,14 +67,14 @@ export function createAuthGuards(
                 .send({ error: 'too_many_attempts' });
             return true;
         },
-        fail(req, userId) {
-            const addressLocked = failures.recordFailure(`mfa:${userId}:${req.ip}`);
-            const accountLocked = accountFailures.recordFailure(`mfa:${userId}`);
+        async fail(req, userId) {
+            const addressLocked = await failures.recordFailure(`mfa:${userId}:${req.ip}`);
+            const accountLocked = await accountFailures.recordFailure(`mfa:${userId}`);
             return addressLocked || accountLocked;
         },
-        reset(req, userId) {
-            failures.reset(`mfa:${userId}:${req.ip}`);
-            accountFailures.reset(`mfa:${userId}`);
+        async reset(req, userId) {
+            await failures.reset(`mfa:${userId}:${req.ip}`);
+            await accountFailures.reset(`mfa:${userId}`);
         },
     };
     return { failures, accountFailures, locked, mfaGuard };
