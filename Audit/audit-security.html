@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 25</b></div>
-  <h1>19 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Security &amp; secrets Audit &middot; <b>rev 26</b></div>
+  <h1>12 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -30,30 +30,23 @@
 <main id="main">
 <section id="reg" class="sec-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Security &amp; secrets</h2></div>
-  <p class="section-note">30 open &middot; 3 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">12 open &middot; 21 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
         <tr><td class="svc-name">SEC-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Old remote history still holds a literal SQL Server SA password</td><td class="wrap-cell"><code>.gitleaks.toml:4</code></td><td class="wrap-cell">Delete stale remote refs and purge their objects</td></tr>
-        <tr><td class="svc-name">SEC-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">MFA lockout never checked before enable, disable, recovery-renew code guesses</td><td class="wrap-cell"><code>server/src/auth/mfa-routes.ts:188</code>, <code>server/src/auth/mfa-routes.ts:274</code></td><td class="wrap-cell">Call <code>locked()</code> on the <code>mfa:</code> key before checking codes</td></tr>
-        <tr><td class="svc-name">SEC-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Introspection connections default to plaintext (<code>ssl</code> false)</td><td class="wrap-cell"><code>server/src/introspect/routes.ts:47</code>, <code>server/src/introspect/postgres.ts:354</code>, <code>server/src/introspect/sqlserver.ts:469</code></td><td class="wrap-cell">Default <code>ssl</code> to true; require explicit opt-out</td></tr>
-        <tr><td class="svc-name">SEC-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Cookie <code>Secure</code> stays off behind TLS proxy unless TRUST_PROXY is set</td><td class="wrap-cell"><code>server/src/config.ts:231</code>, <code>server/src/auth/routes.ts:82</code>, <code>docker-compose.yml:74</code></td><td class="wrap-cell">Warn at start when COOKIE_SECURE=auto without TRUST_PROXY</td></tr>
-        <tr><td class="svc-name">SEC-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">No rate limit on authenticated routes (50 MB saves, share, admin)</td><td class="wrap-cell"><code>server/src/app.ts:139</code></td><td class="wrap-cell">Add global per-user rate limit with route overrides</td></tr>
+        <tr><td class="svc-name">SEC-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Introspection API default is <code>ssl</code> true; editor form default and explicit <code>ssl: false</code> still allow plaintext</td><td class="wrap-cell"><code>server/src/introspect/routes.ts:48</code>, <code>server/src/introspect/postgres.ts:354</code>, <code>server/src/introspect/sqlserver.ts:469</code></td><td class="wrap-cell">Default the editor form to ssl on; warn on plaintext</td></tr>
         <tr><td class="svc-name">SEC-010</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unkeyed sha256 recovery-code hashes still accepted</td><td class="wrap-cell"><code>server/src/auth/mfa.ts:167</code>, <code>server/src/auth/totp.ts:172</code></td><td class="wrap-cell">Migrate legacy hashes, then drop legacy lookup</td></tr>
-        <tr><td class="svc-name">SEC-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Encryption keys accept any 16 characters; scrypt salt is fixed</td><td class="wrap-cell"><code>server/src/config.ts:129</code>, <code>server/src/introspect/crypto-box.ts:11</code></td><td class="wrap-cell">Require 32+ chars; add per-value random salt</td></tr>
+        <tr><td class="svc-name">SEC-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Encryption keys under 32 characters only warn at start; scrypt salt is fixed</td><td class="wrap-cell"><code>server/src/config.ts:129</code>, <code>server/src/introspect/crypto-box.ts:31</code></td><td class="wrap-cell">Refuse short keys; add versioned per-value salt</td></tr>
         <tr><td class="svc-name">SEC-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Legacy shared-key fallback lets any purpose box open unpurposed ciphertext</td><td class="wrap-cell"><code>server/src/introspect/crypto-box.ts:81</code></td><td class="wrap-cell">Re-seal legacy values, then remove fallback</td></tr>
-        <tr><td class="svc-name">SEC-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Read-only guard is a denylist missing <code>pg_read_binary_file</code>, <code>sp_executesql</code>, <code>xp_dirtree</code></td><td class="wrap-cell"><code>server/src/introspect/readonly-guard.ts:15</code></td><td class="wrap-cell">Allowlist query ids instead of keyword denylist</td></tr>
-        <tr><td class="svc-name">SEC-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server session not read-only; <code>readOnlyIntent</code> is only a routing hint</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:473</code></td><td class="wrap-cell">Document least-privilege login; refuse <code>db_owner</code> logins</td></tr>
+        <tr><td class="svc-name">SEC-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Read-only guard is still a denylist; file and shell functions added, allowlist not built</td><td class="wrap-cell"><code>server/src/introspect/readonly-guard.ts:15</code></td><td class="wrap-cell">Allowlist query ids instead of keyword denylist</td></tr>
+        <tr><td class="svc-name">SEC-014</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server session not read-only; <code>readOnlyIntent</code> is only a routing hint; only documented</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:473</code></td><td class="wrap-cell">Refuse <code>db_owner</code> and <code>sysadmin</code> logins; fix test login</td></tr>
         <tr><td class="svc-name">SEC-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Admin can reset another admin's password and MFA with no step-up</td><td class="wrap-cell"><code>server/src/admin/routes.ts:371</code>, <code>server/src/admin/routes.ts:596</code></td><td class="wrap-cell">Require admin password and code for reset actions</td></tr>
         <tr><td class="svc-name">SEC-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">First-run register open to any caller who reaches an empty server</td><td class="wrap-cell"><code>server/src/auth/routes.ts:130</code>, <code>server/src/auth/routes.ts:142</code></td><td class="wrap-cell">Require a setup token printed in server log</td></tr>
         <tr><td class="svc-name">SEC-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Editor CSP allows inline styles (<code>style-src 'unsafe-inline'</code>)</td><td class="wrap-cell"><code>server/src/web.ts:16</code></td><td class="wrap-cell">Move inline styles to nonce or hashed styles</td></tr>
-        <tr><td class="svc-name">SEC-023</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">App container lacks <code>no-new-privileges</code>, <code>cap_drop</code>, <code>read_only</code></td><td class="wrap-cell"><code>docker-compose.yml:50</code></td><td class="wrap-cell">Add <code>security_opt</code>, <code>cap_drop: [ALL]</code>, <code>read_only: true</code></td></tr>
         <tr><td class="svc-name">SEC-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Compose default image tag <code>latest</code>, unpinned</td><td class="wrap-cell"><code>docker-compose.yml:54</code></td><td class="wrap-cell">Require QBASE_VERSION; drop the <code>latest</code> default</td></tr>
-        <tr><td class="svc-name">SEC-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Load stack hard-codes DB password, encryption key and admin password</td><td class="wrap-cell"><code>server/load/docker-compose.yml:65</code>, <code>server/load/docker-compose.yml:66</code>, <code>server/load/seed.mjs:10</code></td><td class="wrap-cell">Generate load-test secrets per run</td></tr>
-        <tr><td class="svc-name">SEC-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it</td><td class="wrap-cell"><code>server/src/lib/rate-key.ts:14</code>, <code>server/src/lint/routes.ts:53</code></td><td class="wrap-cell">Count in preHandler after session lookup, like sharedUserLimit</td></tr>
-        <tr><td class="svc-name">SEC-030</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Session cookie lacks <code>__Host-</code> prefix</td><td class="wrap-cell"><code>server/src/auth/routes.ts:97</code>, <code>server/src/auth/sessions.ts:7</code></td><td class="wrap-cell">Rename to <code>__Host-</code> cookie when secure</td></tr>
-        <tr><td class="svc-name">SEC-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Driver error text and address class returned; refused, timeout, private-host answers map networks</td><td class="wrap-cell"><code>server/src/introspect/routes.ts:226</code>, <code>server/src/introspect/routes.ts:231</code>, <code>server/src/introspect/net-guard.ts:217</code></td><td class="wrap-cell">Return fixed error codes; log driver text server-side only</td></tr>
+        <tr><td class="svc-name">SEC-031</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Drift webhook send still returns address-class text for a refused host</td><td class="wrap-cell"><code>server/src/drift/webhook.ts:114</code></td><td class="wrap-cell">Return a fixed error code; log text server-side only</td></tr>
       </tbody>
     </table>
   </div>
@@ -61,7 +54,7 @@
 
 <section id="closed" class="sec-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (14)</summary>
+  <details><summary>Fixed (21)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -80,6 +73,13 @@
         <tr><td class="svc-name">SEC-032</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Webhooks reuse INTROSPECT_ALLOW_HOSTS; a database allow-list also permits internal HTTP POSTs</td></tr>
         <tr><td class="svc-name">SEC-033</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Webhook accepts plain <code>http:</code>; token-bearing URL and drift details sent unencrypted</td></tr>
         <tr><td class="svc-name">SEC-034</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">API responses lack <code>Cache-Control: no-store</code>; GET share-links returns live tokens</td></tr>
+        <tr><td class="svc-name">SEC-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">MFA lockout never checked before enable, disable, recovery-renew code guesses</td></tr>
+        <tr><td class="svc-name">SEC-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Cookie <code>Secure</code> stays off behind TLS proxy unless TRUST_PROXY is set</td></tr>
+        <tr><td class="svc-name">SEC-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No rate limit on authenticated routes (50 MB saves, share, admin)</td></tr>
+        <tr><td class="svc-name">SEC-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">App container lacks <code>no-new-privileges</code>, <code>cap_drop</code>, <code>read_only</code></td></tr>
+        <tr><td class="svc-name">SEC-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Load stack hard-codes DB password, encryption key and admin password</td></tr>
+        <tr><td class="svc-name">SEC-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it</td></tr>
+        <tr><td class="svc-name">SEC-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Session cookie lacks <code>__Host-</code> prefix</td></tr>
       </tbody>
     </table>
   </div>

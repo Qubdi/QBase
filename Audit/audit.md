@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 25 · **date** 2026-11-10
+**rev** 26 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 19 | 0 | 0 | 14 | 0 |
+| Security & secrets | 12 | 0 | 0 | 21 | 0 |
 | Repository | 12 | 0 | 1 | 44 | 0 |
 | Server | 16 | 0 | 4 | 20 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 5 | 0 | 0 | 89 | 0 |
 | Dead code | 1 | 0 | 0 | 39 | 0 |
-| **Total** | 61 | 0 | 5 | 216 | 1 |
+| **Total** | 54 | 0 | 5 | 223 | 1 |
 
 ## Act first
 
@@ -31,24 +31,17 @@
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | Med | Old remote history still holds a literal SQL Server SA password | `.gitleaks.toml:4` | Delete stale remote refs and purge their objects |
-| SEC-002 | Med | MFA lockout never checked before enable, disable, recovery-renew code guesses | `server/src/auth/mfa-routes.ts:188`, `server/src/auth/mfa-routes.ts:274` | Call `locked()` on the `mfa:` key before checking codes |
-| SEC-003 | Med | Introspection connections default to plaintext (`ssl` false) | `server/src/introspect/routes.ts:47`, `server/src/introspect/postgres.ts:354`, `server/src/introspect/sqlserver.ts:469` | Default `ssl` to true; require explicit opt-out |
-| SEC-004 | Med | Cookie `Secure` stays off behind TLS proxy unless TRUST_PROXY is set | `server/src/config.ts:231`, `server/src/auth/routes.ts:82`, `docker-compose.yml:74` | Warn at start when COOKIE_SECURE=auto without TRUST_PROXY |
-| SEC-005 | Med | No rate limit on authenticated routes (50 MB saves, share, admin) | `server/src/app.ts:139` | Add global per-user rate limit with route overrides |
+| SEC-003 | Med | Introspection API default is `ssl` true; editor form default and explicit `ssl: false` still allow plaintext | `server/src/introspect/routes.ts:48`, `server/src/introspect/postgres.ts:354`, `server/src/introspect/sqlserver.ts:469` | Default the editor form to ssl on; warn on plaintext |
 | SEC-010 | Low | Unkeyed sha256 recovery-code hashes still accepted | `server/src/auth/mfa.ts:167`, `server/src/auth/totp.ts:172` | Migrate legacy hashes, then drop legacy lookup |
-| SEC-011 | Low | Encryption keys accept any 16 characters; scrypt salt is fixed | `server/src/config.ts:129`, `server/src/introspect/crypto-box.ts:11` | Require 32+ chars; add per-value random salt |
+| SEC-011 | Low | Encryption keys under 32 characters only warn at start; scrypt salt is fixed | `server/src/config.ts:129`, `server/src/introspect/crypto-box.ts:31` | Refuse short keys; add versioned per-value salt |
 | SEC-012 | Low | Legacy shared-key fallback lets any purpose box open unpurposed ciphertext | `server/src/introspect/crypto-box.ts:81` | Re-seal legacy values, then remove fallback |
-| SEC-013 | Low | Read-only guard is a denylist missing `pg_read_binary_file`, `sp_executesql`, `xp_dirtree` | `server/src/introspect/readonly-guard.ts:15` | Allowlist query ids instead of keyword denylist |
-| SEC-014 | Low | SQL Server session not read-only; `readOnlyIntent` is only a routing hint | `server/src/introspect/sqlserver.ts:473` | Document least-privilege login; refuse `db_owner` logins |
+| SEC-013 | Low | Read-only guard is still a denylist; file and shell functions added, allowlist not built | `server/src/introspect/readonly-guard.ts:15` | Allowlist query ids instead of keyword denylist |
+| SEC-014 | Low | SQL Server session not read-only; `readOnlyIntent` is only a routing hint; only documented | `server/src/introspect/sqlserver.ts:473` | Refuse `db_owner` and `sysadmin` logins; fix test login |
 | SEC-018 | Low | Admin can reset another admin's password and MFA with no step-up | `server/src/admin/routes.ts:371`, `server/src/admin/routes.ts:596` | Require admin password and code for reset actions |
 | SEC-019 | Low | First-run register open to any caller who reaches an empty server | `server/src/auth/routes.ts:130`, `server/src/auth/routes.ts:142` | Require a setup token printed in server log |
 | SEC-022 | Low | Editor CSP allows inline styles (`style-src 'unsafe-inline'`) | `server/src/web.ts:16` | Move inline styles to nonce or hashed styles |
-| SEC-023 | Low | App container lacks `no-new-privileges`, `cap_drop`, `read_only` | `docker-compose.yml:50` | Add `security_opt`, `cap_drop: [ALL]`, `read_only: true` |
 | SEC-024 | Low | Compose default image tag `latest`, unpinned | `docker-compose.yml:54` | Require QBASE_VERSION; drop the `latest` default |
-| SEC-026 | Low | Load stack hard-codes DB password, encryption key and admin password | `server/load/docker-compose.yml:65`, `server/load/docker-compose.yml:66`, `server/load/seed.mjs:10` | Generate load-test secrets per run |
-| SEC-027 | Med | Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it | `server/src/lib/rate-key.ts:14`, `server/src/lint/routes.ts:53` | Count in preHandler after session lookup, like sharedUserLimit |
-| SEC-030 | Low | Session cookie lacks `__Host-` prefix | `server/src/auth/routes.ts:97`, `server/src/auth/sessions.ts:7` | Rename to `__Host-` cookie when secure |
-| SEC-031 | Low | Driver error text and address class returned; refused, timeout, private-host answers map networks | `server/src/introspect/routes.ts:226`, `server/src/introspect/routes.ts:231`, `server/src/introspect/net-guard.ts:217` | Return fixed error codes; log driver text server-side only |
+| SEC-031 | Low | Drift webhook send still returns address-class text for a refused host | `server/src/drift/webhook.ts:114` | Return a fixed error code; log text server-side only |
 
 ### Repository
 
@@ -303,6 +296,13 @@
 | SEC-032 | Security & secrets | Webhooks reuse INTROSPECT_ALLOW_HOSTS; a database allow-list also permits internal HTTP POSTs |
 | SEC-033 | Security & secrets | Webhook accepts plain `http:`; token-bearing URL and drift details sent unencrypted |
 | SEC-034 | Security & secrets | API responses lack `Cache-Control: no-store`; GET share-links returns live tokens |
+| SEC-002 | Security & secrets | MFA lockout never checked before enable, disable, recovery-renew code guesses |
+| SEC-004 | Security & secrets | Cookie `Secure` stays off behind TLS proxy unless TRUST_PROXY is set |
+| SEC-005 | Security & secrets | No rate limit on authenticated routes (50 MB saves, share, admin) |
+| SEC-023 | Security & secrets | App container lacks `no-new-privileges`, `cap_drop`, `read_only` |
+| SEC-026 | Security & secrets | Load stack hard-codes DB password, encryption key and admin password |
+| SEC-027 | Security & secrets | Lint rate limit keyed by raw cookie at onRequest; rotating junk cookies bypasses it |
+| SEC-030 | Security & secrets | Session cookie lacks `__Host-` prefix |
 | SRV-037 | Server | `forceCloseConnections: true` destroys in-flight requests on shutdown, not only SSE |
 | CLI-001 | Client | No error boundary or route `errorElement`; a render or chunk-load error blanks the app |
 | CLI-002 | Client | Startup `api.me()` failure of any kind (timeout, 5xx) shows user as signed out |
@@ -408,6 +408,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 26 | 2026-11-10 | 7 fixed (security batch 2: SEC-002, 004, 005, 023, 026, 027, 030), 5 narrowed (SEC-003, 011, 013, 014, 031); anchors not remapped |
 | 25 | 2026-11-10 | 10 fixed (dead-code batch: DEAD-001, 002, 007, 011, 025, 026, 027, 029, 032, 033), 1 narrowed (DEAD-024); anchors not remapped |
 | 24 | 2026-11-10 | 17 fixed (client batch 2: CLI-008, 012, 013, 015, 018, 019, 025, 026, 027, 028, 045, 054, 065, 068, 071, 087, 093), 5 narrowed (CLI-005, 006, 007, 039, 069); anchors not remapped |
 | 23 | 2026-11-09 | 18 fixed (client batch 1: CLI-001, 002, 003, 020, 021, 022, 023, 024, 050, 052, 057, 066, 067, 081, 082, 085, 086, 101), 2 High cleared; anchors not remapped |
