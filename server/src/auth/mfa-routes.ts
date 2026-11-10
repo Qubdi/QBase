@@ -195,6 +195,9 @@ export const mfaRoutes =
             if ((await mfa.secretOf(req.user.id)) === null) {
                 return reply.code(409).send({ error: 'setup_first' });
             }
+            // wrong codes are counted below; once they trip the lockout, no
+            // further guess is checked
+            if (mfaGuard.locked(reply, req, req.user.id)) return;
             if (!(await mfa.checkCode(req.user.id, body.code))) {
                 mfaGuard.fail(req, req.user.id);
                 await audit(db, { userId: req.user.id, action: 'mfa.failed' });
@@ -280,6 +283,9 @@ export const mfaRoutes =
             const userId = req.user!.id;
             const user = await checkPassword(req, reply, body.password);
             if (!user) return null;
+            // the same lockout as signing in: a held-back address or account
+            // gets no more guesses at the code
+            if (mfaGuard.locked(reply, req, userId)) return null;
             const used = await checkFactor(userId, body);
             if (!used) {
                 mfaGuard.fail(req, userId);

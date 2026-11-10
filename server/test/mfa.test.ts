@@ -664,7 +664,48 @@ describe('two-factor sign-in', () => {
             }
         });
 
-        async function enrolledOn(app: TestCtx) {
+        it('wrong codes at switch-on, switch-off and new recovery codes trip the same lockout', async () => {
+            const strict = await createTestApp(
+                { secretsKey: KEY, authMaxFailures: 3 },
+                undefined,
+                false
+            );
+            try {
+                const send = (url: string, payload: object, who: TestUser) =>
+                    strict.app.inject({ method: 'POST', url, payload, headers: as(who) });
+
+                // switching on: three wrong codes, then even the right one is held back
+                const fresh = await enrolledOn(strict, false);
+                const wrongFresh = totp(fresh.secret) === '000000' ? '000001' : '000000';
+                for (let i = 0; i < 3; i++) {
+                    const res = await send('/auth/mfa/enable', { password: PASSWORD, code: wrongFresh }, fresh.user);
+                    expect(res.statusCode).toBe(400);
+                }
+                const heldOn = await send('/auth/mfa/enable', { password: PASSWORD, code: totp(fresh.secret) }, fresh.user);
+                expect(heldOn.statusCode).toBe(429);
+                expect(heldOn.headers['retry-after']).toBeDefined();
+                expect((await ctx.app.inject({ url: '/auth/me', headers: as(fresh.user) })).json().mfaEnabled).toBe(false);
+
+                // switching off and renewing recovery codes share it
+                for (const url of ['/auth/mfa/disable', '/auth/mfa/recovery-codes']) {
+                    const { user, secret } = await enrolledOn(strict);
+                    const wrong = totp(secret) === '000000' ? '000001' : '000000';
+                    for (let i = 0; i < 3; i++) {
+                        const res = await send(url, { password: PASSWORD, code: wrong }, user);
+                        expect(res.statusCode).toBe(403);
+                    }
+                    nextStep();
+                    const held = await send(url, { password: PASSWORD, code: totp(secret) }, user);
+                    expect(held.statusCode).toBe(429);
+                    const [row] = await ctx.db.select().from(users).where(eq(users.id, user.id));
+                    expect(row.mfaEnabledAt).not.toBeNull();
+                }
+            } finally {
+                await strict.close();
+            }
+        });
+
+        async function enrolledOn(app: TestCtx, switchOn = true) {
             const email = `limit${++counter}@example.com`;
             // the admin of the shared database creates the account
             const admin = await loginUser(app.app, 'admin@example.com');
@@ -680,6 +721,7 @@ describe('two-factor sign-in', () => {
             const { secret } = (
                 await app.app.inject({ method: 'POST', url: '/auth/mfa/setup', payload: {}, headers: as(user) })
             ).json();
+            if (!switchOn) return { user, secret };
             const enable = await app.app.inject({
                 method: 'POST',
                 url: '/auth/mfa/enable',
