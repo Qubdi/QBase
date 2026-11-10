@@ -16,6 +16,16 @@ describe('heavy libraries are not part of the main editor load', () => {
     });
 });
 
+describe('the DBML section fetches the parser at the first edit, not at the first view', () => {
+    it('only reaches import-dbml through import()', () => {
+        const source = read(
+            'pages/editor-page/side-panel/dbml-section/dbml-section.tsx'
+        );
+        expect(source).not.toMatch(/^import [^;]*import-dbml';/m);
+        expect(source).toContain("import('@/formats/dbml/import-dbml')");
+    });
+});
+
 describe('the DBML parser is not part of the main editor load', () => {
     it.each([
         [
