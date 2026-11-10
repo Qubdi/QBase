@@ -17,6 +17,7 @@ import { toast } from '@/platform/toast/use-toast';
 import type { DatabaseType } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
 import { exportSql } from '@/formats/sql/export-sql';
+import { selectFilter } from '@/store/selectors';
 import { useEditorStore } from '@/store/store-context';
 import { downloadText, safeFileName } from './download-file';
 import { diagnosticText } from '@/lib/diagnostic-text';
@@ -34,7 +35,7 @@ export const ExportSqlDialog: React.FC<ExportSqlDialogProps> = ({
 }) => {
     const { t } = useTranslation();
     const design = useEditorStore((s) => s.design);
-    const filter = useEditorStore((s) => s.ui.filter);
+    const filter = useEditorStore(selectFilter);
     const [ready, setReady] = useState(false);
 
     // a spinner for a moment, as the script is written (EXP-004)

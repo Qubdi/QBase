@@ -125,8 +125,18 @@ export function relabel(
         id: next('userType', type.id),
     }));
 
+    const filter = design.filter?.tableIds
+        ? {
+              ...design.filter,
+              tableIds: design.filter.tableIds.flatMap((old) =>
+                  entityMap.has(old) ? [mapped(entityMap, old)] : []
+              ),
+          }
+        : design.filter;
+
     return {
         ...design,
+        ...(filter ? { filter } : {}),
         id,
         entities: collectionOf(entities),
         columns,

@@ -209,6 +209,13 @@ export const diagramShape = z.object({
     customTypes: z.array(customType).optional(),
     areas: z.array(area).optional(),
     notes: z.array(note).optional(),
+    /** which tables are shown; absent when all are */
+    filter: z
+        .object({
+            schemaIds: z.array(z.string()).optional(),
+            tableIds: z.array(z.string()).optional(),
+        })
+        .optional(),
     createdAt: z.date(),
     updatedAt: z.date(),
     /** the format version the serialiser writes; absent on hand-made diagrams */

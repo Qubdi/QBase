@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createRevisionTracker } from '@/lib/qubdi/revision';
 import { shop } from '@/core/wire/fixtures/shop';
 import {
     createDiagramProjector,
@@ -37,5 +38,37 @@ describe('the diagram projector (CLI-045)', () => {
         expect(after.notes).toBe(before.notes);
         expect(after.customTypes).toBe(before.customTypes);
         expect(after.dependencies).toBe(before.dependencies);
+    });
+});
+
+describe('the table filter in the projected diagram', () => {
+    it('carries the filter, and keeps the same object while it is unchanged', () => {
+        const design = diagramToDesign(dated()).design;
+        const project = createDiagramProjector();
+        const id = design.entities.order[0];
+        const filtered = { ...design, filter: { tableIds: [id] } };
+        const first = project(filtered);
+        expect(first.filter).toEqual({ tableIds: [id] });
+        const edited = {
+            ...filtered,
+            entities: {
+                ...filtered.entities,
+                byId: {
+                    ...filtered.entities.byId,
+                    [id]: { ...filtered.entities.byId[id], name: 'clients' },
+                },
+            },
+        };
+        expect(project(edited).filter).toBe(first.filter);
+    });
+
+    it('a changed filter is a changed diagram for autosave', () => {
+        const design = diagramToDesign(dated()).design;
+        const project = createDiagramProjector();
+        const revision = createRevisionTracker();
+        const before = revision(project(design));
+        const hidden = { ...design, filter: { tableIds: [] } };
+        expect(revision(project(hidden))).toBe(before + 1);
+        expect(revision(project(hidden))).toBe(before + 1);
     });
 });

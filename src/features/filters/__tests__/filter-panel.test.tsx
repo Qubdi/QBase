@@ -1,3 +1,4 @@
+import { selectFilter } from '@/store/selectors';
 import React from 'react';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -40,12 +41,12 @@ describe('EDT-063 EDT-064 EDT-072 the eyes', () => {
         );
         await userEvent.click(screen.getByRole('button', { name: 'Hide a' }));
         const id = store.getState().design.entities.order[0];
-        expect(store.getState().ui.filter.tableIds).toEqual([
+        expect(selectFilter(store.getState()).tableIds).toEqual([
             store.getState().design.entities.order[1],
         ]);
-        expect(store.getState().ui.filter.tableIds).not.toContain(id);
+        expect(selectFilter(store.getState()).tableIds).not.toContain(id);
         await userEvent.click(screen.getByRole('button', { name: 'Show a' }));
-        expect(store.getState().ui.filter).toEqual({});
+        expect(selectFilter(store.getState())).toEqual({});
     });
 
     it('a group eye hides every table of the group', async () => {
@@ -57,7 +58,7 @@ describe('EDT-063 EDT-064 EDT-072 the eyes', () => {
         await userEvent.click(
             screen.getByRole('button', { name: 'Hide public' })
         );
-        expect(store.getState().ui.filter).toEqual({ tableIds: [] });
+        expect(selectFilter(store.getState())).toEqual({ tableIds: [] });
     });
 
     it('the visibility choice is not an undo step (EDT-071)', async () => {
@@ -82,7 +83,7 @@ describe('EDT-065 a click on a table row', () => {
             }
         );
         await userEvent.click(screen.getByRole('button', { name: 'a' }));
-        expect(store.getState().ui.filter).toEqual({});
+        expect(selectFilter(store.getState())).toEqual({});
         expect(store.getState().ui.selection).toEqual([
             design.entities.order[0],
         ]);
@@ -104,7 +105,7 @@ describe('EDT-066 EDT-067 EDT-068 searching', () => {
         );
         await userEvent.type(screen.getByLabelText('Search tables...'), 'ORD');
         expect(screen.getAllByTestId('filter-table')).toHaveLength(1);
-        expect(store.getState().ui.filter).toEqual({
+        expect(selectFilter(store.getState())).toEqual({
             tableIds: [design.entities.order[0]],
         });
     });

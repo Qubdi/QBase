@@ -1,3 +1,4 @@
+import { selectFilter } from '@/store/selectors';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { blank, NOW, withTables } from '@/core/testing/helpers';
 import { createEntityParts } from '@/core/model/defaults';
@@ -173,20 +174,30 @@ describe('editor store: view state', () => {
             filter: { tableIds: [] },
         });
         expect(
-            visibleIds(store.getState().design, store.getState().ui.filter).size
+            visibleIds(store.getState().design, selectFilter(store.getState()))
+                .size
         ).toBe(0);
         const id = store.getState().design.entities.order[0];
         store.getState().setFilter({ tableIds: [id] });
         expect(
-            visibleIds(store.getState().design, store.getState().ui.filter).size
+            visibleIds(store.getState().design, selectFilter(store.getState()))
+                .size
         ).toBe(1);
     });
 
     it('changing the view does not make the design dirty (EDT-225)', () => {
         const store = createEditorStore({ design: blank() });
         store.getState().setZoom(2);
+        store.getState().select([]);
+        // the same filter again is not a change
         store.getState().setFilter({});
         expect(store.getState().session.dirty).toBe(false);
+    });
+
+    it('changing which tables are shown is saved with the diagram, so it makes the design dirty', () => {
+        const store = createEditorStore({ design: withTables(['a']) });
+        store.getState().setFilter({ tableIds: [] });
+        expect(store.getState().session.dirty).toBe(true);
     });
 });
 

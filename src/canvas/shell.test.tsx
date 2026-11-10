@@ -1,3 +1,4 @@
+import { selectFilter } from '@/store/selectors';
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { withTables } from '@/core/testing/helpers';
@@ -116,7 +117,7 @@ describe('canvas shell', () => {
         act(() => store.getState().setFilter({ tableIds: [] }));
         expect(screen.getByText('All tables are hidden')).toBeInTheDocument();
         fireEvent.click(screen.getByTestId('show-all-hidden'));
-        expect(store.getState().ui.filter).toEqual({});
+        expect(selectFilter(store.getState())).toEqual({});
         expect(screen.queryByText('All tables are hidden')).toBeNull();
     });
 

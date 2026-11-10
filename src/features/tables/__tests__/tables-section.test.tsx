@@ -1,3 +1,4 @@
+import { selectFilter } from '@/store/selectors';
 import React from 'react';
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -220,7 +221,7 @@ describe('EDT-069 every table hidden', () => {
         );
         expect(screen.getByText('All tables are hidden')).toBeTruthy();
         await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
-        expect(store.getState().ui.filter).toEqual({});
+        expect(selectFilter(store.getState())).toEqual({});
     });
 });
 

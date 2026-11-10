@@ -92,6 +92,10 @@ export function createDiagramProjector(): (design: Design) => Diagram {
             }
         }
         const next = designToDiagram(withoutSections(design, reused));
+        // the filter is rebuilt on every projection: keep the old object while
+        // it is unchanged, so autosave does not see a change that is not there
+        if (last && lastDesign && Object.is(lastDesign.filter, design.filter))
+            next.filter = last.filter;
         for (const section of reused)
             (next as unknown as RawRecord)[section] = last![section];
         lastDesign = design;

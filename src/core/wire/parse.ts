@@ -25,6 +25,8 @@ import { REGION_SIZE } from '../model/region';
 import type { Region } from '../model/region';
 import type { Rule } from '../model/rule';
 import type { CompositeMember, UserType } from '../model/user-type';
+import { isUnrestricted } from '../model/visibility-filter';
+import type { VisibilityFilter } from '../model/visibility-filter';
 import { RecordReader, isRecord } from './record-reader';
 import type { RawRecord } from './record-reader';
 import { upgrade } from './upgrade';
@@ -134,6 +136,7 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
 
     const idText = top.str('id');
     const diagramName = top.str('name');
+    const rawFilter = top.any('filter');
     const designExtra = extrasOf(top);
 
     // ---- regions first: tables point at them
@@ -515,6 +518,8 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
         dependencies,
     };
     if (databaseEdition) design.databaseEdition = databaseEdition;
+    const filter = readFilter(rawFilter, entityByRaw, warn);
+    if (filter) design.filter = filter;
     if (designExtra) design.extra = designExtra;
 
     // a note belongs to an area, a table or a column: the ids it names are
@@ -550,6 +555,44 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
         ),
         warnings,
     };
+}
+
+/**
+ * The saved table filter. Table ids follow the ids the tables ended up with;
+ * an id that names no table is dropped. A value of the wrong shape is ignored
+ * (everything shown) with a warning.
+ */
+function readFilter(
+    raw: unknown,
+    entityByRaw: ReadonlyMap<Id, Id>,
+    warn: (path: string, message: string) => void
+): VisibilityFilter | undefined {
+    if (raw === undefined) return undefined;
+    if (!isRecord(raw)) {
+        warn('filter', 'expected an object; ignored');
+        return undefined;
+    }
+    const list = (key: 'schemaIds' | 'tableIds'): string[] | undefined => {
+        const value = raw[key];
+        if (value === undefined || value === null) return undefined;
+        if (
+            !Array.isArray(value) ||
+            !value.every((item) => typeof item === 'string')
+        ) {
+            warn(`filter.${key}`, 'expected a list of text; ignored');
+            return undefined;
+        }
+        return value as string[];
+    };
+    const schemaIds = list('schemaIds');
+    const tableIds = list('tableIds')?.flatMap((id) => {
+        const mapped = entityByRaw.get(id);
+        return mapped === undefined ? [] : [mapped];
+    });
+    const out: VisibilityFilter = {};
+    if (schemaIds) out.schemaIds = schemaIds;
+    if (tableIds) out.tableIds = tableIds;
+    return isUnrestricted(out) ? undefined : out;
 }
 
 function orderEntities(rows: Ranked<Entity>[]): Entity[] {

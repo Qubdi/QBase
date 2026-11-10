@@ -1,7 +1,6 @@
 import type { History } from '@/core/history/history';
 import type { Design } from '@/core/model/design';
 import type { Id } from '@/core/model/id';
-import type { VisibilityFilter } from '@/core/model/visibility-filter';
 import type { WireWarning } from '@/core/wire/warning';
 
 /** Sections of the left side panel (spec A7). */
@@ -12,7 +11,7 @@ export type VisualsTab = 'areas' | 'notes';
 export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 5;
 
-/** What the person is looking at. None of it is saved with the design or undoable. */
+/** What the person is looking at. None of it is saved with the design or undoable (the table filter is the exception: it lives in `design.filter`). */
 export interface UiState {
     /** ids of the selected entities, regions, memos and links */
     selection: Id[];
@@ -23,8 +22,6 @@ export interface UiState {
         /** the entity whose card is expanded in the Tables section */
         expandedEntityId?: Id;
     };
-    /** which entities are shown on the canvas */
-    filter: VisibilityFilter;
     zoom: number;
     /** the custom type whose fields are tinted (EDT-196); one at a time, never saved */
     highlightedTypeId?: Id;

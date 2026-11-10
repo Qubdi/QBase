@@ -2,7 +2,8 @@ import type { Entity } from './entity';
 
 /**
  * Which entities the person chose to show (data-format 3.12). Absent keys
- * mean "not restricted". Local view state, never exported.
+ * mean "not restricted". Saved with the diagram (`filter` key, omitted when
+ * everything is shown).
  */
 export interface VisibilityFilter {
     schemaIds?: string[];
@@ -80,19 +81,15 @@ export function tidyFilter(
     return tidy;
 }
 
-/**
- * The filter a diagram starts with when none is saved: with more than one
- * schema only the first is shown, otherwise everything.
- */
-export function initialFilter(
-    entities: readonly Pick<Entity, 'schema'>[],
-    defaultSchema?: string
-): VisibilityFilter {
-    const seen: string[] = [];
-    for (const entity of entities) {
-        const schemaId = entitySchemaId(entity, defaultSchema);
-        if (schemaId !== undefined && !seen.includes(schemaId))
-            seen.push(schemaId);
-    }
-    return seen.length > 1 ? { schemaIds: [seen[0]] } : {};
+/** True when the filter restricts nothing (no keys set). */
+export function isUnrestricted(filter: VisibilityFilter | undefined): boolean {
+    return (
+        filter === undefined ||
+        (filter.schemaIds === undefined && filter.tableIds === undefined)
+    );
+}
+
+/** The filter a diagram starts with when none is saved: everything is shown. */
+export function initialFilter(): VisibilityFilter {
+    return {};
 }

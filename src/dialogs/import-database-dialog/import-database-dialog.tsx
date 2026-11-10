@@ -18,6 +18,7 @@ import { ImportBox } from '@/features/import/import-box';
 import type { ImportBoxState } from '@/features/import/import-box';
 import { mergeImported } from '@/features/import/merge-into-design';
 import { useDialog } from '@/hooks/use-dialog';
+import { selectFilter } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import { diagnosticText } from '@/lib/diagnostic-text';
 
@@ -78,7 +79,7 @@ export const ImportDatabaseDialog: React.FC<ImportDatabaseDialogProps> = ({
         }
         state.markDirty();
         // the new tables must not be hidden by a filter the person set earlier
-        const { filter } = store.getState().ui;
+        const filter = selectFilter(store.getState());
         const defaultSchema = traitsOf(fresh.design.databaseType).defaultSchema;
         const added = imported.entities.order;
         const hidden = added.filter(

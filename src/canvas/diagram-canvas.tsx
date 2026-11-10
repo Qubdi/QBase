@@ -27,7 +27,7 @@ import type { Id } from '@/core/model/id';
 import { cn } from '@/lib/utils/utils';
 import { isVisible } from '@/core/model/visibility-filter';
 import { traitsOf } from '@/core/model/database';
-import { selectLocked } from '@/store/selectors';
+import { selectFilter, selectLocked } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import {
     arrangeDiagram,
@@ -167,7 +167,7 @@ function Surface({
         diffRef.current = diff;
     }, [diff]);
     const selection = useEditorStore((s) => s.ui.selection);
-    const filter = useEditorStore((s) => s.ui.filter);
+    const filter = useEditorStore(selectFilter);
     const locked = useEditorStore(selectLocked);
     const fullRender = useFullRender();
     // a preview draws tables the store does not have: nothing moves meanwhile

@@ -704,7 +704,7 @@ describe('DAT-061 / DAT-062 / DAT-063 / DAT-065 export file', () => {
         expect(out.dependencies).toHaveLength(1);
     });
 
-    it('DAT-065 holds no filter, config or diagramId', () => {
+    it('DAT-065 holds no filter (when none is set), config or diagramId', () => {
         const text = exportFileText(read(shop).design);
         for (const word of [
             'schemaIds',

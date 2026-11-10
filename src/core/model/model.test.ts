@@ -25,6 +25,7 @@ import { idFromSeed, newDesignId, newId, seededRandom } from './ids';
 import { regionMembership } from './region-membership';
 import {
     initialFilter,
+    isUnrestricted,
     isVisible,
     schemaIdOf,
     tidyFilter,
@@ -572,18 +573,12 @@ describe('DAT-058 the visibility filter', () => {
         expect(tidyFilter({ tableIds: ['a', 'b'] }, plain)).toEqual({});
     });
 
-    it('DAT-011 with no saved filter and several schemas only the first is shown', () => {
-        expect(initialFilter(tables, 'public')).toEqual({
-            schemaIds: ['public'],
-        });
-        expect(
-            initialFilter(
-                [{ schema: 'public' }, { schema: undefined }],
-                'public'
-            )
-        ).toEqual({});
-        expect(initialFilter([{ schema: undefined }], undefined)).toEqual({});
-        expect(initialFilter([], 'public')).toEqual({});
+    it('DAT-011 with no saved filter everything is shown, whatever the schemas', () => {
+        expect(initialFilter()).toEqual({});
+        expect(isUnrestricted(initialFilter())).toBe(true);
+        expect(isUnrestricted(undefined)).toBe(true);
+        expect(isUnrestricted({ tableIds: [] })).toBe(false);
+        expect(isUnrestricted({ schemaIds: ['public'] })).toBe(false);
     });
 });
 

@@ -12,7 +12,7 @@ import {
 import type { DispatchOptions } from '@/core/history/history';
 import type { Design } from '@/core/model/design';
 import type { Id } from '@/core/model/id';
-import { initialFilter } from '@/core/model/visibility-filter';
+import { isUnrestricted } from '@/core/model/visibility-filter';
 import type { VisibilityFilter } from '@/core/model/visibility-filter';
 import type { WireWarning } from '@/core/wire/warning';
 import { ZOOM_MAX, ZOOM_MIN } from './editor-state';
@@ -78,12 +78,17 @@ export interface EditorStoreOptions {
     readonly?: boolean;
     location?: DiagramLocation;
     warnings?: WireWarning[];
-    /** the filter loaded with the design; the default one is built from the design */
+    /** an older filter kept apart from the design; used only when the design has none */
     filter?: VisibilityFilter;
     panelOpen?: boolean;
     /** the clock, for tests */
     now?: () => number;
 }
+
+const sameFilter = (
+    a: VisibilityFilter | undefined,
+    b: VisibilityFilter | undefined
+) => JSON.stringify(a ?? {}) === JSON.stringify(b ?? {});
 
 const failed = (r: {
     reason: FailureReason | 'empty';
@@ -101,7 +106,12 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
         const applyOptions = () => ({ readOnly: get().session.readonly });
 
         return {
-            design: options.design,
+            design:
+                options.filter &&
+                options.design.filter === undefined &&
+                !isUnrestricted(options.filter)
+                    ? { ...options.design, filter: options.filter }
+                    : options.design,
             history: emptyHistory(),
             ui: {
                 selection: [],
@@ -110,13 +120,6 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                     section: 'tables',
                     visualsTab: 'areas',
                 },
-                filter:
-                    options.filter ??
-                    initialFilter(
-                        options.design.entities.order.map(
-                            (id) => options.design.entities.byId[id]
-                        )
-                    ),
                 zoom: 1,
             },
             session: {
@@ -287,8 +290,21 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                 set((s) => ({ ui: { ...s.ui, selection: ids } }));
             },
 
+            // the filter is part of the design (saved with it) but is not an
+            // undo step; a viewer may change it on screen, and it is not saved
             setFilter(filter) {
-                set((s) => ({ ui: { ...s.ui, filter } }));
+                set((s) => {
+                    const next = isUnrestricted(filter) ? undefined : filter;
+                    if (sameFilter(s.design.filter, next)) return s;
+                    const design = { ...s.design, filter: next };
+                    if (!next) delete design.filter;
+                    return {
+                        design,
+                        session: s.session.readonly
+                            ? s.session
+                            : { ...s.session, dirty: true },
+                    };
+                });
             },
 
             setHighlightedType(id) {
