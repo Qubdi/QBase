@@ -5,6 +5,18 @@ import pg from 'pg';
 /** The Postgres channel the replicas tell each other about publishes on. */
 export const EVENTS_CHANNEL = 'qubdi_events';
 
+/**
+ * How the listening connection is opened. It sits idle between events, so a
+ * link dropped without a close (a NAT or a firewall forgetting it) is never
+ * noticed unless the OS probes it: keepalive does, and the client then gets
+ * its 'error' and listens again.
+ */
+export const listenClientConfig = (databaseUrl: string): pg.ClientConfig => ({
+    connectionString: databaseUrl,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000,
+});
+
 export type PublishListener = (diagramId: string, version: number) => void;
 export type LinkListener = (linkId: string) => void;
 
@@ -105,7 +117,7 @@ export function createEventBus() {
 
         const listen = async () => {
             if (stopped) return;
-            const c = new pg.Client({ connectionString: databaseUrl });
+            const c = new pg.Client(listenClientConfig(databaseUrl));
             const lost = () => {
                 if (client === c) client = null;
                 c.removeAllListeners();
