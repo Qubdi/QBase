@@ -34,9 +34,9 @@ describe('lazy translations', () => {
             .poll(() => i18n.hasResourceBundle('fr', 'translation'))
             .toBe(true);
         await expect
-            .poll(() => i18n.t('menu.actions.save'))
-            .toBe(fr.translation.menu.actions.save);
-        expect(i18n.t('menu.actions.save')).not.toBe('Save');
+            .poll(() => i18n.t('editor.common.cancel'))
+            .toBe(fr.translation.editor.common.cancel);
+        expect(i18n.t('editor.common.cancel')).not.toBe('Cancel');
         // the other languages were not touched
         expect(i18n.hasResourceBundle('ja', 'translation')).toBe(false);
     });
@@ -54,7 +54,7 @@ describe('lazy translations', () => {
     it('falls back to English for a language it has no file for', async () => {
         await i18n.changeLanguage('xx');
         await i18n.changeLanguage('en');
-        expect(i18n.t('menu.actions.save')).toBe('Save');
+        expect(i18n.t('editor.common.cancel')).toBe('Cancel');
     });
 
     it('serves a regional code from its base language file', async () => {

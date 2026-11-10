@@ -248,7 +248,7 @@ describe('QBS-020 i18n works outside React and locale files keep their shape', (
     it('t() gives English text with no component, and the language list is exported', async () => {
         const { i18nReady } = await import('@/i18n/i18n');
         await i18nReady;
-        expect(i18n.t('menu.actions.save')).toBe('Save');
+        expect(i18n.t('editor.common.cancel')).toBe('Cancel');
         expect(languages.length).toBeGreaterThan(1);
     });
 

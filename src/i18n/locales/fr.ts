@@ -1,10 +1,5 @@
 export const fr = {
     translation: {
-        menu: {
-            actions: {
-                save: 'Enregistrer',
-            },
-        },
         editor: {
             common: {
                 copyFailed: {

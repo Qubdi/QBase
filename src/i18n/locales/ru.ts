@@ -1,10 +1,5 @@
 export const ru = {
     translation: {
-        menu: {
-            actions: {
-                save: 'Сохранить',
-            },
-        },
         editor: {
             common: {
                 copyFailed: {

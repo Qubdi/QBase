@@ -16,11 +16,6 @@ import { workspaceStrings } from '../editor/workspace';
 // own wording lives in ../editor/*, one file per area, and is merged here.
 export const en = {
     translation: {
-        menu: {
-            actions: {
-                save: 'Save',
-            },
-        },
         editor: {
             common: workspaceStrings.common,
             workspace: workspaceStrings.workspace,
