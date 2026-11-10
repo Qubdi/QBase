@@ -145,12 +145,24 @@ export const DbmlSection: React.FC = () => {
         [discard]
     );
     const away = !panel.open || panel.section !== 'dbml';
-    useEffect(() => {
+    // the state of an unaccepted preview goes when the section is left
+    const [wasAway, setWasAway] = useState(away);
+    if (wasAway !== away) {
+        setWasAway(away);
         if (away) {
-            discard();
+            setStale(false);
+            setPending(undefined);
+            setErrorLine(undefined);
             setEditing(false);
         }
-    }, [away, discard]);
+    }
+    useEffect(() => {
+        if (away) {
+            parseSeq.current++;
+            clearTimeout(timer.current);
+            clearMarks();
+        }
+    }, [away, clearMarks]);
 
     const parse = useCallback(
         async (source: string) => {
