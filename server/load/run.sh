@@ -61,13 +61,18 @@ k6run() {
 
 run_one() {
     fresh || return 1
+    # the callers run this in an `||` list, where `set -e` is off: keep the
+    # scenario's own status (k6 exits non-zero when a threshold fails; pipefail
+    # carries it through tee) and return it after the report below
+    local rc=0
     case "$1" in
-        sse) dc run --rm "${as_me[@]}" seed node sse-fanout.mjs | tee results/sse.txt ;;
-        *)   k6run "$1" ;;
+        sse) dc run --rm "${as_me[@]}" seed node sse-fanout.mjs | tee results/sse.txt || rc=$? ;;
+        *)   k6run "$1" || rc=$? ;;
     esac
     echo
     echo "--- server and database after $1 ---"
     dc exec -T db psql -U qbase -c "select left(query, 60) as query, calls, round(mean_exec_time::numeric, 2) as mean_ms, round(total_exec_time::numeric) as total_ms from pg_stat_statements order by total_exec_time desc limit 5" 2>/dev/null || true
+    return "$rc"
 }
 
 # the same read-heavy load against diagrams of different sizes: a model of 30-40
