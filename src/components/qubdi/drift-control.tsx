@@ -26,21 +26,30 @@ export const DriftControl: React.FC = () => {
     const [badge, setBadge] = useState<DriftBadge | null>(null);
     const remoteId = remoteIdFor(currentDiagram.id);
     const shownRemoteId = useRef(remoteId);
-    shownRemoteId.current = remoteId;
+    // runs before the effects below, so they and the replies they wait for see
+    // the diagram that is shown now
+    useEffect(() => {
+        shownRemoteId.current = remoteId;
+    });
+    // no diagram: no badge. Reset while rendering, when the id goes away.
+    const [seenRemoteId, setSeenRemoteId] = useState(remoteId);
+    if (seenRemoteId !== remoteId) {
+        setSeenRemoteId(remoteId);
+        if (!remoteId) setBadge(null);
+    }
     const checkedOnOpen = useRef<string | undefined>(undefined);
 
-    const refresh = useCallback(async () => {
-        if (!remoteId) {
-            setBadge(null);
-            return;
-        }
-        try {
-            const { badge: next } = await api.getDrift(remoteId);
-            // the person may have moved to another diagram while it ran
-            if (shownRemoteId.current === remoteId) setBadge(next);
-        } catch {
-            // keep the last known badge; the dialog reports real errors
-        }
+    const refresh = useCallback(() => {
+        if (!remoteId) return Promise.resolve();
+        return api.getDrift(remoteId).then(
+            ({ badge: next }) => {
+                // the person may have moved to another diagram while it ran
+                if (shownRemoteId.current === remoteId) setBadge(next);
+            },
+            () => {
+                // keep the last known badge; the dialog reports real errors
+            }
+        );
     }, [remoteId]);
 
     useEffect(() => {

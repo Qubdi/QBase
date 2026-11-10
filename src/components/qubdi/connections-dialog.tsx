@@ -80,26 +80,38 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
     const cancelLoad = useCallback(() => {
         newestLoad.current += 1;
     }, []);
-    const load = useCallback(async () => {
+    const load = useCallback(() => {
         const request = ++newestLoad.current;
-        try {
-            const list = await api.listSavedConnections(project.id);
-            if (request !== newestLoad.current) return;
-            setConnections(list);
-            setError(null);
-        } catch (e) {
-            if (request !== newestLoad.current) return;
-            setConnections([]);
-            setError(errorMessage(e));
-        }
+        return api.listSavedConnections(project.id).then(
+            (list) => {
+                if (request !== newestLoad.current) return;
+                setConnections(list);
+                setError(null);
+            },
+            (e: unknown) => {
+                if (request !== newestLoad.current) return;
+                setConnections([]);
+                setError(errorMessage(e));
+            }
+        );
     }, [project.id]);
+
+    // each opening, and each other project while open, starts from a clean
+    // dialog: reset while rendering, before the effect below starts the load
+    const [openFor, setOpenFor] = useState<string | null>(null);
+    const wantedFor = open ? project.id : null;
+    if (openFor !== wantedFor) {
+        setOpenFor(wantedFor);
+        if (wantedFor !== null) {
+            setConnections(null);
+            setEditing(null);
+            setError(null);
+            setTested(null);
+        }
+    }
 
     useEffect(() => {
         if (!open) return;
-        setConnections(null);
-        setEditing(null);
-        setError(null);
-        setTested(null);
         void load();
         api.introspectCapabilities()
             .then((c) => setCanStore(c.savedConnections))

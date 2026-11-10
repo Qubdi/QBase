@@ -116,18 +116,30 @@ function useWorkspaceResolution(
     // the effect below reads the storage calls when it runs, but must not
     // start over (and show "loading") whenever the storage context changes
     const storageRef = useRef(storage);
-    storageRef.current = storage;
+    useEffect(() => {
+        storageRef.current = storage;
+    });
     const [state, setState] = useState<Resolution>({ kind: 'loading' });
     // keyed on who is signed in, not on the user object: turning two-factor
     // on refreshes that object, and starting over here would remount the
     // gate and lose the recovery codes shown once
     const userId = user?.id;
 
+    // starting over shows "loading": reset while rendering, when what is
+    // being resolved changes, not in the effect that starts the work
+    const resolving = userId
+        ? JSON.stringify([userId, slug, remoteDiagramId])
+        : null;
+    const [resolvingSeen, setResolvingSeen] = useState(resolving);
+    if (resolvingSeen !== resolving) {
+        setResolvingSeen(resolving);
+        if (resolving !== null) setState({ kind: 'loading' });
+    }
+
     useEffect(() => {
         if (!userId) return;
         let cancelled = false;
         const done = (next: Resolution) => !cancelled && setState(next);
-        setState({ kind: 'loading' });
 
         (async () => {
             // the server answers 404 for a project that is missing or not the user's
@@ -272,28 +284,42 @@ const WorkspaceGate: React.FC<GateProps> = ({ children, fallback }) => {
 /** Asks the server what the signed-in user may do with a local diagram. */
 function useLegacyAccess(localId: string | undefined): DiagramAccessValue {
     const { user } = useQubdi();
-    const [access, setAccess] = useState<AccessState>({ status: 'loading' });
+    const [fetched, setFetched] = useState<AccessState>({ status: 'loading' });
     const [tick, setTick] = useState(0);
     const refresh = useCallback(() => setTick((t) => t + 1), []);
 
     // who is signed in, not the user object (see useWorkspaceResolution)
     const who = user === undefined ? undefined : user === null ? null : user.id;
+    // read when who, the diagram or the tick changes, as the effect used to
+    // read it when it ran
+    const remoteId = useMemo(
+        () => (localId ? getRemoteId(localId) : undefined),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [who, localId, tick]
+    );
+    // the answers that need no server call are worked out while rendering
+    const direct: AccessState | null =
+        who === undefined
+            ? { status: 'loading' }
+            : who === null
+              ? { status: 'signed_out' }
+              : !remoteId
+                ? { status: 'unbound' }
+                : null;
+
+    // asking the server starts from "loading": reset while rendering, when
+    // what is asked changes, not in the effect that asks
+    const asking =
+        direct === null ? JSON.stringify([who, localId, remoteId, tick]) : null;
+    const [askingSeen, setAskingSeen] = useState(asking);
+    if (askingSeen !== asking) {
+        setAskingSeen(asking);
+        if (asking !== null) setFetched({ status: 'loading' });
+    }
+
     useEffect(() => {
-        if (who === undefined) {
-            setAccess({ status: 'loading' });
-            return;
-        }
-        if (who === null) {
-            setAccess({ status: 'signed_out' });
-            return;
-        }
-        const remoteId = localId ? getRemoteId(localId) : undefined;
-        if (!remoteId) {
-            setAccess({ status: 'unbound' });
-            return;
-        }
+        if (!who || !remoteId) return;
         let cancelled = false;
-        setAccess({ status: 'loading' });
         // this diagram's own row; a 404 means the user may not see it any more
         api.getDiagramSummary(remoteId)
             .then((found) => [found])
@@ -309,14 +335,15 @@ function useLegacyAccess(localId: string | undefined): DiagramAccessValue {
                         setProjectId(localId, next.projectId);
                     }
                 }
-                setAccess(next);
+                setFetched(next);
             })
-            .catch(() => !cancelled && setAccess({ status: 'error' }));
+            .catch(() => !cancelled && setFetched({ status: 'error' }));
         return () => {
             cancelled = true;
         };
-    }, [who, localId, tick]);
+    }, [who, localId, remoteId, tick]);
 
+    const access = direct ?? fetched;
     return useMemo(() => ({ access, refresh }), [access, refresh]);
 }
 

@@ -168,12 +168,21 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
 
     // loads when the dialog opens, not whenever one of what `load` reads changes
     const loadRef = useRef(load);
-    loadRef.current = load;
+    useEffect(() => {
+        loadRef.current = load;
+    });
+    // nothing of the last opening shows while this one loads: reset while
+    // rendering, when the dialog opens, before the effect below starts the load
+    const [openSeen, setOpenSeen] = useState(false);
+    if (openSeen !== open) {
+        setOpenSeen(open);
+        if (open) {
+            setReport(null);
+            setConnections([]);
+        }
+    }
     useEffect(() => {
         if (!open) return;
-        // nothing of the last opening shows while this one loads
-        setReport(null);
-        setConnections([]);
         void loadRef.current();
         return cancelLoad;
     }, [open, cancelLoad]);

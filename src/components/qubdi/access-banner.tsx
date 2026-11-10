@@ -38,12 +38,17 @@ export const AccessBanner: React.FC = () => {
             .catch(() => setProjects([]));
     }, [unbound]);
 
+    // no project: no name to show. Reset while rendering, when the id changes
+    // to none, not in an effect.
+    const [seenProjectId, setSeenProjectId] = useState(projectId);
+    if (seenProjectId !== projectId) {
+        setSeenProjectId(projectId);
+        if (!projectId) setProjectName(undefined);
+    }
+
     // the diagram's own project, by id: it may be beyond the first page of projects
     useEffect(() => {
-        if (!projectId) {
-            setProjectName(undefined);
-            return;
-        }
+        if (!projectId) return;
         let cancelled = false;
         api.getProject(projectId)
             .then((project) => !cancelled && setProjectName(project.name))
