@@ -183,11 +183,19 @@ describe('QBS-004 read-only is a store flag: nothing is changed or stored', () =
         );
         await waitFor(() => expect(held.seen).toBeDefined());
         expect(held.seen!.readonly).toBe(true);
-        await expect(
-            held.seen!.updateTable('missing', { name: 'x' })
-        ).rejects.toThrow();
-        await new Promise((r) => setTimeout(r, 50));
-        expect(save).not.toHaveBeenCalled();
+        // fake timers from before the edit: any save it scheduled would be
+        // queued on them, so running them far past the autosave delay shows
+        // that none was
+        vi.useFakeTimers();
+        try {
+            await expect(
+                held.seen!.updateTable('missing', { name: 'x' })
+            ).rejects.toThrow();
+            await vi.advanceTimersByTimeAsync(10_000);
+            expect(save).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 
