@@ -17,17 +17,6 @@ export function userRateKey(req: FastifyRequest): string {
         : `ip:${req.ip}`;
 }
 
-/** Route `config` that limits a route to `max` calls a minute per user. */
-export const perUserLimit = (max: number) => ({
-    config: {
-        rateLimit: {
-            max,
-            timeWindow: '1 minute',
-            keyGenerator: userRateKey,
-        },
-    },
-});
-
 /** A Fastify route hook. */
 export type RequestHook = (
     req: FastifyRequest,

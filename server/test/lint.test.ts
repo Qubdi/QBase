@@ -383,6 +383,31 @@ describe('lint route limits', () => {
         }
     });
 
+    it('counts the signed-in user, not the cookie a caller sends', async () => {
+        const ctx = await createTestApp({ lintRateLimit: 2 });
+        try {
+            const user = await registerUser(ctx.app, 'a@example.com');
+            // junk cookies are turned away as signed out, however many; none
+            // of them is counted against anyone
+            for (let i = 0; i < 5; i++) {
+                const res = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/lint',
+                    headers: { cookie: 'qbase_session=junk-' + i },
+                    payload: { diagram: { tables: [] } },
+                });
+                expect(res.statusCode).toBe(401);
+            }
+            const codes = [];
+            for (let i = 0; i < 3; i++) {
+                codes.push((await post(ctx, user, { tables: [] })).statusCode);
+            }
+            expect(codes).toEqual([200, 200, 429]);
+        } finally {
+            await ctx.close();
+        }
+    });
+
     it('limits each lint-config route with the per-user allowance', async () => {
         const ctx = await createTestApp({ lintRateLimit: 2 });
         try {
