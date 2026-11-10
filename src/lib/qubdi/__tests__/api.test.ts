@@ -16,6 +16,47 @@ const jsonResponse = (status: number, body: unknown) =>
         headers: { 'content-type': 'application/json' },
     });
 
+// what the server answers, in the shape its presenters give
+const T0 = '2026-01-01T00:00:00.000Z';
+const savedAnswer = {
+    id: 'd1',
+    ownerId: 'u1',
+    title: 'Shop',
+    updatedAt: T0,
+    role: 'owner',
+    publishedVersion: null,
+    publishedAt: null,
+    autoPublish: false,
+    unpublishedChanges: true,
+};
+const counts = { breaking: 0, warning: 0, info: 0 };
+const checkAnswer = {
+    id: 'r1',
+    runAt: T0,
+    status: 'clean',
+    trigger: 'manual',
+    counts,
+    worst: null,
+    error: null,
+    dismissedAt: null,
+    webhook: null,
+    changes: [],
+    renameHints: [],
+    badge: null,
+};
+const connectionAnswer = {
+    id: 'c1',
+    name: 'prod',
+    dialect: 'postgresql',
+    host: 'db.corp.io',
+    port: 5432,
+    database: 'shop',
+    user: 'app',
+    ssl: true,
+    trustServerCertificate: false,
+    createdAt: T0,
+};
+
 describe('qubdi api client', () => {
     describe('path ids', () => {
         it('encodes an id in every path it is put into', async () => {
@@ -53,9 +94,7 @@ describe('qubdi api client', () => {
             content: Record<string, unknown>,
             options?: { keepalive?: boolean }
         ) => {
-            const fetchMock = vi.fn(async () =>
-                jsonResponse(200, { id: 'd1' })
-            );
+            const fetchMock = vi.fn(async () => jsonResponse(200, savedAnswer));
             const api = createApi(
                 'http://srv',
                 fetchMock as unknown as typeof fetch
@@ -362,7 +401,7 @@ describe('qubdi api client', () => {
 
     describe('drift check', () => {
         const urlOf = async (options?: { cached?: boolean }) => {
-            const fetchMock = vi.fn(async () => jsonResponse(200, {}));
+            const fetchMock = vi.fn(async () => jsonResponse(200, checkAnswer));
             const api = createApi(
                 'http://srv',
                 fetchMock as unknown as typeof fetch
@@ -468,7 +507,7 @@ describe('qubdi api client', () => {
     describe('saved connections', () => {
         it('updates one in place, leaving the password out when it is not changing', async () => {
             const fetchMock = vi.fn(async () =>
-                jsonResponse(200, { id: 'c1' })
+                jsonResponse(200, connectionAnswer)
             );
             const api = createApi(
                 'http://srv',
@@ -718,6 +757,8 @@ describe('getDiagramSummary', () => {
         const row = {
             id: 'r1',
             title: 'Shop',
+            updatedAt: T0,
+            ownerId: 'u1',
             role: 'editor',
             projectId: 'p1',
         };
@@ -742,5 +783,223 @@ describe('getDiagramSummary', () => {
         await expect(api.getDiagramSummary('gone')).rejects.toMatchObject({
             status: 404,
         });
+    });
+});
+
+describe('answers that are checked (CLI-006)', () => {
+    const answering = (status: number, body: unknown) =>
+        createApi('http://srv', (async () =>
+            jsonResponse(status, body)) as unknown as typeof fetch);
+    const invalid = (e: unknown) =>
+        e instanceof ApiError &&
+        e.code === 'invalid_response' &&
+        e.status === 200;
+
+    it('takes a full diagram, a saved one without content, and a list', async () => {
+        const full = { ...savedAnswer, content: { tables: [] } };
+        await expect(answering(200, full).getDiagram('d1')).resolves.toEqual(
+            full
+        );
+        await expect(
+            answering(200, savedAnswer).updateDiagram('d1', { title: 'x' })
+        ).resolves.toEqual(savedAnswer);
+        await expect(
+            answering(200, [{ ...savedAnswer, tableCount: 3 }]).listDiagrams()
+        ).resolves.toHaveLength(1);
+    });
+
+    it('keeps a field the server adds later', async () => {
+        const answer = { ...savedAnswer, somethingNew: 1 };
+        await expect(
+            answering(200, answer).updateDiagram('d1', { title: 'x' })
+        ).resolves.toMatchObject({ somethingNew: 1 });
+    });
+
+    it('fails a diagram without its id, role or owner', async () => {
+        const broken = {
+            title: 'Shop',
+            content: null,
+            publishedVersion: null,
+            publishedAt: null,
+        };
+        await expect(answering(200, broken).getDiagram('d1')).rejects.toSatisfy(
+            invalid
+        );
+        // undefined is left out of the JSON, so the field is missing
+        const noRole = { ...savedAnswer, role: undefined };
+        await expect(
+            answering(200, noRole).updateDiagram('d1', { title: 'x' })
+        ).rejects.toSatisfy(invalid);
+    });
+
+    it('fails a list that is not a list', async () => {
+        await expect(
+            answering(200, { items: [] }).listDiagrams()
+        ).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, [{ id: 'x' }]).listDiagrams()
+        ).rejects.toSatisfy(invalid);
+    });
+
+    it('fails a page without its total', async () => {
+        await expect(
+            answering(200, { items: [] }).listProjects()
+        ).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, {
+                items: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+            }).listProjects()
+        ).resolves.toEqual({ items: [], total: 0, page: 1, limit: 10 });
+        await expect(
+            answering(200, {
+                items: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+            }).adminListUsers()
+        ).resolves.toMatchObject({ total: 0 });
+    });
+
+    it('takes a project update that has no counts, and fails one with no name', async () => {
+        const row = {
+            id: 'p1',
+            name: 'Shop',
+            slug: 'shop',
+            description: '',
+            createdAt: T0,
+        };
+        await expect(
+            answering(200, row).adminUpdateProject('p1', { name: 'Shop' })
+        ).resolves.toEqual(row);
+        const noName = { ...row, name: undefined };
+        await expect(
+            answering(200, noName).adminUpdateProject('p1', {})
+        ).rejects.toSatisfy(invalid);
+        // a new project does carry the counts
+        await expect(
+            answering(201, {
+                ...row,
+                members: 0,
+                diagrams: 0,
+            }).adminCreateProject({
+                name: 'Shop',
+            })
+        ).resolves.toMatchObject({ members: 0 });
+        await expect(
+            answering(201, row).adminCreateProject({ name: 'Shop' })
+        ).rejects.toMatchObject({ code: 'invalid_response' });
+    });
+
+    it('checks the lock, share link, drift and connection answers', async () => {
+        await expect(
+            answering(200, { held: false }).acquireLock('d1', 't')
+        ).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, { held: true }).acquireLock('d1', 't')
+        ).resolves.toEqual({ held: true });
+
+        const link = {
+            id: 'l1',
+            diagramId: 'd1',
+            access: 'anyone',
+            expiresAt: null,
+            live: false,
+            createdAt: T0,
+            revokedAt: null,
+        };
+        await expect(
+            answering(200, [link]).listShareLinks('d1')
+        ).resolves.toHaveLength(1);
+        // a new link comes with its token
+        await expect(
+            answering(201, link).createShareLink('d1')
+        ).rejects.toMatchObject({ code: 'invalid_response' });
+        await expect(
+            answering(201, { ...link, token: 'tok' }).createShareLink('d1')
+        ).resolves.toMatchObject({ token: 'tok' });
+
+        await expect(
+            answering(200, {
+                settings: null,
+                latest: null,
+                badge: null,
+            }).getDrift('d1')
+        ).resolves.toEqual({ settings: null, latest: null, badge: null });
+        await expect(
+            answering(200, { settings: null }).getDrift('d1')
+        ).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, { ...checkAnswer, status: 'weird' }).checkDrift('d1')
+        ).rejects.toSatisfy(invalid);
+
+        await expect(
+            answering(200, [connectionAnswer]).listSavedConnections('p1')
+        ).resolves.toHaveLength(1);
+        await expect(
+            answering(200, [
+                { ...connectionAnswer, port: '5432' },
+            ]).listSavedConnections('p1')
+        ).rejects.toSatisfy(invalid);
+    });
+
+    it('checks what two-factor and sign out answer', async () => {
+        await expect(answering(200, { ok: true }).logout()).resolves.toEqual({
+            ok: true,
+        });
+        await expect(answering(200, {}).logout()).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, { recoveryCodes: ['a'] }).mfaEnable('p', '1')
+        ).resolves.toEqual({ recoveryCodes: ['a'] });
+        await expect(
+            answering(200, { recoveryCodes: 'a' }).mfaEnable('p', '1')
+        ).rejects.toSatisfy(invalid);
+        await expect(answering(200, {}).mfaSetup()).rejects.toSatisfy(invalid);
+    });
+
+    it('checks the admin figures and the activity log', async () => {
+        await expect(answering(200, {}).adminStats()).rejects.toSatisfy(
+            invalid
+        );
+        await expect(
+            answering(200, { items: [], nextCursor: null }).adminListActivity()
+        ).resolves.toEqual({ items: [], nextCursor: null });
+        await expect(
+            answering(200, { items: [] }).adminListActivity()
+        ).rejects.toSatisfy(invalid);
+    });
+
+    it('does not turn an error answer into a failed check', async () => {
+        await expect(
+            answering(404, { error: 'not_found' }).getDiagram('d1')
+        ).rejects.toMatchObject({ code: 'not_found', status: 404 });
+        // no content: nothing to check
+        await expect(
+            createApi(
+                'http://srv',
+                (async () =>
+                    new Response(null, {
+                        status: 204,
+                    })) as unknown as typeof fetch
+            ).releaseLock('d1', 't')
+        ).resolves.toBeUndefined();
+    });
+
+    it('turns a shared page of the wrong shape into an error, not a crash', async () => {
+        await expect(
+            answering(200, { title: 'x' }).getPublicShare('tok')
+        ).resolves.toEqual({ status: 'error' });
+        const share = {
+            title: 'x',
+            content: {},
+            version: 1,
+            publishedAt: T0,
+            live: false,
+        };
+        await expect(
+            answering(200, share).getPublicShare('tok')
+        ).resolves.toEqual({ status: 'ok', share });
     });
 });
