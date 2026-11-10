@@ -3,7 +3,7 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config.js';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
-import { DRIFT_DIAGRAM_LIMIT, latestReportSummary, runDriftCheck } from '../src/drift/service.js';
+import { DRIFT_DIAGRAM_LIMIT, MAX_CONCURRENT_DRIFT_CHECKS, latestReportSummary, runDriftCheck } from '../src/drift/service.js';
 import type {
     DatabaseMetadata,
     Introspector,
@@ -736,6 +736,26 @@ describe('drift detection', () => {
             const [a, b] = await Promise.all([check(), check()]);
             expect([a.statusCode, b.statusCode].sort()).toEqual([200, 409]);
             expect([a, b].find((r) => r.statusCode === 409)!.json().error).toBe('already_running');
+        });
+
+        it('caps checks running at once so they cannot starve the pool', async () => {
+            const ids = [diagramId];
+            for (let i = 0; i < MAX_CONCURRENT_DRIFT_CHECKS; i++) {
+                const made = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/diagrams',
+                    headers: as(owner),
+                    payload: { ...diagramFixture, projectId: await projectFor(ctx.app) },
+                });
+                ids.push(made.json().id);
+            }
+            for (const id of ids) await put(owner, settings(), id);
+            factoryDelayMs = 150;
+            const res = await Promise.all(ids.map((id) => check(owner, id)));
+            const busy = res.filter((r) => r.statusCode === 429);
+            expect(busy).toHaveLength(1);
+            expect(busy[0]!.json().error).toBe('drift_busy');
+            expect(res.filter((r) => r.statusCode === 200)).toHaveLength(MAX_CONCURRENT_DRIFT_CHECKS);
         });
     });
 });

@@ -78,6 +78,10 @@ export interface SourceKeys {
 // diagram at the same time.
 const running = new Set<string>();
 
+// Each check holds one pooled connection for its whole run (the advisory lock),
+// so the number running at once is capped well below the pool size (default 10).
+export const MAX_CONCURRENT_DRIFT_CHECKS = 3;
+
 /**
  * Takes a Postgres advisory lock on the diagram's drift check, on a connection
  * held until the returned function is called (a crashed process drops it with
@@ -247,7 +251,7 @@ class DriftError extends Error {}
 export const DRIFT_DIAGRAM_LIMIT = 5 * 1024 * 1024;
 
 /** Why a check did not run: another is running, or what it needs is gone. */
-export type DriftSkip = 'running' | 'not_configured' | 'not_found';
+export type DriftSkip = 'running' | 'busy' | 'not_configured' | 'not_found';
 
 /**
  * Compares the diagram's working copy with the live database and stores a
@@ -261,6 +265,7 @@ export async function runDriftCheck(
 ): Promise<ReportRow | DriftSkip> {
     const { db } = deps;
     if (running.has(diagramId)) return 'running';
+    if (running.size >= MAX_CONCURRENT_DRIFT_CHECKS) return 'busy';
     running.add(diagramId);
     let release: (() => Promise<void>) | null = null;
     try {

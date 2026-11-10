@@ -235,6 +235,9 @@ export const driftRoutes =
             if (report === 'running') {
                 return reply.code(409).send({ error: 'already_running' });
             }
+            if (report === 'busy') {
+                return reply.code(429).send({ error: 'drift_busy' });
+            }
             // settings or the diagram went away while the request was waiting
             if (report === 'not_configured') {
                 return reply.code(409).send({ error: 'not_configured' });
