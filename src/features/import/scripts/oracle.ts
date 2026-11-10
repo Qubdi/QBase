@@ -73,6 +73,9 @@ export const ORACLE_SCRIPT = `SELECT JSON_OBJECT(
         'column' VALUE c.column_name,
         'index_type' VALUE CASE WHEN i.index_type = 'BITMAP' THEN 'bitmap' ELSE 'btree' END,
         'unique' VALUE CASE WHEN i.uniqueness = 'UNIQUE' THEN 'true' ELSE 'false' END FORMAT JSON,
+        'primary' VALUE CASE WHEN EXISTS (SELECT 1 FROM user_constraints pk
+          WHERE pk.constraint_type = 'P' AND pk.table_name = i.table_name
+          AND pk.index_name = i.index_name) THEN 'true' ELSE 'false' END FORMAT JSON,
         'direction' VALUE LOWER(c.descend),
         'column_position' VALUE c.column_position) RETURNING CLOB)
       FROM user_indexes i

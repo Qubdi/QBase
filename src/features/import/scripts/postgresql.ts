@@ -153,6 +153,7 @@ export function postgresScript(options: PostgresOptions = {}): string {
           ELSE pg_get_indexdef(i.indexrelid, g.k, true) END,
       'index_type', am.amname,
       'unique', i.indisunique,
+      'primary', i.indisprimary,
       'where', pg_get_expr(i.indpred, i.indrelid),
       'direction', ${direction}, 'column_position', g.k)
       ORDER BY n.nspname, c.relname, ic.relname, g.k)

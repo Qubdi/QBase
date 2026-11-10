@@ -156,6 +156,8 @@ function mysqlScript(withChecks: boolean): string {
                 ['index_type', q('LOWER(s.INDEX_TYPE)')],
                 ['cardinality', n('s.CARDINALITY')],
                 ['unique', b('s.NON_UNIQUE = 0')],
+                // the index behind a primary key is always named PRIMARY
+                ['primary', b(`s.INDEX_NAME = 'PRIMARY'`)],
                 ['direction', q(`IF(s.COLLATION = 'D', 'desc', 'asc')`)],
                 ['column_position', n('s.SEQ_IN_INDEX')],
             ],
