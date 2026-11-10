@@ -61,6 +61,7 @@ export async function createTestApp(
     // the limits count in the database, which a second app shares with the first;
     // a new app starts with every allowance unspent, as one with its own memory did
     await pool.query('delete from rate_counters');
+    await pool.query('delete from live_viewers');
     const app = buildApp({ config, db, introspect, userRateLimit });
     await app.ready();
     return {

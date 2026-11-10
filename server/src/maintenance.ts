@@ -1,6 +1,7 @@
 import { and, isNotNull, lt, or, sql } from 'drizzle-orm';
 import { safeError } from './lib/safe-error.js';
 import type { Config } from './config.js';
+import { purgeExpiredViewers } from './share/viewers.js';
 import { MAINTENANCE_LOCK, withAdvisoryLock, type Db } from './db/client.js';
 import {
     diagramLocks,
@@ -239,6 +240,7 @@ export async function runMaintenance(
         mfaChallenges: () => purgeExpiredMfaChallenges(db, now),
         locks: () => purgeExpiredLocks(db, now),
         counters: () => purgeExpiredCounters(db, now),
+        viewers: () => purgeExpiredViewers(db, now),
         links: () => purgeDeadLinks(db, config.deadLinkKeepDays, now),
         audit: () => purgeAuditLog(db, config.auditRetentionDays, now),
         snapshots: () => pruneSnapshots(db, config.snapshotKeep),

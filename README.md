@@ -401,9 +401,13 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   the hourly clean-up deletes closed windows. If Postgres cannot answer a count, that
   request is counted in the memory of its own process instead (a warning is logged, at
   most once a minute), so an outage neither turns requests away nor locks people out, and
-  the limits hold per process until it passes. One cap stays per process: the open
-  live-viewer caps per link and per address (`SSE_MAX_PER_LINK`, `SSE_MAX_PER_IP`) count the
-  connections that process holds, so with N replicas each is N times as loose.
+  the limits hold per process until it passes. The open live-viewer caps per link and per
+  address (`SSE_MAX_PER_LINK`, `SSE_MAX_PER_IP`) hold across replicas too: each open stream
+  is a row of the unlogged table `live_viewers` (migration `0030`), renewed on every
+  heartbeat and counted for three heartbeats after the last renewal, so a replica that dies
+  frees its viewers by itself; the hourly clean-up deletes the expired rows. Opening a
+  stream takes one short transaction under a Postgres advisory lock, and each heartbeat
+  adds one small write per viewer.
 - The first start after upgrading to a version with the diagram-list columns (migration
   `0022`) rewrites the whole `diagrams` table under an exclusive lock: about 11 seconds for
   320 MB of diagrams here, and reads and writes of diagrams wait meanwhile. Start the new

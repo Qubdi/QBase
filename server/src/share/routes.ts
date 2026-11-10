@@ -17,6 +17,7 @@ import { canWrite, getRole } from '../diagrams/permissions.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
 import { activeLinkSql, countedLinkSql } from './active.js';
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
+import { acquireViewer, releaseViewer, renewViewer } from './viewers.js';
 import { createSnapshotCache } from './snapshot-cache.js';
 import { generateToken, hashToken } from './tokens.js';
 
@@ -379,10 +380,15 @@ export const publicShareRoutes =
             for (const closeStream of [...openStreams]) closeStream();
         });
 
-        // open live viewers per link, so one link cannot hold unlimited sockets
-        const viewers = new Map<string, number>();
-        // ...and per client address over all links, so one address cannot take every slot
-        const viewersByIp = new Map<string, number>();
+        // Open live viewers are counted in the database (see viewers.ts), per
+        // link so one link cannot hold unlimited sockets, and per client
+        // address over all links so one address cannot take every slot. A row
+        // counts for three heartbeats after the stream last renewed it.
+        const viewerCaps = {
+            maxPerLink: config.sseMaxPerLink,
+            maxPerIp: config.sseMaxPerIp,
+            ttlMs: config.sseHeartbeatSeconds * 3 * 1000,
+        };
         // One publish wakes every viewer of a link. They share one re-check
         // of the link instead of running a query each.
         const RECHECK_TTL_MS = 2_000;
@@ -458,14 +464,16 @@ export const publicShareRoutes =
             // a slot taken now would never be given back.
             if (req.raw.destroyed) return reply.hijack();
 
-            const open = viewers.get(linkId) ?? 0;
             const ip = addressKey(req.ip);
-            const openFromIp = viewersByIp.get(ip) ?? 0;
-            if (open >= config.sseMaxPerLink || openFromIp >= config.sseMaxPerIp) {
+            const viewerId = await acquireViewer(db, linkId, ip, viewerCaps);
+            if (!viewerId) {
                 return reply.code(429).send({ error: 'too_many_viewers' });
             }
-            viewers.set(linkId, open + 1);
-            viewersByIp.set(ip, openFromIp + 1);
+            // the browser can also leave while the slot is being taken
+            if (req.raw.destroyed) {
+                await releaseViewer(db, viewerId).catch(() => undefined);
+                return reply.hijack();
+            }
 
             reply.hijack();
             const raw = reply.raw;
@@ -494,12 +502,10 @@ export const publicShareRoutes =
                 if (closed) return;
                 closed = true;
                 openStreams.delete(close);
-                const left = (viewers.get(linkId) ?? 1) - 1;
-                if (left > 0) viewers.set(linkId, left);
-                else viewers.delete(linkId);
-                const fromIp = (viewersByIp.get(ip) ?? 1) - 1;
-                if (fromIp > 0) viewersByIp.set(ip, fromIp);
-                else viewersByIp.delete(ip);
+                // a failure here only leaves a row that expires by itself
+                void releaseViewer(db, viewerId).catch((err) =>
+                    req.log.error({ err: safeError(err) }, 'share events: viewer release failed')
+                );
                 cleanup.forEach((fn) => fn());
                 raw.end();
             };
@@ -559,6 +565,7 @@ export const publicShareRoutes =
                     // opened: read it again instead of trusting what was seen then
                     const now = await stillValidShared(linkId, openedWith, req.user);
                     if (!now.valid) return close();
+                    await renewViewer(db, viewerId, linkId, ip, viewerCaps.ttlMs);
                     if (now.access === 'signed_in' && req.user) {
                         const still = await getSessionUser(
                             db,

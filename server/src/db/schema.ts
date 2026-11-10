@@ -509,3 +509,22 @@ export const rateCounters = pgTable(
     },
     (t) => [index('rate_counters_expires_idx').on(t.expiresAt)]
 );
+
+// One row per open live share stream, so the viewer caps hold across every
+// server process. A stream renews its row on each heartbeat; a process that
+// dies leaves rows that stop counting when they expire. UNLOGGED by the
+// migration: after a crash the viewers reconnect and are counted again.
+export const liveViewers = pgTable(
+    'live_viewers',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        linkId: uuid('link_id').notNull(),
+        ip: text('ip').notNull(),
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    },
+    (t) => [
+        index('live_viewers_link_idx').on(t.linkId),
+        index('live_viewers_ip_idx').on(t.ip),
+        index('live_viewers_expires_idx').on(t.expiresAt),
+    ]
+);
