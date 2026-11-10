@@ -58,7 +58,9 @@ export const SQLSERVER_QUERIES = {
                c.max_length AS max_length, c.precision AS [precision], c.scale AS scale,
                c.column_id AS ordinal_position, c.is_nullable AS nullable,
                dc.definition AS [default], CAST(ep.value AS nvarchar(4000)) AS comment,
-               c.is_identity AS is_identity, c.collation_name AS collation,
+               c.is_identity AS is_identity,
+               CASE WHEN c.collation_name = CONVERT(sysname, DATABASEPROPERTYEX(DB_NAME(), 'Collation'))
+                    THEN NULL ELSE c.collation_name END AS collation,
                cmp.definition AS generated_expression, cmp.is_persisted AS generated_stored
         FROM sys.columns c
         JOIN sys.objects o ON o.object_id = c.object_id AND o.type IN ('U', 'V')

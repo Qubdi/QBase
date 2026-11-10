@@ -204,7 +204,7 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
             { schema: 'dbo', table: 'people', name: 'upper_first', type: 'nvarchar', max_length: 40, precision: 0, scale: 0, ordinal_position: 2, nullable: true, generated_expression: '(upper([first]))', generated_stored: true },
             { schema: 'dbo', table: 'people', name: 'age', type: 'int', max_length: 4, precision: 10, scale: 0, ordinal_position: 3, nullable: true, generated_expression: null, generated_stored: null },
             // an alias type over nvarchar(40): the query answers the base type and the alias as domain
-            { schema: 'dbo', table: 'people', name: 'nick', type: 'nvarchar', domain: 'nickname', max_length: 40, precision: 0, scale: 0, ordinal_position: 4, nullable: true },
+            { schema: 'dbo', table: 'people', name: 'nick', type: 'nvarchar', domain: 'nickname', collation: 'Latin1_General_CS_AS', max_length: 40, precision: 0, scale: 0, ordinal_position: 4, nullable: true },
         ],
         primaryKeys: [],
         foreignKeys: [],
@@ -253,6 +253,15 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         expect([nick.type, nick.domain, nick.character_maximum_length]).toEqual(['nvarchar', 'nickname', '20']);
         // a column of a plain type has no domain
         expect(meta.columns.filter((c) => c.name !== 'nick').every((c) => c.domain === null)).toBe(true);
+    });
+
+    it('DB-019: the collation is whatever the query answers, and the query answers NULL for the database default', async () => {
+        const { SqlServerIntrospector } = await import('../src/introspect/sqlserver.js');
+        const meta = await new SqlServerIntrospector(pool as never).introspect({ schemas: [] });
+        expect(meta.columns.map((c) => c.collation)).toEqual([null, null, null, 'Latin1_General_CS_AS']);
+        const q = SQLSERVER_QUERIES.columns;
+        expect(q).toContain("DATABASEPROPERTYEX(DB_NAME(), 'Collation')");
+        expect(q).toMatch(/THEN NULL ELSE c\.collation_name END AS collation/);
     });
 
     it('DB-004: columnstore, XML and spatial indexes are listed with every column, in their own order', () => {
