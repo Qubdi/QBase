@@ -321,3 +321,26 @@ describe('edit card stacking', () => {
         );
     });
 });
+
+describe('cursors', () => {
+    it('tables, areas and notes show the grab hand', () => {
+        expect(CHROME_CSS).toMatch(
+            /\.react-flow__node:hover\s*\{\s*cursor:\s*grab\s*;/
+        );
+    });
+
+    it('a column row shows the pointing finger, not the grab hand of its table', () => {
+        const { design, orderUser, userKey } = shop();
+        renderCanvas(design);
+        for (const id of [orderUser, userKey])
+            expect(screen.getByTestId(`field-${id}`).className).toContain(
+                'cursor-pointer'
+            );
+    });
+
+    it('while a table is dragged the grabbing hand shows over all of it, rows too', () => {
+        expect(CHROME_CSS).toMatch(
+            /\.react-flow__node\.dragging\s*,\s*\.react-flow__node\.dragging \*\s*\{\s*cursor:\s*grabbing\s*;/
+        );
+    });
+});

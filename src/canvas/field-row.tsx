@@ -125,7 +125,8 @@ export const FieldRow = memo(function FieldRow({
             data-highlighted={highlighted || undefined}
             data-link-end={linkEnd || undefined}
             className={cn(
-                'group/row relative flex h-8 items-center gap-1 border-t px-3 text-sm transition-all duration-200 ease-in-out',
+                // a click on the row follows its field, so it is the pointing finger, not the table's grab hand
+                'group/row relative flex h-8 cursor-pointer items-center gap-1 border-t px-3 text-sm transition-all duration-200 ease-in-out',
                 linkEnd
                     ? 'bg-teal-100 dark:bg-teal-900/60'
                     : 'hover:bg-slate-100 dark:hover:bg-slate-800',
