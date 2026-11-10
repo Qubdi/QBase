@@ -119,6 +119,31 @@ export function parseTrustProxy(
         .filter(Boolean);
 }
 
+/**
+ * Settings the server runs on but that probably leave something weaker than the
+ * operator expects. Printed once at start; none of them stops the server.
+ */
+export function startupWarnings(
+    config: Pick<Config, 'cookieSecure' | 'trustProxy'>
+): string[] {
+    const warnings: string[] = [];
+    const noProxy =
+        config.trustProxy === false ||
+        (Array.isArray(config.trustProxy) && config.trustProxy.length === 0);
+    // 'auto' sets Secure only on a request that arrived over https, and behind a
+    // TLS-terminating proxy every request reaches the server as plain http
+    // unless the proxy is trusted: the session cookie then goes out without
+    // Secure
+    if (config.cookieSecure === 'auto' && noProxy) {
+        warnings.push(
+            'COOKIE_SECURE=auto and TRUST_PROXY is not set: behind a reverse proxy that ends TLS ' +
+                'the session cookie is sent without the Secure flag. ' +
+                'Set TRUST_PROXY to the number of proxies in front of the server, or COOKIE_SECURE=true.'
+        );
+    }
+    return warnings;
+}
+
 /** Thrown by `loadConfig` when the environment holds values the server cannot run on. */
 export class ConfigError extends Error {
     constructor(problems: string[]) {

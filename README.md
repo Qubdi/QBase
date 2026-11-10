@@ -246,7 +246,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `AUTO_PUBLISH_COALESCE_SECONDS` | `300` | While auto-publish is on, a save rewrites the person's latest auto snapshot when it is younger than this, instead of adding a copy; `0` adds one every save |
 | `AUDIT_SAVE_MINUTES` | `60` | A save is logged once per person and diagram in this many minutes; `0` logs every save |
 | `SHARE_RATE_LIMIT` | `60` | Public share requests per minute per IP |
-| `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`) |
+| `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`, or the server warns at start that the cookie goes out without `Secure`) |
 | `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
 | `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) from one address before it is locked out of an account; failures from all addresses together lock the account at five times this |
 | `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |
@@ -375,9 +375,10 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   before it is sent, and PostgreSQL runs inside a read-only transaction. SQL Server has no
   read-only transaction, so use a login that only has read access.
 - Drift checks compare the server's copy of the diagram, so the editor syncs it first.
+- Besides the limits above, one signed-in user is held to 600 calls a minute across the whole API (a fixed ceiling, not a setting; kept in each process's memory like the others).
 - Several server processes can share one database. Live share updates, the migrations at
   start-up and the hourly clean-up are coordinated through Postgres. Rate limits, the
-  per-link live-viewer cap, the shared lint and outbound allowances and the guard against two
+  per-link live-viewer cap, the per-user allowance, the lint and outbound allowances and the guard against two
   drift checks of one diagram at once are kept in the memory of each process, so with N
   replicas each limit is N times as loose and two drift checks can overlap: keep the limiter at
   the reverse proxy, or run one process (see "Scaling").

@@ -1,5 +1,5 @@
 import { buildApp } from './app.js';
-import { ConfigError, loadConfig } from './config.js';
+import { ConfigError, loadConfig, startupWarnings } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
 import { resealPlaintextWebhooks } from './drift/reseal.js';
 import { startEventBridge } from './events.js';
@@ -18,6 +18,7 @@ try {
     console.error(err.message);
     process.exit(1);
 }
+for (const warning of startupWarnings(config)) console.warn(`Warning: ${warning}`);
 // migrations get their own connection with no statement limit: one that
 // rewrites a large table can take longer than any request should. Two
 // connections: one holds the lock that makes replicas take turns, one migrates

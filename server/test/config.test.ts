@@ -5,6 +5,7 @@ import {
     loadConfig as loadConfigFrom,
     parseCookieSecure,
     parseTrustProxy,
+    startupWarnings,
 } from '../src/config.js';
 
 /** `loadConfig` with the one setting that has no default. */
@@ -292,5 +293,20 @@ describe("the repository's example settings file", () => {
                 expect(value, name).toBe('');
             }
         }
+    });
+});
+
+describe('startupWarnings', () => {
+    it('warns when the cookie flag is auto and no proxy is trusted', () => {
+        const warnings = startupWarnings(loadConfig({}));
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toMatch(/COOKIE_SECURE=auto and TRUST_PROXY is not set/);
+    });
+
+    it('is quiet once a proxy is trusted or the flag is fixed', () => {
+        expect(startupWarnings(loadConfig({ TRUST_PROXY: '1' }))).toEqual([]);
+        expect(startupWarnings(loadConfig({ TRUST_PROXY: '10.0.0.1' }))).toEqual([]);
+        expect(startupWarnings(loadConfig({ COOKIE_SECURE: 'true' }))).toEqual([]);
+        expect(startupWarnings(loadConfig({ COOKIE_SECURE: 'false' }))).toEqual([]);
     });
 });
