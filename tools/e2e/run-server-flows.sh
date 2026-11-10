@@ -82,7 +82,7 @@ docker run --rm --ipc=host --network "$NET" -u "$(id -u)" -e HOME=/tmp -e SHOTS=
     -e ONLY="${ONLY:-}" -e SCRIPT="${SCRIPT:-tools/e2e/server-flows.mjs}" \
     -v "$PWD":/w:ro -v "$SHOTS":/shots -v "$PW_CACHE":/tmp/pw -w /w \
     mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2 \
-    sh -c '[ -d /tmp/pw/node_modules/playwright ] || (cd /tmp/pw && npm i --no-save --no-audit --no-fund playwright@1.49.1 pg@8 >/dev/null); cd /w && node "$SCRIPT"'
+    sh -c '[ -d /tmp/pw/node_modules/playwright ] || (mkdir -p /tmp/pw && cp /w/tools/e2e/package.json /w/tools/e2e/package-lock.json /tmp/pw/ && cd /tmp/pw && npm ci --no-audit --no-fund >/dev/null); cd /w && node "$SCRIPT"'
 STATUS=$?
 echo "app container log (last lines):"
 docker logs "$APP" 2>&1 | tail -5
