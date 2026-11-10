@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { StorageAdapter } from '@/persistence/storage-adapter';
 import { startAutosave } from './autosave';
 import { StoreContext } from './store-context';
 import { createEditorStore } from './editor-store';
-import type { EditorStore, EditorStoreOptions } from './editor-store';
+import type { EditorStoreOptions } from './editor-store';
 
 export interface EditorStoreProviderProps extends EditorStoreOptions {
     /** where the design is saved; without it nothing is written */
@@ -24,11 +24,12 @@ export const EditorStoreProvider: React.FC<EditorStoreProviderProps> = ({
     children,
     ...options
 }) => {
-    const ref = useRef<EditorStore | null>(null);
-    ref.current ??= createEditorStore(options);
-    const store = ref.current;
+    const [store] = useState(() => createEditorStore(options));
     const errorRef = useRef(onSaveError);
-    errorRef.current = onSaveError;
+    // runs before the autosave effect below, so a save error sees the latest callback
+    useEffect(() => {
+        errorRef.current = onSaveError;
+    }, [onSaveError]);
 
     useEffect(() => {
         if (!adapter) return;
