@@ -1,5 +1,5 @@
 import sql from 'mssql';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assertReadOnlySql } from '../src/introspect/readonly-guard.js';
 import {
     PrivilegedLoginError,
@@ -199,13 +199,10 @@ describe.skipIf(!up)(`SQL Server introspection against a real database${up ? '' 
                 },
                 { address: MSSQL_HOST, family: 4 }
             );
-        vi.stubEnv('INTROSPECT_ALLOW_PRIVILEGED', '');
         await expect(connect()).rejects.toBeInstanceOf(PrivilegedLoginError);
-        vi.unstubAllEnvs();
     });
 
     it('connects through connectSqlServer with a vetted address', async () => {
-        vi.stubEnv('INTROSPECT_ALLOW_PRIVILEGED', '1');
         const i = await connectSqlServer(
             {
                 dialect: 'sqlserver',
@@ -217,13 +214,13 @@ describe.skipIf(!up)(`SQL Server introspection against a real database${up ? '' 
                 ssl: false,
                 trustServerCertificate: true,
             },
-            { address: MSSQL_HOST, family: 4 }
+            { address: MSSQL_HOST, family: 4 },
+            true
         );
         try {
             expect((await i.catalog()).map((s) => s.schema)).toEqual(['dbo', 'shop']);
         } finally {
             await i.close();
-            vi.unstubAllEnvs();
         }
     });
 

@@ -15,7 +15,7 @@ import {
 import type { Config } from './config.js';
 import type { Db } from './db/client.js';
 import { driftRoutes } from './drift/routes.js';
-import { defaultIntrospectorFactory } from './introspect/routes.js';
+import { createIntrospectorFactory } from './introspect/routes.js';
 import { lintRoutes } from './lint/routes.js';
 import { introspectRoutes, type IntrospectDeps } from './introspect/routes.js';
 import { adminRoutes } from './admin/routes.js';
@@ -298,7 +298,7 @@ export function buildApp({
         driftRoutes({
             db,
             config,
-            factory: introspect?.factory ?? defaultIntrospectorFactory,
+            factory: introspect?.factory ?? createIntrospectorFactory(config),
             lookup: introspect?.lookup,
             outboundLimit,
         }),

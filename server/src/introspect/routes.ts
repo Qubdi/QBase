@@ -30,13 +30,17 @@ import {
     type IntrospectorFactory,
 } from './types.js';
 
-export const defaultIntrospectorFactory: IntrospectorFactory = (
-    params,
-    target
-) =>
-    params.dialect === 'postgresql'
-        ? connectPostgres(params, target)
-        : connectSqlServer(params, target);
+export const createIntrospectorFactory =
+    (config: Pick<Config, 'introspectAllowPrivileged'>): IntrospectorFactory =>
+    (params, target) =>
+        params.dialect === 'postgresql'
+            ? connectPostgres(params, target)
+            : connectSqlServer(params, target, config.introspectAllowPrivileged);
+
+/** The factory with no privileged logins allowed. */
+export const defaultIntrospectorFactory = createIntrospectorFactory({
+    introspectAllowPrivileged: false,
+});
 
 const connectionFields = z.object({
     dialect: z.enum(['postgresql', 'sqlserver']),
@@ -117,7 +121,7 @@ export const introspectRoutes =
     ({
         db,
         config,
-        factory = defaultIntrospectorFactory,
+        factory = createIntrospectorFactory(config),
         lookup,
         outboundLimit,
     }: IntrospectDeps): FastifyPluginAsync =>

@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 35 · **date** 2026-11-10
+**rev** 36 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 3 | 0 | 0 | 42 | 0 |
-| Repository | 9 | 0 | 0 | 54 | 0 |
+| Repository | 4 | 0 | 0 | 59 | 0 |
 | Server | 7 | 0 | 0 | 33 | 0 |
 | Database | 7 | 0 | 0 | 15 | 1 |
 | Client | 8 | 0 | 0 | 94 | 0 |
 | Dead code | 2 | 0 | 0 | 39 | 0 |
-| **Total** | 36 | 0 | 0 | 277 | 1 |
+| **Total** | 31 | 0 | 0 | 282 | 1 |
 
 ## Act first
 
@@ -37,12 +37,7 @@ None.
 | REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:8`, `rewrite/TODO.md:11`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
 | REPO-070 | Med | Full-history gitleaks fails: two test keys missing from `.gitleaksignore` | `server/test/startup.test.ts:8`, `server/test/drift-reseal.test.ts:9`, `.gitleaksignore:1` | Add their fingerprints, or build the keys at run time |
-| REPO-071 | Low | Dependabot header says npm updates paused; both entries have limit 5 | `.github/dependabot.yml:1` | Delete the stale "PAUSED" comment |
-| REPO-072 | Low | `INTROSPECT_ALLOW_PRIVILEGED` read outside `config.ts`, absent from compose and `.env.example` | `server/src/introspect/sqlserver.ts:530`, `README.md:244` | Add it to config.ts, compose and `.env.example` |
-| REPO-073 | Low | `WEB_DIR` read in `config.ts` but absent from `server/.env.example` | `server/src/config.ts:321` | Add a commented `WEB_DIR` entry |
 | REPO-074 | Med | Publish pushes to Docker Hub and GHCR with no environment gate or main-ancestry check | `.github/workflows/publish.yaml:5`, `.github/workflows/publish.yaml:109` | Add `environment:` with reviewers; verify tag commit is on main |
-| REPO-075 | Low | CI builds the image but never starts it or checks `/health` | `.github/workflows/ci.yaml:139` | Run the image against Postgres and curl `/health` |
-| REPO-076 | Low | Published images are not signed or vulnerability-scanned; only provenance and SBOM | `.github/workflows/publish.yaml:167` | Add cosign signing and a Trivy scan step |
 
 ### Server
 
@@ -116,6 +111,11 @@ None.
 | SRV-024 | Server | SESSION_DAYS has no maximum; large value makes expiry Invalid Date, sign-in 500s |
 | SRV-027 | Server | Lint-config GET and PUT have no rate limit unlike /lint |
 | SRV-029 | Server | Session end deletes sessions and locks in separate statements, not one transaction |
+| REPO-071 | Repository | Dependabot header says npm updates paused; both entries have limit 5 |
+| REPO-072 | Repository | `INTROSPECT_ALLOW_PRIVILEGED` read outside `config.ts`, absent from compose and `.env.example` |
+| REPO-073 | Repository | `WEB_DIR` read in `config.ts` but absent from `server/.env.example` |
+| REPO-075 | Repository | CI builds the image but never starts it or checks `/health` |
+| REPO-076 | Repository | Published images are not signed or vulnerability-scanned; only provenance and SBOM |
 | REPO-039 | Repository | PLAN says branch does not build; TODO says build, lint, tests pass |
 | REPO-041 | Repository | e2e visual scripts hard-code `/home/qubdi/ui-reference` output path |
 | REPO-042 | Repository | Committed briefs and specs embed an absolute personal home path |
@@ -440,6 +440,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 36 | 2026-11-10 | 5 fixed (repository low batch: REPO-071, 072, 073, 075, 076; REPO-022 needs a team name from the org); 31 open, 0 Crit, 0 High; anchors not remapped |
 | 35 | 2026-11-10 | 10 fixed (security low batch: SEC-038 to 047); 36 open, 0 Crit, 0 High; anchors not remapped |
 | 34 | 2026-11-10 | 34 new (SEC-036 to 047, REPO-070 to 076, SRV-038 to 041, DB-021 to 024, CLI-103 to 109), SEC-001 widened to branch and pull refs, REPO-060 renumbered REPO-071; 46 open, 0 Crit, 0 High; npm audit clean |
 | 33 | 2026-11-10 | 13 total open: 3 new (REPO-060, CLI-102, DEAD-042), 1 regressed (DEAD-037, two of four copies remain), 4 anchors remapped, about 60 Fixed rows spot-checked; migrations and `schema.ts` diff empty; npm audit and gitleaks skipped |

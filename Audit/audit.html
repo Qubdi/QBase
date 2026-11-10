@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 35</b></div>
-  <h1>36 open across six lenses.</h1>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 36</b></div>
+  <h1>31 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
@@ -35,12 +35,12 @@
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
         <tr><td>Security &amp; secrets</td><td>3</td><td>0</td><td>0</td><td>42</td><td>0</td></tr>
-        <tr><td>Repository</td><td>9</td><td>0</td><td>0</td><td>54</td><td>0</td></tr>
+        <tr><td>Repository</td><td>4</td><td>0</td><td>0</td><td>59</td><td>0</td></tr>
         <tr><td>Server</td><td>7</td><td>0</td><td>0</td><td>33</td><td>0</td></tr>
         <tr><td>Database</td><td>7</td><td>0</td><td>0</td><td>15</td><td>1</td></tr>
         <tr><td>Client</td><td>8</td><td>0</td><td>0</td><td>94</td><td>0</td></tr>
         <tr><td>Dead code</td><td>2</td><td>0</td><td>0</td><td>39</td><td>0</td></tr>
-        <tr><td>Total</td><td>36</td><td>0</td><td>0</td><td>277</td><td>1</td></tr>
+        <tr><td>Total</td><td>31</td><td>0</td><td>0</td><td>282</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -56,7 +56,7 @@
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
     <p>1 open finding.</p>
-    <p class="lbl">2 open &middot; 0 Crit &middot; 0 High &middot; 54 fixed &middot; 0 accepted</p>
+    <p class="lbl">4 open &middot; 0 Crit &middot; 0 High &middot; 59 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
@@ -86,6 +86,7 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
+        <tr><td>36</td><td>2026-11-10</td><td class="wrap-cell">5 fixed (repository low batch: REPO-071, 072, 073, 075, 076; REPO-022 needs a team name from the org); 31 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>35</td><td>2026-11-10</td><td class="wrap-cell">10 fixed (security low batch: SEC-038 to 047); 36 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>34</td><td>2026-11-10</td><td class="wrap-cell">34 new (SEC-036 to 047, REPO-070 to 076, SRV-038 to 041, DB-021 to 024, CLI-103 to 109), SEC-001 widened to branch and pull refs, REPO-060 renumbered REPO-071; 46 open, 0 Crit, 0 High; npm audit clean</td></tr>
         <tr><td>33</td><td>2026-11-10</td><td class="wrap-cell">13 total open: 3 new (REPO-060, CLI-102, DEAD-042), 1 regressed (DEAD-037, two of four copies remain), 4 anchors remapped, about 60 Fixed rows spot-checked; migrations and <code>schema.ts</code> diff empty; npm audit and gitleaks skipped</td></tr>

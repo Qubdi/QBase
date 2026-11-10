@@ -494,7 +494,9 @@ export class PrivilegedLoginError extends Error {
 
 export async function connectSqlServer(
     params: ConnectionParams,
-    target: ResolvedTarget
+    target: ResolvedTarget,
+    /** INTROSPECT_ALLOW_PRIVILEGED: accept a login that can change data */
+    allowPrivileged = false
 ): Promise<Introspector> {
     const pool = new sql.ConnectionPool({
         // connect to the address we already vetted, not the hostname again
@@ -527,7 +529,7 @@ export async function connectSqlServer(
     const introspector = new SqlServerIntrospector(pool, watch);
     // readOnlyIntent only routes the connection; the login is what limits it.
     // A login that can change data is refused unless the operator accepts it.
-    if (process.env.INTROSPECT_ALLOW_PRIVILEGED !== '1') {
+    if (!allowPrivileged) {
         let privileged: boolean;
         try {
             privileged = await introspector.isPrivilegedLogin();

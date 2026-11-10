@@ -1,7 +1,3 @@
-# npm updates are PAUSED: both npm entries have open-pull-requests-limit: 5, so
-# Dependabot opens no version-update pull requests for packages. To resume, set
-# them back to 5. The pinned images (Node, Postgres) and the workflows' action
-# SHAs keep being updated: a pin nobody bumps misses its security fixes.
 version: 2
 updates:
   - package-ecosystem: npm

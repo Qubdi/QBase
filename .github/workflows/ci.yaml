@@ -149,6 +149,23 @@ jobs:
       - name: Build image
         run: docker build -t qubdi/qbase:ci .
 
+      # the image has to start, migrate and answer, not just build
+      - name: Start the image with its database and check /api/health
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --wait --wait-timeout 120
+          curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8080/api/health
+        env:
+          # throwaway values for this run only
+          POSTGRES_PASSWORD: ci-only-password
+          CONNECTION_KEY: ci-only-connection-key-0123456789abcdef
+
+      - name: Show the app log if the check failed
+        if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.build.yml logs app
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+          CONNECTION_KEY: ci-only-connection-key-0123456789abcdef
+
       # the tests and the shipped database must be the same image
       - name: Check the database image is pinned the same everywhere
         run: .github/scripts/check-postgres-digest.sh

@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 35</b></div>
-  <h1>9 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 36</b></div>
+  <h1>4 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
@@ -31,7 +31,7 @@
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">9 open &middot; 54 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">4 open &middot; 59 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -39,12 +39,7 @@
         <tr><td class="svc-name">REPO-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish workflow ships images while TODO says do not publish</td><td class="wrap-cell"><code>TODO.md:7</code>, <code>rewrite/TODO.md:11</code>, <code>.github/workflows/publish.yaml:5</code></td><td class="wrap-cell">Reconcile TODO with publish; gate publish on rewrite status</td></tr>
         <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CODEOWNERS lists a personal email, no team; single point of review</td><td class="wrap-cell"><code>.github/CODEOWNERS:5</code></td><td class="wrap-cell">Use a verified <code>@org/team</code> owner</td></tr>
         <tr><td class="svc-name">REPO-070</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Full-history gitleaks fails: two test keys missing from <code>.gitleaksignore</code></td><td class="wrap-cell"><code>server/test/startup.test.ts:8</code>, <code>server/test/drift-reseal.test.ts:9</code>, <code>.gitleaksignore:1</code></td><td class="wrap-cell">Add their fingerprints, or build the keys at run time</td></tr>
-        <tr><td class="svc-name">REPO-071</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Dependabot header says npm updates paused; both entries have limit 5</td><td class="wrap-cell"><code>.github/dependabot.yml:1</code></td><td class="wrap-cell">Delete the stale "PAUSED" comment</td></tr>
-        <tr><td class="svc-name">REPO-072</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>INTROSPECT_ALLOW_PRIVILEGED</code> read outside <code>config.ts</code>, absent from compose and <code>.env.example</code></td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:530</code>, <code>README.md:244</code></td><td class="wrap-cell">Add it to config.ts, compose and <code>.env.example</code></td></tr>
-        <tr><td class="svc-name">REPO-073</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>WEB_DIR</code> read in <code>config.ts</code> but absent from <code>server/.env.example</code></td><td class="wrap-cell"><code>server/src/config.ts:321</code></td><td class="wrap-cell">Add a commented <code>WEB_DIR</code> entry</td></tr>
         <tr><td class="svc-name">REPO-074</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish pushes to Docker Hub and GHCR with no environment gate or main-ancestry check</td><td class="wrap-cell"><code>.github/workflows/publish.yaml:5</code>, <code>.github/workflows/publish.yaml:109</code></td><td class="wrap-cell">Add <code>environment:</code> with reviewers; verify tag commit is on main</td></tr>
-        <tr><td class="svc-name">REPO-075</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CI builds the image but never starts it or checks <code>/health</code></td><td class="wrap-cell"><code>.github/workflows/ci.yaml:139</code></td><td class="wrap-cell">Run the image against Postgres and curl <code>/health</code></td></tr>
-        <tr><td class="svc-name">REPO-076</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Published images are not signed or vulnerability-scanned; only provenance and SBOM</td><td class="wrap-cell"><code>.github/workflows/publish.yaml:167</code></td><td class="wrap-cell">Add cosign signing and a Trivy scan step</td></tr>
       </tbody>
     </table>
   </div>
@@ -52,11 +47,16 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (54)</summary>
+  <details><summary>Fixed (59)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-071</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dependabot header says npm updates paused; both entries have limit 5</td></tr>
+        <tr><td class="svc-name">REPO-072</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>INTROSPECT_ALLOW_PRIVILEGED</code> read outside <code>config.ts</code>, absent from compose and <code>.env.example</code></td></tr>
+        <tr><td class="svc-name">REPO-073</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>WEB_DIR</code> read in <code>config.ts</code> but absent from <code>server/.env.example</code></td></tr>
+        <tr><td class="svc-name">REPO-075</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI builds the image but never starts it or checks <code>/health</code></td></tr>
+        <tr><td class="svc-name">REPO-076</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Published images are not signed or vulnerability-scanned; only provenance and SBOM</td></tr>
         <tr><td class="svc-name">REPO-039</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">PLAN says branch does not build; TODO says build, lint, tests pass</td></tr>
         <tr><td class="svc-name">REPO-041</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">e2e visual scripts hard-code <code>/home/qubdi/ui-reference</code> output path</td></tr>
         <tr><td class="svc-name">REPO-042</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Committed briefs and specs embed an absolute personal home path</td></tr>

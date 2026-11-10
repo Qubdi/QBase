@@ -363,3 +363,12 @@ describe('SSE_HEARTBEAT_SECONDS', () => {
         expect(() => loadConfig({ SSE_HEARTBEAT_SECONDS: '0' })).toThrow(ConfigError);
     });
 });
+
+describe('INTROSPECT_ALLOW_PRIVILEGED', () => {
+    it('is off unless it is exactly 1', () => {
+        expect(loadConfig().introspectAllowPrivileged).toBe(false);
+        expect(loadConfig({ INTROSPECT_ALLOW_PRIVILEGED: '' }).introspectAllowPrivileged).toBe(false);
+        expect(loadConfig({ INTROSPECT_ALLOW_PRIVILEGED: 'true' }).introspectAllowPrivileged).toBe(false);
+        expect(loadConfig({ INTROSPECT_ALLOW_PRIVILEGED: '1' }).introspectAllowPrivileged).toBe(true);
+    });
+});

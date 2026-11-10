@@ -70,6 +70,8 @@ export interface Config {
     shareRateLimit: number;
     /** hostnames, IPs or IPv4 CIDRs that introspection may reach even if private */
     introspectAllowHosts: string[];
+    /** INTROSPECT_ALLOW_PRIVILEGED=1: a SQL Server import may log in as a sysadmin or db_owner */
+    introspectAllowPrivileged: boolean;
     /** hostnames, IPs or IPv4 CIDRs that a drift webhook may reach even if private; separate from the database list */
     webhookAllowHosts: string[];
     /**
@@ -350,6 +352,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
         introspectAllowHosts,
+        introspectAllowPrivileged: env.INTROSPECT_ALLOW_PRIVILEGED?.trim() === '1',
         webhookAllowHosts,
         setupToken,
         connectionKey,
