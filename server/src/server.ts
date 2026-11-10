@@ -2,6 +2,7 @@ import { buildApp } from './app.js';
 import { ConfigError, loadConfig, startupWarnings } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
 import { resealPlaintextWebhooks } from './drift/reseal.js';
+import { resealStoredSecrets } from './reseal.js';
 import { startEventBridge } from './events.js';
 import { loadEnvFile } from './lib/env-file.js';
 import { startMaintenance } from './maintenance.js';
@@ -48,6 +49,22 @@ if (config.secretsKey) {
             err instanceof Error ? err.message : err
         );
     }
+}
+
+// values sealed in the old format, or with the shared key from before purposes
+// existed, are written again in the current one, so no open path falls back to
+// the shared key. A failure leaves them as they were and does not stop the server.
+try {
+    for (const c of await resealStoredSecrets(db, config)) {
+        if (c.resealed > 0) console.log(`Re-sealed ${c.resealed} value(s) in ${c.column}`);
+        if (c.unreadable > 0) {
+            console.warn(
+                `Warning: ${c.unreadable} value(s) in ${c.column} could not be opened with the current key and were left as they are`
+            );
+        }
+    }
+} catch (err) {
+    console.error('Could not re-seal stored secrets:', err instanceof Error ? err.message : err);
 }
 
 const app = buildApp({ config, db });

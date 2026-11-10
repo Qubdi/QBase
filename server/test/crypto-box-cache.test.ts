@@ -68,10 +68,12 @@ describe('CryptoBox purposes', () => {
         expect(() => bare.decrypt(sealed)).toThrow();
     });
 
-    it('still opens values sealed before purposes existed', async () => {
+    it('no longer opens a value sealed before purposes existed through a purpose box', async () => {
         const { CryptoBox } = await import('../src/introspect/crypto-box.js');
         const old = legacyV1(secret, undefined, 'https://hook.example/t0ken');
-        expect(new CryptoBox(secret, 'webhook').decrypt(old)).toBe(
+        expect(() => new CryptoBox(secret, 'webhook').decrypt(old)).toThrow();
+        // the start-up re-seal opens it with the shared key and writes it again
+        expect(new CryptoBox(secret, 'webhook').decryptLegacyShared(old)).toBe(
             'https://hook.example/t0ken'
         );
     });

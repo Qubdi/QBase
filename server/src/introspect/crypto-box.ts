@@ -90,13 +90,9 @@ export class CryptoBox {
         }
         if (parts[0] === 'v1' && parts.length === 4) {
             const [, iv, tag, data] = parts;
-            try {
-                return open(this.keyV1(false), iv, tag, data);
-            } catch (err) {
-                if (!this.purpose) throw err;
-                // values sealed before purposes existed used the shared key
-                return open(this.keyV1(true), iv, tag, data);
-            }
+            // no fallback to the shared key: values sealed with it are re-sealed
+            // at start (see reseal.ts) and `decryptLegacyShared` is for that alone
+            return open(this.keyV1(false), iv, tag, data);
         }
         throw new Error('Unsupported encrypted value');
     }
