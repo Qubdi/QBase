@@ -7,6 +7,8 @@ export const account = {
         email_taken: 'That email is already registered.',
         signup_disabled:
             'Accounts are created by an admin. Ask yours for access.',
+        step_up_required:
+            'Enter your own password to continue: this changes another administrator.',
         invalid_setup_token:
             'That setup token is not right. Copy it from the server log or from SETUP_TOKEN.',
         invalid_request: 'Please check the values you entered.',

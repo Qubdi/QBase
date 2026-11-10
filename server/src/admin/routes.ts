@@ -30,7 +30,9 @@ import {
     type AuditMeta,
 } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
+import { createAuthGuards, type AuthGuards } from '../auth/guards.js';
 import { createMfa } from '../auth/mfa.js';
+import { createStepUp, stepUpFields } from '../auth/step-up.js';
 import { weakPassword } from '../auth/password-rules.js';
 import type { Config } from '../config.js';
 import { isForeignKeyViolation, isUniqueViolation } from '../lib/pg-errors.js';
@@ -77,6 +79,8 @@ const updateUserBody = z
         password: z.string().max(200).optional(),
         isAdmin: z.boolean().optional(),
         isActive: z.boolean().optional(),
+        // proof for resetting another admin's password (see createStepUp)
+        ...stepUpFields,
     })
     .refine(
         (b) =>
@@ -179,10 +183,20 @@ export const adminRoutes =
         db: Db,
         config: Pick<
             Config,
-            'passwordMinLength' | 'mfaEnabled' | 'secretsKey' | 'mfaWindowSteps'
-        >
+            | 'passwordMinLength'
+            | 'mfaEnabled'
+            | 'secretsKey'
+            | 'mfaWindowSteps'
+            | 'authMaxFailures'
+            | 'authLockoutMinutes'
+        >,
+        // the failure counters of sign-in and the account screens: a wrong
+        // password here counts against the same lockout
+        guards: AuthGuards = createAuthGuards(config)
     ): FastifyPluginAsync =>
     async (app) => {
+        const stepMfa = config.mfaEnabled ? createMfa(db, config) : null;
+        const stepUp = createStepUp({ db, config, mfa: stepMfa, guards });
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -377,11 +391,16 @@ export const adminRoutes =
             if (body.password !== undefined) {
                 // the rules compare with the account's own email
                 const [account] = await db
-                    .select({ email: users.email })
+                    .select({ email: users.email, isAdmin: users.isAdmin })
                     .from(users)
                     .where(eq(users.id, id));
                 if (!account)
                     return reply.code(404).send({ error: 'not_found' });
+                // taking over another admin's account needs this admin's own
+                // password (and code): a stolen session alone must not do it
+                if (account.isAdmin && !(await stepUp(req, reply, body))) {
+                    return;
+                }
                 const weak = weakPassword(config, body.password, account.email);
                 if (weak) return reply.code(400).send(weak);
                 patch.passwordHash = await hashPassword(body.password);
@@ -595,16 +614,23 @@ export const adminRoutes =
             const mfa = createMfa(db, config);
             app.post('/users/:id/mfa/reset', async (req, reply) => {
                 const { id } = idParam.parse(req.params);
+                const proof = z.object(stepUpFields).partial().parse(req.body ?? {});
                 if (id === req.user!.id) {
                     return reply.code(400).send({ error: 'cannot_reset_self' });
                 }
                 const [target] = await db
-                    .select({ enabledAt: users.mfaEnabledAt })
+                    .select({
+                        enabledAt: users.mfaEnabledAt,
+                        isAdmin: users.isAdmin,
+                    })
                     .from(users)
                     .where(eq(users.id, id));
                 if (!target) return reply.code(404).send({ error: 'not_found' });
                 // nothing to reset is not an event
                 if (target.enabledAt === null) return { reset: false };
+                // clearing another admin's second factor needs this admin's own
+                // password (and code), so a stolen session cannot strip it
+                if (target.isAdmin && !(await stepUp(req, reply, proof))) return;
                 await mfa.clear(id);
                 await destroyOtherSessions(db, id, undefined);
                 await audit(db, {

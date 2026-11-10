@@ -10,15 +10,15 @@ import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { users } from '../db/schema.js';
-import { createFailureThrottle } from '../lib/failure-throttle.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
 import {
     hashPassword,
     verifyAgainstNobody,
     verifyPassword,
 } from './password.js';
+import { createAuthGuards, type AuthGuards } from './guards.js';
 import { createMfa, mfaAvailable } from './mfa.js';
-import { mfaRoutes, type MfaGuard } from './mfa-routes.js';
+import { mfaRoutes } from './mfa-routes.js';
 import { weakPassword } from './password-rules.js';
 import {
     createSession,
@@ -63,11 +63,13 @@ const changePassword = z.object({
     recoveryCode: z.string().max(40).optional(),
 });
 
-/** the all-addresses ceiling on failures at one account, as a multiple of AUTH_MAX_FAILURES */
-const ACCOUNT_FAILURE_FACTOR = 5;
-
 export const authRoutes =
-    (db: Db, config: Config): FastifyPluginAsync =>
+    (
+        db: Db,
+        config: Config,
+        // shared with the admin step-up, so a lockout holds at every door
+        guards: AuthGuards = createAuthGuards(config)
+    ): FastifyPluginAsync =>
     async (app) => {
         // per client address; an account's failures are counted separately
         // below, so one account cannot be guessed at from many addresses
@@ -79,52 +81,7 @@ export const authRoutes =
                 },
             },
         };
-        const failures = createFailureThrottle({
-            max: config.authMaxFailures,
-            windowMs: config.authLockoutMinutes * 60_000,
-        });
-        // Failures at one account from every address together. The ceiling is well
-        // above the per-address one, so a stranger cannot cheaply keep the owner
-        // out, but guesses spread over many addresses still run into it.
-        const accountFailures = createFailureThrottle({
-            max: config.authMaxFailures * ACCOUNT_FAILURE_FACTOR,
-            windowMs: config.authLockoutMinutes * 60_000,
-        });
-        const locked = (reply: FastifyReply, key: string) => {
-            const wait = failures.blockedFor(key);
-            if (wait === 0) return false;
-            reply
-                .code(429)
-                .header('retry-after', wait)
-                .send({ error: 'too_many_attempts' });
-            return true;
-        };
-
-        // The second-step (code) lockout. It is keyed by account and address, so
-        // someone who holds the password cannot lock the owner out of their own
-        // second step by failing it from elsewhere; codes guessed from many
-        // addresses are held back by the all-addresses ceiling.
-        const mfaGuard: MfaGuard = {
-            locked(reply, req, userId) {
-                if (locked(reply, `mfa:${userId}:${req.ip}`)) return true;
-                const wait = accountFailures.blockedFor(`mfa:${userId}`);
-                if (wait === 0) return false;
-                reply
-                    .code(429)
-                    .header('retry-after', wait)
-                    .send({ error: 'too_many_attempts' });
-                return true;
-            },
-            fail(req, userId) {
-                const addressLocked = failures.recordFailure(`mfa:${userId}:${req.ip}`);
-                const accountLocked = accountFailures.recordFailure(`mfa:${userId}`);
-                return addressLocked || accountLocked;
-            },
-            reset(req, userId) {
-                failures.reset(`mfa:${userId}:${req.ip}`);
-                accountFailures.reset(`mfa:${userId}`);
-            },
-        };
+        const { failures, accountFailures, locked, mfaGuard } = guards;
 
         const cookieSecure = (req: FastifyRequest) =>
             config.cookieSecure === 'auto'

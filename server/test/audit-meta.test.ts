@@ -162,6 +162,8 @@ describe('audit meta: what an action was done to', () => {
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
                 isAdmin: true,
                 password: 'A-third-password-1!',
+                // the target is an admin by now: resetting its password needs the acting admin's own
+                adminPassword: 'Password-123!',
             });
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,

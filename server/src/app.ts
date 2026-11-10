@@ -4,6 +4,7 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { sql } from 'drizzle-orm';
 import { ZodError } from 'zod';
+import { createAuthGuards } from './auth/guards.js';
 import { authRoutes } from './auth/routes.js';
 import {
     getSessionUser,
@@ -251,8 +252,10 @@ export function buildApp({
         });
     });
 
-    api.register(authRoutes(db, config), { prefix: '/auth' });
-    api.register(adminRoutes(db, config), { prefix: '/admin' });
+    // one set of failure counters, so a lockout reached through one door holds at the others
+    const guards = createAuthGuards(config);
+    api.register(authRoutes(db, config, guards), { prefix: '/auth' });
+    api.register(adminRoutes(db, config, guards), { prefix: '/admin' });
     api.register(projectRoutes(db), { prefix: '/projects' });
     api.register(diagramRoutes(db, config), { prefix: '/diagrams' });
     api.register(memberRoutes(db), { prefix: '/diagrams' });

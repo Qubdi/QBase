@@ -27,6 +27,7 @@ const users = [
     row({ id: 'u2', email: 'ann@corp.io', mfaEnabled: true }),
     row({ id: 'u3', email: 'bob@corp.io', mfaEnabled: false }),
     row({ id: 'u4', email: 'cara@corp.io' }),
+    row({ id: 'u5', email: 'root@corp.io', isAdmin: true, mfaEnabled: true }),
 ];
 
 const adminListUsers = vi.fn();
@@ -111,6 +112,62 @@ describe('UsersPanel: two-factor', () => {
                 expect.objectContaining({ title: 'Two-factor reset' })
             )
         );
+    });
+
+    it('asks for your own password before resetting another admin, and sends it', async () => {
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Reset two-factor of root@corp.io',
+            })
+        );
+        const dialog = await screen.findByRole('alertdialog');
+        const action = within(dialog).getByRole('button', {
+            name: 'Reset two-factor',
+        }) as HTMLButtonElement;
+        // nothing to send yet
+        expect(action.disabled).toBe(true);
+        fireEvent.change(within(dialog).getByLabelText('Your password'), {
+            target: { value: 'my-own-password' },
+        });
+        expect(action.disabled).toBe(false);
+        fireEvent.click(action);
+        await waitFor(() =>
+            expect(adminResetMfa).toHaveBeenCalledWith('u5', {
+                adminPassword: 'my-own-password',
+            })
+        );
+    });
+
+    it('keeps the dialog open and says so when the password is wrong', async () => {
+        adminResetMfa.mockRejectedValue(new ApiError(403, 'wrong_password'));
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Reset two-factor of root@corp.io',
+            })
+        );
+        const dialog = await screen.findByRole('alertdialog');
+        fireEvent.change(within(dialog).getByLabelText('Your password'), {
+            target: { value: 'nope' },
+        });
+        fireEvent.click(
+            within(dialog).getByRole('button', { name: 'Reset two-factor' })
+        );
+        await waitFor(() =>
+            expect(within(dialog).getByRole('alert').textContent).toMatch(
+                /incorrect/
+            )
+        );
+        expect(screen.queryByRole('alertdialog')).not.toBeNull();
+    });
+
+    it('asks for no proof for someone who is not an admin', async () => {
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Reset two-factor of ann@corp.io',
+            })
+        );
+        const dialog = await screen.findByRole('alertdialog');
+        expect(within(dialog).queryByLabelText('Your password')).toBeNull();
     });
 
     it('cancelling resets nothing', async () => {

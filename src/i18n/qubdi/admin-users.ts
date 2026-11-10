@@ -165,6 +165,12 @@ export const adminUsers = {
         resetMfaDescription:
             '{{email}} will be signed out everywhere and can then sign in with the password alone. Use this when they have lost their phone and their recovery codes. They can set it up again in the account menu.',
         resetMfaAction: 'Reset two-factor',
+        confirmItsYou:
+            'This changes another administrator. Enter your own password to confirm it is you.',
+        confirmItsYouCode:
+            'This changes another administrator. Enter your own password and a code from your authenticator app (or a recovery code) to confirm it is you.',
+        ownPassword: 'Your password',
+        ownCode: 'Your code',
         mfaResetDone: 'Two-factor reset',
         bulkDeleteTitle_one: 'Delete {{count}} user?',
         bulkDeleteTitle_other: 'Delete {{count}} users?',

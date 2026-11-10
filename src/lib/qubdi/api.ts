@@ -737,7 +737,14 @@ export function createApi(
             ),
         adminUpdateUser: (
             id: string,
-            body: { password?: string; isAdmin?: boolean; isActive?: boolean }
+            body: {
+                password?: string;
+                isAdmin?: boolean;
+                isActive?: boolean;
+                /** the acting admin's own proof, needed to reset another admin's password */
+                adminPassword?: string;
+                adminCode?: string;
+            }
         ) =>
             request<{ id: string; isAdmin: boolean; isActive: boolean }>(
                 'PATCH',
@@ -775,11 +782,15 @@ export function createApi(
                 shape.signedOutCount
             ),
         /** Switches off a person's two-factor sign-in (lost phone) and signs them out. */
-        adminResetMfa: (id: string) =>
+        adminResetMfa: (
+            id: string,
+            /** the acting admin's own proof, needed when the person is an admin */
+            proof?: { adminPassword?: string; adminCode?: string }
+        ) =>
             request<{ reset: boolean }>(
                 'POST',
                 `/admin/users/${encodeURIComponent(id)}/mfa/reset`,
-                undefined,
+                proof,
                 undefined,
                 shape.resetResult
             ),
