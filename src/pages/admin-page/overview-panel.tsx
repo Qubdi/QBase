@@ -30,7 +30,7 @@ const dayOf = (iso: string) =>
 /** Totals, a week of activity and the latest events: where an admin starts. */
 export const OverviewPanel: React.FC = () => {
     const { t } = useTranslation();
-    const timeZone = useMemo(viewerTimeZone, []);
+    const timeZone = useMemo(() => viewerTimeZone(), []);
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [recent, setRecent] = useState<ActivityItem[] | null>(null);
     const [statsError, setStatsError] = useState<string | null>(null);

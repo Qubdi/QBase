@@ -102,7 +102,7 @@ export function WindowedList<T>({
         );
         // a focused row that lost focus is no longer kept
         if (!list.contains(document.activeElement)) setFocusedId(undefined);
-    }, []);
+    }, [setFocusedId]);
 
     // the scroll box: scroll position and size
     useEffect(() => {
