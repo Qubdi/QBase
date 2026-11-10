@@ -23,6 +23,7 @@ import { projectRoutes } from './projects/routes.js';
 import { memberRoutes } from './members/routes.js';
 import { requestIds } from './audit/request-context.js';
 import { sharedUserLimit } from './lib/rate-key.js';
+import { safeError } from './lib/safe-error.js';
 import { registerWeb, API_PREFIX } from './web.js';
 import { publicShareRoutes, shareManagementRoutes } from './share/routes.js';
 
@@ -39,6 +40,8 @@ export interface AppDeps {
     introspect?: Pick<IntrospectDeps, 'factory' | 'lookup'>;
     /** calls a minute one signed-in user may make in all (tests lower or raise it) */
     userRateLimit?: number;
+    /** where log lines go instead of stdout (tests read them) */
+    logStream?: NodeJS.WritableStream;
 }
 
 /**
@@ -105,6 +108,7 @@ export function buildApp({
     db,
     introspect,
     userRateLimit = USER_RATE_LIMIT,
+    logStream,
 }: AppDeps): FastifyInstance {
     const prefix = config.webDir ? API_PREFIX : '';
     const app = Fastify({
@@ -126,6 +130,7 @@ export function buildApp({
                 ? false
                 : {
                       level: config.logLevel,
+                      ...(logStream ? { stream: logStream } : {}),
                       serializers: {
                           // Fastify's usual request fields, with the token hidden
                           req(req) {
@@ -249,7 +254,10 @@ export function buildApp({
         }
         const status = (err as { statusCode?: number }).statusCode ?? 500;
         // unexpected failures: log them with the request id, show the client nothing
-        if (status >= 500) req.log.error({ err }, 'request failed');
+        // the error object itself is never logged: a database error carries the
+        // statement and every value it ran with (see safeError)
+        if (status >= 500)
+            req.log.error({ err: safeError(err), route: req.routeOptions?.url }, 'request failed');
         return reply.code(status).send({
             // a server-side failure (500, 502, 503...) may carry driver or
             // host details in its message: none of it goes to the client
