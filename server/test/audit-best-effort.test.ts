@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { diagrams } from '../src/db/schema.js';
 import { audit } from '../src/audit/audit.js';
-import { as, createDiagram, createTestApp, registerUser, type TestCtx, type TestUser } from './helpers.js';
+import { createDiagram, createTestApp, registerUser, type TestCtx, type TestUser } from './helpers.js';
 
 describe('an audit row that cannot be written after the action is done', () => {
     let ctx: TestCtx;
@@ -25,17 +25,16 @@ describe('an audit row that cannot be written after the action is done', () => {
 
     it('is logged with the request id and does not fail a plain-db action', async () => {
         const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-        let id = '';
         try {
             // createDiagram audits with the plain db after the row is stored
-            id = await withBrokenAudit(() => createDiagram(ctx.app, admin, 'Made while the log was broken'));
+            const id = await withBrokenAudit(() => createDiagram(ctx.app, admin, 'Made while the log was broken'));
             expect(id).not.toBe('');
             const lines = log.mock.calls.map((c) => String(c[0]));
             expect(lines.some((l) => l.includes('Audit row lost (diagram.create)') && l.includes('[request '))).toBe(true);
+            expect(await ctx.db.select().from(diagrams).where(eq(diagrams.id, id))).toHaveLength(1);
         } finally {
             log.mockRestore();
         }
-        expect(await ctx.db.select().from(diagrams).where(eq(diagrams.id, id))).toHaveLength(1);
     });
 
     it('still fails an action whose audit row is part of its transaction', async () => {
