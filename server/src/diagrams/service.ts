@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { diagrams, snapshots } from '../db/schema.js';
-import { diagramHash } from '../lib/hash.js';
+import { diagramHashAsync } from '../lib/hash.js';
 import { snapshotStatsColumns } from './summary.js';
 import { emitPublish } from '../events.js';
 import { canWrite, type Role } from './permissions.js';
@@ -96,7 +96,7 @@ async function currentHash(
                       .from(diagrams)
                       .where(eq(diagrams.id, d.id))
               )[0]?.content;
-    const hash = diagramHash(d.title, content);
+    const hash = await diagramHashAsync(d.title, content);
     // best effort and only into an empty slot: a save that landed meanwhile keeps its own
     await db
         .update(diagrams)
@@ -254,7 +254,7 @@ export async function publishSnapshot(
         // every save keeps the hash current; a rename alone leaves it empty
         const hash =
             d.contentHash ??
-            diagramHash(
+            (await diagramHashAsync(
                 d.title,
                 (
                     await tx
@@ -262,7 +262,7 @@ export async function publishSnapshot(
                         .from(diagrams)
                         .where(eq(diagrams.id, diagramId))
                 )[0]?.content
-            );
+            ));
         if (opts.onlyIfChanged && last?.contentHash === hash) return null;
 
         const note = opts.note ?? null;

@@ -22,7 +22,7 @@ import {
     publishSnapshot,
 } from './service.js';
 import { exceedsDepth } from '../lib/depth.js';
-import { diagramHash } from '../lib/hash.js';
+import { diagramHashAsync } from '../lib/hash.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { pgDate } from '../lib/pg-date.js';
 
@@ -311,7 +311,7 @@ export const diagramRoutes =
                         projectId: body.projectId,
                         title: body.title,
                         content: body.content,
-                        contentHash: diagramHash(body.title, body.content),
+                        contentHash: await diagramHashAsync(body.title, body.content),
                     })
                     .returning(columns);
                 diagram = { ...row, content: body.content };
@@ -441,7 +441,7 @@ export const diagramRoutes =
                 contentHash =
                     title === undefined
                         ? null
-                        : diagramHash(title, changes.content);
+                        : await diagramHashAsync(title, changes.content);
             } else if (changes.title !== undefined) {
                 contentHash = null;
             }

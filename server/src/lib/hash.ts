@@ -34,3 +34,75 @@ export function diagramHash(title: string, content: unknown): string {
         .update(stableStringify({ title, content: body }))
         .digest('hex');
 }
+
+/** Levels of a diagram that are walked one step at a time; below them a subtree is hashed in one go. */
+const STEP_DEPTH = 3;
+/** Longest the event loop is held while hashing before it is handed back. */
+const SLICE_MS = 5;
+const FLUSH_CHARS = 1 << 16;
+
+const nextTurn = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+/**
+ * `diagramHash`, for a body that may be tens of megabytes: the same bytes go
+ * into the same hash, but the walk gives the event loop back every few
+ * milliseconds, so one large save does not hold up everyone else for a second.
+ */
+export async function diagramHashAsync(
+    title: string,
+    content: unknown
+): Promise<string> {
+    let body = content;
+    if (content && typeof content === 'object' && !Array.isArray(content)) {
+        const { updatedAt: _ignored, ...rest } = content as Record<
+            string,
+            unknown
+        >;
+        body = rest;
+    }
+    const hash = createHash('sha256');
+    let pending = '';
+    let sliceStart = performance.now();
+    const feed = async (text: string) => {
+        pending += text;
+        if (pending.length < FLUSH_CHARS) return;
+        hash.update(pending);
+        pending = '';
+        if (performance.now() - sliceStart > SLICE_MS) {
+            await nextTurn();
+            sliceStart = performance.now();
+        }
+    };
+    // the same text stableStringify gives, written piece by piece
+    const walk = async (value: unknown, depth: number): Promise<void> => {
+        if (
+            value === null ||
+            typeof value !== 'object' ||
+            depth >= STEP_DEPTH
+        ) {
+            return feed(stableStringify(value));
+        }
+        if (Array.isArray(value)) {
+            await feed('[');
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0) await feed(',');
+                await walk(value[i], depth + 1);
+            }
+            return feed(']');
+        }
+        const obj = value as Record<string, unknown>;
+        const keys = Object.keys(obj)
+            .filter((k) => obj[k] !== undefined)
+            .sort();
+        await feed('{');
+        for (let i = 0; i < keys.length; i++) {
+            if (i > 0) await feed(',');
+            await feed(`${JSON.stringify(keys[i])}:`);
+            await walk(obj[keys[i]], depth + 1);
+        }
+        return feed('}');
+    };
+    await walk({ title, content: body }, 0);
+    hash.update(pending);
+    return hash.digest('hex');
+}
