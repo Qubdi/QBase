@@ -11,6 +11,7 @@ import { planAddColumn } from '@/core/commands/plan-column';
 import { toast } from '@/platform/toast/use-toast';
 import {
     connectColumns,
+    connectFromDrop,
     connectFromHandles,
     isUsableConnection,
 } from './canvas-actions';
@@ -495,5 +496,116 @@ describe('the line popover', () => {
         });
         fireEvent.doubleClick(edge);
         expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    });
+});
+
+/** The DOM of a table with one field row, as the canvas draws it: `inner` is the middle of the row. */
+function tableWithRow(entityId: string, columnId: string) {
+    const node = document.createElement('div');
+    node.className = 'react-flow__node-entity';
+    node.setAttribute('data-id', entityId);
+    const row = document.createElement('div');
+    row.setAttribute('data-testid', `field-${columnId}`);
+    const inner = document.createElement('span');
+    row.append(inner);
+    const header = document.createElement('div');
+    node.append(header, row);
+    return { node, row, inner, header };
+}
+
+describe('releasing a link drag on the row of a field, away from its dots', () => {
+    const setup = () => {
+        const s = shop();
+        const store = createEditorStore({ design: s.design });
+        const items = s.design.entities.byId[s.items].columnIds[0];
+        // items.id and the orders field are compatible whole numbers
+        const from = { nodeId: s.orders, handleId: handleId(s.orderUser, 'r') };
+        return { s, store, items, from };
+    };
+
+    it('joins the two fields, the same as a release on a dot', () => {
+        const { s, store, items, from } = setup();
+        const { inner } = tableWithRow(s.items, items);
+        const viaRow = connectFromDrop(store, from, inner);
+
+        const dot = createEditorStore({ design: s.design });
+        const viaDot = connectFromHandles(dot, {
+            source: from.nodeId,
+            sourceHandle: from.handleId,
+            target: s.items,
+            targetHandle: handleId(items, 'l'),
+        });
+
+        expect(viaRow?.kind).toBe('created');
+        expect(viaRow?.kind).toBe(viaDot?.kind);
+        const links = store.getState().design.links;
+        expect(links.order).toHaveLength(2);
+        const made = links.byId[links.order[1]];
+        const sameLink = dot.getState().design.links;
+        const other = sameLink.byId[sameLink.order[1]];
+        expect(made).toMatchObject({
+            sourceEntityId: s.orders,
+            sourceColumnId: s.orderUser,
+            targetEntityId: s.items,
+            targetColumnId: items,
+            name: other.name,
+        });
+    });
+
+    it('works on the row itself and whichever side the drag began on', () => {
+        const { s, store, items } = setup();
+        const { row } = tableWithRow(s.items, items);
+        const out = connectFromDrop(
+            store,
+            { nodeId: s.orders, handleId: handleId(s.orderUser, 'l') },
+            row
+        );
+        expect(out?.kind).toBe('created');
+    });
+
+    it('a pair that is already joined says so and adds nothing', () => {
+        const { s, store, from } = setup();
+        const { inner } = tableWithRow(s.users, s.userKey);
+        const out = connectFromDrop(store, from, inner);
+        expect(out).toEqual({ kind: 'exists', linkId: s.link });
+        expect(store.getState().design.links.order).toHaveLength(1);
+    });
+
+    it('a release on the table header, empty canvas or nothing creates nothing', () => {
+        const { s, store, items, from } = setup();
+        const { header } = tableWithRow(s.items, items);
+        expect(connectFromDrop(store, from, header)).toBeUndefined();
+        expect(connectFromDrop(store, from, document.body)).toBeUndefined();
+        expect(connectFromDrop(store, from, null)).toBeUndefined();
+        expect(connectFromDrop(store, from, undefined)).toBeUndefined();
+        expect(store.getState().design.links.order).toHaveLength(1);
+    });
+
+    it('a field cannot be joined to itself', () => {
+        const { s, store, from } = setup();
+        const { inner } = tableWithRow(s.orders, s.orderUser);
+        expect(connectFromDrop(store, from, inner)).toBeUndefined();
+        expect(store.getState().design.links.order).toHaveLength(1);
+    });
+
+    it('a row that is not a field of that table is ignored', () => {
+        const { s, store, items, from } = setup();
+        // the id of a field of another table, and an id no table has
+        expect(
+            connectFromDrop(store, from, tableWithRow(s.items, s.userKey).inner)
+        ).toBeUndefined();
+        expect(
+            connectFromDrop(store, from, tableWithRow(s.items, 'nope').inner)
+        ).toBeUndefined();
+        expect(items).toBeTruthy();
+        expect(store.getState().design.links.order).toHaveLength(1);
+    });
+
+    it('a read-only editor creates nothing', () => {
+        const { s, store, items, from } = setup();
+        store.getState().setReadonly(true);
+        const { inner } = tableWithRow(s.items, items);
+        expect(connectFromDrop(store, from, inner)?.kind).not.toBe('created');
+        expect(store.getState().design.links.order).toHaveLength(1);
     });
 });

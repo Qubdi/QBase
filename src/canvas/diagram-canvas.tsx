@@ -32,6 +32,7 @@ import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 import {
     arrangeDiagram,
     connectDependency,
+    connectFromDrop,
     connectFromHandles,
     copySelection,
     deleteSelection,
@@ -72,6 +73,7 @@ import {
     NO_LIVE,
     orderedNodes,
     parseDependencyHandle,
+    parseHandle,
 } from './flow-model';
 import type {
     LinkEdge,
@@ -477,23 +479,37 @@ function Surface({
             state: {
                 fromNode: { id: string } | null;
                 fromHandle: { id?: string | null } | null;
+                isValid?: boolean | null;
             }
         ) => {
             setDependencyDrag(false);
-            if (
-                !state.fromNode ||
-                parseDependencyHandle(state.fromHandle?.id) === undefined
-            )
-                return;
+            if (!state.fromNode) return;
             const point =
                 'changedTouches' in event ? event.changedTouches[0] : event;
             if (!point) return;
-            const over = document
-                .elementFromPoint(point.clientX, point.clientY)
-                ?.closest('.react-flow__node-entity');
-            const tableId = over?.getAttribute('data-id');
-            if (tableId)
-                connectDependency(storeApi, state.fromNode.id, tableId);
+            const under = document.elementFromPoint(
+                point.clientX,
+                point.clientY
+            );
+            if (parseDependencyHandle(state.fromHandle?.id) !== undefined) {
+                const tableId = under
+                    ?.closest('.react-flow__node-entity')
+                    ?.getAttribute('data-id');
+                if (tableId)
+                    connectDependency(storeApi, state.fromNode.id, tableId);
+                return;
+            }
+            // released on a dot that took the link: onConnect has made it. A
+            // dot that refused it (a near miss, the field itself) does not count
+            if (state.isValid) return;
+            // released on the row of a field, away from its dots
+            if (parseHandle(state.fromHandle?.id) === undefined) return;
+            const outcome = connectFromDrop(
+                storeApi,
+                { nodeId: state.fromNode.id, handleId: state.fromHandle?.id },
+                under
+            );
+            if (outcome) reportConnect(outcome);
         },
         [storeApi]
     );
