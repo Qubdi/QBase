@@ -1,15 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CUSTOM_COLORS_KEY, MAX_CUSTOM_COLORS } from '@/lib/custom-colors';
-import {
-    resetCustomColorsForTests,
-    useCustomColors,
-} from '../use-custom-colors';
+import { useCustomColors } from '../use-custom-colors';
 
 describe('useCustomColors', () => {
     beforeEach(() => {
         localStorage.clear();
-        act(() => resetCustomColorsForTests());
     });
 
     it('starts empty', () => {
@@ -68,7 +64,6 @@ describe('useCustomColors', () => {
 
     it('picks up colors saved earlier, like after a reload', () => {
         localStorage.setItem(CUSTOM_COLORS_KEY, '["#112233","nope","#445566"]');
-        act(() => resetCustomColorsForTests());
         const { result } = renderHook(() => useCustomColors());
         expect(result.current.colors).toEqual(['#112233', '#445566']);
     });

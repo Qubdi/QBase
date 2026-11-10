@@ -1,9 +1,8 @@
 import React from 'react';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { colorOptions } from '@/lib/colors';
 import { CUSTOM_COLORS_KEY } from '@/lib/custom-colors';
-import { resetCustomColorsForTests } from '@/hooks/use-custom-colors';
 import { ColorPicker } from '../color-picker';
 
 const open = () =>
@@ -27,7 +26,6 @@ const saved = () => JSON.parse(localStorage.getItem(CUSTOM_COLORS_KEY) ?? '[]');
 describe('ColorPicker', () => {
     beforeEach(() => {
         localStorage.clear();
-        act(() => resetCustomColorsForTests());
     });
 
     it('shows the current color on the trigger', () => {
@@ -142,7 +140,6 @@ describe('ColorPicker', () => {
     describe('your colors', () => {
         it('lists saved colors and applies one on click', () => {
             localStorage.setItem(CUSTOM_COLORS_KEY, '["#112233","#445566"]');
-            act(() => resetCustomColorsForTests());
             const { onChange } = setup();
             open();
             const group = screen.getByRole('group', { name: 'Your colors' });
@@ -171,7 +168,6 @@ describe('ColorPicker', () => {
 
         it('removes a saved color without applying anything', () => {
             localStorage.setItem(CUSTOM_COLORS_KEY, '["#112233","#445566"]');
-            act(() => resetCustomColorsForTests());
             const { onChange } = setup();
             open();
             fireEvent.click(
@@ -192,7 +188,6 @@ describe('ColorPicker', () => {
 
         it('marks a saved color as current', () => {
             localStorage.setItem(CUSTOM_COLORS_KEY, '["#112233"]');
-            act(() => resetCustomColorsForTests());
             setup('#112233');
             open();
             expect(

@@ -51,14 +51,6 @@ const subscribe = (listener: () => void) => {
     };
 };
 
-/** Test helper: forget what this module remembers between tests. */
-export const resetCustomColorsForTests = () => {
-    cachedRaw = undefined;
-    cached = [];
-    session = null;
-    emit();
-};
-
 export function useCustomColors() {
     const colors = useSyncExternalStore(subscribe, snapshot, () => NONE);
     const add = useCallback(
