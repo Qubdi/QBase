@@ -599,7 +599,13 @@ export function convertDesign(
     if (blocks.length === 0)
         return {
             text: '',
-            diagnostics: [{ severity: 'error', message: 'Nothing to export' }],
+            diagnostics: [
+                {
+                    severity: 'error',
+                    message: 'Nothing to export',
+                    code: 'nothing-to-export',
+                },
+            ],
         };
     let text =
         notes.header(sourceLabel, target.label) +

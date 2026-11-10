@@ -82,7 +82,7 @@ export const ExportSqlDialog: React.FC<ExportSqlDialogProps> = ({
                         role="alert"
                         className="rounded-md border border-destructive/40 p-4 text-sm text-destructive"
                     >
-                        {problem.message === 'Nothing to export'
+                        {problem.code === 'nothing-to-export'
                             ? t('editor.exporting.sql.nothing')
                             : diagnosticText(problem.message)}
                     </p>

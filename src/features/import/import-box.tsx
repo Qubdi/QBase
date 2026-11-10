@@ -84,9 +84,6 @@ const offsetOf = (text: string, line = 1, column = 1): number => {
     return Math.min(text.length, before + Math.max(0, column - 1));
 };
 
-/** The engine's summary note, shown as the counts line instead. */
-const FOUND_NOTE = /^Found \d+ tables?(?: and \d+ views?)? to import\.$/;
-
 const DiagnosticLine: React.FC<{ item: Diagnostic; onJump: () => void }> = ({
     item,
     onJump,
@@ -295,11 +292,11 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
 
     // "Found 2 tables to import." says what the counts line below says again
     const listed = analysis.diagnostics.filter(
-        (d) => !FOUND_NOTE.test(d.message)
+        (d) => d.code !== 'found-tables'
     );
     const { shown, more } = listProblems(listed);
     const warnings = listed.filter(
-        (d) => d.severity !== 'error' && d.message !== 'Nothing to import'
+        (d) => d.severity !== 'error' && d.code !== 'nothing-to-import'
     );
     const counted =
         quiet.trim() !== '' && !pending && !analysis.blocked && analysis.design;

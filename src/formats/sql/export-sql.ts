@@ -122,7 +122,12 @@ export function exportSql(
             (id) => filtered.entities.byId[id].kind === 'table'
         )
     )
-        return { text: '', diagnostics: [error('Nothing to export')] };
+        return {
+            text: '',
+            diagnostics: [
+                { ...error('Nothing to export'), code: 'nothing-to-export' },
+            ],
+        };
     // text the writers put into the DDL as it is must not end its statement
     const unsafe = unsafeText(filtered);
     if (unsafe.length > 0) return { text: '', diagnostics: unsafe };

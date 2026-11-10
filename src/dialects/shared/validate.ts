@@ -217,6 +217,7 @@ export function validateText(
     if (tables + views > 0)
         out.unshift({
             severity: 'info',
+            code: 'found-tables',
             message: `Found ${tables} table${tables === 1 ? '' : 's'}${
                 views > 0 ? ` and ${views} view${views === 1 ? '' : 's'}` : ''
             } to import.`,
