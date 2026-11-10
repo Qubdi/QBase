@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useRef } from 'react';
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+} from 'react';
 
 /** What the canvas lets the workspace ask of it (menus, shortcuts, image export). */
 export interface CanvasHandle {
@@ -41,7 +47,10 @@ export const useCanvasActions = (): Omit<Bridge, 'register'> =>
 export function useRegisterCanvas(handle: CanvasHandle): void {
     const bridge = useContext(CanvasBridgeContext);
     const latest = useRef(handle);
-    latest.current = handle;
+    // kept current after each commit; the bridge only calls it from events
+    useLayoutEffect(() => {
+        latest.current = handle;
+    });
     useEffect(
         () =>
             bridge.register({

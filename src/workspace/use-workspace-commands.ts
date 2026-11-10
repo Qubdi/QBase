@@ -1,4 +1,4 @@
-import { useContext, useMemo, useRef } from 'react';
+import { useContext, useLayoutEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/platform/toast/use-toast';
@@ -35,15 +35,18 @@ export function useWorkspaceCommands(): WorkspaceCommands {
         resolvedTheme,
         t,
     });
-    latest.current = {
-        dialogs,
-        canvas,
-        navigate,
-        enabled,
-        config,
-        resolvedTheme,
-        t,
-    };
+    // kept current after each commit; commands only run from events
+    useLayoutEffect(() => {
+        latest.current = {
+            dialogs,
+            canvas,
+            navigate,
+            enabled,
+            config,
+            resolvedTheme,
+            t,
+        };
+    });
 
     return useMemo<WorkspaceCommands>(
         () => ({
