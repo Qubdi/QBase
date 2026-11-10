@@ -357,7 +357,7 @@ npm run lint:diagram -- path/to/diagram.json --fail-on error
 ```
 
 Exit code `0` means nothing at or above `--fail-on`, `1` means findings, `2` means bad input.
-The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`.
+The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`; `GET /lint/rules` lists the rules and their defaults.
 
 ## Notes
 
