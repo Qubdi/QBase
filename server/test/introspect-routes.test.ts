@@ -301,9 +301,11 @@ describe('introspect HTTP layer (fake driver)', () => {
                     payload: { connection: conn() },
                 });
                 expect(res.statusCode).toBe(502);
-                expect(res.json().error).toBe('connection_failed');
+                // the code only: no driver text, so nothing to tell refused from
+                // timed out from a wrong password
+                expect(res.json()).toEqual({ error: 'connection_failed' });
                 expect(res.body).not.toContain('p@ss-w0rd-SECRET');
-                expect(res.body).toContain('***');
+                expect(res.body).not.toContain('login failed');
             } finally {
                 await leaky.close();
             }
@@ -332,6 +334,8 @@ describe('introspect HTTP layer (fake driver)', () => {
             }
             const log = logged.join('');
             expect(log).toContain('introspection connection failed');
+            // the driver's text is kept here, scrubbed, since the caller is not told it
+            expect(log).toContain('login failed');
             expect(log).not.toContain('p@ss-w0rd-SECRET');
         });
     });
@@ -342,7 +346,8 @@ describe('introspect HTTP layer (fake driver)', () => {
             for (const host of ['127.0.0.1', 'localhost', '10.1.2.3', '192.168.0.5', '169.254.169.254', '[::1]', '::1', 'fd00::1', '0.0.0.0']) {
                 const res = await post(alice, '/introspect/catalog', { connection: conn({ host }) });
                 expect(res.statusCode, host).toBe(400);
-                expect(res.json().error, host).toBe('target_blocked');
+                // no message: not the address class, and not the host back
+                expect(res.json(), host).toEqual({ error: 'target_blocked' });
             }
             expect(calls.length).toBe(before);
         });
@@ -351,7 +356,8 @@ describe('introspect HTTP layer (fake driver)', () => {
             const before = calls.length;
             const res = await post(alice, '/introspect/catalog', { connection: conn({ host: 'evil.example.com' }) });
             expect(res.statusCode).toBe(400);
-            expect(res.json().error).toBe('target_blocked');
+            expect(res.json()).toEqual({ error: 'target_blocked' });
+            expect(res.body).not.toMatch(/private|loopback|resolve/);
             expect(calls.length).toBe(before);
         });
 
