@@ -56,6 +56,13 @@ services:
     # the server force-quits 10 s after SIGTERM; give it longer than Docker's default
     # 10 s before SIGKILL so a clean shutdown is never cut off
     stop_grace_period: 15s
+    # the server writes nothing to its own disk, binds a port above 1024 and runs
+    # as the unprivileged `node` user, so it needs none of what these take away
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       db:
         condition: service_healthy
