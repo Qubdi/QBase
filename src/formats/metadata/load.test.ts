@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { listOf } from '@/core/model/collection';
 import { loadFromDatabaseMetadata } from './load';
 import { createRelationshipsFromMetadata } from './relationships';
-import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
+import { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import {
     parseMetadataText,
     repairMetadataText,
@@ -269,5 +269,56 @@ describe('IMP-059 the server fixture is accepted by the contract', () => {
         expect(
             listOf(design.entities).filter((e) => e.kind === 'view')
         ).toHaveLength(1);
+    });
+});
+
+describe('CLI-039 a second unique index on the key columns is kept', () => {
+    it('names the primary key after its own index and keeps the other unique index', () => {
+        const idx = (name: string) => ({
+            schema: 'public',
+            table: 't',
+            name,
+            column: 'id',
+            index_type: 'btree',
+            unique: true,
+            direction: 'asc',
+            column_position: 1,
+        });
+        const meta = DatabaseMetadata.parse({
+            database_name: 'd',
+            version: 'x',
+            tables: [{ schema: 'public', table: 't' }],
+            views: [],
+            columns: [
+                {
+                    schema: 'public',
+                    table: 't',
+                    name: 'id',
+                    type: 'integer',
+                    ordinal_position: 1,
+                    nullable: false,
+                },
+            ],
+            pk_info: [
+                {
+                    schema: 'public',
+                    table: 't',
+                    column: 'id',
+                    pk_def: 'PRIMARY KEY (id)',
+                },
+            ],
+            fk_info: [],
+            // the user's index is listed first: it must not take the key's name
+            indexes: [idx('t_id_unique'), idx('t_pkey')],
+        });
+        const { design } = loadFromDatabaseMetadata({
+            databaseType: 'postgresql',
+            databaseMetadata: meta,
+        });
+        const keys = Object.values(design.keys);
+        expect(keys.find((k) => k.pk)?.label).toBe('t_pkey');
+        expect(keys.filter((k) => !k.pk).map((k) => k.label)).toEqual([
+            't_id_unique',
+        ]);
     });
 });

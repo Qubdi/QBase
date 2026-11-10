@@ -51,6 +51,9 @@ function lengthOf(text: string | null | undefined): number | 'max' | undefined {
     return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
+/** The names databases give the index behind a primary key. */
+const PRIMARY_INDEX_NAME = /^(?:primary|pk_.*|.*_pkey|.*_pk|sys_c\d+)$/i;
+
 /** Builds a design from the metadata JSON (IMP-056 to IMP-065). */
 export function loadFromDatabaseMetadata(
     options: MetadataLoadOptions
@@ -166,15 +169,26 @@ export function loadFromDatabaseMetadata(
         const indexes: IndexSpec[] = [];
         let primaryKeyName: string | undefined;
         const pk = columns.filter((c) => c.primary).map((c) => c.name);
-        for (const raw of rawIndexes.get(k)?.values() ?? []) {
-            const ordered = raw.columns.sort((a, b) => a.position - b.position);
-            const names = ordered.map((c) => c.name);
-            const samePk =
+        const all = [...(rawIndexes.get(k)?.values() ?? [])];
+        for (const raw of all)
+            raw.columns.sort((a, b) => a.position - b.position);
+        // Only one unique index on the primary-key columns is the key's own;
+        // a second one is the user's and stays an index (CLI-039). The
+        // metadata has no primary flag, so the conventional names pick it.
+        const onPk = all.filter(
+            (raw) =>
+                raw.unique &&
                 raw.where === undefined &&
                 pk.length > 0 &&
-                names.length === pk.length &&
-                names.every((n) => pk.includes(n));
-            if (samePk && raw.unique) {
+                raw.columns.length === pk.length &&
+                raw.columns.every((c) => pk.includes(c.name))
+        );
+        const keysOwn =
+            onPk.find((raw) => PRIMARY_INDEX_NAME.test(raw.name)) ?? onPk[0];
+        for (const raw of all) {
+            const ordered = raw.columns;
+            const names = ordered.map((c) => c.name);
+            if (raw === keysOwn) {
                 primaryKeyName ??= raw.name;
                 continue;
             }
