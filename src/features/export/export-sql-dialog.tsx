@@ -38,8 +38,12 @@ export const ExportSqlDialog: React.FC<ExportSqlDialogProps> = ({
     const [ready, setReady] = useState(false);
 
     // a spinner for a moment, as the script is written (EXP-004)
-    useEffect(() => {
+    const [seenTarget, setSeenTarget] = useState(target);
+    if (target !== seenTarget) {
+        setSeenTarget(target);
         setReady(false);
+    }
+    useEffect(() => {
         if (!target) return;
         const timer = setTimeout(() => setReady(true), 0);
         return () => clearTimeout(timer);

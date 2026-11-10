@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { localeTag } from '@/i18n/locale-tag';
@@ -83,12 +83,15 @@ export const OpenDesignDialog: React.FC<OpenDesignDialogProps> = ({
     const [deleting, setDeleting] = useState<DiagramSummary | undefined>();
     const rows = useRef(new Map<string, HTMLTableRowElement>());
 
-    useEffect(() => {
+    // each time the dialog opens it starts with an empty search and no selection
+    const [wasOpen, setWasOpen] = useState(open);
+    if (open !== wasOpen) {
+        setWasOpen(open);
         if (open) {
             setSearch('');
             setSelected(undefined);
         }
-    }, [open]);
+    }
 
     const shown = useMemo(
         () => (items ?? []).filter((d) => matchesSearch(d, search)),

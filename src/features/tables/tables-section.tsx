@@ -31,9 +31,11 @@ export const TablesSection: React.FC = () => {
     const [filterText, setFilterText] = useState('');
     // one row is open at a time; a table opened from the canvas opens here too
     const [openId, setOpenId] = useState<string | undefined>(expanded);
-    useEffect(() => {
+    const [seenExpanded, setSeenExpanded] = useState(expanded);
+    if (expanded !== seenExpanded) {
+        setSeenExpanded(expanded);
         if (expanded) setOpenId(expanded);
-    }, [expanded]);
+    }
 
     // a table added from here opens its form at once
     const knownIds = useRef(new Set(design.entities.order));

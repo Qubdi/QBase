@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
@@ -49,13 +49,17 @@ export const ExportImageDialog: React.FC<ExportImageDialogProps> = ({
     );
     const [busy, setBusy] = useState(false);
 
-    useEffect(() => {
-        if (!format) return;
-        setAdvanced(false);
-        setScale(DEFAULT_IMAGE_OPTIONS.scale);
-        setPattern(DEFAULT_IMAGE_OPTIONS.pattern);
-        setTransparent(DEFAULT_IMAGE_OPTIONS.transparent);
-    }, [format]);
+    // each format starts from the default options
+    const [seenFormat, setSeenFormat] = useState(format);
+    if (format !== seenFormat) {
+        setSeenFormat(format);
+        if (format) {
+            setAdvanced(false);
+            setScale(DEFAULT_IMAGE_OPTIONS.scale);
+            setPattern(DEFAULT_IMAGE_OPTIONS.pattern);
+            setTransparent(DEFAULT_IMAGE_OPTIONS.transparent);
+        }
+    }
 
     const run = async () => {
         if (!format) return;
