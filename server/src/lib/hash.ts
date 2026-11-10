@@ -52,6 +52,21 @@ export async function diagramHashAsync(
     title: string,
     content: unknown
 ): Promise<string> {
+    return (await diagramFingerprintAsync(title, content)).hash;
+}
+
+/**
+ * The hash of `diagramHashAsync` and, from the same walk, the size in bytes
+ * of the content as compact JSON (the keys sorted, `updatedAt` left out, the
+ * title included). It is what the size limits are checked against, stored with
+ * the diagram so no read has to turn a large jsonb back into text; the text
+ * Postgres makes of a jsonb has a space after each `:` and `,`, so it is a
+ * little longer than this.
+ */
+export async function diagramFingerprintAsync(
+    title: string,
+    content: unknown
+): Promise<{ hash: string; bytes: number }> {
     let body = content;
     if (content && typeof content === 'object' && !Array.isArray(content)) {
         const { updatedAt: _ignored, ...rest } = content as Record<
@@ -62,10 +77,12 @@ export async function diagramHashAsync(
     }
     const hash = createHash('sha256');
     let pending = '';
+    let bytes = 0;
     let sliceStart = performance.now();
     const feed = async (text: string) => {
         pending += text;
         if (pending.length < FLUSH_CHARS) return;
+        bytes += Buffer.byteLength(pending);
         hash.update(pending);
         pending = '';
         if (performance.now() - sliceStart > SLICE_MS) {
@@ -103,6 +120,7 @@ export async function diagramHashAsync(
         return feed('}');
     };
     await walk({ title, content: body }, 0);
+    bytes += Buffer.byteLength(pending);
     hash.update(pending);
-    return hash.digest('hex');
+    return { hash: hash.digest('hex'), bytes };
 }

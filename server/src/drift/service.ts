@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import {
@@ -21,6 +21,7 @@ import type {
 } from '../introspect/types.js';
 import type { RequestHook } from '../lib/rate-key.js';
 import { openWebhookUrl, postJson } from './webhook.js';
+import { diagramBytesSql } from '../diagrams/summary.js';
 import {
     countBySeverity,
     driftSignature,
@@ -285,9 +286,7 @@ export async function runDriftCheck(
             // the size first, so a diagram over the cap is never loaded
             const [sized] = await db
                 .select({
-                    size: sql<number>`octet_length(${diagrams.content}::text)`.mapWith(
-                        Number
-                    ),
+                    size: diagramBytesSql.mapWith(Number),
                 })
                 .from(diagrams)
                 .where(eq(diagrams.id, diagramId));

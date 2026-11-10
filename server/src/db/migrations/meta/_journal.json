@@ -197,6 +197,13 @@
       "when": 1794296417003,
       "tag": "0027_rate_counters",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794307461619,
+      "tag": "0028_plain_diagram_stats",
+      "breakpoints": true
     }
   ]
 }

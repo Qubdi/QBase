@@ -186,7 +186,17 @@ export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
 /** The note of a snapshot made by auto-publish, which is the one kind that may be rewritten. */
 export const AUTO_PUBLISH_NOTE = 'Auto-published on save';
 
-export type SnapshotMeta = Omit<SnapshotRow, 'content' | 'auto'>;
+export type SnapshotMeta = Omit<
+    SnapshotRow,
+    | 'content'
+    | 'auto'
+    | 'statDatabaseType'
+    | 'statDatabaseEdition'
+    | 'statTableCount'
+    | 'statRelationshipCount'
+    | 'statCreatedAt'
+    | 'statContentBytes'
+>;
 
 const snapshotMetaColumns = {
     id: snapshots.id,
@@ -278,7 +288,13 @@ export async function publishSnapshot(
             await tx.execute(sql`
                 update snapshots
                 set title = d.title, content = d.content,
-                    content_hash = ${hash}::text, published_at = now()
+                    content_hash = ${hash}::text, published_at = now(),
+                    stat_database_type = d.stat_database_type,
+                    stat_database_edition = d.stat_database_edition,
+                    stat_table_count = d.stat_table_count,
+                    stat_relationship_count = d.stat_relationship_count,
+                    stat_created_at = d.stat_created_at,
+                    stat_content_bytes = d.stat_content_bytes
                 from diagrams d
                 where d.id = ${diagramId}::uuid and snapshots.id = ${last.id}::uuid
             `);
@@ -292,9 +308,13 @@ export async function publishSnapshot(
         const version = (last?.version ?? 0) + 1;
         const inserted = await tx.execute<{ id: string }>(sql`
             insert into snapshots
-                (diagram_id, version, title, content, content_hash, published_by, note, auto)
+                (diagram_id, version, title, content, content_hash, published_by, note, auto,
+                 stat_database_type, stat_database_edition, stat_table_count,
+                 stat_relationship_count, stat_created_at, stat_content_bytes)
             select d.id, ${version}::integer, d.title, d.content, ${hash}::text,
-                   ${userId}::uuid, ${note}::text, ${opts.auto ?? false}::boolean
+                   ${userId}::uuid, ${note}::text, ${opts.auto ?? false}::boolean,
+                   d.stat_database_type, d.stat_database_edition, d.stat_table_count,
+                   d.stat_relationship_count, d.stat_created_at, d.stat_content_bytes
             from diagrams d
             where d.id = ${diagramId}::uuid
             returning id

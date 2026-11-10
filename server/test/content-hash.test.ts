@@ -11,6 +11,11 @@ vi.mock('../src/lib/hash.js', async (importOriginal) => {
             hashed.calls++;
             return real.diagramHashAsync(title, content);
         },
+        // saves hash and measure in one walk
+        diagramFingerprintAsync: (title: string, content: unknown) => {
+            hashed.calls++;
+            return real.diagramFingerprintAsync(title, content);
+        },
     };
 });
 

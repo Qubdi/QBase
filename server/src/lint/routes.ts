@@ -8,6 +8,7 @@ import type { Config } from '../config.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { sharedUserLimit } from '../lib/rate-key.js';
 import { latestSnapshot } from '../diagrams/service.js';
+import { diagramBytesSql, snapshotBytesSql } from '../diagrams/summary.js';
 import {
     RULES,
     lint,
@@ -97,7 +98,7 @@ export const lintRoutes =
                     lintConfig: diagrams.lintConfig,
                     size:
                         source === 'working'
-                            ? sql<number>`octet_length(${diagrams.content}::text)`.mapWith(Number)
+                            ? diagramBytesSql.mapWith(Number)
                             : sql<number>`0`,
                 })
                 .from(diagrams)
@@ -118,7 +119,7 @@ export const lintRoutes =
             } else {
                 const [latest] = await db
                     .select({
-                        size: sql<number>`octet_length(${snapshots.content}::text)`.mapWith(Number),
+                        size: snapshotBytesSql.mapWith(Number),
                     })
                     .from(snapshots)
                     .where(eq(snapshots.diagramId, id))

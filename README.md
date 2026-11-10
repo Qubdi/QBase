@@ -408,6 +408,18 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   `0022`) rewrites the whole `diagrams` table under an exclusive lock: about 11 seconds for
   320 MB of diagrams here, and reads and writes of diagrams wait meanwhile. Start the new
   version in a quiet moment on a large installation.
+- Migration `0028` turns those diagram-list columns into plain ones that the server writes
+  itself (a save no longer makes the database parse the whole diagram a second time) and adds
+  the same columns to snapshots, so the viewer list reads columns, not each snapshot's
+  content. It only changes the catalog and adds empty columns, so it takes milliseconds on
+  any size, and it builds five small indexes (on the `created_by`, `owner_id`, `updated_by`
+  and `user_id` columns that point at users), each under a short lock on a small table; the
+  migrator runs in one transaction, so they are not built `CONCURRENTLY`. Rows written before
+  it have no stored size (and a snapshot no stored numbers) until the hourly clean-up has
+  worked them out, 50 rows at a time (about 10 s of work per 20,000 small diagrams on the
+  test machine); until then a read takes them from the content, so no answer changes, only
+  its cost. The size limits for lint and drift checks use the stored size of the content as
+  compact JSON, a little under the length Postgres gives the text of a jsonb.
 - Upgrading from a version older than migration `0015` rewrites the whole `audit_log` table
   under an exclusive lock (its `id` becomes a `bigint`) and builds its indexes without
   `CONCURRENTLY`, so every action that writes an audit row (saves, sign-ins, admin changes)

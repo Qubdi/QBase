@@ -176,6 +176,53 @@ export async function pruneDriftReports(
     }
 }
 
+const STATS_BATCH = 50;
+const STATS_BATCHES_PER_RUN = 200;
+
+/**
+ * Fills in the stored stats and content size of rows written before the app
+ * kept them: a diagram's size, and a snapshot's numbers and size, worked out
+ * from its content a few rows at a time (a diagram's own stats were kept by
+ * the generated columns it had before). Until a row is reached, readers take
+ * its numbers from the content, so this changes no answer, only the cost of
+ * giving it. At most `maxBatches` per run; the next hourly run continues.
+ */
+export async function fillStoredStats(
+    db: Db,
+    batch = STATS_BATCH,
+    maxBatches = STATS_BATCHES_PER_RUN
+): Promise<number> {
+    let total = 0;
+    for (let i = 0; i < maxBatches; i++) {
+        const diagramsDone = await db.execute(sql`
+            update diagrams
+            set stat_content_bytes = octet_length(content::text)
+            where id in (
+                select id from diagrams where stat_content_bytes is null limit ${batch}
+            )
+        `);
+        const snapshotsDone = await db.execute(sql`
+            update snapshots
+            set stat_database_type = nullif(content->>'databaseType', ''),
+                stat_database_edition = nullif(content->>'databaseEdition', ''),
+                stat_table_count = case when jsonb_typeof(content->'tables') = 'array'
+                    then jsonb_array_length(content->'tables') else 0 end,
+                stat_relationship_count = case when jsonb_typeof(content->'relationships') = 'array'
+                    then jsonb_array_length(content->'relationships') else 0 end,
+                stat_created_at = nullif(content->>'createdAt', ''),
+                stat_content_bytes = octet_length(content::text)
+            where id in (
+                select id from snapshots where stat_table_count is null limit ${batch}
+            )
+        `);
+        const n = (diagramsDone.rowCount ?? 0) + (snapshotsDone.rowCount ?? 0);
+        total += n;
+        if ((diagramsDone.rowCount ?? 0) < batch && (snapshotsDone.rowCount ?? 0) < batch)
+            return total;
+    }
+    return total;
+}
+
 type MaintenanceConfig = Pick<
     Config,
     'auditRetentionDays' | 'snapshotKeep' | 'driftReportKeep' | 'deadLinkKeepDays'
@@ -195,6 +242,7 @@ export async function runMaintenance(
         audit: () => purgeAuditLog(db, config.auditRetentionDays, now),
         snapshots: () => pruneSnapshots(db, config.snapshotKeep),
         driftReports: () => pruneDriftReports(db, config.driftReportKeep),
+        stats: () => fillStoredStats(db),
     };
     // one step failing must not skip the ones after it until the next hour
     const removed = {} as Record<keyof typeof steps, number>;

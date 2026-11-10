@@ -12,7 +12,7 @@ import { sharedUserLimit } from '../lib/rate-key.js';
 import { gunzipBody } from './gzip-body.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
-import { statsColumns } from './summary.js';
+import { statsColumns, statValues } from './summary.js';
 import {
     AUTO_PUBLISH_NOTE,
     latestSnapshotListing,
@@ -22,7 +22,7 @@ import {
     publishSnapshot,
 } from './service.js';
 import { exceedsDepth } from '../lib/depth.js';
-import { diagramHashAsync } from '../lib/hash.js';
+import { diagramFingerprintAsync } from '../lib/hash.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { pgDate } from '../lib/pg-date.js';
 
@@ -304,6 +304,7 @@ export const diagramRoutes =
                 // that was just sent instead of reading it back
                 const { content: _content, ...columns } =
                     getTableColumns(diagrams);
+                const made = await diagramFingerprintAsync(body.title, body.content);
                 const [row] = await db
                     .insert(diagrams)
                     .values({
@@ -311,7 +312,8 @@ export const diagramRoutes =
                         projectId: body.projectId,
                         title: body.title,
                         content: body.content,
-                        contentHash: await diagramHashAsync(body.title, body.content),
+                        contentHash: made.hash,
+                        ...statValues(body.content, made.bytes),
                     })
                     .returning(columns);
                 diagram = { ...row, content: body.content };
@@ -429,6 +431,7 @@ export const diagramRoutes =
             // A rename alone leaves it empty: the content is not in hand, and
             // the next read fills it in.
             let contentHash: string | null | undefined;
+            let stats: ReturnType<typeof statValues> | undefined;
             if (changes.content !== undefined) {
                 const title =
                     changes.title ??
@@ -438,10 +441,14 @@ export const diagramRoutes =
                             .from(diagrams)
                             .where(eq(diagrams.id, id))
                     )[0]?.title;
-                contentHash =
-                    title === undefined
-                        ? null
-                        : await diagramHashAsync(title, changes.content);
+                // the stats and the size come from the same walk as the hash; with
+                // no title to hash (the row is gone) only the stats are used
+                const made = await diagramFingerprintAsync(
+                    title ?? '',
+                    changes.content
+                );
+                contentHash = title === undefined ? null : made.hash;
+                stats = statValues(changes.content, made.bytes);
             } else if (changes.title !== undefined) {
                 contentHash = null;
             }
@@ -450,6 +457,7 @@ export const diagramRoutes =
                 .set({
                     ...changes,
                     ...(contentHash !== undefined ? { contentHash } : {}),
+                    ...stats,
                     updatedAt: new Date(),
                 })
                 .where(

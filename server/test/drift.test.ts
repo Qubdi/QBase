@@ -412,7 +412,7 @@ describe('drift detection', () => {
             const [row] = await ctx.db.select().from(diagrams).where(eq(diagrams.id, diagramId));
             await ctx.db
                 .update(diagrams)
-                .set({ content: { ...(row.content as object), padding: 'x'.repeat(DRIFT_DIAGRAM_LIMIT + 1024) } })
+                .set({ content: { ...(row.content as object), padding: 'x'.repeat(DRIFT_DIAGRAM_LIMIT + 1024) }, statContentBytes: null }) // a write the app did not make has no stored size: it is measured
                 .where(eq(diagrams.id, diagramId));
             try {
                 const body = (await check()).json();
@@ -420,7 +420,7 @@ describe('drift detection', () => {
                 expect(body.error).toMatch(/too large/);
                 expect(factoryCalls).toBe(0);
             } finally {
-                await ctx.db.update(diagrams).set({ content: row.content }).where(eq(diagrams.id, diagramId));
+                await ctx.db.update(diagrams).set({ content: row.content, statContentBytes: row.statContentBytes }).where(eq(diagrams.id, diagramId));
             }
             // under the cap again, it compares as before
             expect((await check()).json().status).not.toBe('error');
