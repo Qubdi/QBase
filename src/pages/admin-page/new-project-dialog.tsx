@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
@@ -31,13 +31,15 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
     const [busy, setBusy] = useState(false);
 
     // each time it opens it is a blank form
-    useEffect(() => {
+    const [wasOpen, setWasOpen] = useState(open);
+    if (wasOpen !== open) {
+        setWasOpen(open);
         if (open) {
             setName('');
             setDescription('');
             setError(null);
         }
-    }, [open]);
+    }
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
