@@ -132,7 +132,12 @@ export function registerWeb(
         if (!page) {
             // an unknown API path never reaches the API's own hooks: give it
             // the API's headers here (pages and files get theirs in onSend)
-            if (isApiPath(url)) reply.headers(API_SECURITY_HEADERS);
+            if (isApiPath(url)) {
+                reply.headers(API_SECURITY_HEADERS);
+                reply.headers(hstsHeaders(req, cookieSecure));
+                // the real API answers differently per Origin (CORS_ORIGIN), so a cache must too
+                reply.header('vary', 'Origin');
+            }
             return reply.code(404).send({
                 message: `Route ${req.method}:${url} not found`,
                 error: 'Not Found',

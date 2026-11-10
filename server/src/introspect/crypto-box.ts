@@ -20,8 +20,12 @@ const BASE_SALT = 'qubdidb-connection-box-v1';
  * tokens) name one, so each gets its own key and a value sealed for one never
  * opens for another.
  *
- * Two formats are read, one is written:
- * - `v2:salt:iv:tag:data` (written): the key is derived from the secret with
+ * Three formats are read, two are written:
+ * - `v3:salt:iv:tag:data` (written when the caller names a context, normally
+ *   the id of the row that holds the value): the same as v2, with the context
+ *   authenticated as GCM additional data. A value copied to another row, or
+ *   another column of the same purpose, fails to open there.
+ * - `v2:salt:iv:tag:data` (written without a context; read): the key is derived from the secret with
  *   HKDF-SHA256, a fresh random salt and the purpose, so no two values share a
  *   key. HKDF is fast and does not block the event loop; the secret must be
  *   random (at least 32 characters, see `loadConfig`), which is what it relies
@@ -62,31 +66,50 @@ export class CryptoBox {
         );
     }
 
-    encrypt(plain: string): string {
+    /** The additional data of a v3 value: the purpose and the caller's context. */
+    private aad(context: string): Buffer {
+        return Buffer.from(`${this.purpose ?? ''}\0${context}`, 'utf8');
+    }
+
+    encrypt(plain: string, context?: string): string {
         const salt = randomBytes(SALT_LENGTH);
         const iv = randomBytes(12);
         const cipher = createCipheriv('aes-256-gcm', this.keyV2(salt), iv, {
             authTagLength: TAG_LENGTH,
         });
+        if (context !== undefined) cipher.setAAD(this.aad(context));
         const data = Buffer.concat([
             cipher.update(plain, 'utf8'),
             cipher.final(),
         ]);
         const tag = cipher.getAuthTag();
-        return ['v2', salt, iv, tag, data]
+        return [context === undefined ? 'v2' : 'v3', salt, iv, tag, data]
             .map((p) => (typeof p === 'string' ? p : p.toString('base64')))
             .join(':');
     }
 
-    decrypt(payload: string): string {
+    /**
+     * Opens a value. A v3 value needs the context it was sealed with; v2 and
+     * v1 values carry none and ignore it (they are re-sealed as v3 at start).
+     */
+    decrypt(payload: string, context?: string): string {
         const parts = payload.split(':');
-        if (parts[0] === 'v2' && parts.length === 5) {
-            const [, salt, iv, tag, data] = parts;
+        if ((parts[0] === 'v2' || parts[0] === 'v3') && parts.length === 5) {
+            const [version, salt, iv, tag, data] = parts;
             const saltBytes = Buffer.from(salt, 'base64');
             if (saltBytes.length !== SALT_LENGTH) {
                 throw new Error('Unsupported encrypted value');
             }
-            return open(this.keyV2(saltBytes), iv, tag, data);
+            if (version === 'v3' && context === undefined) {
+                throw new Error('Unsupported encrypted value');
+            }
+            return open(
+                this.keyV2(saltBytes),
+                iv,
+                tag,
+                data,
+                version === 'v3' ? this.aad(context!) : undefined
+            );
         }
         if (parts[0] === 'v1' && parts.length === 4) {
             const [, iv, tag, data] = parts;
@@ -112,7 +135,13 @@ export class CryptoBox {
     }
 }
 
-function open(key: Buffer, iv: string, tag: string, data: string | undefined): string {
+function open(
+    key: Buffer,
+    iv: string,
+    tag: string,
+    data: string | undefined,
+    aad?: Buffer
+): string {
     if (!iv || !tag || data === undefined) {
         throw new Error('Unsupported encrypted value');
     }
@@ -127,6 +156,7 @@ function open(key: Buffer, iv: string, tag: string, data: string | undefined): s
         Buffer.from(iv, 'base64'),
         { authTagLength: TAG_LENGTH }
     );
+    if (aad) decipher.setAAD(aad);
     decipher.setAuthTag(authTag);
     return Buffer.concat([
         decipher.update(Buffer.from(data, 'base64')),
@@ -136,9 +166,9 @@ function open(key: Buffer, iv: string, tag: string, data: string | undefined): s
 
 /** True for a value in a format this box writes or reads (not plain text). */
 export const isSealed = (value: string) =>
-    value.startsWith('v1:') || value.startsWith('v2:');
+    value.startsWith('v1:') || value.startsWith('v2:') || value.startsWith('v3:');
 
-/** True for a value already in the format `encrypt` writes. */
+/** True for a value already in the format `encrypt` writes without a context. */
 export const isCurrentFormat = (value: string) => value.startsWith('v2:');
 
 const boxes = new Map<string, CryptoBox>();

@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 34 · **date** 2026-11-10
+**rev** 35 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 13 | 0 | 0 | 32 | 0 |
+| Security & secrets | 3 | 0 | 0 | 42 | 0 |
 | Repository | 9 | 0 | 0 | 54 | 0 |
 | Server | 7 | 0 | 0 | 33 | 0 |
 | Database | 7 | 0 | 0 | 15 | 1 |
 | Client | 8 | 0 | 0 | 94 | 0 |
 | Dead code | 2 | 0 | 0 | 39 | 0 |
-| **Total** | 46 | 0 | 0 | 267 | 1 |
+| **Total** | 36 | 0 | 0 | 277 | 1 |
 
 ## Act first
 
@@ -29,16 +29,6 @@ None.
 | SEC-001 | Med | Old SA password literal in 67 `refs/pull/N/head` and three branch refs (`main-old`, `origin/main-old`, `audit/db-deadcode-lenses`) | `.gitleaks.toml:4` | Rotate the password; delete stale branches; ask GitHub to purge pull refs |
 | SEC-036 | Med | Account-wide sign-in lockout checked before password; strangers lock out any account | `server/src/auth/routes.ts:221`, `server/src/auth/guards.ts:39` | Add delay instead of hard 429, or let correct password through |
 | SEC-037 | Med | Stolen admin session creates or promotes an admin with no step-up | `server/src/admin/routes.ts:74`, `server/src/admin/routes.ts:347`, `server/src/admin/routes.ts:389` | Require step-up when granting isAdmin or creating an admin |
-| SEC-038 | Low | Rate limits and lockouts key on raw `req.ip`; no IPv6 /64 masking | `server/src/lib/rate-key.ts:15`, `server/src/app.ts:180`, `server/src/share/routes.ts:442` | Mask IPv6 to /64 in every address key |
-| SEC-039 | Low | Over https the plain-named session cookie is still accepted, defeating `__Host-` | `server/src/auth/sessions.ts:25` | Drop the plain-name fallback when the cookie is Secure |
-| SEC-040 | Low | Disabling or deleting a user leaves their share links live | `server/src/admin/routes.ts:576` | Revoke the creator's links on disable and delete |
-| SEC-041 | Low | `share.update` audit omits expiry and live changes; only access recorded | `server/src/share/routes.ts:258` | Add expiresAt and live to the audit meta |
-| SEC-042 | Low | Anonymous `/auth/logout` and `/auth/setup-status` have no rate limit | `server/src/auth/routes.ts:121`, `server/src/auth/routes.ts:286` | Add the per-address limit to both |
-| SEC-043 | Low | Read-only guard quote scanner desyncs on `$$` and `E'\''`; multi-statement text passes | `server/src/introspect/readonly-guard.ts:72` | Reject `$` and backslash, or use a real tokenizer |
-| SEC-044 | Low | Read-only guard denylist misses side-effect and DoS functions (`set_config`, `pg_terminate_backend`) | `server/src/introspect/readonly-guard.ts:19` | Switch to an allowlist, or add function and `pg_`/`lo_` prefixes |
-| SEC-045 | Low | `classifyIp` returns public for `100::/64`, `5f00::/16`, `3fff::/20`, `192.88.99.0/24` | `server/src/introspect/net-guard.ts:79` | Add the missing special-use ranges |
-| SEC-046 | Low | Sealed values carry no AAD; ciphertext moves between rows and decrypts | `server/src/introspect/crypto-box.ts:65` | Bind the row id as GCM AAD |
-| SEC-047 | Low | SSE head and web-mode `/api` 404 omit HSTS and `Vary: Origin` | `server/src/share/routes.ts:458`, `server/src/web.ts:135` | Spread `hstsHeaders` and add Vary on both |
 
 ### Repository
 
@@ -283,6 +273,16 @@ None.
 | DEAD-032 | Dead code | Unused en keys `editor.sidePanel`: common.more/rename, tables.color, fields.foreignKey, visuals.colour, hover.*, clipboard copied/pasted |
 | DEAD-024 | Dead code | Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts, forgetClipboard |
 | DEAD-033 | Dead code | Unused UI component bodies: DropdownMenu SubTrigger/SubContent/CheckboxItem/RadioItem, SelectLabel/Separator, TableFooter/Caption, MenubarCheckboxItem |
+| SEC-038 | Security & secrets | Rate limits and lockouts key on raw `req.ip`; no IPv6 /64 masking |
+| SEC-039 | Security & secrets | Over https the plain-named session cookie is still accepted, defeating `__Host-` |
+| SEC-040 | Security & secrets | Disabling or deleting a user leaves their share links live |
+| SEC-041 | Security & secrets | `share.update` audit omits expiry and live changes; only access recorded |
+| SEC-042 | Security & secrets | Anonymous `/auth/logout` and `/auth/setup-status` have no rate limit |
+| SEC-043 | Security & secrets | Read-only guard quote scanner desyncs on `$$` and `E'\''`; multi-statement text passes |
+| SEC-044 | Security & secrets | Read-only guard denylist misses side-effect and DoS functions (`set_config`, `pg_terminate_backend`) |
+| SEC-045 | Security & secrets | `classifyIp` returns public for `100::/64`, `5f00::/16`, `3fff::/20`, `192.88.99.0/24` |
+| SEC-046 | Security & secrets | Sealed values carry no AAD; ciphertext moves between rows and decrypts |
+| SEC-047 | Security & secrets | SSE head and web-mode `/api` 404 omit HSTS and `Vary: Origin` |
 | SEC-006 | Security & secrets | Fastify sets no requestTimeout or connectionTimeout (slow-body hold) |
 | SEC-007 | Security & secrets | Disabled account answers 403 after correct password, confirming it |
 | SEC-008 | Security & secrets | Lockout key includes address; spread guesses on one account unthrottled |
@@ -440,6 +440,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 35 | 2026-11-10 | 10 fixed (security low batch: SEC-038 to 047); 36 open, 0 Crit, 0 High; anchors not remapped |
 | 34 | 2026-11-10 | 34 new (SEC-036 to 047, REPO-070 to 076, SRV-038 to 041, DB-021 to 024, CLI-103 to 109), SEC-001 widened to branch and pull refs, REPO-060 renumbered REPO-071; 46 open, 0 Crit, 0 High; npm audit clean |
 | 33 | 2026-11-10 | 13 total open: 3 new (REPO-060, CLI-102, DEAD-042), 1 regressed (DEAD-037, two of four copies remain), 4 anchors remapped, about 60 Fixed rows spot-checked; migrations and `schema.ts` diff empty; npm audit and gitleaks skipped |
 | 32 | 2026-11-10 | 5 fixed (database batch: DB-001, 002, 003, 007, 012), 3 narrowed (DB-004, 006, 019); anchors not remapped |

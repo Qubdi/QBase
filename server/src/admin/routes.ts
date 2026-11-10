@@ -140,10 +140,31 @@ const withAdminSetLock = <T>(db: Db, fn: (tx: Tx) => Promise<T>) =>
     });
 
 /**
+ * Revokes the live share links the accounts made, and returns their ids so the
+ * caller can tell the viewers once the change is committed. A link outlives
+ * the account's sessions otherwise: it keeps serving a diagram for someone
+ * the admin has just cut off.
+ */
+const revokeLinksOf = async (tx: Tx, userIds: string[]): Promise<string[]> => {
+    const revoked = await tx
+        .update(shareLinks)
+        .set({ revokedAt: new Date(), tokenEnc: null })
+        .where(
+            and(inArray(shareLinks.createdBy, userIds), isNull(shareLinks.revokedAt))
+        )
+        .returning({ id: shareLinks.id });
+    return revoked.map((r) => r.id);
+};
+
+/**
  * Deletes accounts. Their diagrams do not go with them (owner_id would
  * cascade): the team keeps them, owned by `heirId`.
  */
-const removeUsers = async (tx: Tx, ids: string[], heirId: string) => {
+const removeUsers = async (
+    tx: Tx,
+    ids: string[],
+    heirId: string
+): Promise<string[]> => {
     // Lock the accounts first. A diagram the user creates while this runs
     // inserts a row that points at the user, which waits for this lock, and
     // then the reassignment below sees it; without the lock it would appear
@@ -159,8 +180,11 @@ const removeUsers = async (tx: Tx, ids: string[], heirId: string) => {
         .update(diagrams)
         .set({ ownerId: heirId })
         .where(inArray(diagrams.ownerId, ids));
+    // before the delete: the links' created_by is cleared with the account
+    const revokedLinks = await revokeLinksOf(tx, ids);
     await tx.delete(sessions).where(inArray(sessions.userId, ids));
     await tx.delete(users).where(inArray(users.id, ids));
+    return revokedLinks;
 };
 
 const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
@@ -424,14 +448,19 @@ export const adminRoutes =
                     return { error: 'last_admin' as const };
                 }
                 await tx.update(users).set(patch).where(eq(users.id, id));
-                return { target };
+                const revokedLinks =
+                    body.isActive === false && target.isActive
+                        ? await revokeLinksOf(tx, [id])
+                        : [];
+                return { target, revokedLinks };
             });
             if ('error' in outcome) {
                 return outcome.error === 'not_found'
                     ? reply.code(404).send({ error: 'not_found' })
                     : reply.code(400).send({ error: 'last_admin' });
             }
-            const { target } = outcome;
+            const { target, revokedLinks } = outcome;
+            revokedLinks.forEach(emitLinkChanged);
             if (body.password !== undefined || body.isActive === false) {
                 // a reset password, or a disabled account, ends every session
                 await destroyOtherSessions(db, id, undefined);
@@ -487,14 +516,14 @@ export const adminRoutes =
                 ) {
                     return { error: 'last_admin' as const };
                 }
-                await removeUsers(tx, [id], req.user!.id);
+                const revokedLinks = await removeUsers(tx, [id], req.user!.id);
                 // in the same transaction: no account is gone without its row
                 await audit(tx, {
                     userId: req.user!.id,
                     action: 'user.delete',
                     meta: { targetUserId: id },
                 });
-                return {};
+                return { revokedLinks };
             });
             if (outcome.error === 'not_found') {
                 return reply.code(404).send({ error: 'not_found' });
@@ -502,6 +531,7 @@ export const adminRoutes =
             if (outcome.error === 'last_admin') {
                 return reply.code(400).send({ error: 'last_admin' });
             }
+            outcome.revokedLinks?.forEach(emitLinkChanged);
             return reply.code(204).send();
         });
 
@@ -543,7 +573,7 @@ export const adminRoutes =
                 );
                 const changingIds = changing.map((u) => u.id);
                 if (changingIds.length === 0)
-                    return { changed: [] as string[] };
+                    return { changed: [] as string[], revokedLinks: [] as string[] };
 
                 // admins who can sign in are lost to a disable or a delete;
                 // someone else must remain
@@ -564,6 +594,7 @@ export const adminRoutes =
                     if (remaining < 1) return { error: 'last_admin' as const };
                 }
 
+                let revokedLinks: string[] = [];
                 if (body.action === 'enable') {
                     await tx
                         .update(users)
@@ -582,8 +613,9 @@ export const adminRoutes =
                     await tx
                         .delete(diagramLocks)
                         .where(inArray(diagramLocks.userId, changingIds));
+                    revokedLinks = await revokeLinksOf(tx, changingIds);
                 } else {
-                    await removeUsers(tx, changingIds, self);
+                    revokedLinks = await removeUsers(tx, changingIds, self);
                 }
                 // in the same transaction: no account changes without its rows
                 await auditMany(
@@ -594,11 +626,12 @@ export const adminRoutes =
                         meta: { targetUserId },
                     }))
                 );
-                return { changed: changingIds };
+                return { changed: changingIds, revokedLinks };
             });
             if ('error' in outcome) {
                 return reply.code(400).send({ error: outcome.error });
             }
+            outcome.revokedLinks.forEach(emitLinkChanged);
             return {
                 changed: outcome.changed.length,
                 unchanged: ids.length - outcome.changed.length,

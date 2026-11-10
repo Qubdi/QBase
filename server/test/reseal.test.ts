@@ -112,17 +112,17 @@ describe('re-sealing stored secrets', () => {
 
         const links = await ctx.db.select().from(shareLinks);
         const share = new CryptoBox(CONNECTION_KEY, 'share-link');
-        expect(links.every((l) => l.tokenEnc?.startsWith('v2:'))).toBe(true);
-        expect(share.decrypt(links.find((l) => l.id === a.id)!.tokenEnc!)).toBe(a.token);
-        expect(share.decrypt(links.find((l) => l.id === b.id)!.tokenEnc!)).toBe(b.token);
+        expect(links.every((l) => l.tokenEnc?.startsWith('v3:'))).toBe(true);
+        expect(share.decrypt(links.find((l) => l.id === a.id)!.tokenEnc!, a.id)).toBe(a.token);
+        expect(share.decrypt(links.find((l) => l.id === b.id)!.tokenEnc!, b.id)).toBe(b.token);
 
         const [c] = await ctx.db.select().from(savedConnections).where(eq(savedConnections.id, conn.id));
-        expect(c.passwordEnc).toMatch(/^v2:/);
-        expect(new CryptoBox(CONNECTION_KEY).decrypt(c.passwordEnc)).toBe('hunter2');
+        expect(c.passwordEnc).toMatch(/^v3:/);
+        expect(new CryptoBox(CONNECTION_KEY).decrypt(c.passwordEnc, conn.id)).toBe('hunter2');
 
         const [d] = await ctx.db.select().from(driftSettings).where(eq(driftSettings.diagramId, diagramId));
-        expect(d.webhookUrl).toMatch(/^v2:/);
-        expect(new CryptoBox(SECRETS_KEY, 'webhook').decrypt(d.webhookUrl!)).toBe('https://hooks.example.com/t0ken');
+        expect(d.webhookUrl).toMatch(/^v3:/);
+        expect(new CryptoBox(SECRETS_KEY, 'webhook').decrypt(d.webhookUrl!, diagramId)).toBe('https://hooks.example.com/t0ken');
 
         // the second time there is nothing left to do
         const second = await resealStoredSecrets(ctx.db, keys);

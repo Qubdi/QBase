@@ -93,6 +93,10 @@ export interface AuditMeta {
     version?: number;
     linkId?: string;
     access?: 'anyone' | 'signed_in' | 'off';
+    /** share.update: the link's expiry after the change (ISO, or null for none), when the request touched it */
+    expiresAt?: string | null;
+    /** share.update: whether the link follows the diagram live, when the request touched it */
+    live?: boolean;
     /** share.revoke: when the link was made (ISO), to tell links apart */
     madeAt?: string;
     /** the project's name or the diagram's title, for when it no longer exists */

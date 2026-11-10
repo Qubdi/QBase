@@ -35,10 +35,10 @@ describe('sealing webhook URLs saved in plain text', () => {
         expect(await resealPlaintextWebhooks(ctx.db, KEY)).toBe(1);
 
         const now = (await urlOf(plain))!;
-        expect(now).toMatch(/^v2:/);
+        expect(now).toMatch(/^v3:/);
         // the token no longer sits in the table, and the URL still opens
         expect(now).not.toContain('secret-token');
-        expect(openWebhookUrl(box, now)).toBe('https://hooks.example.com/secret-token');
+        expect(openWebhookUrl(box, plain, now)).toBe('https://hooks.example.com/secret-token');
         expect(await urlOf(sealed)).toBe(already);
         expect(await urlOf(none)).toBeNull();
     });
@@ -57,6 +57,6 @@ describe('sealing webhook URLs saved in plain text', () => {
         ]);
         expect(a + b).toBe(1);
         const box = cryptoBoxFor(KEY, 'webhook');
-        expect(openWebhookUrl(box, (await urlOf(raced))!)).toBe('https://hooks.example.com/one');
+        expect(openWebhookUrl(box, raced, (await urlOf(raced))!)).toBe('https://hooks.example.com/one');
     });
 });

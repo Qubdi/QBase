@@ -64,9 +64,31 @@ const FORBIDDEN = [
     'lo_import',
     'lo_export',
     'dblink',
+    // functions that change the session or the server, or hold it up
+    'set_config',
+    'pg_terminate_backend',
+    'pg_cancel_backend',
+    'pg_reload_conf',
+    'pg_rotate_logfile',
+    'pg_switch_wal',
+    'pg_create_restore_point',
+    'pg_advisory_lock',
+    'pg_advisory_xact_lock',
+    'pg_advisory_lock_shared',
+    'pg_advisory_xact_lock_shared',
+    'pg_notify',
+    'pg_sleep_for',
+    'pg_sleep_until',
+    'pg_logical_emit_message',
+    'pg_read_server_files',
+    'nextval',
+    'setval',
+    'waitfor',
+    'dblink_exec',
 ];
 
-const FORBIDDEN_RE = new RegExp(`\\b(${FORBIDDEN.join('|')})\\b`, 'i');
+// lo_* is every large-object function (lo_import, lo_put, lo_unlink, ...)
+const FORBIDDEN_RE = new RegExp(`\\b(${FORBIDDEN.join('|')}|lo_\\w+)\\b`, 'i');
 
 /** Removes comments and the *contents* of string literals / quoted identifiers. */
 export function stripSqlNoise(sql: string): string {
@@ -86,12 +108,25 @@ export function stripSqlNoise(sql: string): string {
             out += ' ';
             continue;
         }
+        // $$ and $tag$ open a dollar-quoted string that this scanner does not
+        // read, so a ';' or a keyword inside it would go unseen: refuse it
+        // ($1 is a parameter, and a '$' inside a word is part of its name)
+        if (ch === '$' && !/\w/.test(sql[i - 1] ?? '') && /[$A-Za-z_]/.test(next ?? '')) {
+            throw new UnsafeSqlError('dollar-quoted text');
+        }
         if (ch === "'" || ch === '"' || ch === '[') {
             const close = ch === '[' ? ']' : ch;
+            // E'...' (PostgreSQL) lets a backslash escape the next character,
+            // quote included; in any other string a backslash is plain text
+            const escapes = ch === "'" && /(^|[^\w])[eE]$/.test(sql.slice(Math.max(0, i - 2), i));
             let j = i + 1;
             for (;;) {
                 if (j >= sql.length) {
                     throw new UnsafeSqlError('unterminated quoted text');
+                }
+                if (escapes && sql[j] === '\\') {
+                    j += 2;
+                    continue;
                 }
                 if (sql[j] === close) {
                     // doubled quote is an escaped quote, not the end

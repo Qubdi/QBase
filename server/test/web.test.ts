@@ -218,6 +218,12 @@ describe('the API beside the editor', () => {
         expect(https.headers['strict-transport-security']).toBeUndefined();
     });
 
+    it('gives an unknown API path HSTS-ready headers and Vary: Origin', async () => {
+        const res = await app.inject({ url: '/api/nope' });
+        expect(res.statusCode).toBe(404);
+        expect(res.headers.vary).toBe('Origin');
+    });
+
     it('is not also at the root', async () => {
         const res = await app.inject({ url: '/auth/setup-status' });
         expect(res.body).toContain('<title>editor</title>');

@@ -16,6 +16,7 @@ import {
     verifyAgainstNobody,
     verifyPassword,
 } from './password.js';
+import { addressKey } from '../lib/rate-key.js';
 import { createAuthGuards, type AuthGuards } from './guards.js';
 import { createMfa, mfaAvailable } from './mfa.js';
 import { mfaRoutes } from './mfa-routes.js';
@@ -27,6 +28,7 @@ import {
     SESSION_COOKIE,
     SECURE_SESSION_COOKIE,
     sessionTokenOf,
+    isSecureRequest,
 } from './sessions.js';
 
 // advisory-lock key for the first-run sign-up (distinct from the admin-set lock)
@@ -84,9 +86,7 @@ export const authRoutes =
         const { failures, accountFailures, locked, mfaGuard } = guards;
 
         const cookieSecure = (req: FastifyRequest) =>
-            config.cookieSecure === 'auto'
-                ? req.protocol === 'https'
-                : config.cookieSecure;
+            isSecureRequest(req, config.cookieSecure);
 
         const startSession = async (
             req: FastifyRequest,
@@ -118,7 +118,7 @@ export const authRoutes =
         const mfa = createMfa(db, config);
 
         // lets the UI show the first-run "create admin" form only when it applies
-        app.get('/setup-status', async () => {
+        app.get('/setup-status', limit, async () => {
             // one row is enough to know; counting would visit every user
             const anyUser = await db
                 .select({ id: users.id })
@@ -215,7 +215,7 @@ export const authRoutes =
             // address for that account, so a stranger cannot keep someone else
             // out by guessing at their account on purpose. (Guesses spread over
             // many addresses are held back by the per-address rate limit.)
-            const key = `login:${body.email}:${req.ip}`;
+            const key = `login:${body.email}:${addressKey(req.ip)}`;
             const accountKey = `login:${body.email}`;
             if (await locked(reply, key)) return;
             const accountWait = await accountFailures.blockedFor(accountKey);
@@ -283,12 +283,12 @@ export const authRoutes =
             };
         });
 
-        app.post('/logout', async (req, reply) => {
+        app.post('/logout', limit, async (req, reply) => {
             // a call with no live session signs nobody out, so it leaves no row
             if (req.user) {
                 await audit(db, { userId: req.user.id, action: 'user.logout' });
             }
-            await destroySession(db, sessionTokenOf(req.cookies));
+            await destroySession(db, sessionTokenOf(req.cookies, cookieSecure(req)));
             const secure = cookieSecure(req);
             reply.clearCookie(SESSION_COOKIE, { path: '/', secure });
             if (secure) reply.clearCookie(SECURE_SESSION_COOKIE, { path: '/', secure });
@@ -371,7 +371,7 @@ export const authRoutes =
             await destroyOtherSessions(
                 db,
                 user.id,
-                sessionTokenOf(req.cookies)
+                sessionTokenOf(req.cookies, cookieSecure(req))
             );
             await audit(db, { userId: user.id, action: 'user.password_change' });
             return { ok: true };

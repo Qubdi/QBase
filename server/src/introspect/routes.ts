@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import { and, eq, ne } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
@@ -171,7 +172,7 @@ export const introspectRoutes =
                     return null;
                 }
                 try {
-                    password = box.decrypt(saved.passwordEnc);
+                    password = box.decrypt(saved.passwordEnc, saved.id);
                 } catch {
                     // CONNECTION_KEY was changed after the password was saved
                     reply.code(409).send({ error: 'connection_key_changed' });
@@ -347,9 +348,12 @@ export const introspectRoutes =
             if (dup.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
+            // chosen here, not by the database, to be sealed with the password
+            const connectionId = randomUUID();
             const row = await db
                 .insert(savedConnections)
                 .values({
+                    id: connectionId,
                     projectId: body.projectId,
                     ownerId: req.user!.id,
                     name: body.name,
@@ -358,7 +362,7 @@ export const introspectRoutes =
                     port: body.port ?? DEFAULT_PORTS[body.dialect],
                     database: body.database,
                     username: body.user,
-                    passwordEnc: box.encrypt(body.password),
+                    passwordEnc: box.encrypt(body.password, connectionId),
                     ssl: body.ssl,
                     trustServerCertificate: body.trustServerCertificate,
                 })
@@ -448,7 +452,7 @@ export const introspectRoutes =
                             ssl: body.ssl,
                             trustServerCertificate: body.trustServerCertificate,
                             ...(body.password !== undefined
-                                ? { passwordEnc: box!.encrypt(body.password) }
+                                ? { passwordEnc: box!.encrypt(body.password, id) }
                                 : {}),
                         })
                         .where(eq(savedConnections.id, id))

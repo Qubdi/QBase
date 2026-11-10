@@ -351,7 +351,7 @@ describe('admin diagrams and their share links', () => {
             expect(await links(draft)).toEqual([]);
         });
 
-        it('keeps a link whose maker has been deleted, without a name', async () => {
+        it('keeps a link whose maker has been deleted, revoked and without a name', async () => {
             const dave = await registerUser(ctx.app, 'dave@example.com');
             await join(billing, dave);
             const id = await create(dave, billing, 'Dave diagram');
@@ -360,7 +360,31 @@ describe('admin diagrams and their share links', () => {
             const [only] = await links(id);
             expect(only.createdById).toBeNull();
             expect(only.createdByEmail).toBeNull();
-            expect(only.status).toBe('active');
+            // deleting the account ends the links it made
+            expect(only.status).toBe('revoked');
+        });
+
+        it('revokes the links of an account that is disabled', async () => {
+            const erin = await registerUser(ctx.app, 'erin@example.com');
+            await join(billing, erin);
+            const id = await create(erin, billing, 'Erin diagram');
+            const link = await share(erin, id);
+            const off = await call(admin, 'PATCH', `/admin/users/${erin.id}`, { isActive: false });
+            expect(off.statusCode).toBe(200);
+            const [only] = await links(id);
+            expect(only.id).toBe(link.id);
+            expect(only.status).toBe('revoked');
+            // bulk disable does the same
+            const frank = await registerUser(ctx.app, 'frank@example.com');
+            await join(billing, frank);
+            const other = await create(frank, billing, 'Frank diagram');
+            await share(frank, other);
+            const bulk = await call(admin, 'POST', '/admin/users/bulk', {
+                ids: [frank.id],
+                action: 'disable',
+            });
+            expect(bulk.statusCode).toBe(200);
+            expect((await links(other))[0].status).toBe('revoked');
         });
 
         it('is for admins only, and for diagrams that exist', async () => {

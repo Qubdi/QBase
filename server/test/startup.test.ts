@@ -70,7 +70,7 @@ describe('start-up tasks', () => {
             await runStartupTasks(ctx.db, configWith({ SECRETS_KEY }), out);
             expect(lines.log).toContain('Encrypted 1 saved webhook URL(s)');
             const [row] = await ctx.db.select().from(driftSettings);
-            expect(row.webhookUrl).toMatch(/^v2:/);
+            expect(row.webhookUrl).toMatch(/^v3:/);
         });
 
         it('leaves them alone without a secrets key', async () => {

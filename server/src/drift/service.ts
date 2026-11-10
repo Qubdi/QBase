@@ -315,7 +315,7 @@ export async function runDriftCheck(
             if (!deps.config.connectionKey) {
                 throw new DriftError('This server cannot read saved passwords (CONNECTION_KEY is not set).');
             }
-            const password = cryptoBoxFor(deps.config.connectionKey).decrypt(conn.passwordEnc);
+            const password = cryptoBoxFor(deps.config.connectionKey).decrypt(conn.passwordEnc, conn.id);
             secrets = [password];
 
             const params: ConnectionParams = {
@@ -388,6 +388,7 @@ export async function runDriftCheck(
                   deps.config.secretsKey
                       ? cryptoBoxFor(deps.config.secretsKey, 'webhook')
                       : null,
+                  diagramId,
                   settings.webhookUrl
               )
             : null;

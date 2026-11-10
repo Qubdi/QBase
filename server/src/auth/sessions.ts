@@ -14,15 +14,28 @@ export const SESSION_COOKIE = 'qbase_session';
 export const SECURE_SESSION_COOKIE = '__Host-qbase_session';
 
 /**
- * The session token a request carries: under the prefixed name when it has
- * one, else under the plain name that every cookie issued before the prefix
- * (and every one issued over plain http) still has. The plain name can be
- * dropped from here once those sessions have all expired (SESSION_DAYS).
+ * Whether a response to this request sets a Secure cookie: https as seen
+ * through TRUST_PROXY under COOKIE_SECURE=auto, else what COOKIE_SECURE says.
+ */
+export const isSecureRequest = (
+    req: { protocol: string },
+    cookieSecure: boolean | 'auto'
+): boolean => (cookieSecure === 'auto' ? req.protocol === 'https' : cookieSecure);
+
+/**
+ * The session token a request carries. Over https only the `__Host-` cookie
+ * counts: the plain name can be planted by a sibling subdomain, which is what
+ * the prefix is there to stop, so honouring it would defeat the prefix. (Sessions
+ * issued under the plain name before the prefix existed end at the next
+ * sign-in.) Over plain http the plain name is the only one there is.
  */
 export const sessionTokenOf = (
-    cookies: Record<string, string | undefined> | undefined
+    cookies: Record<string, string | undefined> | undefined,
+    secure = false
 ): string | undefined =>
-    cookies?.[SECURE_SESSION_COOKIE] ?? cookies?.[SESSION_COOKIE];
+    secure
+        ? cookies?.[SECURE_SESSION_COOKIE]
+        : (cookies?.[SECURE_SESSION_COOKIE] ?? cookies?.[SESSION_COOKIE]);
 
 /** A session's last_seen_at is rewritten at most this often, not on every request. */
 export const LAST_SEEN_SECONDS = 5 * 60;

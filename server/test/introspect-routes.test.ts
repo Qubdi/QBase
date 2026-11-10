@@ -487,7 +487,7 @@ describe('introspect HTTP layer (fake driver)', () => {
                 .where(eq(savedConnections.id, savedId));
             expect(row.projectId).toBe(projectId);
             expect(row.passwordEnc).not.toContain('p@ss-w0rd-SECRET');
-            expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc)).toBe('p@ss-w0rd-SECRET');
+            expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc, row.id)).toBe('p@ss-w0rd-SECRET');
 
             const res2 = await list(bob);
             expect(res2.body).not.toContain('p@ss-w0rd-SECRET');
@@ -522,7 +522,7 @@ describe('introspect HTTP layer (fake driver)', () => {
                 .select()
                 .from(savedConnections)
                 .where(eq(savedConnections.id, savedId));
-            expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc)).toBe('p@ss-w0rd-SECRET');
+            expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc, row.id)).toBe('p@ss-w0rd-SECRET');
         });
 
         it('keeps projects independent: other projects cannot see, use or delete it', async () => {
@@ -624,7 +624,7 @@ describe('introspect HTTP layer (fake driver)', () => {
                     .select()
                     .from(savedConnections)
                     .where(eq(savedConnections.id, id));
-                return new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc);
+                return new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc, row.id);
             };
 
             beforeAll(async () => {

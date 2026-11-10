@@ -25,27 +25,36 @@ export const WEBHOOK_TIMEOUT_MS = 5000;
 /** How long a whole request may take, trickling or not. */
 export const WEBHOOK_DEADLINE_MS = 15_000;
 
-/** The stored form of a webhook URL: its path and query may hold a token, so it is encrypted. */
-export const sealWebhookUrl = (box: CryptoBox, url: string) => box.encrypt(url);
+/**
+ * The stored form of a webhook URL: its path and query may hold a token, so it
+ * is encrypted, bound to the diagram it belongs to.
+ */
+export const sealWebhookUrl = (box: CryptoBox, diagramId: string, url: string) =>
+    box.encrypt(url, diagramId);
 
 /** Reads a stored webhook URL; rows saved before encryption hold the plain URL. */
 export const openWebhookUrl = (
     box: CryptoBox | null,
+    diagramId: string,
     stored: string
 ): string | null => {
     if (!isSealed(stored)) return stored;
     if (!box) return null;
     try {
-        return box.decrypt(stored);
+        return box.decrypt(stored, diagramId);
     } catch {
         return null;
     }
 };
 
 /** Where a stored webhook points, without the path or query that may carry a token. */
-export const webhookHost = (box: CryptoBox | null, stored: string | null) => {
+export const webhookHost = (
+    box: CryptoBox | null,
+    diagramId: string,
+    stored: string | null
+) => {
     if (!stored) return null;
-    const url = openWebhookUrl(box, stored);
+    const url = openWebhookUrl(box, diagramId, stored);
     if (!url) return null;
     try {
         return new URL(url).host;

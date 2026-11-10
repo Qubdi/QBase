@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, like } from 'drizzle-orm';
+import { and, asc, eq, gt, like, or } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import type { Db } from './db/client.js';
 import {
@@ -38,7 +38,8 @@ function openLegacy(box: CryptoBox, stored: string): string | null {
 }
 
 /**
- * Re-seals every v1 value of one column as v2 under the box's own key. Each
+ * Re-seals every v1 value of one column as v2 under the box's own key (as v3,
+ * bound to the row's id, for a `bound` column, whose v2 values are rewritten too). Each
  * batch is one transaction, and a row is only changed while it still holds the
  * value that was read, so running it again, or on several replicas at once, does
  * no harm. A value that cannot be opened is left as it is and counted.
@@ -51,7 +52,13 @@ async function resealColumn(
     encColumn: PgColumn,
     /** the property of the table's columns that `encColumn` is, which `set` is keyed by */
     field: string,
-    box: CryptoBox
+    box: CryptoBox,
+    /**
+     * true: the value is sealed bound to its row's id (v3), so v2 values are
+     * rewritten too; false: the value is bound by other means (MFA secrets
+     * carry their owner's id inside) and stays v2
+     */
+    bound: boolean
 ): Promise<ResealCount> {
     const count: ResealCount = { column, resealed: 0, unreadable: 0 };
     let after: string | null = null;
@@ -63,7 +70,9 @@ async function resealColumn(
                 .from(table)
                 .where(
                     and(
-                        like(encColumn, 'v1:%'),
+                        bound
+                            ? or(like(encColumn, 'v1:%'), like(encColumn, 'v2:%'))
+                            : like(encColumn, 'v1:%'),
                         lastSeen === null ? undefined : gt(idColumn, lastSeen)
                     )
                 )
@@ -80,7 +89,7 @@ async function resealColumn(
                 }
                 const changed = await tx
                     .update(table)
-                    .set({ [field]: box.encrypt(plain) } as Record<string, unknown>)
+                    .set({ [field]: bound ? box.encrypt(plain, row.id) : box.encrypt(plain) } as Record<string, unknown>)
                     .where(and(eq(idColumn, row.id), eq(encColumn, row.enc)))
                     .returning({ id: idColumn });
                 count.resealed += changed.length;
@@ -92,7 +101,7 @@ async function resealColumn(
 
 /**
  * Writes every encrypted value the server keeps in the current format, under
- * the key of its own purpose:
+ * the key of its own purpose (all but the MFA secrets bound to their row's id):
  * - authenticator secrets (`users.mfa_secret_enc`, purpose `mfa`)
  * - drift webhook URLs (`drift_settings.webhook_url`, purpose `webhook`)
  * - share-link tokens (`share_links.token_enc`, purpose `share-link`)
@@ -116,7 +125,8 @@ export async function resealStoredSecrets(
                 users.id,
                 users.mfaSecretEnc,
                 'mfaSecretEnc',
-                cryptoBoxFor(keys.secretsKey, 'mfa')
+                cryptoBoxFor(keys.secretsKey, 'mfa'),
+                false
             ),
             await resealColumn(
                 db,
@@ -125,7 +135,8 @@ export async function resealStoredSecrets(
                 driftSettings.diagramId,
                 driftSettings.webhookUrl,
                 'webhookUrl',
-                cryptoBoxFor(keys.secretsKey, 'webhook')
+                cryptoBoxFor(keys.secretsKey, 'webhook'),
+                true
             )
         );
     }
@@ -138,7 +149,8 @@ export async function resealStoredSecrets(
                 shareLinks.id,
                 shareLinks.tokenEnc,
                 'tokenEnc',
-                cryptoBoxFor(keys.connectionKey, 'share-link')
+                cryptoBoxFor(keys.connectionKey, 'share-link'),
+                true
             ),
             await resealColumn(
                 db,
@@ -147,7 +159,8 @@ export async function resealStoredSecrets(
                 savedConnections.id,
                 savedConnections.passwordEnc,
                 'passwordEnc',
-                cryptoBoxFor(keys.connectionKey)
+                cryptoBoxFor(keys.connectionKey),
+                true
             )
         );
     }

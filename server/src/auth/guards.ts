@@ -1,6 +1,7 @@
 import type { FastifyReply } from 'fastify';
 import type { Config } from '../config.js';
 import type { CounterStore } from '../lib/counters.js';
+import { addressKey } from '../lib/rate-key.js';
 import { createFailureThrottle } from '../lib/failure-throttle.js';
 import type { MfaGuard } from './mfa-routes.js';
 
@@ -58,7 +59,7 @@ export function createAuthGuards(
     // addresses are held back by the all-addresses ceiling.
     const mfaGuard: MfaGuard = {
         async locked(reply, req, userId) {
-            if (await locked(reply, `mfa:${userId}:${req.ip}`)) return true;
+            if (await locked(reply, `mfa:${userId}:${addressKey(req.ip)}`)) return true;
             const wait = await accountFailures.blockedFor(`mfa:${userId}`);
             if (wait === 0) return false;
             reply
@@ -68,12 +69,12 @@ export function createAuthGuards(
             return true;
         },
         async fail(req, userId) {
-            const addressLocked = await failures.recordFailure(`mfa:${userId}:${req.ip}`);
+            const addressLocked = await failures.recordFailure(`mfa:${userId}:${addressKey(req.ip)}`);
             const accountLocked = await accountFailures.recordFailure(`mfa:${userId}`);
             return addressLocked || accountLocked;
         },
         async reset(req, userId) {
-            await failures.reset(`mfa:${userId}:${req.ip}`);
+            await failures.reset(`mfa:${userId}:${addressKey(req.ip)}`);
             await accountFailures.reset(`mfa:${userId}`);
         },
     };

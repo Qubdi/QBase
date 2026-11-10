@@ -1,7 +1,26 @@
 import { createHash } from 'node:crypto';
+import net from 'node:net';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { sessionTokenOf } from '../auth/sessions.js';
+import { parseIPv6 } from '../introspect/net-guard.js';
 import { createMemoryCounters, type CounterStore } from './counters.js';
+
+/**
+ * The key a client address is counted under. An IPv6 customer holds a whole
+ * /64 (or more), so counting each address would give one client billions of
+ * fresh buckets: IPv6 is cut to its /64 prefix. IPv4, and an IPv6 address
+ * that wraps one (::ffff:a.b.c.d), count as the IPv4 address.
+ */
+export function addressKey(ip: string): string {
+    if (!net.isIPv6(ip)) return ip;
+    const b = parseIPv6(ip);
+    if (!b) return ip;
+    if (b.slice(0, 10).every((x) => x === 0) && b[10] === 0xff && b[11] === 0xff) {
+        return b.slice(12).join('.');
+    }
+    const group = (i: number) => ((b[i] << 8) | b[i + 1]).toString(16);
+    return `${[0, 2, 4, 6].map(group).join(':')}::/64`;
+}
 
 /**
  * Rate-limit bucket for a signed-in user: their session, hashed so the raw
@@ -9,10 +28,10 @@ import { createMemoryCounters, type CounterStore } from './counters.js';
  * client address is used.
  */
 export function userRateKey(req: FastifyRequest): string {
-    const token = sessionTokenOf(req.cookies);
+    const token = sessionTokenOf(req.cookies, req.protocol === 'https');
     return token
         ? `session:${createHash('sha256').update(token).digest('hex').slice(0, 24)}`
-        : `ip:${req.ip}`;
+        : `ip:${addressKey(req.ip)}`;
 }
 
 /** A Fastify route hook. */

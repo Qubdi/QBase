@@ -1,15 +1,17 @@
+import { randomUUID } from 'node:crypto';
 import { createSseWriter } from '../lib/sse-write.js';
 import { and, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
-import { sessionTokenOf, getSessionUser } from '../auth/sessions.js';
+import { sessionTokenOf, getSessionUser, isSecureRequest } from '../auth/sessions.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { CryptoBox } from '../introspect/crypto-box.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
-import { API_SECURITY_HEADERS } from '../lib/security-headers.js';
+import { addressKey } from '../lib/rate-key.js';
+import { API_SECURITY_HEADERS, hstsHeaders } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
 import { activeLinkSql, countedLinkSql } from './active.js';
@@ -76,11 +78,12 @@ export const shareManagementRoutes =
         const box = config.connectionKey
             ? new CryptoBox(config.connectionKey, 'share-link')
             : null;
-        const sealed = (token: string) => box?.encrypt(token) ?? null;
+        // the link's id is bound to its token, so a token copied to another link does not open
+        const sealed = (linkId: string, token: string) => box?.encrypt(token, linkId) ?? null;
         const unsealed = (l: ShareLinkRow) => {
             if (!box || !l.tokenEnc || l.revokedAt) return undefined;
             try {
-                return box.decrypt(l.tokenEnc);
+                return box.decrypt(l.tokenEnc, l.id);
             } catch {
                 // a changed key: the link works, only its URL cannot be shown
                 return undefined;
@@ -161,12 +164,15 @@ export const shareManagementRoutes =
                     
                     .where(and(eq(shareLinks.diagramId, id), countedLinkSql()));
                 if (open >= MAX_ACTIVE_LINKS) return null;
+                // the id is chosen here, not by the database, to be sealed with the token
+                const linkId = randomUUID();
                 const [created] = await tx
                     .insert(shareLinks)
                     .values({
+                        id: linkId,
                         diagramId: id,
                         tokenHash: hashToken(token),
-                        tokenEnc: sealed(token),
+                        tokenEnc: sealed(linkId, token),
                         access: body.access,
                         expiresAt: body.expiresAt
                             ? new Date(body.expiresAt)
@@ -255,7 +261,15 @@ export const shareManagementRoutes =
                 userId: req.user!.id,
                 action: 'share.update',
                 diagramId: id,
-                meta: { linkId, access: updated.access },
+                meta: {
+                    linkId,
+                    access: updated.access,
+                    // the fields this request changed, in their new state
+                    ...(body.expiresAt !== undefined
+                        ? { expiresAt: updated.expiresAt?.toISOString() ?? null }
+                        : {}),
+                    ...(body.live !== undefined ? { live: updated.live } : {}),
+                },
             });
             return presentLink(updated);
         });
@@ -309,7 +323,7 @@ export const shareManagementRoutes =
             const token = generateToken();
             const [updated] = await db
                 .update(shareLinks)
-                .set({ tokenHash: hashToken(token), tokenEnc: sealed(token) })
+                .set({ tokenHash: hashToken(token), tokenEnc: sealed(linkId, token) })
                 // a revoke that landed after the check above must not be undone
                 .where(and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt)))
                 .returning();
@@ -439,7 +453,7 @@ export const publicShareRoutes =
             if (req.raw.destroyed) return reply.hijack();
 
             const open = viewers.get(linkId) ?? 0;
-            const ip = req.ip;
+            const ip = addressKey(req.ip);
             const openFromIp = viewersByIp.get(ip) ?? 0;
             if (open >= config.sseMaxPerLink || openFromIp >= config.sseMaxPerIp) {
                 return reply.code(429).send({ error: 'too_many_viewers' });
@@ -456,11 +470,13 @@ export const publicShareRoutes =
                 'x-accel-buffering': 'no',
                 // the stream bypasses the app's onSend hook
                 ...API_SECURITY_HEADERS,
+                ...hstsHeaders(req, config.cookieSecure),
                 connection: 'keep-alive',
                 ...(config.corsOrigin
                     ? {
                           'access-control-allow-origin': config.corsOrigin,
                           'access-control-allow-credentials': 'true',
+                          vary: 'Origin',
                       }
                     : {}),
             });
@@ -540,7 +556,7 @@ export const publicShareRoutes =
                     if (now.access === 'signed_in' && req.user) {
                         const still = await getSessionUser(
                             db,
-                            sessionTokenOf(req.cookies),
+                            sessionTokenOf(req.cookies, isSecureRequest(req, config.cookieSecure)),
                             config.sessionIdleDays * 86_400
                         );
                         if (!still || still.id !== req.user.id) return close();

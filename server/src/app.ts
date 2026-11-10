@@ -9,6 +9,7 @@ import { authRoutes } from './auth/routes.js';
 import {
     getSessionUser,
     sessionTokenOf,
+    isSecureRequest,
     type SessionUser,
 } from './auth/sessions.js';
 import type { Config } from './config.js';
@@ -24,7 +25,7 @@ import { memberRoutes } from './members/routes.js';
 import { requestIds } from './audit/request-context.js';
 import { createCounters } from './lib/counters.js';
 import { sharedRateLimitStore } from './lib/rate-limit-store.js';
-import { sharedUserLimit } from './lib/rate-key.js';
+import { addressKey, sharedUserLimit } from './lib/rate-key.js';
 import { safeError } from './lib/safe-error.js';
 import { registerWeb, API_PREFIX } from './web.js';
 import { publicShareRoutes, shareManagementRoutes } from './share/routes.js';
@@ -177,7 +178,12 @@ export function buildApp({
 
     const mountApi = (api: FastifyInstance) => {
     api.register(cookie);
-    api.register(rateLimit, { global: false, store: sharedRateLimitStore(counters) });
+    api.register(rateLimit, {
+        global: false,
+        store: sharedRateLimitStore(counters),
+        // an IPv6 client is counted by its /64, not by each address in it
+        keyGenerator: (req) => addressKey(req.ip),
+    });
     api.decorateRequest('user', null);
 
     // lets code that has no request in hand (the audit helper) name it in a log line
@@ -231,7 +237,7 @@ export function buildApp({
         // a route that settles the caller before reading its body has done it already
         req.user ??= await getSessionUser(
             db,
-            sessionTokenOf(req.cookies),
+            sessionTokenOf(req.cookies, isSecureRequest(req, config.cookieSecure)),
             config.sessionIdleDays * 86_400
         );
     });

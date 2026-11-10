@@ -7,7 +7,7 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, shareLinks, snapshots, users } from '../db/schema.js';
 import { emitLinkChanged } from '../events.js';
-import { getSessionUser, sessionTokenOf } from '../auth/sessions.js';
+import { getSessionUser, isSecureRequest, sessionTokenOf } from '../auth/sessions.js';
 import { sharedUserLimit } from '../lib/rate-key.js';
 import { gunzipBody } from './gzip-body.js';
 import { acquireLock, releaseLock } from './lock.js';
@@ -125,7 +125,7 @@ const publishBody = z
 export const PUBLISH_RATE_LIMIT = 20;
 
 export const diagramRoutes =
-    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays'>): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays' | 'cookieSecure'>): FastifyPluginAsync =>
     async (app) => {
         const publishLimit = sharedUserLimit(PUBLISH_RATE_LIMIT);
         // Who is calling is settled before the body is read. A diagram body can
@@ -135,7 +135,7 @@ export const diagramRoutes =
         app.addHook('preParsing', async (req, reply) => {
             req.user = await getSessionUser(
                 db,
-                sessionTokenOf(req.cookies),
+                sessionTokenOf(req.cookies, isSecureRequest(req, config.cookieSecure)),
                 config.sessionIdleDays * 86_400
             );
             if (!req.user) {

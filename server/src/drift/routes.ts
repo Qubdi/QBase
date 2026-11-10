@@ -59,7 +59,7 @@ const presentSettings = (
     schemas: s.schemas,
     tables: s.tables,
     sourceKeys: s.sourceKeys,
-    webhookHost: webhookHost(box, s.webhookUrl),
+    webhookHost: webhookHost(box, s.diagramId, s.webhookUrl),
     updatedAt: s.updatedAt,
 });
 
@@ -180,7 +180,7 @@ export const driftRoutes =
                     ? {}
                     : {
                           webhookUrl: body.webhookUrl
-                              ? sealWebhookUrl(box()!, body.webhookUrl)
+                              ? sealWebhookUrl(box()!, id, body.webhookUrl)
                               : null,
                       }),
                 updatedBy: req.user!.id,

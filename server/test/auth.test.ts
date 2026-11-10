@@ -480,7 +480,7 @@ describe('session cookie flags', () => {
             }
         });
 
-        it('still accepts the plain name, so sessions from before the prefix keep working', async () => {
+        it('refuses the plain name over https, where a sibling subdomain could have planted it', async () => {
             const ctx = await createTestApp({ cookieSecure: true });
             try {
                 const res = await ctx.app.inject({
@@ -493,12 +493,12 @@ describe('session cookie flags', () => {
                     url: '/auth/me',
                     headers: { cookie: `qbase_session=${token}` },
                 });
-                expect(me.statusCode).toBe(200);
-                // the plain-named copy is also ended by signing out, and both names are cleared
+                expect(me.statusCode).toBe(401);
+                // signing out with the real cookie ends it, and both names are cleared
                 const out = await ctx.app.inject({
                     method: 'POST',
                     url: '/auth/logout',
-                    headers: { cookie: `qbase_session=${token}` },
+                    headers: { cookie: `__Host-qbase_session=${token}` },
                 });
                 expect(out.statusCode).toBe(200);
                 expect(out.cookies.map((c) => c.name).sort()).toEqual([
@@ -507,7 +507,7 @@ describe('session cookie flags', () => {
                 ]);
                 const after = await ctx.app.inject({
                     url: '/auth/me',
-                    headers: { cookie: `qbase_session=${token}` },
+                    headers: { cookie: `__Host-qbase_session=${token}` },
                 });
                 expect(after.statusCode).toBe(401);
             } finally {

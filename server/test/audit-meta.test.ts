@@ -300,6 +300,21 @@ describe('audit meta: what an action was done to', () => {
                 access: 'signed_in',
             });
 
+            // expiry and live are recorded when the request changed them
+            const expiresAt = new Date(Date.now() + 86_400_000).toISOString();
+            await call(
+                admin,
+                'PATCH',
+                `/diagrams/${diagramId}/share-links/${linkId}`,
+                { expiresAt, live: true }
+            );
+            expect((await latest('share.update')).meta).toEqual({
+                linkId,
+                access: 'signed_in',
+                expiresAt,
+                live: true,
+            });
+
             const again = await call(
                 admin,
                 'POST',
