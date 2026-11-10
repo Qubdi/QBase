@@ -7,6 +7,7 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, shareLinks, snapshots, users } from '../db/schema.js';
 import { emitLinkChanged } from '../events.js';
+import { getSessionUser, sessionTokenOf } from '../auth/sessions.js';
 import { gunzipBody } from './gzip-body.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
@@ -120,8 +121,23 @@ const publishBody = z
     .default({});
 
 export const diagramRoutes =
-    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds'>): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays'>): FastifyPluginAsync =>
     async (app) => {
+        // Who is calling is settled before the body is read. A diagram body can
+        // be tens of megabytes: someone with no session is turned away here and
+        // never makes the server buffer, inflate or parse one. (The app's own
+        // lookup, later, sees that the user is already known.)
+        app.addHook('preParsing', async (req, reply) => {
+            req.user = await getSessionUser(
+                db,
+                sessionTokenOf(req.cookies),
+                config.sessionIdleDays * 86_400
+            );
+            if (!req.user) {
+                return reply.code(401).send({ error: 'unauthorized' });
+            }
+        });
+
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });

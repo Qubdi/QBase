@@ -215,7 +215,8 @@ export function buildApp({
     });
 
     api.addHook('preHandler', async (req) => {
-        req.user = await getSessionUser(
+        // a route that settles the caller before reading its body has done it already
+        req.user ??= await getSessionUser(
             db,
             sessionTokenOf(req.cookies),
             config.sessionIdleDays * 86_400
