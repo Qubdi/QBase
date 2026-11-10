@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 42 · **date** 2026-11-10
+**rev** 43 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 3 | 0 | 0 | 42 | 0 |
 | Repository | 4 | 0 | 0 | 59 | 0 |
-| Server | 2 | 0 | 0 | 38 | 0 |
+| Server | 1 | 0 | 0 | 39 | 0 |
 | Database | 1 | 0 | 0 | 21 | 1 |
 | Client | 0 | 0 | 0 | 102 | 0 |
 | Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 10 | 0 | 0 | 303 | 1 |
+| **Total** | 9 | 0 | 0 | 304 | 1 |
 
 ## Act first
 
@@ -43,8 +43,7 @@ None.
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SRV-008 | Med | Live-viewer caps (`SSE_MAX_PER_LINK`, `SSE_MAX_PER_IP`) are per process; limiters, lockout and drift guard now cluster-wide | `server/src/config.ts:341`, `server/src/config.ts:342`, `server/src/share/routes.ts:444` | Count live viewers in Postgres with a heartbeat table |
-| SRV-009 | Med | 40 MB diagram body still blocks the event loop about 0.9 s in JSON.parse, depth check and write | `server/src/config.ts:329`, `server/src/diagrams/routes.ts:285` | Parse in a worker thread or lower the default limit |
+| SRV-009 | Med | 40 MB diagram body blocks the event loop about 0.9 s: JSON.parse 285 ms, handing a parsed object back from a worker 311 ms | `server/src/config.ts:329`, `server/src/diagrams/routes.ts:285` | Lower the default limit, or store the body as text without parsing |
 
 ### Database
 
@@ -73,6 +72,7 @@ None.
 | SEC-016 | Security & secrets | `user.create` audit omits whether the new account was made admin |
 | SEC-021 | Security & secrets | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked |
 | SEC-025 | Security & secrets | `.gitignore` lacks key and certificate patterns (`*.pem`, `*.key`) |
+| SRV-008 | Server | Live-viewer caps count per process; held in Postgres by `live_viewers`, shared by all replicas |
 | SRV-030 | Server | SQL Server tests skip in CI: `ci.yaml` has no SQL Server service |
 | SRV-038 | Server | PATCH on a revoked share link returns 200, emits event, logs `share.update` |
 | SRV-039 | Server | Password reset and change commit before sessions are destroyed; failure leaves old sessions valid |
@@ -442,6 +442,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 43 | 2026-11-10 | 1 fixed (SRV-008: live-viewer caps held in Postgres, table `live_viewers`, migration 0030, renewed on each heartbeat); SRV-009 re-measured (see its row): 40 MB body parses in 285 ms on the main thread and a worker hands the object back at 311 ms, so a worker does not help; 9 open, 0 Crit, 0 High; anchors not remapped |
 | 42 | 2026-11-10 | 3 fixed (CLI-103: failed autosave retries with capped backoff and jitter, honours Retry-After; CLI-109: DBML text over 2 MB refused; CLI-106: English-only server screens documented in README); client lens has no open findings; 10 open, 0 Crit, 0 High; anchors not remapped |
 | 41 | 2026-11-10 | 4 fixed (DB-004, DB-019: SQL Server introspect tests run against SQL Server 2025, 15 of 15 pass; all-schemas filter no longer runs OPENJSON on an empty string; DB-021: at most 3 drift checks at once, a fourth answers 429; SRV-030: SQL Server job added to CI); DB-006 left (metadata format change); 13 open, 0 Crit, 0 High; anchors not remapped |
 | 40 | 2026-11-10 | 4 fixed (server low batch: SRV-038, 039, 040, 041); SRV-030 left (SQL Server CI); 17 open, 0 Crit, 0 High; anchors not remapped |
