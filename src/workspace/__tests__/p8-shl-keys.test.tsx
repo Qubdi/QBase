@@ -8,7 +8,6 @@ import { qubdiContext } from '@/context/qubdi-context/qubdi-context';
 import type { QubdiContext } from '@/context/qubdi-context/qubdi-context';
 import { blank } from '@/core/testing/helpers';
 import { Toaster } from '@/platform/toast/toaster';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { useWorkspaceCommands } from '../use-workspace-commands';
 import type { WorkspaceCommands } from '../use-workspace-commands';
 import { useWorkspaceShortcuts } from '../use-workspace-shortcuts';
@@ -199,7 +198,6 @@ describe('save key (SHL-031)', () => {
         expect(await findByText('Everything is saved')).toBeTruthy();
         expect(store.getState().design).toBe(design);
         expect(store.getState().design.updatedAt).toBe(design.updatedAt);
-        resetToasts();
     });
 
     it('says it is still saving while there are unsaved changes', async () => {
@@ -215,6 +213,5 @@ describe('save key (SHL-031)', () => {
         );
         act(() => void press({ key: 's', ctrlKey: true }));
         expect(await findByText('Saving your latest changes')).toBeTruthy();
-        resetToasts();
     });
 });

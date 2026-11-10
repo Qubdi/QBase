@@ -1,11 +1,9 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { Toaster } from '../toaster';
 import { ToastAction } from '../toast';
-import { resetToasts, toast } from '../use-toast';
-
-afterEach(() => act(() => resetToasts()));
+import { toast } from '../use-toast';
 
 describe('toast', () => {
     it('shows a title and description', async () => {

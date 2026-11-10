@@ -6,11 +6,10 @@ import {
     screen,
     waitFor,
 } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { designToDiagram, diagramToDesign } from '@/qbase/diagram-convert';
 import { metadataToDiagram } from '@/lib/qubdi/import-from-db';
 import postgresSample from '@/lib/qubdi/__tests__/fixtures/postgres-sample.json';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { Toaster } from '@/platform/toast/toaster';
 import { createEditorStore } from '@/store/editor-store';
 import { StoreContext } from '@/store/store-context';
@@ -38,8 +37,6 @@ const orders = (store: Awaited<ReturnType<typeof setup>>['store']) =>
     designToDiagram(store.getState().design).tables!.find(
         (t) => t.name === 'orders'
     )!;
-
-beforeEach(() => resetToasts());
 
 describe('QBS-028 lint button, count badge, and fixes through undoable editor operations', () => {
     it('shows the finding count on the button and lists the finding in a panel', async () => {

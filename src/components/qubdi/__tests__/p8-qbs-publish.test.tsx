@@ -7,7 +7,6 @@ import {
 } from '@/context/qubdi-context/qubdi-context';
 import { ApiError } from '@/lib/qubdi/api';
 import { Toaster } from '@/platform/toast/toaster';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { DiagramAccessContext } from '../diagram-access-context';
 import { PublishControl } from '../publish-control';
 
@@ -68,7 +67,6 @@ const publishWithNote = async (note?: string) => {
 };
 
 beforeEach(() => {
-    resetToasts();
     getPublishStatus.mockReset();
     publish.mockReset();
     getPublishStatus.mockResolvedValue({

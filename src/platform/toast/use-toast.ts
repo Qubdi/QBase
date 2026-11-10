@@ -78,11 +78,4 @@ function useToast() {
     return { toasts, toast, dismiss };
 }
 
-/** For tests: drop every toast and pending timer. */
-function resetToasts() {
-    removeTimers.forEach(clearTimeout);
-    removeTimers.clear();
-    publish([]);
-}
-
-export { useToast, toast, resetToasts };
+export { useToast, toast };
