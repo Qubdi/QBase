@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { QUBDI_BACKEND_URL } from './config';
 import { i18n } from '@/i18n/i18n';
 import type { LintConfig } from '../../../shared/lint';
@@ -430,6 +431,40 @@ export interface RequestOptions {
     keepalive?: boolean;
 }
 
+/**
+ * Runtime checks for the answers the app cannot work without. Objects are
+ * loose: a field the server adds later is kept, one it drops is caught.
+ */
+const remoteUserSchema = z.looseObject({
+    id: z.string(),
+    email: z.string(),
+    isAdmin: z.boolean(),
+    mustChangePassword: z.boolean(),
+    mfaEnabled: z.boolean().optional(),
+});
+const loginResultSchema = z.union([
+    remoteUserSchema,
+    z.looseObject({ mfaRequired: z.literal(true), challenge: z.string() }),
+]);
+const setupStatusSchema = z.looseObject({
+    needsSetup: z.boolean(),
+    passwordMinLength: z.number(),
+    mfaAvailable: z.boolean().optional(),
+});
+const mfaStatusSchema = z.looseObject({
+    available: z.boolean(),
+    enabled: z.boolean(),
+    enabledAt: z.string().nullable(),
+    recoveryCodesLeft: z.number(),
+});
+const membersSchema = z.array(
+    z.looseObject({
+        userId: z.string(),
+        email: z.string(),
+        role: z.enum(['owner', 'editor', 'viewer']),
+    })
+);
+
 export function createApi(
     baseUrl: string = QUBDI_BACKEND_URL,
     fetchImpl: FetchLike = (...args) => fetch(...args)
@@ -438,7 +473,9 @@ export function createApi(
         method: string,
         path: string,
         body?: unknown,
-        options?: RequestOptions
+        options?: RequestOptions,
+        /** when given, a successful answer must match it, or the call fails */
+        schema?: z.ZodType<T>
     ): Promise<T> {
         const json = body === undefined ? undefined : JSON.stringify(body);
         const res = await fetchImpl(`${baseUrl}${path}`, {
@@ -473,6 +510,12 @@ export function createApi(
                 typeof data?.message === 'string' ? data.message : undefined
             );
         }
+        if (schema) {
+            const parsed = schema.safeParse(data);
+            if (!parsed.success)
+                throw new ApiError(res.status, 'invalid_response');
+            return parsed.data;
+        }
         return data as T;
     }
 
@@ -483,18 +526,46 @@ export function createApi(
                 passwordMinLength: number;
                 /** the server offers two-factor sign-in */
                 mfaAvailable?: boolean;
-            }>('GET', '/auth/setup-status'),
+            }>(
+                'GET',
+                '/auth/setup-status',
+                undefined,
+                undefined,
+                setupStatusSchema
+            ),
         register: (email: string, password: string) =>
-            request<RemoteUser>('POST', '/auth/register', { email, password }),
+            request<RemoteUser>(
+                'POST',
+                '/auth/register',
+                { email, password },
+                undefined,
+                remoteUserSchema
+            ),
         login: (email: string, password: string) =>
-            request<LoginResult>('POST', '/auth/login', { email, password }),
+            request<LoginResult>(
+                'POST',
+                '/auth/login',
+                { email, password },
+                undefined,
+                loginResultSchema
+            ),
         /** The second step of signing in, with the ticket the password step gave. */
         loginMfa: (challenge: string, factor: SecondFactor) =>
-            request<RemoteUser>('POST', '/auth/login/mfa', {
-                challenge,
-                ...factor,
-            }),
-        mfaStatus: () => request<MfaStatus>('GET', '/auth/mfa'),
+            request<RemoteUser>(
+                'POST',
+                '/auth/login/mfa',
+                { challenge, ...factor },
+                undefined,
+                remoteUserSchema
+            ),
+        mfaStatus: () =>
+            request<MfaStatus>(
+                'GET',
+                '/auth/mfa',
+                undefined,
+                undefined,
+                mfaStatusSchema
+            ),
         /** A new secret, not yet on: the address for the QR code and the key to type. */
         mfaSetup: () =>
             request<{ secret: string; otpauthUrl: string }>(
@@ -524,7 +595,14 @@ export function createApi(
                 { password, code }
             ),
         logout: () => request<{ ok: true }>('POST', '/auth/logout'),
-        me: () => request<RemoteUser>('GET', '/auth/me'),
+        me: () =>
+            request<RemoteUser>(
+                'GET',
+                '/auth/me',
+                undefined,
+                undefined,
+                remoteUserSchema
+            ),
         changePassword: (
             currentPassword: string,
             newPassword: string,
@@ -944,7 +1022,10 @@ export function createApi(
         listMembers: (id: string) =>
             request<RemoteMember[]>(
                 'GET',
-                `/diagrams/${encodeURIComponent(id)}/members`
+                `/diagrams/${encodeURIComponent(id)}/members`,
+                undefined,
+                undefined,
+                membersSchema
             ),
     };
 }

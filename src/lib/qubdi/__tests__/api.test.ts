@@ -108,9 +108,22 @@ describe('qubdi api client', () => {
         expect(init.signal?.aborted).toBe(false);
     });
 
+    it('refuses an answer that is not the shape the call needs (CLI-006)', async () => {
+        const api = createApi('http://srv', (async () =>
+            jsonResponse(200, { id: 1 })) as unknown as typeof fetch);
+        await expect(api.me()).rejects.toMatchObject({
+            code: 'invalid_response',
+        });
+    });
+
     it('sends credentials and a JSON body', async () => {
         const fetchMock = vi.fn(async () =>
-            jsonResponse(200, { id: '1', email: 'a@b.co', isAdmin: true })
+            jsonResponse(200, {
+                id: '1',
+                email: 'a@b.co',
+                isAdmin: true,
+                mustChangePassword: false,
+            })
         );
         const api = createApi(
             'http://srv',

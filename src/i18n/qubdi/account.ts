@@ -57,6 +57,7 @@ export const account = {
         managed_by_project:
             'Access is managed by the project. Ask an admin to change it.',
         // not server codes: fallbacks
+        invalid_response: 'The server sent an answer this app cannot read.',
         requestFailed: 'Request failed ({{code}}).',
         locked: 'Someone else is editing this diagram.',
         lockedBy: '{{holder}} is editing this diagram.',
