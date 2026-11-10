@@ -406,9 +406,35 @@ describe('converting an index type', () => {
                 kinds: ['int', 'int'],
             }).regular
         ).toBe(true);
-        expect(convertIndex('gin', false, 'postgres', around).between).toBe(
-            ' USING GIN'
+        expect(
+            convertIndex('gin', false, 'postgres', {
+                ...around,
+                kinds: ['json'],
+            }).between
+        ).toBe(' USING GIN');
+    });
+
+    it('a gin, fulltext or spatial index on the wrong column types becomes a regular index (CLI-025)', () => {
+        const gin = convertIndex('gin', false, 'postgres', around);
+        expect(gin.regular).toBe(true);
+        expect(gin.note).toContain('gin');
+        const ft = convertIndex('fulltext', false, 'mysql', around);
+        expect(ft.regular).toBe(true);
+        expect(
+            convertIndex('fulltext', false, 'mysql', {
+                ...around,
+                kinds: ['varchar', 'text'],
+            }).regular
+        ).toBe(false);
+        expect(convertIndex('spatial', false, 'mysql', around).regular).toBe(
+            true
         );
+        expect(
+            convertIndex('spatial', false, 'mysql', {
+                ...around,
+                kinds: ['geo'],
+            }).head
+        ).toBe('SPATIAL ');
     });
 });
 

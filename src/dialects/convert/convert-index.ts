@@ -29,6 +29,9 @@ export interface IndexSurrounding {
 /** Types that are the plain index of every database: nothing to say about them. */
 const PLAIN = new Set<string>(['btree', 'index', 'nonclustered']);
 
+const isTextKind = (k: Neutral['kind']): boolean =>
+    k === 'char' || k === 'varchar' || k === 'text';
+
 const label = (flavour: Flavour): string =>
     ({
         postgres: 'PostgreSQL',
@@ -83,6 +86,18 @@ export function convertIndex(
                 return refuses(`only a btree index can be unique in ${name}`);
             if (asked === 'hash' && around.kinds.length > 1)
                 return refuses(`a hash index in ${name} takes one column`);
+            if (
+                asked === 'gin' &&
+                !(
+                    around.kinds.length > 0 &&
+                    around.kinds.every(
+                        (k) => k === 'array' || k === 'json' || k === 'other'
+                    )
+                )
+            )
+                return refuses(
+                    `a gin index in ${name} needs array, json or text-search columns`
+                );
             return {
                 head: '',
                 between: ` USING ${asked.toUpperCase()}`,
@@ -97,6 +112,15 @@ export function convertIndex(
                     tail: ' USING HASH',
                     regular: false,
                 };
+            if (asked === 'fulltext' && !around.kinds.every(isTextKind))
+                return refuses(`a fulltext index in ${name} needs text columns`);
+            if (
+                asked === 'spatial' &&
+                !(around.kinds.length === 1 && around.kinds[0] === 'geo')
+            )
+                return refuses(
+                    `a spatial index in ${name} takes one geometry column`
+                );
             if (unique)
                 return refuses(`a ${asked} index cannot be unique in ${name}`);
             return {
