@@ -60,7 +60,8 @@ export function WindowedList<T>({
 
     const listRef = useRef<HTMLDivElement>(null);
     const rootRef = useRef<HTMLElement | null>(null);
-    const heights = useRef(new Map<string, number>());
+    // measured row heights; a change re-renders through `bump`
+    const [heights] = useState(() => new Map<string, number>());
     const observed = useRef(new Set<Element>());
     const observer = useRef<ResizeObserver | null>(null);
     const [, bump] = useReducer((x: number) => x + 1, 0);
@@ -70,17 +71,18 @@ export function WindowedList<T>({
     const pendingFocus = useRef<'first' | 'last' | 'toggle'>('first');
 
     const ids = items.map(getId);
-    const rowHeights = ids.map(
-        (id) => heights.current.get(id) ?? estimate + gap
-    );
+    const rowHeights = ids.map((id) => heights.get(id) ?? estimate + gap);
     const offsets: number[] = [];
     let total = 0;
     for (const h of rowHeights) {
         offsets.push(total);
         total += h;
     }
+    // what the event handlers and effects read, kept current after each commit
     const latest = useRef({ ids, offsets, rowHeights, view });
-    latest.current = { ids, offsets, rowHeights, view };
+    useLayoutEffect(() => {
+        latest.current = { ids, offsets, rowHeights, view };
+    });
 
     const measureView = useCallback(() => {
         const root = rootRef.current;
@@ -137,14 +139,17 @@ export function WindowedList<T>({
     }, [windowed, measureView]);
 
     // row heights: measured when drawn and whenever a row resizes
-    const measureRow = useCallback((el: Element): boolean => {
-        const id = (el as HTMLElement).dataset.windowId;
-        if (id === undefined) return false;
-        const h = el.getBoundingClientRect().height;
-        if (h <= 0 || heights.current.get(id) === h) return false;
-        heights.current.set(id, h);
-        return true;
-    }, []);
+    const measureRow = useCallback(
+        (el: Element): boolean => {
+            const id = (el as HTMLElement).dataset.windowId;
+            if (id === undefined) return false;
+            const h = el.getBoundingClientRect().height;
+            if (h <= 0 || heights.get(id) === h) return false;
+            heights.set(id, h);
+            return true;
+        },
+        [heights]
+    );
     useLayoutEffect(() => {
         const list = listRef.current;
         if (!windowed || !list) return;
@@ -178,10 +183,10 @@ export function WindowedList<T>({
     );
     // forget heights of rows that are gone (keeps the map from growing)
     useEffect(() => {
-        if (heights.current.size <= n * 2) return;
+        if (heights.size <= n * 2) return;
         const live = new Set(ids);
-        for (const id of [...heights.current.keys()])
-            if (!live.has(id)) heights.current.delete(id);
+        for (const id of [...heights.keys()])
+            if (!live.has(id)) heights.delete(id);
     });
 
     const ensureVisible = useCallback(
