@@ -93,7 +93,7 @@ export const SQLSERVER_QUERIES = {
 
     indexes: `
         SELECT s.name AS [schema], t.name AS [table], i.name AS name, c.name AS [column],
-               i.type_desc AS index_type, i.is_unique AS [unique],
+               i.type_desc AS index_type, i.is_unique AS [unique], i.is_primary_key AS [primary],
                i.filter_definition AS [where],
                CASE WHEN ic.is_descending_key = 1 THEN 'DESC' ELSE 'ASC' END AS direction,
                ic.key_ordinal AS column_position
@@ -367,6 +367,7 @@ export class SqlServerIntrospector implements Introspector {
                 column: String(i.column),
                 index_type: String(i.index_type),
                 unique: Boolean(i.unique),
+                primary: Boolean(i.primary),
                 direction: String(i.direction),
                 column_position: Number(i.column_position),
                 where: i.where ? String(i.where) : null,

@@ -103,7 +103,7 @@ export const POSTGRES_QUERIES = {
     indexes: `
         SELECT n.nspname AS schema, t.relname AS "table", i.relname AS name,
                COALESCE(a.attname, pg_get_indexdef(ix.indexrelid, k.pos::int, true)) AS "column",
-               am.amname AS index_type, ix.indisunique AS "unique",
+               am.amname AS index_type, ix.indisunique AS "unique", ix.indisprimary AS "primary",
                pg_get_expr(ix.indpred, ix.indrelid) AS "where",
                CASE WHEN (ix.indoption[k.pos - 1] & 1) = 1 THEN 'DESC' ELSE 'ASC' END AS direction,
                k.pos AS column_position
@@ -308,6 +308,7 @@ export class PostgresIntrospector implements Introspector {
                     column: String(i.column),
                     index_type: String(i.index_type),
                     unique: Boolean(i.unique),
+                    primary: Boolean(i.primary),
                     direction: String(i.direction),
                     column_position: Number(i.column_position),
                     where: i.where ? String(i.where) : null,

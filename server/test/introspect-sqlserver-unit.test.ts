@@ -205,8 +205,8 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         primaryKeys: [],
         foreignKeys: [],
         indexes: [
-            { schema: 'dbo', table: 'people', name: 'ix_age', column: 'age', index_type: 'NONCLUSTERED', unique: false, where: '([age] IS NOT NULL)', direction: 'DESC', column_position: 1 },
-            { schema: 'dbo', table: 'people', name: 'ix_first', column: 'first', index_type: 'NONCLUSTERED', unique: true, where: null, direction: 'ASC', column_position: 1 },
+            { schema: 'dbo', table: 'people', name: 'ix_age', column: 'age', index_type: 'NONCLUSTERED', unique: false, primary: false, where: '([age] IS NOT NULL)', direction: 'DESC', column_position: 1 },
+            { schema: 'dbo', table: 'people', name: 'ix_first', column: 'first', index_type: 'NONCLUSTERED', unique: true, primary: true, where: null, direction: 'ASC', column_position: 1 },
         ],
         checks: [{ schema: 'dbo', table: 'people', expression: '([age]>=(0))' }],
     };
@@ -237,6 +237,8 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
             ['DESC', '([age] IS NOT NULL)'],
             ['ASC', null],
         ]);
+        // CLI-039: the catalog's is_primary_key travels as `primary`
+        expect(meta.indexes.map((i) => i.primary)).toEqual([false, true]);
     });
 
     it('the queries ask the catalog for them', () => {
@@ -244,5 +246,6 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         expect(SQLSERVER_QUERIES.columns).toContain('sys.computed_columns');
         expect(SQLSERVER_QUERIES.indexes).toContain('filter_definition');
         expect(SQLSERVER_QUERIES.indexes).toContain('is_descending_key');
+        expect(SQLSERVER_QUERIES.indexes).toContain('i.is_primary_key AS [primary]');
     });
 });
