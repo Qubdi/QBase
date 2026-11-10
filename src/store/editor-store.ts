@@ -57,6 +57,8 @@ export interface EditorActions {
     setWarnings(warnings: WireWarning[]): void;
     // ui slice
     select(ids: Id[]): void;
+    /** the field whose own links keep their tables bright (the table must be the one selected) */
+    setFocusColumn(focus: { entityId: Id; columnId: Id } | undefined): void;
     setFilter(filter: VisibilityFilter): void;
     setZoom(zoom: number): void;
     /** tints the fields that use this custom type; undefined clears (EDT-196) */
@@ -225,6 +227,7 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                     ui: {
                         ...s.ui,
                         selection: [],
+                        focusColumn: undefined,
                         highlightedTypeId: undefined,
                     },
                     session: { ...s.session, dirty: false },
@@ -287,7 +290,28 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
             },
 
             select(ids) {
-                set((s) => ({ ui: { ...s.ui, selection: ids } }));
+                set((s) => {
+                    // a field stays focused only while its table is the one thing selected
+                    const focus = s.ui.focusColumn;
+                    const keep =
+                        focus && ids.length === 1 && ids[0] === focus.entityId;
+                    return {
+                        ui: {
+                            ...s.ui,
+                            selection: ids,
+                            focusColumn: keep ? focus : undefined,
+                        },
+                    };
+                });
+            },
+
+            setFocusColumn(focus) {
+                set((s) =>
+                    s.ui.focusColumn?.entityId === focus?.entityId &&
+                    s.ui.focusColumn?.columnId === focus?.columnId
+                        ? s
+                        : { ui: { ...s.ui, focusColumn: focus } }
+                );
             },
 
             // the filter is part of the design (saved with it) but is not an

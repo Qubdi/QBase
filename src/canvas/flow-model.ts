@@ -90,6 +90,8 @@ export function parseHandle(
 export interface FlowInput {
     design: Design;
     selection: ReadonlySet<Id>;
+    /** the field clicked on the one selected table (see `activeFocus`) */
+    focusColumn?: { entityId: Id; columnId: Id };
     /** entities the filter lets through and the views switch allows */
     visible: ReadonlySet<Id>;
     live: LiveShapes;
@@ -106,16 +108,58 @@ export interface FlowInput {
     diff?: DiffMarks;
 }
 
-/** Tables that stand back while others are selected (EDT-032). */
+/**
+ * The field to follow, when there is one: it counts only while its table is
+ * the one thing selected and the field is still in that table.
+ */
+export function activeFocus(
+    design: Design,
+    selection: ReadonlySet<Id>,
+    focus: { entityId: Id; columnId: Id } | undefined
+): { entityId: Id; columnId: Id } | undefined {
+    if (!focus || selection.size !== 1 || !selection.has(focus.entityId))
+        return undefined;
+    const entity = design.entities.byId[focus.entityId];
+    return entity?.columnIds.includes(focus.columnId) ? focus : undefined;
+}
+
+/** True when the link has this field at one of its ends. */
+function touchesField(
+    link: Design['links']['byId'][Id],
+    focus: { entityId: Id; columnId: Id }
+): boolean {
+    return (
+        (link.sourceEntityId === focus.entityId &&
+            link.sourceColumnId === focus.columnId) ||
+        (link.targetEntityId === focus.entityId &&
+            link.targetColumnId === focus.columnId)
+    );
+}
+
+/**
+ * Tables that stand back while others are selected (EDT-032). With a field
+ * in `focus`, only its table and the tables joined to that field stay bright.
+ */
 export function dimmedEntities(
     design: Design,
-    selection: ReadonlySet<Id>
+    selection: ReadonlySet<Id>,
+    focus?: { entityId: Id; columnId: Id }
 ): Set<Id> {
     const picked = new Set<Id>(
         design.entities.order.filter((id) => selection.has(id))
     );
     if (picked.size === 0) return new Set();
+    const field = activeFocus(design, selection, focus);
     const near = new Set<Id>(picked);
+    if (field) {
+        for (const id of design.links.order) {
+            const link = design.links.byId[id];
+            if (!touchesField(link, field)) continue;
+            near.add(link.sourceEntityId);
+            near.add(link.targetEntityId);
+        }
+        return new Set(design.entities.order.filter((id) => !near.has(id)));
+    }
     for (const id of design.links.order) {
         const link = design.links.byId[id];
         if (picked.has(link.sourceEntityId)) near.add(link.targetEntityId);
@@ -294,7 +338,7 @@ export function buildNodes(
     memory?: NodeMemory
 ): CanvasNode[] {
     const { design, selection, live } = input;
-    const dim = dimmedEntities(design, selection);
+    const dim = dimmedEntities(design, selection, input.focusColumn);
     const dimRegions = dimmedRegions(design, selection, dim);
     const nodes: CanvasNode[] = [];
     for (const id of design.regions.order) {
@@ -396,7 +440,8 @@ export function buildEdges(
     kept?: Map<Id, LinkEdge>
 ): LinkEdge[] {
     const { design, live } = input;
-    const dim = dimmedEntities(design, input.selection);
+    const dim = dimmedEntities(design, input.selection, input.focusColumn);
+    const field = activeFocus(design, input.selection, input.focusColumn);
     const alive = kept ? new Set<Id>() : undefined;
     const rank = new Map<string, number>();
     const edges: LinkEdge[] = [];
@@ -438,7 +483,10 @@ export function buildEdges(
                 reach: (selfLoop ? 36 : 22) + n * 14,
                 selfLoop,
                 mark: input.diff?.links[id],
-                dimmed: dim.has(from.id) || dim.has(to.id),
+                // with a field in focus only the lines at that field stay bright
+                dimmed: field
+                    ? !touchesField(link, field)
+                    : dim.has(from.id) || dim.has(to.id),
             },
         };
         // the edge of last time when nothing about it changed
@@ -463,7 +511,7 @@ export function buildEdges(
  */
 export function buildDependencyEdges(input: FlowInput): DependencyEdge[] {
     const { design, live } = input;
-    const dim = dimmedEntities(design, input.selection);
+    const dim = dimmedEntities(design, input.selection, input.focusColumn);
     const edges: DependencyEdge[] = [];
     design.dependencies.forEach((dep, index) => {
         if (

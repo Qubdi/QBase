@@ -169,6 +169,7 @@ function Surface({
         diffRef.current = diff;
     }, [diff]);
     const selection = useEditorStore((s) => s.ui.selection);
+    const focusColumn = useEditorStore((s) => s.ui.focusColumn);
     const filter = useEditorStore(selectFilter);
     const locked = useEditorStore(selectLocked);
     const fullRender = useFullRender();
@@ -261,6 +262,7 @@ function Surface({
         () => ({
             design,
             selection: selected,
+            focusColumn,
             visible,
             live,
             flashing,
@@ -275,6 +277,7 @@ function Surface({
         [
             design,
             selected,
+            focusColumn,
             visible,
             live,
             flashing,
@@ -869,6 +872,7 @@ function Surface({
             }
             if (event.key === 'Escape') {
                 if (!escapeIsFree(event)) return;
+                storeApi.getState().setFocusColumn(undefined);
                 cancelDraft();
                 setPopover(undefined);
                 setEditingId(undefined);
@@ -1075,6 +1079,22 @@ function Surface({
                             })
                         }
                         onNodeClick={(event, node) => {
+                            // a click on a field row follows that field; a click
+                            // elsewhere on the table goes back to the whole table
+                            if (node.type === 'entity') {
+                                const column = (event.target as Element)
+                                    .closest?.('[data-testid^="field-"]')
+                                    ?.getAttribute('data-testid')
+                                    ?.slice('field-'.length);
+                                storeApi.getState().setFocusColumn(
+                                    column
+                                        ? {
+                                              entityId: node.id,
+                                              columnId: column,
+                                          }
+                                        : undefined
+                                );
+                            }
                             if (draftFrom && node.type === 'entity')
                                 pickTarget(node.id, {
                                     x: event.clientX,

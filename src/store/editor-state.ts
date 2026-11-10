@@ -15,6 +15,12 @@ export const ZOOM_MAX = 5;
 export interface UiState {
     /** ids of the selected entities, regions, memos and links */
     selection: Id[];
+    /**
+     * The field clicked on a table that is the only thing selected: only the
+     * tables joined to that field stay bright. Cleared when the selection
+     * changes to anything else.
+     */
+    focusColumn?: { entityId: Id; columnId: Id };
     panel: {
         open: boolean;
         section: PanelSection;
