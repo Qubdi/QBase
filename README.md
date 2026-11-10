@@ -359,6 +359,15 @@ npm run lint:diagram -- path/to/diagram.json --fail-on error
 Exit code `0` means nothing at or above `--fail-on`, `1` means findings, `2` means bad input.
 The same engine is available as `POST /lint` and `GET /diagrams/:id/lint`; `GET /lint/rules` lists the rules and their defaults.
 
+## Read-only history endpoints
+
+Paths are relative to the API root (`/api` when the server also serves the editor). The editor does not call these; they are for scripts and CI.
+
+| Endpoint | Who | Answer |
+|----------|-----|--------|
+| `GET /diagrams/:id/versions` | any member | Published versions, newest first: `version`, `note`, `publishedAt`, `publishedBy` (null for viewers). Capped by `SNAPSHOT_KEEP` |
+| `GET /diagrams/:id/versions/:version` | any member | One published version with its content |
+
 ## Notes
 
 - Read-only import: every introspection query is a fixed catalog `SELECT`, checked by a guard
