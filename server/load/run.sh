@@ -13,6 +13,16 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 dc() { docker compose -f docker-compose.yml "$@"; }
+
+# Secrets for this run only: the database password, the key that encrypts saved
+# connections, and the passwords of the accounts the seed creates. Nothing in
+# the repository is a credential, and the stack is thrown away at the end. A
+# password needs a capital, a digit and a symbol, so each has "Ld-" and "-1".
+secret() { od -An -N"$1" -tx1 /dev/urandom | tr -d ' \n'; }
+export LOAD_DB_PASSWORD="${LOAD_DB_PASSWORD:-$(secret 16)}"
+export LOAD_CONNECTION_KEY="${LOAD_CONNECTION_KEY:-$(secret 24)}"
+export LOAD_PASSWORD="${LOAD_PASSWORD:-Ld-$(secret 12)-1}"
+export LOAD_TEMP_PASSWORD="${LOAD_TEMP_PASSWORD:-Ld-$(secret 12)-2}"
 # helpers write into this folder: as the caller, not as root
 as_me=(--user "$(id -u):$(id -g)")
 what="${1:-all}"

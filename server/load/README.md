@@ -44,6 +44,12 @@ Set in the environment, e.g. `VUS=200 DURATION=5m npm run load -- mixed`.
 | `LOAD_APP_CPUS`, `LOAD_APP_MEM` | 2, 1g | what the server container may use |
 | `DB_POOL_MAX` | 10 | the server's connection pool, as in production |
 
+The database password, the key that encrypts saved connections and the passwords of
+the seeded accounts are random and made for each run by `run.sh` (nothing in the
+repository is a credential). To fix one, set `LOAD_DB_PASSWORD`, `LOAD_CONNECTION_KEY`,
+`LOAD_PASSWORD` or `LOAD_TEMP_PASSWORD` yourself; an account password needs a capital, a
+digit and a symbol. `docker compose` run directly, without `run.sh`, stops and says so.
+
 The per-address limits (login, share, live viewers) are raised in
 `docker-compose.yml`, because all virtual users share one address and the
 stock limits would only measure themselves. Capacity settings stay at their
