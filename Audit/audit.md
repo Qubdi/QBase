@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 23 · **date** 2026-11-09
+**rev** 24 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 1 | 44 | 0 |
 | Server | 16 | 0 | 4 | 20 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
-| Client | 22 | 0 | 0 | 72 | 0 |
+| Client | 5 | 0 | 0 | 89 | 0 |
 | Dead code | 11 | 0 | 0 | 29 | 0 |
-| **Total** | 88 | 0 | 5 | 189 | 1 |
+| **Total** | 71 | 0 | 5 | 206 | 1 |
 
 ## Act first
 
@@ -105,28 +105,11 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-005 | Med | Final-save keepalive silently dropped above 60 KB; larger diagrams rely on beforeunload prompt only | `src/lib/qubdi/api.ts:455` | Use sendBeacon or chunked fallback for large final saves |
-| CLI-006 | Med | API responses cast `as T`, never validated at runtime | `src/lib/qubdi/api.ts:476` | Parse responses with zod schemas per endpoint |
-| CLI-007 | Med | Four React Compiler hook rules disabled repo-wide; refs written during render | `eslint.config.mjs:52`, `src/components/qubdi/server-autosave.tsx:49` | Migrate components; re-enable rules |
-| CLI-008 | Low | Native `window.confirm` on sign-out with unsaved changes; not a styled dialog | `src/context/qubdi-context/qubdi-provider.tsx:120` | Replace with AlertDialog |
-| CLI-012 | Low | Diagnostics matched by English message text, not code | `src/features/export/export-sql-dialog.tsx:85`, `src/features/import/import-box.tsx:299` | Add `code` field to diagnostics; compare codes |
-| CLI-013 | Low | Server `detail` text shown raw, bypasses i18n | `src/lib/qubdi/api.ts:948`, `src/lib/qubdi/api.ts:953` | Map server codes to translated strings only |
-| CLI-015 | Low | Favicon is empty `data:,`; no app icon in tabs | `index.html:8` | Link real favicon from public/ |
-| CLI-018 | Low | No tests import `ProjectCreateDialog`, `NewProjectDialog`, `ProjectSettings` | `src/components/qubdi/project-create-dialog.tsx:1` | Add unit tests for the three dialogs |
-| CLI-019 | Low | Eslint-disable `exhaustive-deps` count 13 in src; two files carry `no-explicit-any` file-wide | `src/canvas/diagram-canvas.tsx:330`, `src/core/wire/wire.test.ts:1` | Narrow suppressions; type fixtures |
-| CLI-025 | Med | Index conversion keeps fulltext, spatial, gin without checking column types; DDL fails | `src/dialects/convert/convert-index.ts:84`, `src/dialects/convert/convert-index.ts:96` | Call `methodProblem` with column kinds before keeping type |
-| CLI-026 | Med | Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram | `src/persistence/dexie-adapter.ts:84` | Check store row or broadcast removals across tabs |
-| CLI-027 | Low | `save` clears removed flag, so an in-flight autosave resurrects a just-deleted diagram | `src/persistence/dexie-adapter.ts:69` | Keep flag; clear it only on explicit create |
-| CLI-028 | Med | Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s | `src/formats/shared/layout.ts:89` | Use spatial grid or per-column cursor for hub neighbours |
-| CLI-039 | Low | Metadata import names primary key after any unique index on same columns | `src/formats/metadata/load.ts:177` | Use primary flag from metadata, not column match |
-| CLI-045 | Low | Every edit serialises the whole design before section reuse check | `src/qbase/diagram-convert.ts:83` | Serialise only changed sections |
-| CLI-054 | Low | Viewer header brand name is hard-coded English | `src/pages/share-viewer-page/share-viewer-page.tsx:280` | Use a translated string or shared logo |
-| CLI-065 | Low | Test waits a fixed 50 ms for a save that must not happen | `src/qbase/p8-qbs-contract.test.tsx:189` | Use fake timers past the autosave delay |
-| CLI-068 | Med | Editor chunk 2.87 MB (561 kB gzip) bundles full all-dialect node-sql-parser | `src/formats/metadata/view-sources.ts:1`, `vite.config.ts:16` | Import per-dialect parser build lazily inside metadata import |
-| CLI-069 | Low | DBML chunk 15.6 MB (2.75 MB gzip) fetched on first DBML view | `src/formats/dbml/import-dbml.ts:1`, `vite.config.ts:16` | Split @dbml/core parser; load exporter without importer |
-| CLI-071 | Low | No `supportedLngs`; unsupported browser language sets `<html lang>` over English text | `src/i18n/i18n.ts:50`, `src/i18n/i18n.ts:70` | Set supportedLngs and nonExplicitSupportedLngs in init |
-| CLI-087 | Low | MySQL writer keeps quoted defaults verbatim; a backslash escapes the closing quote | `src/dialects/mysql/write.ts:108` | Re-quote string defaults with MySQL `asStringLiteral` |
-| CLI-093 | Low | Column collation imported and saved but no SQL writer emits it | `src/formats/metadata/load.ts:141`, `src/dialects/postgresql/write.ts:151` | Write COLLATE in same-dialect export; note it in conversion |
+| CLI-005 | Med | Final-save keepalive silently dropped above 60 KB; larger diagrams rely on beforeunload prompt only | `src/lib/qubdi/api.ts:455` | Needs a server change: sendBeacon only sends POST, saves use PUT; `beforeunload` prompt covers it meanwhile |
+| CLI-006 | Med | API responses cast `as T`, never validated at runtime; auth and member endpoints now parsed with zod | `src/lib/qubdi/api.ts:476` | Add zod schemas for the remaining endpoints |
+| CLI-007 | Med | Two React Compiler hook rules (`refs`, `set-state-in-effect`) still off for about 50 files; refs written during render | `eslint.config.mjs:52`, `src/components/qubdi/server-autosave.tsx:49` | Migrate those components; drop the per-file overrides |
+| CLI-039 | Low | Metadata import has no primary flag; key's own index picked by naming convention (`*_pkey`, `PRIMARY`, `PK_*`) | `src/formats/metadata/load.ts:177` | Carry a primary flag in the metadata format |
+| CLI-069 | Low | DBML chunk 15.6 MB (2.75 MB gzip) now fetched at first edit, not on view | `src/formats/dbml/import-dbml.ts:1`, `vite.config.ts:16` | Replace or split @dbml/core parser to shrink the chunk |
 
 ### Dead code
 
@@ -339,6 +322,23 @@
 | CLI-085 | Client | PostgreSQL default containing `nextval` written raw; sequence name raw in CREATE SEQUENCE |
 | CLI-086 | Client | Column type name written raw into DDL by every writer |
 | CLI-101 | Client | Metadata over 50 tables: new default Set each render loops onChange forever; dialog hangs |
+| CLI-008 | Client | Native `window.confirm` on sign-out with unsaved changes; not a styled dialog |
+| CLI-012 | Client | Diagnostics matched by English message text, not code |
+| CLI-013 | Client | Server `detail` text shown raw, bypasses i18n |
+| CLI-015 | Client | Favicon is empty `data:,`; no app icon in tabs |
+| CLI-018 | Client | No tests import `ProjectCreateDialog`, `NewProjectDialog`, `ProjectSettings` |
+| CLI-019 | Client | Eslint-disable `exhaustive-deps` without reason; two files carry `no-explicit-any` file-wide |
+| CLI-025 | Client | Index conversion keeps fulltext, spatial, gin without checking column types; DDL fails |
+| CLI-026 | Client | Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram |
+| CLI-027 | Client | `save` clears removed flag, so an in-flight autosave resurrects a just-deleted diagram |
+| CLI-028 | Client | Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s |
+| CLI-045 | Client | Every edit serialises the whole design before section reuse check |
+| CLI-054 | Client | Viewer header brand name is hard-coded English |
+| CLI-065 | Client | Test waits a fixed 50 ms for a save that must not happen |
+| CLI-068 | Client | Editor chunk 2.87 MB (561 kB gzip) bundles full all-dialect node-sql-parser; now 752 kB |
+| CLI-071 | Client | No `supportedLngs`; unsupported browser language sets `<html lang>` over English text |
+| CLI-087 | Client | MySQL writer keeps quoted defaults verbatim; a backslash escapes the closing quote |
+| CLI-093 | Client | Column collation imported and saved but no SQL writer emits it (Oracle writer not covered) |
 
 ---
 
@@ -408,6 +408,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 24 | 2026-11-10 | 17 fixed (client batch 2: CLI-008, 012, 013, 015, 018, 019, 025, 026, 027, 028, 045, 054, 065, 068, 071, 087, 093), 5 narrowed (CLI-005, 006, 007, 039, 069); anchors not remapped |
 | 23 | 2026-11-09 | 18 fixed (client batch 1: CLI-001, 002, 003, 020, 021, 022, 023, 024, 050, 052, 057, 066, 067, 081, 082, 085, 086, 101), 2 High cleared; anchors not remapped |
 | 22 | 2026-11-09 | 1 fixed (SRV-037); anchors not remapped |
 | 21 | 2026-11-09 | 11 fixed (security low batch 1: SEC-006, 007, 008, 009, 017, 020, 028, 029, 032, 033, 034); anchors not remapped |

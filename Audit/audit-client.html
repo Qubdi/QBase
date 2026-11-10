@@ -8,10 +8,10 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 23</b></div>
-  <h1>22 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 24</b></div>
+  <h1>5 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-09</span>
+    <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
@@ -31,33 +31,16 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">40 open &middot; 54 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">5 open &middot; 89 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">CLI-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Final-save keepalive silently dropped above 60 KB; larger diagrams rely on beforeunload prompt only</td><td class="wrap-cell"><code>src/lib/qubdi/api.ts:455</code></td><td class="wrap-cell">Use sendBeacon or chunked fallback for large final saves</td></tr>
-        <tr><td class="svc-name">CLI-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">API responses cast <code>as T</code>, never validated at runtime</td><td class="wrap-cell"><code>src/lib/qubdi/api.ts:476</code></td><td class="wrap-cell">Parse responses with zod schemas per endpoint</td></tr>
-        <tr><td class="svc-name">CLI-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Four React Compiler hook rules disabled repo-wide; refs written during render</td><td class="wrap-cell"><code>eslint.config.mjs:52</code>, <code>src/components/qubdi/server-autosave.tsx:49</code></td><td class="wrap-cell">Migrate components; re-enable rules</td></tr>
-        <tr><td class="svc-name">CLI-008</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Native <code>window.confirm</code> on sign-out with unsaved changes; not a styled dialog</td><td class="wrap-cell"><code>src/context/qubdi-context/qubdi-provider.tsx:120</code></td><td class="wrap-cell">Replace with AlertDialog</td></tr>
-        <tr><td class="svc-name">CLI-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Diagnostics matched by English message text, not code</td><td class="wrap-cell"><code>src/features/export/export-sql-dialog.tsx:85</code>, <code>src/features/import/import-box.tsx:299</code></td><td class="wrap-cell">Add <code>code</code> field to diagnostics; compare codes</td></tr>
-        <tr><td class="svc-name">CLI-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Server <code>detail</code> text shown raw, bypasses i18n</td><td class="wrap-cell"><code>src/lib/qubdi/api.ts:948</code>, <code>src/lib/qubdi/api.ts:953</code></td><td class="wrap-cell">Map server codes to translated strings only</td></tr>
-        <tr><td class="svc-name">CLI-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Favicon is empty <code>data:,</code>; no app icon in tabs</td><td class="wrap-cell"><code>index.html:8</code></td><td class="wrap-cell">Link real favicon from public/</td></tr>
-        <tr><td class="svc-name">CLI-018</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No tests import <code>ProjectCreateDialog</code>, <code>NewProjectDialog</code>, <code>ProjectSettings</code></td><td class="wrap-cell"><code>src/components/qubdi/project-create-dialog.tsx:1</code></td><td class="wrap-cell">Add unit tests for the three dialogs</td></tr>
-        <tr><td class="svc-name">CLI-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Eslint-disable <code>exhaustive-deps</code> count 13 in src; two files carry <code>no-explicit-any</code> file-wide</td><td class="wrap-cell"><code>src/canvas/diagram-canvas.tsx:330</code>, <code>src/core/wire/wire.test.ts:1</code></td><td class="wrap-cell">Narrow suppressions; type fixtures</td></tr>
-        <tr><td class="svc-name">CLI-025</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Index conversion keeps fulltext, spatial, gin without checking column types; DDL fails</td><td class="wrap-cell"><code>src/dialects/convert/convert-index.ts:84</code>, <code>src/dialects/convert/convert-index.ts:96</code></td><td class="wrap-cell">Call <code>methodProblem</code> with column kinds before keeping type</td></tr>
-        <tr><td class="svc-name">CLI-026</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram</td><td class="wrap-cell"><code>src/persistence/dexie-adapter.ts:84</code></td><td class="wrap-cell">Check store row or broadcast removals across tabs</td></tr>
-        <tr><td class="svc-name">CLI-027</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>save</code> clears removed flag, so an in-flight autosave resurrects a just-deleted diagram</td><td class="wrap-cell"><code>src/persistence/dexie-adapter.ts:69</code></td><td class="wrap-cell">Keep flag; clear it only on explicit create</td></tr>
-        <tr><td class="svc-name">CLI-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s</td><td class="wrap-cell"><code>src/formats/shared/layout.ts:89</code></td><td class="wrap-cell">Use spatial grid or per-column cursor for hub neighbours</td></tr>
-        <tr><td class="svc-name">CLI-039</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Metadata import names primary key after any unique index on same columns</td><td class="wrap-cell"><code>src/formats/metadata/load.ts:177</code></td><td class="wrap-cell">Use primary flag from metadata, not column match</td></tr>
-        <tr><td class="svc-name">CLI-045</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Every edit serialises the whole design before section reuse check</td><td class="wrap-cell"><code>src/qbase/diagram-convert.ts:83</code></td><td class="wrap-cell">Serialise only changed sections</td></tr>
-        <tr><td class="svc-name">CLI-054</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Viewer header brand name is hard-coded English</td><td class="wrap-cell"><code>src/pages/share-viewer-page/share-viewer-page.tsx:280</code></td><td class="wrap-cell">Use a translated string or shared logo</td></tr>
-        <tr><td class="svc-name">CLI-065</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Test waits a fixed 50 ms for a save that must not happen</td><td class="wrap-cell"><code>src/qbase/p8-qbs-contract.test.tsx:189</code></td><td class="wrap-cell">Use fake timers past the autosave delay</td></tr>
-        <tr><td class="svc-name">CLI-068</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Editor chunk 2.87 MB (561 kB gzip) bundles full all-dialect node-sql-parser</td><td class="wrap-cell"><code>src/formats/metadata/view-sources.ts:1</code>, <code>vite.config.ts:16</code></td><td class="wrap-cell">Import per-dialect parser build lazily inside metadata import</td></tr>
-        <tr><td class="svc-name">CLI-069</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">DBML chunk 15.6 MB (2.75 MB gzip) fetched on first DBML view</td><td class="wrap-cell"><code>src/formats/dbml/import-dbml.ts:1</code>, <code>vite.config.ts:16</code></td><td class="wrap-cell">Split @dbml/core parser; load exporter without importer</td></tr>
-        <tr><td class="svc-name">CLI-071</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">No <code>supportedLngs</code>; unsupported browser language sets <code>&lt;html lang&gt;</code> over English text</td><td class="wrap-cell"><code>src/i18n/i18n.ts:50</code>, <code>src/i18n/i18n.ts:70</code></td><td class="wrap-cell">Set supportedLngs and nonExplicitSupportedLngs in init</td></tr>
-        <tr><td class="svc-name">CLI-087</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">MySQL writer keeps quoted defaults verbatim; a backslash escapes the closing quote</td><td class="wrap-cell"><code>src/dialects/mysql/write.ts:108</code></td><td class="wrap-cell">Re-quote string defaults with MySQL <code>asStringLiteral</code></td></tr>
-        <tr><td class="svc-name">CLI-093</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Column collation imported and saved but no SQL writer emits it</td><td class="wrap-cell"><code>src/formats/metadata/load.ts:141</code>, <code>src/dialects/postgresql/write.ts:151</code></td><td class="wrap-cell">Write COLLATE in same-dialect export; note it in conversion</td></tr>
+        <tr><td class="svc-name">CLI-005</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Final-save keepalive silently dropped above 60 KB; larger diagrams rely on beforeunload prompt only</td><td class="wrap-cell"><code>src/lib/qubdi/api.ts:455</code></td><td class="wrap-cell">Needs a server change: sendBeacon only sends POST, saves use PUT; <code>beforeunload</code> prompt covers it meanwhile</td></tr>
+        <tr><td class="svc-name">CLI-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">API responses cast <code>as T</code>, never validated at runtime; auth and member endpoints now parsed with zod</td><td class="wrap-cell"><code>src/lib/qubdi/api.ts:476</code></td><td class="wrap-cell">Add zod schemas for the remaining endpoints</td></tr>
+        <tr><td class="svc-name">CLI-007</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Two React Compiler hook rules (<code>refs</code>, <code>set-state-in-effect</code>) still off for about 50 files; refs written during render</td><td class="wrap-cell"><code>eslint.config.mjs:52</code>, <code>src/components/qubdi/server-autosave.tsx:49</code></td><td class="wrap-cell">Migrate those components; drop the per-file overrides</td></tr>
+        <tr><td class="svc-name">CLI-039</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Metadata import has no primary flag; key's own index picked by naming convention (<code>*_pkey</code>, <code>PRIMARY</code>, <code>PK_*</code>)</td><td class="wrap-cell"><code>src/formats/metadata/load.ts:177</code></td><td class="wrap-cell">Carry a primary flag in the metadata format</td></tr>
+        <tr><td class="svc-name">CLI-069</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">DBML chunk 15.6 MB (2.75 MB gzip) now fetched at first edit, not on view</td><td class="wrap-cell"><code>src/formats/dbml/import-dbml.ts:1</code>, <code>vite.config.ts:16</code></td><td class="wrap-cell">Replace or split @dbml/core parser to shrink the chunk</td></tr>
       </tbody>
     </table>
   </div>
@@ -65,7 +48,7 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (72)</summary>
+  <details><summary>Fixed (89)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -142,6 +125,23 @@
         <tr><td class="svc-name">CLI-085</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">PostgreSQL default containing <code>nextval</code> written raw; sequence name raw in CREATE SEQUENCE</td></tr>
         <tr><td class="svc-name">CLI-086</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Column type name written raw into DDL by every writer</td></tr>
         <tr><td class="svc-name">CLI-101</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Metadata over 50 tables: new default Set each render loops onChange forever; dialog hangs</td></tr>
+        <tr><td class="svc-name">CLI-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Native <code>window.confirm</code> on sign-out with unsaved changes; not a styled dialog</td></tr>
+        <tr><td class="svc-name">CLI-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Diagnostics matched by English message text, not code</td></tr>
+        <tr><td class="svc-name">CLI-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server <code>detail</code> text shown raw, bypasses i18n</td></tr>
+        <tr><td class="svc-name">CLI-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Favicon is empty <code>data:,</code>; no app icon in tabs</td></tr>
+        <tr><td class="svc-name">CLI-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No tests import <code>ProjectCreateDialog</code>, <code>NewProjectDialog</code>, <code>ProjectSettings</code></td></tr>
+        <tr><td class="svc-name">CLI-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Eslint-disable <code>exhaustive-deps</code> without reason; two files carry <code>no-explicit-any</code> file-wide</td></tr>
+        <tr><td class="svc-name">CLI-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Index conversion keeps fulltext, spatial, gin without checking column types; DDL fails</td></tr>
+        <tr><td class="svc-name">CLI-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram</td></tr>
+        <tr><td class="svc-name">CLI-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>save</code> clears removed flag, so an in-flight autosave resurrects a just-deleted diagram</td></tr>
+        <tr><td class="svc-name">CLI-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Layout probe loop scans placed boxes per step; 2000-link hub import takes 7.5 s</td></tr>
+        <tr><td class="svc-name">CLI-045</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Every edit serialises the whole design before section reuse check</td></tr>
+        <tr><td class="svc-name">CLI-054</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Viewer header brand name is hard-coded English</td></tr>
+        <tr><td class="svc-name">CLI-065</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Test waits a fixed 50 ms for a save that must not happen</td></tr>
+        <tr><td class="svc-name">CLI-068</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Editor chunk 2.87 MB (561 kB gzip) bundles full all-dialect node-sql-parser; now 752 kB</td></tr>
+        <tr><td class="svc-name">CLI-071</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">No <code>supportedLngs</code>; unsupported browser language sets <code>&lt;html lang&gt;</code> over English text</td></tr>
+        <tr><td class="svc-name">CLI-087</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">MySQL writer keeps quoted defaults verbatim; a backslash escapes the closing quote</td></tr>
+        <tr><td class="svc-name">CLI-093</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Column collation imported and saved but no SQL writer emits it (Oracle writer not covered)</td></tr>
       </tbody>
     </table>
   </div>
