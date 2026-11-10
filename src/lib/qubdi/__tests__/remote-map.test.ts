@@ -45,6 +45,21 @@ describe('remote map', () => {
         ).toEqual(['b']);
     });
 
+    it('forgets the sync state of the copy when it is unbound', () => {
+        setRemoteId('a', '1');
+        localStorage.setItem(
+            'qbase.sync-state',
+            JSON.stringify({
+                a: { dialect: 'postgresql' },
+                b: { dialect: 'postgresql' },
+            })
+        );
+        clearRemoteId('a');
+        expect(
+            Object.keys(JSON.parse(localStorage.getItem('qbase.sync-state')!))
+        ).toEqual(['b']);
+    });
+
     it('survives corrupted storage', () => {
         localStorage.setItem('qbase.remote-map', '{not json');
         expect(getRemoteId('a')).toBeUndefined();

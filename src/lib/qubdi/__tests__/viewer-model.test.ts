@@ -4,6 +4,7 @@ import {
     buildViewerGraph,
     edgeTouches,
     relatedTableIds,
+    safeColor,
     searchTables,
 } from '../viewer-model';
 
@@ -179,5 +180,27 @@ describe('buildShareUrl', () => {
         expect(buildShareUrl('https://db.example.com/', 'abc')).toBe(
             'https://db.example.com/s/abc'
         );
+    });
+});
+
+describe('safeColor', () => {
+    it('lets a hex colour or a colour name through', () => {
+        for (const ok of ['#fff', '#ff0000', '#ff000080', 'red', ' blue ']) {
+            expect(safeColor(ok)).toBe(ok.trim());
+        }
+    });
+
+    it('falls back for anything that could break out of a CSS value', () => {
+        for (const bad of [
+            'red) , url(https://evil.example/x',
+            'red; background: url(x)',
+            'var(--x)',
+            '#12',
+            '',
+            7,
+            null,
+        ]) {
+            expect(safeColor(bad)).toBe('#8eb7ff');
+        }
     });
 });

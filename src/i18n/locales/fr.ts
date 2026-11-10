@@ -266,6 +266,8 @@ export const fr = {
                 foundWithViews: '{{tables}} et {{views}} à importer.',
                 foundOnly: '{{tables}} à importer.',
                 nothingToImport: 'Rien à importer',
+                invalidJson:
+                    'JSON non valide. Corrigez-le ou contactez-nous à support@qubdi.dev.',
                 nothingToExport: 'Rien à exporter',
                 emptyScript: 'Le script SQL est vide',
                 noStatements: 'Aucune instruction SQL valide trouvée',

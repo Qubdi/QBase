@@ -43,6 +43,18 @@ const num = (v: unknown, fallback: number): number =>
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
 const DEFAULT_COLOR = '#8eb7ff';
+
+/**
+ * A colour the viewer may put in a style string. The table colour comes from a
+ * shared diagram, which anyone with edit access can set to anything, and it is
+ * placed inside a CSS function: only a hex colour or a plain colour name passes.
+ */
+const SAFE_COLOR =
+    /^(#[0-9a-fA-F]{3,4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|[a-zA-Z]{3,20})$/;
+export const safeColor = (value: unknown): string =>
+    typeof value === 'string' && SAFE_COLOR.test(value.trim())
+        ? value.trim()
+        : DEFAULT_COLOR;
 const GRID_COLUMNS = 4;
 const GRID_STEP_X = 320;
 const GRID_STEP_Y = 360;
@@ -72,7 +84,7 @@ export function buildViewerGraph(content: unknown): ViewerGraph {
             // tables without coordinates get a readable grid position
             x: num(raw.x, (index % GRID_COLUMNS) * GRID_STEP_X),
             y: num(raw.y, Math.floor(index / GRID_COLUMNS) * GRID_STEP_Y),
-            color: str(raw.color, DEFAULT_COLOR),
+            color: safeColor(raw.color),
             isView: raw.isView === true,
             fields,
         });

@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 37</b></div>
-  <h1>8 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 38</b></div>
+  <h1>3 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
@@ -31,19 +31,14 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">8 open &middot; 94 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">3 open &middot; 99 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">CLI-102</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>INVALID_JSON_MESSAGE</code> has no diagnostic rule or i18n key; shown English-only</td><td class="wrap-cell"><code>src/formats/metadata/repair-text.ts:3</code>, <code>src/lib/diagnostic-text.ts:240</code></td><td class="wrap-cell">Add exact rule and en/locale key for it</td></tr>
         <tr><td class="svc-name">CLI-103</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Failed autosave (5xx, 429, network) never retries without a new edit</td><td class="wrap-cell"><code>src/lib/qubdi/autosave.ts:75</code></td><td class="wrap-cell">Retry with capped backoff and jitter; honour Retry-After</td></tr>
-        <tr><td class="svc-name">CLI-104</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Viewer puts unvalidated table colour into a CSS <code>backgroundImage</code> string</td><td class="wrap-cell"><code>src/pages/share-viewer-page/viewer-table-node.tsx:70</code></td><td class="wrap-cell">Validate colour against a hex or named allowlist</td></tr>
-        <tr><td class="svc-name">CLI-105</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>clearRemoteId</code> leaves sync-state behind; connection details linger in localStorage</td><td class="wrap-cell"><code>src/lib/qubdi/remote-map.ts:27</code></td><td class="wrap-cell">Call <code>clearSyncState</code> there too</td></tr>
         <tr><td class="svc-name">CLI-106</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Qubdi UI keys (907 of 1586) are English-only in de, fr, it, ru</td><td class="wrap-cell"><code>src/i18n/locales/de.ts:1</code></td><td class="wrap-cell">Translate the keys, or document English-only server UI</td></tr>
-        <tr><td class="svc-name">CLI-107</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>readJsonMap</code> accepts arrays and inherits <code>Object.prototype</code> on lookup</td><td class="wrap-cell"><code>src/lib/qubdi/local-map.ts:2</code></td><td class="wrap-cell">Require a plain object; use <code>Object.create(null)</code> or <code>Map</code></td></tr>
-        <tr><td class="svc-name">CLI-108</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Share dialog saves the diagram captured at render, after awaiting the flush</td><td class="wrap-cell"><code>src/components/qubdi/account-menu.tsx:204</code></td><td class="wrap-cell">Read the latest diagram from the store after the flush</td></tr>
-        <tr><td class="svc-name">CLI-109</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">DBML import is superlinear: 20k tables 5.4 s, 40k tables 18 s</td><td class="wrap-cell"><code>src/formats/dbml/import-dbml.ts:1</code></td><td class="wrap-cell">Index tables in a Map</td></tr>
+        <tr><td class="svc-name">CLI-109</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">DBML import is superlinear: 20k tables 5.4 s, 40k tables 18 s; the time is in <code>@dbml/core</code> <code>Parser.parse</code> (scratch run: 5k tables 4 s, 10k 12 s, 20k 34 s), not in <code>import-dbml.ts</code>, whose table lookups are already Maps</td><td class="wrap-cell"><code>src/formats/dbml/import-dbml.ts:121</code></td><td class="wrap-cell">Cap the DBML size, parse in chunks, or replace the parser; no change in QBase code helps</td></tr>
       </tbody>
     </table>
   </div>
@@ -51,11 +46,16 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (94)</summary>
+  <details><summary>Fixed (99)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-102</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>INVALID_JSON_MESSAGE</code> has no diagnostic rule or i18n key; shown English-only</td></tr>
+        <tr><td class="svc-name">CLI-104</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Viewer puts unvalidated table colour into a CSS <code>backgroundImage</code> string</td></tr>
+        <tr><td class="svc-name">CLI-105</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>clearRemoteId</code> leaves sync-state behind; connection details linger in localStorage</td></tr>
+        <tr><td class="svc-name">CLI-107</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>readJsonMap</code> accepts arrays and inherits <code>Object.prototype</code> on lookup</td></tr>
+        <tr><td class="svc-name">CLI-108</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Share dialog saves the diagram captured at render, after awaiting the flush</td></tr>
         <tr><td class="svc-name">CLI-038</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Array default conversion swaps every <code>'</code> for <code>"</code>, mangling items with quotes</td></tr>
         <tr><td class="svc-name">CLI-091</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQLite writer drops schema; same-named tables collapse via IF NOT EXISTS silently</td></tr>
         <tr><td class="svc-name">CLI-094</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">DBML export drops views and partial-index WHERE with no diagnostic</td></tr>

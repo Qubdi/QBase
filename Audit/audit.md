@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 37 · **date** 2026-11-10
+**rev** 38 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 4 | 0 | 0 | 59 | 0 |
 | Server | 7 | 0 | 0 | 33 | 0 |
 | Database | 7 | 0 | 0 | 15 | 1 |
-| Client | 8 | 0 | 0 | 94 | 0 |
+| Client | 3 | 0 | 0 | 99 | 0 |
 | Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 29 | 0 | 0 | 284 | 1 |
+| **Total** | 24 | 0 | 0 | 289 | 1 |
 
 ## Act first
 
@@ -67,14 +67,9 @@ None.
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-102 | Low | `INVALID_JSON_MESSAGE` has no diagnostic rule or i18n key; shown English-only | `src/formats/metadata/repair-text.ts:3`, `src/lib/diagnostic-text.ts:240` | Add exact rule and en/locale key for it |
 | CLI-103 | Med | Failed autosave (5xx, 429, network) never retries without a new edit | `src/lib/qubdi/autosave.ts:75` | Retry with capped backoff and jitter; honour Retry-After |
-| CLI-104 | Low | Viewer puts unvalidated table colour into a CSS `backgroundImage` string | `src/pages/share-viewer-page/viewer-table-node.tsx:70` | Validate colour against a hex or named allowlist |
-| CLI-105 | Low | `clearRemoteId` leaves sync-state behind; connection details linger in localStorage | `src/lib/qubdi/remote-map.ts:27` | Call `clearSyncState` there too |
 | CLI-106 | Low | Qubdi UI keys (907 of 1586) are English-only in de, fr, it, ru | `src/i18n/locales/de.ts:1` | Translate the keys, or document English-only server UI |
-| CLI-107 | Low | `readJsonMap` accepts arrays and inherits `Object.prototype` on lookup | `src/lib/qubdi/local-map.ts:2` | Require a plain object; use `Object.create(null)` or `Map` |
-| CLI-108 | Low | Share dialog saves the diagram captured at render, after awaiting the flush | `src/components/qubdi/account-menu.tsx:204` | Read the latest diagram from the store after the flush |
-| CLI-109 | Low | DBML import is superlinear: 20k tables 5.4 s, 40k tables 18 s | `src/formats/dbml/import-dbml.ts:1` | Index tables in a Map |
+| CLI-109 | Low | DBML import is superlinear: 20k tables 5.4 s, 40k tables 18 s; the time is in `@dbml/core` `Parser.parse` (scratch run: 5k tables 4 s, 10k 12 s, 20k 34 s), not in `import-dbml.ts`, whose table lookups are already Maps | `src/formats/dbml/import-dbml.ts:121` | Cap the DBML size, parse in chunks, or replace the parser; no change in QBase code helps |
 
 ### Dead code
 
@@ -181,6 +176,11 @@ None.
 | DB-017 | Database | Postgres introspection skips foreign tables; SQL Server lists external tables |
 | DB-018 | Database | Materialized views reported as plain views; definition rebuilt as CREATE VIEW |
 | DB-020 | Database | Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones |
+| CLI-102 | Client | `INVALID_JSON_MESSAGE` has no diagnostic rule or i18n key; shown English-only |
+| CLI-104 | Client | Viewer puts unvalidated table colour into a CSS `backgroundImage` string |
+| CLI-105 | Client | `clearRemoteId` leaves sync-state behind; connection details linger in localStorage |
+| CLI-107 | Client | `readJsonMap` accepts arrays and inherits `Object.prototype` on lookup |
+| CLI-108 | Client | Share dialog saves the diagram captured at render, after awaiting the flush |
 | CLI-038 | Client | Array default conversion swaps every `'` for `"`, mangling items with quotes |
 | CLI-091 | Client | SQLite writer drops schema; same-named tables collapse via IF NOT EXISTS silently |
 | CLI-094 | Client | DBML export drops views and partial-index WHERE with no diagnostic |
@@ -443,6 +443,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 38 | 2026-11-10 | 5 fixed (client low batch: CLI-102, 104, 105, 107, 108); CLI-109 re-attributed to `@dbml/core` Parser.parse; CLI-106 left (907 keys to translate); 24 open, 0 Crit, 0 High; anchors not remapped |
 | 37 | 2026-11-10 | 2 fixed (dead code lens: DEAD-037, DEAD-042); 29 open, 0 Crit, 0 High; anchors not remapped |
 | 36 | 2026-11-10 | 5 fixed (repository low batch: REPO-071, 072, 073, 075, 076; REPO-022 needs a team name from the org); 31 open, 0 Crit, 0 High; anchors not remapped |
 | 35 | 2026-11-10 | 10 fixed (security low batch: SEC-038 to 047); 36 open, 0 Crit, 0 High; anchors not remapped |
