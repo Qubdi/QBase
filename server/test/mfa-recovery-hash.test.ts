@@ -1,11 +1,17 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createMfa } from '../src/auth/mfa.js';
-import { legacyHashRecoveryCode } from '../src/auth/totp.js';
+import { createHash } from 'node:crypto';
+import { hashRecoveryCode } from '../src/auth/totp.js';
 import { mfaRecoveryCodes } from '../src/db/schema.js';
 import { createTestApp, registerUser, type TestCtx, type TestUser } from './helpers.js';
 
 const KEY = 'a-test-key-of-at-least-16-chars';
+/** A recovery code stored the way the oldest versions did: the bare sha256. */
+const bareSha256 = (code: string) =>
+    createHash('sha256').update(code.replace(/[\s-]/g, '').toUpperCase()).digest('hex');
+/** One stored as an HMAC without the version prefix. */
+const unprefixed = (code: string) => hashRecoveryCode(code, KEY).slice('k1:'.length);
 
 describe('recovery code storage', () => {
     let ctx: TestCtx;
@@ -20,21 +26,25 @@ describe('recovery code storage', () => {
     });
     afterAll(() => ctx.close());
 
-    it('stores new codes keyed, not as the plain sha256 of the code', async () => {
+    it('stores new codes keyed and prefixed, not as the plain sha256 of the code', async () => {
         const codes = await mfa().renewRecoveryCodes(user.id);
         const hashes = await stored();
         expect(hashes).toHaveLength(codes.length);
-        for (const code of codes) expect(hashes).not.toContain(legacyHashRecoveryCode(code));
+        for (const code of codes) expect(hashes).not.toContain(bareSha256(code));
+        for (const hash of hashes) expect(hash).toMatch(/^k1:[0-9a-f]{64}$/);
         // and they still work, once each
         expect(await mfa().spendRecoveryCode(user.id, codes[0])).toBe(true);
         expect(await mfa().spendRecoveryCode(user.id, codes[0])).toBe(false);
     });
 
-    it('still accepts a code stored the old way, once', async () => {
+    it('no longer accepts a code stored the old way, as a bare sha256 or an unprefixed hash', async () => {
         await ctx.db.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, user.id));
-        await ctx.db.insert(mfaRecoveryCodes).values({ userId: user.id, codeHash: legacyHashRecoveryCode('ABCDE-FGHJK') });
-        expect(await mfa().spendRecoveryCode(user.id, 'abcde fghjk')).toBe(true);
-        expect(await mfa().spendRecoveryCode(user.id, 'ABCDE-FGHJK')).toBe(false);
+        await ctx.db.insert(mfaRecoveryCodes).values([
+            { userId: user.id, codeHash: bareSha256('ABCDE-FGHJK') },
+            { userId: user.id, codeHash: unprefixed('KMNPQ-RSTUV') },
+        ]);
+        expect(await mfa().spendRecoveryCode(user.id, 'abcde fghjk')).toBe(false);
+        expect(await mfa().spendRecoveryCode(user.id, 'KMNPQ-RSTUV')).toBe(false);
     });
 
     it('does not accept a code under a different key', async () => {

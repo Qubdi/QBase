@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { and, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db, Tx } from '../db/client.js';
 import {
@@ -11,7 +11,6 @@ import { CryptoBox } from '../introspect/crypto-box.js';
 import {
     generateRecoveryCodes,
     hashRecoveryCode,
-    legacyHashRecoveryCode,
     verifyTotp,
 } from './totp.js';
 
@@ -161,11 +160,7 @@ export function createMfa(
                 .where(
                     and(
                         eq(mfaRecoveryCodes.userId, userId),
-                        // codes made before the keyed hash are stored as plain sha256
-                        inArray(mfaRecoveryCodes.codeHash, [
-                            keyed(code),
-                            legacyHashRecoveryCode(code),
-                        ]),
+                        eq(mfaRecoveryCodes.codeHash, keyed(code)),
                         isNull(mfaRecoveryCodes.usedAt)
                     )
                 )

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
     base32Decode,
@@ -5,7 +6,6 @@ import {
     generateRecoveryCodes,
     generateSecret,
     hashRecoveryCode,
-    legacyHashRecoveryCode,
     hotp,
     normalizeRecoveryCode,
     otpauthUrl,
@@ -137,14 +137,14 @@ describe('recovery codes', () => {
         expect(normalizeRecoveryCode(' abcde-fghjk ')).toBe('ABCDEFGHJK');
         const key = 'a-test-key-of-at-least-16-chars';
         expect(hashRecoveryCode('abcde fghjk', key)).toBe(hashRecoveryCode('ABCDE-FGHJK', key));
-        expect(hashRecoveryCode('ABCDE-FGHJK', key)).toMatch(/^[0-9a-f]{64}$/);
+        expect(hashRecoveryCode('ABCDE-FGHJK', key)).toMatch(/^k1:[0-9a-f]{64}$/);
         expect(hashRecoveryCode('ABCDE-FGHJK', key)).not.toBe(hashRecoveryCode('ABCDE-FGHJM', key));
     });
 
-    it('is keyed: another key, or no key at all (the old plain sha256), gives another hash', () => {
+    it('is keyed: another key gives another hash, and no hash is the bare sha256 of the code', () => {
         const a = hashRecoveryCode('ABCDE-FGHJK', 'a-test-key-of-at-least-16-chars');
         expect(hashRecoveryCode('ABCDE-FGHJK', 'another-key-of-at-least-16-chars')).not.toBe(a);
-        expect(legacyHashRecoveryCode('ABCDE-FGHJK')).not.toBe(a);
-        expect(legacyHashRecoveryCode('abcde fghjk')).toBe(legacyHashRecoveryCode('ABCDE-FGHJK'));
+        const bare = createHash('sha256').update('ABCDEFGHJK').digest('hex');
+        expect(a).not.toContain(bare);
     });
 });

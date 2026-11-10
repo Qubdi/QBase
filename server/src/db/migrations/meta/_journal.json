@@ -183,6 +183,13 @@
       "when": 1794219569107,
       "tag": "0025_mfa_challenge_per_user",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794294104298,
+      "tag": "0026_recovery_code_hash_prefix",
+      "breakpoints": true
     }
   ]
 }
