@@ -51,7 +51,8 @@ const emptyForm = {
     database: '',
     user: '',
     password: '',
-    ssl: false,
+    // encrypted unless the user turns it off
+    ssl: true,
     trustServerCertificate: false,
     saveAs: '',
 };
@@ -408,6 +409,14 @@ export const ImportFromDatabaseDialog: React.FC<
                                 )}
                             </label>
                         </div>
+                        {!form.ssl && (
+                            <p
+                                role="alert"
+                                className="text-sm text-destructive"
+                            >
+                                {t('qubdi.database.importFromDb.sslOff')}
+                            </p>
+                        )}
                         {!savedId ? (
                             <Input
                                 placeholder={t(

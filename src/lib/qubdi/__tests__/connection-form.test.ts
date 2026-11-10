@@ -27,7 +27,7 @@ describe('connection form', () => {
             dialect: 'postgresql',
             port: DEFAULT_PORT.postgresql,
             password: '',
-            ssl: false,
+            ssl: true,
         });
     });
 
@@ -66,7 +66,7 @@ describe('connection form', () => {
             database: 'shop',
             user: 'reader',
             password: ' keep the spaces ',
-            ssl: false,
+            ssl: true,
             trustServerCertificate: false,
         });
     });

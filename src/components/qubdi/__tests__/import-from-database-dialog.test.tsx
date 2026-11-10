@@ -101,6 +101,17 @@ describe('ImportFromDatabaseDialog', () => {
         );
     };
 
+    it('starts encrypted and warns when SSL / TLS is turned off', async () => {
+        mount();
+        const box = await screen.findByRole('checkbox', {
+            name: 'Use SSL / TLS',
+        });
+        expect(box).toBeChecked();
+        expect(screen.queryByText(/travel unencrypted/)).toBeNull();
+        fireEvent.click(box);
+        expect(screen.getByText(/travel unencrypted/)).toBeInTheDocument();
+    });
+
     it('starts from an empty form and the first step when it is opened again', async () => {
         const view = mount();
         await fillAndConnect();

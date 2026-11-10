@@ -32,7 +32,8 @@ export const emptyConnectionForm = (): ConnectionForm => ({
     database: '',
     user: '',
     password: '',
-    ssl: false,
+    // a new connection is encrypted unless the user turns it off
+    ssl: true,
     trustServerCertificate: false,
 });
 

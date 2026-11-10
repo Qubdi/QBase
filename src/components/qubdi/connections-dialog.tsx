@@ -499,6 +499,14 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                     )}
                                 </label>
                             </div>
+                            {!form.ssl && (
+                                <p
+                                    role="alert"
+                                    className="text-sm text-destructive"
+                                >
+                                    {t('qubdi.database.connections.sslOff')}
+                                </p>
+                            )}
                             {tested ? (
                                 <p role="status" className="text-sm">
                                     {tested}

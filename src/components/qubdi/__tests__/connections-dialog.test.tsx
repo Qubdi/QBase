@@ -155,6 +155,17 @@ describe('ConnectionsDialog', () => {
             return shown;
         };
 
+        it('starts encrypted and warns when SSL / TLS is turned off', async () => {
+            await open();
+            const box = screen.getByRole('checkbox', {
+                name: 'Use SSL / TLS',
+            });
+            expect(box).toBeChecked();
+            expect(screen.queryByText(/travel unencrypted/)).toBeNull();
+            fireEvent.click(box);
+            expect(screen.getByText(/travel unencrypted/)).toBeInTheDocument();
+        });
+
         it('saves what was typed, trimmed, in this project', async () => {
             const { onChanged } = await open();
             fillNew();
@@ -168,7 +179,7 @@ describe('ConnectionsDialog', () => {
                 database: 'shop',
                 user: 'reader',
                 password: 'secret',
-                ssl: false,
+                ssl: true,
                 trustServerCertificate: false,
             });
             // back on the list, which was reloaded
