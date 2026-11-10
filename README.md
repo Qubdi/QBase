@@ -427,6 +427,13 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   It happens once; do it in a quiet moment, and lower `AUDIT_RETENTION_DAYS` and let the
   clean-up run first if the log is very large.
 
+- Languages: the editor is translated into German, French, Italian and Russian. The
+  screens that talk to the server (sign-in, projects, members, share links, connections,
+  drift, admin) are English only for now: about 900 of their keys have no translation in
+  those four languages and show the English text. Contributions of translations are welcome.
+- DBML import reads at most 2 MB of text (a few thousand tables): the parser it uses slows
+  down faster than the input grows (10k tables take about 12 s). Split a larger file.
+
 ## Scaling
 
 One server process and the bundled database take a team a long way: a save is about 5 ms

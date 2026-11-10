@@ -7,7 +7,7 @@ import {
     sampleS3,
 } from '@/dialects/testing/sample-designs';
 import { exportDbml } from './export-dbml';
-import { importDbml } from './import-dbml';
+import { importDbml, MAX_DBML_CHARS } from './import-dbml';
 import { checkExpression } from '../sql/check-expression';
 
 const names = (d: Design) =>
@@ -286,5 +286,14 @@ describe('EXP-049 check expression checker', () => {
         const p = checkExpression(expr);
         expect(!!p).toBe(bad);
         if (p) expect(p.line).toBeGreaterThan(0);
+    });
+});
+
+describe('DBML size cap', () => {
+    it('refuses text over the cap before the parser sees it', () => {
+        const r = importDbml(' '.repeat(MAX_DBML_CHARS + 1), 'postgresql');
+        expect(r.diagnostics[0]?.severity).toBe('error');
+        expect(r.diagnostics[0]?.message).toMatch(/too large/);
+        expect(r.counts).toEqual({ ...r.counts });
     });
 });

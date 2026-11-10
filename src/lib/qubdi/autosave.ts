@@ -1,6 +1,41 @@
 /** How long the editor waits after the last change before saving to the server. */
 export const AUTOSAVE_DELAY_MS = 10_000;
 
+const RETRY_BASE_MS = 2_000;
+const RETRY_MAX_MS = 60_000;
+// a server that asks for a long wait is obeyed, up to this
+const RETRY_AFTER_MAX_MS = 5 * 60_000;
+
+/**
+ * How long to wait before sending a failed save again, or null when waiting
+ * cannot help (the server refused it: 4xx other than 429). A network failure
+ * has no status. Exponential from 2 s to 1 min with jitter; a Retry-After the
+ * server sent is honoured when it asks for longer.
+ */
+export function retryDelayMs(
+    error: unknown,
+    attempt: number,
+    random: () => number = Math.random
+): number | null {
+    const { status, retryAfterMs } = (error ?? {}) as {
+        status?: unknown;
+        retryAfterMs?: unknown;
+    };
+    if (typeof status === 'number' && status !== 429 && status < 500) {
+        return null;
+    }
+    const backoff = Math.min(
+        RETRY_MAX_MS,
+        RETRY_BASE_MS * 2 ** Math.max(0, attempt - 1)
+    );
+    const jittered = backoff * (0.5 + random() / 2);
+    const asked =
+        typeof retryAfterMs === 'number'
+            ? Math.min(RETRY_AFTER_MAX_MS, retryAfterMs)
+            : 0;
+    return Math.max(jittered, asked);
+}
+
 export type SaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
 export interface AutosaverOptions<T> {
@@ -34,8 +69,9 @@ export interface Autosaver<T> {
 /**
  * Debounced saving of a value that changes often. It never sends content that
  * is already saved, never runs two saves at once (a change made while saving
- * is sent right after), and keeps the change pending after a failure so the
- * next flush or edit retries it.
+ * is sent right after), and keeps the change pending after a failure. A
+ * failure that waiting can fix (network, 429, 5xx) is retried by itself with
+ * backoff; the next flush, edit or return of the connection retries at once.
  */
 export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
     const { delayMs, save, onStatus, serialize } = options;
@@ -47,10 +83,19 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
     let pending = false;
     // the last save failed and nothing has retried it since
     let failed = false;
+    // failures in a row, for the retry backoff
+    let failures = 0;
 
     const clear = () => {
         if (timer !== undefined) clearTimeout(timer);
         timer = undefined;
+    };
+
+    const schedule = (ms: number) => {
+        timer = setTimeout(() => {
+            timer = undefined;
+            void run();
+        }, ms);
     };
 
     const run = (): Promise<void> => {
@@ -64,6 +109,7 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
             .then(
                 () => {
                     baseline = attempt.key;
+                    failures = 0;
                     // edited while saving: send the newer content as well
                     if (latest && latest.key !== baseline) {
                         running = null;
@@ -73,7 +119,13 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
                 },
                 (error: unknown) => {
                     failed = true;
+                    failures++;
                     onStatus('error', error);
+                    // an edit made meanwhile has its own timer; keep that one
+                    const wait = retryDelayMs(error, failures);
+                    if (wait !== null && !disposed && timer === undefined) {
+                        schedule(wait);
+                    }
                 }
             )
             .finally(() => {
@@ -84,7 +136,11 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
 
     // a save that failed because the connection dropped is retried when it is back
     const onOnline = () => {
-        if (failed && !disposed) void run();
+        if (failed && !disposed) {
+            clear();
+            failures = 0;
+            void run();
+        }
     };
     const stopListening = () => {
         if (typeof window !== 'undefined') {
@@ -119,7 +175,7 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
                 pending = true;
                 onStatus('pending');
             }
-            timer = setTimeout(() => void run(), delayMs);
+            schedule(delayMs);
         },
         markUnsaved() {
             if (disposed || !latest || pending) return;
@@ -128,7 +184,7 @@ export function createAutosaver<T>(options: AutosaverOptions<T>): Autosaver<T> {
             pending = true;
             onStatus('pending');
             clear();
-            timer = setTimeout(() => void run(), delayMs);
+            schedule(delayMs);
         },
         flush() {
             clear();

@@ -86,12 +86,29 @@ function failure(diagnostics: Diagnostic[]): DbmlImportResult {
     return { diagnostics, counts: NONE };
 }
 
+/**
+ * The most DBML text read in one go. The parser in `@dbml/core` is
+ * superlinear: measured 5k tables 4 s, 10k 12 s, 20k 34 s, and the time is
+ * inside Parser.parse. 2 MB is a few thousand tables, a few seconds.
+ */
+export const MAX_DBML_CHARS = 2_000_000;
+
 /** Reads DBML text into a design (IMP-045 to IMP-055). */
 export function importDbml(
     text: string,
     databaseType: DatabaseType,
     options: DbmlImportOptions = {}
 ): DbmlImportResult {
+    if (text.length > MAX_DBML_CHARS) {
+        return failure([
+            {
+                severity: 'error',
+                message: `The DBML is too large to import (${MAX_DBML_CHARS / 1_000_000} MB of text at most). Split it into several files.`,
+                line: 1,
+                column: 1,
+            },
+        ]);
+    }
     const dialect = dialectFor(databaseType);
     const prepared = prepareDbml(text);
     const diagnostics: Diagnostic[] = [];

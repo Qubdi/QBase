@@ -297,10 +297,24 @@ export class ApiError extends Error {
         public status: number,
         public code: string,
         /** human readable detail from the server, when it sends one */
-        public detail?: string
+        public detail?: string,
+        /** how long the server asked the client to wait (Retry-After), in ms */
+        public retryAfterMs?: number
     ) {
         super(detail ?? code);
     }
+}
+
+/** Retry-After as milliseconds: delta-seconds or an HTTP date; undefined when absent or unreadable. */
+export function parseRetryAfter(
+    value: string | null,
+    now: number = Date.now()
+): number | undefined {
+    if (!value) return undefined;
+    const trimmed = value.trim();
+    if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
+    const at = Date.parse(trimmed);
+    return Number.isNaN(at) ? undefined : Math.max(0, at - now);
 }
 
 export type DbDialect = 'postgresql' | 'sqlserver';
@@ -534,7 +548,8 @@ export function createApi(
             throw new ApiError(
                 res.status,
                 data?.error ?? 'request_failed',
-                typeof data?.message === 'string' ? data.message : undefined
+                typeof data?.message === 'string' ? data.message : undefined,
+                parseRetryAfter(res.headers.get('Retry-After'))
             );
         }
         if (schema) {

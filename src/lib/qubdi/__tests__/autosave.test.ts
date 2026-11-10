@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     AUTOSAVE_DELAY_MS,
     createAutosaver,
+    retryDelayMs,
     type SaveStatus,
 } from '../autosave';
 
@@ -121,6 +122,44 @@ describe('createAutosaver', () => {
         await saver.flush();
         expect(saved).toEqual([2, 2]);
         expect(statuses.at(-1)).toBe('saved');
+    });
+
+    it('retries a network failure by itself, with a growing wait', async () => {
+        let fails = 2;
+        const { saver, saved, statuses } = setup(async () => {
+            if (fails-- > 0) throw new TypeError('Failed to fetch');
+        });
+        saver.update({ n: 1 });
+        saver.update({ n: 2 });
+        await vi.advanceTimersByTimeAsync(1000); // first try fails
+        expect(saved).toEqual([2]);
+        await vi.advanceTimersByTimeAsync(2000); // retry 1 (at most 2 s) fails
+        expect(saved).toEqual([2, 2]);
+        await vi.advanceTimersByTimeAsync(4000); // retry 2 (at most 4 s) works
+        expect(saved).toEqual([2, 2, 2]);
+        expect(statuses.at(-1)).toBe('saved');
+        await vi.advanceTimersByTimeAsync(120_000);
+        expect(saved).toEqual([2, 2, 2]);
+    });
+
+    it('does not retry a refusal, and stops retrying once disposed', async () => {
+        const refused = setup(async () => {
+            throw Object.assign(new Error('no'), { status: 403 });
+        });
+        refused.saver.update({ n: 1 });
+        refused.saver.update({ n: 2 });
+        await vi.advanceTimersByTimeAsync(300_000);
+        expect(refused.saved).toEqual([2]);
+
+        const down = setup(async () => {
+            throw Object.assign(new Error('bad gateway'), { status: 502 });
+        });
+        down.saver.update({ n: 1 });
+        down.saver.update({ n: 2 });
+        await vi.advanceTimersByTimeAsync(1000);
+        down.saver.dispose();
+        await vi.advanceTimersByTimeAsync(300_000);
+        expect(down.saved).toEqual([2]);
     });
 
     it('retries with the next edit after a failure', async () => {
@@ -308,5 +347,36 @@ describe('createAutosaver', () => {
             await vi.advanceTimersByTimeAsync(5000);
             expect(saved).toEqual([]);
         });
+    });
+});
+
+describe('retryDelayMs', () => {
+    const mid = () => 1; // no jitter reduction
+    it('backs off from 2 s up to a minute', () => {
+        const net = new TypeError('Failed to fetch');
+        expect(
+            [1, 2, 3, 4, 5, 6, 7, 20].map((n) => retryDelayMs(net, n, mid))
+        ).toEqual([2000, 4000, 8000, 16000, 32000, 60000, 60000, 60000]);
+    });
+    it('jitters between half and all of the wait', () => {
+        expect(retryDelayMs(new TypeError('x'), 1, () => 0)).toBe(1000);
+    });
+    it('retries 429 and 5xx, not other refusals', () => {
+        expect(retryDelayMs({ status: 429 }, 1, mid)).toBe(2000);
+        expect(retryDelayMs({ status: 503 }, 1, mid)).toBe(2000);
+        for (const status of [400, 401, 403, 404, 409, 413, 423]) {
+            expect(retryDelayMs({ status }, 1, mid)).toBeNull();
+        }
+    });
+    it('honours Retry-After when it asks for longer, up to 5 minutes', () => {
+        expect(
+            retryDelayMs({ status: 429, retryAfterMs: 30_000 }, 1, mid)
+        ).toBe(30_000);
+        expect(retryDelayMs({ status: 429, retryAfterMs: 500 }, 1, mid)).toBe(
+            2000
+        );
+        expect(
+            retryDelayMs({ status: 429, retryAfterMs: 3_600_000 }, 1, mid)
+        ).toBe(300_000);
     });
 });

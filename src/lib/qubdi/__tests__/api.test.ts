@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     ApiError,
+    parseRetryAfter,
     createApi,
     errorMessage,
     KEEPALIVE_BODY_LIMIT,
@@ -1001,5 +1002,19 @@ describe('answers that are checked (CLI-006)', () => {
         await expect(
             answering(200, share).getPublicShare('tok')
         ).resolves.toEqual({ status: 'ok', share });
+    });
+});
+
+describe('parseRetryAfter', () => {
+    it('reads seconds and HTTP dates, and nothing else', () => {
+        expect(parseRetryAfter('7')).toBe(7000);
+        expect(parseRetryAfter(' 0 ')).toBe(0);
+        const now = Date.parse('2026-11-10T12:00:00Z');
+        expect(parseRetryAfter('Tue, 10 Nov 2026 12:00:30 GMT', now)).toBe(
+            30_000
+        );
+        expect(parseRetryAfter('Tue, 10 Nov 2026 11:00:00 GMT', now)).toBe(0);
+        expect(parseRetryAfter('soon')).toBeUndefined();
+        expect(parseRetryAfter(null)).toBeUndefined();
     });
 });
