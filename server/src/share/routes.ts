@@ -10,6 +10,7 @@ import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { CryptoBox } from '../introspect/crypto-box.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
+import { safeError } from '../lib/safe-error.js';
 import { addressKey } from '../lib/rate-key.js';
 import { API_SECURITY_HEADERS, hstsHeaders } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
@@ -205,6 +206,11 @@ export const shareManagementRoutes =
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const link = await findLink(id, linkId);
             if (!link) return reply.code(404).send({ error: 'not_found' });
+            // a revoked link is gone for good: changing it would tell viewers and
+            // the log about an edit that did nothing
+            if (link.revokedAt) {
+                return reply.code(409).send({ error: 'revoked' });
+            }
             const body = patchBody.parse(req.body);
             const nextExpiresAt =
                 body.expiresAt === undefined
@@ -245,7 +251,7 @@ export const shareManagementRoutes =
                                 ? undefined
                                 : nextExpiresAt,
                     })
-                    .where(eq(shareLinks.id, linkId))
+                    .where(and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt)))
                     .returning();
                 return row;
             });
@@ -520,7 +526,7 @@ export const publicShareRoutes =
                         send(`event: version\ndata: ${JSON.stringify({ version })}\n\n`);
                     } catch (err) {
                         req.log.error(
-                            { err },
+                            { err: safeError(err) },
                             'share events: publish check failed'
                         );
                         close();
@@ -534,7 +540,7 @@ export const publicShareRoutes =
                         if (!(await stillValid(true))) close();
                     } catch (err) {
                         req.log.error(
-                            { err },
+                            { err: safeError(err) },
                             'share events: link check failed'
                         );
                         close();
@@ -562,7 +568,7 @@ export const publicShareRoutes =
                         if (!still || still.id !== req.user.id) return close();
                     }
                 } catch (err) {
-                    req.log.error({ err }, 'share events: heartbeat check failed');
+                    req.log.error({ err: safeError(err) }, 'share events: heartbeat check failed');
                     return close();
                 }
                 // The ping names the newest version: a publish that fell in a gap
@@ -573,7 +579,7 @@ export const publicShareRoutes =
                 try {
                     version = await snapshots.version(diagramId);
                 } catch (err) {
-                    req.log.error({ err }, 'share events: version read failed');
+                    req.log.error({ err: safeError(err) }, 'share events: version read failed');
                 }
                 if (closed) return;
                 if (version === undefined) send(': ping\n\n');

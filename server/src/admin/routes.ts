@@ -452,6 +452,11 @@ export const adminRoutes =
                     body.isActive === false && target.isActive
                         ? await revokeLinksOf(tx, [id])
                         : [];
+                // a reset password, or a disabled account, ends every session: in
+                // the same transaction, so the change never stands without it
+                if (body.password !== undefined || body.isActive === false) {
+                    await destroyOtherSessions(tx, id, undefined);
+                }
                 return { target, revokedLinks };
             });
             if ('error' in outcome) {
@@ -461,10 +466,6 @@ export const adminRoutes =
             }
             const { target, revokedLinks } = outcome;
             revokedLinks.forEach(emitLinkChanged);
-            if (body.password !== undefined || body.isActive === false) {
-                // a reset password, or a disabled account, ends every session
-                await destroyOtherSessions(db, id, undefined);
-            }
             const statusChanged =
                 body.isActive !== undefined &&
                 body.isActive !== target.isActive;

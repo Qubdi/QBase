@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 39 · **date** 2026-11-10
+**rev** 40 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 3 | 0 | 0 | 42 | 0 |
 | Repository | 4 | 0 | 0 | 59 | 0 |
-| Server | 7 | 0 | 0 | 33 | 0 |
+| Server | 3 | 0 | 0 | 37 | 0 |
 | Database | 4 | 0 | 0 | 18 | 1 |
 | Client | 3 | 0 | 0 | 99 | 0 |
 | Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 21 | 0 | 0 | 292 | 1 |
+| **Total** | 17 | 0 | 0 | 296 | 1 |
 
 ## Act first
 
@@ -46,10 +46,6 @@ None.
 | SRV-008 | Med | Live-viewer caps (`SSE_MAX_PER_LINK`, `SSE_MAX_PER_IP`) are per process; limiters, lockout and drift guard now cluster-wide | `server/src/config.ts:341`, `server/src/config.ts:342`, `server/src/share/routes.ts:444` | Count live viewers in Postgres with a heartbeat table |
 | SRV-009 | Med | 40 MB diagram body still blocks the event loop about 0.9 s in JSON.parse, depth check and write | `server/src/config.ts:329`, `server/src/diagrams/routes.ts:285` | Parse in a worker thread or lower the default limit |
 | SRV-030 | Low | SQL Server tests skip in CI: `ci.yaml` has no SQL Server service | `server/test/introspect-sqlserver.test.ts:24`, `.github/workflows/ci.yaml:48` | Add SQL Server service and MSSQL_SA_PASSWORD to the server job |
-| SRV-038 | Low | PATCH on a revoked share link returns 200, emits event, logs `share.update` | `server/src/share/routes.ts:242` | Add `isNull(revokedAt)` to the update; answer 409 |
-| SRV-039 | Low | Password reset and change commit before sessions are destroyed; failure leaves old sessions valid | `server/src/admin/routes.ts:426`, `server/src/auth/routes.ts:363` | Update hash and delete sessions in one transaction |
-| SRV-040 | Low | Raw Drizzle errors logged outside the handler; messages embed query params | `server/src/audit/audit.ts:157`, `server/src/maintenance.ts:258`, `server/src/share/routes.ts:549`, `server/src/auth/routes.ts:256`, `server/src/server.ts:69` | Route every log site through `safeError` |
-| SRV-041 | Low | Sign-in email has no max length; it goes into a rate-counter key | `server/src/auth/routes.ts:38` | Add `.max(254)` to email |
 
 ### Database
 
@@ -85,6 +81,10 @@ None.
 | SEC-016 | Security & secrets | `user.create` audit omits whether the new account was made admin |
 | SEC-021 | Security & secrets | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked |
 | SEC-025 | Security & secrets | `.gitignore` lacks key and certificate patterns (`*.pem`, `*.key`) |
+| SRV-038 | Server | PATCH on a revoked share link returns 200, emits event, logs `share.update` |
+| SRV-039 | Server | Password reset and change commit before sessions are destroyed; failure leaves old sessions valid |
+| SRV-040 | Server | Raw Drizzle errors logged outside the handler; messages embed query params |
+| SRV-041 | Server | Sign-in email has no max length; it goes into a rate-counter key |
 | SRV-028 | Server | SSE writes ignore backpressure; a slow viewer buffers events without bound |
 | SRV-036 | Server | Shutdown awaits running maintenance before closing app; long prune hits forced exit |
 | SRV-032 | Server | Deeply nested content (10 KB, depth 5000) overflows recursive stableStringify; answers 500 |
@@ -443,6 +443,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 40 | 2026-11-10 | 4 fixed (server low batch: SRV-038, 039, 040, 041); SRV-030 left (SQL Server CI); 17 open, 0 Crit, 0 High; anchors not remapped |
 | 39 | 2026-11-10 | 3 fixed (database low batch: DB-022, 023, 024; one migration, 0029); DB-006 and DB-019 left (metadata format change; SQL Server CI); 21 open, 0 Crit, 0 High; anchors not remapped |
 | 38 | 2026-11-10 | 5 fixed (client low batch: CLI-102, 104, 105, 107, 108); CLI-109 re-attributed to `@dbml/core` Parser.parse; CLI-106 left (907 keys to translate); 24 open, 0 Crit, 0 High; anchors not remapped |
 | 37 | 2026-11-10 | 2 fixed (dead code lens: DEAD-037, DEAD-042); 29 open, 0 Crit, 0 High; anchors not remapped |

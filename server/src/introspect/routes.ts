@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { safeError } from '../lib/safe-error.js';
 import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import { and, eq, ne } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
@@ -236,7 +237,7 @@ export const introspectRoutes =
                 } else if (err instanceof UnsafeSqlError) {
                     // a bug in a catalog query, not the caller's doing: the log is
                     // the only place it shows
-                    reply.log.error({ err }, 'introspection query refused by the read-only guard');
+                    reply.log.error({ err: safeError(err) }, 'introspection query refused by the read-only guard');
                     reply.code(500).send({ error: 'internal_error' });
                 } else {
                     // driver text tells refused from timed out from wrong password, which

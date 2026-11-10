@@ -1,4 +1,5 @@
 import { buildApp } from './app.js';
+import { safeError } from './lib/safe-error.js';
 import { ConfigError, loadConfig, startupWarnings } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
 import { startEventBridge } from './events.js';
@@ -66,10 +67,10 @@ process.on('SIGINT', () => void shutdown('SIGINT'));
 // an error nobody handled: log it and close in order (streams, pool) instead of
 // dying half way, then exit with 1 so a process manager restarts the server
 process.on('unhandledRejection', (reason) => {
-    app.log.error({ err: reason }, 'unhandled rejection');
+    app.log.error({ err: safeError(reason) }, 'unhandled rejection');
     void shutdown('unhandledRejection', true);
 });
 process.on('uncaughtException', (err) => {
-    app.log.error({ err }, 'uncaught exception');
+    app.log.error({ err: safeError(err) }, 'uncaught exception');
     void shutdown('uncaughtException', true);
 });

@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { safeError } from '../lib/safe-error.js';
 import { eq, sql } from 'drizzle-orm';
 import type {
     FastifyPluginAsync,
@@ -38,7 +39,8 @@ const FIRST_USER_LOCK = 7_301_001;
 // apply when one is SET (see weakPassword), never here, so people who chose a
 // password under older rules can still get in.
 const signIn = z.object({
-    email: z.string().trim().toLowerCase().email(),
+    // 254 is the longest address there is: it also keeps the lockout key short
+    email: z.string().trim().toLowerCase().max(254).email(),
     password: z.string().min(1).max(200),
 });
 
@@ -253,7 +255,7 @@ export const authRoutes =
                             await audit(db, { userId: user.id, action: 'user.locked' });
                         }
                     } catch (err) {
-                        req.log.error({ err }, 'sign-in failure was not logged');
+                        req.log.error({ err: safeError(err) }, 'sign-in failure was not logged');
                     }
                 }
                 return reply;
@@ -360,19 +362,24 @@ export const authRoutes =
                 }
             }
             await failures.reset(key);
-            await db
-                .update(users)
-                .set({
-                    passwordHash: await hashPassword(body.newPassword),
-                    // their own password now, not the temporary one
-                    mustChangePassword: false,
-                })
-                .where(eq(users.id, user.id));
-            await destroyOtherSessions(
-                db,
-                user.id,
-                sessionTokenOf(req.cookies, cookieSecure(req))
-            );
+            const newHash = await hashPassword(body.newPassword);
+            // together: a failure between the two would leave the old sessions
+            // valid under the new password
+            await db.transaction(async (tx) => {
+                await tx
+                    .update(users)
+                    .set({
+                        passwordHash: newHash,
+                        // their own password now, not the temporary one
+                        mustChangePassword: false,
+                    })
+                    .where(eq(users.id, user.id));
+                await destroyOtherSessions(
+                    tx,
+                    user.id,
+                    sessionTokenOf(req.cookies, cookieSecure(req))
+                );
+            });
             await audit(db, { userId: user.id, action: 'user.password_change' });
             return { ok: true };
         });

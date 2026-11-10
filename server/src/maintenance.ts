@@ -1,4 +1,5 @@
 import { and, isNotNull, lt, or, sql } from 'drizzle-orm';
+import { safeError } from './lib/safe-error.js';
 import type { Config } from './config.js';
 import { MAINTENANCE_LOCK, withAdvisoryLock, type Db } from './db/client.js';
 import {
@@ -255,7 +256,7 @@ export async function runMaintenance(
         } catch (err) {
             removed[name] = 0;
             failed.push(name);
-            console.error(`Maintenance step "${name}" failed:`, err);
+            console.error(`Maintenance step "${name}" failed:`, safeError(err));
         }
     }
     return { ...removed, failed };
@@ -282,7 +283,7 @@ export function startMaintenance(
         )
             .then(() => undefined)
             .catch((err: unknown) => {
-                console.error('Maintenance failed:', err);
+                console.error('Maintenance failed:', safeError(err));
             })
             .finally(() => {
                 current = null;

@@ -165,14 +165,14 @@ export function buildApp({
             ]);
             return { ok: true };
         } catch (err) {
-            app.log.warn({ err }, 'health check: the database did not answer');
+            app.log.warn({ err: safeError(err) }, 'health check: the database did not answer');
             return reply.code(503).send({ ok: false });
         }
     });
 
     // rate limits and lockouts count here, in Postgres, so they hold across server processes
     const counters = createCounters(db, (err) =>
-        app.log.warn({ err }, 'shared counters unavailable; counting in this process')
+        app.log.warn({ err: safeError(err) }, 'shared counters unavailable; counting in this process')
     );
     app.decorate('counters', counters);
 

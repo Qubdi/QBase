@@ -135,7 +135,10 @@ describe('server.ts start and stop wiring', () => {
         const reason = new Error('nobody caught this');
         handlers.get('unhandledRejection')!(reason);
         await vi.waitFor(() => expect(exit).toHaveBeenCalled());
-        expect(app.log.error).toHaveBeenCalledWith({ err: reason }, 'unhandled rejection');
+        expect(app.log.error).toHaveBeenCalledWith(
+            { err: expect.objectContaining({ message: 'nobody caught this' }) },
+            'unhandled rejection'
+        );
         expect(calls.order).toContain('pool end');
         expect(exit).toHaveBeenCalledExactlyOnceWith(1);
     });

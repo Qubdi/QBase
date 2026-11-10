@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { and, eq, gt, ne, sql } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
+import type { Db, Tx } from '../db/client.js';
 import { hashToken } from '../share/tokens.js';
 import { diagramLocks, sessions, users } from '../db/schema.js';
 
@@ -165,7 +165,7 @@ export async function destroySession(db: Db, token: string | undefined) {
  * out" from "was not signed in".
  */
 export async function destroyOtherSessions(
-    db: Db,
+    db: Db | Tx,
     userId: string,
     exceptToken: string | undefined
 ): Promise<number> {

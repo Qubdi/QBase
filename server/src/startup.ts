@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { safeError } from './lib/safe-error.js';
 import type { Config } from './config.js';
 import type { Db } from './db/client.js';
 import { users } from './db/schema.js';
@@ -39,7 +40,7 @@ export async function runStartupTasks(
         } catch (err) {
             out.error(
                 'Could not encrypt saved webhook URLs:',
-                err instanceof Error ? err.message : err
+                safeError(err).message
             );
         }
     }
@@ -57,7 +58,7 @@ export async function runStartupTasks(
             }
         }
     } catch (err) {
-        out.error('Could not re-seal stored secrets:', err instanceof Error ? err.message : err);
+        out.error('Could not re-seal stored secrets:', safeError(err).message);
     }
 
     // On an empty server the first sign-up becomes the admin, so it needs a token:

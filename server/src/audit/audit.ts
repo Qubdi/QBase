@@ -1,4 +1,5 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
+import { safeError } from '../lib/safe-error.js';
 import type { Db, Tx } from '../db/client.js';
 import { auditLog } from '../db/schema.js';
 import { requestIds } from './request-context.js';
@@ -162,7 +163,7 @@ const logLost = (what: string, err: unknown) => {
     const id = requestIds.getStore();
     console.error(
         `Audit row lost (${what})${id ? ` [request ${id}]` : ''}:`,
-        err instanceof Error ? err.message : err
+        safeError(err).message
     );
 };
 
