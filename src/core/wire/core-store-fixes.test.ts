@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- hand-edited JSON fixtures */
 import { describe, expect, it } from 'vitest';
 import { listOf } from '../model/collection';
 import { NOW, rng } from '../testing/helpers';
@@ -6,11 +5,15 @@ import { shop } from './fixtures/shop';
 import { parse } from './parse';
 import { serialise } from './serialise';
 
+// the one place a fixture is allowed to be untyped: tests edit it by path
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Fixture = any;
+
 const read = (json: unknown) => parse(json, { now: NOW, random: rng() });
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 
-function tiny(tables: any[], relationships: any[] = []) {
-    const base = clone(shop) as any;
+function tiny(tables: Fixture[], relationships: Fixture[] = []) {
+    const base = clone(shop) as Fixture;
     return {
         ...base,
         tables,
@@ -126,7 +129,7 @@ describe('review core-store 16: wire edge cases', () => {
             },
         ]);
         const { design } = read(json);
-        const out: any = serialise(design);
+        const out: Fixture = serialise(design);
         expect(out.tables[0].fields[0].type).toEqual({
             id: 'int',
             name: 'int',
@@ -154,7 +157,7 @@ describe('RecordReader extras', () => {
         const extras = reader.extras()!;
         expect(Object.getPrototypeOf(extras)).toBe(Object.prototype);
         expect(Object.keys(extras)).toEqual(['__proto__']);
-        expect((extras as any).polluted).toBeUndefined();
-        expect(({} as any).polluted).toBeUndefined();
+        expect((extras as Fixture).polluted).toBeUndefined();
+        expect(({} as Fixture).polluted).toBeUndefined();
     });
 });

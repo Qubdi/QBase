@@ -33,7 +33,7 @@ export const RegionCard = memo(function RegionCard({
             done.current = false;
             setDraft(region.label);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- focus follows the renaming id only, not the rest of `surface`
     }, [surface.renamingId, id]);
     useEffect(() => {
         if (renaming) input.current?.select();

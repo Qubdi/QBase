@@ -327,7 +327,7 @@ function Surface({
             return;
         }
         updateInternals([...visible]);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `visible` and `updateInternals` are read, but only a change of `detailed` re-measures
     }, [detailed]);
 
     // hand the camera to the frame once; the functions never change
@@ -339,7 +339,7 @@ function Surface({
             zoomToIds: (ids) => controls.zoomToIds(ids),
             viewportOrigin: () => controls.viewportOrigin(),
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- the camera functions are handed over once, on mount
     }, []);
 
     // A table that only the DBML preview has must come into view. The preview is
@@ -373,7 +373,7 @@ function Surface({
         };
         raf = requestAnimationFrame(tick);
         return () => cancelAnimationFrame(raf);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- the effect restarts only for a new set of added tables, not when `controls` changes
     }, [addedKey]);
 
     // the view refits after the filter changes (EDT-073)
@@ -384,7 +384,7 @@ function Surface({
             return;
         }
         controls.fit();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- the view refits only when the filter changes, not when `controls` does
     }, [filter]);
 
     const onNodesChange = useCallback(
@@ -957,7 +957,7 @@ function Surface({
         if (![...visible].every((id) => sizes[id])) return;
         fittedOnce.current = true;
         controls.fit({ instant: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- the first fit waits for `visible` and `sizes`; `controls` is not a trigger
     }, [visible, sizes]);
     useEffect(() => {
         if (!hostEl || typeof ResizeObserver === 'undefined') return;
@@ -976,7 +976,7 @@ function Surface({
         });
         watcher.observe(hostEl);
         return () => watcher.disconnect();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- the observer is made once per host element; `controls` is read when it fires
     }, [hostEl]);
 
     const everythingHidden =
