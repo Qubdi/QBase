@@ -20,6 +20,7 @@ import {
 import {
     byText,
     claimName,
+    collateClause,
     commaList,
     firstSeen,
     linesOf,
@@ -105,6 +106,7 @@ function columnLine(column: Column): string {
         return `${notes}    ${computed}`;
     }
     let line = `${quoteBracket(column.name)} ${sqlServerType(column)}`;
+    line += collateClause(column.collation);
     if (!column.nullable) line += ' NOT NULL';
     if (numbered) line += ' IDENTITY(1,1)';
     if (!column.primaryKey && column.unique) line += ' UNIQUE';

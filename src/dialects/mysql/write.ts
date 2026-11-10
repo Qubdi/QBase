@@ -18,6 +18,7 @@ import {
 } from '../shared/export-model';
 import {
     claimName,
+    collateClause,
     commaList,
     firstSeen,
     linesOf,
@@ -124,6 +125,7 @@ function columnLine(column: Column): string {
     const numbered =
         column.increment || (column.primaryKey && isNumberingMarker(text));
     let line = `${quoteBacktick(column.name)} ${mysqlType(column)}`;
+    line += collateClause(column.collation);
     if (column.generated) {
         line += ` GENERATED ALWAYS AS (${column.generated.expression}) ${
             column.generated.stored ? 'STORED' : 'VIRTUAL'

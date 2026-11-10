@@ -349,3 +349,30 @@ describe('PostgreSQL nextval defaults are written only in their real form (CLI-0
         expect(text).not.toContain('CREATE SEQUENCE');
     });
 });
+
+describe('CLI-093 column collation', () => {
+    it.each([
+        ['postgresql', 'C'],
+        ['mysql', 'utf8mb4_bin'],
+        ['sql_server', 'Latin1_General_CI_AS'],
+        ['sqlite', 'NOCASE'],
+    ] as const)('%s writes COLLATE in a same-dialect export', (db, collation) => {
+        const d = build(db, [table('t', [col('a', 'text', { collation })])]);
+        const text = exportSql(d, db).text;
+        expect(text).toMatch(new RegExp(`COLLATE "?${collation}"?`));
+    });
+
+    it('leaves out a collation name that is not a plain name', () => {
+        const d = build('postgresql', [
+            table('t', [col('a', 'text', { collation: 'x; DROP TABLE t' })]),
+        ]);
+        expect(exportSql(d, 'postgresql').text).not.toContain('COLLATE');
+    });
+
+    it('notes the dropped collation in a conversion', () => {
+        const d = build('postgresql', [
+            table('t', [col('a', 'text', { collation: 'C' })]),
+        ]);
+        expect(exportSql(d, 'mysql').text).toContain('Collations');
+    });
+});

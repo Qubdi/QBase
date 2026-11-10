@@ -34,7 +34,8 @@ type Section =
     | 'Indexes'
     | 'Foreign keys'
     | 'Schemas and views'
-    | 'Names';
+    | 'Names'
+    | 'Collations';
 
 /** Conversion notes, grouped by section in the order each section is first used. */
 class Notes {
@@ -338,6 +339,12 @@ export function convertDesign(
                 );
             neutral = p.neutral;
 
+            if (column.collation?.trim())
+                notes.add(
+                    'Collations',
+                    where(column),
+                    `collation ${column.collation.trim()} is not carried over; the target's default collation applies`
+                );
             const flags: string[] = [];
             const notNull = column.primaryKey || numbered || !column.nullable;
             const typeText = numberedInt ?? type.text;
