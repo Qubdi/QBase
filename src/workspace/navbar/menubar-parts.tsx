@@ -97,25 +97,6 @@ export const MenubarItem = React.forwardRef<
 ));
 MenubarItem.displayName = 'MenubarItem';
 
-export const MenubarCheckboxItem = React.forwardRef<
-    React.ComponentRef<typeof Primitive.CheckboxItem>,
-    React.ComponentPropsWithoutRef<typeof Primitive.CheckboxItem>
->(({ className, children, ...props }, ref) => (
-    <Primitive.CheckboxItem
-        ref={ref}
-        className={cn(item, 'pl-8', className)}
-        {...props}
-    >
-        <span className="absolute left-2 flex size-4 items-center justify-center">
-            <Primitive.ItemIndicator>
-                <Check className="size-4" />
-            </Primitive.ItemIndicator>
-        </span>
-        {children}
-    </Primitive.CheckboxItem>
-));
-MenubarCheckboxItem.displayName = 'MenubarCheckboxItem';
-
 export const MenubarRadioItem = React.forwardRef<
     React.ComponentRef<typeof Primitive.RadioItem>,
     React.ComponentPropsWithoutRef<typeof Primitive.RadioItem>
