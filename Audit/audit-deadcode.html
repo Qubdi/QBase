@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 26</b></div>
-  <h1>1 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 27</b></div>
+  <h1>0 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -30,12 +30,11 @@
 <main id="main">
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Dead code</h2></div>
-  <p class="section-note">1 open &middot; 39 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 40 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">DEAD-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts</td><td class="wrap-cell"><code>src/hooks/use-custom-colors.ts:55</code>, <code>src/hooks/use-password-min-length.ts:24</code>, <code>src/platform/toast/use-toast.ts:88</code></td><td class="wrap-cell">Move resets into test helpers; <code>forgetClipboard</code> already removed</td></tr>
       </tbody>
     </table>
   </div>
@@ -43,7 +42,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (39)</summary>
+  <details><summary>Fixed (40)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -86,6 +85,7 @@
         <tr><td class="svc-name">DEAD-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>GET /lint/rules</code> has no client caller and no README mention; now documented</td></tr>
         <tr><td class="svc-name">DEAD-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Three rewrite briefs referenced by no file or tool</td></tr>
         <tr><td class="svc-name">DEAD-032</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused en keys <code>editor.sidePanel</code>: common.more/rename, tables.color, fields.foreignKey, visuals.colour, hover.*, clipboard copied/pasted</td></tr>
+        <tr><td class="svc-name">DEAD-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts, forgetClipboard</td></tr>
         <tr><td class="svc-name">DEAD-033</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused UI component bodies: DropdownMenu SubTrigger/SubContent/CheckboxItem/RadioItem, SelectLabel/Separator, TableFooter/Caption, MenubarCheckboxItem</td></tr>
       </tbody>
     </table>

@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 26 · **date** 2026-11-10
+**rev** 27 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -11,8 +11,8 @@
 | Server | 16 | 0 | 4 | 20 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 5 | 0 | 0 | 89 | 0 |
-| Dead code | 1 | 0 | 0 | 39 | 0 |
-| **Total** | 54 | 0 | 5 | 223 | 1 |
+| Dead code | 0 | 0 | 0 | 40 | 0 |
+| **Total** | 53 | 0 | 5 | 224 | 1 |
 
 ## Act first
 
@@ -108,7 +108,6 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| DEAD-024 | Low | Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts | `src/hooks/use-custom-colors.ts:55`, `src/hooks/use-password-min-length.ts:24`, `src/platform/toast/use-toast.ts:88` | Move resets into test helpers; `forgetClipboard` already removed |
 
 ---
 
@@ -284,6 +283,7 @@
 | DEAD-027 | Dead code | `GET /lint/rules` has no client caller and no README mention; now documented |
 | DEAD-029 | Dead code | Three rewrite briefs referenced by no file or tool |
 | DEAD-032 | Dead code | Unused en keys `editor.sidePanel`: common.more/rename, tables.color, fields.foreignKey, visuals.colour, hover.*, clipboard copied/pasted |
+| DEAD-024 | Dead code | Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts, forgetClipboard |
 | DEAD-033 | Dead code | Unused UI component bodies: DropdownMenu SubTrigger/SubContent/CheckboxItem/RadioItem, SelectLabel/Separator, TableFooter/Caption, MenubarCheckboxItem |
 | SEC-006 | Security & secrets | Fastify sets no requestTimeout or connectionTimeout (slow-body hold) |
 | SEC-007 | Security & secrets | Disabled account answers 403 after correct password, confirming it |
@@ -408,6 +408,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 27 | 2026-11-10 | 1 fixed (DEAD-024, the three remaining reset hooks removed); anchors not remapped |
 | 26 | 2026-11-10 | 7 fixed (security batch 2: SEC-002, 004, 005, 023, 026, 027, 030), 5 narrowed (SEC-003, 011, 013, 014, 031); anchors not remapped |
 | 25 | 2026-11-10 | 10 fixed (dead-code batch: DEAD-001, 002, 007, 011, 025, 026, 027, 029, 032, 033), 1 narrowed (DEAD-024); anchors not remapped |
 | 24 | 2026-11-10 | 17 fixed (client batch 2: CLI-008, 012, 013, 015, 018, 019, 025, 026, 027, 028, 045, 054, 065, 068, 071, 087, 093), 5 narrowed (CLI-005, 006, 007, 039, 069); anchors not remapped |
