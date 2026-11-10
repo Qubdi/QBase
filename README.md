@@ -260,7 +260,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `LINT_RATE_LIMIT` | `30` | Schema lint calls per minute per user |
 | `OUTBOUND_RATE_LIMIT` | `20` | Connections to your databases (import, re-sync, drift checks) per minute per user |
 | `BODY_LIMIT_KB` | `1024` | Largest request body on ordinary routes, in KB |
-| `DIAGRAM_BODY_LIMIT_MB` | `50` | Largest request body on the routes that carry a whole diagram, in MB |
+| `DIAGRAM_BODY_LIMIT_MB` | `25` | Largest request body on the routes that carry a whole diagram, in MB. Saving a diagram blocks the server's event loop while it is parsed, checked and written, about 0.9 s at 40 MB and roughly 0.5 s at 25 MB, and every other request waits that long. Raise it only if a diagram of yours is larger |
 | `DRIFT_CACHE_SECONDS` | `300` | Opening a diagram reuses a drift report this young while the diagram and its settings are unchanged; `0` always reads the database |
 | `DRIFT_REPORT_KEEP` | `50` | Newest drift reports kept per diagram; `0` keeps them all |
 | `DEAD_LINK_KEEP_DAYS` | `30` | Share links revoked or expired this many days ago are deleted; `0` keeps them all |
@@ -435,6 +435,10 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   screens that talk to the server (sign-in, projects, members, share links, connections,
   drift, admin) are English only for now: about 900 of their keys have no translation in
   those four languages and show the English text. Contributions of translations are welcome.
+- The default `DIAGRAM_BODY_LIMIT_MB` went from 50 to 25. A diagram body is parsed, checked and
+  written on the server's single event loop (about 0.9 s at 40 MB), and reading one back costs
+  the parse again in the database driver. An installation that saves diagrams over 25 MB (a
+  save of one answers 413) sets `DIAGRAM_BODY_LIMIT_MB` in its `.env` to keep them.
 - DBML import reads at most 2 MB of text (a few thousand tables): the parser it uses slows
   down faster than the input grows (10k tables take about 12 s). Split a larger file.
 

@@ -540,7 +540,7 @@ unchanged) with minimal checks so unknown keys pass through untouched:
   up to 50 (all optional strings).
 - `tables`, `relationships`, `dependencies`, `areas`, `customTypes`, `notes`: each, if
   present, must be an array (items not inspected).
-- Request body limit: 50 MB by default (setting `DIAGRAM_BODY_LIMIT_MB`).
+- Request body limit: 25 MB by default (setting `DIAGRAM_BODY_LIMIT_MB`).
 - Title (separate from `content.name`): trimmed, 1 to 200 chars.
 
 The editor sends content using the diagram's real ids, never the renumbered export ids,

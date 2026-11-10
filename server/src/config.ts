@@ -328,7 +328,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         snapshotKeep: int('SNAPSHOT_KEEP', 200),
         driftReportKeep: int('DRIFT_REPORT_KEEP', 50),
         bodyLimit: int('BODY_LIMIT_KB', 1024, 1) * 1024,
-        diagramBodyLimit: int('DIAGRAM_BODY_LIMIT_MB', 50, 1) * 1024 * 1024,
+        diagramBodyLimit: int('DIAGRAM_BODY_LIMIT_MB', 25, 1) * 1024 * 1024,
         auditRetentionDays: int('AUDIT_RETENTION_DAYS', 365),
         deadLinkKeepDays: int('DEAD_LINK_KEEP_DAYS', 30),
         cookieSecure: parseCookieSecure(env.COOKIE_SECURE),

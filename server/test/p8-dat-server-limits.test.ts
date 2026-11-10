@@ -5,8 +5,8 @@ import { MAX_LISTED_VERSIONS } from '../src/diagrams/routes.js';
 const defaults = loadConfig({ DATABASE_URL: 'postgres://u:p@localhost:5432/db' });
 
 describe('DAT-075 the content body limit', () => {
-    it('is 50 MB for a diagram by default and 1 MB for ordinary routes', () => {
-        expect(defaults.diagramBodyLimit).toBe(50 * 1024 * 1024);
+    it('is 25 MB for a diagram by default and 1 MB for ordinary routes', () => {
+        expect(defaults.diagramBodyLimit).toBe(25 * 1024 * 1024);
         expect(defaults.bodyLimit).toBe(1024 * 1024);
     });
 
