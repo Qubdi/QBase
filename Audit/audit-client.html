@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 41</b></div>
-  <h1>3 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 42</b></div>
+  <h1>0 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
@@ -31,26 +31,20 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">3 open &middot; 99 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
-      <tbody>
-        <tr><td class="svc-name">CLI-103</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Failed autosave (5xx, 429, network) never retries without a new edit</td><td class="wrap-cell"><code>src/lib/qubdi/autosave.ts:75</code></td><td class="wrap-cell">Retry with capped backoff and jitter; honour Retry-After</td></tr>
-        <tr><td class="svc-name">CLI-106</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Qubdi UI keys (907 of 1586) are English-only in de, fr, it, ru</td><td class="wrap-cell"><code>src/i18n/locales/de.ts:1</code></td><td class="wrap-cell">Translate the keys, or document English-only server UI</td></tr>
-        <tr><td class="svc-name">CLI-109</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">DBML import is superlinear: 20k tables 5.4 s, 40k tables 18 s; the time is in <code>@dbml/core</code> <code>Parser.parse</code> (scratch run: 5k tables 4 s, 10k 12 s, 20k 34 s), not in <code>import-dbml.ts</code>, whose table lookups are already Maps</td><td class="wrap-cell"><code>src/formats/dbml/import-dbml.ts:121</code></td><td class="wrap-cell">Cap the DBML size, parse in chunks, or replace the parser; no change in QBase code helps</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <p class="section-note">0 open &middot; 102 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p>None.</p>
 </section>
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (99)</summary>
+  <details><summary>Fixed (102)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-103</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Failed autosave (5xx, 429, network) never retries without a new edit</td></tr>
+        <tr><td class="svc-name">CLI-106</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Qubdi UI keys (907 of 1586) are English-only in de, fr, it, ru; documented in README</td></tr>
+        <tr><td class="svc-name">CLI-109</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">DBML import is superlinear in <code>@dbml/core</code> Parser.parse; text over 2 MB refused</td></tr>
         <tr><td class="svc-name">CLI-102</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>INVALID_JSON_MESSAGE</code> has no diagnostic rule or i18n key; shown English-only</td></tr>
         <tr><td class="svc-name">CLI-104</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Viewer puts unvalidated table colour into a CSS <code>backgroundImage</code> string</td></tr>
         <tr><td class="svc-name">CLI-105</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>clearRemoteId</code> leaves sync-state behind; connection details linger in localStorage</td></tr>

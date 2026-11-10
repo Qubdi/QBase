@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 41</b></div>
-  <h1>13 open across six lenses.</h1>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 42</b></div>
+  <h1>10 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
@@ -38,9 +38,9 @@
         <tr><td>Repository</td><td>4</td><td>0</td><td>0</td><td>59</td><td>0</td></tr>
         <tr><td>Server</td><td>2</td><td>0</td><td>0</td><td>38</td><td>0</td></tr>
         <tr><td>Database</td><td>1</td><td>0</td><td>0</td><td>21</td><td>1</td></tr>
-        <tr><td>Client</td><td>3</td><td>0</td><td>0</td><td>99</td><td>0</td></tr>
+        <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>102</td><td>0</td></tr>
         <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>41</td><td>0</td></tr>
-        <tr><td>Total</td><td>13</td><td>0</td><td>0</td><td>300</td><td>1</td></tr>
+        <tr><td>Total</td><td>10</td><td>0</td><td>0</td><td>303</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -70,8 +70,8 @@
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
-    <p>3 open findings.</p>
-    <p class="lbl">3 open &middot; 0 Crit &middot; 0 High &middot; 99 fixed &middot; 0 accepted</p>
+    <p>0 open findings.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 102 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-deadcode.html">
     <h3>Dead code</h3>
@@ -86,6 +86,7 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
+        <tr><td>42</td><td>2026-11-10</td><td class="wrap-cell">3 fixed (CLI-103: failed autosave retries with capped backoff and jitter, honours Retry-After; CLI-109: DBML text over 2 MB refused; CLI-106: English-only server screens documented in README); client lens has no open findings; 10 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>41</td><td>2026-11-10</td><td class="wrap-cell">4 fixed (DB-004, DB-019: SQL Server introspect tests run against SQL Server 2025, 15 of 15 pass; all-schemas filter no longer runs OPENJSON on an empty string; DB-021: at most 3 drift checks at once, a fourth answers 429; SRV-030: SQL Server job added to CI); DB-006 left (metadata format change); 13 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>40</td><td>2026-11-10</td><td class="wrap-cell">4 fixed (server low batch: SRV-038, 039, 040, 041); SRV-030 left (SQL Server CI); 17 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>39</td><td>2026-11-10</td><td class="wrap-cell">3 fixed (database low batch: DB-022, 023, 024; one migration, 0029); DB-006 and DB-019 left (metadata format change; SQL Server CI); 21 open, 0 Crit, 0 High; anchors not remapped</td></tr>

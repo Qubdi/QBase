@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 41 · **date** 2026-11-10
+**rev** 42 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 4 | 0 | 0 | 59 | 0 |
 | Server | 2 | 0 | 0 | 38 | 0 |
 | Database | 1 | 0 | 0 | 21 | 1 |
-| Client | 3 | 0 | 0 | 99 | 0 |
+| Client | 0 | 0 | 0 | 102 | 0 |
 | Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 13 | 0 | 0 | 300 | 1 |
+| **Total** | 10 | 0 | 0 | 303 | 1 |
 
 ## Act first
 
@@ -54,11 +54,7 @@ None.
 
 ### Client
 
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| CLI-103 | Med | Failed autosave (5xx, 429, network) never retries without a new edit | `src/lib/qubdi/autosave.ts:75` | Retry with capped backoff and jitter; honour Retry-After |
-| CLI-106 | Low | Qubdi UI keys (907 of 1586) are English-only in de, fr, it, ru | `src/i18n/locales/de.ts:1` | Translate the keys, or document English-only server UI |
-| CLI-109 | Low | DBML import is superlinear: 20k tables 5.4 s, 40k tables 18 s; the time is in `@dbml/core` `Parser.parse` (scratch run: 5k tables 4 s, 10k 12 s, 20k 34 s), not in `import-dbml.ts`, whose table lookups are already Maps | `src/formats/dbml/import-dbml.ts:121` | Cap the DBML size, parse in chunks, or replace the parser; no change in QBase code helps |
+None.
 
 ### Dead code
 
@@ -176,6 +172,9 @@ None.
 | DB-017 | Database | Postgres introspection skips foreign tables; SQL Server lists external tables |
 | DB-018 | Database | Materialized views reported as plain views; definition rebuilt as CREATE VIEW |
 | DB-020 | Database | Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones |
+| CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |
+| CLI-106 | Client | Qubdi UI keys (907 of 1586) are English-only in de, fr, it, ru; documented in README |
+| CLI-109 | Client | DBML import is superlinear in `@dbml/core` Parser.parse; text over 2 MB refused |
 | CLI-102 | Client | `INVALID_JSON_MESSAGE` has no diagnostic rule or i18n key; shown English-only |
 | CLI-104 | Client | Viewer puts unvalidated table colour into a CSS `backgroundImage` string |
 | CLI-105 | Client | `clearRemoteId` leaves sync-state behind; connection details linger in localStorage |
@@ -443,6 +442,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 42 | 2026-11-10 | 3 fixed (CLI-103: failed autosave retries with capped backoff and jitter, honours Retry-After; CLI-109: DBML text over 2 MB refused; CLI-106: English-only server screens documented in README); client lens has no open findings; 10 open, 0 Crit, 0 High; anchors not remapped |
 | 41 | 2026-11-10 | 4 fixed (DB-004, DB-019: SQL Server introspect tests run against SQL Server 2025, 15 of 15 pass; all-schemas filter no longer runs OPENJSON on an empty string; DB-021: at most 3 drift checks at once, a fourth answers 429; SRV-030: SQL Server job added to CI); DB-006 left (metadata format change); 13 open, 0 Crit, 0 High; anchors not remapped |
 | 40 | 2026-11-10 | 4 fixed (server low batch: SRV-038, 039, 040, 041); SRV-030 left (SQL Server CI); 17 open, 0 Crit, 0 High; anchors not remapped |
 | 39 | 2026-11-10 | 3 fixed (database low batch: DB-022, 023, 024; one migration, 0029); DB-006 and DB-019 left (metadata format change; SQL Server CI); 21 open, 0 Crit, 0 High; anchors not remapped |
