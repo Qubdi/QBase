@@ -97,7 +97,7 @@ export const LinkLine = memo(function LinkLine(props: EdgeProps<LinkEdge>) {
                         aria-label={t('canvas.link.select')}
                         title={t('canvas.link.select')}
                         data-testid={`link-dot-${props.id}`}
-                        className="nodrag nopan pointer-events-auto absolute flex size-6 items-center justify-center rounded-full border-2 border-teal-600 bg-background text-teal-600 shadow-lg transition-all hover:scale-110 hover:bg-teal-50"
+                        className="nodrag nopan pointer-events-auto absolute flex size-6 items-center justify-center rounded-full border-2 border-teal-600 bg-background text-teal-600 shadow-lg transition-colors hover:scale-110 hover:bg-teal-50"
                         style={{
                             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
                         }}
