@@ -9,7 +9,7 @@ export const database = {
             'Saved for {{project}}. Its editors use them to import, re-sync and check drift. Passwords are stored encrypted and are never shown again.',
         descriptionForm: 'Connects read-only to read the schema.',
         noStore:
-            'This server cannot store passwords yet, so no connection can be saved. Whoever runs it needs to set <code>CONNECTION_KEY</code> (at least 16 characters) and restart it.',
+            'This server cannot store passwords yet, so no connection can be saved. Whoever runs it needs to set <code>CONNECTION_KEY</code> (at least 32 characters) and restart it.',
         loading: 'Loading…',
         empty: 'No connections yet.',
         listLabel: 'Connections',

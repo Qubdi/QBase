@@ -108,10 +108,10 @@ describe('two-factor settings', () => {
 
     it('encrypts with SECRETS_KEY, else the connection key, else nothing', () => {
         expect(loadConfig({}).secretsKey).toBeNull();
-        expect(loadConfig({ CONNECTION_KEY: 'c'.repeat(20) }).secretsKey).toBe('c'.repeat(20));
+        expect(loadConfig({ CONNECTION_KEY: 'c'.repeat(32) }).secretsKey).toBe('c'.repeat(32));
         expect(
-            loadConfig({ CONNECTION_KEY: 'c'.repeat(20), SECRETS_KEY: 's'.repeat(20) }).secretsKey
-        ).toBe('s'.repeat(20));
+            loadConfig({ CONNECTION_KEY: 'c'.repeat(32), SECRETS_KEY: 's'.repeat(32) }).secretsKey
+        ).toBe('s'.repeat(32));
     });
 });
 
@@ -228,7 +228,18 @@ describe('boot-time validation', () => {
     it('refuses an encryption key under 16 characters', () => {
         expect(() => loadConfig({ SECRETS_KEY: 'short' })).toThrow(/SECRETS_KEY must be at least 16/);
         expect(() => loadConfig({ CONNECTION_KEY: 'short' })).toThrow(/CONNECTION_KEY must be at least 16/);
-        expect(() => loadConfig({ SECRETS_KEY: 'k'.repeat(16) })).not.toThrow();
+        expect(() => loadConfig({ SECRETS_KEY: 'k'.repeat(32) })).not.toThrow();
+    });
+
+    it('refuses a key of 16 to 31 characters unless ALLOW_SHORT_KEYS is set', () => {
+        const short = 'k'.repeat(16);
+        expect(() => loadConfig({ SECRETS_KEY: short })).toThrow(/SECRETS_KEY must be at least 32 characters/);
+        expect(() => loadConfig({ CONNECTION_KEY: 'k'.repeat(31) })).toThrow(/CONNECTION_KEY must be at least 32/);
+        expect(() => loadConfig({ SECRETS_KEY: short, ALLOW_SHORT_KEYS: '1' })).not.toThrow();
+        expect(() => loadConfig({ SECRETS_KEY: short, ALLOW_SHORT_KEYS: 'true' })).not.toThrow();
+        expect(() => loadConfig({ SECRETS_KEY: short, ALLOW_SHORT_KEYS: '0' })).toThrow(ConfigError);
+        // the flag does not lower the floor of 16
+        expect(() => loadConfig({ SECRETS_KEY: 'short', ALLOW_SHORT_KEYS: '1' })).toThrow(/at least 16/);
     });
 });
 
@@ -313,12 +324,13 @@ describe('startupWarnings', () => {
     it('warns about an encryption key shorter than 32 characters, once per value', () => {
         const quiet = { COOKIE_SECURE: 'true' };
         const short = 'k'.repeat(16);
-        const one = startupWarnings(loadConfig({ ...quiet, CONNECTION_KEY: short }));
+        const allow = { ALLOW_SHORT_KEYS: '1' };
+        const one = startupWarnings(loadConfig({ ...quiet, ...allow, CONNECTION_KEY: short }));
         expect(one).toHaveLength(1);
         expect(one[0]).toMatch(/^CONNECTION_KEY is 16 characters; use at least 32/);
         expect(one[0]).not.toContain(short);
         const two = startupWarnings(
-            loadConfig({ ...quiet, CONNECTION_KEY: 'c'.repeat(40), SECRETS_KEY: short })
+            loadConfig({ ...quiet, ...allow, CONNECTION_KEY: 'c'.repeat(40), SECRETS_KEY: short })
         );
         expect(two).toHaveLength(1);
         expect(two[0]).toMatch(/^SECRETS_KEY is 16 characters/);

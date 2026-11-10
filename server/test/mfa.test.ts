@@ -201,7 +201,7 @@ describe('two-factor sign-in', () => {
         it('stores the secret encrypted and the recovery codes hashed; nothing returns them again', async () => {
             const { user, secret, recoveryCodes } = await enrolled();
             const [row] = await ctx.db.select().from(users).where(eq(users.id, user.id));
-            expect(row.mfaSecretEnc).toMatch(/^v1:/);
+            expect(row.mfaSecretEnc).toMatch(/^v2:/);
             expect(row.mfaSecretEnc).not.toContain(secret);
             const stored = await ctx.db
                 .select()

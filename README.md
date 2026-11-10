@@ -59,7 +59,7 @@ A secret in these steps means a long random string. Make one with `openssl rand 
 
    ```bash
    POSTGRES_PASSWORD=<a secret>     # the password of the bundled database
-   CONNECTION_KEY=<a secret>        # at least 16 characters; encrypts saved database passwords
+   CONNECTION_KEY=<a secret>        # at least 32 characters; encrypts saved database passwords
    ```
 
    `SECRETS_KEY` is optional: it encrypts authenticator-app secrets for two-factor sign-in (see below). Keep these values; losing `CONNECTION_KEY` makes saved connections unreadable.
@@ -139,7 +139,7 @@ QBase then does not start a database of its own. You need PostgreSQL 16 or newer
    POSTGRES_USER=qbase
    POSTGRES_PASSWORD=choose-a-password
    POSTGRES_DB=qbase
-   CONNECTION_KEY=<a secret>             # at least 16 characters
+   CONNECTION_KEY=<a secret>             # at least 32 characters
    ```
 
    Use a password of plain letters and digits: Compose pastes it into the connection address as it is, so `@ : / ? # %` would break it.
@@ -196,7 +196,7 @@ The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the conne
    Edit `server/.env`:
 
    - `DATABASE_URL`: for the bundled database `postgres://qbase:<POSTGRES_PASSWORD>@localhost:5433/qbase`; for yours, its own address. Write special characters in the password as `%`-escapes, and add `?sslmode=require` if it needs SSL.
-   - `CONNECTION_KEY`: a secret of at least 16 characters (needed to save database connections).
+   - `CONNECTION_KEY`: a secret of at least 32 characters, e.g. `openssl rand -hex 24` (needed to save database connections).
    - leave `CORS_ORIGIN=http://localhost:5173`: that is where the editor runs in the next step.
 
    ```bash
@@ -234,8 +234,9 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `PORT` | `3001` | HTTP port |
 | `WEB_DIR` | unset (set in the Docker image) | Folder holding the built editor. When set, the server serves the editor too and the API moves under `/api`; unset = API only, at the root |
 | `CORS_ORIGIN` | unset | One exact origin (`https://editor.example.com`: no path, no trailing slash, no `*`; the server refuses to start otherwise) of the editor when it runs on another host (`npm run dev`); not needed in the image, where editor and API share one address |
-| `CONNECTION_KEY` | unset | Encrypts saved database passwords and the tokens of active share links (at least 16 characters; 32 or more is advised, and a shorter one is warned about at start). Saving connections, and with them drift checks and re-syncs, need it; without it a share link's URL is shown only once, when it is created or regenerated |
-| `SECRETS_KEY` | unset | Encrypts the secrets of authenticator apps (two-factor sign-in), at least 16 characters (32 or more advised). Unset = `CONNECTION_KEY` is used; with neither, two-factor sign-in is not offered. Do not lose it: people who turned it on could not sign in |
+| `CONNECTION_KEY` | unset | Encrypts saved database passwords and the tokens of active share links (at least 32 characters; the server refuses a shorter one at start unless `ALLOW_SHORT_KEYS=1`, which keeps an older key of 16 to 31 characters working and is warned about). Saving connections, and with them drift checks and re-syncs, need it; without it a share link's URL is shown only once, when it is created or regenerated |
+| `SECRETS_KEY` | unset | Encrypts the secrets of authenticator apps (two-factor sign-in), at least 32 characters (same rule as `CONNECTION_KEY`). Unset = `CONNECTION_KEY` is used; with neither, two-factor sign-in is not offered. Do not lose it: people who turned it on could not sign in |
+| `ALLOW_SHORT_KEYS` | unset | `1` or `true` lets the server start with a `CONNECTION_KEY` or `SECRETS_KEY` of 16 to 31 characters (it is warned about at start). Without it such a key stops the server, because the key is the only entropy in every key derived from it. Keys under 16 characters are always refused |
 | `MFA_ENABLED` | `true` | `false` removes two-factor sign-in completely: no endpoints, no screens |
 | `MFA_WINDOW_STEPS` | `1` | 30-second steps a code is accepted either side of now (0 to 5) |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default. A bad entry stops the server at start, and a range wider than `/8` is refused |
@@ -288,7 +289,7 @@ An admin who creates a user or resets a password is choosing a **temporary** pas
 After the password, a person can be asked for the 6-digit code their authenticator app shows. It is the standard TOTP of RFC 6238 (SHA-1, 6 digits, 30 seconds), so Google Authenticator, Microsoft Authenticator, Authy, 1Password and any other TOTP app work, by scanning a QR code or typing a key. It is **not** "sign in with Google or Microsoft": nothing is sent to a third party.
 
 - **Optional, and it works offline.** It is off for everyone until a person turns it on (account menu, *Two-factor authentication*); anyone who never does keeps signing in with the password only. Codes are calculated on the phone from a shared secret and the clock, and checked the same way by the server, so neither side needs the internet. The QR code is drawn in the browser by a library bundled with the editor: no CDN, no external request.
-- **Turn it on for the server:** set `SECRETS_KEY` (or `CONNECTION_KEY`, which is used when `SECRETS_KEY` is unset), at least 16 characters, and keep it safe. With no key the entry is not shown and nothing is an error. `MFA_ENABLED=false` removes the feature completely. In local-only mode (no server) there are no accounts, so there is no two-factor either.
+- **Turn it on for the server:** set `SECRETS_KEY` (or `CONNECTION_KEY`, which is used when `SECRETS_KEY` is unset), at least 32 characters, and keep it safe. With no key the entry is not shown and nothing is an error. `MFA_ENABLED=false` removes the feature completely. In local-only mode (no server) there are no accounts, so there is no two-factor either.
 - **The server's clock must be right.** A code is accepted within about 30 seconds either side of now (`MFA_WINDOW_STEPS`, default 1). On an offline or air-gapped machine keep the clock correct (NTP, or set it by hand); a clock that is minutes out rejects every code.
 - **How it works:** after a correct password the server answers `{ "mfaRequired": true, "challenge": "..." }` and sets no cookie; `POST /auth/login/mfa` with the ticket and a code (or a recovery code) then starts the session. A ticket lasts 5 minutes and dies after 5 wrong codes, wrong codes also count against the account's lockout (`AUTH_MAX_FAILURES`), and a code can be used only once. The secret is stored encrypted (AES-256-GCM) and never returned after set-up; the 10 recovery codes are stored as hashes and shown once. Turning it on needs the password, so a stolen session cannot lock the owner out with a second factor they do not have. Turning it off, making new recovery codes and changing the password need the password and/or a code.
 - **A lost phone:** use a recovery code (each works once). Otherwise an admin opens *Admin > Users* and chooses *Reset two-factor* for that person, who is signed out everywhere and can sign in with the password alone. If the only admin is locked out, run on the server `npm run mfa:reset -- person@example.com` (from `server/`), or in Docker `docker compose exec app node dist/server/src/cli/mfa-reset.js person@example.com`.

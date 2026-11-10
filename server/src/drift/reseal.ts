@@ -24,7 +24,8 @@ export async function resealPlaintextWebhooks(
         .where(
             and(
                 isNotNull(driftSettings.webhookUrl),
-                notLike(driftSettings.webhookUrl, 'v1:%')
+                notLike(driftSettings.webhookUrl, 'v1:%'),
+                notLike(driftSettings.webhookUrl, 'v2:%')
             )
         );
     let sealed = 0;

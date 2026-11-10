@@ -1,7 +1,7 @@
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
-import type { CryptoBox } from '../introspect/crypto-box.js';
+import { isSealed, type CryptoBox } from '../introspect/crypto-box.js';
 import {
     ForbiddenTargetError,
     matchesIpEntry,
@@ -25,8 +25,6 @@ export const WEBHOOK_TIMEOUT_MS = 5000;
 /** How long a whole request may take, trickling or not. */
 export const WEBHOOK_DEADLINE_MS = 15_000;
 
-const SEALED_PREFIX = 'v1:';
-
 /** The stored form of a webhook URL: its path and query may hold a token, so it is encrypted. */
 export const sealWebhookUrl = (box: CryptoBox, url: string) => box.encrypt(url);
 
@@ -35,7 +33,7 @@ export const openWebhookUrl = (
     box: CryptoBox | null,
     stored: string
 ): string | null => {
-    if (!stored.startsWith(SEALED_PREFIX)) return stored;
+    if (!isSealed(stored)) return stored;
     if (!box) return null;
     try {
         return box.decrypt(stored);

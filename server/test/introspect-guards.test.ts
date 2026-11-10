@@ -289,7 +289,7 @@ describe('CryptoBox', () => {
     it('detects tampering', () => {
         const enc = box.encrypt('secret-password');
         const parts = enc.split(':');
-        parts[3] = Buffer.from('tampered-data').toString('base64');
+        parts[4] = Buffer.from('tampered-data').toString('base64');
         expect(() => box.decrypt(parts.join(':'))).toThrow();
         const flipped = enc.slice(0, -2) + (enc.endsWith('A=') ? 'B=' : 'A=');
         expect(() => box.decrypt(flipped)).toThrow();
@@ -297,7 +297,7 @@ describe('CryptoBox', () => {
 
     it('refuses a shortened authentication tag', () => {
         const parts = box.encrypt('secret-password').split(':');
-        parts[2] = Buffer.from(parts[2], 'base64').subarray(0, 4).toString('base64');
+        parts[3] = Buffer.from(parts[3], 'base64').subarray(0, 4).toString('base64');
         expect(() => box.decrypt(parts.join(':'))).toThrow('Unsupported encrypted value');
     });
 
