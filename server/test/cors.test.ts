@@ -25,7 +25,9 @@ describe('CORS', () => {
         expect(res.headers['access-control-allow-origin']).toBe(ORIGIN);
         expect(res.headers['access-control-allow-credentials']).toBe('true');
         expect(res.headers['access-control-allow-methods']).toBe('GET,POST,PUT,PATCH,DELETE,OPTIONS');
-        expect(res.headers['access-control-allow-headers']).toBe('content-type');
+        expect(res.headers['access-control-allow-headers']).toBe(
+            'content-type,content-encoding'
+        );
         expect(res.body).toBe('');
     });
 

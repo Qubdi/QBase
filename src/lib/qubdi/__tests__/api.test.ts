@@ -76,21 +76,91 @@ describe('qubdi api client', () => {
             expect(init.keepalive).toBeUndefined();
         });
 
+        // text gzip cannot shrink: random letters
+        const noise = (n: number, alphabet: string) => {
+            const letters = [...alphabet];
+            let out = '';
+            while (out.length < n) {
+                // getRandomValues takes at most 65,536 bytes at a time
+                const pick = crypto.getRandomValues(new Uint8Array(65_536));
+                out += Array.from(
+                    pick,
+                    (v) => letters[v % letters.length]
+                ).join('');
+            }
+            return out.slice(0, n);
+        };
+        const bodyOf = (init: RequestInit) => init.body as unknown;
+        const withoutGzip = async <T>(fn: () => Promise<T>): Promise<T> => {
+            const real = globalThis.CompressionStream;
+            // @ts-expect-error simulate a browser without it
+            delete globalThis.CompressionStream;
+            try {
+                return await fn();
+            } finally {
+                globalThis.CompressionStream = real;
+            }
+        };
+
         it('counts bytes, not characters, against the limit', async () => {
             // 30,000 Georgian letters are 30,000 characters but 90,000 bytes
-            const init = await run(
-                { text: 'ა'.repeat(30_000) },
-                { keepalive: true }
+            const init = await withoutGzip(() =>
+                run({ text: 'ა'.repeat(30_000) }, { keepalive: true })
             );
             expect(init.keepalive).toBeUndefined();
         });
 
-        it('drops keepalive for a body over the browser limit', async () => {
+        it('drops keepalive for a body over the browser limit that gzip cannot shrink enough', async () => {
             const init = await run(
-                { big: 'x'.repeat(KEEPALIVE_BODY_LIMIT) },
+                {
+                    big: noise(
+                        KEEPALIVE_BODY_LIMIT * 2,
+                        'abcdefghijklmnopqrstuvwxyz0123456789'
+                    ),
+                },
                 { keepalive: true }
             );
             expect(init.keepalive).toBeUndefined();
+            expect(init.headers).not.toHaveProperty('content-encoding');
+        });
+
+        it('gzips a big body that fits once packed, and keeps keepalive', async () => {
+            const content = { big: 'x'.repeat(KEEPALIVE_BODY_LIMIT * 4) };
+            const init = await run(content, { keepalive: true });
+            expect(init.keepalive).toBe(true);
+            expect(init.headers).toMatchObject({
+                'content-type': 'application/json',
+                'content-encoding': 'gzip',
+            });
+            const sent = bodyOf(init) as Uint8Array;
+            expect(sent.length).toBeLessThanOrEqual(KEEPALIVE_BODY_LIMIT);
+            // what the server inflates is the same JSON
+            const text = await new Response(
+                new Blob([sent as BlobPart])
+                    .stream()
+                    .pipeThrough(new DecompressionStream('gzip'))
+            ).text();
+            expect(JSON.parse(text)).toEqual({ content });
+        });
+
+        it('does not gzip a body that was not asked to outlive the page', async () => {
+            const init = await run({
+                big: 'x'.repeat(KEEPALIVE_BODY_LIMIT * 4),
+            });
+            expect(init.keepalive).toBeUndefined();
+            expect(typeof bodyOf(init)).toBe('string');
+            expect(init.headers).not.toHaveProperty('content-encoding');
+        });
+
+        it('sends the big body as it is when the browser cannot gzip', async () => {
+            const init = await withoutGzip(() =>
+                run(
+                    { big: 'x'.repeat(KEEPALIVE_BODY_LIMIT * 4) },
+                    { keepalive: true }
+                )
+            );
+            expect(init.keepalive).toBeUndefined();
+            expect(typeof bodyOf(init)).toBe('string');
         });
     });
 

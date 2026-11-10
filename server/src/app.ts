@@ -181,7 +181,7 @@ export function buildApp({
                 'access-control-allow-methods',
                 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
             );
-            reply.header('access-control-allow-headers', 'content-type');
+            reply.header('access-control-allow-headers', 'content-type,content-encoding');
             // the editor reads these from the activity export
             reply.header(
                 'access-control-expose-headers',

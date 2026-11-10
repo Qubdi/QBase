@@ -7,6 +7,7 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, shareLinks, snapshots, users } from '../db/schema.js';
 import { emitLinkChanged } from '../events.js';
+import { gunzipBody } from './gzip-body.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import { statsColumns } from './summary.js';
@@ -369,7 +370,14 @@ export const diagramRoutes =
             return shown;
         });
 
-        app.put('/:id', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {
+        app.put(
+            '/:id',
+            {
+                bodyLimit: config.diagramBodyLimit,
+                // the editor gzips a big last save so it fits a request sent as the page closes
+                preParsing: gunzipBody(config.diagramBodyLimit),
+            },
+            async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
@@ -480,7 +488,8 @@ export const diagramRoutes =
                 }
             }
             return presentSaved(db, d, role);
-        });
+            }
+        );
 
         // The editor asks for this when it opens the diagram and again every
         // few seconds. `held: false` means someone else is editing: open read-only.

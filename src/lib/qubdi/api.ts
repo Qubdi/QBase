@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { QUBDI_BACKEND_URL } from './config';
 import { i18n } from '@/i18n/i18n';
 import type { LintConfig } from '../../../shared/lint';
+import { gzipText } from './gzip';
 import { listQuery, type ListParams, type Page } from './paging';
 import { InvalidServerDiagramError } from './open-remote';
 
@@ -426,6 +427,10 @@ export const KEEPALIVE_BODY_LIMIT = 60_000;
 // is a third of the bytes for Georgian and other non-Latin text
 const utf8Bytes = (text: string) => new TextEncoder().encode(text).length;
 
+/** The one route that inflates a gzipped body: the save of a diagram. */
+const acceptsGzip = (method: string, path: string) =>
+    method === 'PUT' && /^\/diagrams\/[^/?]+$/.test(path);
+
 export interface RequestOptions {
     /** Let the request finish even if the page is closing (small bodies only). */
     keepalive?: boolean;
@@ -478,21 +483,40 @@ export function createApi(
         schema?: z.ZodType<T>
     ): Promise<T> {
         const json = body === undefined ? undefined : JSON.stringify(body);
+        // a request sent as the page closes (keepalive) may carry 64 KiB at most:
+        // a bigger body is sent gzipped when that makes it fit, else as an
+        // ordinary request that the page closing may cut off
+        let payload: string | Uint8Array | undefined = json;
+        let gzipped = false;
+        let keepalive = false;
+        if (options?.keepalive && json !== undefined) {
+            if (utf8Bytes(json) <= KEEPALIVE_BODY_LIMIT) {
+                keepalive = true;
+            } else if (acceptsGzip(method, path)) {
+                const packed = await gzipText(json);
+                if (packed && packed.length <= KEEPALIVE_BODY_LIMIT) {
+                    payload = packed;
+                    gzipped = true;
+                    keepalive = true;
+                }
+            }
+        } else if (options?.keepalive) {
+            keepalive = true;
+        }
         const res = await fetchImpl(`${baseUrl}${path}`, {
             method,
             credentials: 'include',
             headers:
                 body === undefined
                     ? {}
-                    : { 'content-type': 'application/json' },
-            body: json,
+                    : {
+                          'content-type': 'application/json',
+                          ...(gzipped ? { 'content-encoding': 'gzip' } : {}),
+                      },
+            body: payload as BodyInit | undefined,
             // one hung request must not stall autosave behind it
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-            // an oversized keepalive request would be rejected outright
-            ...(options?.keepalive &&
-            (json === undefined ? 0 : utf8Bytes(json)) <= KEEPALIVE_BODY_LIMIT
-                ? { keepalive: true }
-                : {}),
+            ...(keepalive ? { keepalive: true } : {}),
         });
         if (res.status === 204) return undefined as T;
         const data = await res.json().catch(() => ({}));
