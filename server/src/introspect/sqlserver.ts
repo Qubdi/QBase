@@ -100,15 +100,17 @@ export const SQLSERVER_QUERIES = {
                i.type_desc AS index_type, i.is_unique AS [unique], i.is_primary_key AS [primary],
                i.filter_definition AS [where],
                CASE WHEN ic.is_descending_key = 1 THEN 'DESC' ELSE 'ASC' END AS direction,
-               ic.key_ordinal AS column_position
+               CASE WHEN ic.key_ordinal > 0 THEN ic.key_ordinal ELSE ic.index_column_id END AS column_position
         FROM sys.indexes i
         JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
         JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
         JOIN sys.tables t ON t.object_id = i.object_id
         JOIN sys.schemas s ON s.schema_id = t.schema_id
-        WHERE i.type > 0 AND i.is_hypothetical = 0 AND ic.is_included_column = 0 AND ic.key_ordinal > 0
+        WHERE i.type > 0 AND i.is_hypothetical = 0
+          AND ((ic.is_included_column = 0 AND ic.key_ordinal > 0) OR i.type IN (3, 4, 5, 6))
           AND t.is_ms_shipped = 0 AND ${SCHEMA_FILTER('s')}
-        ORDER BY s.name, t.name, i.name, ic.key_ordinal`,
+        ORDER BY s.name, t.name, i.name,
+                 CASE WHEN ic.key_ordinal > 0 THEN ic.key_ordinal ELSE ic.index_column_id END`,
 
     checks: `
         SELECT s.name AS [schema], t.name AS [table], cc.definition AS expression

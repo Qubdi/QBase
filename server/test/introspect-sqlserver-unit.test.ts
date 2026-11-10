@@ -243,6 +243,15 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         expect(meta.indexes.map((i) => i.primary)).toEqual([false, true]);
     });
 
+    it('DB-004: columnstore, XML and spatial indexes are listed with every column, in their own order', () => {
+        const q = SQLSERVER_QUERIES.indexes;
+        expect(q).toContain('i.type IN (3, 4, 5, 6)');
+        // key indexes still read key columns only
+        expect(q).toContain('ic.is_included_column = 0 AND ic.key_ordinal > 0');
+        expect(q).toContain('ic.index_column_id');
+        expect(q).toContain('i.type_desc AS index_type');
+    });
+
     it('the queries ask the catalog for them', () => {
         expect(SQLSERVER_QUERIES.checks).toContain('sys.check_constraints');
         expect(SQLSERVER_QUERIES.columns).toContain('sys.computed_columns');
