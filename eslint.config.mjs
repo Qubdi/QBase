@@ -47,9 +47,9 @@ const ourRules = {
         { roles: ['tabpanel', 'status', 'img'] },
     ],
 
-    // react-hooks 7 added React Compiler rules. They are on everywhere; the
-    // files that still break set-state-in-effect or refs are listed in the
-    // override at the bottom, and a migrated file is removed from it.
+    // react-hooks 7 added React Compiler rules (refs, set-state-in-effect,
+    // preserve-manual-memoization, use-memo). They are on everywhere, no file is
+    // excepted.
 };
 
 export default [
@@ -67,22 +67,5 @@ export default [
         // shadcn-style primitives export a variants helper next to the component
         files: ['src/platform/ui/**', 'src/platform/toast/**'],
         rules: { 'react-refresh/only-export-components': 'off' },
-    },
-
-    {
-        // not yet migrated to the React Compiler rule `set-state-in-effect`
-        files: [
-            'src/canvas/diagram-canvas.tsx',
-        ],
-        rules: { 'react-hooks/set-state-in-effect': 'off' },
-    },
-    {
-        // not yet migrated to the React Compiler rule `refs`
-        files: [
-            'src/canvas/diagram-canvas.tsx',
-            'src/context/qubdi-context/qubdi-provider.tsx',
-            'src/store/editor-provider.tsx',
-        ],
-        rules: { 'react-hooks/refs': 'off' },
     },
 ];
