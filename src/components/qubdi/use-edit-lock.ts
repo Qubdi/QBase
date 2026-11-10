@@ -40,6 +40,14 @@ export async function releaseHeldLocks(): Promise<void> {
 export function useEditLock(remoteId: string | undefined): LockState {
     const [lock, setLock] = useState<LockState>(CHECKING);
 
+    // asking for another diagram's lock starts from 'checking': reset while
+    // rendering, not in the effect that asks
+    const [lockFor, setLockFor] = useState(remoteId);
+    if (lockFor !== remoteId) {
+        setLockFor(remoteId);
+        if (remoteId) setLock(CHECKING);
+    }
+
     useEffect(() => {
         if (!remoteId) return;
         const editorId = getEditorId();
@@ -115,7 +123,6 @@ export function useEditLock(remoteId: string | undefined): LockState {
             setLock({ status: 'taken', holder: null });
         });
 
-        setLock(CHECKING);
         void ask().then(() => {
             if (!cancelled && held) {
                 timer = setInterval(() => void ask(), LOCK_HEARTBEAT_MS);
