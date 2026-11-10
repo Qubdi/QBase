@@ -148,10 +148,11 @@ jobs:
           images: |
             ${{ env.DOCKERHUB_IMAGE }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # the version (docker-compose.yml defaults to it), and latest for anyone who asks for it
+          # the version (docker-compose.yml defaults to it), and latest for anyone
+          # who asks for it; a prerelease (v1.2.3-rc.1) never moves latest
           tags: |
             type=semver,pattern={{version}}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
 
       - name: Build and push multi-arch Docker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0

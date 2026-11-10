@@ -84,7 +84,7 @@ push() {
         esac
     done
     if [[ -z "$version" || "$version" == "latest" ]]; then
-        err "Give the version to push, e.g. 1.0.5 (latest is moved only by the release workflow)."
+        err "Give the version to push, e.g. 1.0.5 (latest is moved only by the release workflow, and never by a prerelease)."
         return 1
     fi
     if $all_platforms; then
