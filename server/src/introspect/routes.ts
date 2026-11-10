@@ -22,7 +22,7 @@ import { connectPostgres } from './postgres.js';
 import { audit } from '../audit/audit.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
 import { UnsafeSqlError } from './readonly-guard.js';
-import { connectSqlServer } from './sqlserver.js';
+import { connectSqlServer, PrivilegedLoginError } from './sqlserver.js';
 import {
     DEFAULT_PORTS,
     type ConnectionParams,
@@ -223,6 +223,11 @@ export const introspectRoutes =
                     // log: answering with it would let a caller map the internal network
                     reply.log.warn({ reason: err.message }, 'introspection target blocked');
                     reply.code(400).send({ error: 'target_blocked' });
+                } else if (err instanceof PrivilegedLoginError) {
+                    // the operator's setting, not a secret: the caller is told to use a
+                    // login that can only read
+                    reply.log.warn('introspection refused a privileged SQL Server login');
+                    reply.code(400).send({ error: 'privileged_login' });
                 } else if (err instanceof UnsafeSqlError) {
                     // a bug in a catalog query, not the caller's doing: the log is
                     // the only place it shows

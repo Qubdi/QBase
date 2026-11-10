@@ -1,7 +1,7 @@
 import sql from 'mssql';
 import net from 'node:net';
 import { limitReceivedBytes } from './byte-budget.js';
-import { assertReadOnlySql } from './readonly-guard.js';
+import { queryAllowlist } from './readonly-guard.js';
 import type { ResolvedTarget } from './net-guard.js';
 import {
     STATEMENT_TIMEOUT_MS,
@@ -24,6 +24,9 @@ export const schemasParam = (schemas: string[]): string =>
 
 export const SQLSERVER_QUERIES = {
     server: `SELECT DB_NAME() AS database_name, @@VERSION AS version`,
+
+    // 1 when the login can change data or the server: see refusePrivilegedLogin
+    privileges: `SELECT IS_SRVROLEMEMBER('sysadmin') AS is_sysadmin, IS_MEMBER('db_owner') AS is_db_owner`,
 
     tables: `
         SELECT s.name AS [schema], t.name AS [table], 'BASE TABLE' AS type,
@@ -239,17 +242,25 @@ export function buildPkDefs(rows: PkRow[]): DatabaseMetadata['pk_info'] {
 
 type Row = Record<string, unknown>;
 
+const assertRegistered = queryAllowlist(SQLSERVER_QUERIES);
+
 export class SqlServerIntrospector implements Introspector {
     constructor(private readonly pool: sql.ConnectionPool) {}
 
     private async query(text: string, schemas: string[]): Promise<Row[]> {
-        assertReadOnlySql(text);
+        assertRegistered(text);
         const request = this.pool.request();
         if (text.includes('@schemas')) {
             request.input('schemas', sql.NVarChar(sql.MAX), schemasParam(schemas));
         }
         const result = await request.query(text);
         return result.recordset as Row[];
+    }
+
+    /** True when the login is a sysadmin or owns the database. */
+    async isPrivilegedLogin(): Promise<boolean> {
+        const row = (await this.query(SQLSERVER_QUERIES.privileges, []))[0];
+        return isPrivilegedRow(row);
     }
 
     async catalog(): Promise<CatalogSchema[]> {
@@ -452,6 +463,18 @@ export function pinnedConnector(
     };
 }
 
+/** The login holds a role that can change data or the server (1, not 0 or null). */
+export const isPrivilegedRow = (row: Row | undefined): boolean =>
+    Number(row?.is_sysadmin) === 1 || Number(row?.is_db_owner) === 1;
+
+/** The login is a sysadmin or a db_owner, and INTROSPECT_ALLOW_PRIVILEGED is not 1. */
+export class PrivilegedLoginError extends Error {
+    constructor() {
+        super('The SQL Server login is a sysadmin or a db_owner');
+        this.name = 'PrivilegedLoginError';
+    }
+}
+
 export async function connectSqlServer(
     params: ConnectionParams,
     target: ResolvedTarget
@@ -481,5 +504,21 @@ export async function connectSqlServer(
         },
     });
     await pool.connect();
-    return new SqlServerIntrospector(pool);
+    const introspector = new SqlServerIntrospector(pool);
+    // readOnlyIntent only routes the connection; the login is what limits it.
+    // A login that can change data is refused unless the operator accepts it.
+    if (process.env.INTROSPECT_ALLOW_PRIVILEGED !== '1') {
+        let privileged: boolean;
+        try {
+            privileged = await introspector.isPrivilegedLogin();
+        } catch (err) {
+            await pool.close().catch(() => undefined);
+            throw err;
+        }
+        if (privileged) {
+            await pool.close().catch(() => undefined);
+            throw new PrivilegedLoginError();
+        }
+    }
+    return introspector;
 }

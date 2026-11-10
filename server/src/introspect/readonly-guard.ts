@@ -1,8 +1,12 @@
+import { createHash } from 'node:crypto';
+
 /**
  * Introspection must never change the target database. Every query the
- * drivers send goes through assertReadOnlySql first, in addition to the
- * database-level protections (read-only transaction on PostgreSQL, a
- * least-privilege login is still recommended on SQL Server).
+ * drivers send is checked twice before it leaves: it must be one of the
+ * fixed queries the driver registered (queryAllowlist, the primary control),
+ * and it must pass assertReadOnlySql (a denylist kept as defence in depth),
+ * in addition to the database-level protections (read-only transaction on
+ * PostgreSQL, a least-privilege login is still recommended on SQL Server).
  */
 export class UnsafeSqlError extends Error {
     constructor(reason: string) {
@@ -120,4 +124,25 @@ export function assertReadOnlySql(sql: string): void {
     }
     const hit = cleaned.match(FORBIDDEN_RE);
     if (hit) throw new UnsafeSqlError(`contains "${hit[1].toLowerCase()}"`);
+}
+
+const normalised = (sql: string): string => sql.replace(/\s+/g, ' ').trim();
+const digest = (sql: string): string =>
+    createHash('sha256').update(normalised(sql)).digest('hex');
+
+/**
+ * Builds the check for one driver. Only the exact text of its fixed queries
+ * (whitespace aside) is accepted; anything else, however harmless it looks,
+ * is refused. The text also has to pass assertReadOnlySql.
+ */
+export function queryAllowlist(
+    queries: Record<string, string>
+): (sql: string) => void {
+    const allowed = new Set(Object.values(queries).map(digest));
+    return (sql) => {
+        if (!allowed.has(digest(sql))) {
+            throw new UnsafeSqlError('not a registered introspection query');
+        }
+        assertReadOnlySql(sql);
+    };
 }

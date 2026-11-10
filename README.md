@@ -239,6 +239,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `MFA_ENABLED` | `true` | `false` removes two-factor sign-in completely: no endpoints, no screens |
 | `MFA_WINDOW_STEPS` | `1` | 30-second steps a code is accepted either side of now (0 to 5) |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default. A bad entry stops the server at start, and a range wider than `/8` is refused |
+| `INTROSPECT_ALLOW_PRIVILEGED` | unset | `1` lets a SQL Server import log in as a `sysadmin` or `db_owner`; by default such a login is refused. Use a read-only login instead |
 | `WEBHOOK_ALLOW_HOSTS` | empty | Same format, for drift webhooks only: hosts, IPs or IPv4 CIDRs a webhook may POST to even if private, and the only hosts that may use plain `http://` (every other webhook must be `https://`). A database allow-list does not open webhook targets, and the other way round |
 | `DB_POOL_MAX` | `10` | Most connections one server process opens to its database |
 | `DB_STATEMENT_TIMEOUT_SECONDS` | `120` | Seconds a statement may run before the database cancels it; `0` for no limit |
@@ -376,7 +377,9 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   read-only transaction, and the connection's `readOnlyIntent` only tells a cluster which
   replica to use; it blocks nothing. So the login you give QBase is the real limit: make
   one that can only read the catalog, and never use `sa` or a member of `sysadmin` or
-  `db_owner`. QBase does not check this for you.
+  `db_owner`. QBase checks this when it connects: a login that is a `sysadmin` or a
+  `db_owner` is refused (`privileged_login`) unless the operator sets
+  `INTROSPECT_ALLOW_PRIVILEGED=1`.
 
   ```sql
   CREATE LOGIN qbase_reader WITH PASSWORD = '<a long random password>';

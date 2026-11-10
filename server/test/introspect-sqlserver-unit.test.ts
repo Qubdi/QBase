@@ -8,6 +8,7 @@ import {
     buildPkDefs,
     mssqlColumnShape,
     pinnedConnector,
+    isPrivilegedRow,
 } from '../src/introspect/sqlserver.js';
 
 describe('mssqlColumnShape', () => {
@@ -195,6 +196,7 @@ describe('pinnedConnector', () => {
 describe('SQL Server metadata: checks, computed columns, index predicates (fake pool)', () => {
     const rows: Record<keyof typeof SQLSERVER_QUERIES, object[]> = {
         server: [{ database_name: 'shop', version: 'Microsoft SQL Server 2022\n(X64)' }],
+        privileges: [],
         tables: [{ schema: 'dbo', table: 'people', type: 'BASE TABLE', rows: 3 }],
         views: [],
         columns: [
@@ -247,5 +249,21 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         expect(SQLSERVER_QUERIES.indexes).toContain('filter_definition');
         expect(SQLSERVER_QUERIES.indexes).toContain('is_descending_key');
         expect(SQLSERVER_QUERIES.indexes).toContain('i.is_primary_key AS [primary]');
+    });
+});
+
+describe('SQL Server login privileges', () => {
+    it('refuses a sysadmin or a db_owner and accepts a plain login', () => {
+        expect(isPrivilegedRow({ is_sysadmin: 1, is_db_owner: 0 })).toBe(true);
+        expect(isPrivilegedRow({ is_sysadmin: 0, is_db_owner: 1 })).toBe(true);
+        expect(isPrivilegedRow({ is_sysadmin: 0, is_db_owner: 0 })).toBe(false);
+        // NULL is what the functions answer for a role that does not exist
+        expect(isPrivilegedRow({ is_sysadmin: null, is_db_owner: null })).toBe(false);
+        expect(isPrivilegedRow(undefined)).toBe(false);
+    });
+
+    it('reads both roles with one registered query', () => {
+        expect(SQLSERVER_QUERIES.privileges).toMatch(/IS_SRVROLEMEMBER\('sysadmin'\)/);
+        expect(SQLSERVER_QUERIES.privileges).toMatch(/IS_MEMBER\('db_owner'\)/);
     });
 });

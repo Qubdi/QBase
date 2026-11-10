@@ -1,7 +1,7 @@
 import net, { isIP } from 'node:net';
 import pg from 'pg';
 import { limitReceivedBytes, MAX_RESPONSE_BYTES } from './byte-budget.js';
-import { assertReadOnlySql } from './readonly-guard.js';
+import { queryAllowlist } from './readonly-guard.js';
 import type { ResolvedTarget } from './net-guard.js';
 import { decodeTypmod, splitArrayType } from './typmod.js';
 import {
@@ -174,13 +174,15 @@ export async function withReadOnlyTransaction<T>(
     }
 }
 
+const assertRegistered = queryAllowlist(POSTGRES_QUERIES);
+
 type Row = Record<string, unknown>;
 
 export class PostgresIntrospector implements Introspector {
     constructor(private readonly client: pg.Client) {}
 
     private async query(sql: string, schemas: string[]): Promise<Row[]> {
-        assertReadOnlySql(sql);
+        assertRegistered(sql);
         const hasFilter = sql.includes('$1');
         const res = await this.client.query(sql, hasFilter ? [schemas] : []);
         return res.rows;

@@ -9,6 +9,7 @@ import {
 } from '../src/introspect/net-guard.js';
 import {
     assertReadOnlySql,
+    queryAllowlist,
     stripSqlNoise,
     UnsafeSqlError,
 } from '../src/introspect/readonly-guard.js';
@@ -282,7 +283,7 @@ describe('CryptoBox', () => {
         const b = box.encrypt('secret-password');
         expect(a).not.toContain('secret-password');
         expect(a).not.toBe(b);
-        expect(a.startsWith('v1:')).toBe(true);
+        expect(a.startsWith('v2:')).toBe(true);
     });
 
     it('detects tampering', () => {
@@ -309,5 +310,38 @@ describe('CryptoBox', () => {
         expect(() => box.decrypt('v2:a:b:c')).toThrow(/Unsupported/);
         expect(() => box.decrypt('garbage')).toThrow();
         expect(() => new CryptoBox('short')).toThrow(/at least 16/);
+    });
+});
+
+describe('queryAllowlist', () => {
+    const fixed = {
+        one: 'SELECT a FROM t WHERE b = $1',
+        two: `
+            SELECT c
+            FROM u`,
+    };
+    const check = queryAllowlist(fixed);
+
+    it('accepts a registered query, whatever its whitespace', () => {
+        expect(() => check(fixed.one)).not.toThrow();
+        expect(() => check(fixed.two)).not.toThrow();
+        expect(() => check('SELECT c   FROM\n u')).not.toThrow();
+    });
+
+    it('refuses a harmless query nobody registered', () => {
+        expect(() => check('SELECT 1')).toThrow(/not a registered/);
+        expect(() => check('SELECT pg_read_binary_file(1)')).toThrow(UnsafeSqlError);
+    });
+
+    it('refuses a registered query that was altered, even by one character', () => {
+        expect(() => check('SELECT a FROM t WHERE b = $2')).toThrow(/not a registered/);
+        expect(() => check(`${fixed.one} OR 1 = 1`)).toThrow(/not a registered/);
+        expect(() => check(`${fixed.one}; DROP TABLE t`)).toThrow(UnsafeSqlError);
+        expect(() => check(fixed.one.toLowerCase())).toThrow(/not a registered/);
+    });
+
+    it('still applies the denylist to a registered query', () => {
+        const risky = queryAllowlist({ bad: 'SELECT xp_dirtree(1)' });
+        expect(() => risky('SELECT xp_dirtree(1)')).toThrow(/xp_dirtree/);
     });
 });
