@@ -168,9 +168,6 @@ function open(
 export const isSealed = (value: string) =>
     value.startsWith('v1:') || value.startsWith('v2:') || value.startsWith('v3:');
 
-/** True for a value already in the format `encrypt` writes without a context. */
-export const isCurrentFormat = (value: string) => value.startsWith('v2:');
-
 const boxes = new Map<string, CryptoBox>();
 
 /**

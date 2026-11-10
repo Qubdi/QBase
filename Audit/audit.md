@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 36 · **date** 2026-11-10
+**rev** 37 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -11,8 +11,8 @@
 | Server | 7 | 0 | 0 | 33 | 0 |
 | Database | 7 | 0 | 0 | 15 | 1 |
 | Client | 8 | 0 | 0 | 94 | 0 |
-| Dead code | 2 | 0 | 0 | 39 | 0 |
-| **Total** | 31 | 0 | 0 | 282 | 1 |
+| Dead code | 0 | 0 | 0 | 41 | 0 |
+| **Total** | 29 | 0 | 0 | 284 | 1 |
 
 ## Act first
 
@@ -78,8 +78,9 @@ None.
 
 ### Dead code
 
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
+None.
+
+----|-----|---------|-------|-----|
 | DEAD-037 | Low | JSON-map localStorage reader still copied beside shared `readJsonMap` | `src/lib/qubdi/sent-content.ts:128`, `src/lib/qubdi/sync-state.ts:62` | Call `readJsonMap` from local-map.ts in both |
 | DEAD-042 | Low | `isCurrentFormat` exported; zero references in src, server, shared, tools, CI | `server/src/introspect/crypto-box.ts:142` | Delete the export |
 
@@ -234,6 +235,8 @@ None.
 | CLI-056 | Client | Viewer loading text is not a live region; error and loading unannounced |
 | CLI-070 | Client | Late locale load calls changeLanguage, reverting a newer language pick |
 | CLI-078 | Client | Publish note input has placeholder only, no accessible name |
+| DEAD-037 | Dead code | JSON-map localStorage reader still copied beside shared `readJsonMap` |
+| DEAD-042 | Dead code | `isCurrentFormat` exported; zero references in src, server, shared, tools, CI |
 | DEAD-022 | Dead code | Unused en keys: canvas.entity openInPanel, narrow; region.colour; memo.colour; clipboard.failed |
 | DEAD-023 | Dead code | `qubdi.workspace.typeLegend` block unused; type legend reads `canvas.legend` |
 | DEAD-028 | Dead code | `postcss` devDependency redundant; `@tailwindcss/postcss` already depends on it, no import |
@@ -440,6 +443,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 37 | 2026-11-10 | 2 fixed (dead code lens: DEAD-037, DEAD-042); 29 open, 0 Crit, 0 High; anchors not remapped |
 | 36 | 2026-11-10 | 5 fixed (repository low batch: REPO-071, 072, 073, 075, 076; REPO-022 needs a team name from the org); 31 open, 0 Crit, 0 High; anchors not remapped |
 | 35 | 2026-11-10 | 10 fixed (security low batch: SEC-038 to 047); 36 open, 0 Crit, 0 High; anchors not remapped |
 | 34 | 2026-11-10 | 34 new (SEC-036 to 047, REPO-070 to 076, SRV-038 to 041, DB-021 to 024, CLI-103 to 109), SEC-001 widened to branch and pull refs, REPO-060 renumbered REPO-071; 46 open, 0 Crit, 0 High; npm audit clean |

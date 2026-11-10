@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 36</b></div>
-  <h1>2 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 37</b></div>
+  <h1>0 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
@@ -30,25 +30,19 @@
 <main id="main">
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Dead code</h2></div>
-  <p class="section-note">2 open &middot; 39 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
-      <tbody>
-        <tr><td class="svc-name">DEAD-037</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">JSON-map localStorage reader still copied beside shared <code>readJsonMap</code></td><td class="wrap-cell"><code>src/lib/qubdi/sent-content.ts:128</code>, <code>src/lib/qubdi/sync-state.ts:62</code></td><td class="wrap-cell">Call <code>readJsonMap</code> from local-map.ts in both</td></tr>
-        <tr><td class="svc-name">DEAD-042</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>isCurrentFormat</code> exported; zero references in src, server, shared, tools, CI</td><td class="wrap-cell"><code>server/src/introspect/crypto-box.ts:142</code></td><td class="wrap-cell">Delete the export</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <p class="section-note">0 open &middot; 41 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p>None.</p>
 </section>
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (39)</summary>
+  <details><summary>Fixed (41)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DEAD-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">JSON-map localStorage reader still copied beside shared <code>readJsonMap</code></td></tr>
+        <tr><td class="svc-name">DEAD-042</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>isCurrentFormat</code> exported; zero references in src, server, shared, tools, CI</td></tr>
         <tr><td class="svc-name">DEAD-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused en keys: canvas.entity openInPanel, narrow; region.colour; memo.colour; clipboard.failed</td></tr>
         <tr><td class="svc-name">DEAD-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>qubdi.workspace.typeLegend</code> block unused; type legend reads <code>canvas.legend</code></td></tr>
         <tr><td class="svc-name">DEAD-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>postcss</code> devDependency redundant; <code>@tailwindcss/postcss</code> already depends on it, no import</td></tr>
