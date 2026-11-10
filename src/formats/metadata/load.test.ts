@@ -273,17 +273,18 @@ describe('IMP-059 the server fixture is accepted by the contract', () => {
 });
 
 describe('CLI-039 a second unique index on the key columns is kept', () => {
-    it('names the primary key after its own index and keeps the other unique index', () => {
-        const idx = (name: string) => ({
-            schema: 'public',
-            table: 't',
-            name,
-            column: 'id',
-            index_type: 'btree',
-            unique: true,
-            direction: 'asc',
-            column_position: 1,
-        });
+    const idx = (name: string, primary?: boolean) => ({
+        schema: 'public',
+        table: 't',
+        name,
+        column: 'id',
+        index_type: 'btree',
+        unique: true,
+        ...(primary === undefined ? {} : { primary }),
+        direction: 'asc',
+        column_position: 1,
+    });
+    const load = (indexes: ReturnType<typeof idx>[]) => {
         const meta = DatabaseMetadata.parse({
             database_name: 'd',
             version: 'x',
@@ -308,17 +309,45 @@ describe('CLI-039 a second unique index on the key columns is kept', () => {
                 },
             ],
             fk_info: [],
-            // the user's index is listed first: it must not take the key's name
-            indexes: [idx('t_id_unique'), idx('t_pkey')],
+            indexes,
         });
         const { design } = loadFromDatabaseMetadata({
             databaseType: 'postgresql',
             databaseMetadata: meta,
         });
         const keys = Object.values(design.keys);
-        expect(keys.find((k) => k.pk)?.label).toBe('t_pkey');
-        expect(keys.filter((k) => !k.pk).map((k) => k.label)).toEqual([
-            't_id_unique',
-        ]);
+        return {
+            pk: keys.find((k) => k.pk)?.label,
+            others: keys.filter((k) => !k.pk).map((k) => k.label),
+        };
+    };
+
+    it('with no flag, names the primary key after its conventional index', () => {
+        // the user's index is listed first: it must not take the key's name
+        expect(load([idx('t_id_unique'), idx('t_pkey')])).toEqual({
+            pk: 't_pkey',
+            others: ['t_id_unique'],
+        });
+    });
+
+    it('with the flag, the primary index is the key even if its name is unusual', () => {
+        expect(load([idx('t_pkey', false), idx('my_own_key', true)])).toEqual({
+            pk: 'my_own_key',
+            others: ['t_pkey'],
+        });
+    });
+
+    it('with the flag, a unique index on the key columns stays an index', () => {
+        expect(load([idx('t_id_unique', false), idx('t_pkey', true)])).toEqual({
+            pk: 't_pkey',
+            others: ['t_id_unique'],
+        });
+    });
+
+    it('with the flag false everywhere, no index takes the key name', () => {
+        expect(
+            load([idx('t_pkey', false), idx('t_id_unique', false)])
+            // the key stays, unnamed; both unique indexes are the user's
+        ).toEqual({ pk: '', others: ['t_pkey', 't_id_unique'] });
     });
 });

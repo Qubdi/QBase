@@ -78,6 +78,8 @@ const indexRow = z.object({
     cardinality: z.number().nullish(),
     size: z.number().nullish(),
     unique: flag,
+    /** true for the index behind the table's primary key; absent in older files */
+    primary: flag.optional(),
     direction: z.string(),
     column_position: z.number(),
     /** predicate of a partial index, without the WHERE keyword (same on every row of the index) */
