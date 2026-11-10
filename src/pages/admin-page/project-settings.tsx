@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useId, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
@@ -36,10 +36,25 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     const [confirmDelete, setConfirmDelete] = useState(false);
     const fieldId = useId();
 
-    useEffect(() => {
+    // the form follows the project when it, or its saved text, changes
+    const [synced, setSynced] = useState({
+        id: project.id,
+        name: project.name,
+        description: project.description,
+    });
+    if (
+        synced.id !== project.id ||
+        synced.name !== project.name ||
+        synced.description !== project.description
+    ) {
+        setSynced({
+            id: project.id,
+            name: project.name,
+            description: project.description,
+        });
         setName(project.name);
         setDescription(project.description);
-    }, [project.id, project.name, project.description]);
+    }
 
     const unchanged =
         name === project.name && description === project.description;

@@ -35,13 +35,14 @@ export const OverviewPanel: React.FC = () => {
     const [recent, setRecent] = useState<ActivityItem[] | null>(null);
     const [statsError, setStatsError] = useState<string | null>(null);
     const [recentError, setRecentError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    // the reload count whose answer last arrived; until then it is loading
+    const [settledTick, setSettledTick] = useState<number | null>(null);
     const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
     const [tick, setTick] = useState(0);
+    const loading = settledTick !== tick;
 
     useEffect(() => {
         let stale = false;
-        setLoading(true);
         // the figures and the latest events are separate asks: one failing
         // must not hide the other
         void Promise.allSettled([
@@ -62,7 +63,7 @@ export const OverviewPanel: React.FC = () => {
                 setRecentError(errorMessage(latest.reason));
             }
             setUpdatedAt(new Date());
-            setLoading(false);
+            setSettledTick(tick);
         });
         return () => {
             stale = true;
