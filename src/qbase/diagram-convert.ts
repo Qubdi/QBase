@@ -80,19 +80,49 @@ export function createDiagramProjector(): (design: Design) => Diagram {
     let last: Diagram | undefined;
     return (design) => {
         if (design === lastDesign && last) return last;
-        const next = designToDiagram(design);
+        // sections whose model slices are untouched are not serialised at all:
+        // the previous array is reused (CLI-045)
+        const reused = new Set<Section>();
         if (lastDesign && last) {
             for (const section of SECTIONS) {
                 const before = SOURCES[section](lastDesign);
                 const now = SOURCES[section](design);
                 if (before.every((slice, i) => Object.is(slice, now[i])))
-                    (next as unknown as RawRecord)[section] = last[section];
+                    reused.add(section);
             }
         }
+        const next = designToDiagram(withoutSections(design, reused));
+        for (const section of reused)
+            (next as unknown as RawRecord)[section] = last![section];
         lastDesign = design;
         last = next;
         return next;
     };
+}
+
+const NONE = { order: [], byId: {} };
+
+/**
+ * The design with the parts of reused sections emptied, so serialising it
+ * costs only what changed. A note reads tables, areas and columns for its
+ * position, so those stay whenever the notes are rebuilt.
+ */
+function withoutSections(design: Design, reused: ReadonlySet<Section>): Design {
+    if (reused.size === 0) return design;
+    const notesRebuilt = !reused.has('notes');
+    const slim: Design = { ...design };
+    if (reused.has('tables') && !notesRebuilt) {
+        slim.entities = NONE;
+        slim.columns = {};
+        slim.keys = {};
+        slim.rules = {};
+    }
+    if (reused.has('relationships')) slim.links = NONE;
+    if (reused.has('dependencies')) slim.dependencies = [];
+    if (reused.has('areas') && !notesRebuilt) slim.regions = NONE;
+    if (reused.has('customTypes')) slim.userTypes = NONE;
+    if (reused.has('notes')) slim.memos = NONE;
+    return slim;
 }
 
 const text = (value: unknown) => typeof value === 'string';
