@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
 import { ImportHelp } from '@/features/import/import-help';
@@ -39,9 +39,12 @@ export const ImportDatabaseDialog: React.FC<ImportDatabaseDialogProps> = ({
     const databaseType = useEditorStore((s) => s.design.databaseType);
     const [box, setBox] = useState<ImportBoxState | undefined>();
 
-    useEffect(() => {
+    // every opening starts with an empty box
+    const [wasOpen, setWasOpen] = useState(dialog.open);
+    if (wasOpen !== dialog.open) {
+        setWasOpen(dialog.open);
         if (dialog.open) setBox(undefined);
-    }, [dialog.open]);
+    }
     const onBox = useCallback((state: ImportBoxState) => setBox(state), []);
 
     const imported = box?.analysis.design;

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
@@ -58,13 +58,16 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     const [problem, setProblem] = useState<string | undefined>();
 
     // every opening starts again from the first step
-    useEffect(() => {
-        if (!dialog.open) return;
-        setStep('type');
-        setType(DEFAULT_DATABASE);
-        setBox(undefined);
-        setProblem(undefined);
-    }, [dialog.open]);
+    const [wasOpen, setWasOpen] = useState(dialog.open);
+    if (wasOpen !== dialog.open) {
+        setWasOpen(dialog.open);
+        if (dialog.open) {
+            setStep('type');
+            setType(DEFAULT_DATABASE);
+            setBox(undefined);
+            setProblem(undefined);
+        }
+    }
 
     const number = nextNumber(items?.length ?? 0);
     const defaultName = t('editor.designs.defaultName', { number });
