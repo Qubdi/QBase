@@ -1,5 +1,6 @@
 import sql from 'mssql';
 import net from 'node:net';
+import { watchConnection, type ConnectionWatch } from './connection-watch.js';
 import { limitReceivedBytes } from './byte-budget.js';
 import { queryAllowlist } from './readonly-guard.js';
 import type { ResolvedTarget } from './net-guard.js';
@@ -245,9 +246,13 @@ type Row = Record<string, unknown>;
 const assertRegistered = queryAllowlist(SQLSERVER_QUERIES);
 
 export class SqlServerIntrospector implements Introspector {
-    constructor(private readonly pool: sql.ConnectionPool) {}
+    constructor(
+        private readonly pool: sql.ConnectionPool,
+        private readonly watch?: ConnectionWatch
+    ) {}
 
     private async query(text: string, schemas: string[]): Promise<Row[]> {
+        this.watch?.assertAlive();
         assertRegistered(text);
         const request = this.pool.request();
         if (text.includes('@schemas')) {
@@ -503,8 +508,11 @@ export async function connectSqlServer(
             ) as unknown as () => Promise<net.Socket>,
         },
     });
+    // before connecting: a pool whose connection drops later emits 'error',
+    // which with no listener would end the process
+    const watch = watchConnection(pool, params.password);
     await pool.connect();
-    const introspector = new SqlServerIntrospector(pool);
+    const introspector = new SqlServerIntrospector(pool, watch);
     // readOnlyIntent only routes the connection; the login is what limits it.
     // A login that can change data is refused unless the operator accepts it.
     if (process.env.INTROSPECT_ALLOW_PRIVILEGED !== '1') {

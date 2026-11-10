@@ -1,5 +1,6 @@
 import net, { isIP } from 'node:net';
 import pg from 'pg';
+import { watchConnection, type ConnectionWatch } from './connection-watch.js';
 import { limitReceivedBytes, MAX_RESPONSE_BYTES } from './byte-budget.js';
 import { queryAllowlist } from './readonly-guard.js';
 import type { ResolvedTarget } from './net-guard.js';
@@ -179,9 +180,13 @@ const assertRegistered = queryAllowlist(POSTGRES_QUERIES);
 type Row = Record<string, unknown>;
 
 export class PostgresIntrospector implements Introspector {
-    constructor(private readonly client: pg.Client) {}
+    constructor(
+        private readonly client: pg.Client,
+        private readonly watch?: ConnectionWatch
+    ) {}
 
     private async query(sql: string, schemas: string[]): Promise<Row[]> {
+        this.watch?.assertAlive();
         assertRegistered(sql);
         const hasFilter = sql.includes('$1');
         const res = await this.client.query(sql, hasFilter ? [schemas] : []);
@@ -381,6 +386,9 @@ export async function connectPostgres(
         query_timeout: STATEMENT_TIMEOUT_MS + 5_000,
         application_name: 'qbase-introspect',
     });
+    // before connecting: a connection dropped later emits 'error', which with
+    // no listener would end the process
+    const watch = watchConnection(client, params.password);
     await client.connect();
-    return new PostgresIntrospector(client);
+    return new PostgresIntrospector(client, watch);
 }
