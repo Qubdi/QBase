@@ -130,7 +130,7 @@ describe('schema filter', () => {
         const filtered = Object.values(SQLSERVER_QUERIES).filter((q) => q.includes('@schemas'));
         expect(filtered.length).toBeGreaterThan(3);
         for (const q of filtered) {
-            expect(q).toContain('OPENJSON(@schemas)');
+            expect(q).toContain("OPENJSON(IIF(@schemas = '', '[]', @schemas))");
             expect(q).not.toContain('STRING_SPLIT');
         }
     });

@@ -15,9 +15,11 @@ import {
 } from './types.js';
 
 // @schemas is a JSON array of names (see `schemasParam`); empty means "all user
-// schemas". A comma list would split a schema whose name holds a comma.
+// schemas". A comma list would split a schema whose name holds a comma. SQL
+// Server does not promise to skip the OPENJSON side of the OR, and OPENJSON('')
+// is an error, so the empty value is turned into an empty array there.
 const SCHEMA_FILTER = (alias: string) =>
-    `(@schemas = '' OR ${alias}.name IN (SELECT value FROM OPENJSON(@schemas)))`;
+    `(@schemas = '' OR ${alias}.name IN (SELECT value FROM OPENJSON(IIF(@schemas = '', '[]', @schemas))))`;
 
 /** The value bound to @schemas: '' for every schema, else a JSON array of names. */
 export const schemasParam = (schemas: string[]): string =>
