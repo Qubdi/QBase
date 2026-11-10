@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { brotliCompressSync, brotliDecompressSync, gzipSync } from 'node:zlib';
 import type { FastifyInstance } from 'fastify';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { buildApp, redactShareToken } from '../src/app.js';
+import { VAUL_STYLE_HASH, webContentSecurityPolicy } from '../src/web.js';
 import { loadConfig } from '../src/config.js';
 import type { Db } from '../src/db/client.js';
 
@@ -15,7 +18,10 @@ let app: FastifyInstance;
 beforeAll(async () => {
     dir = mkdtempSync(path.join(tmpdir(), 'qbase-web-'));
     mkdirSync(path.join(dir, 'assets'));
-    writeFileSync(path.join(dir, 'index.html'), '<!doctype html><title>editor</title>');
+    writeFileSync(
+        path.join(dir, 'index.html'),
+        '<!doctype html><title>editor</title><meta name="csp-nonce" content="__CSP_NONCE__" />'
+    );
     writeFileSync(path.join(dir, 'assets', 'app-abc123.js'), 'console.log(1)');
     // what scripts/precompress-web.mjs writes beside a large file
     writeFileSync(path.join(dir, 'assets', 'big-abc123.js'), 'console.log("plain")');
@@ -115,6 +121,56 @@ describe('serving the editor', () => {
             expect(res.headers['x-content-type-options'], url).toBe('nosniff');
             expect(res.headers['referrer-policy'], url).toBe('strict-origin-when-cross-origin');
         }
+    });
+
+    it('lets only this page\'s own <style> elements in: the nonce of the header is the one in the page', async () => {
+        const res = await app.inject({ url: '/' });
+        const policy = String(res.headers['content-security-policy']);
+        const nonce = /'nonce-([^']+)'/.exec(policy)?.[1];
+        expect(nonce).toBeTruthy();
+        expect(res.body).toContain(`content="${nonce}"`);
+        expect(res.body).not.toContain('__CSP_NONCE__');
+        // an element can carry the nonce or the vaul hash, nothing else but 'self'
+        const elem = /style-src-elem ([^;]+)/.exec(policy)?.[1];
+        expect(elem).toBe(`'self' 'nonce-${nonce}' '${VAUL_STYLE_HASH}'`);
+        expect(/style-src ([^;]+)/.exec(policy)?.[1]).toBe(elem);
+        // inline style="" attributes stay allowed; style elements may not be
+        expect(policy).toContain("style-src-attr 'unsafe-inline'");
+        expect(elem).not.toContain('unsafe-inline');
+        expect(policy).not.toMatch(/style-src [^;]*unsafe-inline/);
+    });
+
+    it('gives every page load a new nonce, on every route that answers with the page', async () => {
+        const seen = new Set<string>();
+        for (const url of ['/', '/', '/s/some-token', '/projects/1/diagrams/2']) {
+            const res = await app.inject({ url });
+            const nonce = /'nonce-([^']+)'/.exec(String(res.headers['content-security-policy']))?.[1];
+            expect(nonce, url).toBeTruthy();
+            expect(res.body, url).toContain(`content="${nonce}"`);
+            seen.add(nonce!);
+        }
+        expect(seen.size).toBe(4);
+        // 16 random bytes, base64
+        for (const n of seen) expect(Buffer.from(n, 'base64')).toHaveLength(16);
+    });
+
+    it('sends no nonce with files, which are not pages', async () => {
+        for (const url of ['/assets/app-abc123.js', '/config.js', '/robots.txt']) {
+            const res = await app.inject({ url });
+            const policy = String(res.headers['content-security-policy']);
+            expect(policy, url).not.toContain('nonce-');
+            expect(policy, url).toBe(webContentSecurityPolicy());
+        }
+    });
+
+    it('allows the style vaul adds by its hash, and the hash is the one of the installed vaul', () => {
+        const file = path.join(__dirname, '..', '..', 'node_modules', 'vaul', 'dist', 'index.mjs');
+        const source = readFileSync(file, 'utf8');
+        const calls = [...source.matchAll(/__insertCSS\(("(?:[^"\\]|\\.)*")\)/g)];
+        expect(calls).toHaveLength(1);
+        const css = JSON.parse(calls[0][1]) as string;
+        const hash = `sha256-${createHash('sha256').update(css).digest('base64')}`;
+        expect(hash).toBe(VAUL_STYLE_HASH);
     });
 
     it('does not serve files from outside the folder', async () => {

@@ -1,19 +1,54 @@
 import fastifyStatic from '@fastify/static';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
+import { randomBytes } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { API_SECURITY_HEADERS, hstsHeaders } from './lib/security-headers.js';
 
 /** Where the API lives when this server also serves the editor. */
 export const API_PREFIX = '/api';
 
+/** What index.html holds where the page's style nonce goes (see sendIndex). */
+export const CSP_NONCE_PLACEHOLDER = '__CSP_NONCE__';
+
 /**
- * Headers on every page and file of the editor (the API sets its own, stricter
- * ones). style-src needs 'unsafe-inline': React and the editor set inline
- * styles. The editor talks to this same origin, so connect-src is 'self'.
+ * The one <style> that vaul (the mobile drawer) adds when it loads, which has
+ * no way to carry a nonce: allowed by its hash instead. It is the SHA-256 of
+ * the CSS text in node_modules/vaul/dist/index.mjs; web.test.ts recomputes it,
+ * so a vaul upgrade that changes the text fails there until this is updated.
  */
+export const VAUL_STYLE_HASH = 'sha256-YIjArHm2rkb5J7hX9lUM1bnQ3Kp61MTfluMGkuyKwDw=';
+
+/**
+ * The policy of an editor page. Styles: a <style> element needs this page's
+ * nonce (or the vaul hash above), so an injected <style> does nothing. A
+ * style="" attribute stays allowed (style-src-attr): React and the canvas set
+ * positions and sizes that way, and an attribute can restyle but not run code
+ * or read the page. The editor talks to this same origin, so connect-src is
+ * 'self'. Without a nonce (files, errors) only 'self' and the hash apply.
+ */
+export const webContentSecurityPolicy = (nonce?: string): string => {
+    const elem = ["'self'", ...(nonce ? [`'nonce-${nonce}'`] : []), `'${VAUL_STYLE_HASH}'`].join(' ');
+    return [
+        "default-src 'self'",
+        "script-src 'self'",
+        `style-src ${elem}`,
+        `style-src-elem ${elem}`,
+        "style-src-attr 'unsafe-inline'",
+        "img-src 'self' data: blob:",
+        "font-src 'self'",
+        "connect-src 'self'",
+        "worker-src 'self' blob:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+    ].join('; ');
+};
+
+/** Headers on every page and file of the editor (the API sets its own, stricter ones). */
 export const WEB_SECURITY_HEADERS = {
-    'content-security-policy':
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    'content-security-policy': webContentSecurityPolicy(),
     'x-content-type-options': 'nosniff',
     'x-frame-options': 'DENY',
     'referrer-policy': 'strict-origin-when-cross-origin',
@@ -36,9 +71,26 @@ export function registerWeb(
     root: string,
     cookieSecure: boolean | 'auto' = 'auto'
 ): void {
+    // index.html is read on each request: the nonce in it is new every time
+    const indexFile = path.join(path.resolve(root), 'index.html');
+    const sendIndex = async (reply: FastifyReply) => {
+        const nonce = randomBytes(16).toString('base64');
+        const html = (await readFile(indexFile, 'utf8')).replaceAll(
+            CSP_NONCE_PLACEHOLDER,
+            nonce
+        );
+        return reply
+            .type('text/html; charset=utf-8')
+            .header('cache-control', 'no-cache')
+            .header('content-security-policy', webContentSecurityPolicy(nonce))
+            .send(html);
+    };
+
     app.addHook('onSend', async (req, reply) => {
         if (isApiPath(req.url)) return;
-        reply.headers(WEB_SECURITY_HEADERS);
+        const { 'content-security-policy': policy, ...others } = WEB_SECURITY_HEADERS;
+        // a page already carries its own policy, with its nonce
+        reply.headers(reply.hasHeader('content-security-policy') ? others : { ...others, 'content-security-policy': policy });
         reply.headers(hstsHeaders(req, cookieSecure));
     });
 
@@ -68,9 +120,7 @@ export function registerWeb(
     });
 
     // the static handler refuses a folder, and "/" is one
-    app.get('/', async (_req, reply) =>
-        reply.header('cache-control', 'no-cache').sendFile('index.html')
-    );
+    app.get('/', async (_req, reply) => sendIndex(reply));
 
     app.setNotFoundHandler(async (req, reply) => {
         const url = req.url.split('?')[0];
@@ -89,6 +139,6 @@ export function registerWeb(
                 statusCode: 404,
             });
         }
-        return reply.header('cache-control', 'no-cache').sendFile('index.html');
+        return sendIndex(reply);
     });
 }
