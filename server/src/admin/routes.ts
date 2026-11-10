@@ -1,3 +1,4 @@
+import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import {
     and,
     count,
@@ -29,7 +30,9 @@ import {
     type AuditMeta,
 } from '../audit/audit.js';
 import { hashPassword } from '../auth/password.js';
+import { createAuthGuards, type AuthGuards } from '../auth/guards.js';
 import { createMfa } from '../auth/mfa.js';
+import { createStepUp, stepUpFields } from '../auth/step-up.js';
 import { weakPassword } from '../auth/password-rules.js';
 import type { Config } from '../config.js';
 import { isForeignKeyViolation, isUniqueViolation } from '../lib/pg-errors.js';
@@ -76,6 +79,8 @@ const updateUserBody = z
         password: z.string().max(200).optional(),
         isAdmin: z.boolean().optional(),
         isActive: z.boolean().optional(),
+        // proof for resetting another admin's password (see createStepUp)
+        ...stepUpFields,
     })
     .refine(
         (b) =>
@@ -135,10 +140,31 @@ const withAdminSetLock = <T>(db: Db, fn: (tx: Tx) => Promise<T>) =>
     });
 
 /**
+ * Revokes the live share links the accounts made, and returns their ids so the
+ * caller can tell the viewers once the change is committed. A link outlives
+ * the account's sessions otherwise: it keeps serving a diagram for someone
+ * the admin has just cut off.
+ */
+const revokeLinksOf = async (tx: Tx, userIds: string[]): Promise<string[]> => {
+    const revoked = await tx
+        .update(shareLinks)
+        .set({ revokedAt: new Date(), tokenEnc: null })
+        .where(
+            and(inArray(shareLinks.createdBy, userIds), isNull(shareLinks.revokedAt))
+        )
+        .returning({ id: shareLinks.id });
+    return revoked.map((r) => r.id);
+};
+
+/**
  * Deletes accounts. Their diagrams do not go with them (owner_id would
  * cascade): the team keeps them, owned by `heirId`.
  */
-const removeUsers = async (tx: Tx, ids: string[], heirId: string) => {
+const removeUsers = async (
+    tx: Tx,
+    ids: string[],
+    heirId: string
+): Promise<string[]> => {
     // Lock the accounts first. A diagram the user creates while this runs
     // inserts a row that points at the user, which waits for this lock, and
     // then the reassignment below sees it; without the lock it would appear
@@ -154,8 +180,11 @@ const removeUsers = async (tx: Tx, ids: string[], heirId: string) => {
         .update(diagrams)
         .set({ ownerId: heirId })
         .where(inArray(diagrams.ownerId, ids));
+    // before the delete: the links' created_by is cleared with the account
+    const revokedLinks = await revokeLinksOf(tx, ids);
     await tx.delete(sessions).where(inArray(sessions.userId, ids));
     await tx.delete(users).where(inArray(users.id, ids));
+    return revokedLinks;
 };
 
 const otherActiveAdmins = async (tx: Tx, exceptId: string) => {
@@ -178,10 +207,20 @@ export const adminRoutes =
         db: Db,
         config: Pick<
             Config,
-            'passwordMinLength' | 'mfaEnabled' | 'secretsKey' | 'mfaWindowSteps'
-        >
+            | 'passwordMinLength'
+            | 'mfaEnabled'
+            | 'secretsKey'
+            | 'mfaWindowSteps'
+            | 'authMaxFailures'
+            | 'authLockoutMinutes'
+        >,
+        // the failure counters of sign-in and the account screens: a wrong
+        // password here counts against the same lockout
+        guards: AuthGuards = createAuthGuards(config)
     ): FastifyPluginAsync =>
     async (app) => {
+        const stepMfa = config.mfaEnabled ? createMfa(db, config) : null;
+        const stepUp = createStepUp({ db, config, mfa: stepMfa, guards });
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -342,7 +381,9 @@ export const adminRoutes =
             await audit(db, {
                 userId: req.user!.id,
                 action: 'user.create',
-                meta: { targetUserId: user.id },
+                // whether the new account can administer: the one fact in this row
+                // that matters when the log is read after something went wrong
+                meta: { targetUserId: user.id, isAdmin: user.isAdmin },
             });
             return reply.code(201).send({
                 id: user.id,
@@ -374,11 +415,16 @@ export const adminRoutes =
             if (body.password !== undefined) {
                 // the rules compare with the account's own email
                 const [account] = await db
-                    .select({ email: users.email })
+                    .select({ email: users.email, isAdmin: users.isAdmin })
                     .from(users)
                     .where(eq(users.id, id));
                 if (!account)
                     return reply.code(404).send({ error: 'not_found' });
+                // taking over another admin's account needs this admin's own
+                // password (and code): a stolen session alone must not do it
+                if (account.isAdmin && !(await stepUp(req, reply, body))) {
+                    return;
+                }
                 const weak = weakPassword(config, body.password, account.email);
                 if (weak) return reply.code(400).send(weak);
                 patch.passwordHash = await hashPassword(body.password);
@@ -402,18 +448,24 @@ export const adminRoutes =
                     return { error: 'last_admin' as const };
                 }
                 await tx.update(users).set(patch).where(eq(users.id, id));
-                return { target };
+                const revokedLinks =
+                    body.isActive === false && target.isActive
+                        ? await revokeLinksOf(tx, [id])
+                        : [];
+                // a reset password, or a disabled account, ends every session: in
+                // the same transaction, so the change never stands without it
+                if (body.password !== undefined || body.isActive === false) {
+                    await destroyOtherSessions(tx, id, undefined);
+                }
+                return { target, revokedLinks };
             });
             if ('error' in outcome) {
                 return outcome.error === 'not_found'
                     ? reply.code(404).send({ error: 'not_found' })
                     : reply.code(400).send({ error: 'last_admin' });
             }
-            const { target } = outcome;
-            if (body.password !== undefined || body.isActive === false) {
-                // a reset password, or a disabled account, ends every session
-                await destroyOtherSessions(db, id, undefined);
-            }
+            const { target, revokedLinks } = outcome;
+            revokedLinks.forEach(emitLinkChanged);
             const statusChanged =
                 body.isActive !== undefined &&
                 body.isActive !== target.isActive;
@@ -465,14 +517,14 @@ export const adminRoutes =
                 ) {
                     return { error: 'last_admin' as const };
                 }
-                await removeUsers(tx, [id], req.user!.id);
+                const revokedLinks = await removeUsers(tx, [id], req.user!.id);
                 // in the same transaction: no account is gone without its row
                 await audit(tx, {
                     userId: req.user!.id,
                     action: 'user.delete',
                     meta: { targetUserId: id },
                 });
-                return {};
+                return { revokedLinks };
             });
             if (outcome.error === 'not_found') {
                 return reply.code(404).send({ error: 'not_found' });
@@ -480,6 +532,7 @@ export const adminRoutes =
             if (outcome.error === 'last_admin') {
                 return reply.code(400).send({ error: 'last_admin' });
             }
+            outcome.revokedLinks?.forEach(emitLinkChanged);
             return reply.code(204).send();
         });
 
@@ -521,7 +574,7 @@ export const adminRoutes =
                 );
                 const changingIds = changing.map((u) => u.id);
                 if (changingIds.length === 0)
-                    return { changed: [] as string[] };
+                    return { changed: [] as string[], revokedLinks: [] as string[] };
 
                 // admins who can sign in are lost to a disable or a delete;
                 // someone else must remain
@@ -542,6 +595,7 @@ export const adminRoutes =
                     if (remaining < 1) return { error: 'last_admin' as const };
                 }
 
+                let revokedLinks: string[] = [];
                 if (body.action === 'enable') {
                     await tx
                         .update(users)
@@ -560,8 +614,9 @@ export const adminRoutes =
                     await tx
                         .delete(diagramLocks)
                         .where(inArray(diagramLocks.userId, changingIds));
+                    revokedLinks = await revokeLinksOf(tx, changingIds);
                 } else {
-                    await removeUsers(tx, changingIds, self);
+                    revokedLinks = await removeUsers(tx, changingIds, self);
                 }
                 // in the same transaction: no account changes without its rows
                 await auditMany(
@@ -572,11 +627,12 @@ export const adminRoutes =
                         meta: { targetUserId },
                     }))
                 );
-                return { changed: changingIds };
+                return { changed: changingIds, revokedLinks };
             });
             if ('error' in outcome) {
                 return reply.code(400).send({ error: outcome.error });
             }
+            outcome.revokedLinks.forEach(emitLinkChanged);
             return {
                 changed: outcome.changed.length,
                 unchanged: ids.length - outcome.changed.length,
@@ -592,16 +648,23 @@ export const adminRoutes =
             const mfa = createMfa(db, config);
             app.post('/users/:id/mfa/reset', async (req, reply) => {
                 const { id } = idParam.parse(req.params);
+                const proof = z.object(stepUpFields).partial().parse(req.body ?? {});
                 if (id === req.user!.id) {
                     return reply.code(400).send({ error: 'cannot_reset_self' });
                 }
                 const [target] = await db
-                    .select({ enabledAt: users.mfaEnabledAt })
+                    .select({
+                        enabledAt: users.mfaEnabledAt,
+                        isAdmin: users.isAdmin,
+                    })
                     .from(users)
                     .where(eq(users.id, id));
                 if (!target) return reply.code(404).send({ error: 'not_found' });
                 // nothing to reset is not an event
                 if (target.enabledAt === null) return { reset: false };
+                // clearing another admin's second factor needs this admin's own
+                // password (and code), so a stolen session cannot strip it
+                if (target.isAdmin && !(await stepUp(req, reply, proof))) return;
                 await mfa.clear(id);
                 await destroyOtherSessions(db, id, undefined);
                 await audit(db, {
@@ -707,6 +770,8 @@ export const adminRoutes =
                     and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt))
                 )
                 .returning({ id: shareLinks.id });
+            // cut the viewers off first: a log row that fails must not leave them connected
+            emitLinkChanged(linkId);
             if (revoked.length > 0) {
                 await audit(db, {
                     userId: req.user!.id,
@@ -719,7 +784,6 @@ export const adminRoutes =
                     },
                 });
             }
-            emitLinkChanged(linkId);
             return reply.code(204).send();
         });
 
@@ -897,7 +961,8 @@ export const adminRoutes =
                 .from(projectMembers)
                 .innerJoin(users, eq(users.id, projectMembers.userId))
                 .where(eq(projectMembers.projectId, id))
-                .orderBy(users.email);
+                .orderBy(users.email)
+                .limit(MAX_UNPAGED_ROWS);
         });
 
         // assign a user, or change their role if already assigned

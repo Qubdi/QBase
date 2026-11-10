@@ -8,7 +8,6 @@ import {
 } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/qubdi/api';
-import { resetPasswordMinLength } from '@/hooks/use-password-min-length';
 import { AuthDialog } from '../auth-dialog';
 import { ChangePasswordDialog } from '../change-password-dialog';
 import { TwoFactorDialog } from '../two-factor-dialog';
@@ -80,7 +79,6 @@ beforeEach(() => {
         isAdmin: false,
         mfaEnabled: false,
     };
-    resetPasswordMinLength();
     mocks.setupStatus.mockResolvedValue({
         needsSetup: false,
         passwordMinLength: 12,

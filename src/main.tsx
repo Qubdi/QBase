@@ -15,7 +15,9 @@ import './globals.css';
 import { i18nReady } from '@/i18n/i18n';
 import { provideDialectTypes } from '@/qbase/dialect-types';
 import { App } from './app';
+import { provideNonceToLibraries } from '@/platform/csp-nonce';
 
+provideNonceToLibraries();
 provideDialectTypes();
 
 // the first screen is never shown in English first; if loading fails, start anyway

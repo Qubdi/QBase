@@ -24,7 +24,9 @@ export async function resealPlaintextWebhooks(
         .where(
             and(
                 isNotNull(driftSettings.webhookUrl),
-                notLike(driftSettings.webhookUrl, 'v1:%')
+                notLike(driftSettings.webhookUrl, 'v1:%'),
+                notLike(driftSettings.webhookUrl, 'v2:%'),
+                notLike(driftSettings.webhookUrl, 'v3:%')
             )
         );
     let sealed = 0;
@@ -32,7 +34,7 @@ export async function resealPlaintextWebhooks(
         if (!row.webhookUrl) continue;
         const changed = await db
             .update(driftSettings)
-            .set({ webhookUrl: sealWebhookUrl(box, row.webhookUrl) })
+            .set({ webhookUrl: sealWebhookUrl(box, row.diagramId, row.webhookUrl) })
             .where(
                 and(
                     eq(driftSettings.diagramId, row.diagramId),

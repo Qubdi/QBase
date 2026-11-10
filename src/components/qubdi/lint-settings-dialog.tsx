@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Dialog,
@@ -46,9 +46,13 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
     );
     const [draft, setDraft] = useState<LintConfig>(config);
     const contentRef = useRef<HTMLDivElement>(null);
-    useEffect(() => {
+    // the draft starts from the saved settings each time the dialog opens or
+    // they change: reset while rendering, not in an effect
+    const [seen, setSeen] = useState({ open, config });
+    if (seen.open !== open || seen.config !== config) {
+        setSeen({ open, config });
         if (open) setDraft(config);
-    }, [open, config]);
+    }
 
     const rule = (id: RuleId) => {
         const info = RULES.find((r) => r.id === id)!;

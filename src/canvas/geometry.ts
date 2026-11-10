@@ -10,10 +10,6 @@ export const MIN_REGION_HEIGHT = 100;
 export const FIT_PADDING = 0.1;
 export const FIT_MAX_ZOOM = 0.8;
 
-export function snapTo(value: number, grid = GRID): number {
-    return Math.round(value / grid) * grid;
-}
-
 /** The size an entity is drawn at: measured if known, else a guess from its rows. */
 export function sizeFor(
     entity: Entity,
@@ -45,22 +41,6 @@ export function contains(outer: Box, inner: Box): boolean {
     );
 }
 
-/** Ids of the boxes that touch at least one other box. */
-export function overlappingIds(
-    boxes: ReadonlyArray<{ id: Id; box: Box }>
-): Set<Id> {
-    const hit = new Set<Id>();
-    for (let i = 0; i < boxes.length; i++) {
-        for (let j = i + 1; j < boxes.length; j++) {
-            if (intersects(boxes[i].box, boxes[j].box)) {
-                hit.add(boxes[i].id);
-                hit.add(boxes[j].id);
-            }
-        }
-    }
-    return hit;
-}
-
 /** How many other boxes each overlapping box touches (boxes touching nothing are left out). */
 export function overlapCounts(
     boxes: ReadonlyArray<{ id: Id; box: Box }>
@@ -79,15 +59,6 @@ export function overlapCounts(
 
 export function clampWidth(width: number): number {
     return Math.min(TABLE_WIDTH.max, Math.max(TABLE_WIDTH.min, width));
-}
-
-/**
- * The header button toggles between the narrowest and the widest width
- * (EDT-082 change: two states, no middle step).
- */
-export function toggledWidth(current: number | undefined): number {
-    const now = current ?? TABLE_WIDTH.default;
-    return now >= TABLE_WIDTH.max ? TABLE_WIDTH.min : TABLE_WIDTH.max;
 }
 
 export interface View {

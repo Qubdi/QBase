@@ -67,33 +67,55 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
         setCopied(false);
     };
 
-    const load = useCallback(async () => {
+    // asks the server how two-factor stands; its answer sets the view
+    const fetchView = useCallback(
+        () =>
+            api.mfaStatus().then(
+                (status) =>
+                    setView(
+                        status.enabled
+                            ? { kind: 'on', status }
+                            : status.available
+                              ? { kind: 'off' }
+                              : { kind: 'unavailable' }
+                    ),
+                (err: unknown) => {
+                    setError(errorMessage(err));
+                    setView({ kind: 'unavailable' });
+                }
+            ),
+        []
+    );
+    const load = useCallback(() => {
         setView({ kind: 'loading' });
-        try {
-            const status = await api.mfaStatus();
-            setView(
-                status.enabled
-                    ? { kind: 'on', status }
-                    : status.available
-                      ? { kind: 'off' }
-                      : { kind: 'unavailable' }
-            );
-        } catch (err) {
-            setError(errorMessage(err));
-            setView({ kind: 'unavailable' });
+        return fetchView();
+    }, [fetchView]);
+
+    // each opening starts clean and loading: reset while rendering, before
+    // the effect below asks the server
+    const [openSeen, setOpenSeen] = useState(false);
+    if (openSeen !== open) {
+        setOpenSeen(open);
+        if (open) {
+            reset();
+            setView({ kind: 'loading' });
         }
-    }, []);
+    }
 
     useEffect(() => {
         if (!open) return;
-        reset();
-        void load();
-    }, [open, load]);
+        void fetchView();
+    }, [open, fetchView]);
 
-    // the picture of the address, made in the browser
+    // the picture of the address, made in the browser; a new address clears
+    // the old picture while rendering
     const otpauthUrl = view.kind === 'setup' ? view.otpauthUrl : null;
-    useEffect(() => {
+    const [qrFor, setQrFor] = useState<string | null>(null);
+    if (qrFor !== otpauthUrl) {
+        setQrFor(otpauthUrl);
         setQr(null);
+    }
+    useEffect(() => {
         if (!otpauthUrl) return;
         let live = true;
         // the library loads here, as setup starts: most visits never need it

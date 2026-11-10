@@ -37,7 +37,14 @@ export const decodeCursor = (text: string): ActivityCursor | null => {
     if (!match) return null;
     const id = Number(match[2]);
     // the value goes into a query as a timestamp, so it must really be one
-    if (Number.isNaN(Date.parse(match[1]))) return null;
+    // and a real calendar day: Date.parse rolls "February 31" over to March
+    // instead of refusing it, and Postgres would then reject the cast
+    const parsed = new Date(match[1]);
+    if (
+        Number.isNaN(parsed.getTime()) ||
+        parsed.toISOString().slice(0, 19) !== match[1].slice(0, 19)
+    )
+        return null;
     return Number.isSafeInteger(id) ? { at: match[1], id } : null;
 };
 

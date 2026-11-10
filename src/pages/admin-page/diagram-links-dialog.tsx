@@ -39,35 +39,59 @@ export const DiagramLinksDialog: React.FC<DiagramLinksDialogProps> = ({
     const { t } = useTranslation();
     const { toast } = useToast();
     const diagramId = diagram?.id;
-    const [links, setLinks] = useState<AdminShareLink[] | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    // the list and the error belong to the diagram they were read for; another
+    // diagram starts from nothing: no old links, no old error
+    const [state, setState] = useState<{
+        id: string | undefined;
+        links: AdminShareLink[] | null;
+        error: string | null;
+    }>({ id: diagramId, links: null, error: null });
+    const own = state.id === diagramId;
+    const links = own ? state.links : null;
+    const error = own ? state.error : null;
+    const patch = useCallback(
+        (
+            id: string | undefined,
+            next: { links?: AdminShareLink[] | null; error?: string | null }
+        ) =>
+            setState((was) => ({
+                ...(was.id === id
+                    ? was
+                    : { id, links: null, error: null as string | null }),
+                ...next,
+            })),
+        []
+    );
 
-    const load = useCallback(async (id: string) => {
-        setLinks(await api.adminListDiagramLinks(id));
-    }, []);
+    const load = useCallback(
+        async (id: string) => {
+            patch(id, { links: await api.adminListDiagramLinks(id) });
+        },
+        [patch]
+    );
 
-    // another diagram starts from nothing: no old links, no old error
     useEffect(() => {
-        setLinks(null);
-        setError(null);
         if (!diagramId) return;
         let cancelled = false;
         api.adminListDiagramLinks(diagramId)
-            .then((list) => !cancelled && setLinks(list))
-            .catch((e: unknown) => !cancelled && setError(errorMessage(e)));
+            .then((list) => !cancelled && patch(diagramId, { links: list }))
+            .catch(
+                (e: unknown) =>
+                    !cancelled && patch(diagramId, { error: errorMessage(e) })
+            );
         return () => {
             cancelled = true;
         };
-    }, [diagramId]);
+    }, [diagramId, patch]);
 
     const revoke = async (link: AdminShareLink): Promise<boolean> => {
         if (!diagramId) return false;
-        setError(null);
+        patch(diagramId, { error: null });
         try {
             await api.adminRevokeDiagramLink(diagramId, link.id);
             await load(diagramId);
         } catch (e) {
-            setError(errorMessage(e));
+            patch(diagramId, { error: errorMessage(e) });
             return false;
         }
         onChanged();

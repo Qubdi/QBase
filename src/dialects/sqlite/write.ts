@@ -19,6 +19,7 @@ import {
 } from '../shared/export-model';
 import {
     claimName,
+    collateClause,
     commaList,
     linesOf,
     oneLine,
@@ -127,6 +128,7 @@ function columnLine(column: Column, inlineKey: Column | undefined): string {
         : '';
     const text = column.default?.trim() ?? '';
     let line = `${quoteDouble(column.name)} ${sqliteType(column)}`;
+    line += collateClause(column.collation);
     if (inlineKey === column) {
         line += ' PRIMARY KEY';
         if (column.increment || isNumberingMarker(text))

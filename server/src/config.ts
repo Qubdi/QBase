@@ -1,4 +1,5 @@
 import { normalizeMinLength } from '../../shared/password.js';
+import { allowEntryProblem } from './introspect/net-guard.js';
 
 export interface Config {
     databaseUrl: string;
@@ -69,6 +70,17 @@ export interface Config {
     shareRateLimit: number;
     /** hostnames, IPs or IPv4 CIDRs that introspection may reach even if private */
     introspectAllowHosts: string[];
+    /** INTROSPECT_ALLOW_PRIVILEGED=1: a SQL Server import may log in as a sysadmin or db_owner */
+    introspectAllowPrivileged: boolean;
+    /** hostnames, IPs or IPv4 CIDRs that a drift webhook may reach even if private; separate from the database list */
+    webhookAllowHosts: string[];
+    /**
+     * Token the first-run sign-up must send while no account exists, so whoever
+     * reaches an empty server cannot become its admin. SETUP_TOKEN; when it is
+     * unset the server makes a random one at start and prints it once (see
+     * server.ts). null = none required (tests, and the app once an account exists).
+     */
+    setupToken: string | null;
     /** secret for encrypting saved connection passwords; null disables saving */
     connectionKey: string | null;
     /**
@@ -116,6 +128,51 @@ export function parseTrustProxy(
         .filter(Boolean);
 }
 
+/**
+ * Settings the server runs on but that probably leave something weaker than the
+ * operator expects. Printed once at start; none of them stops the server.
+ */
+export function startupWarnings(
+    config: Pick<
+        Config,
+        'cookieSecure' | 'trustProxy' | 'connectionKey' | 'secretsKey'
+    >
+): string[] {
+    const warnings: string[] = [];
+    const noProxy =
+        config.trustProxy === false ||
+        (Array.isArray(config.trustProxy) && config.trustProxy.length === 0);
+    // 'auto' sets Secure only on a request that arrived over https, and behind a
+    // TLS-terminating proxy every request reaches the server as plain http
+    // unless the proxy is trusted: the session cookie then goes out without
+    // Secure
+    if (config.cookieSecure === 'auto' && noProxy) {
+        warnings.push(
+            'COOKIE_SECURE=auto and TRUST_PROXY is not set: behind a reverse proxy that ends TLS ' +
+                'the session cookie is sent without the Secure flag. ' +
+                'Set TRUST_PROXY to the number of proxies in front of the server, or COOKIE_SECURE=true.'
+        );
+    }
+    // a key under 32 characters only gets this far with ALLOW_SHORT_KEYS=1: the
+    // key is the only entropy in every key derived from it, so it is warned about
+    for (const [name, value] of [
+        ['CONNECTION_KEY', config.connectionKey],
+        ['SECRETS_KEY', config.secretsKey],
+    ] as const) {
+        if (value === null) continue;
+        // SECRETS_KEY falls back to CONNECTION_KEY: one warning per value
+        if (name === 'SECRETS_KEY' && value === config.connectionKey) continue;
+        if (value.length < RECOMMENDED_KEY_LENGTH) {
+            warnings.push(
+                `${name} is ${value.length} characters; use at least ${RECOMMENDED_KEY_LENGTH} ` +
+                    '(for example `openssl rand -hex 24`). Changing it makes saved values unreadable, so re-enter them after a change; ' +
+                    'ALLOW_SHORT_KEYS=1 is what lets the server start on it.'
+            );
+        }
+    }
+    return warnings;
+}
+
 /** Thrown by `loadConfig` when the environment holds values the server cannot run on. */
 export class ConfigError extends Error {
     constructor(problems: string[]) {
@@ -124,8 +181,14 @@ export class ConfigError extends Error {
     }
 }
 
+/** Shortest SETUP_TOKEN: it is the only thing between a stranger and the first admin account. */
+const MIN_SETUP_TOKEN_LENGTH = 16;
+
 /** Shortest encryption key `CryptoBox` accepts. */
 const MIN_KEY_LENGTH = 16;
+
+/** Shortest key accepted without ALLOW_SHORT_KEYS=1; a shorter one that is allowed is warned about at start. */
+const RECOMMENDED_KEY_LENGTH = 32;
 
 /** The levels the logger knows; anything else makes it throw at start-up. */
 export const LOG_LEVELS = [
@@ -152,10 +215,55 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         }
         return n;
     };
+    const allowList = (name: string) => {
+        const hosts = (env[name] ?? '')
+            .split(',')
+            .map((h) => h.trim())
+            .filter(Boolean);
+        for (const entry of hosts) {
+            const why = allowEntryProblem(entry);
+            if (why) problems.push(`${name} entry "${entry}": ${why}`);
+        }
+        return hosts;
+    };
+    const introspectAllowHosts = allowList('INTROSPECT_ALLOW_HOSTS');
+    const webhookAllowHosts = allowList('WEBHOOK_ALLOW_HOSTS');
+    // the browser's Origin header is scheme://host[:port] with nothing after it,
+    // and the server compares it as text: `*`, a path or a trailing slash would
+    // match no request and fail every credentialed call without saying why
+    const corsOrigin = env.CORS_ORIGIN?.trim() || null;
+    if (corsOrigin !== null) {
+        let exact = false;
+        try {
+            const url = new URL(corsOrigin);
+            exact = /^https?:$/.test(url.protocol) && url.origin === corsOrigin;
+        } catch {
+            // not a URL at all
+        }
+        if (!exact) {
+            problems.push(
+                `CORS_ORIGIN must be one exact origin such as https://editor.example.com, with no path or trailing slash (got "${corsOrigin}")`
+            );
+        }
+    }
+    // a short key is the only entropy in every key derived from it, so it is
+    // refused unless the operator says it is deliberate (a throwaway setup)
+    const allowShortKeys = ['1', 'true'].includes(
+        env.ALLOW_SHORT_KEYS?.trim().toLowerCase() ?? ''
+    );
     const key = (name: string) => {
         const value = env[name] || null;
         if (value !== null && value.length < MIN_KEY_LENGTH) {
             problems.push(`${name} must be at least ${MIN_KEY_LENGTH} characters`);
+        } else if (
+            value !== null &&
+            value.length < RECOMMENDED_KEY_LENGTH &&
+            !allowShortKeys
+        ) {
+            problems.push(
+                `${name} must be at least ${RECOMMENDED_KEY_LENGTH} characters (for example \`openssl rand -hex 24\`); ` +
+                    'set ALLOW_SHORT_KEYS=1 only to keep running on an older, shorter key'
+            );
         }
         return value;
     };
@@ -200,6 +308,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // no built-in fallback: a default credential would be a known password
     const databaseUrl = env.DATABASE_URL?.trim() ?? '';
     if (!databaseUrl) problems.push('DATABASE_URL is required');
+    const setupToken = env.SETUP_TOKEN?.trim() || null;
+    if (setupToken !== null && setupToken.length < MIN_SETUP_TOKEN_LENGTH) {
+        problems.push(`SETUP_TOKEN must be at least ${MIN_SETUP_TOKEN_LENGTH} characters`);
+    }
     const connectionKey = key('CONNECTION_KEY');
     const secretsKey = key('SECRETS_KEY') ?? connectionKey;
     const config: Config = {
@@ -207,16 +319,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         // loopback unless told otherwise; the Docker image sets 0.0.0.0
         host: env.HOST ?? '127.0.0.1',
         port: int('PORT', 3001, 1, 65535),
-        corsOrigin: env.CORS_ORIGIN ?? null,
+        corsOrigin,
         webDir: env.WEB_DIR?.trim() || null,
-        sessionDays: int('SESSION_DAYS', 30, 1),
+        sessionDays: int('SESSION_DAYS', 30, 1, 3650),
         sessionIdleDays: int('SESSION_IDLE_DAYS', 14),
         lintRateLimit: int('LINT_RATE_LIMIT', 30, 1),
         outboundRateLimit: int('OUTBOUND_RATE_LIMIT', 20, 1),
         snapshotKeep: int('SNAPSHOT_KEEP', 200),
         driftReportKeep: int('DRIFT_REPORT_KEEP', 50),
         bodyLimit: int('BODY_LIMIT_KB', 1024, 1) * 1024,
-        diagramBodyLimit: int('DIAGRAM_BODY_LIMIT_MB', 50, 1) * 1024 * 1024,
+        diagramBodyLimit: int('DIAGRAM_BODY_LIMIT_MB', 25, 1) * 1024 * 1024,
         auditRetentionDays: int('AUDIT_RETENTION_DAYS', 365),
         deadLinkKeepDays: int('DEAD_LINK_KEEP_DAYS', 30),
         cookieSecure: parseCookieSecure(env.COOKIE_SECURE),
@@ -230,7 +342,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         ),
         sseMaxPerLink: int('SSE_MAX_PER_LINK', 100, 1),
         sseMaxPerIp: int('SSE_MAX_PER_IP', 20, 1),
-        sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1),
+        // the seconds go to setInterval in ms: above 2147483 it overflows to 1 ms ticks, so the cap is an hour
+        sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1, 3600),
         trustProxy,
         logLevel,
         dbPoolMax: int('DB_POOL_MAX', 10, 2),
@@ -238,10 +351,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         autoPublishCoalesceSeconds: int('AUTO_PUBLISH_COALESCE_SECONDS', 300),
         dbStatementTimeoutSeconds: int('DB_STATEMENT_TIMEOUT_SECONDS', 120),
         shareRateLimit: int('SHARE_RATE_LIMIT', 60, 1),
-        introspectAllowHosts: (env.INTROSPECT_ALLOW_HOSTS ?? '')
-            .split(',')
-            .map((h) => h.trim())
-            .filter(Boolean),
+        introspectAllowHosts,
+        introspectAllowPrivileged: env.INTROSPECT_ALLOW_PRIVILEGED?.trim() === '1',
+        webhookAllowHosts,
+        setupToken,
         connectionKey,
         secretsKey,
         mfaEnabled: env.MFA_ENABLED?.trim().toLowerCase() !== 'false',

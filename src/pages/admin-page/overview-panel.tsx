@@ -16,12 +16,13 @@ import { ActivitySentence } from './activity-sentence';
 import { adminPath } from './admin-sections';
 import { StatTile } from './stat-tile';
 import { timeOf } from './time-of';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 /** How many of the latest events the Overview lists; the Activity page has the rest. */
 export const RECENT_EVENTS = 8;
 
 const dayOf = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, {
+    new Date(iso).toLocaleDateString(uiLocale(), {
         day: 'numeric',
         month: 'short',
     });
@@ -29,18 +30,19 @@ const dayOf = (iso: string) =>
 /** Totals, a week of activity and the latest events: where an admin starts. */
 export const OverviewPanel: React.FC = () => {
     const { t } = useTranslation();
-    const timeZone = useMemo(viewerTimeZone, []);
+    const timeZone = useMemo(() => viewerTimeZone(), []);
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [recent, setRecent] = useState<ActivityItem[] | null>(null);
     const [statsError, setStatsError] = useState<string | null>(null);
     const [recentError, setRecentError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    // the reload count whose answer last arrived; until then it is loading
+    const [settledTick, setSettledTick] = useState<number | null>(null);
     const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
     const [tick, setTick] = useState(0);
+    const loading = settledTick !== tick;
 
     useEffect(() => {
         let stale = false;
-        setLoading(true);
         // the figures and the latest events are separate asks: one failing
         // must not hide the other
         void Promise.allSettled([
@@ -61,7 +63,7 @@ export const OverviewPanel: React.FC = () => {
                 setRecentError(errorMessage(latest.reason));
             }
             setUpdatedAt(new Date());
-            setLoading(false);
+            setSettledTick(tick);
         });
         return () => {
             stale = true;
@@ -249,7 +251,9 @@ export const OverviewPanel: React.FC = () => {
                                 <ActivitySentence item={item} />
                                 <time
                                     dateTime={item.at}
-                                    title={new Date(item.at).toLocaleString()}
+                                    title={new Date(item.at).toLocaleString(
+                                        uiLocale()
+                                    )}
                                     className="shrink-0 text-xs text-muted-foreground"
                                 >
                                     {t(

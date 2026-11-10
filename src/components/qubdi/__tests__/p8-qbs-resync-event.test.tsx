@@ -17,6 +17,7 @@ vi.mock('../resync-dialog', () => ({
 vi.mock('@/qbase/use-diagram', () => ({
     useDiagram: () => ({
         currentDiagram: { id: 'local-1', tables: [] },
+        getCurrentDiagram: () => ({ id: 'local-1', tables: [] }),
         tables: [],
         databaseType: 'postgresql',
     }),

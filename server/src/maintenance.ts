@@ -1,7 +1,15 @@
 import { and, isNotNull, lt, or, sql } from 'drizzle-orm';
+import { safeError } from './lib/safe-error.js';
 import type { Config } from './config.js';
+import { purgeExpiredViewers } from './share/viewers.js';
 import { MAINTENANCE_LOCK, withAdvisoryLock, type Db } from './db/client.js';
-import { diagramLocks, mfaChallenges, shareLinks, sessions } from './db/schema.js';
+import {
+    diagramLocks,
+    mfaChallenges,
+    rateCounters,
+    shareLinks,
+    sessions,
+} from './db/schema.js';
 
 const DAY_MS = 86_400_000;
 
@@ -25,6 +33,21 @@ export async function purgeExpiredMfaChallenges(
     const res = await db
         .delete(mfaChallenges)
         .where(lt(mfaChallenges.expiresAt, now));
+    return res.rowCount ?? 0;
+}
+
+/**
+ * Deletes rate-limit and lockout counters whose window has closed. They are
+ * already ignored (a closed window starts again at one); this only keeps the
+ * table small.
+ */
+export async function purgeExpiredCounters(
+    db: Db,
+    now: Date = new Date()
+): Promise<number> {
+    const res = await db
+        .delete(rateCounters)
+        .where(lt(rateCounters.expiresAt, now));
     return res.rowCount ?? 0;
 }
 
@@ -90,42 +113,116 @@ export async function purgeAuditLog(
     }
 }
 
+const PRUNE_BATCH = 5000;
+
 /**
  * Applies the snapshot limit to diagrams published before it existed: removes
- * every version more than `keep` behind that diagram's newest one.
+ * every version more than `keep` behind that diagram's newest one, a batch at a
+ * time so a large backlog never holds one long lock or runs into the statement
+ * timeout.
  */
-export async function pruneSnapshots(db: Db, keep: number): Promise<number> {
+export async function pruneSnapshots(
+    db: Db,
+    keep: number,
+    batch = PRUNE_BATCH
+): Promise<number> {
     if (!(keep > 0)) return 0;
-    const res = await db.execute(sql`
-        delete from snapshots s
-        using (
-            select diagram_id, max(version) as newest
-            from snapshots
-            group by diagram_id
-        ) latest
-        where s.diagram_id = latest.diagram_id
-          and s.version <= latest.newest - ${keep}
-    `);
-    return res.rowCount ?? 0;
+    let total = 0;
+    for (;;) {
+        const res = await db.execute(sql`
+            delete from snapshots
+            where id in (
+                select s.id
+                from snapshots s
+                join (
+                    select diagram_id, max(version) as newest
+                    from snapshots
+                    group by diagram_id
+                ) latest on latest.diagram_id = s.diagram_id
+                where s.version <= latest.newest - ${keep}
+                limit ${batch}
+            )
+        `);
+        const n = res.rowCount ?? 0;
+        total += n;
+        if (n < batch) return total;
+    }
 }
 
-/** Removes every drift report beyond the newest `keep` of its diagram. */
-export async function pruneDriftReports(db: Db, keep: number): Promise<number> {
+/** Removes every drift report beyond the newest `keep` of each diagram, a batch at a time. */
+export async function pruneDriftReports(
+    db: Db,
+    keep: number,
+    batch = PRUNE_BATCH
+): Promise<number> {
     if (!(keep > 0)) return 0;
-    const res = await db.execute(sql`
-        delete from drift_reports
-        where id in (
-            select id from (
-                select id,
-                       row_number() over (
-                           partition by diagram_id order by run_at desc, id desc
-                       ) as place
-                from drift_reports
-            ) ranked
-            where place > ${keep}
-        )
-    `);
-    return res.rowCount ?? 0;
+    let total = 0;
+    for (;;) {
+        const res = await db.execute(sql`
+            delete from drift_reports
+            where id in (
+                select id from (
+                    select id,
+                           row_number() over (
+                               partition by diagram_id order by run_at desc, id desc
+                           ) as place
+                    from drift_reports
+                ) ranked
+                where place > ${keep}
+                limit ${batch}
+            )
+        `);
+        const n = res.rowCount ?? 0;
+        total += n;
+        if (n < batch) return total;
+    }
+}
+
+const STATS_BATCH = 50;
+const STATS_BATCHES_PER_RUN = 200;
+
+/**
+ * Fills in the stored stats and content size of rows written before the app
+ * kept them: a diagram's size, and a snapshot's numbers and size, worked out
+ * from its content a few rows at a time (a diagram's own stats were kept by
+ * the generated columns it had before). Until a row is reached, readers take
+ * its numbers from the content, so this changes no answer, only the cost of
+ * giving it. At most `maxBatches` per run; the next hourly run continues.
+ */
+export async function fillStoredStats(
+    db: Db,
+    batch = STATS_BATCH,
+    maxBatches = STATS_BATCHES_PER_RUN
+): Promise<number> {
+    let total = 0;
+    for (let i = 0; i < maxBatches; i++) {
+        const diagramsDone = await db.execute(sql`
+            update diagrams
+            set stat_content_bytes = octet_length(content::text)
+            where id in (
+                select id from diagrams where stat_content_bytes is null limit ${batch}
+            )
+        `);
+        const snapshotsDone = await db.execute(sql`
+            update snapshots
+            set stat_database_type = nullif(content->>'databaseType', ''),
+                stat_database_edition = nullif(content->>'databaseEdition', ''),
+                stat_table_count = case when jsonb_typeof(content->'tables') = 'array'
+                    then jsonb_array_length(content->'tables') else 0 end,
+                stat_relationship_count = case when jsonb_typeof(content->'relationships') = 'array'
+                    then jsonb_array_length(content->'relationships') else 0 end,
+                stat_created_at = nullif(content->>'createdAt', ''),
+                stat_content_bytes = octet_length(content::text)
+            where id in (
+                select id from snapshots where stat_table_count is null limit ${batch}
+            )
+        `);
+        const n = (diagramsDone.rowCount ?? 0) + (snapshotsDone.rowCount ?? 0);
+        total += n;
+        if ((diagramsDone.rowCount ?? 0) < batch && (snapshotsDone.rowCount ?? 0) < batch)
+            return total;
+    }
+    return total;
 }
 
 type MaintenanceConfig = Pick<
@@ -142,10 +239,13 @@ export async function runMaintenance(
         sessions: () => purgeExpiredSessions(db, now),
         mfaChallenges: () => purgeExpiredMfaChallenges(db, now),
         locks: () => purgeExpiredLocks(db, now),
+        counters: () => purgeExpiredCounters(db, now),
+        viewers: () => purgeExpiredViewers(db, now),
         links: () => purgeDeadLinks(db, config.deadLinkKeepDays, now),
         audit: () => purgeAuditLog(db, config.auditRetentionDays, now),
         snapshots: () => pruneSnapshots(db, config.snapshotKeep),
         driftReports: () => pruneDriftReports(db, config.driftReportKeep),
+        stats: () => fillStoredStats(db),
     };
     // one step failing must not skip the ones after it until the next hour
     const removed = {} as Record<keyof typeof steps, number>;
@@ -158,7 +258,7 @@ export async function runMaintenance(
         } catch (err) {
             removed[name] = 0;
             failed.push(name);
-            console.error(`Maintenance step "${name}" failed:`, err);
+            console.error(`Maintenance step "${name}" failed:`, safeError(err));
         }
     }
     return { ...removed, failed };
@@ -185,7 +285,7 @@ export function startMaintenance(
         )
             .then(() => undefined)
             .catch((err: unknown) => {
-                console.error('Maintenance failed:', err);
+                console.error('Maintenance failed:', safeError(err));
             })
             .finally(() => {
                 current = null;

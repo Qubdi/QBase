@@ -1,5 +1,5 @@
 import type { Db } from '../db/client.js';
-import { latestSnapshot } from '../diagrams/service.js';
+import { latestSnapshot, latestSnapshotMeta } from '../diagrams/service.js';
 import { onPublish } from '../events.js';
 
 type Snapshot = Awaited<ReturnType<typeof latestSnapshot>>;
@@ -17,10 +17,44 @@ export function createSnapshotCache(db: Db, ttlMs = 2_000, maxEntries = 16) {
         string,
         { at: number; snapshot: Promise<Snapshot> }
     >();
+    // the newest version number alone, for the heartbeats: a read without the content
+    const versions = new Map<
+        string,
+        { at: number; version: Promise<number | undefined> }
+    >();
     const stopListening = onPublish((diagramId) => {
         entries.delete(diagramId);
+        versions.delete(diagramId);
     });
     return {
+        /**
+         * The newest published version of a diagram, shared for a moment like
+         * the snapshot. A heartbeat tells a viewer this number, so a publish
+         * it missed while the listening connection was down still reaches it.
+         */
+        version(diagramId: string): Promise<number | undefined> {
+            const now = Date.now();
+            const hit = versions.get(diagramId);
+            if (hit && now - hit.at < ttlMs) return hit.version;
+            const version = latestSnapshotMeta(db, diagramId).then(
+                (row) => row?.version
+            );
+            versions.set(diagramId, { at: now, version });
+            version.catch(() => {
+                if (versions.get(diagramId)?.version === version) {
+                    versions.delete(diagramId);
+                }
+            });
+            for (const [key, entry] of versions) {
+                if (now - entry.at >= ttlMs) versions.delete(key);
+            }
+            while (versions.size > maxEntries) {
+                const oldest = versions.keys().next().value;
+                if (oldest === undefined) break;
+                versions.delete(oldest);
+            }
+            return version;
+        },
         get(diagramId: string): Promise<Snapshot> {
             const now = Date.now();
             const hit = entries.get(diagramId);
@@ -47,6 +81,7 @@ export function createSnapshotCache(db: Db, ttlMs = 2_000, maxEntries = 16) {
         close() {
             stopListening();
             entries.clear();
+            versions.clear();
         },
     };
 }

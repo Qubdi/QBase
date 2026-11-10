@@ -39,8 +39,12 @@ export interface StorageAdapter {
     /** newest change first */
     list(): Promise<DiagramSummary[]>;
     load(id: string): Promise<LoadedDesign | undefined>;
-    /** adds or replaces the design with the same id */
-    save(design: Design): Promise<void>;
+    /**
+     * Adds or replaces the design with the same id. With `update`, the design
+     * is written only while it still exists: one that was deleted (here or in
+     * another tab) stays deleted. Autosave passes it; a create does not.
+     */
+    save(design: Design, options?: { update?: boolean }): Promise<void>;
     /** removes the design, its saved filter and any old-layout rows it still has */
     remove(id: string): Promise<void>;
     /** true when this adapter removed the design in this session (autosave then leaves it deleted) */

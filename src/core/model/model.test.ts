@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applyOk, blank, NOW, rng, withTables } from '../testing/helpers';
+import {
+    applyOk,
+    blank,
+    looksLikeGeneratedId,
+    NOW,
+    rng,
+    withTables,
+} from '../testing/helpers';
 import { editionFits, traitsOf } from './database';
 import {
     createColumn,
@@ -14,16 +21,11 @@ import {
     schemaForNewEntity,
 } from './defaults';
 import { TABLE_COLOR, TABLE_WIDTH, VIEW_COLOR } from './entity';
-import {
-    idFromSeed,
-    looksLikeGeneratedId,
-    newDesignId,
-    newId,
-    seededRandom,
-} from './ids';
+import { idFromSeed, newDesignId, newId, seededRandom } from './ids';
 import { regionMembership } from './region-membership';
 import {
     initialFilter,
+    isUnrestricted,
     isVisible,
     schemaIdOf,
     tidyFilter,
@@ -571,18 +573,12 @@ describe('DAT-058 the visibility filter', () => {
         expect(tidyFilter({ tableIds: ['a', 'b'] }, plain)).toEqual({});
     });
 
-    it('DAT-011 with no saved filter and several schemas only the first is shown', () => {
-        expect(initialFilter(tables, 'public')).toEqual({
-            schemaIds: ['public'],
-        });
-        expect(
-            initialFilter(
-                [{ schema: 'public' }, { schema: undefined }],
-                'public'
-            )
-        ).toEqual({});
-        expect(initialFilter([{ schema: undefined }], undefined)).toEqual({});
-        expect(initialFilter([], 'public')).toEqual({});
+    it('DAT-011 with no saved filter everything is shown, whatever the schemas', () => {
+        expect(initialFilter()).toEqual({});
+        expect(isUnrestricted(initialFilter())).toBe(true);
+        expect(isUnrestricted(undefined)).toBe(true);
+        expect(isUnrestricted({ tableIds: [] })).toBe(false);
+        expect(isUnrestricted({ schemaIds: ['public'] })).toBe(false);
     });
 });
 
@@ -604,5 +600,33 @@ describe('DAT-059 / DAT-060 ids', () => {
     it('DAT-060 a new diagram id has the same shape as any other id, no browser prefix', () => {
         expect(newDesignId()).toMatch(/^[0-9a-z]{25}$/);
         expect(listOf(blank().entities)).toEqual([]);
+    });
+});
+
+describe('parseTypeDeclaration on long runs of spaces', () => {
+    it('answers in milliseconds, not seconds (no catastrophic backtracking)', () => {
+        for (const text of [
+            `a${' '.repeat(5000)}!`,
+            `varchar${' '.repeat(5000)}(`,
+            `varchar(1)${' '.repeat(5000)}x`,
+            `a b${' '.repeat(5000)}[`,
+        ]) {
+            const started = performance.now();
+            expect(parseTypeDeclaration(text)).toBeUndefined();
+            expect(performance.now() - started).toBeLessThan(200);
+        }
+    });
+
+    it('still reads names with spaces, lengths and brackets', () => {
+        expect(parseTypeDeclaration('  character varying ( 10 ) [] ')).toEqual({
+            name: 'character varying',
+            length: 10,
+            isArray: true,
+        });
+        expect(parseTypeDeclaration('decimal(10, 2)')).toEqual({
+            name: 'decimal',
+            precision: 10,
+            scale: 2,
+        });
     });
 });

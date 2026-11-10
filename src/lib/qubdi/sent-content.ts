@@ -3,6 +3,8 @@
 // reach the server while its reply is lost (a reload or closed tab mid-request),
 // which leaves the editor with an old version and a false "someone else saved"
 // conflict. If the server's copy is exactly what was sent, the save was ours.
+import { readJsonMap } from './local-map';
+
 const KEY = 'qbase.sent-content';
 
 type Sent = Record<string, string[]>;
@@ -123,14 +125,8 @@ const SYNCED_KEY = 'qbase.synced-content';
 
 const syncedMemory: Record<string, string> = {};
 
-const readSynced = (): Record<string, string> => {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(SYNCED_KEY) ?? '{}');
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-        return {};
-    }
-};
+const readSynced = (): Record<string, string> =>
+    readJsonMap<string>(SYNCED_KEY);
 
 /** The copy in this browser now equals `content`, which the server has. */
 export const markSyncedContent = (

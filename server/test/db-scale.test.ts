@@ -312,3 +312,32 @@ describe('the hourly clean-up runs in one process at a time', () => {
         expect(again).toEqual({ ran: true, value: 'ok' });
     });
 });
+
+describe('indexes for the activity filter and the stats fill', () => {
+    let ctx: TestCtx;
+    beforeAll(async () => {
+        ctx = await createTestApp();
+    });
+    afterAll(async () => {
+        await ctx.close();
+    });
+
+    const definition = async (name: string) => {
+        const res = await ctx.db.execute(
+            sql`select indexdef from pg_indexes where indexname = ${name}`
+        );
+        return (res.rows[0] as { indexdef: string } | undefined)?.indexdef ?? '';
+    };
+
+    it('the action index carries id, so a filtered cursor page walks it', async () => {
+        expect(await definition('audit_log_action_at_idx')).toMatch(
+            /\(action, at DESC( NULLS FIRST)?, id DESC( NULLS FIRST)?\)/
+        );
+    });
+
+    it('only snapshots without stats are in the pending index', async () => {
+        expect(await definition('snapshots_stats_pending_idx')).toMatch(
+            /\(id\) WHERE \(stat_table_count IS NULL\)/
+        );
+    });
+});

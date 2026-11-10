@@ -1,9 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    resetPasswordMinLength,
-    usePasswordMinLength,
-} from '../use-password-min-length';
+import type { usePasswordMinLength as UsePasswordMinLength } from '../use-password-min-length';
 
 const { setupStatus } = vi.hoisted(() => ({ setupStatus: vi.fn() }));
 
@@ -12,9 +9,13 @@ vi.mock('@/lib/qubdi/api', () => ({
 }));
 
 describe('usePasswordMinLength', () => {
-    beforeEach(() => {
+    // the answer is kept for the page load, so each test loads a fresh copy
+    let usePasswordMinLength: typeof UsePasswordMinLength;
+
+    beforeEach(async () => {
         setupStatus.mockReset();
-        resetPasswordMinLength();
+        vi.resetModules();
+        ({ usePasswordMinLength } = await import('../use-password-min-length'));
     });
 
     it('starts at the default and takes what the server says', async () => {

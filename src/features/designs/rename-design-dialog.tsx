@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
 import {
@@ -25,8 +25,13 @@ export const RenameDesignDialog: React.FC<RenameDesignDialogProps> = ({
     onClose,
 }) => {
     const { t } = useTranslation();
-    const [name, setName] = useState('');
-    useEffect(() => setName(target?.name ?? ''), [target]);
+    const [name, setName] = useState(target?.name ?? '');
+    // a new target starts the form over with that design's name
+    const [seen, setSeen] = useState(target);
+    if (target !== seen) {
+        setSeen(target);
+        setName(target?.name ?? '');
+    }
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();

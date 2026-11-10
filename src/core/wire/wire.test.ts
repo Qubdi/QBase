@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- hand-edited JSON fixtures */
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
 import { listOf } from '../model/collection';
 import { KEY_METHODS } from '../model/key';
-import { looksLikeGeneratedId } from '../model/ids';
-import { rng, NOW } from '../testing/helpers';
+import { looksLikeGeneratedId, rng, NOW } from '../testing/helpers';
 import { exportFileName, exportFileText } from './file-export';
 import { ImportError, importFileText } from './file-import';
 import { oracleFile } from './fixtures/other-databases';
@@ -13,6 +11,10 @@ import { shop } from './fixtures/shop';
 import { parse } from './parse';
 import { serialise, serialiseText } from './serialise';
 import { upgrade } from './upgrade';
+
+// the one place a fixture is allowed to be untyped: tests edit it by path
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Fixture = any;
 
 const read = (json: unknown) => parse(json, { now: NOW, random: rng() });
 
@@ -702,7 +704,7 @@ describe('DAT-061 / DAT-062 / DAT-063 / DAT-065 export file', () => {
         expect(out.dependencies).toHaveLength(1);
     });
 
-    it('DAT-065 holds no filter, config or diagramId', () => {
+    it('DAT-065 holds no filter (when none is set), config or diagramId', () => {
         const text = exportFileText(read(shop).design);
         for (const word of [
             'schemaIds',
@@ -784,24 +786,27 @@ describe('DAT-066 / DAT-067 / DAT-068 / DAT-069 import', () => {
         ],
         [
             'nullable as text',
-            (f: any) => (f.tables[0].fields[0].nullable = 'true'),
+            (f: Fixture) => (f.tables[0].fields[0].nullable = 'true'),
         ],
-        ['a type as text', (f: any) => (f.tables[0].fields[0].type = 'int')],
+        [
+            'a type as text',
+            (f: Fixture) => (f.tables[0].fields[0].type = 'int'),
+        ],
         [
             'an unknown cardinality',
-            (f: any) => (f.relationships[0].sourceCardinality = 'few'),
+            (f: Fixture) => (f.relationships[0].sourceCardinality = 'few'),
         ],
         [
             'a wrong custom type kind',
-            (f: any) => (f.customTypes[0].kind = 'range'),
+            (f: Fixture) => (f.customTypes[0].kind = 'range'),
         ],
         [
             'an unknown index type',
-            (f: any) => (f.tables[0].indexes[1].type = 'rtree'),
+            (f: Fixture) => (f.tables[0].indexes[1].type = 'rtree'),
         ],
-        ['tables that are not a list', (f: any) => (f.tables = {})],
-        ['a null order on an area', (f: any) => (f.areas[0].order = null)],
-        ['a missing id', (f: any) => delete f.id],
+        ['tables that are not a list', (f: Fixture) => (f.tables = {})],
+        ['a null order on an area', (f: Fixture) => (f.areas[0].order = null)],
+        ['a missing id', (f: Fixture) => delete f.id],
     ])('DAT-067 refuses %s', (_name, mutate) => {
         const file = clone(shop);
         mutate(file as never);

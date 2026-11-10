@@ -1,14 +1,20 @@
 import sql from 'mssql';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assertReadOnlySql } from '../src/introspect/readonly-guard.js';
-import { SqlServerIntrospector, connectSqlServer } from '../src/introspect/sqlserver.js';
+import {
+    PrivilegedLoginError,
+    SqlServerIntrospector,
+    connectSqlServer,
+} from '../src/introspect/sqlserver.js';
 import type { DatabaseMetadata } from '../src/introspect/types.js';
 import {
     MSSQL_DB,
     MSSQL_HOST,
     MSSQL_PASSWORD,
     MSSQL_PORT,
+    MSSQL_SKIP_NOTICE,
     MSSQL_USER,
+    mssqlRequired,
     mssqlConfig,
     resetMssqlSample,
     waitForMssql,
@@ -16,8 +22,20 @@ import {
 
 // Needs the optional container and its password: see docker-compose.mssql.yml
 const up = await waitForMssql(Number(process.env.MSSQL_WAIT_MS ?? 90_000));
+const required = mssqlRequired();
+// a skip nobody sees is how a suite stops running: say it, loudly
+if (!up && !required) console.warn(MSSQL_SKIP_NOTICE);
 
-describe.skipIf(!up)('SQL Server introspection against a real database', () => {
+// where the run needs SQL Server (CI with the container set up, or REQUIRE_MSSQL=1)
+// an unreachable one is a failure, not a quiet skip
+describe.runIf(required)('SQL Server is reachable where the suite requires it', () => {
+    it('answers on the configured port', () => {
+        expect(up, 'SQL Server did not answer, but this run requires it (REQUIRE_MSSQL=1, or CI with MSSQL_SA_PASSWORD set)').toBe(true);
+    });
+});
+
+// the skip is in the suite's name too: a reporter shows names, and a console line of a skipped file is dropped
+describe.skipIf(!up)(`SQL Server introspection against a real database${up ? '' : ' [NOT RUN: no reachable SQL Server, see docker-compose.mssql.yml; REQUIRE_MSSQL=1 makes this a failure]'}`, () => {
     let intro: SqlServerIntrospector;
     let pool: sql.ConnectionPool;
     let meta: DatabaseMetadata;
@@ -165,6 +183,25 @@ describe.skipIf(!up)('SQL Server introspection against a real database', () => {
         expect(await count()).toBe(before);
     });
 
+    it('refuses a sysadmin login unless INTROSPECT_ALLOW_PRIVILEGED is 1', async () => {
+        // the fixture logs in as sa, a sysadmin
+        const connect = () =>
+            connectSqlServer(
+                {
+                    dialect: 'sqlserver',
+                    host: 'localhost',
+                    port: MSSQL_PORT,
+                    database: MSSQL_DB,
+                    user: MSSQL_USER,
+                    password: MSSQL_PASSWORD,
+                    ssl: false,
+                    trustServerCertificate: true,
+                },
+                { address: MSSQL_HOST, family: 4 }
+            );
+        await expect(connect()).rejects.toBeInstanceOf(PrivilegedLoginError);
+    });
+
     it('connects through connectSqlServer with a vetted address', async () => {
         const i = await connectSqlServer(
             {
@@ -177,7 +214,8 @@ describe.skipIf(!up)('SQL Server introspection against a real database', () => {
                 ssl: false,
                 trustServerCertificate: true,
             },
-            { address: MSSQL_HOST, family: 4 }
+            { address: MSSQL_HOST, family: 4 },
+            true
         );
         try {
             expect((await i.catalog()).map((s) => s.schema)).toEqual(['dbo', 'shop']);

@@ -1,6 +1,7 @@
 import { clearBaseUpdatedAt } from './remote-version';
 import { clearSyncedContent } from './sent-content';
 import { readJsonMap } from './local-map';
+import { clearSyncState } from './sync-state';
 
 // Remembers which server diagram a local (Dexie) diagram is synced to.
 // Per-browser convenience only; the server stays the source of truth.
@@ -27,6 +28,8 @@ export const setRemoteId = (localId: string, remoteId: string) => {
 export const clearRemoteId = (localId: string) => {
     clearBaseUpdatedAt(localId);
     clearSyncedContent(localId);
+    // the connection details it remembers must not outlive the binding
+    clearSyncState(localId);
     const map = read();
     delete map[localId];
     try {

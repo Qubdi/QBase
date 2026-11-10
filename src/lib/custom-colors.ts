@@ -55,14 +55,6 @@ export function parseSaved(raw: string | null): string[] {
     }
 }
 
-export function readSavedColors(): string[] {
-    try {
-        return parseSaved(localStorage.getItem(CUSTOM_COLORS_KEY));
-    } catch {
-        return [];
-    }
-}
-
 /** Returns false when the browser would not store it (private mode, quota). */
 export function writeSavedColors(colors: string[]): boolean {
     try {

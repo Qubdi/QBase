@@ -9,6 +9,7 @@ import it from 'timeago.js/lib/lang/it';
 import ru from 'timeago.js/lib/lang/ru';
 import { useDiagram } from '@/qbase/use-diagram';
 import { wordsFunction } from './words-function';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 // The languages that have "time ago" wording (spec A4); any other reads English.
 const WORDS = {
@@ -54,7 +55,7 @@ export const LastSaved: React.FC = () => {
         <span
             role="img"
             aria-label={text}
-            title={`${text}\n${currentDiagram.updatedAt.toLocaleString()}`}
+            title={`${text}\n${currentDiagram.updatedAt.toLocaleString(uiLocale())}`}
             className="flex size-8 items-center justify-center rounded-md text-muted-foreground [&_svg]:size-4"
         >
             <Save />

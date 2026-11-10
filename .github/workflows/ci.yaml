@@ -46,16 +46,26 @@ jobs:
         run: npm run test:ci
 
   server:
-    name: Server (lint, typecheck, build, test)
+    name: Server (lint, typecheck, build, test) on PostgreSQL ${{ matrix.postgres.major }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # the README says PostgreSQL 16 or newer: the oldest supported major and the
+    # one the bundled compose file runs both get the whole server suite
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres:
+          - major: 16
+            image: postgres:16-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
+          - major: 18
+            image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
     defaults:
       run:
         working-directory: server
     services:
       # the server tests expect this database on localhost:5433
       postgres:
-        image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+        image: ${{ matrix.postgres.image }}
         env:
           POSTGRES_USER: qbase
           POSTGRES_PASSWORD: qbase
@@ -94,6 +104,66 @@ jobs:
 
       - name: Run tests
         run: npx vitest run
+
+  mssql:
+    name: Server SQL Server introspection tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: server
+    env:
+      # throwaway value for this run only; setting it makes the SQL Server tests
+      # required in CI, so they fail instead of skipping
+      MSSQL_SA_PASSWORD: Ci-only-Passw0rd!
+      REQUIRE_MSSQL: "1"
+    services:
+      # the app side of the tests still expects this database on localhost:5433
+      postgres:
+        image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+        env:
+          POSTGRES_USER: qbase
+          POSTGRES_PASSWORD: qbase
+          POSTGRES_DB: qbase
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U qbase"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+      # the same pinned image as docker-compose.mssql.yml, on the port the tests use
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2025-latest@sha256:742481d1b1186cccc81220a1eaacef244ca8d0f7d19c8e5c70df8ae541ffbab2
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: Ci-only-Passw0rd!
+        ports:
+          - 14333:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Ci-only-Passw0rd!' -Q 'SELECT 1' || exit 1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+          --health-start-period 20s
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the SQL Server introspection tests
+        run: npx vitest run test/introspect-sqlserver.test.ts test/introspect-sqlserver-unit.test.ts test/introspect-mssql-required.test.ts
 
   audit:
     name: Dependency audit and secret scan
@@ -138,6 +208,23 @@ jobs:
 
       - name: Build image
         run: docker build -t qubdi/qbase:ci .
+
+      # the image has to start, migrate and answer, not just build
+      - name: Start the image with its database and check /api/health
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --wait --wait-timeout 120
+          curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8080/api/health
+        env:
+          # throwaway values for this run only
+          POSTGRES_PASSWORD: ci-only-password
+          CONNECTION_KEY: ci-only-connection-key-0123456789abcdef
+
+      - name: Show the app log if the check failed
+        if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.build.yml logs app
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+          CONNECTION_KEY: ci-only-connection-key-0123456789abcdef
 
       # the tests and the shipped database must be the same image
       - name: Check the database image is pinned the same everywhere

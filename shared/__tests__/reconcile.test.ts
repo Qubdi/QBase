@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countByKind, isEmpty, reconcile, diffColumn } from '../reconcile';
+import { reconcile, diffColumn, type ChangeSet } from '../reconcile';
 import {
     canonicalType,
     diagramToDesc,
@@ -68,6 +68,9 @@ const users = () =>
 
 const kinds = (cs: ReturnType<typeof reconcile>) =>
     cs.changes.map((c) => c.kind);
+
+const isEmpty = (cs: ChangeSet): boolean =>
+    cs.changes.length === 0 && cs.possibleRenames.length === 0;
 
 describe('canonicalType', () => {
     it('folds synonyms, spacing, case and QBase-style ids together', () => {
@@ -913,14 +916,6 @@ describe('reconcile: output shape', () => {
         const before = JSON.stringify([a, b]);
         reconcile(a, b);
         expect(JSON.stringify([a, b])).toBe(before);
-    });
-
-    it('counts changes by kind', () => {
-        const db = users();
-        db.columns.push(col('a'), col('b'));
-        expect(countByKind(reconcile(schema([users()]), schema([db])))).toEqual(
-            { column_added: 2 }
-        );
     });
 });
 

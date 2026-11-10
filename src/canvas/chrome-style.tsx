@@ -1,4 +1,5 @@
 import React from 'react';
+import { cspNonce } from '@/platform/csp-nonce';
 
 /**
  * Where the floating controls sit. The workspace may set these CSS variables
@@ -46,7 +47,11 @@ export const CHROME_CSS = `
 }`;
 
 export function ChromeStyle() {
-    return <style data-testid="canvas-chrome-style">{CHROME_CSS}</style>;
+    return (
+        <style data-testid="canvas-chrome-style" nonce={cspNonce()}>
+            {CHROME_CSS}
+        </style>
+    );
 }
 
 const DROP_TARGET_CSS =
@@ -54,5 +59,9 @@ const DROP_TARGET_CSS =
 
 /** While a dependency is dragged the table under the pointer shows it can take it. */
 export function DropTargetStyle() {
-    return <style data-testid="canvas-drop-style">{DROP_TARGET_CSS}</style>;
+    return (
+        <style data-testid="canvas-drop-style" nonce={cspNonce()}>
+            {DROP_TARGET_CSS}
+        </style>
+    );
 }

@@ -20,7 +20,6 @@ import { designToDiagram, diagramToDesign } from '@/qbase/diagram-convert';
 import { createEditorStore } from '@/store/editor-store';
 import { StoreContext } from '@/store/store-context';
 import { Toaster } from '@/platform/toast/toaster';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { ResyncDialog } from '../resync-dialog';
 
 const introspect = vi.fn();
@@ -74,7 +73,6 @@ const diagramOf = (s: Setup) => designToDiagram(s.store.getState().design);
 
 beforeEach(() => {
     localStorage.clear();
-    resetToasts();
     introspect.mockReset();
 });
 

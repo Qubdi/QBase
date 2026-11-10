@@ -1,4 +1,5 @@
-import { Parser } from 'node-sql-parser';
+// only the PostgreSQL grammar: the all-dialect build is several times larger
+import { Parser } from 'node-sql-parser/build/postgresql';
 
 /** Text of a base64 view definition: UTF-8, or UTF-16LE for SQL Server. */
 export function decodeDefinition(base64: string, utf16: boolean): string {

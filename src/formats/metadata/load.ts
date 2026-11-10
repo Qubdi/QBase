@@ -51,6 +51,32 @@ function lengthOf(text: string | null | undefined): number | 'max' | undefined {
     return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
+/** The names databases give the index behind a primary key. */
+const PRIMARY_INDEX_NAME = /^(?:primary|pk_.*|.*_pkey|.*_pk|sys_c\d+)$/i;
+
+/**
+ * For metadata with no primary flag: the one unique index on exactly the
+ * primary-key columns that is the key's own, by the names databases give it.
+ */
+function pickByName<
+    T extends {
+        name: string;
+        unique: boolean;
+        where?: string;
+        columns: { name: string }[];
+    },
+>(all: T[], pk: string[]): T | undefined {
+    const onPk = all.filter(
+        (raw) =>
+            raw.unique &&
+            raw.where === undefined &&
+            pk.length > 0 &&
+            raw.columns.length === pk.length &&
+            raw.columns.every((c) => pk.includes(c.name))
+    );
+    return onPk.find((raw) => PRIMARY_INDEX_NAME.test(raw.name)) ?? onPk[0];
+}
+
 /** Builds a design from the metadata JSON (IMP-056 to IMP-065). */
 export function loadFromDatabaseMetadata(
     options: MetadataLoadOptions
@@ -92,6 +118,8 @@ export function loadFromDatabaseMetadata(
     interface Raw {
         name: string;
         unique: boolean;
+        /** the metadata's own word that this is the primary key's index */
+        primary?: boolean;
         type: string;
         columns: { name: string; position: number; descending: boolean }[];
         where?: string;
@@ -106,6 +134,7 @@ export function loadFromDatabaseMetadata(
             type: i.index_type,
             columns: [],
         };
+        if (i.primary !== undefined) found.primary = truthy(i.primary);
         found.columns.push({
             name: i.column,
             position: i.column_position,
@@ -166,15 +195,22 @@ export function loadFromDatabaseMetadata(
         const indexes: IndexSpec[] = [];
         let primaryKeyName: string | undefined;
         const pk = columns.filter((c) => c.primary).map((c) => c.name);
-        for (const raw of rawIndexes.get(k)?.values() ?? []) {
-            const ordered = raw.columns.sort((a, b) => a.position - b.position);
+        const all = [...(rawIndexes.get(k)?.values() ?? [])];
+        for (const raw of all)
+            raw.columns.sort((a, b) => a.position - b.position);
+        // Only the index behind the primary key is the key's own; any other
+        // unique index on the same columns is the user's and stays an index
+        // (CLI-039). Metadata that says which index is primary is believed;
+        // older metadata has no flag, so only then do the conventional names
+        // pick one unique index on the key columns.
+        const flagged = all.some((raw) => raw.primary !== undefined);
+        const keysOwn = flagged
+            ? all.find((raw) => raw.primary === true)
+            : pickByName(all, pk);
+        for (const raw of all) {
+            const ordered = raw.columns;
             const names = ordered.map((c) => c.name);
-            const samePk =
-                raw.where === undefined &&
-                pk.length > 0 &&
-                names.length === pk.length &&
-                names.every((n) => pk.includes(n));
-            if (samePk && raw.unique) {
+            if (raw === keysOwn) {
                 primaryKeyName ??= raw.name;
                 continue;
             }

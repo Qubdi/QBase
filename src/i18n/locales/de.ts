@@ -1,10 +1,5 @@
 export const de = {
     translation: {
-        menu: {
-            actions: {
-                save: 'Speichern',
-            },
-        },
         editor: {
             common: {
                 copyFailed: {
@@ -26,6 +21,11 @@ export const de = {
                 notFound: {
                     title: 'Hier fehlt etwas.',
                     body: 'Die gesuchte Seite wurde nicht gefunden. Sie wurde möglicherweise verschoben oder der Link ist falsch.',
+                },
+                problem: {
+                    title: 'Etwas ist schiefgelaufen.',
+                    body: 'Die Seite konnte nicht angezeigt werden. Laden Sie neu und versuchen Sie es erneut; Ihre gespeicherten Diagramme sind nicht betroffen.',
+                    reload: 'Neu laden',
                 },
                 colorPicker: {
                     change: 'Farbe ändern',
@@ -262,6 +262,8 @@ export const de = {
                 foundWithViews: '{{tables}} und {{views}} zum Importieren.',
                 foundOnly: '{{tables}} zum Importieren.',
                 nothingToImport: 'Nichts zu importieren',
+                invalidJson:
+                    'Ungültiges JSON. Bitte korrigiere es oder schreibe uns an support@qubdi.dev.',
                 nothingToExport: 'Nichts zu exportieren',
                 emptyScript: 'Das SQL-Skript ist leer',
                 noStatements: 'Keine gültigen SQL-Anweisungen gefunden',
@@ -578,8 +580,6 @@ export const de = {
                     filter: 'Filtern',
                     clearFilter: 'Filter zurücksetzen',
                     focus: 'Auf der Zeichenfläche anzeigen',
-                    more: 'Weitere Aktionen',
-                    rename: 'Umbenennen',
                     saveName: 'Namen speichern',
                     dragHandle: 'Zum Umsortieren ziehen',
                     cancel: 'Abbrechen',
@@ -611,7 +611,6 @@ export const de = {
                     checks: 'Prüfeinschränkungen',
                     description: 'Beschreibung',
                     noDescription: 'Keine Beschreibung',
-                    color: 'Tabellenfarbe',
                     duplicateName:
                         'Eine andere Tabelle in diesem Schema heißt bereits „{{name}}“.',
                     selectSchema: {
@@ -659,7 +658,6 @@ export const de = {
                     delete: 'Feld löschen',
                     addNote: 'Notiz hinzufügen',
                     showComment: 'Feldbeschreibung anzeigen',
-                    foreignKey: 'Fremdschlüssel',
                     none: 'Diese Tabelle hat keine Felder',
                 },
                 indexes: {
@@ -790,7 +788,6 @@ export const de = {
                     emptyNote: 'Leere Notiz',
                     noteActions: 'Notizaktionen',
                     deleteNote: 'Notiz löschen',
-                    colour: 'Farbe',
                 },
                 filters: {
                     title: 'Tabellen filtern',
@@ -805,26 +802,6 @@ export const de = {
                     createToStart: 'Erstellen Sie eine Tabelle, um zu beginnen',
                     noSchema: 'Kein Schema',
                     noArea: 'Kein Bereich',
-                },
-                hover: {
-                    type: 'Typ',
-                    nullability: 'null',
-                    nullable: 'nullable',
-                    notNull: 'NOT NULL',
-                    key: 'Schlüssel',
-                    primaryKey: 'Primärschlüssel',
-                    unique: 'eindeutig',
-                    autoIncrement: 'Auto-Inkrement',
-                    default: 'Standard',
-                    check: 'Prüfung',
-                    references: 'verweist auf',
-                    referencedBy: 'referenziert von',
-                },
-                clipboard: {
-                    copied: 'Tabelle kopiert',
-                    copiedMany: '{{count}} Tabellen kopiert',
-                    pasted: 'Tabelle eingefügt',
-                    pastedMany: '{{count}} Tabellen eingefügt',
                 },
                 dbml: {
                     title: 'DBML',

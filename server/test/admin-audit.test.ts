@@ -356,6 +356,15 @@ describe('GET /admin/audit', () => {
             expect(after.targetUserEmail).toBe(null);
         });
 
+        it('records whether an account was created as an admin', async () => {
+            const plain = await call('POST', '/admin/users', { email: 'plain@example.com', password: 'Password-123!' });
+            const boss = await call('POST', '/admin/users', { email: 'boss@example.com', password: 'Password-123!', isAdmin: true });
+            const rows = (await page('?action=user.create&limit=10')).items;
+            const adminFlag = (id: string) => rows.find((r) => r.targetUserId === id)?.meta?.isAdmin;
+            expect(adminFlag(plain.json().id)).toBe(false);
+            expect(adminFlag(boss.json().id)).toBe(true);
+        });
+
         it('has no email for an actor whose account is gone', async () => {
             const ghost = randomUUID();
             await insertAs(ghost, [
@@ -428,6 +437,12 @@ describe('activity cursor', () => {
         expect(decodeCursor(encodeCursor(cursor))).toEqual(cursor);
     });
 
+    it('accepts the last day of a month and a leap day', () => {
+        for (const at of ['2021-01-31T23:59:59.999999Z', '2024-02-29T00:00:00.000000Z']) {
+            expect(decodeCursor(encodeCursor({ at, id: 1 }))).toEqual({ at, id: 1 });
+        }
+    });
+
     it('refuses anything this server did not issue', () => {
         const encode = (text: string) =>
             Buffer.from(text).toString('base64url');
@@ -439,6 +454,8 @@ describe('activity cursor', () => {
             encode('2021-06-01T12:00:00.123456Z|5; drop table audit_log'),
             encode("2021-06-01T12:00:00.123456Z'|5"),
             encode('2021-13-45T99:00:00.123456Z|5'), // not a real time
+            encode('2021-02-31T12:00:00.123456Z|5'), // no such day: Date.parse would roll it to March
+            encode('2021-04-31T12:00:00.123456Z|5'),
             encode('2021-06-01T12:00:00.123456Z|99999999999999999999'),
         ]) {
             expect(decodeCursor(bad), bad).toBeNull();

@@ -51,7 +51,8 @@ const emptyForm = {
     database: '',
     user: '',
     password: '',
-    ssl: false,
+    // encrypted unless the user turns it off
+    ssl: true,
     trustServerCertificate: false,
     saveAs: '',
 };
@@ -75,17 +76,26 @@ export const ImportFromDatabaseDialog: React.FC<
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // a fresh run each time: nothing typed or picked last time carries over.
+    // Reset while rendering, when the dialog opens or the project changes.
+    const [runFor, setRunFor] = useState<string | null>(null);
+    const wantedRun = open ? projectId : null;
+    if (runFor !== wantedRun) {
+        setRunFor(wantedRun);
+        if (wantedRun !== null) {
+            setStep('connect');
+            setError(null);
+            setForm(emptyForm);
+            setSavedId('');
+            setJustSavedId(null);
+            setCatalog(null);
+            setSelected(new Set());
+            setName('');
+        }
+    }
+
     useEffect(() => {
         if (!open) return;
-        // a fresh run each time: nothing typed or picked last time carries over
-        setStep('connect');
-        setError(null);
-        setForm(emptyForm);
-        setSavedId('');
-        setJustSavedId(null);
-        setCatalog(null);
-        setSelected(new Set());
-        setName('');
         api.listSavedConnections(projectId)
             .then(setSaved)
             .catch(() => setSaved([]));
@@ -399,6 +409,14 @@ export const ImportFromDatabaseDialog: React.FC<
                                 )}
                             </label>
                         </div>
+                        {!form.ssl && (
+                            <p
+                                role="alert"
+                                className="text-sm text-destructive"
+                            >
+                                {t('qubdi.database.importFromDb.sslOff')}
+                            </p>
+                        )}
                         {!savedId ? (
                             <Input
                                 placeholder={t(

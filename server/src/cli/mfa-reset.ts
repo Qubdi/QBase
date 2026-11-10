@@ -8,8 +8,10 @@
 // everywhere and writes an `mfa.reset` row to the activity log.
 // Exit codes: 0 = reset (or nothing to reset), 1 = no such account, 2 = bad usage.
 import { sql } from 'drizzle-orm';
+import { safeError } from '../lib/safe-error.js';
 import { audit } from '../audit/audit.js';
 import { createMfa } from '../auth/mfa.js';
+import { loadEnvFile } from '../lib/env-file.js';
 import { destroyOtherSessions } from '../auth/sessions.js';
 import { loadConfig, type Config } from '../config.js';
 import { createDb, type Db } from '../db/client.js';
@@ -51,6 +53,8 @@ export async function main(argv: string[]): Promise<number> {
         process.stderr.write(USAGE);
         return 2;
     }
+    // the same server/.env the server reads: run from a source checkout the settings are there
+    loadEnvFile();
     const config = loadConfig();
     const { db, pool } = createDb(config.databaseUrl);
     try {
@@ -74,7 +78,7 @@ if (process.argv[1] && /mfa-reset\.[cm]?[jt]s$/.test(process.argv[1])) {
     main(process.argv.slice(2)).then(
         (code) => process.exit(code),
         (err: unknown) => {
-            console.error(err);
+            console.error(safeError(err));
             process.exit(2);
         }
     );

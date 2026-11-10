@@ -44,12 +44,27 @@ export const DiagramProvider: React.FC<
     const workspace = useWorkspace();
     const { toast } = useToast();
     const { t } = useTranslation();
-    const [loaded, setLoaded] = useState<Loaded>({ status: 'loading' });
+    // what was found, and for which adapter, id and workspace; an answer for
+    // other inputs is not shown, so a change of any of them shows the spinner
+    const [answer, setAnswer] = useState<{
+        adapter: typeof adapter;
+        routeId: typeof routeId;
+        workspace: typeof workspace;
+        loaded: Loaded;
+    } | null>(null);
+    const loaded: Loaded =
+        answer &&
+        answer.adapter === adapter &&
+        answer.routeId === routeId &&
+        answer.workspace === workspace
+            ? answer.loaded
+            : { status: 'loading' };
     const [openId, setOpenId] = useState<string | undefined>();
 
     useEffect(() => {
         let cancelled = false;
-        setLoaded({ status: 'loading' });
+        const settle = (next: Loaded) =>
+            setAnswer({ adapter, routeId, workspace, loaded: next });
         void (async () => {
             // inside a project workspace with no local copy there is nothing to
             // open: the browser's own default diagram is not that project's.
@@ -62,17 +77,17 @@ export const DiagramProvider: React.FC<
                       undefined);
             const found = id ? await adapter.load(id) : undefined;
             if (cancelled) return;
-            if (!id || !found) return setLoaded({ status: 'missing' });
+            if (!id || !found) return settle({ status: 'missing' });
             const filter = await adapter.readFilter(id);
             if (cancelled) return;
             setOpenId(id);
-            setLoaded({
+            settle({
                 status: 'ready',
                 design: found.design,
                 warnings: found.warnings,
                 filter,
             });
-        })().catch(() => !cancelled && setLoaded({ status: 'missing' }));
+        })().catch(() => !cancelled && settle({ status: 'missing' }));
         return () => {
             cancelled = true;
         };

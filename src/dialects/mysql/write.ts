@@ -18,6 +18,7 @@ import {
 } from '../shared/export-model';
 import {
     claimName,
+    collateClause,
     commaList,
     firstSeen,
     linesOf,
@@ -104,10 +105,13 @@ export function mysqlDefault(raw: string): string {
         isKnownForm(text) ||
         isFunctionCall(text) ||
         isKeywordDefault(text) ||
-        isNumberText(text) ||
-        isQuotedText(text)
+        isNumberText(text)
     )
         return text;
+    // a quoted default is re-quoted for MySQL, where a backslash escapes (CLI-087)
+    const quoted = /^(N)?'([\s\S]*)'$/i.exec(text);
+    if (quoted && isQuotedText(text))
+        return `${quoted[1] ?? ''}${asStringLiteral(quoted[2].replace(/''/g, "'"))}`;
     return asStringLiteral(text);
 }
 
@@ -121,6 +125,7 @@ function columnLine(column: Column): string {
     const numbered =
         column.increment || (column.primaryKey && isNumberingMarker(text));
     let line = `${quoteBacktick(column.name)} ${mysqlType(column)}`;
+    line += collateClause(column.collation);
     if (column.generated) {
         line += ` GENERATED ALWAYS AS (${column.generated.expression}) ${
             column.generated.stored ? 'STORED' : 'VIRTUAL'

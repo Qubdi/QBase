@@ -12,7 +12,7 @@ export function exportFileName(design: Pick<Design, 'name'>): string {
  * The design as an export file (DAT-061 to DAT-065): every id except check
  * constraint ids becomes a small decimal counter, all references follow;
  * primary-key index names are emptied; a dependency or link that points at
- * nothing is left out; no filter or config is included; the version key is
+ * nothing is left out; the table filter is included (its table ids follow the new ids); no config is included; the version key is
  * written. 2-space indent.
  */
 export function exportFileText(design: Design): string {

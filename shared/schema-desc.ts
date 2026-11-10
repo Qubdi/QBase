@@ -92,8 +92,17 @@ export function canonicalType(raw: string): string {
         .replace(/\s+/g, ' ')
         .replace(/_/g, ' ');
     // "character_varying" (a QBase type id) and "character varying" are the same
-    const arrays = lower.match(/(\[\])+$/)?.[0] ?? '';
-    const base = lower.slice(0, lower.length - arrays.length).trim();
+    // the trailing run of "[]" pairs, found by walking back: a regex for it
+    // retries from every start and takes quadratic time on a long run
+    let cut = lower.length;
+    while (
+        cut >= 2 &&
+        lower.charCodeAt(cut - 2) === 91 &&
+        lower.charCodeAt(cut - 1) === 93
+    )
+        cut -= 2;
+    const arrays = lower.slice(cut);
+    const base = lower.slice(0, cut).trim();
     return `${ALIASES[base] ?? base}${arrays}`;
 }
 

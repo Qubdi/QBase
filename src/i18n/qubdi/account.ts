@@ -7,6 +7,10 @@ export const account = {
         email_taken: 'That email is already registered.',
         signup_disabled:
             'Accounts are created by an admin. Ask yours for access.',
+        step_up_required:
+            'Enter your own password to continue: this changes another administrator.',
+        invalid_setup_token:
+            'That setup token is not right. Copy it from the server log or from SETUP_TOKEN.',
         invalid_request: 'Please check the values you entered.',
         wrong_password: 'Current password is incorrect.',
         invalid_code: 'That code is not right. Check the app and try again.',
@@ -47,8 +51,6 @@ export const account = {
         cannot_disable_self: 'You cannot disable your own account.',
         cannot_sign_out_self:
             'You cannot sign yourself out here. Use Sign out in the account menu.',
-        account_disabled:
-            'This account has been disabled. Ask an admin to enable it.',
         invalid_name:
             'Use letters or numbers in the project name; it becomes its web address.',
         reserved_name:
@@ -59,8 +61,16 @@ export const account = {
         managed_by_project:
             'Access is managed by the project. Ask an admin to change it.',
         // not server codes: fallbacks
+        invalid_response: 'The server sent an answer this app cannot read.',
         requestFailed: 'Request failed ({{code}}).',
         locked: 'Someone else is editing this diagram.',
+        lockedBy: '{{holder}} is editing this diagram.',
+        target_blocked:
+            'This database address is not allowed. Ask an admin to allow its host.',
+        privileged_login:
+            'This SQL Server login is a sysadmin or a db_owner. Use a login that can only read the schema.',
+        connection_failed:
+            'Could not connect to the database. Check the address, port, name and credentials.',
         unreachable: 'Could not reach the server.',
         invalidDiagram: 'The server copy of this diagram could not be read.',
     },
@@ -82,6 +92,9 @@ export const account = {
             'This server has no users yet. The first account becomes its admin and can create everyone else.',
         email: 'Email',
         password: 'Password',
+        setupToken: 'Setup token',
+        setupTokenHint:
+            'The server printed this token in its log when it started (or it is the SETUP_TOKEN you set).',
     },
     accountMenu: {
         signIn: 'Sign in',
@@ -99,8 +112,11 @@ export const account = {
         signOut: 'Sign out',
         signOutFailed:
             'Could not sign out. Check your connection and try again.',
+        signOutUnsavedTitle: 'Sign out with unsaved changes?',
         signOutUnsaved:
             'Some changes could not be saved to the server. Signing out deletes the copy kept in this browser, so they will be lost. Sign out anyway?',
+        signOutAnyway: 'Sign out anyway',
+        signOutStay: 'Stay signed in',
     },
     changePassword: {
         forcedTitle: 'Choose your own password',

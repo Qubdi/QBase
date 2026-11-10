@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 16</b></div>
-  <h1>11 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 44</b></div>
+  <h1>0 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-09</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
+    <span><b>audit date</b> 2026-11-10</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -30,40 +30,24 @@
 <main id="main">
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Dead code</h2></div>
-  <p class="section-note">11 open &middot; 29 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
-      <tbody>
-        <tr><td class="svc-name">DEAD-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>VITE_HOST_URL</code>, <code>VITE_APP_URL</code> baked at build, no reader; README claims they work</td><td class="wrap-cell"><code>.env.example:88</code>, <code>.env.example:92</code>, <code>Dockerfile:10</code>, <code>Dockerfile:11</code>, <code>Dockerfile:18</code>, <code>docker-compose.build.yml:18</code>, <code>docker-compose.build.yml:19</code>, <code>run.sh:92</code>, <code>run.sh:93</code>, <code>src/vite-env.d.ts:5</code>, <code>src/vite-env.d.ts:6</code>, <code>README.md:224</code></td><td class="wrap-cell">Remove both variables and README sentence</td></tr>
-        <tr><td class="svc-name">DEAD-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>qubdi.viewerPage.pageTitle</code> missing from en; title shows raw key, test asserts same key</td><td class="wrap-cell"><code>src/pages/share-viewer-page/share-viewer-page.tsx:343</code>, <code>src/i18n/qubdi/workspace.ts:181</code>, <code>src/helmet/__tests__/p8-shl-title.test.tsx:97</code></td><td class="wrap-cell">Use <code>qubdi.workspace.viewerPage.pageTitle</code> in the page</td></tr>
-        <tr><td class="svc-name">DEAD-007</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unused en key <code>menu.actions.save</code>; read only by i18n tests</td><td class="wrap-cell"><code>src/i18n/qubdi/workspace.ts:57</code>, <code>src/i18n/qubdi/workspace.ts:60</code>, <code>src/i18n/qubdi/workspace.ts:63</code>, <code>src/i18n/locales/en.ts:24</code></td><td class="wrap-cell">Delete keys</td></tr>
-        <tr><td class="svc-name">DEAD-011</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Exports referenced only by tests; production-dead</td><td class="wrap-cell"><code>src/core/commands/plan-visual.ts:120</code> (planMove), <code>src/core/model/ids.ts:49</code> (looksLikeGeneratedId), <code>src/canvas/geometry.ts:13</code> (snapTo), <code>src/canvas/geometry.ts:49</code> (overlappingIds), <code>src/canvas/geometry.ts:88</code> (toggledWidth), <code>src/formats/image/export-options.ts:112</code> (outputSize), <code>src/features/filters/filter-tree.ts:47</code> (isFilterActive), <code>src/lib/export-import-utils.ts:10</code> (diagramToJSONOutput), <code>src/lib/custom-colors.ts:58</code> (readSavedColors), <code>src/lib/qubdi/diagram-summary.ts:5</code> (toDatabaseType), <code>src/lib/qubdi/diagram-summary.ts:12</code> (toDatabaseEdition), <code>src/lib/qubdi/project-path.ts:19</code> (findProjectBySlug), <code>src/lib/qubdi/local-data.ts:59</code> (adoptLegacyLocalData), <code>src/store/selectors.ts:14</code> (selectDirty), <code>src/store/selectors.ts:36</code> (selectVisibleEntities), <code>src/qbase/diagram-types.ts:222</code> (databasesWithSchemas), <code>src/qbase/sql-adapters.ts:16</code> (exportDiagramSql), <code>src/dialects/registry.ts:26</code> (listDialects), <code>shared/reconcile.ts:575</code> (isEmpty), <code>shared/reconcile.ts:578</code> (countByKind)</td><td class="wrap-cell">Delete exports and their tests</td></tr>
-        <tr><td class="svc-name">DEAD-024</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts, forgetClipboard</td><td class="wrap-cell"><code>src/hooks/use-custom-colors.ts:55</code>, <code>src/hooks/use-password-min-length.ts:24</code>, <code>src/platform/toast/use-toast.ts:88</code>, <code>src/canvas/clipboard.ts:23</code></td><td class="wrap-cell">Move resets into test helpers</td></tr>
-        <tr><td class="svc-name">DEAD-025</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>GET /diagrams/:id/versions</code> and <code>/versions/:version</code> have no client caller</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:535</code>, <code>server/src/diagrams/routes.ts:554</code></td><td class="wrap-cell">Remove routes or document as public API</td></tr>
-        <tr><td class="svc-name">DEAD-026</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>GET /:id/drift/reports</code> list has no client caller; client fetches one report</td><td class="wrap-cell"><code>server/src/drift/routes.ts:253</code>, <code>src/lib/qubdi/api.ts:923</code></td><td class="wrap-cell">Remove route or document as public API</td></tr>
-        <tr><td class="svc-name">DEAD-027</td><td><span class="pill flat">Low</span></td><td class="wrap-cell"><code>GET /lint/rules</code> has no client caller and no README mention</td><td class="wrap-cell"><code>server/src/lint/routes.ts:62</code></td><td class="wrap-cell">Remove route or document it</td></tr>
-        <tr><td class="svc-name">DEAD-029</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Three rewrite briefs referenced by no file or tool</td><td class="wrap-cell"><code>rewrite/phase8-brief.md</code>, <code>rewrite/translation-brief.md</code>, <code>rewrite/decisions-phase6a.md</code></td><td class="wrap-cell">Delete unreferenced notes or archive off tree</td></tr>
-        <tr><td class="svc-name">DEAD-032</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unused en keys <code>editor.sidePanel</code>: common.more/rename, tables.color, fields.foreignKey, visuals.colour, hover.*, clipboard copied/pasted</td><td class="wrap-cell"><code>src/i18n/editor/side-panel.ts:10</code>, <code>src/i18n/editor/side-panel.ts:11</code>, <code>src/i18n/editor/side-panel.ts:43</code>, <code>src/i18n/editor/side-panel.ts:91</code>, <code>src/i18n/editor/side-panel.ts:215</code>, <code>src/i18n/editor/side-panel.ts:231</code>, <code>src/i18n/editor/side-panel.ts:246</code>, <code>src/i18n/editor/side-panel.ts:247</code>, <code>src/i18n/editor/side-panel.ts:248</code>, <code>src/i18n/editor/side-panel.ts:249</code></td><td class="wrap-cell">Delete keys and whole hover block</td></tr>
-        <tr><td class="svc-name">DEAD-033</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Unused UI component bodies: DropdownMenu SubTrigger/SubContent/CheckboxItem/RadioItem, SelectLabel/Separator, TableFooter/Caption, MenubarCheckboxItem</td><td class="wrap-cell"><code>src/platform/ui/dropdown-menu.tsx:14</code>, <code>src/platform/ui/dropdown-menu.tsx:36</code>, <code>src/platform/ui/dropdown-menu.tsx:77</code>, <code>src/platform/ui/dropdown-menu.tsx:97</code>, <code>src/platform/ui/select.tsx:99</code>, <code>src/platform/ui/select.tsx:133</code>, <code>src/platform/ui/table.tsx:39</code>, <code>src/platform/ui/table.tsx:99</code>, <code>src/workspace/navbar/menubar-parts.tsx:100</code></td><td class="wrap-cell">Delete components and export entries</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <p class="section-note">0 open &middot; 41 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p>None.</p>
 </section>
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (29)</summary>
+  <details><summary>Fixed (41)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DEAD-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">JSON-map localStorage reader still copied beside shared <code>readJsonMap</code></td></tr>
+        <tr><td class="svc-name">DEAD-042</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>isCurrentFormat</code> exported; zero references in src, server, shared, tools, CI</td></tr>
         <tr><td class="svc-name">DEAD-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused en keys: canvas.entity openInPanel, narrow; region.colour; memo.colour; clipboard.failed</td></tr>
         <tr><td class="svc-name">DEAD-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>qubdi.workspace.typeLegend</code> block unused; type legend reads <code>canvas.legend</code></td></tr>
         <tr><td class="svc-name">DEAD-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>postcss</code> devDependency redundant; <code>@tailwindcss/postcss</code> already depends on it, no import</td></tr>
         <tr><td class="svc-name">DEAD-035</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server tsconfig <code>@/*</code> path alias unused; no server file imports <code>@/</code></td></tr>
         <tr><td class="svc-name">DEAD-036</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Root <code>preview</code> script has no caller; e2e tools run <code>npx vite preview</code></td></tr>
-        <tr><td class="svc-name">DEAD-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Same localStorage JSON-map reader copied in four modules</td></tr>
         <tr><td class="svc-name">DEAD-038</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Two 25-char id generators; <code>generateId</code> duplicates <code>newId</code>, modulo-biased; <code>newDesignId</code> same body</td></tr>
         <tr><td class="svc-name">DEAD-039</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>timeOf</code> helper duplicated in two admin panels</td></tr>
         <tr><td class="svc-name">DEAD-040</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>isRecord</code> guard duplicated in viewer model</td></tr>
@@ -87,6 +71,17 @@
         <tr><td class="svc-name">DEAD-030</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>droppedUnique</code> is always false and never read</td></tr>
         <tr><td class="svc-name">DEAD-031</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>plural</code> helper in overview.ts has no production caller, English-only suffix</td></tr>
         <tr><td class="svc-name">DEAD-034</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>key-value-store.ts</code> reached only from production-dead DEAD-008 files and tests</td></tr>
+        <tr><td class="svc-name">DEAD-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>VITE_HOST_URL</code>, <code>VITE_APP_URL</code> baked at build, no reader; README claims they work</td></tr>
+        <tr><td class="svc-name">DEAD-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>qubdi.viewerPage.pageTitle</code> missing from en; title shows raw key, test asserts same key</td></tr>
+        <tr><td class="svc-name">DEAD-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused en key <code>menu.actions.save</code>; read only by i18n tests</td></tr>
+        <tr><td class="svc-name">DEAD-011</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Exports referenced only by tests; production-dead</td></tr>
+        <tr><td class="svc-name">DEAD-025</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>GET /diagrams/:id/versions</code> and <code>/versions/:version</code> have no client caller; now documented as public API</td></tr>
+        <tr><td class="svc-name">DEAD-026</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>GET /:id/drift/reports</code> list has no client caller; now documented as public API</td></tr>
+        <tr><td class="svc-name">DEAD-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>GET /lint/rules</code> has no client caller and no README mention; now documented</td></tr>
+        <tr><td class="svc-name">DEAD-029</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Three rewrite briefs referenced by no file or tool</td></tr>
+        <tr><td class="svc-name">DEAD-032</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused en keys <code>editor.sidePanel</code>: common.more/rename, tables.color, fields.foreignKey, visuals.colour, hover.*, clipboard copied/pasted</td></tr>
+        <tr><td class="svc-name">DEAD-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Test-only reset hooks exported from production modules: resetCustomColorsForTests, resetPasswordMinLength, resetToasts, forgetClipboard</td></tr>
+        <tr><td class="svc-name">DEAD-033</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused UI component bodies: DropdownMenu SubTrigger/SubContent/CheckboxItem/RadioItem, SelectLabel/Separator, TableFooter/Caption, MenubarCheckboxItem</td></tr>
       </tbody>
     </table>
   </div>

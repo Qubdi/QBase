@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate, type RouteObject } from 'react-router-dom';
+import { RouteError } from '@/platform/router/problem-page';
 import { RouteFallback } from '@/platform/router/route-fallback';
 import {
     ADMIN_SECTION_IDS,
@@ -16,6 +17,7 @@ import {
 export const adminRoute: RouteObject = {
     path: 'admin',
     HydrateFallback: RouteFallback,
+    errorElement: <RouteError />,
     async lazy() {
         const { AdminPage } = await import('./admin-page');
         return { element: <AdminPage /> };

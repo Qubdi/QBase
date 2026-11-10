@@ -1,7 +1,8 @@
 import sql from 'mssql';
 import net from 'node:net';
+import { watchConnection, type ConnectionWatch } from './connection-watch.js';
 import { limitReceivedBytes } from './byte-budget.js';
-import { assertReadOnlySql } from './readonly-guard.js';
+import { queryAllowlist } from './readonly-guard.js';
 import type { ResolvedTarget } from './net-guard.js';
 import {
     STATEMENT_TIMEOUT_MS,
@@ -14,9 +15,11 @@ import {
 } from './types.js';
 
 // @schemas is a JSON array of names (see `schemasParam`); empty means "all user
-// schemas". A comma list would split a schema whose name holds a comma.
+// schemas". A comma list would split a schema whose name holds a comma. SQL
+// Server does not promise to skip the OPENJSON side of the OR, and OPENJSON('')
+// is an error, so the empty value is turned into an empty array there.
 const SCHEMA_FILTER = (alias: string) =>
-    `(@schemas = '' OR ${alias}.name IN (SELECT value FROM OPENJSON(@schemas)))`;
+    `(@schemas = '' OR ${alias}.name IN (SELECT value FROM OPENJSON(IIF(@schemas = '', '[]', @schemas))))`;
 
 /** The value bound to @schemas: '' for every schema, else a JSON array of names. */
 export const schemasParam = (schemas: string[]): string =>
@@ -24,6 +27,9 @@ export const schemasParam = (schemas: string[]): string =>
 
 export const SQLSERVER_QUERIES = {
     server: `SELECT DB_NAME() AS database_name, @@VERSION AS version`,
+
+    // 1 when the login can change data or the server: see refusePrivilegedLogin
+    privileges: `SELECT IS_SRVROLEMEMBER('sysadmin') AS is_sysadmin, IS_MEMBER('db_owner') AS is_db_owner`,
 
     tables: `
         SELECT s.name AS [schema], t.name AS [table], 'BASE TABLE' AS type,
@@ -47,15 +53,22 @@ export const SQLSERVER_QUERIES = {
 
     columns: `
         SELECT s.name AS [schema], o.name AS [table], c.name AS name,
-               ty.name AS type, c.max_length AS max_length, c.precision AS [precision], c.scale AS scale,
+               CASE WHEN ty.is_user_defined = 1 AND ty.is_assembly_type = 0 AND bt.name IS NOT NULL
+                    THEN bt.name ELSE ty.name END AS type,
+               CASE WHEN ty.is_user_defined = 1 AND ty.is_assembly_type = 0 AND bt.name IS NOT NULL
+                    THEN ty.name END AS domain,
+               c.max_length AS max_length, c.precision AS [precision], c.scale AS scale,
                c.column_id AS ordinal_position, c.is_nullable AS nullable,
                dc.definition AS [default], CAST(ep.value AS nvarchar(4000)) AS comment,
-               c.is_identity AS is_identity, c.collation_name AS collation,
+               c.is_identity AS is_identity,
+               CASE WHEN c.collation_name = CONVERT(sysname, DATABASEPROPERTYEX(DB_NAME(), 'Collation'))
+                    THEN NULL ELSE c.collation_name END AS collation,
                cmp.definition AS generated_expression, cmp.is_persisted AS generated_stored
         FROM sys.columns c
         JOIN sys.objects o ON o.object_id = c.object_id AND o.type IN ('U', 'V')
         JOIN sys.schemas s ON s.schema_id = o.schema_id
         JOIN sys.types ty ON ty.user_type_id = c.user_type_id
+        LEFT JOIN sys.types bt ON bt.user_type_id = ty.system_type_id AND ty.is_user_defined = 1
         LEFT JOIN sys.default_constraints dc ON dc.object_id = c.default_object_id
         LEFT JOIN sys.computed_columns cmp ON cmp.object_id = c.object_id AND cmp.column_id = c.column_id
         LEFT JOIN sys.extended_properties ep
@@ -93,18 +106,20 @@ export const SQLSERVER_QUERIES = {
 
     indexes: `
         SELECT s.name AS [schema], t.name AS [table], i.name AS name, c.name AS [column],
-               i.type_desc AS index_type, i.is_unique AS [unique],
+               i.type_desc AS index_type, i.is_unique AS [unique], i.is_primary_key AS [primary],
                i.filter_definition AS [where],
                CASE WHEN ic.is_descending_key = 1 THEN 'DESC' ELSE 'ASC' END AS direction,
-               ic.key_ordinal AS column_position
+               CASE WHEN ic.key_ordinal > 0 THEN ic.key_ordinal ELSE ic.index_column_id END AS column_position
         FROM sys.indexes i
         JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
         JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
         JOIN sys.tables t ON t.object_id = i.object_id
         JOIN sys.schemas s ON s.schema_id = t.schema_id
-        WHERE i.type > 0 AND i.is_hypothetical = 0 AND ic.is_included_column = 0 AND ic.key_ordinal > 0
+        WHERE i.type > 0 AND i.is_hypothetical = 0
+          AND ((ic.is_included_column = 0 AND ic.key_ordinal > 0) OR i.type IN (3, 4, 5, 6))
           AND t.is_ms_shipped = 0 AND ${SCHEMA_FILTER('s')}
-        ORDER BY s.name, t.name, i.name, ic.key_ordinal`,
+        ORDER BY s.name, t.name, i.name,
+                 CASE WHEN ic.key_ordinal > 0 THEN ic.key_ordinal ELSE ic.index_column_id END`,
 
     checks: `
         SELECT s.name AS [schema], t.name AS [table], cc.definition AS expression
@@ -239,17 +254,29 @@ export function buildPkDefs(rows: PkRow[]): DatabaseMetadata['pk_info'] {
 
 type Row = Record<string, unknown>;
 
+const assertRegistered = queryAllowlist(SQLSERVER_QUERIES);
+
 export class SqlServerIntrospector implements Introspector {
-    constructor(private readonly pool: sql.ConnectionPool) {}
+    constructor(
+        private readonly pool: sql.ConnectionPool,
+        private readonly watch?: ConnectionWatch
+    ) {}
 
     private async query(text: string, schemas: string[]): Promise<Row[]> {
-        assertReadOnlySql(text);
+        this.watch?.assertAlive();
+        assertRegistered(text);
         const request = this.pool.request();
         if (text.includes('@schemas')) {
             request.input('schemas', sql.NVarChar(sql.MAX), schemasParam(schemas));
         }
         const result = await request.query(text);
         return result.recordset as Row[];
+    }
+
+    /** True when the login is a sysadmin or owns the database. */
+    async isPrivilegedLogin(): Promise<boolean> {
+        const row = (await this.query(SQLSERVER_QUERIES.privileges, []))[0];
+        return isPrivilegedRow(row);
     }
 
     async catalog(): Promise<CatalogSchema[]> {
@@ -329,7 +356,9 @@ export class SqlServerIntrospector implements Introspector {
                     comment: c.comment ? String(c.comment) : null,
                     is_identity: Boolean(c.is_identity),
                     is_array: false,
-                    domain: null,
+                    // an alias type (sys.types, is_user_defined): `type` is its
+                    // base type and `domain` its name, as for a PostgreSQL domain
+                    domain: c.domain ? String(c.domain) : null,
                     generated: c.generated_expression
                         ? {
                               expression: String(c.generated_expression),
@@ -367,6 +396,7 @@ export class SqlServerIntrospector implements Introspector {
                 column: String(i.column),
                 index_type: String(i.index_type),
                 unique: Boolean(i.unique),
+                primary: Boolean(i.primary),
                 direction: String(i.direction),
                 column_position: Number(i.column_position),
                 where: i.where ? String(i.where) : null,
@@ -376,7 +406,8 @@ export class SqlServerIntrospector implements Introspector {
                 table: String(c.table),
                 expression: String(c.expression),
             })),
-            // SQL Server has no enum or composite types to list
+            // SQL Server has no enum or composite types to list; its alias
+            // types travel as `domain` on the columns that use them
             custom_types: [],
         };
     }
@@ -451,9 +482,23 @@ export function pinnedConnector(
     };
 }
 
+/** The login holds a role that can change data or the server (1, not 0 or null). */
+export const isPrivilegedRow = (row: Row | undefined): boolean =>
+    Number(row?.is_sysadmin) === 1 || Number(row?.is_db_owner) === 1;
+
+/** The login is a sysadmin or a db_owner, and INTROSPECT_ALLOW_PRIVILEGED is not 1. */
+export class PrivilegedLoginError extends Error {
+    constructor() {
+        super('The SQL Server login is a sysadmin or a db_owner');
+        this.name = 'PrivilegedLoginError';
+    }
+}
+
 export async function connectSqlServer(
     params: ConnectionParams,
-    target: ResolvedTarget
+    target: ResolvedTarget,
+    /** INTROSPECT_ALLOW_PRIVILEGED: accept a login that can change data */
+    allowPrivileged = false
 ): Promise<Introspector> {
     const pool = new sql.ConnectionPool({
         // connect to the address we already vetted, not the hostname again
@@ -479,6 +524,25 @@ export async function connectSqlServer(
             ) as unknown as () => Promise<net.Socket>,
         },
     });
+    // before connecting: a pool whose connection drops later emits 'error',
+    // which with no listener would end the process
+    const watch = watchConnection(pool, params.password);
     await pool.connect();
-    return new SqlServerIntrospector(pool);
+    const introspector = new SqlServerIntrospector(pool, watch);
+    // readOnlyIntent only routes the connection; the login is what limits it.
+    // A login that can change data is refused unless the operator accepts it.
+    if (!allowPrivileged) {
+        let privileged: boolean;
+        try {
+            privileged = await introspector.isPrivilegedLogin();
+        } catch (err) {
+            await pool.close().catch(() => undefined);
+            throw err;
+        }
+        if (privileged) {
+            await pool.close().catch(() => undefined);
+            throw new PrivilegedLoginError();
+        }
+    }
+    return introspector;
 }

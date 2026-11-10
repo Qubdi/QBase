@@ -214,6 +214,18 @@ describe('review core-store 5: MySQL string literals', () => {
         expect(text).toContain("DEFAULT 'a\\\\b'");
         expect(text).toContain("COMMENT='T:\\\\'");
     });
+
+    it('re-quotes an already quoted default so a trailing backslash cannot escape the quote (CLI-087)', () => {
+        const d = build('mysql', [
+            table('t', [
+                col('a', 'varchar', { default: "'C:\\'" }),
+                col('b', 'varchar', { default: "'it''s'" }),
+            ]),
+        ]);
+        const text = exportSql(d, 'mysql').text;
+        expect(text).toContain("DEFAULT 'C:\\\\'");
+        expect(text).toContain("DEFAULT 'it''s'");
+    });
 });
 
 describe('review core-store 6: text in comments cannot leave the comment', () => {
@@ -287,5 +299,85 @@ describe('pasted text with a very long run of blank lines', () => {
         expect(methodForPaste(`${blank}x`)).toBeUndefined();
         expect(Date.now() - start).toBeLessThan(500);
         expect(methodForPaste('\n\n  Table users {\n id int\n}')).toBe('dbml');
+    });
+});
+
+describe('default text that only mentions a numbering word is a value (CLI-082)', () => {
+    it('does not treat quoted or compound text as automatic numbering', async () => {
+        const { isNumberingMarker } = await import('./shared/defaults');
+        expect(isNumberingMarker("'my identity'")).toBe(false);
+        expect(isNumberingMarker("'autoincrement'")).toBe(false);
+        expect(isNumberingMarker('identity_card')).toBe(false);
+        expect(isNumberingMarker("nextval('s')")).toBe(true);
+        expect(isNumberingMarker('IDENTITY(1,1)')).toBe(true);
+        expect(isNumberingMarker('AUTOINCREMENT')).toBe(true);
+    });
+});
+
+describe('PostgreSQL nextval defaults are written only in their real form (CLI-085)', () => {
+    const withDefault = async (text: string) => {
+        const { sampleS1 } = await import('./testing/sample-designs');
+        const { exportSql } = await import('@/formats/sql/export-sql');
+        const design = sampleS1('postgresql');
+        const column = Object.values(design.columns).find(
+            (c) => c.name === 'full_name'
+        )!;
+        column.default = text;
+        return exportSql(design, 'postgresql').text;
+    };
+
+    it('keeps a real nextval call and creates the sequence under a quoted name', async () => {
+        const text = await withDefault("nextval('Public.Orders_Seq')");
+        expect(text).toContain("DEFAULT nextval('Public.Orders_Seq')");
+        expect(text).toContain(
+            'CREATE SEQUENCE IF NOT EXISTS "public"."orders_seq";'
+        );
+    });
+
+    it('does not pass text that only contains the word through as SQL', async () => {
+        // a `;` in a default would end the statement, so nothing is exported
+        const text = await withDefault("x'); DROP TABLE customers; -- nextval");
+        expect(text).toBe('');
+        // without a statement break the word alone does not make it a nextval call
+        const plain = await withDefault('my nextval notes');
+        expect(plain).toContain("DEFAULT 'my nextval notes'");
+        expect(plain).not.toContain('CREATE SEQUENCE');
+    });
+
+    it('does not make a sequence out of a name that is not a plain reference', async () => {
+        const text = await withDefault("nextval('a b; DROP TABLE t')");
+        expect(text).not.toContain('CREATE SEQUENCE');
+    });
+});
+
+describe('CLI-093 column collation', () => {
+    it.each([
+        ['postgresql', 'C'],
+        ['mysql', 'utf8mb4_bin'],
+        ['sql_server', 'Latin1_General_CI_AS'],
+        ['sqlite', 'NOCASE'],
+    ] as const)(
+        '%s writes COLLATE in a same-dialect export',
+        (db, collation) => {
+            const d = build(db, [
+                table('t', [col('a', 'text', { collation })]),
+            ]);
+            const text = exportSql(d, db).text;
+            expect(text).toMatch(new RegExp(`COLLATE "?${collation}"?`));
+        }
+    );
+
+    it('leaves out a collation name that is not a plain name', () => {
+        const d = build('postgresql', [
+            table('t', [col('a', 'text', { collation: 'x; DROP TABLE t' })]),
+        ]);
+        expect(exportSql(d, 'postgresql').text).not.toContain('COLLATE');
+    });
+
+    it('notes the dropped collation in a conversion', () => {
+        const d = build('postgresql', [
+            table('t', [col('a', 'text', { collation: 'C' })]),
+        ]);
+        expect(exportSql(d, 'mysql').text).toContain('Collations');
     });
 });

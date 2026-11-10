@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
@@ -59,7 +59,7 @@ const presentSettings = (
     schemas: s.schemas,
     tables: s.tables,
     sourceKeys: s.sourceKeys,
-    webhookHost: webhookHost(box, s.webhookUrl),
+    webhookHost: webhookHost(box, s.diagramId, s.webhookUrl),
     updatedAt: s.updatedAt,
 });
 
@@ -118,7 +118,7 @@ export const driftRoutes =
             const body = settingsBody.parse(req.body);
 
             if (body.webhookUrl) {
-                const parsed = parseWebhookUrl(body.webhookUrl);
+                const parsed = parseWebhookUrl(body.webhookUrl, deps.config.webhookAllowHosts);
                 if ('error' in parsed) {
                     return reply
                         .code(400)
@@ -180,7 +180,7 @@ export const driftRoutes =
                     ? {}
                     : {
                           webhookUrl: body.webhookUrl
-                              ? sealWebhookUrl(box()!, body.webhookUrl)
+                              ? sealWebhookUrl(box()!, id, body.webhookUrl)
                               : null,
                       }),
                 updatedBy: req.user!.id,
@@ -231,9 +231,12 @@ export const driftRoutes =
                 ? await reusableReport(db, id, deps.config.driftCacheSeconds)
                 : null;
             if (reused) return presentCheck(reused);
-            const report = await runDriftCheck(deps, id);
+            const report = await runDriftCheck({ ...deps, log: req.log }, id);
             if (report === 'running') {
                 return reply.code(409).send({ error: 'already_running' });
+            }
+            if (report === 'busy') {
+                return reply.code(429).send({ error: 'drift_busy' });
             }
             // settings or the diagram went away while the request was waiting
             if (report === 'not_configured') {
@@ -288,16 +291,21 @@ export const driftRoutes =
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const latest = await latestReportSummary(db, id);
             if (latest && !latest.dismissedAt) {
-                await db
+                // only a row this call changed is worth a log entry: two dismissals
+                // at once, or one of nothing, leave no trace of a second
+                const changed = await db
                     .update(driftReports)
                     .set({ dismissedAt: new Date() })
-                    .where(eq(driftReports.id, latest.id));
+                    .where(and(eq(driftReports.id, latest.id), isNull(driftReports.dismissedAt)))
+                    .returning({ id: driftReports.id });
+                if (changed.length > 0) {
+                    await audit(db, {
+                        userId: req.user!.id,
+                        action: 'drift.dismiss',
+                        diagramId: id,
+                    });
+                }
             }
-            await audit(db, {
-                userId: req.user!.id,
-                action: 'drift.dismiss',
-                diagramId: id,
-            });
             const after = await latestReportSummary(db, id);
             return {
                 latest: after ? summarizeReport(after) : null,

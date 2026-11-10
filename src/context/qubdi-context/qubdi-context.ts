@@ -18,7 +18,11 @@ export interface QubdiContext {
     ) => Promise<{ mfaChallenge: string } | void>;
     /** the second step of signing in: a code from the app or a recovery code */
     loginMfa: (challenge: string, factor: SecondFactor) => Promise<void>;
-    register: (email: string, password: string) => Promise<void>;
+    register: (
+        email: string,
+        password: string,
+        setupToken?: string
+    ) => Promise<void>;
     logout: () => Promise<void>;
     /** asks the server who is signed in again, e.g. after the password was changed */
     refreshUser: () => Promise<void>;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Dialog,
@@ -33,6 +33,7 @@ import {
 } from '@/lib/qubdi/sync-state';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import type { ChangeSet } from '../../../shared/reconcile';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 export interface ResyncDialogProps {
     open: boolean;
@@ -59,13 +60,16 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
 
     const state = open ? getSyncState(currentDiagram.id) : undefined;
 
-    useEffect(() => {
+    // each opening starts clean: reset while rendering, not in an effect
+    const [openSeen, setOpenSeen] = useState(false);
+    if (openSeen !== open) {
+        setOpenSeen(open);
         if (open) {
             setPlan(null);
             setError(null);
             setPassword('');
         }
-    }, [open]);
+    }
 
     const groups = useMemo(
         () => (plan ? groupChanges(plan.cs.changes) : []),
@@ -192,7 +196,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                             {t('qubdi.database.resync.lastSynced', {
                                 date: new Date(
                                     state.lastSyncedAt
-                                ).toLocaleString(),
+                                ).toLocaleString(uiLocale()),
                             })}
                         </p>
                         {needsPassword(state) ||

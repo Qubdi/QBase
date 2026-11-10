@@ -193,6 +193,78 @@ function similarity(a: TableDesc, b: TableDesc): number {
     return both / (sa.size + sb.size - both);
 }
 
+/** The best pairs kept for one table; a table has one rename, so a few are enough. */
+const MAX_CANDIDATES_PER_TABLE = 10;
+/** Right-hand tables looked at for one table, so a column every table has costs nothing. */
+const MAX_PROBED_PER_TABLE = 5000;
+
+/**
+ * Pairs a table that exists on one side with tables on the other side whose
+ * columns are similar enough to be a rename, best first (ties keep left then
+ * right order). Scoring every pair is quadratic in the table count, so each
+ * table only meets the tables that share one of its rarest columns: a pair
+ * that reaches the threshold must share one of them, and the score of each
+ * such pair is the same one `similarity` gives.
+ */
+function renameCandidates(
+    left: TableDesc[],
+    right: TableDesc[],
+    threshold: number
+): Array<{ d: TableDesc; i: TableDesc; score: number }> {
+    const out: Array<{ d: TableDesc; i: TableDesc; score: number }> = [];
+    if (threshold <= 0) {
+        // every pair qualifies, even with nothing in common: keep it simple
+        for (const d of left)
+            for (const i of right) {
+                const score = similarity(d, i);
+                if (score >= threshold) out.push({ d, i, score });
+            }
+        return out.sort((a, b) => b.score - a.score);
+    }
+    const rightSigs = right.map((t) => new Set(t.columns.map(colSignature)));
+    const holders = new Map<string, number[]>();
+    rightSigs.forEach((set, j) => {
+        for (const sig of set) {
+            const list = holders.get(sig);
+            if (list) list.push(j);
+            else holders.set(sig, [j]);
+        }
+    });
+    for (const d of left) {
+        const mine = [...new Set(d.columns.map(colSignature))];
+        // a pair scoring `threshold` shares at least `need` of my columns, so
+        // it shares one of the (size - need + 1) rarest of them
+        const need = Math.max(1, Math.ceil(threshold * mine.length - 1e-9));
+        const probe = mine.length - need + 1;
+        if (probe < 1) continue;
+        const rarest = mine
+            .map((sig) => ({ sig, held: holders.get(sig) }))
+            .filter((x): x is { sig: string; held: number[] } => !!x.held)
+            .sort((a, b) => a.held.length - b.held.length)
+            .slice(0, probe);
+        const seen = new Set<number>();
+        outer: for (const { held } of rarest) {
+            for (const j of held) {
+                seen.add(j);
+                if (seen.size >= MAX_PROBED_PER_TABLE) break outer;
+            }
+        }
+        const mineSet = new Set(mine);
+        const scored: Array<{ j: number; score: number }> = [];
+        for (const j of seen) {
+            let both = 0;
+            for (const sig of mineSet) if (rightSigs[j].has(sig)) both++;
+            const score = both / (mineSet.size + rightSigs[j].size - both);
+            if (score >= threshold) scored.push({ j, score });
+        }
+        scored.sort((a, b) => b.score - a.score || a.j - b.j);
+        for (const { j, score } of scored.slice(0, MAX_CANDIDATES_PER_TABLE))
+            out.push({ d, i: right[j], score });
+    }
+    // stable: equal scores keep the order they were found in
+    return out.sort((a, b) => b.score - a.score);
+}
+
 // --- columns ----------------------------------------------------------------
 
 const COLUMN_FIELDS: ColumnField[] = [
@@ -428,14 +500,7 @@ export function reconcile(
     const freeNew = new Set(tp.rightOnly);
     const hintedOld = new Set<TableDesc>();
     const hintedNew = new Set<TableDesc>();
-    const candidates: Array<{ d: TableDesc; i: TableDesc; score: number }> = [];
-    for (const d of tp.leftOnly) {
-        for (const i of freeNew) {
-            const score = similarity(d, i);
-            if (score >= threshold) candidates.push({ d, i, score });
-        }
-    }
-    candidates.sort((a, b) => b.score - a.score);
+    const candidates = renameCandidates(tp.leftOnly, [...freeNew], threshold);
     for (const { d, i, score } of candidates) {
         if (hintedOld.has(d) || hintedNew.has(i)) continue;
         hintedOld.add(d);
@@ -568,17 +633,4 @@ function diffRelationships(
         }
     }
     return out;
-}
-
-// --- helpers ------------------------------------------------------------------
-
-export const isEmpty = (cs: ChangeSet): boolean =>
-    cs.changes.length === 0 && cs.possibleRenames.length === 0;
-
-export function countByKind(
-    cs: ChangeSet
-): Partial<Record<ChangeKind, number>> {
-    const counts: Partial<Record<ChangeKind, number>> = {};
-    for (const c of cs.changes) counts[c.kind] = (counts[c.kind] ?? 0) + 1;
-    return counts;
 }

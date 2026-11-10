@@ -1,10 +1,41 @@
 import { randomBytes } from 'node:crypto';
 import { and, eq, gt, ne, sql } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
+import type { Db, Tx } from '../db/client.js';
 import { hashToken } from '../share/tokens.js';
 import { diagramLocks, sessions, users } from '../db/schema.js';
 
 export const SESSION_COOKIE = 'qbase_session';
+
+/**
+ * The session cookie's name over https. The `__Host-` prefix makes a browser
+ * refuse the cookie unless it is Secure, set with Path=/ and has no Domain, so
+ * another site on a sibling subdomain cannot plant or replace it.
+ */
+export const SECURE_SESSION_COOKIE = '__Host-qbase_session';
+
+/**
+ * Whether a response to this request sets a Secure cookie: https as seen
+ * through TRUST_PROXY under COOKIE_SECURE=auto, else what COOKIE_SECURE says.
+ */
+export const isSecureRequest = (
+    req: { protocol: string },
+    cookieSecure: boolean | 'auto'
+): boolean => (cookieSecure === 'auto' ? req.protocol === 'https' : cookieSecure);
+
+/**
+ * The session token a request carries. Over https only the `__Host-` cookie
+ * counts: the plain name can be planted by a sibling subdomain, which is what
+ * the prefix is there to stop, so honouring it would defeat the prefix. (Sessions
+ * issued under the plain name before the prefix existed end at the next
+ * sign-in.) Over plain http the plain name is the only one there is.
+ */
+export const sessionTokenOf = (
+    cookies: Record<string, string | undefined> | undefined,
+    secure = false
+): string | undefined =>
+    secure
+        ? cookies?.[SECURE_SESSION_COOKIE]
+        : (cookies?.[SECURE_SESSION_COOKIE] ?? cookies?.[SESSION_COOKIE]);
 
 /** A session's last_seen_at is rewritten at most this often, not on every request. */
 export const LAST_SEEN_SECONDS = 5 * 60;
@@ -112,14 +143,19 @@ export async function getSessionUser(
 
 export async function destroySession(db: Db, token: string | undefined) {
     if (!token) return;
-    const ended = await db
-        .delete(sessions)
-        .where(eq(sessions.id, hashToken(token)))
-        .returning({ userId: sessions.userId });
-    // signing out lets go of the diagrams the user was editing
-    for (const { userId } of ended) {
-        await db.delete(diagramLocks).where(eq(diagramLocks.userId, userId));
-    }
+    // the session and the locks go together: if letting go of the locks fails,
+    // the person is still signed in and can try again, rather than signed out
+    // with diagrams still held
+    await db.transaction(async (tx) => {
+        const ended = await tx
+            .delete(sessions)
+            .where(eq(sessions.id, hashToken(token)))
+            .returning({ userId: sessions.userId });
+        // signing out lets go of the diagrams the user was editing
+        for (const { userId } of ended) {
+            await tx.delete(diagramLocks).where(eq(diagramLocks.userId, userId));
+        }
+    });
 }
 
 /**
@@ -129,7 +165,7 @@ export async function destroySession(db: Db, token: string | undefined) {
  * out" from "was not signed in".
  */
 export async function destroyOtherSessions(
-    db: Db,
+    db: Db | Tx,
     userId: string,
     exceptToken: string | undefined
 ): Promise<number> {

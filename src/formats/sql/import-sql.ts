@@ -214,7 +214,10 @@ export function importSql(
     };
     if (hasErrors(diagnostics)) return { diagnostics, counts };
     if (script.tables.length === 0) {
-        diagnostics.push(warning('Nothing to import'));
+        diagnostics.push({
+            ...warning('Nothing to import'),
+            code: 'nothing-to-import',
+        });
         return { diagnostics, counts };
     }
     const built = designFromScript(script, dialectId, options);

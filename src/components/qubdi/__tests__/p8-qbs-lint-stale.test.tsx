@@ -1,7 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { Toaster } from '@/platform/toast/toaster';
 import { LintControl } from '../lint-control';
 
@@ -66,7 +65,6 @@ vi.mock('@/lib/qubdi/lint-fix', async (importOriginal) => ({
 }));
 
 beforeEach(() => {
-    resetToasts();
     vi.clearAllMocks();
 });
 

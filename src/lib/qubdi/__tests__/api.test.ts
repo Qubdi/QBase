@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     ApiError,
+    parseRetryAfter,
     createApi,
     errorMessage,
     KEEPALIVE_BODY_LIMIT,
@@ -15,6 +16,47 @@ const jsonResponse = (status: number, body: unknown) =>
         status,
         headers: { 'content-type': 'application/json' },
     });
+
+// what the server answers, in the shape its presenters give
+const T0 = '2026-01-01T00:00:00.000Z';
+const savedAnswer = {
+    id: 'd1',
+    ownerId: 'u1',
+    title: 'Shop',
+    updatedAt: T0,
+    role: 'owner',
+    publishedVersion: null,
+    publishedAt: null,
+    autoPublish: false,
+    unpublishedChanges: true,
+};
+const counts = { breaking: 0, warning: 0, info: 0 };
+const checkAnswer = {
+    id: 'r1',
+    runAt: T0,
+    status: 'clean',
+    trigger: 'manual',
+    counts,
+    worst: null,
+    error: null,
+    dismissedAt: null,
+    webhook: null,
+    changes: [],
+    renameHints: [],
+    badge: null,
+};
+const connectionAnswer = {
+    id: 'c1',
+    name: 'prod',
+    dialect: 'postgresql',
+    host: 'db.corp.io',
+    port: 5432,
+    database: 'shop',
+    user: 'app',
+    ssl: true,
+    trustServerCertificate: false,
+    createdAt: T0,
+};
 
 describe('qubdi api client', () => {
     describe('path ids', () => {
@@ -53,9 +95,7 @@ describe('qubdi api client', () => {
             content: Record<string, unknown>,
             options?: { keepalive?: boolean }
         ) => {
-            const fetchMock = vi.fn(async () =>
-                jsonResponse(200, { id: 'd1' })
-            );
+            const fetchMock = vi.fn(async () => jsonResponse(200, savedAnswer));
             const api = createApi(
                 'http://srv',
                 fetchMock as unknown as typeof fetch
@@ -76,21 +116,91 @@ describe('qubdi api client', () => {
             expect(init.keepalive).toBeUndefined();
         });
 
+        // text gzip cannot shrink: random letters
+        const noise = (n: number, alphabet: string) => {
+            const letters = [...alphabet];
+            let out = '';
+            while (out.length < n) {
+                // getRandomValues takes at most 65,536 bytes at a time
+                const pick = crypto.getRandomValues(new Uint8Array(65_536));
+                out += Array.from(
+                    pick,
+                    (v) => letters[v % letters.length]
+                ).join('');
+            }
+            return out.slice(0, n);
+        };
+        const bodyOf = (init: RequestInit) => init.body as unknown;
+        const withoutGzip = async <T>(fn: () => Promise<T>): Promise<T> => {
+            const real = globalThis.CompressionStream;
+            // @ts-expect-error simulate a browser without it
+            delete globalThis.CompressionStream;
+            try {
+                return await fn();
+            } finally {
+                globalThis.CompressionStream = real;
+            }
+        };
+
         it('counts bytes, not characters, against the limit', async () => {
             // 30,000 Georgian letters are 30,000 characters but 90,000 bytes
-            const init = await run(
-                { text: 'ა'.repeat(30_000) },
-                { keepalive: true }
+            const init = await withoutGzip(() =>
+                run({ text: 'ა'.repeat(30_000) }, { keepalive: true })
             );
             expect(init.keepalive).toBeUndefined();
         });
 
-        it('drops keepalive for a body over the browser limit', async () => {
+        it('drops keepalive for a body over the browser limit that gzip cannot shrink enough', async () => {
             const init = await run(
-                { big: 'x'.repeat(KEEPALIVE_BODY_LIMIT) },
+                {
+                    big: noise(
+                        KEEPALIVE_BODY_LIMIT * 2,
+                        'abcdefghijklmnopqrstuvwxyz0123456789'
+                    ),
+                },
                 { keepalive: true }
             );
             expect(init.keepalive).toBeUndefined();
+            expect(init.headers).not.toHaveProperty('content-encoding');
+        });
+
+        it('gzips a big body that fits once packed, and keeps keepalive', async () => {
+            const content = { big: 'x'.repeat(KEEPALIVE_BODY_LIMIT * 4) };
+            const init = await run(content, { keepalive: true });
+            expect(init.keepalive).toBe(true);
+            expect(init.headers).toMatchObject({
+                'content-type': 'application/json',
+                'content-encoding': 'gzip',
+            });
+            const sent = bodyOf(init) as Uint8Array;
+            expect(sent.length).toBeLessThanOrEqual(KEEPALIVE_BODY_LIMIT);
+            // what the server inflates is the same JSON
+            const text = await new Response(
+                new Blob([sent as BlobPart])
+                    .stream()
+                    .pipeThrough(new DecompressionStream('gzip'))
+            ).text();
+            expect(JSON.parse(text)).toEqual({ content });
+        });
+
+        it('does not gzip a body that was not asked to outlive the page', async () => {
+            const init = await run({
+                big: 'x'.repeat(KEEPALIVE_BODY_LIMIT * 4),
+            });
+            expect(init.keepalive).toBeUndefined();
+            expect(typeof bodyOf(init)).toBe('string');
+            expect(init.headers).not.toHaveProperty('content-encoding');
+        });
+
+        it('sends the big body as it is when the browser cannot gzip', async () => {
+            const init = await withoutGzip(() =>
+                run(
+                    { big: 'x'.repeat(KEEPALIVE_BODY_LIMIT * 4) },
+                    { keepalive: true }
+                )
+            );
+            expect(init.keepalive).toBeUndefined();
+            expect(typeof bodyOf(init)).toBe('string');
         });
     });
 
@@ -108,9 +218,22 @@ describe('qubdi api client', () => {
         expect(init.signal?.aborted).toBe(false);
     });
 
+    it('refuses an answer that is not the shape the call needs (CLI-006)', async () => {
+        const api = createApi('http://srv', (async () =>
+            jsonResponse(200, { id: 1 })) as unknown as typeof fetch);
+        await expect(api.me()).rejects.toMatchObject({
+            code: 'invalid_response',
+        });
+    });
+
     it('sends credentials and a JSON body', async () => {
         const fetchMock = vi.fn(async () =>
-            jsonResponse(200, { id: '1', email: 'a@b.co', isAdmin: true })
+            jsonResponse(200, {
+                id: '1',
+                email: 'a@b.co',
+                isAdmin: true,
+                mustChangePassword: false,
+            })
         );
         const api = createApi(
             'http://srv',
@@ -279,7 +402,7 @@ describe('qubdi api client', () => {
 
     describe('drift check', () => {
         const urlOf = async (options?: { cached?: boolean }) => {
-            const fetchMock = vi.fn(async () => jsonResponse(200, {}));
+            const fetchMock = vi.fn(async () => jsonResponse(200, checkAnswer));
             const api = createApi(
                 'http://srv',
                 fetchMock as unknown as typeof fetch
@@ -360,6 +483,13 @@ describe('qubdi api client', () => {
                     )
                 )
             ).toBe('sam@corp.io is editing this diagram.');
+            // not a server message that is shown raw: the code decides the text
+            expect(
+                errorMessage(new ApiError(400, 'target_blocked', 'raw'))
+            ).not.toContain('raw');
+            expect(
+                errorMessage(new ApiError(423, 'locked', 'raw server text'))
+            ).toBe('Someone else is editing this diagram.');
             expect(errorMessage(new ApiError(423, 'locked'))).toBe(
                 'Someone else is editing this diagram.'
             );
@@ -378,7 +508,7 @@ describe('qubdi api client', () => {
     describe('saved connections', () => {
         it('updates one in place, leaving the password out when it is not changing', async () => {
             const fetchMock = vi.fn(async () =>
-                jsonResponse(200, { id: 'c1' })
+                jsonResponse(200, connectionAnswer)
             );
             const api = createApi(
                 'http://srv',
@@ -628,6 +758,8 @@ describe('getDiagramSummary', () => {
         const row = {
             id: 'r1',
             title: 'Shop',
+            updatedAt: T0,
+            ownerId: 'u1',
             role: 'editor',
             projectId: 'p1',
         };
@@ -652,5 +784,237 @@ describe('getDiagramSummary', () => {
         await expect(api.getDiagramSummary('gone')).rejects.toMatchObject({
             status: 404,
         });
+    });
+});
+
+describe('answers that are checked (CLI-006)', () => {
+    const answering = (status: number, body: unknown) =>
+        createApi('http://srv', (async () =>
+            jsonResponse(status, body)) as unknown as typeof fetch);
+    const invalid = (e: unknown) =>
+        e instanceof ApiError &&
+        e.code === 'invalid_response' &&
+        e.status === 200;
+
+    it('takes a full diagram, a saved one without content, and a list', async () => {
+        const full = { ...savedAnswer, content: { tables: [] } };
+        await expect(answering(200, full).getDiagram('d1')).resolves.toEqual(
+            full
+        );
+        await expect(
+            answering(200, savedAnswer).updateDiagram('d1', { title: 'x' })
+        ).resolves.toEqual(savedAnswer);
+        await expect(
+            answering(200, [{ ...savedAnswer, tableCount: 3 }]).listDiagrams()
+        ).resolves.toHaveLength(1);
+    });
+
+    it('keeps a field the server adds later', async () => {
+        const answer = { ...savedAnswer, somethingNew: 1 };
+        await expect(
+            answering(200, answer).updateDiagram('d1', { title: 'x' })
+        ).resolves.toMatchObject({ somethingNew: 1 });
+    });
+
+    it('fails a diagram without its id, role or owner', async () => {
+        const broken = {
+            title: 'Shop',
+            content: null,
+            publishedVersion: null,
+            publishedAt: null,
+        };
+        await expect(answering(200, broken).getDiagram('d1')).rejects.toSatisfy(
+            invalid
+        );
+        // undefined is left out of the JSON, so the field is missing
+        const noRole = { ...savedAnswer, role: undefined };
+        await expect(
+            answering(200, noRole).updateDiagram('d1', { title: 'x' })
+        ).rejects.toSatisfy(invalid);
+    });
+
+    it('fails a list that is not a list', async () => {
+        await expect(
+            answering(200, { items: [] }).listDiagrams()
+        ).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, [{ id: 'x' }]).listDiagrams()
+        ).rejects.toSatisfy(invalid);
+    });
+
+    it('fails a page without its total', async () => {
+        await expect(
+            answering(200, { items: [] }).listProjects()
+        ).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, {
+                items: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+            }).listProjects()
+        ).resolves.toEqual({ items: [], total: 0, page: 1, limit: 10 });
+        await expect(
+            answering(200, {
+                items: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+            }).adminListUsers()
+        ).resolves.toMatchObject({ total: 0 });
+    });
+
+    it('takes a project update that has no counts, and fails one with no name', async () => {
+        const row = {
+            id: 'p1',
+            name: 'Shop',
+            slug: 'shop',
+            description: '',
+            createdAt: T0,
+        };
+        await expect(
+            answering(200, row).adminUpdateProject('p1', { name: 'Shop' })
+        ).resolves.toEqual(row);
+        const noName = { ...row, name: undefined };
+        await expect(
+            answering(200, noName).adminUpdateProject('p1', {})
+        ).rejects.toSatisfy(invalid);
+        // a new project does carry the counts
+        await expect(
+            answering(201, {
+                ...row,
+                members: 0,
+                diagrams: 0,
+            }).adminCreateProject({
+                name: 'Shop',
+            })
+        ).resolves.toMatchObject({ members: 0 });
+        await expect(
+            answering(201, row).adminCreateProject({ name: 'Shop' })
+        ).rejects.toMatchObject({ code: 'invalid_response' });
+    });
+
+    it('checks the lock, share link, drift and connection answers', async () => {
+        await expect(
+            answering(200, { held: false }).acquireLock('d1', 't')
+        ).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, { held: true }).acquireLock('d1', 't')
+        ).resolves.toEqual({ held: true });
+
+        const link = {
+            id: 'l1',
+            diagramId: 'd1',
+            access: 'anyone',
+            expiresAt: null,
+            live: false,
+            createdAt: T0,
+            revokedAt: null,
+        };
+        await expect(
+            answering(200, [link]).listShareLinks('d1')
+        ).resolves.toHaveLength(1);
+        // a new link comes with its token
+        await expect(
+            answering(201, link).createShareLink('d1')
+        ).rejects.toMatchObject({ code: 'invalid_response' });
+        await expect(
+            answering(201, { ...link, token: 'tok' }).createShareLink('d1')
+        ).resolves.toMatchObject({ token: 'tok' });
+
+        await expect(
+            answering(200, {
+                settings: null,
+                latest: null,
+                badge: null,
+            }).getDrift('d1')
+        ).resolves.toEqual({ settings: null, latest: null, badge: null });
+        await expect(
+            answering(200, { settings: null }).getDrift('d1')
+        ).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, { ...checkAnswer, status: 'weird' }).checkDrift('d1')
+        ).rejects.toSatisfy(invalid);
+
+        await expect(
+            answering(200, [connectionAnswer]).listSavedConnections('p1')
+        ).resolves.toHaveLength(1);
+        await expect(
+            answering(200, [
+                { ...connectionAnswer, port: '5432' },
+            ]).listSavedConnections('p1')
+        ).rejects.toSatisfy(invalid);
+    });
+
+    it('checks what two-factor and sign out answer', async () => {
+        await expect(answering(200, { ok: true }).logout()).resolves.toEqual({
+            ok: true,
+        });
+        await expect(answering(200, {}).logout()).rejects.toSatisfy(invalid);
+        await expect(
+            answering(200, { recoveryCodes: ['a'] }).mfaEnable('p', '1')
+        ).resolves.toEqual({ recoveryCodes: ['a'] });
+        await expect(
+            answering(200, { recoveryCodes: 'a' }).mfaEnable('p', '1')
+        ).rejects.toSatisfy(invalid);
+        await expect(answering(200, {}).mfaSetup()).rejects.toSatisfy(invalid);
+    });
+
+    it('checks the admin figures and the activity log', async () => {
+        await expect(answering(200, {}).adminStats()).rejects.toSatisfy(
+            invalid
+        );
+        await expect(
+            answering(200, { items: [], nextCursor: null }).adminListActivity()
+        ).resolves.toEqual({ items: [], nextCursor: null });
+        await expect(
+            answering(200, { items: [] }).adminListActivity()
+        ).rejects.toSatisfy(invalid);
+    });
+
+    it('does not turn an error answer into a failed check', async () => {
+        await expect(
+            answering(404, { error: 'not_found' }).getDiagram('d1')
+        ).rejects.toMatchObject({ code: 'not_found', status: 404 });
+        // no content: nothing to check
+        await expect(
+            createApi(
+                'http://srv',
+                (async () =>
+                    new Response(null, {
+                        status: 204,
+                    })) as unknown as typeof fetch
+            ).releaseLock('d1', 't')
+        ).resolves.toBeUndefined();
+    });
+
+    it('turns a shared page of the wrong shape into an error, not a crash', async () => {
+        await expect(
+            answering(200, { title: 'x' }).getPublicShare('tok')
+        ).resolves.toEqual({ status: 'error' });
+        const share = {
+            title: 'x',
+            content: {},
+            version: 1,
+            publishedAt: T0,
+            live: false,
+        };
+        await expect(
+            answering(200, share).getPublicShare('tok')
+        ).resolves.toEqual({ status: 'ok', share });
+    });
+});
+
+describe('parseRetryAfter', () => {
+    it('reads seconds and HTTP dates, and nothing else', () => {
+        expect(parseRetryAfter('7')).toBe(7000);
+        expect(parseRetryAfter(' 0 ')).toBe(0);
+        const now = Date.parse('2026-11-10T12:00:00Z');
+        expect(parseRetryAfter('Tue, 10 Nov 2026 12:00:30 GMT', now)).toBe(
+            30_000
+        );
+        expect(parseRetryAfter('Tue, 10 Nov 2026 11:00:00 GMT', now)).toBe(0);
+        expect(parseRetryAfter('soon')).toBeUndefined();
+        expect(parseRetryAfter(null)).toBeUndefined();
     });
 });

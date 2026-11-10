@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+} from 'react';
 import { useReactFlow } from '@xyflow/react';
 import type { Id } from '@/core/model/id';
 import type { EditorStore } from '@/store/editor-store';
@@ -39,7 +45,10 @@ export function useViewportControls(
 ): ViewportControls {
     const flow = useReactFlow();
     const drawnRef = useRef(drawn);
-    drawnRef.current = drawn;
+    // read when fit runs, from events; kept current after each commit
+    useLayoutEffect(() => {
+        drawnRef.current = drawn;
+    });
 
     const fit = useCallback(
         (options?: { instant?: boolean }) => {

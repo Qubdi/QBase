@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from 'react';
 import { errorMessage } from '@/lib/qubdi/api';
 import { pageCountOf, pageToFallBackTo, type Page } from '@/lib/qubdi/paging';
 
@@ -24,11 +30,22 @@ export function usePagedList<T>(
     const [query, setQuery] = useState('');
     const [committed, setCommitted] = useState({ q: '', page: 1, filter });
     const [data, setData] = useState<Page<T> | null>(null);
-    const [loading, setLoading] = useState(true);
+    // the request (committed search and reload count) whose page last answered
+    const [settled, setSettled] = useState<{
+        committed: typeof committed;
+        tick: number;
+    } | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [tick, setTick] = useState(0);
+    const loading = !(
+        settled !== null &&
+        settled.committed === committed &&
+        settled.tick === tick
+    );
     const fetchRef = useRef(fetchPage);
-    fetchRef.current = fetchPage;
+    useLayoutEffect(() => {
+        fetchRef.current = fetchPage;
+    });
 
     // commit the search text after a pause; a different search restarts at page 1
     useEffect(() => {
@@ -40,15 +57,12 @@ export function usePagedList<T>(
     }, [query, debounceMs]);
 
     // a different filter shows a different list: start again at page 1
-    useEffect(() => {
-        setCommitted((c) =>
-            c.filter === filter ? c : { ...c, filter, page: 1 }
-        );
-    }, [filter]);
+    if (committed.filter !== filter) {
+        setCommitted({ ...committed, filter, page: 1 });
+    }
 
     useEffect(() => {
         let stale = false;
-        setLoading(true);
         fetchRef
             .current({
                 page: committed.page,
@@ -65,12 +79,12 @@ export function usePagedList<T>(
                 }
                 setData(loaded);
                 setError(null);
-                setLoading(false);
+                setSettled({ committed, tick });
             })
             .catch((e: unknown) => {
                 if (stale) return;
                 setError(errorMessage(e));
-                setLoading(false);
+                setSettled({ committed, tick });
             });
         return () => {
             stale = true;

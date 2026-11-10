@@ -17,9 +17,16 @@ export function useDesignList(adapter: StorageAdapter, active = true) {
 
     useEffect(() => {
         if (!active) return;
-        void reload();
-        return adapter.onChange(() => void reload());
-    }, [adapter, active, reload]);
+        const load = async () => {
+            try {
+                setItems(await adapter.list());
+            } catch {
+                setItems([]);
+            }
+        };
+        void load();
+        return adapter.onChange(() => void load());
+    }, [adapter, active]);
 
     return { items, reload };
 }

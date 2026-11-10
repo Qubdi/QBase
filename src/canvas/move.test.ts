@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { commitShapes } from './commit-shapes';
-import { snapTo } from './geometry';
 import { shop, withRegion } from './test/fixtures';
 import { createEditorStore } from '@/store/editor-store';
-import { planMove } from '@/core/commands/plan-visual';
+import { planMembership } from '@/core/commands/plan-visual';
+import type { Command } from '@/core/commands/command';
+import { applyOk } from '@/core/testing/helpers';
 
 describe('moving and snapping', () => {
     it('EDT-034: a finished drag sends one move; nothing is sent for no change', () => {
@@ -42,13 +43,6 @@ describe('moving and snapping', () => {
         store.getState().undo();
         expect(store.getState().design.entities.byId[users].x).toBe(0);
         expect(store.getState().design.entities.byId[orders].x).toBe(300);
-    });
-
-    it('EDT-035: positions snap to the 20 px grid', () => {
-        expect(snapTo(29)).toBe(20);
-        expect(snapTo(31)).toBe(40);
-        expect(snapTo(-9)).toBe(-0);
-        expect(snapTo(-11)).toBe(-20);
     });
 
     it('EDT-036: dropping a table fully inside an area makes it a member; moving out removes it', () => {
@@ -90,9 +84,16 @@ describe('moving and snapping', () => {
         });
         const store = createEditorStore({ design: placed.design });
         // first make the membership real
-        store
-            .getState()
-            .edit(planMove(placed.design, [{ id: users, x: 0, y: 0 }]));
+        const move: Command = {
+            type: 'entity.move',
+            moves: [{ id: users, x: 0, y: 0 }],
+        };
+        const moved = applyOk(placed.design, move).design;
+        store.getState().edit({
+            type: 'group',
+            label: 'move',
+            commands: [move, planMembership(moved)!],
+        });
         store.getState().resetHistory();
         expect(store.getState().design.entities.byId[users].regionId).toBe(
             placed.regionId

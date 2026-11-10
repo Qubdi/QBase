@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ListCollapse, Workflow } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 import { ChevronDownIcon } from '@/platform/ui/radix-icons';
@@ -191,15 +191,15 @@ export const RefsSection: React.FC = () => {
     const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set());
     // a line chosen on the canvas ("Open in sidebar") opens its row
     const chosen = useEditorStore((s) => s.ui.selection.join(' '));
-    useEffect(() => {
+    // only a change of the selection opens rows; closing one stays closed
+    const [seenChosen, setSeenChosen] = useState<string | undefined>();
+    if (chosen !== seenChosen) {
+        setSeenChosen(chosen);
         const ids = chosen.split(' ').filter((id) => design.links.byId[id]);
-        if (ids.length === 0) return;
-        setOpenIds((now) =>
-            ids.every((id) => now.has(id)) ? now : new Set([...now, ...ids])
-        );
-        // only a change of the selection opens rows; closing one stays closed
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [chosen]);
+        if (ids.length > 0 && !ids.every((id) => openIds.has(id))) {
+            setOpenIds(new Set([...openIds, ...ids]));
+        }
+    }
     const [creating, setCreating] = useState(false);
     const links = listRefs({ design, filter, showViews, text: filterText });
     const dependencies = listDependencies({

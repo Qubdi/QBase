@@ -72,7 +72,8 @@ describe('maintenance', () => {
             expect(await ctx.db.select().from(mfaChallenges)).toHaveLength(0);
             expect(log).toHaveBeenCalledWith(
                 expect.stringContaining('"sessions" failed'),
-                expect.any(Error)
+                // only what kind of failure it was, never the statement or its values
+                expect.objectContaining({ name: 'Error', message: expect.any(String) })
             );
         } finally {
             log.mockRestore();

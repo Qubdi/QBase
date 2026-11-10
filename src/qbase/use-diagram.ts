@@ -8,6 +8,8 @@ import type { DatabaseType } from './diagram-types';
 export interface UseDiagram {
     /** the diagram being edited; an edit replaces only the sections it touched */
     currentDiagram: Diagram;
+    /** the diagram open right now, for code that waited and must not use a stale render */
+    getCurrentDiagram: () => Diagram;
     tables: DBTable[];
     databaseType: DatabaseType;
     readonly: boolean;
@@ -40,6 +42,7 @@ export function useDiagram(): UseDiagram {
     return useMemo(
         () => ({
             currentDiagram,
+            getCurrentDiagram: () => api.currentDiagram(),
             tables: currentDiagram.tables ?? [],
             databaseType: currentDiagram.databaseType,
             readonly,

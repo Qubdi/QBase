@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DatabaseType } from '@/qbase/diagram-types';
 import { DBCustomTypeKind } from '@/qbase/diagram-types';
-import { exportDiagramSql } from '@/qbase/sql-adapters';
 import {
     diagram,
     exportBaseSQL,
+    exportDiagramSql,
     field,
     pk,
     relationship,

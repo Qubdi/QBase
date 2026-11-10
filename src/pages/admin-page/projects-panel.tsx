@@ -64,6 +64,8 @@ export const ProjectsPanel: React.FC = () => {
     const choose = useCallback((p: AdminProject | null) => {
         setSelectedId(p?.id ?? null);
         setSelectedCache(p);
+        // no project open: no members to show
+        if (!p) setMembers([]);
         // an error belongs to the project it happened in
         setError(null);
     }, []);
@@ -77,15 +79,12 @@ export const ProjectsPanel: React.FC = () => {
     );
 
     // Open the first project once the list arrives, and again when the open one
-    // is gone. The updates are functional: this effect runs after the render it
-    // belongs to, and a project the person chose in between must not be replaced
-    // by the first one because this render still saw "nothing chosen".
-    useEffect(() => {
-        const first = list.items[0];
-        if (!first) return;
-        setSelectedId((current) => current ?? first.id);
-        setSelectedCache((current) => current ?? first);
-    }, [selectedId, list.items]);
+    // is gone (nothing chosen).
+    const first = list.items[0];
+    if (selectedId === null && first) {
+        setSelectedId(first.id);
+        setSelectedCache(first);
+    }
 
     const reloadMembers = useCallback(async (id: string | null) => {
         if (!id) {
@@ -100,8 +99,16 @@ export const ProjectsPanel: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        void reloadMembers(selectedId);
-    }, [selectedId, reloadMembers]);
+        if (!selectedId) return;
+        const id = selectedId;
+        void (async () => {
+            try {
+                setMembers(await api.adminListProjectMembers(id));
+            } catch (e) {
+                setError(errorMessage(e));
+            }
+        })();
+    }, [selectedId]);
 
     /**
      * Runs a change, then refreshes the list and the members, and says it worked

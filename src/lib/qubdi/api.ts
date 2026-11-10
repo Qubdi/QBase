@@ -1,6 +1,9 @@
+import { z } from 'zod';
 import { QUBDI_BACKEND_URL } from './config';
 import { i18n } from '@/i18n/i18n';
 import type { LintConfig } from '../../../shared/lint';
+import * as shape from './api-schemas';
+import { gzipText } from './gzip';
 import { listQuery, type ListParams, type Page } from './paging';
 import { InvalidServerDiagramError } from './open-remote';
 
@@ -294,10 +297,24 @@ export class ApiError extends Error {
         public status: number,
         public code: string,
         /** human readable detail from the server, when it sends one */
-        public detail?: string
+        public detail?: string,
+        /** how long the server asked the client to wait (Retry-After), in ms */
+        public retryAfterMs?: number
     ) {
         super(detail ?? code);
     }
+}
+
+/** Retry-After as milliseconds: delta-seconds or an HTTP date; undefined when absent or unreadable. */
+export function parseRetryAfter(
+    value: string | null,
+    now: number = Date.now()
+): number | undefined {
+    if (!value) return undefined;
+    const trimmed = value.trim();
+    if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
+    const at = Date.parse(trimmed);
+    return Number.isNaN(at) ? undefined : Math.max(0, at - now);
 }
 
 export type DbDialect = 'postgresql' | 'sqlserver';
@@ -425,10 +442,50 @@ export const KEEPALIVE_BODY_LIMIT = 60_000;
 // is a third of the bytes for Georgian and other non-Latin text
 const utf8Bytes = (text: string) => new TextEncoder().encode(text).length;
 
+/** The one route that inflates a gzipped body: the save of a diagram. */
+const acceptsGzip = (method: string, path: string) =>
+    method === 'PUT' && /^\/diagrams\/[^/?]+$/.test(path);
+
 export interface RequestOptions {
     /** Let the request finish even if the page is closing (small bodies only). */
     keepalive?: boolean;
 }
+
+/**
+ * Runtime checks for the answers the app cannot work without. Objects are
+ * loose: a field the server adds later is kept, one it drops is caught.
+ */
+const remoteUserSchema = z.looseObject({
+    id: z.string(),
+    email: z.string(),
+    isAdmin: z.boolean(),
+    mustChangePassword: z.boolean(),
+    mfaEnabled: z.boolean().optional(),
+});
+const loginResultSchema = z.union([
+    remoteUserSchema,
+    z.looseObject({ mfaRequired: z.literal(true), challenge: z.string() }),
+]);
+const setupStatusSchema = z.looseObject({
+    needsSetup: z.boolean(),
+    passwordMinLength: z.number(),
+    mfaAvailable: z.boolean().optional(),
+    // the first-run form shows its setup-token field only when this is true
+    setupTokenRequired: z.boolean().optional(),
+});
+const mfaStatusSchema = z.looseObject({
+    available: z.boolean(),
+    enabled: z.boolean(),
+    enabledAt: z.string().nullable(),
+    recoveryCodesLeft: z.number(),
+});
+const membersSchema = z.array(
+    z.looseObject({
+        userId: z.string(),
+        email: z.string(),
+        role: z.enum(['owner', 'editor', 'viewer']),
+    })
+);
 
 export function createApi(
     baseUrl: string = QUBDI_BACKEND_URL,
@@ -438,24 +495,45 @@ export function createApi(
         method: string,
         path: string,
         body?: unknown,
-        options?: RequestOptions
+        options?: RequestOptions,
+        /** when given, a successful answer must match it, or the call fails */
+        schema?: z.ZodType<T>
     ): Promise<T> {
         const json = body === undefined ? undefined : JSON.stringify(body);
+        // a request sent as the page closes (keepalive) may carry 64 KiB at most:
+        // a bigger body is sent gzipped when that makes it fit, else as an
+        // ordinary request that the page closing may cut off
+        let payload: string | Uint8Array | undefined = json;
+        let gzipped = false;
+        let keepalive = false;
+        if (options?.keepalive && json !== undefined) {
+            if (utf8Bytes(json) <= KEEPALIVE_BODY_LIMIT) {
+                keepalive = true;
+            } else if (acceptsGzip(method, path)) {
+                const packed = await gzipText(json);
+                if (packed && packed.length <= KEEPALIVE_BODY_LIMIT) {
+                    payload = packed;
+                    gzipped = true;
+                    keepalive = true;
+                }
+            }
+        } else if (options?.keepalive) {
+            keepalive = true;
+        }
         const res = await fetchImpl(`${baseUrl}${path}`, {
             method,
             credentials: 'include',
             headers:
                 body === undefined
                     ? {}
-                    : { 'content-type': 'application/json' },
-            body: json,
+                    : {
+                          'content-type': 'application/json',
+                          ...(gzipped ? { 'content-encoding': 'gzip' } : {}),
+                      },
+            body: payload as BodyInit | undefined,
             // one hung request must not stall autosave behind it
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-            // an oversized keepalive request would be rejected outright
-            ...(options?.keepalive &&
-            (json === undefined ? 0 : utf8Bytes(json)) <= KEEPALIVE_BODY_LIMIT
-                ? { keepalive: true }
-                : {}),
+            ...(keepalive ? { keepalive: true } : {}),
         });
         if (res.status === 204) return undefined as T;
         const data = await res.json().catch(() => ({}));
@@ -470,8 +548,15 @@ export function createApi(
             throw new ApiError(
                 res.status,
                 data?.error ?? 'request_failed',
-                typeof data?.message === 'string' ? data.message : undefined
+                typeof data?.message === 'string' ? data.message : undefined,
+                parseRetryAfter(res.headers.get('Retry-After'))
             );
+        }
+        if (schema) {
+            const parsed = schema.safeParse(data);
+            if (!parsed.success)
+                throw new ApiError(res.status, 'invalid_response');
+            return parsed.data;
         }
         return data as T;
     }
@@ -483,24 +568,59 @@ export function createApi(
                 passwordMinLength: number;
                 /** the server offers two-factor sign-in */
                 mfaAvailable?: boolean;
-            }>('GET', '/auth/setup-status'),
-        register: (email: string, password: string) =>
-            request<RemoteUser>('POST', '/auth/register', { email, password }),
+                /** the first-run sign-up needs the setup token the server printed */
+                setupTokenRequired?: boolean;
+            }>(
+                'GET',
+                '/auth/setup-status',
+                undefined,
+                undefined,
+                setupStatusSchema
+            ),
+        register: (email: string, password: string, setupToken?: string) =>
+            request<RemoteUser>(
+                'POST',
+                '/auth/register',
+                // the token is sent only when the server asked for one
+                setupToken
+                    ? { email, password, setupToken }
+                    : { email, password },
+                undefined,
+                remoteUserSchema
+            ),
         login: (email: string, password: string) =>
-            request<LoginResult>('POST', '/auth/login', { email, password }),
+            request<LoginResult>(
+                'POST',
+                '/auth/login',
+                { email, password },
+                undefined,
+                loginResultSchema
+            ),
         /** The second step of signing in, with the ticket the password step gave. */
         loginMfa: (challenge: string, factor: SecondFactor) =>
-            request<RemoteUser>('POST', '/auth/login/mfa', {
-                challenge,
-                ...factor,
-            }),
-        mfaStatus: () => request<MfaStatus>('GET', '/auth/mfa'),
+            request<RemoteUser>(
+                'POST',
+                '/auth/login/mfa',
+                { challenge, ...factor },
+                undefined,
+                remoteUserSchema
+            ),
+        mfaStatus: () =>
+            request<MfaStatus>(
+                'GET',
+                '/auth/mfa',
+                undefined,
+                undefined,
+                mfaStatusSchema
+            ),
         /** A new secret, not yet on: the address for the QR code and the key to type. */
         mfaSetup: () =>
             request<{ secret: string; otpauthUrl: string }>(
                 'POST',
                 '/auth/mfa/setup',
-                {}
+                {},
+                undefined,
+                shape.mfaSetup
             ),
         /**
          * Checks the password and a code from the app, switches it on; the
@@ -508,123 +628,211 @@ export function createApi(
          * session from switching it on.
          */
         mfaEnable: (password: string, code: string) =>
-            request<{ recoveryCodes: string[] }>('POST', '/auth/mfa/enable', {
-                password,
-                code,
-            }),
+            request<{ recoveryCodes: string[] }>(
+                'POST',
+                '/auth/mfa/enable',
+                { password, code },
+                undefined,
+                shape.recoveryCodes
+            ),
         mfaDisable: (password: string, factor: SecondFactor) =>
-            request<{ ok: true }>('POST', '/auth/mfa/disable', {
-                password,
-                ...factor,
-            }),
+            request<{ ok: true }>(
+                'POST',
+                '/auth/mfa/disable',
+                { password, ...factor },
+                undefined,
+                shape.okAnswer
+            ),
         mfaNewRecoveryCodes: (password: string, code: string) =>
             request<{ recoveryCodes: string[] }>(
                 'POST',
                 '/auth/mfa/recovery-codes',
-                { password, code }
+                { password, code },
+                undefined,
+                shape.recoveryCodes
             ),
-        logout: () => request<{ ok: true }>('POST', '/auth/logout'),
-        me: () => request<RemoteUser>('GET', '/auth/me'),
+        logout: () =>
+            request<{ ok: true }>(
+                'POST',
+                '/auth/logout',
+                undefined,
+                undefined,
+                shape.okAnswer
+            ),
+        me: () =>
+            request<RemoteUser>(
+                'GET',
+                '/auth/me',
+                undefined,
+                undefined,
+                remoteUserSchema
+            ),
         changePassword: (
             currentPassword: string,
             newPassword: string,
             /** asked for when the account has two-factor on */
             factor?: SecondFactor
         ) =>
-            request<{ ok: true }>('POST', '/auth/change-password', {
-                currentPassword,
-                newPassword,
-                ...factor,
-            }),
+            request<{ ok: true }>(
+                'POST',
+                '/auth/change-password',
+                { currentPassword, newPassword, ...factor },
+                undefined,
+                shape.okAnswer
+            ),
 
         /** Every diagram the user may see; `projectId` keeps one project's. */
         listDiagrams: (params?: { projectId?: string }) =>
             request<RemoteDiagramSummary[]>(
                 'GET',
-                `/diagrams${listQuery({}, { projectId: params?.projectId })}`
+                `/diagrams${listQuery({}, { projectId: params?.projectId })}`,
+                undefined,
+                undefined,
+                shape.diagramList
             ),
         /** One row of the list, without the content; 404 unless the user may see it. */
         getDiagramSummary: (id: string) =>
             request<RemoteDiagramSummary>(
                 'GET',
-                `/diagrams/${encodeURIComponent(id)}/summary`
+                `/diagrams/${encodeURIComponent(id)}/summary`,
+                undefined,
+                undefined,
+                shape.diagramSummary
             ),
         createDiagram: (
             title: string,
             content: Record<string, unknown>,
             projectId: string
         ) =>
-            request<RemoteDiagram>('POST', '/diagrams', {
-                title,
-                content,
-                projectId,
-            }),
+            request<RemoteDiagram>(
+                'POST',
+                '/diagrams',
+                { title, content, projectId },
+                undefined,
+                shape.remoteDiagram
+            ),
         listProjects: (params?: ListParams) =>
-            request<Page<MyProject>>('GET', `/projects${listQuery(params)}`),
+            request<Page<MyProject>>(
+                'GET',
+                `/projects${listQuery(params)}`,
+                undefined,
+                undefined,
+                shape.page(shape.myProject)
+            ),
         /** One project by its web address or id; 404 unless the user may see it. */
         getProject: (ref: string) =>
-            request<MyProject>('GET', `/projects/${encodeURIComponent(ref)}`),
+            request<MyProject>(
+                'GET',
+                `/projects/${encodeURIComponent(ref)}`,
+                undefined,
+                undefined,
+                shape.myProject
+            ),
 
         // admin panel (admins only; everyone else gets a 404)
         adminListUsers: (params?: ListParams & { status?: UserStatus }) =>
             request<Page<AdminUser>>(
                 'GET',
-                `/admin/users${listQuery(params, { status: params?.status })}`
+                `/admin/users${listQuery(params, { status: params?.status })}`,
+                undefined,
+                undefined,
+                shape.page(shape.adminUser)
             ),
         adminCreateUser: (body: {
             email: string;
             password: string;
             isAdmin?: boolean;
-        }) => request<AdminUser>('POST', '/admin/users', body),
+        }) =>
+            request<AdminUser>(
+                'POST',
+                '/admin/users',
+                body,
+                undefined,
+                shape.adminUser
+            ),
         adminUpdateUser: (
             id: string,
-            body: { password?: string; isAdmin?: boolean; isActive?: boolean }
+            body: {
+                password?: string;
+                isAdmin?: boolean;
+                isActive?: boolean;
+                /** the acting admin's own proof, needed to reset another admin's password */
+                adminPassword?: string;
+                adminCode?: string;
+            }
         ) =>
             request<{ id: string; isAdmin: boolean; isActive: boolean }>(
                 'PATCH',
                 `/admin/users/${encodeURIComponent(id)}`,
-                body
+                body,
+                undefined,
+                shape.adminUserChange
             ),
         adminDeleteUser: (id: string) =>
             request<void>('DELETE', `/admin/users/${encodeURIComponent(id)}`),
         /** Enable, disable or delete up to 100 accounts; all or nothing. */
         adminBulkUsers: (action: BulkUserAction, ids: string[]) =>
-            request<BulkUsersResult>('POST', '/admin/users/bulk', {
-                action,
-                ids,
-            }),
+            request<BulkUsersResult>(
+                'POST',
+                '/admin/users/bulk',
+                { action, ids },
+                undefined,
+                shape.bulkUsersResult
+            ),
         adminListUserSessions: (id: string) =>
             request<AdminSession[]>(
                 'GET',
-                `/admin/users/${encodeURIComponent(id)}/sessions`
+                `/admin/users/${encodeURIComponent(id)}/sessions`,
+                undefined,
+                undefined,
+                z.array(shape.adminSession)
             ),
         /** Ends every session of the user; says how many were live. */
         adminSignOutUser: (id: string) =>
             request<{ signedOut: number }>(
                 'DELETE',
-                `/admin/users/${encodeURIComponent(id)}/sessions`
+                `/admin/users/${encodeURIComponent(id)}/sessions`,
+                undefined,
+                undefined,
+                shape.signedOutCount
             ),
         /** Switches off a person's two-factor sign-in (lost phone) and signs them out. */
-        adminResetMfa: (id: string) =>
+        adminResetMfa: (
+            id: string,
+            /** the acting admin's own proof, needed when the person is an admin */
+            proof?: { adminPassword?: string; adminCode?: string }
+        ) =>
             request<{ reset: boolean }>(
                 'POST',
-                `/admin/users/${encodeURIComponent(id)}/mfa/reset`
+                `/admin/users/${encodeURIComponent(id)}/mfa/reset`,
+                proof,
+                undefined,
+                shape.resetResult
             ),
         /** `timeZone` makes a "day" on the chart the viewer's own. */
         adminStats: (timeZone?: string) =>
             request<AdminStats>(
                 'GET',
-                `/admin/stats${listQuery(undefined, { tz: timeZone })}`
+                `/admin/stats${listQuery(undefined, { tz: timeZone })}`,
+                undefined,
+                undefined,
+                shape.adminStats
             ),
         adminListDiagrams: (params?: ListParams & { projectId?: string }) =>
             request<Page<AdminDiagram>>(
                 'GET',
-                `/admin/diagrams${listQuery(params, { projectId: params?.projectId })}`
+                `/admin/diagrams${listQuery(params, { projectId: params?.projectId })}`,
+                undefined,
+                undefined,
+                shape.page(shape.adminDiagram)
             ),
         adminListDiagramLinks: (id: string) =>
             request<AdminShareLink[]>(
                 'GET',
-                `/admin/diagrams/${encodeURIComponent(id)}/share-links`
+                `/admin/diagrams/${encodeURIComponent(id)}/share-links`,
+                undefined,
+                undefined,
+                z.array(shape.adminShareLink)
             ),
         /** Ends a share link at once, for anyone using it. */
         adminRevokeDiagramLink: (id: string, linkId: string) =>
@@ -646,7 +854,10 @@ export function createApi(
                         to: params.to,
                         saves: params.saves,
                     }
-                )}`
+                )}`,
+                undefined,
+                undefined,
+                shape.activityPage
             ),
         /**
          * The activity log as a CSV file, for the same filters as the list.
@@ -684,18 +895,30 @@ export function createApi(
         adminListProjects: (params?: ListParams) =>
             request<Page<AdminProject>>(
                 'GET',
-                `/admin/projects${listQuery(params)}`
+                `/admin/projects${listQuery(params)}`,
+                undefined,
+                undefined,
+                shape.page(shape.adminProject)
             ),
         adminCreateProject: (body: { name: string; description?: string }) =>
-            request<AdminProject>('POST', '/admin/projects', body),
+            request<AdminProject>(
+                'POST',
+                '/admin/projects',
+                body,
+                undefined,
+                shape.adminProject
+            ),
         adminUpdateProject: (
             id: string,
             body: { name?: string; description?: string }
         ) =>
-            request<AdminProject>(
+            // the answer is the project row: the member and diagram counts are not in it
+            request<Omit<AdminProject, 'members' | 'diagrams'>>(
                 'PATCH',
                 `/admin/projects/${encodeURIComponent(id)}`,
-                body
+                body,
+                undefined,
+                shape.adminProjectRow
             ),
         adminDeleteProject: (id: string) =>
             request<void>(
@@ -705,7 +928,10 @@ export function createApi(
         adminListProjectMembers: (id: string) =>
             request<ProjectMember[]>(
                 'GET',
-                `/admin/projects/${encodeURIComponent(id)}/members`
+                `/admin/projects/${encodeURIComponent(id)}/members`,
+                undefined,
+                undefined,
+                z.array(shape.projectMember)
             ),
         adminSetProjectMember: (
             id: string,
@@ -715,7 +941,9 @@ export function createApi(
             request<ProjectMember>(
                 'PUT',
                 `/admin/projects/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`,
-                { role }
+                { role },
+                undefined,
+                shape.projectMember
             ),
         adminRemoveProjectMember: (id: string, userId: string) =>
             request<void>(
@@ -725,7 +953,27 @@ export function createApi(
         getDiagram: (id: string) =>
             request<RemoteDiagram>(
                 'GET',
-                `/diagrams/${encodeURIComponent(id)}`
+                `/diagrams/${encodeURIComponent(id)}`,
+                undefined,
+                undefined,
+                shape.remoteDiagram
+            ),
+        /** The publish badge's read: no content, so it is cheap after every save. */
+        getPublishStatus: (id: string) =>
+            request<
+                Pick<
+                    RemoteDiagram,
+                    | 'publishedVersion'
+                    | 'publishedAt'
+                    | 'unpublishedChanges'
+                    | 'autoPublish'
+                >
+            >(
+                'GET',
+                `/diagrams/${encodeURIComponent(id)}/publish-status`,
+                undefined,
+                undefined,
+                shape.publishStatusOnly
             ),
         updateDiagram: (
             id: string,
@@ -740,18 +988,22 @@ export function createApi(
             },
             options?: RequestOptions
         ) =>
-            request<RemoteDiagram>(
+            // the answer does not carry the content: the editor has it
+            request<Omit<RemoteDiagram, 'content'>>(
                 'PUT',
                 `/diagrams/${encodeURIComponent(id)}`,
                 patch,
-                options
+                options,
+                shape.savedDiagram
             ),
         /** Only one editor at a time: `held: false` means someone else has it. */
         acquireLock: (id: string, editorId: string) =>
             request<{ held: true } | { held: false; holder: string }>(
                 'POST',
                 `/diagrams/${encodeURIComponent(id)}/lock`,
-                { editorId }
+                { editorId },
+                undefined,
+                shape.lockAnswer
             ),
         releaseLock: (id: string, editorId: string, options?: RequestOptions) =>
             request<void>(
@@ -768,12 +1020,17 @@ export function createApi(
             }>(
                 'POST',
                 `/diagrams/${encodeURIComponent(id)}/publish`,
-                note ? { note } : {}
+                note ? { note } : {},
+                undefined,
+                shape.publishResult
             ),
         listShareLinks: (id: string) =>
             request<RemoteShareLink[]>(
                 'GET',
-                `/diagrams/${encodeURIComponent(id)}/share-links`
+                `/diagrams/${encodeURIComponent(id)}/share-links`,
+                undefined,
+                undefined,
+                z.array(shape.shareLink)
             ),
         createShareLink: (
             id: string,
@@ -786,7 +1043,9 @@ export function createApi(
             request<RemoteShareLinkWithToken>(
                 'POST',
                 `/diagrams/${encodeURIComponent(id)}/share-links`,
-                body
+                body,
+                undefined,
+                shape.shareLinkWithToken
             ),
         updateShareLink: (
             id: string,
@@ -800,7 +1059,9 @@ export function createApi(
             request<RemoteShareLink>(
                 'PATCH',
                 `/diagrams/${encodeURIComponent(id)}/share-links/${encodeURIComponent(linkId)}`,
-                body
+                body,
+                undefined,
+                shape.shareLink
             ),
         revokeShareLink: (id: string, linkId: string) =>
             request<void>(
@@ -810,7 +1071,10 @@ export function createApi(
         regenerateShareLink: (id: string, linkId: string) =>
             request<RemoteShareLinkWithToken>(
                 'POST',
-                `/diagrams/${encodeURIComponent(id)}/share-links/${encodeURIComponent(linkId)}/regenerate`
+                `/diagrams/${encodeURIComponent(id)}/share-links/${encodeURIComponent(linkId)}/regenerate`,
+                undefined,
+                undefined,
+                shape.shareLinkWithToken
             ),
         getPublicShare: async (token: string): Promise<PublicShareResult> => {
             try {
@@ -823,7 +1087,10 @@ export function createApi(
                     }
                 );
                 if (res.ok) {
-                    return { status: 'ok', share: await res.json() };
+                    const share = shape.publicShare.safeParse(await res.json());
+                    return share.success
+                        ? { status: 'ok', share: share.data }
+                        : { status: 'error' };
                 }
                 if (res.status === 401) return { status: 'login_required' };
                 if (res.status === 404) {
@@ -843,23 +1110,41 @@ export function createApi(
             }
         },
         introspectCatalog: (ref: ConnectionRef) =>
-            request<CatalogResponse>('POST', '/introspect/catalog', ref),
+            request<CatalogResponse>(
+                'POST',
+                '/introspect/catalog',
+                ref,
+                undefined,
+                shape.catalog
+            ),
         introspect: (
             ref: ConnectionRef & { schemas?: string[]; tables?: string[] }
         ) =>
             request<{ dialect: DbDialect; metadata: unknown }>(
                 'POST',
                 '/introspect',
-                ref
+                ref,
+                undefined,
+                shape.introspectResult
             ),
         listSavedConnections: (projectId: string) =>
             request<SavedConnection[]>(
                 'GET',
-                `/introspect/connections?projectId=${encodeURIComponent(projectId)}`
+                `/introspect/connections?projectId=${encodeURIComponent(projectId)}`,
+                undefined,
+                undefined,
+                z.array(shape.savedConnection)
             ),
         saveConnection: (
             input: DbConnectionInput & { name: string; projectId: string }
-        ) => request<SavedConnection>('POST', '/introspect/connections', input),
+        ) =>
+            request<SavedConnection>(
+                'POST',
+                '/introspect/connections',
+                input,
+                undefined,
+                shape.savedConnection
+            ),
         /** Leave `password` out to keep the one already saved. */
         updateConnection: (
             id: string,
@@ -871,13 +1156,18 @@ export function createApi(
             request<SavedConnection>(
                 'PUT',
                 `/introspect/connections/${encodeURIComponent(id)}`,
-                input
+                input,
+                undefined,
+                shape.savedConnection
             ),
         /** Whether the server can store connection passwords (CONNECTION_KEY is set). */
         introspectCapabilities: () =>
             request<{ savedConnections: boolean }>(
                 'GET',
-                '/introspect/capabilities'
+                '/introspect/capabilities',
+                undefined,
+                undefined,
+                shape.introspectCapabilities
             ),
         deleteSavedConnection: (id: string) =>
             request<void>(
@@ -887,26 +1177,34 @@ export function createApi(
         getLintConfig: (id: string) =>
             request<LintConfig>(
                 'GET',
-                `/diagrams/${encodeURIComponent(id)}/lint-config`
+                `/diagrams/${encodeURIComponent(id)}/lint-config`,
+                undefined,
+                undefined,
+                shape.lintConfig
             ),
         saveLintConfig: (id: string, config: LintConfig) =>
             request<LintConfig>(
                 'PUT',
                 `/diagrams/${encodeURIComponent(id)}/lint-config`,
-                {
-                    config,
-                }
+                { config },
+                undefined,
+                shape.lintConfig
             ),
         getDrift: (id: string) =>
             request<DriftOverview>(
                 'GET',
-                `/diagrams/${encodeURIComponent(id)}/drift`
+                `/diagrams/${encodeURIComponent(id)}/drift`,
+                undefined,
+                undefined,
+                shape.driftOverview
             ),
         saveDrift: (id: string, settings: DriftSettings) =>
             request<DriftSettings>(
                 'PUT',
                 `/diagrams/${encodeURIComponent(id)}/drift`,
-                settings
+                settings,
+                undefined,
+                shape.driftSettings
             ),
         /**
          * Reads the database and stores a report. With `cached`, a recent report
@@ -915,25 +1213,40 @@ export function createApi(
         checkDrift: (id: string, options?: { cached?: boolean }) =>
             request<DriftCheckResult>(
                 'POST',
-                `/diagrams/${encodeURIComponent(id)}/drift/check${options?.cached ? '?cached=1' : ''}`
+                `/diagrams/${encodeURIComponent(id)}/drift/check${options?.cached ? '?cached=1' : ''}`,
+                undefined,
+                undefined,
+                shape.driftCheckResult
             ),
         getDriftReport: (id: string, reportId: string) =>
             request<DriftReport>(
                 'GET',
-                `/diagrams/${encodeURIComponent(id)}/drift/reports/${encodeURIComponent(reportId)}`
+                `/diagrams/${encodeURIComponent(id)}/drift/reports/${encodeURIComponent(reportId)}`,
+                undefined,
+                undefined,
+                shape.driftReport
             ),
         dismissDrift: (id: string) =>
             request<{
                 latest: DriftReportSummary | null;
                 badge: DriftBadge | null;
-            }>('POST', `/diagrams/${encodeURIComponent(id)}/drift/dismiss`),
+            }>(
+                'POST',
+                `/diagrams/${encodeURIComponent(id)}/drift/dismiss`,
+                undefined,
+                undefined,
+                shape.driftDismissResult
+            ),
         deleteDiagram: (id: string) =>
             request<void>('DELETE', `/diagrams/${encodeURIComponent(id)}`),
 
         listMembers: (id: string) =>
             request<RemoteMember[]>(
                 'GET',
-                `/diagrams/${encodeURIComponent(id)}/members`
+                `/diagrams/${encodeURIComponent(id)}/members`,
+                undefined,
+                undefined,
+                membersSchema
             ),
     };
 }
@@ -943,14 +1256,15 @@ export const api: QubdiApi = createApi();
 
 export const errorMessage = (e: unknown): string => {
     if (e instanceof ApiError) {
-        if (e.code === 'target_blocked' || e.code === 'connection_failed') {
-            return (
-                e.detail ??
-                i18n.t('qubdi.account.errors.requestFailed', { code: e.code })
-            );
-        }
         if (e.code === 'locked') {
-            return e.detail ?? i18n.t('qubdi.account.errors.locked');
+            // the server names the editor ("sam@corp.io is editing ..."): take
+            // the name and say the rest in the chosen language
+            const holder = /^(.+) is editing this diagram\.$/.exec(
+                e.detail ?? ''
+            )?.[1];
+            return holder
+                ? i18n.t('qubdi.account.errors.lockedBy', { holder })
+                : i18n.t('qubdi.account.errors.locked');
         }
         const key = `qubdi.account.errors.${e.code}`;
         // only server codes (word characters) are looked up; the fallback names the code

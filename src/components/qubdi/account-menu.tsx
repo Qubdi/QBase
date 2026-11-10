@@ -42,7 +42,7 @@ import { useWorkspace } from './workspace-context';
 export const AccountMenu: React.FC = () => {
     const { t } = useTranslation();
     const { enabled, user, logout, syncDiagram, remoteIdFor } = useQubdi();
-    const { currentDiagram } = useDiagram();
+    const { currentDiagram, getCurrentDiagram } = useDiagram();
     const workspace = useWorkspace();
     const navigate = useNavigate();
     const [authOpen, setAuthOpen] = useState(false);
@@ -201,7 +201,9 @@ export const AccountMenu: React.FC = () => {
                 ensureRemoteId={async () => {
                     // let the autosaver finish so both saves never share one base version
                     await flushPendingSave();
-                    return syncDiagram(currentDiagram);
+                    // the flush took time: save what is open now, not what was
+                    // drawn when this menu last rendered
+                    return syncDiagram(getCurrentDiagram());
                 }}
             />
             <ChangePasswordDialog

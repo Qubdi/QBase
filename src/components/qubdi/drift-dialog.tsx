@@ -30,6 +30,7 @@ import {
 import { getSyncState } from '@/lib/qubdi/sync-state';
 import { ConnectionsDialog } from './connections-dialog';
 import { useWorkspace } from './workspace-context';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 export interface DriftDialogProps {
     open: boolean;
@@ -167,12 +168,21 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
 
     // loads when the dialog opens, not whenever one of what `load` reads changes
     const loadRef = useRef(load);
-    loadRef.current = load;
+    useEffect(() => {
+        loadRef.current = load;
+    });
+    // nothing of the last opening shows while this one loads: reset while
+    // rendering, when the dialog opens, before the effect below starts the load
+    const [openSeen, setOpenSeen] = useState(false);
+    if (openSeen !== open) {
+        setOpenSeen(open);
+        if (open) {
+            setReport(null);
+            setConnections([]);
+        }
+    }
     useEffect(() => {
         if (!open) return;
-        // nothing of the last opening shows while this one loads
-        setReport(null);
-        setConnections([]);
         void loadRef.current();
         return cancelLoad;
     }, [open, cancelLoad]);
@@ -356,7 +366,9 @@ export const DriftDialog: React.FC<DriftDialogProps> = ({
                     >
                         <p className="text-sm">
                             {t('qubdi.database.drift.lastCheck', {
-                                date: new Date(report.runAt).toLocaleString(),
+                                date: new Date(report.runAt).toLocaleString(
+                                    uiLocale()
+                                ),
                             })}{' '}
                             <strong data-testid="drift-status">
                                 {report.status === 'clean'

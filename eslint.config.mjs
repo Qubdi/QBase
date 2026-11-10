@@ -47,12 +47,9 @@ const ourRules = {
         { roles: ['tabpanel', 'status', 'img'] },
     ],
 
-    // react-hooks 7 added React Compiler rules. They stay off until the
-    // components are migrated (see TODO.md).
-    'react-hooks/set-state-in-effect': 'off',
-    'react-hooks/refs': 'off',
-    'react-hooks/preserve-manual-memoization': 'off',
-    'react-hooks/use-memo': 'off',
+    // react-hooks 7 added React Compiler rules (refs, set-state-in-effect,
+    // preserve-manual-memoization, use-memo). They are on everywhere, no file is
+    // excepted.
 };
 
 export default [

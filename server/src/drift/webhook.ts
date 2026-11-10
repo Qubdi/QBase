@@ -1,8 +1,10 @@
 import http from 'node:http';
 import https from 'node:https';
-import type { CryptoBox } from '../introspect/crypto-box.js';
+import net from 'node:net';
+import { isSealed, type CryptoBox } from '../introspect/crypto-box.js';
 import {
     ForbiddenTargetError,
+    matchesIpEntry,
     resolveAllowedTarget,
     type LookupAll,
 } from '../introspect/net-guard.js';
@@ -13,34 +15,46 @@ export interface WebhookResult {
     error?: string;
 }
 
+/** What a report says when the host is not allowed or does not resolve. */
+export const WEBHOOK_HOST_REFUSED = 'host not allowed';
+/** What a report says when the connection could not be made or broke. */
+export const WEBHOOK_CONNECTION_FAILED = 'connection failed';
+
 /** How long the connection may sit silent. A server that keeps trickling bytes resets it. */
 export const WEBHOOK_TIMEOUT_MS = 5000;
 /** How long a whole request may take, trickling or not. */
 export const WEBHOOK_DEADLINE_MS = 15_000;
 
-const SEALED_PREFIX = 'v1:';
-
-/** The stored form of a webhook URL: its path and query may hold a token, so it is encrypted. */
-export const sealWebhookUrl = (box: CryptoBox, url: string) => box.encrypt(url);
+/**
+ * The stored form of a webhook URL: its path and query may hold a token, so it
+ * is encrypted, bound to the diagram it belongs to.
+ */
+export const sealWebhookUrl = (box: CryptoBox, diagramId: string, url: string) =>
+    box.encrypt(url, diagramId);
 
 /** Reads a stored webhook URL; rows saved before encryption hold the plain URL. */
 export const openWebhookUrl = (
     box: CryptoBox | null,
+    diagramId: string,
     stored: string
 ): string | null => {
-    if (!stored.startsWith(SEALED_PREFIX)) return stored;
+    if (!isSealed(stored)) return stored;
     if (!box) return null;
     try {
-        return box.decrypt(stored);
+        return box.decrypt(stored, diagramId);
     } catch {
         return null;
     }
 };
 
 /** Where a stored webhook points, without the path or query that may carry a token. */
-export const webhookHost = (box: CryptoBox | null, stored: string | null) => {
+export const webhookHost = (
+    box: CryptoBox | null,
+    diagramId: string,
+    stored: string | null
+) => {
     if (!stored) return null;
-    const url = openWebhookUrl(box, stored);
+    const url = openWebhookUrl(box, diagramId, stored);
     if (!url) return null;
     try {
         return new URL(url).host;
@@ -49,8 +63,26 @@ export const webhookHost = (box: CryptoBox | null, stored: string | null) => {
     }
 };
 
-/** http(s) only, no credentials in the URL; returns the parsed URL or an error. */
-export function parseWebhookUrl(raw: string): { url: URL } | { error: string } {
+/** True when the allow-list names this host: the exact name, or an address an entry covers. */
+const hostAllowListed = (hostname: string, allow: string[]) => {
+    const host = hostname.replace(/^\[(.*)\]$/, '$1').toLowerCase();
+    return allow.some(
+        (entry) =>
+            (!entry.includes('/') && entry.toLowerCase() === host) ||
+            (net.isIP(host) !== 0 && matchesIpEntry(host, entry))
+    );
+};
+
+/**
+ * https, or http only to a host the webhook allow-list names (a service on the
+ * private network that has no certificate); no credentials in the URL. The URL
+ * can carry a token and the body drift details, so they do not cross a network
+ * unencrypted by default. Returns the parsed URL or an error.
+ */
+export function parseWebhookUrl(
+    raw: string,
+    allow: string[] = []
+): { url: URL } | { error: string } {
     let url: URL;
     try {
         url = new URL(raw);
@@ -58,7 +90,12 @@ export function parseWebhookUrl(raw: string): { url: URL } | { error: string } {
         return { error: 'not a valid URL' };
     }
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-        return { error: 'must be an http or https URL' };
+        return { error: 'must be an https URL' };
+    }
+    if (url.protocol === 'http:' && !hostAllowListed(url.hostname, allow)) {
+        return {
+            error: 'must be an https URL (plain http is only for hosts in WEBHOOK_ALLOW_HOSTS)',
+        };
     }
     if (url.username || url.password) {
         return { error: 'must not contain credentials' };
@@ -74,9 +111,15 @@ export function parseWebhookUrl(raw: string): { url: URL } | { error: string } {
 export async function postJson(
     rawUrl: string,
     payload: unknown,
-    opts: { allow: string[]; lookup?: LookupAll; deadlineMs?: number }
+    opts: {
+        allow: string[];
+        lookup?: LookupAll;
+        deadlineMs?: number;
+        /** Gets the real reason of a failure; the result carries only a fixed text. */
+        onFailure?: (reason: string) => void;
+    }
 ): Promise<WebhookResult> {
-    const parsed = parseWebhookUrl(rawUrl);
+    const parsed = parseWebhookUrl(rawUrl, opts.allow);
     if ('error' in parsed) return { ok: false, error: parsed.error };
     const { url } = parsed;
 
@@ -84,10 +127,10 @@ export async function postJson(
     try {
         target = await resolveAllowedTarget(url.hostname, opts.allow, opts.lookup);
     } catch (e) {
-        return {
-            ok: false,
-            error: e instanceof ForbiddenTargetError ? e.message : 'host did not resolve',
-        };
+        // the reason (an address class, "did not resolve") names what is on the
+        // internal network: it goes to the log, the report gets a fixed text
+        opts.onFailure?.(e instanceof ForbiddenTargetError ? e.message : 'host did not resolve');
+        return { ok: false, error: WEBHOOK_HOST_REFUSED };
     }
 
     const body = JSON.stringify(payload);
@@ -132,7 +175,15 @@ export async function postJson(
         }, opts.deadlineMs ?? WEBHOOK_DEADLINE_MS);
         deadline.unref();
         req.on('close', () => clearTimeout(deadline));
-        req.on('error', (err) => resolve({ ok: false, error: err.message.slice(0, 200) }));
+        req.on('error', (err) => {
+            // a refused, reset or unreachable connection tells refused from filtered
+            // from down: only the log gets it
+            opts.onFailure?.(err.message.slice(0, 200));
+            resolve({
+                ok: false,
+                error: err.message === 'timed out' ? 'timed out' : WEBHOOK_CONNECTION_FAILED,
+            });
+        });
         req.end(body);
     });
 }

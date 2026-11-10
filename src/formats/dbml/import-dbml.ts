@@ -13,7 +13,7 @@ import type {
     TableSpec,
 } from '../shared/design-builder';
 import { checkExpression } from '../sql/check-expression';
-import { prepareDbml } from './prepare';
+import { fieldKey, prepareDbml } from './prepare';
 
 export interface DbmlImportOptions {
     now?: number;
@@ -86,19 +86,36 @@ function failure(diagnostics: Diagnostic[]): DbmlImportResult {
     return { diagnostics, counts: NONE };
 }
 
+/**
+ * The most DBML text read in one go. The parser in `@dbml/core` is
+ * superlinear: measured 5k tables 4 s, 10k 12 s, 20k 34 s, and the time is
+ * inside Parser.parse. 2 MB is a few thousand tables, a few seconds.
+ */
+export const MAX_DBML_CHARS = 2_000_000;
+
 /** Reads DBML text into a design (IMP-045 to IMP-055). */
 export function importDbml(
     text: string,
     databaseType: DatabaseType,
     options: DbmlImportOptions = {}
 ): DbmlImportResult {
+    if (text.length > MAX_DBML_CHARS) {
+        return failure([
+            {
+                severity: 'error',
+                message: `The DBML is too large to import (${MAX_DBML_CHARS / 1_000_000} MB of text at most). Split it into several files.`,
+                line: 1,
+                column: 1,
+            },
+        ]);
+    }
     const dialect = dialectFor(databaseType);
     const prepared = prepareDbml(text);
     const diagnostics: Diagnostic[] = [];
 
     for (const [key, at] of prepared.arrayFields) {
         if (dialect.capabilities.arrayColumns) continue;
-        const field = key.slice(key.indexOf('.') + 1);
+        const field = key.slice(key.lastIndexOf('.') + 1);
         return failure([
             {
                 severity: 'error',
@@ -170,11 +187,17 @@ export function importDbml(
                 values: e.values.map((v) => v.name),
             });
 
+    // an enum is found by its written name in any letter case: the column's type
+    // is lower-cased below, which would otherwise lose the link to `Status`
+    const enumByLower = new Map<string, string>();
+    for (const s of schemas)
+        for (const e of s.enums) enumByLower.set(e.name.toLowerCase(), e.name);
+
     const allTables = schemas.flatMap((s) =>
         s.tables.map((t) => ({ t, schema: s.name }))
     );
     for (const { t, schema } of allTables) {
-        const key = (f: string): string => `${t.name}.${f}`;
+        const key = (f: string): string => fieldKey(schema, t.name, f);
         const primary = new Set(
             t.fields.filter((f) => f.pk).map((f) => f.name)
         );
@@ -189,7 +212,10 @@ export function importDbml(
             const lower = decl.name.toLowerCase();
             const spec: ColumnSpec = {
                 name: f.name,
-                typeName: dialect.typeSynonyms?.[lower] ?? lower,
+                typeName:
+                    enumByLower.get(lower) ??
+                    dialect.typeSynonyms?.[lower] ??
+                    lower,
                 nullable: !(f.not_null || primary.has(f.name) || f.increment),
                 primary: primary.has(f.name),
                 unique: !!f.unique,

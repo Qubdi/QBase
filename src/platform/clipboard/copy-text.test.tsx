@@ -5,7 +5,6 @@ import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { i18n } from '@/i18n/i18n';
 import { Toaster } from '@/platform/toast/toaster';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { copyText } from './copy-text';
 
 const setClipboard = (value: unknown) =>
@@ -15,7 +14,6 @@ const setClipboard = (value: unknown) =>
     });
 
 afterEach(() => {
-    act(() => resetToasts());
     setClipboard(undefined);
     vi.restoreAllMocks();
 });

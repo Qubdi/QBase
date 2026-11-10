@@ -17,6 +17,7 @@ import { toast } from '@/platform/toast/use-toast';
 import type { DatabaseType } from '@/core/model/database';
 import { dialectFor } from '@/dialects/registry';
 import { exportSql } from '@/formats/sql/export-sql';
+import { selectFilter } from '@/store/selectors';
 import { useEditorStore } from '@/store/store-context';
 import { downloadText, safeFileName } from './download-file';
 import { diagnosticText } from '@/lib/diagnostic-text';
@@ -34,12 +35,16 @@ export const ExportSqlDialog: React.FC<ExportSqlDialogProps> = ({
 }) => {
     const { t } = useTranslation();
     const design = useEditorStore((s) => s.design);
-    const filter = useEditorStore((s) => s.ui.filter);
+    const filter = useEditorStore(selectFilter);
     const [ready, setReady] = useState(false);
 
     // a spinner for a moment, as the script is written (EXP-004)
-    useEffect(() => {
+    const [seenTarget, setSeenTarget] = useState(target);
+    if (target !== seenTarget) {
+        setSeenTarget(target);
         setReady(false);
+    }
+    useEffect(() => {
         if (!target) return;
         const timer = setTimeout(() => setReady(true), 0);
         return () => clearTimeout(timer);
@@ -82,7 +87,7 @@ export const ExportSqlDialog: React.FC<ExportSqlDialogProps> = ({
                         role="alert"
                         className="rounded-md border border-destructive/40 p-4 text-sm text-destructive"
                     >
-                        {problem.message === 'Nothing to export'
+                        {problem.code === 'nothing-to-export'
                             ? t('editor.exporting.sql.nothing')
                             : diagnosticText(problem.message)}
                     </p>

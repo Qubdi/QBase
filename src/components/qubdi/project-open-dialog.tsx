@@ -50,22 +50,38 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
     const [error, setError] = useState<string | null>(null);
     const canEdit = project.role !== 'viewer';
 
-    const load = useCallback(async () => {
-        setError(null);
-        try {
+    const load = useCallback(
+        () =>
             // the server keeps to this project's diagrams, newest first
-            setDiagrams(await api.listDiagrams({ projectId: project.id }));
-        } catch (e) {
-            setError(errorMessage(e));
-            setDiagrams([]);
+            api
+                .listDiagrams({ projectId: project.id })
+                .then(setDiagrams, (e) => {
+                    setError(errorMessage(e));
+                    setDiagrams([]);
+                }),
+        [project.id]
+    );
+    const reload = () => {
+        setError(null);
+        void load();
+    };
+
+    // each opening, and each other project while open, starts empty: reset
+    // while rendering, before the effect below starts the load
+    const [loadFor, setLoadFor] = useState<string | null>(null);
+    const wantedLoad = open ? project.id : null;
+    if (loadFor !== wantedLoad) {
+        setLoadFor(wantedLoad);
+        if (wantedLoad !== null) {
+            setError(null);
+            setDiagrams(null);
+            setQuery('');
+            setSelectedId(null);
         }
-    }, [project.id]);
+    }
 
     useEffect(() => {
         if (!open) return;
-        setDiagrams(null);
-        setQuery('');
-        setSelectedId(null);
         void load();
     }, [open, load]);
 
@@ -131,7 +147,7 @@ export const ProjectOpenDialog: React.FC<ProjectOpenDialogProps> = ({
                             selectedId={selectedId}
                             onSelect={setSelectedId}
                             onOpen={openDiagram}
-                            onChanged={() => void load()}
+                            onChanged={reload}
                         />
                     )}
                 </DialogInternalContent>

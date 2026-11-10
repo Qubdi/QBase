@@ -38,8 +38,10 @@ export class MemoryStorageAdapter implements StorageAdapter {
         return doc ? parse(doc) : undefined;
     }
 
-    async save(design: Design): Promise<void> {
-        this.removed.delete(design.id);
+    async save(design: Design, options?: { update?: boolean }): Promise<void> {
+        if (options?.update) {
+            if (this.removed.has(design.id)) return;
+        } else this.removed.delete(design.id);
         this.docs.set(design.id, JSON.parse(JSON.stringify(serialise(design))));
         this.index.set(design.id, summaryOf(design));
         this.changed();

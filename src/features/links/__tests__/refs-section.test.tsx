@@ -1,10 +1,9 @@
 import React from 'react';
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { applyOk, rng, withTables } from '@/core/testing/helpers';
 import { planLink } from '@/core/commands/plan-link';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { renderPanel } from '@/features/testing/render-panel';
 import { RefsSection } from '../refs-section';
 
@@ -27,8 +26,6 @@ function linked() {
         orders,
     };
 }
-
-afterEach(() => resetToasts());
 
 describe('EDT-182 an empty Refs list', () => {
     it('says No relationships', () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
@@ -42,14 +42,16 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
         checkPassword(password, { minLength, email: email.trim() }).length > 0;
 
     // each time it opens it is a blank form, so a password never lingers
-    useEffect(() => {
+    const [wasOpen, setWasOpen] = useState(open);
+    if (wasOpen !== open) {
+        setWasOpen(open);
         if (open) {
             setEmail('');
             setPassword('');
             setIsAdmin(false);
             setError(null);
         }
-    }, [open]);
+    }
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();

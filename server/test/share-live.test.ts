@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { sessions } from '../src/db/schema.js';
+import { desc, eq } from 'drizzle-orm';
+import { sessions, snapshots } from '../src/db/schema.js';
 import {
     as,
     createDiagram,
@@ -107,7 +108,7 @@ describe("live share stream and the viewer's session", () => {
         try {
             const stream = await openStream(url, { cookie: owner.cookie });
             await stream.readUntil(': connected');
-            await stream.readUntil(': ping', 4000);
+            await stream.readUntil('event: ping', 4000);
             stream.close();
         } finally {
             await ctx.close();
@@ -119,7 +120,33 @@ describe("live share stream and the viewer's session", () => {
         try {
             const stream = await openStream(url);
             await stream.readUntil(': connected');
-            await stream.readUntil(': ping', 4000);
+            await stream.readUntil('event: ping', 4000);
+            stream.close();
+        } finally {
+            await ctx.close();
+        }
+    });
+});
+
+describe('the heartbeat of a live share stream', () => {
+    it('names the newest version, so a publish missed during an outage still reaches the viewer', async () => {
+        const ctx = await createTestApp({ sseHeartbeatSeconds: 1 });
+        try {
+            const owner = await registerUser(ctx.app, 'owner@example.com');
+            const id = await createDiagram(ctx.app, owner);
+            await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/publish`, headers: as(owner), payload: {} });
+            const { token } = (
+                await ctx.app.inject({ method: 'POST', url: `/diagrams/${id}/share-links`, headers: as(owner), payload: { live: true } })
+            ).json();
+            const base = await ctx.app.listen({ port: 0, host: '127.0.0.1' });
+            const stream = await openStream(`${base}/s/${token}/events`);
+            await stream.readUntil('event: ping', 4000);
+            const [latest] = await ctx.db.select().from(snapshots).where(eq(snapshots.diagramId, id)).orderBy(desc(snapshots.version)).limit(1);
+            expect(await stream.readUntil(`"version":${latest.version}`, 4000)).toContain('event: ping');
+            // a version stored while no event reached this process: nothing is emitted
+            const { id: _drop, ...rest } = latest;
+            await ctx.db.insert(snapshots).values({ ...rest, version: latest.version + 1 });
+            expect(await stream.readUntil(`"version":${latest.version + 1}`, 6000)).toContain('event: ping');
             stream.close();
         } finally {
             await ctx.close();

@@ -13,7 +13,10 @@ import { DiagramAccessContext } from '../diagram-access-context';
 import { WorkspaceContext } from '../workspace-context';
 
 vi.mock('@/qbase/use-diagram', () => ({
-    useDiagram: () => ({ currentDiagram: { id: 'd1', name: 'Shop' } }),
+    useDiagram: () => ({
+        currentDiagram: { id: 'd1', name: 'Shop' },
+        getCurrentDiagram: () => ({ id: 'd1', name: 'Shop' }),
+    }),
 }));
 const mfa = vi.hoisted(() => ({ available: false }));
 vi.mock('@/hooks/use-mfa-available', () => ({

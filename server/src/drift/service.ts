@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import {
@@ -21,6 +21,7 @@ import type {
 } from '../introspect/types.js';
 import type { RequestHook } from '../lib/rate-key.js';
 import { openWebhookUrl, postJson } from './webhook.js';
+import { diagramBytesSql } from '../diagrams/summary.js';
 import {
     countBySeverity,
     driftSignature,
@@ -43,6 +44,8 @@ export interface DriftDeps {
     config: Config;
     factory: IntrospectorFactory;
     lookup?: LookupAll;
+    /** where the reason of a refused or failed connection goes; reports get a fixed text */
+    log?: { warn: (obj: object, msg: string) => void };
     /** per-user allowance for checks */
     outboundLimit?: RequestHook;
 }
@@ -70,8 +73,59 @@ export interface SourceKeys {
     columns: Record<string, string>;
 }
 
-// diagrams with a check in progress; per process, like the rate limits
+// Diagrams with a check in progress in this process. It answers at once; the
+// advisory lock below is what keeps two server processes from checking the same
+// diagram at the same time.
 const running = new Set<string>();
+
+// Each check holds one pooled connection for its whole run (the advisory lock),
+// so the number running at once is capped well below the pool size (default 10).
+export const MAX_CONCURRENT_DRIFT_CHECKS = 3;
+
+/**
+ * Takes a Postgres advisory lock on the diagram's drift check, on a connection
+ * held until the returned function is called (a crashed process drops it with
+ * its connection). Null when another server process holds it.
+ */
+export async function holdDriftLock(
+    db: Db,
+    diagramId: string
+): Promise<(() => Promise<void>) | null> {
+    const name = `drift:${diagramId}`;
+    const client = await db.$client.connect();
+    // a connection lost while the check runs would otherwise be an unhandled
+    // 'error' event on a checked-out client, which ends the process
+    const onError = () => undefined;
+    client.on('error', onError);
+    let held: boolean;
+    try {
+        const res = await client.query<{ ok: boolean }>(
+            'select pg_try_advisory_lock(hashtextextended($1, 0)) as ok',
+            [name]
+        );
+        held = res.rows[0]?.ok === true;
+    } catch (err) {
+        client.off('error', onError);
+        client.release(true);
+        throw err;
+    }
+    if (!held) {
+        client.off('error', onError);
+        client.release();
+        return null;
+    }
+    return async () => {
+        const released = await client
+            .query('select pg_advisory_unlock(hashtextextended($1, 0))', [name])
+            .then(
+                () => true,
+                () => false
+            );
+        client.off('error', onError);
+        // a connection that may still hold the lock must not go back to the pool
+        client.release(released ? undefined : true);
+    };
+}
 
 /** Compact view of a report, used for lists and the diagram badge. */
 export function summarizeReport(r: ReportSummaryRow) {
@@ -197,7 +251,7 @@ class DriftError extends Error {}
 export const DRIFT_DIAGRAM_LIMIT = 5 * 1024 * 1024;
 
 /** Why a check did not run: another is running, or what it needs is gone. */
-export type DriftSkip = 'running' | 'not_configured' | 'not_found';
+export type DriftSkip = 'running' | 'busy' | 'not_configured' | 'not_found';
 
 /**
  * Compares the diagram's working copy with the live database and stores a
@@ -211,8 +265,12 @@ export async function runDriftCheck(
 ): Promise<ReportRow | DriftSkip> {
     const { db } = deps;
     if (running.has(diagramId)) return 'running';
+    if (running.size >= MAX_CONCURRENT_DRIFT_CHECKS) return 'busy';
     running.add(diagramId);
+    let release: (() => Promise<void>) | null = null;
     try {
+        release = await holdDriftLock(db, diagramId);
+        if (!release) return 'running';
         const [settings] = await db
             .select()
             .from(driftSettings)
@@ -233,9 +291,7 @@ export async function runDriftCheck(
             // the size first, so a diagram over the cap is never loaded
             const [sized] = await db
                 .select({
-                    size: sql<number>`octet_length(${diagrams.content}::text)`.mapWith(
-                        Number
-                    ),
+                    size: diagramBytesSql.mapWith(Number),
                 })
                 .from(diagrams)
                 .where(eq(diagrams.id, diagramId));
@@ -264,7 +320,7 @@ export async function runDriftCheck(
             if (!deps.config.connectionKey) {
                 throw new DriftError('This server cannot read saved passwords (CONNECTION_KEY is not set).');
             }
-            const password = cryptoBoxFor(deps.config.connectionKey).decrypt(conn.passwordEnc);
+            const password = cryptoBoxFor(deps.config.connectionKey).decrypt(conn.passwordEnc, conn.id);
             secrets = [password];
 
             const params: ConnectionParams = {
@@ -305,12 +361,18 @@ export async function runDriftCheck(
                 hints: renameHints(cs.possibleRenames),
             };
         } catch (err) {
+            if (err instanceof ForbiddenTargetError) {
+                // the reason names an address class: the log only, the report is fixed
+                deps.log?.warn({ reason: err.message }, 'drift check target blocked');
+            }
             outcome = {
                 status: 'error',
                 message:
-                    err instanceof DriftError || err instanceof ForbiddenTargetError
-                        ? err.message
-                        : safeMessage(err, secrets),
+                    err instanceof ForbiddenTargetError
+                        ? 'database address not allowed'
+                        : err instanceof DriftError
+                          ? err.message
+                          : safeMessage(err, secrets),
             };
         }
 
@@ -326,15 +388,39 @@ export async function runDriftCheck(
         // a dismissed report stays dismissed until the drift actually changes
         const dismissedAt = sameAsBefore ? (previous?.dismissedAt ?? null) : null;
 
-        let webhookNote: string | null = null;
         const webhookUrl = settings.webhookUrl
             ? openWebhookUrl(
                   deps.config.secretsKey
                       ? cryptoBoxFor(deps.config.secretsKey, 'webhook')
                       : null,
+                  diagramId,
                   settings.webhookUrl
               )
             : null;
+        // there is a webhook, but it cannot be opened (the key changed, or the
+        // value is damaged): say so in the report instead of staying silent
+        const unreadableNote =
+            settings.webhookUrl && !webhookUrl && outcome.status !== 'clean' && !sameAsBefore
+                ? UNREADABLE_WEBHOOK_NOTE
+                : null;
+
+        const [report] = await db
+            .insert(driftReports)
+            .values({
+                diagramId,
+                runAt: now,
+                status: outcome.status,
+                trigger: 'manual',
+                changes: items,
+                renameHints: outcome.status === 'error' ? [] : outcome.hints,
+                counts,
+                error: outcome.status === 'error' ? outcome.message : null,
+                signature,
+                dismissedAt,
+                webhook: unreadableNote,
+            })
+            .returning();
+
         if (outcome.status !== 'clean' && !sameAsBefore && webhookUrl) {
             const diagramRow = await db
                 .select({ title: diagrams.title })
@@ -356,41 +442,25 @@ export async function runDriftCheck(
                     })),
                     at: now.toISOString(),
                 },
-                { allow: deps.config.introspectAllowHosts, lookup: deps.lookup }
+                {
+                    allow: deps.config.webhookAllowHosts,
+                    lookup: deps.lookup,
+                    onFailure: (reason) =>
+                        deps.log?.warn({ reason }, 'drift webhook failed'),
+                }
             );
-            webhookNote = result.ok
+            // the report is already stored, so a failed insert cannot make the
+            // next check send this change again
+            const note = result.ok
                 ? `sent (${result.status})`
                 : `failed: ${result.error ?? `HTTP ${result.status}`}`;
-        } else if (
-            settings.webhookUrl &&
-            !webhookUrl &&
-            outcome.status !== 'clean' &&
-            !sameAsBefore
-        ) {
-            // there is a webhook, but it cannot be opened (the key changed, or
-            // the value is damaged): say so in the report instead of staying silent
-            webhookNote = UNREADABLE_WEBHOOK_NOTE;
+            await db.update(driftReports).set({ webhook: note }).where(eq(driftReports.id, report.id));
+            report.webhook = note;
         }
-
-        const [report] = await db
-            .insert(driftReports)
-            .values({
-                diagramId,
-                runAt: now,
-                status: outcome.status,
-                trigger: 'manual',
-                changes: items,
-                renameHints: outcome.status === 'error' ? [] : outcome.hints,
-                counts,
-                error: outcome.status === 'error' ? outcome.message : null,
-                signature,
-                dismissedAt,
-                webhook: webhookNote,
-            })
-            .returning();
 
         return report;
     } finally {
         running.delete(diagramId);
+        await release?.();
     }
 }

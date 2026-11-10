@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { SESSION_COOKIE } from '../src/auth/sessions.js';
 import { auditLog, savedConnections } from '../src/db/schema.js';
 import { CryptoBox } from '../src/introspect/crypto-box.js';
@@ -73,6 +73,7 @@ const conn = (over: object = {}) => ({
     database: 'shop',
     user: 'reader',
     password: 'p@ss-w0rd-SECRET',
+    ssl: false, // the default is true; these tests talk to a fake or a local driver
     ...over,
 });
 
@@ -170,6 +171,14 @@ describe('introspect HTTP layer (fake driver)', () => {
         expect(calls.at(-1)!.params.port).toBe(1433);
         await post(alice, '/introspect/catalog', { connection: conn({ port: 6543 }) });
         expect(calls.at(-1)!.params.port).toBe(6543);
+    });
+
+    it('encrypts the connection unless the caller opts out', async () => {
+        const { ssl: _ssl, ...bare } = conn();
+        await post(alice, '/introspect/catalog', { connection: bare });
+        expect(calls.at(-1)!.params.ssl).toBe(true);
+        await post(alice, '/introspect/catalog', { connection: conn({ ssl: false }) });
+        expect(calls.at(-1)!.params.ssl).toBe(false);
     });
 
     it('returns metadata, honouring the table selection and dropping dangling foreign keys', async () => {
@@ -292,12 +301,42 @@ describe('introspect HTTP layer (fake driver)', () => {
                     payload: { connection: conn() },
                 });
                 expect(res.statusCode).toBe(502);
-                expect(res.json().error).toBe('connection_failed');
+                // the code only: no driver text, so nothing to tell refused from
+                // timed out from a wrong password
+                expect(res.json()).toEqual({ error: 'connection_failed' });
                 expect(res.body).not.toContain('p@ss-w0rd-SECRET');
-                expect(res.body).toContain('***');
+                expect(res.body).not.toContain('login failed');
             } finally {
                 await leaky.close();
             }
+        });
+    });
+
+    describe('failures are logged', () => {
+        it('writes a connection failure to the log, without the password', async () => {
+            const logged: string[] = [];
+            const write = vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array) => {
+                logged.push(String(chunk));
+                return true;
+            });
+            const noisy = await createTestApp(
+                { logLevel: 'warn' },
+                { factory: fakeFactory([], { failWith: new Error('login failed password=p@ss-w0rd-SECRET') }) },
+                false
+            );
+            try {
+                const u = await registerUser(noisy.app, 'noisy@example.com');
+                await grant(noisy.app, u, 'editor');
+                await noisy.app.inject({ method: 'POST', url: '/introspect/catalog', headers: as(u), payload: { connection: conn() } });
+            } finally {
+                write.mockRestore();
+                await noisy.close();
+            }
+            const log = logged.join('');
+            expect(log).toContain('introspection connection failed');
+            // the driver's text is kept here, scrubbed, since the caller is not told it
+            expect(log).toContain('login failed');
+            expect(log).not.toContain('p@ss-w0rd-SECRET');
         });
     });
 
@@ -307,7 +346,8 @@ describe('introspect HTTP layer (fake driver)', () => {
             for (const host of ['127.0.0.1', 'localhost', '10.1.2.3', '192.168.0.5', '169.254.169.254', '[::1]', '::1', 'fd00::1', '0.0.0.0']) {
                 const res = await post(alice, '/introspect/catalog', { connection: conn({ host }) });
                 expect(res.statusCode, host).toBe(400);
-                expect(res.json().error, host).toBe('target_blocked');
+                // no message: not the address class, and not the host back
+                expect(res.json(), host).toEqual({ error: 'target_blocked' });
             }
             expect(calls.length).toBe(before);
         });
@@ -316,7 +356,8 @@ describe('introspect HTTP layer (fake driver)', () => {
             const before = calls.length;
             const res = await post(alice, '/introspect/catalog', { connection: conn({ host: 'evil.example.com' }) });
             expect(res.statusCode).toBe(400);
-            expect(res.json().error).toBe('target_blocked');
+            expect(res.json()).toEqual({ error: 'target_blocked' });
+            expect(res.body).not.toMatch(/private|loopback|resolve/);
             expect(calls.length).toBe(before);
         });
 
@@ -446,7 +487,7 @@ describe('introspect HTTP layer (fake driver)', () => {
                 .where(eq(savedConnections.id, savedId));
             expect(row.projectId).toBe(projectId);
             expect(row.passwordEnc).not.toContain('p@ss-w0rd-SECRET');
-            expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc)).toBe('p@ss-w0rd-SECRET');
+            expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc, row.id)).toBe('p@ss-w0rd-SECRET');
 
             const res2 = await list(bob);
             expect(res2.body).not.toContain('p@ss-w0rd-SECRET');
@@ -481,7 +522,7 @@ describe('introspect HTTP layer (fake driver)', () => {
                 .select()
                 .from(savedConnections)
                 .where(eq(savedConnections.id, savedId));
-            expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc)).toBe('p@ss-w0rd-SECRET');
+            expect(new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc, row.id)).toBe('p@ss-w0rd-SECRET');
         });
 
         it('keeps projects independent: other projects cannot see, use or delete it', async () => {
@@ -583,7 +624,7 @@ describe('introspect HTTP layer (fake driver)', () => {
                     .select()
                     .from(savedConnections)
                     .where(eq(savedConnections.id, id));
-                return new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc);
+                return new CryptoBox('a-long-enough-connection-key').decrypt(row.passwordEnc, row.id);
             };
 
             beforeAll(async () => {
@@ -758,6 +799,7 @@ describe('introspect end to end against the real sample database', () => {
         database: SAMPLE_DB,
         user: PG_USER,
         password: PG_PASSWORD,
+        ssl: false, // the sample database speaks plain TCP
         ...over,
     });
 

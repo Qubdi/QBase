@@ -1,16 +1,3 @@
-import { exportFileText } from '@/core/wire/file-export';
-import { diagramToDesign } from '@/qbase/diagram-convert';
-import type { Diagram } from '@/qbase/diagram-types';
-
-/**
- * The text of a diagram file for a diagram in the saved shape: what the JSON
- * export writes, version key and running ids included. QBase code keeps
- * diagrams in that shape; the editor's own export goes through core/wire.
- */
-export function diagramToJSONOutput(diagram: Diagram): string {
-    return exportFileText(diagramToDesign(diagram).design);
-}
-
 /** The biggest diagram file the editor reads, the same as the server's save limit. */
 export const MAX_IMPORT_BYTES = 50 * 1024 * 1024;
 

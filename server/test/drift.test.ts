@@ -1,9 +1,9 @@
 import http from 'node:http';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config.js';
 import { auditLog, driftReports, driftSettings } from '../src/db/schema.js';
-import { DRIFT_DIAGRAM_LIMIT, latestReportSummary, runDriftCheck } from '../src/drift/service.js';
+import { DRIFT_DIAGRAM_LIMIT, MAX_CONCURRENT_DRIFT_CHECKS, latestReportSummary, runDriftCheck } from '../src/drift/service.js';
 import type {
     DatabaseMetadata,
     Introspector,
@@ -188,6 +188,7 @@ describe('drift detection', () => {
             expect((await put(owner, settings({ webhookUrl: 'ftp://x.example.com' }))).json().error).toBe('invalid_webhook');
             expect((await put(owner, settings({ webhookUrl: 'not a url' }))).statusCode).toBe(400);
             expect((await put(owner, settings({ webhookUrl: 'https://user:pw@x.example.com/h' }))).statusCode).toBe(400);
+            expect((await put(owner, settings({ webhookUrl: 'http://x.example.com/h' }))).json().error).toBe('invalid_webhook');
             expect((await put(owner, settings({ connectionId: '00000000-0000-4000-8000-000000000000' }))).json().error).toBe('connection_not_found');
         });
 
@@ -411,7 +412,7 @@ describe('drift detection', () => {
             const [row] = await ctx.db.select().from(diagrams).where(eq(diagrams.id, diagramId));
             await ctx.db
                 .update(diagrams)
-                .set({ content: { ...(row.content as object), padding: 'x'.repeat(DRIFT_DIAGRAM_LIMIT + 1024) } })
+                .set({ content: { ...(row.content as object), padding: 'x'.repeat(DRIFT_DIAGRAM_LIMIT + 1024) }, statContentBytes: null }) // a write the app did not make has no stored size: it is measured
                 .where(eq(diagrams.id, diagramId));
             try {
                 const body = (await check()).json();
@@ -419,7 +420,7 @@ describe('drift detection', () => {
                 expect(body.error).toMatch(/too large/);
                 expect(factoryCalls).toBe(0);
             } finally {
-                await ctx.db.update(diagrams).set({ content: row.content }).where(eq(diagrams.id, diagramId));
+                await ctx.db.update(diagrams).set({ content: row.content, statContentBytes: row.statContentBytes }).where(eq(diagrams.id, diagramId));
             }
             // under the cap again, it compares as before
             expect((await check()).json().status).not.toBe('error');
@@ -441,7 +442,9 @@ describe('drift detection', () => {
             await ctx.db.update((await import('../src/db/schema.js')).savedConnections).set({ host: '10.0.0.5' });
             const body = (await check()).json();
             expect(body.status).toBe('error');
-            expect(body.error).toMatch(/blocked/);
+            // a fixed text: the address class stays in the log
+            expect(body.error).toBe('database address not allowed');
+            expect(body.error).not.toMatch(/private|loopback|10\.0\.0\.5/i);
             expect(factoryCalls).toBe(0);
             await ctx.db.update((await import('../src/db/schema.js')).savedConnections).set({ host: '93.184.216.34' });
         });
@@ -494,6 +497,20 @@ describe('drift detection', () => {
             const dismissed = await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/dismiss`, headers: as(owner) });
             expect(dismissed.json().badge).toBeNull();
             expect((await get()).json().latest.dismissedAt).toBeTruthy();
+        });
+
+        it('logs a dismissal once, and not at all when there was nothing to dismiss', async () => {
+            const dismiss = () => ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/dismiss`, headers: as(owner) });
+            const dismissals = async () =>
+                (await ctx.db.select().from(auditLog)).filter((r) => r.diagramId === diagramId && r.action === 'drift.dismiss').length;
+            await ctx.db.delete(auditLog);
+            await dismiss(); // no report yet
+            expect(await dismissals()).toBe(0);
+            addColumn('phone');
+            await check();
+            await dismiss();
+            await dismiss(); // already dismissed
+            expect(await dismissals()).toBe(1);
         });
 
         it('keeps drift dismissed while it stays the same, and raises it again when it changes', async () => {
@@ -720,6 +737,26 @@ describe('drift detection', () => {
             expect([a.statusCode, b.statusCode].sort()).toEqual([200, 409]);
             expect([a, b].find((r) => r.statusCode === 409)!.json().error).toBe('already_running');
         });
+
+        it('caps checks running at once so they cannot starve the pool', async () => {
+            const ids = [diagramId];
+            for (let i = 0; i < MAX_CONCURRENT_DRIFT_CHECKS; i++) {
+                const made = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/diagrams',
+                    headers: as(owner),
+                    payload: { ...diagramFixture, projectId: await projectFor(ctx.app) },
+                });
+                ids.push(made.json().id);
+            }
+            for (const id of ids) await put(owner, settings(), id);
+            factoryDelayMs = 150;
+            const res = await Promise.all(ids.map((id) => check(owner, id)));
+            const busy = res.filter((r) => r.statusCode === 429);
+            expect(busy).toHaveLength(1);
+            expect(busy[0]!.json().error).toBe('drift_busy');
+            expect(res.filter((r) => r.statusCode === 200)).toHaveLength(MAX_CONCURRENT_DRIFT_CHECKS);
+        });
     });
 });
 
@@ -747,7 +784,7 @@ describe('drift webhooks', () => {
         port = (server.address() as { port: number }).port;
 
         ctx = await createTestApp(
-            { connectionKey: 'a-long-enough-connection-key', secretsKey: 'a-long-enough-connection-key', introspectAllowHosts: ['127.0.0.1'] },
+            { connectionKey: 'a-long-enough-connection-key', secretsKey: 'a-long-enough-connection-key', introspectAllowHosts: ['127.0.0.1'], webhookAllowHosts: ['127.0.0.1'] },
             { factory }
         );
         owner = await registerUser(ctx.app, 'hook@example.com');
@@ -794,6 +831,26 @@ describe('drift webhooks', () => {
         });
         expect((received[0].body.changes as Array<{ summary: string }>)[0].summary).toMatch(/phone/);
         expect(report.webhook).toMatch(/^sent \(200\)/);
+    });
+
+    it('posts nothing when the report cannot be stored, so the next check does not post it twice', async () => {
+        drift('phone');
+        await ctx.db.execute(sql`
+            create function refuse_report() returns trigger language plpgsql as
+            $$ begin raise exception 'refused'; end $$`);
+        await ctx.db.execute(sql`
+            create trigger refuse_report before insert on drift_reports
+            for each row execute function refuse_report()`);
+        try {
+            expect((await check()).statusCode).toBe(500);
+            expect(received).toHaveLength(0);
+        } finally {
+            await ctx.db.execute(sql`drop trigger refuse_report on drift_reports`);
+            await ctx.db.execute(sql`drop function refuse_report()`);
+        }
+        // the change is still news to the next check, which posts it once
+        expect((await check()).statusCode).toBe(200);
+        expect(received).toHaveLength(1);
     });
 
     it('does not post for a clean database', async () => {
@@ -862,11 +919,12 @@ describe('drift webhooks', () => {
                 method: 'PUT',
                 url: `/diagrams/${id}/drift`,
                 headers: as(u),
-                payload: { connectionId: cid, webhookUrl: `http://127.0.0.1:${port}/hook` },
+                payload: { connectionId: cid, webhookUrl: `https://127.0.0.1:${port}/hook` },
             });
             drift('phone');
             const res = await strict.app.inject({ method: 'POST', url: `/diagrams/${id}/drift/check`, headers: as(u) });
-            expect(res.json().webhook).toMatch(/blocked/);
+            // a fixed text: the address class stays in the log
+            expect(res.json().webhook).toBe('failed: host not allowed');
             expect(received).toHaveLength(0);
         } finally {
             await strict.close();
@@ -877,5 +935,54 @@ describe('drift webhooks', () => {
         for (let i = 0; i < 60; i++) drift(`c${i}`);
         await check();
         expect((received[0].body.changes as unknown[]).length).toBe(50);
+    });
+});
+
+describe('drift webhooks and the database allow-list', () => {
+    let ctx: TestCtx;
+    let owner: TestUser;
+    let server: http.Server;
+    let hits = 0;
+
+    beforeAll(async () => {
+        server = http.createServer((_req, res) => {
+            hits++;
+            res.end('ok');
+        });
+        await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+        meta = clone(base);
+        factoryError = null;
+        // the database list allows loopback; the webhook list is left empty
+        ctx = await createTestApp(
+            { connectionKey: 'a-long-enough-connection-key', secretsKey: 'a-long-enough-connection-key', introspectAllowHosts: ['127.0.0.1'] },
+            { factory }
+        );
+        owner = await registerUser(ctx.app, 'hook2@example.com');
+    });
+    afterAll(async () => {
+        await ctx.close();
+        await new Promise((r) => server.close(r));
+    });
+
+    it('does not let a database allow-list open internal webhook targets', async () => {
+        const port = (server.address() as { port: number }).port;
+        const projectId = await projectFor(ctx.app);
+        const diagramId = (await ctx.app.inject({ method: 'POST', url: '/diagrams', headers: as(owner), payload: { ...diagramFixture, projectId } })).json().id;
+        const connectionId = (
+            await ctx.app.inject({ method: 'POST', url: '/introspect/connections', headers: as(owner), payload: { ...conn(), projectId, name: 'c' } })
+        ).json().id;
+        const put = await ctx.app.inject({
+            method: 'PUT',
+            url: `/diagrams/${diagramId}/drift`,
+            headers: as(owner),
+            payload: { connectionId, webhookUrl: `https://127.0.0.1:${port}/hook` },
+        });
+        expect(put.statusCode).toBe(200);
+        // a first check records the baseline; the second sees the change and would post
+        await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/check`, headers: as(owner) });
+        meta.columns.push({ schema: 'public', table: 'customers', name: 'phone', type: 'text', ordinal_position: 99, nullable: true } as DatabaseMetadata['columns'][number]);
+        const report = (await ctx.app.inject({ method: 'POST', url: `/diagrams/${diagramId}/drift/check`, headers: as(owner) })).json();
+        expect(report.webhook).toMatch(/^failed:/);
+        expect(hits).toBe(0);
     });
 });

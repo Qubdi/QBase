@@ -5,6 +5,7 @@ import {
     loadConfig as loadConfigFrom,
     parseCookieSecure,
     parseTrustProxy,
+    startupWarnings,
 } from '../src/config.js';
 
 /** `loadConfig` with the one setting that has no default. */
@@ -107,10 +108,10 @@ describe('two-factor settings', () => {
 
     it('encrypts with SECRETS_KEY, else the connection key, else nothing', () => {
         expect(loadConfig({}).secretsKey).toBeNull();
-        expect(loadConfig({ CONNECTION_KEY: 'c'.repeat(20) }).secretsKey).toBe('c'.repeat(20));
+        expect(loadConfig({ CONNECTION_KEY: 'c'.repeat(32) }).secretsKey).toBe('c'.repeat(32));
         expect(
-            loadConfig({ CONNECTION_KEY: 'c'.repeat(20), SECRETS_KEY: 's'.repeat(20) }).secretsKey
-        ).toBe('s'.repeat(20));
+            loadConfig({ CONNECTION_KEY: 'c'.repeat(32), SECRETS_KEY: 's'.repeat(32) }).secretsKey
+        ).toBe('s'.repeat(32));
     });
 });
 
@@ -123,10 +124,73 @@ describe('boot-time validation', () => {
             { PORT: '70000' },
             { DB_POOL_MAX: '-3' },
             { SESSION_DAYS: 'NaN' },
+            // beyond what a Date can hold, so an expiry would be Invalid Date
+            { SESSION_DAYS: '99999999999' },
+            { SESSION_DAYS: '3651' },
             { PASSWORD_MIN_LENGTH: 'abc' },
         ]) {
             expect(() => loadConfig(env), JSON.stringify(env)).toThrow(ConfigError);
         }
+    });
+
+    it('accepts the longest session a year count allows', () => {
+        expect(loadConfig({ SESSION_DAYS: '3650' }).sessionDays).toBe(3650);
+        // and an expiry that long is a real date
+        expect(Number.isNaN(new Date(Date.now() + 3650 * 86_400_000).getTime())).toBe(false);
+    });
+
+    describe('INTROSPECT_ALLOW_HOSTS', () => {
+        const hosts = (value: string) => loadConfig({ INTROSPECT_ALLOW_HOSTS: value }).introspectAllowHosts;
+
+        it('accepts host names, IP addresses and ranges that are not huge', () => {
+            expect(hosts('db.internal, 10.1.0.5 ,192.168.0.0/16,::1,localhost')).toEqual([
+                'db.internal',
+                '10.1.0.5',
+                '192.168.0.0/16',
+                '::1',
+                'localhost',
+            ]);
+            expect(hosts('10.0.0.0/8')).toEqual(['10.0.0.0/8']);
+            expect(hosts('')).toEqual([]);
+        });
+
+        it('refuses a range wider than /8, which would allow most of the internet', () => {
+            for (const entry of ['0.0.0.0/0', '10.0.0.0/7', '128.0.0.0/1'])
+                expect(() => hosts(entry), entry).toThrow(/too wide/);
+        });
+
+        it('refuses entries that can only be typos, and says which', () => {
+            for (const entry of ['*', 'https://db.internal', 'db internal', '10.0.0.0/33', '10.0.0.0/x', '999.1.1.1/24', 'a/b/c', '-bad'])
+                expect(() => hosts(entry), entry).toThrow(ConfigError);
+            expect(() => hosts('good.example,*')).toThrow(/INTROSPECT_ALLOW_HOSTS entry "\*"/);
+        });
+    });
+
+    describe('WEBHOOK_ALLOW_HOSTS', () => {
+        it('is its own list, validated like the database one', () => {
+            const c = loadConfig({ INTROSPECT_ALLOW_HOSTS: 'db.internal', WEBHOOK_ALLOW_HOSTS: 'hooks.internal, 10.1.0.5' });
+            expect(c.introspectAllowHosts).toEqual(['db.internal']);
+            expect(c.webhookAllowHosts).toEqual(['hooks.internal', '10.1.0.5']);
+            expect(loadConfig({}).webhookAllowHosts).toEqual([]);
+            expect(() => loadConfig({ WEBHOOK_ALLOW_HOSTS: '*' })).toThrow(/WEBHOOK_ALLOW_HOSTS entry "\*"/);
+        });
+    });
+
+    describe('CORS_ORIGIN', () => {
+        const origin = (value: string) => loadConfig({ CORS_ORIGIN: value }).corsOrigin;
+
+        it('accepts one exact origin, or nothing', () => {
+            expect(origin('http://localhost:5173')).toBe('http://localhost:5173');
+            expect(origin('https://editor.example.com')).toBe('https://editor.example.com');
+            expect(origin('')).toBeNull();
+            expect(loadConfig({}).corsOrigin).toBeNull();
+        });
+
+        it('refuses a value that could never match a browser Origin, and says so', () => {
+            for (const value of ['*', 'https://editor.example.com/', 'https://editor.example.com/app', 'editor.example.com', 'ftp://editor.example.com', 'https://a.example.com,https://b.example.com'])
+                expect(() => origin(value), value).toThrow(ConfigError);
+            expect(() => origin('*')).toThrow(/CORS_ORIGIN must be one exact origin/);
+        });
     });
 
     it('names every bad setting at once', () => {
@@ -164,7 +228,27 @@ describe('boot-time validation', () => {
     it('refuses an encryption key under 16 characters', () => {
         expect(() => loadConfig({ SECRETS_KEY: 'short' })).toThrow(/SECRETS_KEY must be at least 16/);
         expect(() => loadConfig({ CONNECTION_KEY: 'short' })).toThrow(/CONNECTION_KEY must be at least 16/);
-        expect(() => loadConfig({ SECRETS_KEY: 'k'.repeat(16) })).not.toThrow();
+        expect(() => loadConfig({ SECRETS_KEY: 'k'.repeat(32) })).not.toThrow();
+    });
+
+    it('refuses a key of 16 to 31 characters unless ALLOW_SHORT_KEYS is set', () => {
+        const short = 'k'.repeat(16);
+        expect(() => loadConfig({ SECRETS_KEY: short })).toThrow(/SECRETS_KEY must be at least 32 characters/);
+        expect(() => loadConfig({ CONNECTION_KEY: 'k'.repeat(31) })).toThrow(/CONNECTION_KEY must be at least 32/);
+        expect(() => loadConfig({ SECRETS_KEY: short, ALLOW_SHORT_KEYS: '1' })).not.toThrow();
+        expect(() => loadConfig({ SECRETS_KEY: short, ALLOW_SHORT_KEYS: 'true' })).not.toThrow();
+        expect(() => loadConfig({ SECRETS_KEY: short, ALLOW_SHORT_KEYS: '0' })).toThrow(ConfigError);
+        // the flag does not lower the floor of 16
+        expect(() => loadConfig({ SECRETS_KEY: 'short', ALLOW_SHORT_KEYS: '1' })).toThrow(/at least 16/);
+    });
+});
+
+describe('SETUP_TOKEN', () => {
+    it('is unset by default, trimmed when given, and at least 16 characters', () => {
+        expect(loadConfig({}).setupToken).toBeNull();
+        expect(loadConfig({ SETUP_TOKEN: '  ' }).setupToken).toBeNull();
+        expect(loadConfig({ SETUP_TOKEN: ' ' + 't'.repeat(16) + ' ' }).setupToken).toBe('t'.repeat(16));
+        expect(() => loadConfig({ SETUP_TOKEN: 'short' })).toThrow(/SETUP_TOKEN must be at least 16 characters/);
     });
 });
 
@@ -229,5 +313,62 @@ describe("the repository's example settings file", () => {
                 expect(value, name).toBe('');
             }
         }
+    });
+});
+
+describe('startupWarnings', () => {
+    it('warns when the cookie flag is auto and no proxy is trusted', () => {
+        const warnings = startupWarnings(loadConfig({}));
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toMatch(/COOKIE_SECURE=auto and TRUST_PROXY is not set/);
+    });
+
+    it('is quiet once a proxy is trusted or the flag is fixed', () => {
+        expect(startupWarnings(loadConfig({ TRUST_PROXY: '1' }))).toEqual([]);
+        expect(startupWarnings(loadConfig({ TRUST_PROXY: '10.0.0.1' }))).toEqual([]);
+        expect(startupWarnings(loadConfig({ COOKIE_SECURE: 'true' }))).toEqual([]);
+        expect(startupWarnings(loadConfig({ COOKIE_SECURE: 'false' }))).toEqual([]);
+    });
+
+    it('warns about an encryption key shorter than 32 characters, once per value', () => {
+        const quiet = { COOKIE_SECURE: 'true' };
+        const short = 'k'.repeat(16);
+        const allow = { ALLOW_SHORT_KEYS: '1' };
+        const one = startupWarnings(loadConfig({ ...quiet, ...allow, CONNECTION_KEY: short }));
+        expect(one).toHaveLength(1);
+        expect(one[0]).toMatch(/^CONNECTION_KEY is 16 characters; use at least 32/);
+        expect(one[0]).not.toContain(short);
+        const two = startupWarnings(
+            loadConfig({ ...quiet, ...allow, CONNECTION_KEY: 'c'.repeat(40), SECRETS_KEY: short })
+        );
+        expect(two).toHaveLength(1);
+        expect(two[0]).toMatch(/^SECRETS_KEY is 16 characters/);
+        expect(
+            startupWarnings(loadConfig({ ...quiet, CONNECTION_KEY: 'c'.repeat(32) }))
+        ).toEqual([]);
+    });
+});
+
+describe('SSE_HEARTBEAT_SECONDS', () => {
+    it('defaults to 25 and takes any value from 1 to 3600', () => {
+        expect(loadConfig({}).sseHeartbeatSeconds).toBe(25);
+        expect(loadConfig({ SSE_HEARTBEAT_SECONDS: '1' }).sseHeartbeatSeconds).toBe(1);
+        expect(loadConfig({ SSE_HEARTBEAT_SECONDS: '3600' }).sseHeartbeatSeconds).toBe(3600);
+    });
+
+    it('refuses a value that would overflow the timer behind it', () => {
+        // above 2147483 seconds setInterval turns the delay into 1 ms ticks
+        expect(() => loadConfig({ SSE_HEARTBEAT_SECONDS: '2147484' })).toThrow(ConfigError);
+        expect(() => loadConfig({ SSE_HEARTBEAT_SECONDS: '3601' })).toThrow(ConfigError);
+        expect(() => loadConfig({ SSE_HEARTBEAT_SECONDS: '0' })).toThrow(ConfigError);
+    });
+});
+
+describe('INTROSPECT_ALLOW_PRIVILEGED', () => {
+    it('is off unless it is exactly 1', () => {
+        expect(loadConfig().introspectAllowPrivileged).toBe(false);
+        expect(loadConfig({ INTROSPECT_ALLOW_PRIVILEGED: '' }).introspectAllowPrivileged).toBe(false);
+        expect(loadConfig({ INTROSPECT_ALLOW_PRIVILEGED: 'true' }).introspectAllowPrivileged).toBe(false);
+        expect(loadConfig({ INTROSPECT_ALLOW_PRIVILEGED: '1' }).introspectAllowPrivileged).toBe(true);
     });
 });

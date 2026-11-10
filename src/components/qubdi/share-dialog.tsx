@@ -57,13 +57,24 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
     // the parent makes a new function each render: only opening starts a load
     const ensureRef = useRef(ensureRemoteId);
-    ensureRef.current = ensureRemoteId;
+    useEffect(() => {
+        ensureRef.current = ensureRemoteId;
+    });
+
+    // each opening starts clean: reset while rendering, before the effect
+    // below starts the load
+    const [openSeen, setOpenSeen] = useState(false);
+    if (openSeen !== open) {
+        setOpenSeen(open);
+        if (open) {
+            setError(null);
+            setCopied(null);
+            setLinks(null);
+        }
+    }
 
     useEffect(() => {
         if (!open) return;
-        setError(null);
-        setCopied(null);
-        setLinks(null);
         // closing, or opening for another diagram, makes a slow reply stale
         let stale = false;
         void (async () => {

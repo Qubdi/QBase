@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CloudCheck, CloudUpload, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
@@ -44,12 +44,15 @@ export const ServerAutosave: React.FC = () => {
     const { syncDiagram } = useQubdi();
     const { currentDiagram } = useDiagram();
     const saverRef = useRef<Autosaver<Revision> | null>(null);
-    const revisionOf = useRef(createRevisionTracker()).current;
+    const [revisionOf] = useState(createRevisionTracker);
     const syncRef = useRef(syncDiagram);
-    syncRef.current = syncDiagram;
     // the saver outlives renders: it reads the latest access from here
     const accessRef = useRef(access);
-    accessRef.current = access;
+    // kept current after each render, before the effects below run
+    useEffect(() => {
+        syncRef.current = syncDiagram;
+        accessRef.current = access;
+    });
     // set while the page is closing, so the final save survives the unload
     const leavingRef = useRef(false);
     // the newest diagram the editor reported, for the check on open
@@ -93,7 +96,7 @@ export const ServerAutosave: React.FC = () => {
                     current.status === 'editor';
                 // "Overwrite": take the server's current version as the base,
                 // so the next save goes on top of it
-                const overwrite =
+                const overwrite: (() => void) | null =
                     conflict && current.status === 'editor'
                         ? () =>
                               void api
@@ -102,7 +105,17 @@ export const ServerAutosave: React.FC = () => {
                                       setBaseUpdatedAt(diagramId, d.updatedAt);
                                       return saver.flush();
                                   })
-                                  .catch(() => undefined)
+                                  .catch(() => {
+                                      // the server's version could not be read:
+                                      // say so and keep the button, instead of a
+                                      // click that does nothing
+                                      if (!disposed)
+                                          setSaveStatus(
+                                              status,
+                                              retry,
+                                              overwrite
+                                          );
+                                  })
                         : null;
                 if (conflict && current.status === 'editor') {
                     // a save of ours that landed without its reply is not a

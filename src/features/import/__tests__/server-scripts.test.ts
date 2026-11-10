@@ -624,6 +624,29 @@ describe('fixes found on live databases', () => {
         }
     });
 
+    it('every script says which index is the primary key (CLI-039)', () => {
+        expect(metadataScriptFor('postgresql')).toContain(
+            "'primary', i.indisprimary"
+        );
+        expect(metadataScriptFor('mysql')).toContain(
+            "s.INDEX_NAME = 'PRIMARY'"
+        );
+        expect(metadataScriptFor('sql_server')).toContain('i.is_primary_key');
+        expect(metadataScriptFor('oracle')).toContain(
+            "pk.constraint_type = 'P'"
+        );
+        expect(metadataScriptFor('sqlite')).toContain("i.origin = 'pk'");
+        // the edition variants are built from the same text
+        for (const [type, edition, needle] of [
+            ['postgresql', 'supabase', "'primary', i.indisprimary"],
+            ['postgresql', 'timescale', "'primary', i.indisprimary"],
+            ['mysql', 'mysql_5_7', "s.INDEX_NAME = 'PRIMARY'"],
+            ['sql_server', 'sql_server_2016_and_below', 'i.is_primary_key'],
+            ['sqlite', 'cloudflare_d1', "i.origin = 'pk'"],
+        ] as const)
+            expect(metadataScriptFor(type, edition)).toContain(needle);
+    });
+
     it('MySQL quotes a string default, keeps numbers and expressions, drops view defaults', () => {
         const script = metadataScriptFor('mysql')!;
         expect(script).toContain('QUOTE(c.COLUMN_DEFAULT)');

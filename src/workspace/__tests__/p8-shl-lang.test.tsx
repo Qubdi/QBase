@@ -79,8 +79,15 @@ describe('which language starts (SHL-094)', () => {
     });
 
     it('a saved choice in localStorage wins over the browser list', async () => {
+        localStorage.setItem('i18nextLng', 'de');
+        expect((await fresh()).language).toBe('de');
+    });
+
+    it('a browser language the app has no file for starts in English (CLI-071)', async () => {
         localStorage.setItem('i18nextLng', 'ja');
-        expect((await fresh()).language).toBe('ja');
+        const instance = await fresh();
+        expect(instance.language).toBe('en');
+        expect(document.documentElement.lang).toBe('en');
     });
 
     it('a lng parameter in the address wins over everything saved', async () => {
@@ -93,11 +100,11 @@ describe('which language starts (SHL-094)', () => {
         localStorage.clear();
         vi.stubGlobal('navigator', {
             ...window.navigator,
-            languages: ['es-MX', 'en'],
-            language: 'es-MX',
+            languages: ['it-IT', 'en'],
+            language: 'it-IT',
         });
         const instance = await fresh();
-        expect(instance.language.startsWith('es')).toBe(true);
+        expect(instance.language.startsWith('it')).toBe(true);
         expect(localStorage.getItem('i18nextLng')).toBeTruthy();
     });
 });

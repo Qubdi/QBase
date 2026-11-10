@@ -30,7 +30,9 @@ describe('editor.sidePanel keys', () => {
 
     it('fills in values', () => {
         expect(
-            i18n.t('editor.sidePanel.clipboard.copiedMany', { count: 3 })
-        ).toBe('3 tables copied');
+            i18n.t('editor.sidePanel.fields.linksRemoved', { count: 3 })
+        ).toBe(
+            'Relationships removed with the field: 3. Undo brings them back.'
+        );
     });
 });

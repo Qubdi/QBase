@@ -28,7 +28,9 @@ export async function createTestApp(
     overrides: Partial<Config> = {},
     introspect?: AppDeps['introspect'],
     /** set false to add a second app without wiping the first one's data */
-    reset = true
+    reset = true,
+    /** the all-routes allowance per user; tests make many calls, so it is high by default */
+    userRateLimit = 100_000
 ): Promise<TestCtx> {
     const config = {
         // tests make many calls; the limits are exercised with explicit overrides
@@ -56,7 +58,11 @@ export async function createTestApp(
             'truncate table audit_log, sessions, project_members, projects, diagrams, saved_connections, drift_settings, drift_reports, users restart identity cascade'
         );
     }
-    const app = buildApp({ config, db, introspect });
+    // the limits count in the database, which a second app shares with the first;
+    // a new app starts with every allowance unspent, as one with its own memory did
+    await pool.query('delete from rate_counters');
+    await pool.query('delete from live_viewers');
+    const app = buildApp({ config, db, introspect, userRateLimit });
     await app.ready();
     return {
         app,

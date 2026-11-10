@@ -11,6 +11,8 @@ export const diagnosticsStrings = {
     foundWithViews: '{{tables}} and {{views}} to import.',
     foundOnly: '{{tables}} to import.',
     nothingToImport: 'Nothing to import',
+    invalidJson:
+        'Invalid JSON. Please correct it or contact us at support@qubdi.dev for help.',
     nothingToExport: 'Nothing to export',
     emptyScript: 'The SQL script is empty',
     noStatements: 'No valid SQL statements found',

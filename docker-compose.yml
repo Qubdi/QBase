@@ -49,13 +49,21 @@ services:
 
   app:
     container_name: qbase-app
-    # the image published on Docker Hub; pin QBASE_VERSION in .env to a release
-    # so an update happens when you decide (`docker compose pull`)
-    image: qubdi/qbase:${QBASE_VERSION:-latest}
+    # the image published on Docker Hub, at the release this file belongs to (the
+    # release workflow keeps the version below current); set QBASE_VERSION in .env
+    # to run another one, and `docker compose pull` to update
+    image: qubdi/qbase:${QBASE_VERSION:-1.20.1} # x-release-please-version
     restart: unless-stopped
     # the server force-quits 10 s after SIGTERM; give it longer than Docker's default
     # 10 s before SIGKILL so a clean shutdown is never cut off
     stop_grace_period: 15s
+    # the server writes nothing to its own disk, binds a port above 1024 and runs
+    # as the unprivileged `node` user, so it needs none of what these take away
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       db:
         condition: service_healthy
@@ -63,9 +71,13 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-qbase}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-qbase}
       CONNECTION_KEY: ${CONNECTION_KEY:?Set CONNECTION_KEY in .env (copy .env.example)}
       SECRETS_KEY: ${SECRETS_KEY:-}
+      ALLOW_SHORT_KEYS: ${ALLOW_SHORT_KEYS:-}
+      SETUP_TOKEN: ${SETUP_TOKEN:-}
       MFA_ENABLED: ${MFA_ENABLED:-true}
       MFA_WINDOW_STEPS: ${MFA_WINDOW_STEPS:-1}
       INTROSPECT_ALLOW_HOSTS: ${INTROSPECT_ALLOW_HOSTS:-}
+      INTROSPECT_ALLOW_PRIVILEGED: ${INTROSPECT_ALLOW_PRIVILEGED:-}
+      WEBHOOK_ALLOW_HOSTS: ${WEBHOOK_ALLOW_HOSTS:-}
       PORT: "3001"
       # the rest of the server's settings (see server/.env.example); the
       # defaults here are the server's own
@@ -81,7 +93,7 @@ services:
       LINT_RATE_LIMIT: ${LINT_RATE_LIMIT:-30}
       OUTBOUND_RATE_LIMIT: ${OUTBOUND_RATE_LIMIT:-20}
       BODY_LIMIT_KB: ${BODY_LIMIT_KB:-1024}
-      DIAGRAM_BODY_LIMIT_MB: ${DIAGRAM_BODY_LIMIT_MB:-50}
+      DIAGRAM_BODY_LIMIT_MB: ${DIAGRAM_BODY_LIMIT_MB:-25}
       SNAPSHOT_KEEP: ${SNAPSHOT_KEEP:-200}
       AUTO_PUBLISH_COALESCE_SECONDS: ${AUTO_PUBLISH_COALESCE_SECONDS:-300}
       DRIFT_REPORT_KEEP: ${DRIFT_REPORT_KEEP:-50}

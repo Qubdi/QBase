@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { diagrams, snapshots } from '../db/schema.js';
-import { diagramHash } from '../lib/hash.js';
+import { diagramHashAsync } from '../lib/hash.js';
 import { snapshotStatsColumns } from './summary.js';
 import { emitPublish } from '../events.js';
 import { canWrite, type Role } from './permissions.js';
@@ -96,7 +96,7 @@ async function currentHash(
                       .from(diagrams)
                       .where(eq(diagrams.id, d.id))
               )[0]?.content;
-    const hash = diagramHash(d.title, content);
+    const hash = await diagramHashAsync(d.title, content);
     // best effort and only into an empty slot: a save that landed meanwhile keeps its own
     await db
         .update(diagrams)
@@ -135,6 +135,25 @@ export async function presentSaved(db: Db, d: SavedDiagram, role: Role) {
     };
 }
 
+/**
+ * What the publish badge needs: the newest version, whether the working copy
+ * differs from it, and the auto-publish switch. Never the content, so the badge
+ * can be refreshed after every save without moving the whole diagram.
+ */
+export async function presentPublishStatus(
+    db: Db,
+    d: Pick<DiagramRow, 'id' | 'title' | 'contentHash' | 'autoPublish'>
+) {
+    const last = await latestSnapshotMeta(db, d.id);
+    return {
+        publishedVersion: last?.version ?? null,
+        publishedAt: last?.publishedAt ?? null,
+        autoPublish: d.autoPublish,
+        unpublishedChanges:
+            !last || last.contentHash !== (await currentHash(db, d)),
+    };
+}
+
 export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
     const common = { id: d.id, ownerId: d.ownerId, projectId: d.projectId, role };
     if (canWrite(role)) {
@@ -167,7 +186,17 @@ export async function presentDiagram(db: Db, d: DiagramRow, role: Role) {
 /** The note of a snapshot made by auto-publish, which is the one kind that may be rewritten. */
 export const AUTO_PUBLISH_NOTE = 'Auto-published on save';
 
-export type SnapshotMeta = Omit<SnapshotRow, 'content' | 'auto'>;
+export type SnapshotMeta = Omit<
+    SnapshotRow,
+    | 'content'
+    | 'auto'
+    | 'statDatabaseType'
+    | 'statDatabaseEdition'
+    | 'statTableCount'
+    | 'statRelationshipCount'
+    | 'statCreatedAt'
+    | 'statContentBytes'
+>;
 
 const snapshotMetaColumns = {
     id: snapshots.id,
@@ -235,7 +264,7 @@ export async function publishSnapshot(
         // every save keeps the hash current; a rename alone leaves it empty
         const hash =
             d.contentHash ??
-            diagramHash(
+            (await diagramHashAsync(
                 d.title,
                 (
                     await tx
@@ -243,7 +272,7 @@ export async function publishSnapshot(
                         .from(diagrams)
                         .where(eq(diagrams.id, diagramId))
                 )[0]?.content
-            );
+            ));
         if (opts.onlyIfChanged && last?.contentHash === hash) return null;
 
         const note = opts.note ?? null;
@@ -259,7 +288,13 @@ export async function publishSnapshot(
             await tx.execute(sql`
                 update snapshots
                 set title = d.title, content = d.content,
-                    content_hash = ${hash}::text, published_at = now()
+                    content_hash = ${hash}::text, published_at = now(),
+                    stat_database_type = d.stat_database_type,
+                    stat_database_edition = d.stat_database_edition,
+                    stat_table_count = d.stat_table_count,
+                    stat_relationship_count = d.stat_relationship_count,
+                    stat_created_at = d.stat_created_at,
+                    stat_content_bytes = d.stat_content_bytes
                 from diagrams d
                 where d.id = ${diagramId}::uuid and snapshots.id = ${last.id}::uuid
             `);
@@ -273,9 +308,13 @@ export async function publishSnapshot(
         const version = (last?.version ?? 0) + 1;
         const inserted = await tx.execute<{ id: string }>(sql`
             insert into snapshots
-                (diagram_id, version, title, content, content_hash, published_by, note, auto)
+                (diagram_id, version, title, content, content_hash, published_by, note, auto,
+                 stat_database_type, stat_database_edition, stat_table_count,
+                 stat_relationship_count, stat_created_at, stat_content_bytes)
             select d.id, ${version}::integer, d.title, d.content, ${hash}::text,
-                   ${userId}::uuid, ${note}::text, ${opts.auto ?? false}::boolean
+                   ${userId}::uuid, ${note}::text, ${opts.auto ?? false}::boolean,
+                   d.stat_database_type, d.stat_database_edition, d.stat_table_count,
+                   d.stat_relationship_count, d.stat_created_at, d.stat_content_bytes
             from diagrams d
             where d.id = ${diagramId}::uuid
             returning id

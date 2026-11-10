@@ -10,6 +10,7 @@ import type { Memo } from './memo';
 import type { Region } from './region';
 import type { Rule } from './rule';
 import type { UserType } from './user-type';
+import type { VisibilityFilter } from './visibility-filter';
 
 /** The whole diagram: one immutable value. Dates are milliseconds. */
 export interface Design {
@@ -30,5 +31,10 @@ export interface Design {
     memos: Collection<Memo>;
     /** legacy view dependencies, carried unchanged */
     dependencies: readonly Dependency[];
+    /**
+     * Which tables are shown on the canvas. Saved with the diagram, so it
+     * survives a refresh and travels with the file. Absent means all shown.
+     */
+    filter?: VisibilityFilter;
     extra?: ExtraKeys;
 }

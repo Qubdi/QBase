@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/platform/ui/button';
 import {
@@ -35,35 +35,54 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
 }) => {
     const { t } = useTranslation();
     const { toast } = useToast();
-    const [sessions, setSessions] = useState<AdminSession[] | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const userId = user?.id;
+    // the list and the error belong to the user they were read for; another
+    // user starts from nothing
+    const [state, setState] = useState<{
+        id: string | undefined;
+        sessions: AdminSession[] | null;
+        error: string | null;
+    }>({ id: userId, sessions: null, error: null });
+    const own = state.id === userId;
+    const sessions = own ? state.sessions : null;
+    const error = own ? state.error : null;
+    const patch = useCallback(
+        (
+            id: string | undefined,
+            next: { sessions?: AdminSession[] | null; error?: string | null }
+        ) =>
+            setState((was) => ({
+                ...(was.id === id
+                    ? was
+                    : { id, sessions: null, error: null as string | null }),
+                ...next,
+            })),
+        []
+    );
 
     useEffect(() => {
-        setSessions(null);
-        setError(null);
         if (!userId) return;
         let stale = false;
         api.adminListUserSessions(userId)
             .then((list) => {
-                if (!stale) setSessions(list);
+                if (!stale) patch(userId, { sessions: list });
             })
             .catch((e: unknown) => {
-                if (!stale) setError(errorMessage(e));
+                if (!stale) patch(userId, { error: errorMessage(e) });
             });
         return () => {
             stale = true;
         };
-    }, [userId]);
+    }, [userId, patch]);
 
     const signOut = async () => {
         if (!user) return;
-        setError(null);
+        patch(user.id, { error: null });
         setBusy(true);
         try {
             const { signedOut } = await api.adminSignOutUser(user.id);
-            setSessions([]);
+            patch(user.id, { sessions: [] });
             onSignedOut();
             toast({
                 title:
@@ -81,7 +100,7 @@ export const UserSessionsDialog: React.FC<UserSessionsDialogProps> = ({
                           ),
             });
         } catch (e) {
-            setError(errorMessage(e));
+            patch(user.id, { error: errorMessage(e) });
         } finally {
             setBusy(false);
         }

@@ -30,7 +30,6 @@ import { Button } from '@/platform/ui/button';
 import { Spinner } from '@/platform/ui/spinner';
 import { copyText } from '@/platform/clipboard/copy-text';
 import { toast } from '@/platform/toast/use-toast';
-import { importDbml } from '@/formats/dbml/import-dbml';
 import { selectPanel } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
 
@@ -98,6 +97,8 @@ export const DbmlSection: React.FC = () => {
     // the text on screen is newer than the parse behind the preview
     const [stale, setStale] = useState(false);
     const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    // text typed, or a discard, after a parse began makes its answer out of date
+    const parseSeq = useRef(0);
     const applyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const backdrop = useRef<HTMLDivElement>(null);
     const gutter = useRef<HTMLDivElement>(null);
@@ -127,6 +128,7 @@ export const DbmlSection: React.FC = () => {
     }, [result.error, text]);
 
     const discard = useCallback(() => {
+        parseSeq.current++;
         clearTimeout(timer.current);
         setStale(false);
         setPending(undefined);
@@ -143,16 +145,32 @@ export const DbmlSection: React.FC = () => {
         [discard]
     );
     const away = !panel.open || panel.section !== 'dbml';
-    useEffect(() => {
+    // the state of an unaccepted preview goes when the section is left
+    const [wasAway, setWasAway] = useState(away);
+    if (wasAway !== away) {
+        setWasAway(away);
         if (away) {
-            discard();
+            setStale(false);
+            setPending(undefined);
+            setErrorLine(undefined);
             setEditing(false);
         }
-    }, [away, discard]);
+    }
+    useEffect(() => {
+        if (away) {
+            parseSeq.current++;
+            clearTimeout(timer.current);
+            clearMarks();
+        }
+    }, [away, clearMarks]);
 
     const parse = useCallback(
-        (source: string) => {
+        async (source: string) => {
             setStale(false);
+            const mine = ++parseSeq.current;
+            // the parser is the heaviest library; it is fetched at the first edit
+            const { importDbml } = await import('@/formats/dbml/import-dbml');
+            if (mine !== parseSeq.current) return;
             const current = store.getState().design;
             const imported = importDbml(source, current.databaseType, {
                 name: current.name,
@@ -189,8 +207,9 @@ export const DbmlSection: React.FC = () => {
     const type = (value: string) => {
         setDraft(value);
         setStale(true);
+        parseSeq.current++;
         clearTimeout(timer.current);
-        timer.current = setTimeout(() => parse(value), PARSE_DELAY_MS);
+        timer.current = setTimeout(() => void parse(value), PARSE_DELAY_MS);
     };
 
     const startEditing = () => {

@@ -183,6 +183,41 @@
       "when": 1794219569107,
       "tag": "0025_mfa_challenge_per_user",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794294104298,
+      "tag": "0026_recovery_code_hash_prefix",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794296417003,
+      "tag": "0027_rate_counters",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794307461619,
+      "tag": "0028_plain_diagram_stats",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794312956220,
+      "tag": "0029_audit_stats_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794316032880,
+      "tag": "0030_live_viewers",
+      "breakpoints": true
     }
   ]
 }

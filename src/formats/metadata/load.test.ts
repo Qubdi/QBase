@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { listOf } from '@/core/model/collection';
 import { loadFromDatabaseMetadata } from './load';
 import { createRelationshipsFromMetadata } from './relationships';
-import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
+import { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import {
     parseMetadataText,
     repairMetadataText,
@@ -269,5 +269,85 @@ describe('IMP-059 the server fixture is accepted by the contract', () => {
         expect(
             listOf(design.entities).filter((e) => e.kind === 'view')
         ).toHaveLength(1);
+    });
+});
+
+describe('CLI-039 a second unique index on the key columns is kept', () => {
+    const idx = (name: string, primary?: boolean) => ({
+        schema: 'public',
+        table: 't',
+        name,
+        column: 'id',
+        index_type: 'btree',
+        unique: true,
+        ...(primary === undefined ? {} : { primary }),
+        direction: 'asc',
+        column_position: 1,
+    });
+    const load = (indexes: ReturnType<typeof idx>[]) => {
+        const meta = DatabaseMetadata.parse({
+            database_name: 'd',
+            version: 'x',
+            tables: [{ schema: 'public', table: 't' }],
+            views: [],
+            columns: [
+                {
+                    schema: 'public',
+                    table: 't',
+                    name: 'id',
+                    type: 'integer',
+                    ordinal_position: 1,
+                    nullable: false,
+                },
+            ],
+            pk_info: [
+                {
+                    schema: 'public',
+                    table: 't',
+                    column: 'id',
+                    pk_def: 'PRIMARY KEY (id)',
+                },
+            ],
+            fk_info: [],
+            indexes,
+        });
+        const { design } = loadFromDatabaseMetadata({
+            databaseType: 'postgresql',
+            databaseMetadata: meta,
+        });
+        const keys = Object.values(design.keys);
+        return {
+            pk: keys.find((k) => k.pk)?.label,
+            others: keys.filter((k) => !k.pk).map((k) => k.label),
+        };
+    };
+
+    it('with no flag, names the primary key after its conventional index', () => {
+        // the user's index is listed first: it must not take the key's name
+        expect(load([idx('t_id_unique'), idx('t_pkey')])).toEqual({
+            pk: 't_pkey',
+            others: ['t_id_unique'],
+        });
+    });
+
+    it('with the flag, the primary index is the key even if its name is unusual', () => {
+        expect(load([idx('t_pkey', false), idx('my_own_key', true)])).toEqual({
+            pk: 'my_own_key',
+            others: ['t_pkey'],
+        });
+    });
+
+    it('with the flag, a unique index on the key columns stays an index', () => {
+        expect(load([idx('t_id_unique', false), idx('t_pkey', true)])).toEqual({
+            pk: 't_pkey',
+            others: ['t_id_unique'],
+        });
+    });
+
+    it('with the flag false everywhere, no index takes the key name', () => {
+        expect(
+            load([idx('t_pkey', false), idx('t_id_unique', false)])
+            // the key stays, unnamed; both unique indexes are the user's
+        ).toEqual({ pk: '', others: ['t_pkey', 't_id_unique'] });
     });
 });

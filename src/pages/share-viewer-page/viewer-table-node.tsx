@@ -118,6 +118,10 @@ export const ViewerTableNode: React.FC<NodeProps> = ({ data }) => {
                                 <KeyRound
                                     size={14}
                                     className="text-amber-500"
+                                    role="img"
+                                    aria-label={t(
+                                        'canvas.fieldCard.primaryKey'
+                                    )}
                                 />
                             ) : null}
                         </span>

@@ -9,6 +9,11 @@ import type { ApplyOptions, Command } from '../commands/command';
 
 export const NOW = Date.UTC(2026, 10, 7, 12, 0, 0);
 
+/** True when `id` has the shape that `newId` produces. */
+export function looksLikeGeneratedId(id: string): boolean {
+    return /^[0-9a-z]{25}$/.test(id);
+}
+
 /** A fresh seeded random source: the same seed always gives the same ids. */
 export function rng(seed = 7) {
     return seededRandom(seed);

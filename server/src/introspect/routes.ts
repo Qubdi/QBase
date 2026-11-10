@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import { safeError } from '../lib/safe-error.js';
+import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import { and, eq, ne } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
@@ -21,20 +24,24 @@ import { connectPostgres } from './postgres.js';
 import { audit } from '../audit/audit.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
 import { UnsafeSqlError } from './readonly-guard.js';
-import { connectSqlServer } from './sqlserver.js';
+import { connectSqlServer, PrivilegedLoginError } from './sqlserver.js';
 import {
     DEFAULT_PORTS,
     type ConnectionParams,
     type IntrospectorFactory,
 } from './types.js';
 
-export const defaultIntrospectorFactory: IntrospectorFactory = (
-    params,
-    target
-) =>
-    params.dialect === 'postgresql'
-        ? connectPostgres(params, target)
-        : connectSqlServer(params, target);
+export const createIntrospectorFactory =
+    (config: Pick<Config, 'introspectAllowPrivileged'>): IntrospectorFactory =>
+    (params, target) =>
+        params.dialect === 'postgresql'
+            ? connectPostgres(params, target)
+            : connectSqlServer(params, target, config.introspectAllowPrivileged);
+
+/** The factory with no privileged logins allowed. */
+export const defaultIntrospectorFactory = createIntrospectorFactory({
+    introspectAllowPrivileged: false,
+});
 
 const connectionFields = z.object({
     dialect: z.enum(['postgresql', 'sqlserver']),
@@ -43,7 +50,8 @@ const connectionFields = z.object({
     database: z.string().min(1).max(128),
     user: z.string().min(1).max(128),
     password: z.string().max(1000),
-    ssl: z.boolean().default(false),
+    // encrypted unless the caller says otherwise; the editor always sends it
+    ssl: z.boolean().default(true),
     trustServerCertificate: z.boolean().default(false),
 });
 
@@ -114,7 +122,7 @@ export const introspectRoutes =
     ({
         db,
         config,
-        factory = defaultIntrospectorFactory,
+        factory = createIntrospectorFactory(config),
         lookup,
         outboundLimit,
     }: IntrospectDeps): FastifyPluginAsync =>
@@ -169,7 +177,7 @@ export const introspectRoutes =
                     return null;
                 }
                 try {
-                    password = box.decrypt(saved.passwordEnc);
+                    password = box.decrypt(saved.passwordEnc, saved.id);
                 } catch {
                     // CONNECTION_KEY was changed after the password was saved
                     reply.code(409).send({ error: 'connection_key_changed' });
@@ -217,19 +225,27 @@ export const introspectRoutes =
                 }
             } catch (err) {
                 if (err instanceof ForbiddenTargetError) {
-                    reply
-                        .code(400)
-                        .send({
-                            error: 'target_blocked',
-                            message: err.message,
-                        });
+                    // the reason (an address class, "did not resolve") stays in the
+                    // log: answering with it would let a caller map the internal network
+                    reply.log.warn({ reason: err.message }, 'introspection target blocked');
+                    reply.code(400).send({ error: 'target_blocked' });
+                } else if (err instanceof PrivilegedLoginError) {
+                    // the operator's setting, not a secret: the caller is told to use a
+                    // login that can only read
+                    reply.log.warn('introspection refused a privileged SQL Server login');
+                    reply.code(400).send({ error: 'privileged_login' });
                 } else if (err instanceof UnsafeSqlError) {
+                    // a bug in a catalog query, not the caller's doing: the log is
+                    // the only place it shows
+                    reply.log.error({ err: safeError(err) }, 'introspection query refused by the read-only guard');
                     reply.code(500).send({ error: 'internal_error' });
                 } else {
-                    reply.code(502).send({
-                        error: 'connection_failed',
-                        message: safeMessage(err, [params.password]),
-                    });
+                    // driver text tells refused from timed out from wrong password, which
+                    // maps what is reachable: it goes to the log, redacted, and the
+                    // caller gets the code only
+                    const message = safeMessage(err, [params.password]);
+                    reply.log.warn({ reason: message }, 'introspection connection failed');
+                    reply.code(502).send({ error: 'connection_failed' });
                 }
                 return null;
             }
@@ -303,7 +319,9 @@ export const introspectRoutes =
             const rows = await db
                 .select()
                 .from(savedConnections)
-                .where(eq(savedConnections.projectId, projectId));
+                .where(eq(savedConnections.projectId, projectId))
+                .orderBy(savedConnections.createdAt)
+                .limit(MAX_UNPAGED_ROWS);
             return rows.map(summarize);
         });
 
@@ -335,9 +353,12 @@ export const introspectRoutes =
             if (dup.length > 0) {
                 return reply.code(409).send({ error: 'name_taken' });
             }
+            // chosen here, not by the database, to be sealed with the password
+            const connectionId = randomUUID();
             const row = await db
                 .insert(savedConnections)
                 .values({
+                    id: connectionId,
                     projectId: body.projectId,
                     ownerId: req.user!.id,
                     name: body.name,
@@ -346,7 +367,7 @@ export const introspectRoutes =
                     port: body.port ?? DEFAULT_PORTS[body.dialect],
                     database: body.database,
                     username: body.user,
-                    passwordEnc: box.encrypt(body.password),
+                    passwordEnc: box.encrypt(body.password, connectionId),
                     ssl: body.ssl,
                     trustServerCertificate: body.trustServerCertificate,
                 })
@@ -436,7 +457,7 @@ export const introspectRoutes =
                             ssl: body.ssl,
                             trustServerCertificate: body.trustServerCertificate,
                             ...(body.password !== undefined
-                                ? { passwordEnc: box!.encrypt(body.password) }
+                                ? { passwordEnc: box!.encrypt(body.password, id) }
                                 : {}),
                         })
                         .where(eq(savedConnections.id, id))

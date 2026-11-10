@@ -95,17 +95,17 @@ export const FieldRow = memo(function FieldRow({
 }: FieldRowProps) {
     const storeApi = useEditorStoreApi();
     const { t } = useTranslation();
-    const [card, setCard] = useState(false);
-    const rowEl = useRef<HTMLDivElement>(null);
+    // the hovered row element while the card is open; the card is placed beside it
+    const [card, setCard] = useState<HTMLElement | null>(null);
 
     // a finger makes the browser send an emulated mouseenter that would keep the
     // card open until the next tap: those are ignored
     const touchedAt = useRef(0);
-    const hoverStart = () => {
+    const hoverStart = (event: React.MouseEvent<HTMLElement>) => {
         if (Date.now() - touchedAt.current < TOUCH_MOUSE_MS) return;
-        setCard(true);
+        setCard(event.currentTarget);
     };
-    const hoverEnd = () => setCard(false);
+    const hoverEnd = () => setCard(null);
 
     const kind = typeKind(column.type.name);
     const highlighted =
@@ -121,7 +121,6 @@ export const FieldRow = memo(function FieldRow({
 
     return (
         <div
-            ref={rowEl}
             data-testid={`field-${column.id}`}
             data-highlighted={highlighted || undefined}
             data-link-end={linkEnd || undefined}
@@ -248,7 +247,7 @@ export const FieldRow = memo(function FieldRow({
             ) : null}
             {card ? (
                 <FieldCard
-                    anchor={rowEl.current}
+                    anchor={card}
                     column={column}
                     entityId={entityId}
                     databaseType={databaseType}

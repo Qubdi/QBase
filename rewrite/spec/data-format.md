@@ -189,7 +189,7 @@ Example (small):
 }
 ```
 
-The per-diagram filter and the editor config are NOT part of the diagram JSON (3.12, 3.13).
+The table filter is part of the diagram JSON as the optional `filter` key (3.12). The editor config is NOT (3.13).
 
 ### 3.2 Data type reference (used by fields)
 
@@ -406,24 +406,28 @@ Stored inside the table's `checkConstraints` array. Only the table row holds the
 | `color` | string | yes | CSS hex color. New notes are `#ffe374`. |
 | `order` | number | no | Position in the side list. Not nullable. |
 
-### 3.12 Diagram filter (local only)
+### 3.12 Diagram filter (`filter` key of the diagram)
 
-One row per diagram in `diagram_filters`, never exported and never sent to the server.
+An optional top-level `filter` object of the diagram JSON. It is saved with the diagram (local
+storage, the server and export files), so the tables a person hides or shows stay that way after
+a refresh and on another machine. It is written only when it hides something; a diagram with no
+`filter` key shows everything.
 
 | Key | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `diagramId` | string | yes (key) | The diagram. |
 | `schemaIds` | array of string | no | Schemas shown. A schema id is the schema name trimmed, lower-cased, with spaces replaced by `_`. |
-| `tableIds` | array of string | no | Individual tables shown. |
+| `tableIds` | array of string | no | Individual tables shown (ids of entries in `tables`). |
 
 Meaning (union): if both keys are absent, everything is shown. Otherwise a table is shown if
 its `id` is in `tableIds`, or its schema id (or the database's default schema when the table
 has none) is in `schemaIds`. An empty `tableIds` array with no `schemaIds` means nothing is
 shown. A filter is tidied when saved: tables whose schema is already listed are dropped from
 `tableIds`; if all tables of a schema are in `tableIds`, the schema moves to `schemaIds`; if
-that makes everything visible, both keys are removed. When no filter is stored and the
-diagram has more than one schema, the editor starts with only the first schema shown
-(`{ "schemaIds": [<first>] }`); otherwise it starts with an empty filter (everything).
+that makes everything visible, the `filter` key is removed. Table ids follow the tables when ids
+are renumbered (export) or replaced (import); an id that names no table is dropped on read. A
+`filter` of the wrong shape is ignored with a warning. Changing the filter is not an undo step.
+When a diagram has no `filter`, the editor shows everything. (The old local `diagram_filters`
+row, if one exists, is read only when the diagram has no `filter`; nothing writes it any more.)
 
 ### 3.13 Editor config (local only)
 
@@ -540,7 +544,7 @@ unchanged) with minimal checks so unknown keys pass through untouched:
   up to 50 (all optional strings).
 - `tables`, `relationships`, `dependencies`, `areas`, `customTypes`, `notes`: each, if
   present, must be an array (items not inspected).
-- Request body limit: 50 MB by default (setting `DIAGRAM_BODY_LIMIT_MB`).
+- Request body limit: 25 MB by default (setting `DIAGRAM_BODY_LIMIT_MB`).
 - Title (separate from `content.name`): trimmed, 1 to 200 chars.
 
 The editor sends content using the diagram's real ids, never the renumbered export ids,

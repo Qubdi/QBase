@@ -17,7 +17,6 @@ import {
     deleteSelection,
     pasteClipboard,
 } from './canvas-actions';
-import { forgetClipboard } from './clipboard';
 import { dropNewItem } from './drop-items';
 import { buildMenu, menuTargets } from './menu-model';
 import type { MenuLine } from './menu-model';
@@ -32,7 +31,6 @@ vi.mock('@/platform/toast/use-toast', () => ({ toast: vi.fn() }));
 
 beforeEach(() => {
     vi.mocked(toast).mockClear();
-    forgetClipboard();
 });
 
 /** happy-dom builds touch events without their points, so they are added by hand. */

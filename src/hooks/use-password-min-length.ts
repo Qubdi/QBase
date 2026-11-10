@@ -20,11 +20,6 @@ const fetchMinLength = (): Promise<number> => {
     return known;
 };
 
-/** Forgets the answer, for tests. */
-export const resetPasswordMinLength = () => {
-    known = null;
-};
-
 /**
  * The fewest characters the server asks of a new password (its
  * PASSWORD_MIN_LENGTH). Until the answer arrives, or if it cannot be had, it is

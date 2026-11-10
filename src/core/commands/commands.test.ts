@@ -2,7 +2,6 @@ import type { Key } from '../model/key';
 import { describe, expect, it } from 'vitest';
 import { listOf } from '../model/collection';
 import type { Design } from '../model/design';
-import { createRegion } from '../model/defaults';
 import { partsOf } from '../model/lookup';
 import {
     applyOk,
@@ -46,7 +45,6 @@ import {
     planAddMemo,
     planAddRegion,
     planAddUserType,
-    planMove,
     planMoveRegion,
     planSetUserTypeKind,
 } from './plan-visual';
@@ -420,12 +418,14 @@ describe('EDT-223 every edit type undoes and redoes exactly', () => {
         ],
         [
             'auto arrange (many moves, one step)',
-            (d) =>
-                planMove(d, [
+            () => ({
+                type: 'entity.move',
+                moves: [
                     { id: 't1', x: 0, y: 0 },
                     { id: 't2', x: 0, y: 500 },
                     { id: 't3', x: 500, y: 0 },
-                ]),
+                ],
+            }),
         ],
         [
             'duplicate',
@@ -1352,29 +1352,6 @@ describe('EDT-200 to EDT-210 areas', () => {
         expect(r.design.entities.byId.t1).toMatchObject({ x: 220, y: 180 });
         expect(r.design.entities.byId.t2).toMatchObject({ x: 520, y: 80 }); // not a member
         expect(sameButDate(applyOk(r.design, r.inverse).design, d)).toEqual(d);
-    });
-
-    it('EDT-036 / EDT-203 a move re-reads membership in the same step', () => {
-        let d = withTables(['a']);
-        const id = d.entities.order[0];
-        d = applyOk(d, {
-            type: 'item.insert',
-            collection: 'regions',
-            item: createRegion(d, {
-                box: { x: 100, y: 100, width: 600, height: 600 },
-                random: rng(1),
-            }),
-        }).design;
-        const into = applyOk(d, planMove(d, [{ id, x: 120, y: 120 }]));
-        expect(into.design.entities.byId[id].regionId).toBe(d.regions.order[0]);
-        const out = applyOk(
-            into.design,
-            planMove(into.design, [{ id, x: 2000, y: 0 }])
-        );
-        expect(out.design.entities.byId[id].regionId).toBeUndefined();
-        expect(
-            sameButDate(applyOk(into.design, into.inverse).design, d)
-        ).toEqual(d);
     });
 });
 

@@ -138,9 +138,11 @@ describe('page shell (SHL-004 to SHL-007)', () => {
         expect(html).toMatch(/<main id="root">\s*(<!--.*?-->\s*)?<noscript>/s);
     });
 
-    it('SHL-007: noindex, robots.txt disallows all, empty favicon, device-width viewport', () => {
+    it('SHL-007: noindex, robots.txt disallows all, favicon, device-width viewport', () => {
         expect(html).toMatch(/<meta name="robots" content="[^"]*noindex/);
-        expect(html).toContain('<link href="data:," rel="icon" />');
+        expect(html).toContain(
+            '<link href="/favicon.svg" rel="icon" type="image/svg+xml" />'
+        );
         expect(html).toContain(
             '<meta name="viewport" content="width=device-width, initial-scale=1" />'
         );

@@ -12,7 +12,7 @@ import {
 import type { DispatchOptions } from '@/core/history/history';
 import type { Design } from '@/core/model/design';
 import type { Id } from '@/core/model/id';
-import { initialFilter } from '@/core/model/visibility-filter';
+import { isUnrestricted } from '@/core/model/visibility-filter';
 import type { VisibilityFilter } from '@/core/model/visibility-filter';
 import type { WireWarning } from '@/core/wire/warning';
 import { ZOOM_MAX, ZOOM_MIN } from './editor-state';
@@ -57,6 +57,8 @@ export interface EditorActions {
     setWarnings(warnings: WireWarning[]): void;
     // ui slice
     select(ids: Id[]): void;
+    /** the field whose own links keep their tables bright (the table must be the one selected) */
+    setFocusColumn(focus: { entityId: Id; columnId: Id } | undefined): void;
     setFilter(filter: VisibilityFilter): void;
     setZoom(zoom: number): void;
     /** tints the fields that use this custom type; undefined clears (EDT-196) */
@@ -78,12 +80,17 @@ export interface EditorStoreOptions {
     readonly?: boolean;
     location?: DiagramLocation;
     warnings?: WireWarning[];
-    /** the filter loaded with the design; the default one is built from the design */
+    /** an older filter kept apart from the design; used only when the design has none */
     filter?: VisibilityFilter;
     panelOpen?: boolean;
     /** the clock, for tests */
     now?: () => number;
 }
+
+const sameFilter = (
+    a: VisibilityFilter | undefined,
+    b: VisibilityFilter | undefined
+) => JSON.stringify(a ?? {}) === JSON.stringify(b ?? {});
 
 const failed = (r: {
     reason: FailureReason | 'empty';
@@ -101,7 +108,12 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
         const applyOptions = () => ({ readOnly: get().session.readonly });
 
         return {
-            design: options.design,
+            design:
+                options.filter &&
+                options.design.filter === undefined &&
+                !isUnrestricted(options.filter)
+                    ? { ...options.design, filter: options.filter }
+                    : options.design,
             history: emptyHistory(),
             ui: {
                 selection: [],
@@ -110,13 +122,6 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                     section: 'tables',
                     visualsTab: 'areas',
                 },
-                filter:
-                    options.filter ??
-                    initialFilter(
-                        options.design.entities.order.map(
-                            (id) => options.design.entities.byId[id]
-                        )
-                    ),
                 zoom: 1,
             },
             session: {
@@ -222,6 +227,7 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
                     ui: {
                         ...s.ui,
                         selection: [],
+                        focusColumn: undefined,
                         highlightedTypeId: undefined,
                     },
                     session: { ...s.session, dirty: false },
@@ -284,11 +290,45 @@ export function createEditorStore(options: EditorStoreOptions): EditorStore {
             },
 
             select(ids) {
-                set((s) => ({ ui: { ...s.ui, selection: ids } }));
+                set((s) => {
+                    // a field stays focused only while its table is the one thing selected
+                    const focus = s.ui.focusColumn;
+                    const keep =
+                        focus && ids.length === 1 && ids[0] === focus.entityId;
+                    return {
+                        ui: {
+                            ...s.ui,
+                            selection: ids,
+                            focusColumn: keep ? focus : undefined,
+                        },
+                    };
+                });
             },
 
+            setFocusColumn(focus) {
+                set((s) =>
+                    s.ui.focusColumn?.entityId === focus?.entityId &&
+                    s.ui.focusColumn?.columnId === focus?.columnId
+                        ? s
+                        : { ui: { ...s.ui, focusColumn: focus } }
+                );
+            },
+
+            // the filter is part of the design (saved with it) but is not an
+            // undo step; a viewer may change it on screen, and it is not saved
             setFilter(filter) {
-                set((s) => ({ ui: { ...s.ui, filter } }));
+                set((s) => {
+                    const next = isUnrestricted(filter) ? undefined : filter;
+                    if (sameFilter(s.design.filter, next)) return s;
+                    const design = { ...s.design, filter: next };
+                    if (!next) delete design.filter;
+                    return {
+                        design,
+                        session: s.session.readonly
+                            ? s.session
+                            : { ...s.session, dirty: true },
+                    };
+                });
             },
 
             setHighlightedType(id) {

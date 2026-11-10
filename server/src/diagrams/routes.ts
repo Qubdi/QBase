@@ -1,3 +1,4 @@
+import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -6,22 +7,25 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, shareLinks, snapshots, users } from '../db/schema.js';
 import { emitLinkChanged } from '../events.js';
+import { getSessionUser, isSecureRequest, sessionTokenOf } from '../auth/sessions.js';
+import { sharedUserLimit } from '../lib/rate-key.js';
+import { gunzipBody } from './gzip-body.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
-import { statsColumns } from './summary.js';
+import { statsColumns, statValues } from './summary.js';
 import {
     AUTO_PUBLISH_NOTE,
     latestSnapshotListing,
     presentDiagram,
+    presentPublishStatus,
     presentSaved,
     publishSnapshot,
 } from './service.js';
-import { diagramHash } from '../lib/hash.js';
+import { exceedsDepth } from '../lib/depth.js';
+import { diagramFingerprintAsync } from '../lib/hash.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { pgDate } from '../lib/pg-date.js';
 
-/** `limit` stand-in when the list is not paged (Postgres' largest integer). */
-const NO_LIMIT = 2_147_483_647;
 /**
  * A list not narrowed to one project is cut to this many diagrams unless the
  * caller asks for another page size: it would read, sort and send every
@@ -47,6 +51,9 @@ const versionParam = z.object({
     version: z.coerce.number().int().positive().max(2147483647),
 });
 
+/** The deepest nesting a saved diagram may have. */
+const MAX_CONTENT_DEPTH = 100;
+
 /**
  * A diagram's content is the editor's own JSON, so unknown keys pass through.
  * What the server relies on is checked: the known collections are arrays and
@@ -65,7 +72,12 @@ const diagramContent = z
         customTypes: z.array(z.unknown()).optional(),
         notes: z.array(z.unknown()).optional(),
     })
-    .passthrough();
+    .passthrough()
+    // a real diagram nests a handful of levels; far deeper is an attempt to
+    // overflow the recursive hash, so it is refused as a bad request
+    .refine((content) => !exceedsDepth(content, MAX_CONTENT_DEPTH), {
+        message: `content nests deeper than ${MAX_CONTENT_DEPTH} levels`,
+    });
 
 const createBody = z.object({
     title: z.string().trim().min(1).max(200),
@@ -109,9 +121,28 @@ const publishBody = z
     .object({ note: z.string().trim().max(500).optional() })
     .default({});
 
+/** Versions one user may publish in a minute (the editor publishes on a click). */
+export const PUBLISH_RATE_LIMIT = 20;
+
 export const diagramRoutes =
-    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds'>): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays' | 'cookieSecure'>): FastifyPluginAsync =>
     async (app) => {
+        const publishLimit = sharedUserLimit(PUBLISH_RATE_LIMIT);
+        // Who is calling is settled before the body is read. A diagram body can
+        // be tens of megabytes: someone with no session is turned away here and
+        // never makes the server buffer, inflate or parse one. (The app's own
+        // lookup, later, sees that the user is already known.)
+        app.addHook('preParsing', async (req, reply) => {
+            req.user = await getSessionUser(
+                db,
+                sessionTokenOf(req.cookies, isSecureRequest(req, config.cookieSecure)),
+                config.sessionIdleDays * 86_400
+            );
+            if (!req.user) {
+                return reply.code(401).send({ error: 'unauthorized' });
+            }
+        });
+
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -170,7 +201,7 @@ export const diagramRoutes =
                           .leftJoin(users, eq(users.id, diagrams.ownerId))
                           .where(only)
                           .orderBy(...order)
-                          .limit(opts.limit ?? NO_LIMIT)
+                          .limit(opts.limit ?? MAX_UNPAGED_ROWS)
                           .offset(opts.offset)
                   ).map((d) => ({
                       ...d,
@@ -194,7 +225,7 @@ export const diagramRoutes =
                       // a viewer sees the published time (below), so the list is
                       // ordered by that, not by the working copy's own edits
                       .orderBy(viewerOrder, diagrams.id)
-                      .limit(opts.limit ?? NO_LIMIT)
+                      .limit(opts.limit ?? MAX_UNPAGED_ROWS)
                       .offset(opts.offset);
             // viewers must not learn about unpublished renames
             const latest = await latestSnapshotListing(
@@ -212,6 +243,8 @@ export const diagramRoutes =
                         ...r,
                         title: last.title,
                         updatedAt: last.publishedAt,
+                        // who owns the working copy is for people who can edit it
+                        ownerEmail: null,
                         // the numbers describe what the viewer can open: the published copy
                         databaseType: last.databaseType,
                         databaseEdition: last.databaseEdition,
@@ -271,6 +304,7 @@ export const diagramRoutes =
                 // that was just sent instead of reading it back
                 const { content: _content, ...columns } =
                     getTableColumns(diagrams);
+                const made = await diagramFingerprintAsync(body.title, body.content);
                 const [row] = await db
                     .insert(diagrams)
                     .values({
@@ -278,7 +312,8 @@ export const diagramRoutes =
                         projectId: body.projectId,
                         title: body.title,
                         content: body.content,
-                        contentHash: diagramHash(body.title, body.content),
+                        contentHash: made.hash,
+                        ...statValues(body.content, made.bytes),
                     })
                     .returning(columns);
                 diagram = { ...row, content: body.content };
@@ -320,6 +355,26 @@ export const diagramRoutes =
             }
         };
 
+        // the publish badge's own read: no content, so refreshing it after
+        // every save does not download the diagram
+        app.get('/:id/publish-status', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const role = await getRole(db, id, req.user!.id);
+            if (!role) return reply.code(404).send({ error: 'not_found' });
+            if (!canWrite(role)) return reply.code(403).send({ error: 'forbidden' });
+            const [d] = await db
+                .select({
+                    id: diagrams.id,
+                    title: diagrams.title,
+                    contentHash: diagrams.contentHash,
+                    autoPublish: diagrams.autoPublish,
+                })
+                .from(diagrams)
+                .where(eq(diagrams.id, id));
+            if (!d) return reply.code(404).send({ error: 'not_found' });
+            return presentPublishStatus(db, d);
+        });
+
         app.get('/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
@@ -338,7 +393,14 @@ export const diagramRoutes =
             return shown;
         });
 
-        app.put('/:id', { bodyLimit: config.diagramBodyLimit }, async (req, reply) => {
+        app.put(
+            '/:id',
+            {
+                bodyLimit: config.diagramBodyLimit,
+                // the editor gzips a big last save so it fits a request sent as the page closes
+                preParsing: gunzipBody(config.diagramBodyLimit),
+            },
+            async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
@@ -369,6 +431,7 @@ export const diagramRoutes =
             // A rename alone leaves it empty: the content is not in hand, and
             // the next read fills it in.
             let contentHash: string | null | undefined;
+            let stats: ReturnType<typeof statValues> | undefined;
             if (changes.content !== undefined) {
                 const title =
                     changes.title ??
@@ -378,10 +441,14 @@ export const diagramRoutes =
                             .from(diagrams)
                             .where(eq(diagrams.id, id))
                     )[0]?.title;
-                contentHash =
-                    title === undefined
-                        ? null
-                        : diagramHash(title, changes.content);
+                // the stats and the size come from the same walk as the hash; with
+                // no title to hash (the row is gone) only the stats are used
+                const made = await diagramFingerprintAsync(
+                    title ?? '',
+                    changes.content
+                );
+                contentHash = title === undefined ? null : made.hash;
+                stats = statValues(changes.content, made.bytes);
             } else if (changes.title !== undefined) {
                 contentHash = null;
             }
@@ -390,6 +457,7 @@ export const diagramRoutes =
                 .set({
                     ...changes,
                     ...(contentHash !== undefined ? { contentHash } : {}),
+                    ...stats,
                     updatedAt: new Date(),
                 })
                 .where(
@@ -449,7 +517,8 @@ export const diagramRoutes =
                 }
             }
             return presentSaved(db, d, role);
-        });
+            }
+        );
 
         // The editor asks for this when it opens the diagram and again every
         // few seconds. `held: false` means someone else is editing: open read-only.
@@ -506,7 +575,9 @@ export const diagramRoutes =
             return reply.code(204).send();
         });
 
-        app.post('/:id/publish', async (req, reply) => {
+        // each publish stores a snapshot of up to the body limit: a script that
+        // loops over it would fill the table, so a user gets a few a minute
+        app.post('/:id/publish', { preHandler: publishLimit }, async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
@@ -536,7 +607,7 @@ export const diagramRoutes =
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
-            return db
+            const rows = await db
                 .select({
                     version: snapshots.version,
                     note: snapshots.note,
@@ -549,6 +620,8 @@ export const diagramRoutes =
                 .orderBy(desc(snapshots.version))
                 // SNAPSHOT_KEEP=0 keeps every version, so the list is bounded here
                 .limit(MAX_LISTED_VERSIONS);
+            // who published is for people who can edit; a viewer sees the versions
+            return canWrite(role) ? rows : rows.map((r) => ({ ...r, publishedBy: null }));
         });
 
         app.get('/:id/versions/:version', async (req, reply) => {

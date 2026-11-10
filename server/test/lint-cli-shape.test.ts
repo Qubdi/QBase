@@ -39,4 +39,12 @@ describe('lint CLI input shape', () => {
         expect([0, 1]).toContain(r.code);
         expect(r.err).toBe('');
     });
+
+    it('exits 2 for a field without a name, and for content whose tables are not a list', () => {
+        const nameless = { id: 'f', type: { name: 'integer' } };
+        expect(run({ tables: [{ id: 't', name: 'a', fields: [nameless] }] }).code).toBe(2);
+        expect(run({ content: { tables: 'nope' } }).code).toBe(2);
+        expect(run({ content: { tables: {} } }).code).toBe(2);
+        expect(run({ content: { nothing: true } }).code).toBe(2);
+    });
 });

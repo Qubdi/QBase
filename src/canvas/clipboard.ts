@@ -19,7 +19,3 @@ export function recall(): { clip: Clip; pastes: number } | undefined {
 export function countPaste(): void {
     if (held) held.pastes += 1;
 }
-
-export function forgetClipboard(): void {
-    held = undefined;
-}

@@ -8,7 +8,6 @@ import {
     hasLogo,
     imageFileName,
     logoPlacement,
-    outputSize,
 } from './export-options';
 
 describe('EXP-060 to EXP-066 image export options', () => {
@@ -59,7 +58,6 @@ describe('EXP-060 to EXP-066 image export options', () => {
             { x: 500, y: 300, width: 200, height: 100 },
         ])!;
         expect(b).toEqual({ x: -50, y: -50, width: 800, height: 500 });
-        expect(outputSize(b, 2)).toEqual({ width: 1600, height: 1000 });
         expect(diagramBounds([])).toBeUndefined();
     });
     it('EXP-066 logo size and placement', () => {

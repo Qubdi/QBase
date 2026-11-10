@@ -1,10 +1,5 @@
 export const it = {
     translation: {
-        menu: {
-            actions: {
-                save: 'Salva',
-            },
-        },
         editor: {
             common: {
                 copyFailed: {
@@ -25,6 +20,11 @@ export const it = {
                 notFound: {
                     title: 'Manca qualcosa.',
                     body: 'Non è stato possibile trovare la pagina cercata. Potrebbe essere stata spostata oppure il link potrebbe essere errato.',
+                },
+                problem: {
+                    title: 'Qualcosa è andato storto.',
+                    body: 'Non è stato possibile mostrare la pagina. Ricarica per riprovare; i diagrammi salvati non sono interessati.',
+                    reload: 'Ricarica',
                 },
                 colorPicker: {
                     change: 'Cambia colore',
@@ -265,6 +265,8 @@ export const it = {
                 foundWithViews: '{{tables}} e {{views}} da importare.',
                 foundOnly: '{{tables}} da importare.',
                 nothingToImport: 'Niente da importare',
+                invalidJson:
+                    'JSON non valido. Correggilo o contattaci a support@qubdi.dev.',
                 nothingToExport: 'Niente da esportare',
                 emptyScript: 'Lo script SQL è vuoto',
                 noStatements: 'Nessuna istruzione SQL valida trovata',
@@ -592,8 +594,6 @@ export const it = {
                     filter: 'Filtra',
                     clearFilter: 'Cancella filtro',
                     focus: 'Metti a fuoco sul canvas',
-                    more: 'Altre azioni',
-                    rename: 'Rinomina',
                     saveName: 'Salva nome',
                     dragHandle: 'Trascina per riordinare',
                     cancel: 'Annulla',
@@ -625,7 +625,6 @@ export const it = {
                     checks: 'Vincoli check',
                     description: 'Descrizione',
                     noDescription: 'Nessuna descrizione',
-                    color: 'Colore della tabella',
                     duplicateName:
                         'In questo schema esiste già un\'altra tabella chiamata "{{name}}".',
                     selectSchema: {
@@ -674,7 +673,6 @@ export const it = {
                     delete: 'Elimina campo',
                     addNote: 'Aggiungi nota',
                     showComment: 'Mostra la descrizione del campo',
-                    foreignKey: 'Chiave esterna',
                     none: 'Questa tabella non ha campi',
                 },
                 indexes: {
@@ -805,7 +803,6 @@ export const it = {
                     emptyNote: 'Nota vuota',
                     noteActions: 'Azioni della nota',
                     deleteNote: 'Elimina nota',
-                    colour: 'Colore',
                 },
                 filters: {
                     title: 'Filtra tabelle',
@@ -820,26 +817,6 @@ export const it = {
                     createToStart: 'Creare una tabella per iniziare',
                     noSchema: 'Nessuno schema',
                     noArea: 'Nessuna area',
-                },
-                hover: {
-                    type: 'tipo',
-                    nullability: 'null',
-                    nullable: 'ammette null',
-                    notNull: 'NOT NULL',
-                    key: 'chiave',
-                    primaryKey: 'chiave primaria',
-                    unique: 'univoco',
-                    autoIncrement: 'auto increment',
-                    default: 'predefinito',
-                    check: 'check',
-                    references: 'fa riferimento a',
-                    referencedBy: 'referenziato da',
-                },
-                clipboard: {
-                    copied: 'Tabella copiata',
-                    copiedMany: '{{count}} tabelle copiate',
-                    pasted: 'Tabella incollata',
-                    pastedMany: '{{count}} tabelle incollate',
                 },
                 dbml: {
                     title: 'DBML',

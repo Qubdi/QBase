@@ -1,37 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DatabaseEdition, DatabaseType } from '@/qbase/diagram-types';
-import {
-    countLabel,
-    formatWhen,
-    toDatabaseEdition,
-    toDatabaseType,
-} from '../diagram-summary';
-
-describe('toDatabaseType', () => {
-    it('accepts every database the editor knows', () => {
-        for (const t of Object.values(DatabaseType)) {
-            expect(toDatabaseType(t)).toBe(t);
-        }
-    });
-
-    it('falls back to PostgreSQL for anything else', () => {
-        expect(toDatabaseType(null)).toBe(DatabaseType.POSTGRESQL);
-        expect(toDatabaseType(undefined)).toBe(DatabaseType.POSTGRESQL);
-        expect(toDatabaseType('')).toBe(DatabaseType.POSTGRESQL);
-        expect(toDatabaseType('db2')).toBe(DatabaseType.POSTGRESQL);
-    });
-});
-
-describe('toDatabaseEdition', () => {
-    it('accepts known editions and drops the rest', () => {
-        expect(toDatabaseEdition('supabase')).toBe(
-            DatabaseEdition.POSTGRESQL_SUPABASE
-        );
-        expect(toDatabaseEdition('nope')).toBeUndefined();
-        expect(toDatabaseEdition(null)).toBeUndefined();
-        expect(toDatabaseEdition('')).toBeUndefined();
-    });
-});
+import { countLabel, formatWhen } from '../diagram-summary';
 
 describe('formatWhen', () => {
     it('formats a valid date for the viewer', () => {

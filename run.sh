@@ -16,7 +16,7 @@
 #   bash run.sh ps | logs           status, or follow the app's log
 #
 # version: a tag such as 1.0.5 or 1.0.5-rc1. Without one, QBASE_VERSION from the
-# environment or .env is used, else "latest". Set NO_COLOR=1 for plain output.
+# environment or .env is used, else the version docker-compose.yml names. Set NO_COLOR=1 for plain output.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -57,11 +57,14 @@ confirm() {
     [[ "$answer" =~ ^[Yy]$ ]] || { warn "Cancelled."; return 1; }
 }
 
-# The version from .env or the environment, else latest
+# The version from .env or the environment, else the one docker-compose.yml names
 default_version() {
     local version="${QBASE_VERSION:-}"
     if [[ -z "$version" && -f .env ]]; then
         version=$(sed -n 's/^QBASE_VERSION=//p' .env | tail -n 1 | tr -d '\r"'"'")
+    fi
+    if [[ -z "$version" ]]; then
+        version=$(sed -n 's/.*QBASE_VERSION:-\([^}]*\)}.*/\1/p' docker-compose.yml | head -n 1)
     fi
     echo "${version:-latest}"
 }
@@ -81,7 +84,7 @@ push() {
         esac
     done
     if [[ -z "$version" || "$version" == "latest" ]]; then
-        err "Give the version to push, e.g. 1.0.5 (latest is moved only by the release workflow)."
+        err "Give the version to push, e.g. 1.0.5 (latest is moved only by the release workflow, and never by a prerelease)."
         return 1
     fi
     if $all_platforms; then
@@ -89,8 +92,6 @@ push() {
         set_version "$version"
         confirm "Build $(tag "$version") for amd64 and arm64 and push it to Docker Hub?" || return 1
         report docker buildx build --platform linux/amd64,linux/arm64 \
-            --build-arg "VITE_HOST_URL=${VITE_HOST_URL:-}" \
-            --build-arg "VITE_APP_URL=${VITE_APP_URL:-}" \
             -t "$IMAGE:$version" --push .
     else
         step "Push to Docker Hub"

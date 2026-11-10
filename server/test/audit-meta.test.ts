@@ -120,6 +120,7 @@ describe('audit meta: what an action was done to', () => {
             targetId = created.json().id;
             expect((await latest('user.create')).meta).toEqual({
                 targetUserId: targetId,
+                isAdmin: false,
             });
         });
 
@@ -161,6 +162,8 @@ describe('audit meta: what an action was done to', () => {
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
                 isAdmin: true,
                 password: 'A-third-password-1!',
+                // the target is an admin by now: resetting its password needs the acting admin's own
+                adminPassword: 'Password-123!',
             });
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,
@@ -295,6 +298,21 @@ describe('audit meta: what an action was done to', () => {
             expect((await latest('share.update')).meta).toEqual({
                 linkId,
                 access: 'signed_in',
+            });
+
+            // expiry and live are recorded when the request changed them
+            const expiresAt = new Date(Date.now() + 86_400_000).toISOString();
+            await call(
+                admin,
+                'PATCH',
+                `/diagrams/${diagramId}/share-links/${linkId}`,
+                { expiresAt, live: true }
+            );
+            expect((await latest('share.update')).meta).toEqual({
+                linkId,
+                access: 'signed_in',
+                expiresAt,
+                live: true,
             });
 
             const again = await call(

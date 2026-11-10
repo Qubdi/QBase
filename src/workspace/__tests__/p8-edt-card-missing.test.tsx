@@ -3,7 +3,6 @@ import { act, fireEvent, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { colorOptions } from '@/lib/colors';
 import { CUSTOM_COLORS_KEY } from '@/lib/custom-colors';
-import { resetCustomColorsForTests } from '@/hooks/use-custom-colors';
 import { applyOk, withTables } from '@/core/testing/helpers';
 import { planAddColumn } from '@/core/commands/plan-column';
 import { renderPanel } from '@/features/testing/render-panel';
@@ -12,7 +11,6 @@ import { EntityEditor } from '../entity-editor';
 
 beforeEach(() => {
     localStorage.clear();
-    resetCustomColorsForTests();
 });
 
 const card = (design: ReturnType<typeof withTables>, index = 0) => {

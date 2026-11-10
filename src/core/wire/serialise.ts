@@ -7,6 +7,7 @@ import type { Link } from '../model/link';
 import { anchorExists, memoPosition } from '../model/memo';
 import type { Memo } from '../model/memo';
 import type { Region } from '../model/region';
+import { isUnrestricted } from '../model/visibility-filter';
 import type { Rule } from '../model/rule';
 import type { UserType } from '../model/user-type';
 import type { RawRecord } from './record-reader';
@@ -243,6 +244,16 @@ export function serialise(design: Design): RawRecord {
         notes: design.memos.order.map((id, i) =>
             wireMemo(design, design.memos.byId[id], i)
         ),
+        filter: isUnrestricted(design.filter)
+            ? undefined
+            : {
+                  ...(design.filter?.schemaIds
+                      ? { schemaIds: [...design.filter.schemaIds] }
+                      : {}),
+                  ...(design.filter?.tableIds
+                      ? { tableIds: [...design.filter.tableIds] }
+                      : {}),
+              },
         createdAt: new Date(design.createdAt).toISOString(),
         updatedAt: new Date(design.updatedAt).toISOString(),
     });

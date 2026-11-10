@@ -70,6 +70,7 @@ function classifyV4(b: number[]): IpClass {
     if (a >= 240) return 'reserved';
     if (a === 192 && c === 0 && b[2] === 0) return 'reserved';
     if (a === 192 && c === 0 && b[2] === 2) return 'reserved';
+    if (a === 192 && c === 88 && b[2] === 99) return 'reserved'; // 6to4 relay anycast, deprecated
     if (a === 198 && (c === 18 || c === 19)) return 'reserved';
     if (a === 198 && c === 51 && b[2] === 100) return 'reserved';
     if (a === 203 && c === 0 && b[2] === 113) return 'reserved';
@@ -121,6 +122,13 @@ export function classifyIp(ip: string): IpClass {
     if (b[0] === 0x20 && b[1] === 0x01 && b[2] === 0x0d && b[3] === 0xb8) {
         return 'reserved'; // documentation range
     }
+    if (b[0] === 0x3f && b[1] === 0xff && (b[2] & 0xf0) === 0) {
+        return 'reserved'; // documentation range, 3fff::/20 (RFC 9637)
+    }
+    if (b[0] === 0x01 && b.slice(1, 8).every((x) => x === 0)) {
+        return 'reserved'; // discard-only, 100::/64
+    }
+    if (b[0] === 0x5f && b[1] === 0) return 'reserved'; // SRv6 segment ids, 5f00::/16
     return 'public';
 }
 
@@ -141,6 +149,31 @@ export function matchesIpEntry(ip: string, entry: string): boolean {
         );
     }
     return entry.toLowerCase() === ip.toLowerCase();
+}
+
+/** The widest IPv4 range an allow-list entry may name: a /8 is 16 million addresses. */
+export const MIN_ALLOW_CIDR_BITS = 8;
+
+/**
+ * Why `entry` is not a usable INTROSPECT_ALLOW_HOSTS entry (a host name, an IP
+ * or an IPv4 CIDR), or null when it is. A typo would otherwise match nothing
+ * and a `0.0.0.0/0` would match everything, both without a word.
+ */
+export function allowEntryProblem(entry: string): string | null {
+    if (entry.includes('/')) {
+        const [base, bitsText, ...extra] = entry.split('/');
+        if (extra.length > 0 || !net.isIPv4(base)) return 'a range must be an IPv4 address and a prefix length, like 10.1.0.0/16';
+        if (!/^\d{1,2}$/.test(bitsText) || Number(bitsText) > 32) return 'the prefix length must be 0 to 32';
+        if (Number(bitsText) < MIN_ALLOW_CIDR_BITS) {
+            return `/${bitsText} is far too wide: ranges must be /${MIN_ALLOW_CIDR_BITS} or narrower`;
+        }
+        return null;
+    }
+    if (net.isIP(entry) !== 0) return null;
+    // a host name: letters, digits, dots and hyphens
+    return /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i.test(entry) && !entry.includes('..')
+        ? null
+        : 'not a host name, an IP address or a range';
 }
 
 export interface ResolvedTarget {

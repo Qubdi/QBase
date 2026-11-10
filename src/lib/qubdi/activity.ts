@@ -3,6 +3,7 @@
 import type { ActivityGroup, ActivityItem } from './api';
 import { i18n } from '@/i18n/i18n';
 import { ago } from './when';
+import { uiLocale } from '@/lib/qubdi/locale';
 
 /** One piece of wording, from `qubdi.adminProjects.sentence` unless the path says otherwise. */
 const s = (key: string, options?: Record<string, unknown>): string =>
@@ -155,9 +156,13 @@ export function describeActivity(item: ActivityItem): Segment[] {
             return [who, text(w('userSignInFailed'))];
         case 'user.password_check_failed':
             return [who, text(w('userPasswordCheckFailed'))];
+        case 'user.locked':
+            return [who, text(w('userLocked'))];
         case 'user.password_change':
             return [who, text(w('userPasswordChange'))];
 
+        case 'mfa.setup':
+            return [who, text(w('mfaSetup'))];
         case 'mfa.enable':
             return [who, text(w('mfaEnable'))];
         case 'mfa.disable':
@@ -340,7 +345,7 @@ export function dayLabel(date: Date, now: Date = new Date()): string {
     const yesterday = new Date(now);
     yesterday.setDate(now.getDate() - 1);
     if (key === dayKey(yesterday)) return s('activity.yesterday');
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(uiLocale(), {
         weekday: 'short',
         day: 'numeric',
         month: 'short',

@@ -1,17 +1,15 @@
 import { buildApp } from './app.js';
-import { ConfigError, loadConfig } from './config.js';
+import { safeError } from './lib/safe-error.js';
+import { ConfigError, loadConfig, startupWarnings } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
-import { resealPlaintextWebhooks } from './drift/reseal.js';
 import { startEventBridge } from './events.js';
+import { loadEnvFile } from './lib/env-file.js';
 import { startMaintenance } from './maintenance.js';
 import { createShutdown } from './shutdown.js';
+import { runStartupTasks } from './startup.js';
 
 // Settings live in server/.env (see .env.example); real environment variables win
-try {
-    process.loadEnvFile();
-} catch {
-    // no .env file: use the environment as is
-}
+loadEnvFile();
 
 let config: ReturnType<typeof loadConfig>;
 try {
@@ -21,6 +19,7 @@ try {
     console.error(err.message);
     process.exit(1);
 }
+for (const warning of startupWarnings(config)) console.warn(`Warning: ${warning}`);
 // migrations get their own connection with no statement limit: one that
 // rewrites a large table can take longer than any request should. Two
 // connections: one holds the lock that makes replicas take turns, one migrates
@@ -38,19 +37,8 @@ const { db, pool } = createDb(config.databaseUrl, {
     statementTimeoutMs: config.dbStatementTimeoutSeconds * 1000,
 });
 
-// webhook URLs saved before encryption existed are sealed now. A failure here
-// leaves them readable as before; it must not stop the server from starting.
-if (config.secretsKey) {
-    try {
-        const sealed = await resealPlaintextWebhooks(db, config.secretsKey);
-        if (sealed > 0) console.log(`Encrypted ${sealed} saved webhook URL(s)`);
-    } catch (err) {
-        console.error(
-            'Could not encrypt saved webhook URLs:',
-            err instanceof Error ? err.message : err
-        );
-    }
-}
+// re-seals old secrets and, on an empty server, makes the first-run setup token
+config = await runStartupTasks(db, config);
 
 const app = buildApp({ config, db });
 await app.listen({ port: config.port, host: config.host });
@@ -76,3 +64,13 @@ const shutdown = createShutdown({
 });
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
+// an error nobody handled: log it and close in order (streams, pool) instead of
+// dying half way, then exit with 1 so a process manager restarts the server
+process.on('unhandledRejection', (reason) => {
+    app.log.error({ err: safeError(reason) }, 'unhandled rejection');
+    void shutdown('unhandledRejection', true);
+});
+process.on('uncaughtException', (err) => {
+    app.log.error({ err: safeError(err) }, 'uncaught exception');
+    void shutdown('uncaughtException', true);
+});

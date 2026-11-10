@@ -1,4 +1,5 @@
 import { i18n } from '@/i18n/i18n';
+import { INVALID_JSON_MESSAGE } from '@/formats/metadata/repair-text';
 
 // The import and export engines write plain English. People read it through
 // this file: each known message is matched and shown from the language files,
@@ -20,6 +21,7 @@ const P = 'editor.diagnostics.';
 
 const RULES: Rule[] = [
     exact('Nothing to import', 'nothingToImport'),
+    exact(INVALID_JSON_MESSAGE, 'invalidJson'),
     exact('Nothing to export', 'nothingToExport'),
     exact('SQL script is empty', 'emptyScript'),
     exact('No valid SQL statements found', 'noStatements'),

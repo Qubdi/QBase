@@ -1,6 +1,14 @@
 import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import { listOf } from '@/core/model/collection';
 import { sampleS1 } from '@/dialects/testing/sample-designs';
 import { usePreviewStore } from '@/features/dbml-diff/preview-store';
@@ -23,10 +31,22 @@ function setup(readonly = false) {
     return view;
 }
 const box = () => screen.getByLabelText('DBML text') as HTMLTextAreaElement;
-const type = (value: string) => {
-    fireEvent.change(box(), { target: { value } });
-    act(() => void vi.advanceTimersByTime(PARSE_DELAY_MS));
+// the parser loads on demand, so a parse finishes a few microtasks after its timer
+const advance = async (ms: number) => {
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(ms);
+    });
 };
+
+const type = async (value: string) => {
+    fireEvent.change(box(), { target: { value } });
+    await advance(PARSE_DELAY_MS);
+};
+
+// the section fetches the parser at the first edit; load it before timers are faked
+beforeAll(async () => {
+    await import('@/formats/dbml/import-dbml');
+});
 
 beforeEach(() => {
     vi.useFakeTimers();
@@ -37,7 +57,7 @@ afterEach(() => {
 });
 
 describe('EDT-238 EDT-239 the DBML section', () => {
-    it('is read-only text with an Edit button for an editable design', () => {
+    it('is read-only text with an Edit button for an editable design', async () => {
         setup();
         expect(
             screen.getByRole('textbox', { name: 'DBML' }).textContent
@@ -49,12 +69,12 @@ describe('EDT-238 EDT-239 the DBML section', () => {
         expect(screen.queryByLabelText('DBML text')).toBeNull();
     });
 
-    it('has no Edit button when the design is read-only', () => {
+    it('has no Edit button when the design is read-only', async () => {
         setup(true);
         expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     });
 
-    it('Edit opens the text; with no diff the button reads View and leaves', () => {
+    it('Edit opens the text; with no diff the button reads View and leaves', async () => {
         setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
         expect(box().value).toBe(original);
@@ -65,22 +85,22 @@ describe('EDT-238 EDT-239 the DBML section', () => {
         expect(screen.queryByLabelText('DBML text')).toBeNull();
     });
 
-    it('does not parse before the pause', () => {
+    it('does not parse before the pause', async () => {
         setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
         fireEvent.change(box(), { target: { value: added } });
-        act(() => void vi.advanceTimersByTime(PARSE_DELAY_MS - 100));
+        await advance(PARSE_DELAY_MS - 100);
         expect(usePreviewStore.getState().marks).toBeUndefined();
-        act(() => void vi.advanceTimersByTime(100));
+        await advance(100);
         expect(usePreviewStore.getState().marks).toBeDefined();
     });
 });
 
 describe('EDT-240 a syntax error', () => {
-    it('marks the line and shows the red message', () => {
+    it('marks the line and shows the red message', async () => {
         setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-        type('Table a {\n  id int [pk]\n}\nTable {\n');
+        await type('Table a {\n  id int [pk]\n}\nTable {\n');
         const alert = screen.getByRole('alert');
         expect(alert.textContent).toMatch(
             /^Failed to parse DBML\. Please check the syntax\. \(1 error found - in line \d+\)$/
@@ -96,10 +116,10 @@ describe('EDT-240 a syntax error', () => {
 });
 
 describe('EDT-241 EDT-244 a valid edit', () => {
-    it('shows a diff without changing the design and offers Accept and Undo', () => {
+    it('shows a diff without changing the design and offers Accept and Undo', async () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-        type(added);
+        await type(added);
         const marks = usePreviewStore.getState().marks!;
         expect(Object.values(marks.tables)).toEqual(['added']);
         expect(store.getState().design).toBe(design);
@@ -112,26 +132,26 @@ describe('EDT-241 EDT-244 a valid edit', () => {
         expect(screen.queryByRole('button', { name: 'View' })).toBeNull();
     });
 
-    it('typing the text back removes the diff', () => {
+    it('typing the text back removes the diff', async () => {
         setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-        type(added);
-        type(original);
+        await type(added);
+        await type(original);
         expect(usePreviewStore.getState().marks).toBeUndefined();
         expect(screen.getByRole('button', { name: 'View' })).toBeTruthy();
     });
 });
 
 describe('EDT-245 Accept changes', () => {
-    it('replaces the tables as one undo step and leaves edit mode, with an overlay while it runs', () => {
+    it('replaces the tables as one undo step and leaves edit mode, with an overlay while it runs', async () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-        type(added);
+        await type(added);
         fireEvent.click(screen.getByRole('button', { name: 'Accept changes' }));
         expect(screen.getByText('Applying changes...')).toBeTruthy();
         // nothing changed yet: the overlay is painted first
         expect(store.getState().design).toBe(design);
-        act(() => void vi.advanceTimersByTime(APPLY_DELAY_MS));
+        await advance(APPLY_DELAY_MS);
         expect(screen.queryByText('Applying changes...')).toBeNull();
         const now = store.getState().design;
         expect(listOf(now.entities).map((e) => e.name)).toContain('extra');
@@ -148,10 +168,10 @@ describe('EDT-245 Accept changes', () => {
 });
 
 describe('EDT-246 Undo changes', () => {
-    it('discards the preview, keeps the design, leaves edit mode', () => {
+    it('discards the preview, keeps the design, leaves edit mode', async () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-        type(added);
+        await type(added);
         fireEvent.click(screen.getByRole('button', { name: 'Undo changes' }));
         expect(usePreviewStore.getState().marks).toBeUndefined();
         expect(store.getState().design).toBe(design);
@@ -161,32 +181,32 @@ describe('EDT-246 Undo changes', () => {
 });
 
 describe('EDT-247 leaving the section', () => {
-    const preview = () => {
+    const preview = async () => {
         const view = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-        type(added);
+        await type(added);
         expect(usePreviewStore.getState().marks).toBeDefined();
         return view;
     };
-    it('switching section discards the preview', () => {
-        const { store } = preview();
+    it('switching section discards the preview', async () => {
+        const { store } = await preview();
         act(() => store.getState().showPanel('refs'));
         expect(usePreviewStore.getState().marks).toBeUndefined();
     });
-    it('closing the panel discards the preview', () => {
-        const { store } = preview();
+    it('closing the panel discards the preview', async () => {
+        const { store } = await preview();
         act(() => void store.getState().hidePanel());
         expect(usePreviewStore.getState().marks).toBeUndefined();
     });
-    it('unmounting discards the preview', () => {
-        const { unmount } = preview();
+    it('unmounting discards the preview', async () => {
+        const { unmount } = await preview();
         unmount();
         expect(usePreviewStore.getState().marks).toBeUndefined();
     });
 });
 
 describe('EXP-051 EXP-057 left-out tables and export errors', () => {
-    it('EXP-051: lists the tables left out of the export', () => {
+    it('EXP-051: lists the tables left out of the export', async () => {
         const [first] = listOf(design.entities);
         const bare = {
             ...design,
@@ -226,10 +246,10 @@ describe('EXP-051 EXP-057 left-out tables and export errors', () => {
 });
 
 describe('review ui 8: Accept applies the text on screen', () => {
-    it('is disabled while a newer edit waits for its parse, then applies that edit', () => {
+    it('is disabled while a newer edit waits for its parse, then applies that edit', async () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-        type(added);
+        await type(added);
         const second = added.replace('"extra"', '"second"');
         fireEvent.change(box(), { target: { value: second } });
         const accept = screen.getByRole('button', {
@@ -237,12 +257,12 @@ describe('review ui 8: Accept applies the text on screen', () => {
         }) as HTMLButtonElement;
         expect(accept.disabled).toBe(true);
         fireEvent.click(accept);
-        act(() => void vi.advanceTimersByTime(APPLY_DELAY_MS));
+        await advance(APPLY_DELAY_MS);
         expect(store.getState().design).toBe(design);
-        act(() => void vi.advanceTimersByTime(PARSE_DELAY_MS));
+        await advance(PARSE_DELAY_MS);
         expect(accept.disabled).toBe(false);
         fireEvent.click(accept);
-        act(() => void vi.advanceTimersByTime(APPLY_DELAY_MS));
+        await advance(APPLY_DELAY_MS);
         const names = listOf(store.getState().design.entities).map(
             (e) => e.name
         );

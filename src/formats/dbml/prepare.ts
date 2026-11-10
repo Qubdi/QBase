@@ -16,6 +16,20 @@ const TABLE_LINE =
 const FIELD_LINE =
     /^(\s*)("(?:[^"\\]|\\.)*"|[\w$]+)(\s+)([^\s[]+(?:\([^)]*\))?)(\[\])?(.*)$/;
 
+/**
+ * Names a field for the maps below: schema, table and field, so two tables of
+ * one name in different schemas stay apart. The default schema is the same as
+ * none, since a table written without one is read into it.
+ */
+export const fieldKey = (
+    schema: string | null | undefined,
+    table: string,
+    field: string
+): string =>
+    schema && schema !== 'public'
+        ? `${schema}.${table}.${field}`
+        : `${table}.${field}`;
+
 const unquote = (s: string): string => s.replace(/^"|"$/g, '');
 
 /**
@@ -62,21 +76,23 @@ export function prepareDbml(source: string): Prepared {
     const arrayFields: Prepared['arrayFields'] = new Map();
     const fieldChecks: Prepared['fieldChecks'] = new Map();
     let table = '';
+    let tableSchema = '';
     let depth = 0;
     let inTriple = false;
-    const lines = source.split('\n').map((line, index) => {
+    const lines = source.split(/\r?\n/).map((line, index) => {
         const header = TABLE_LINE.exec(line);
         if (header && depth === 0) {
             const first = header[1] ?? header[2];
             const second = header[3] ?? header[4];
             table = second ?? first;
+            tableSchema = second === undefined ? '' : first;
         }
         let out = line;
         if (depth === 1 && table) {
             const m = FIELD_LINE.exec(line);
             if (m && !/^(?:Note|Indexes|checks)\b/i.test(unquote(m[2]))) {
                 const field = unquote(m[2]);
-                const key = `${table}.${field}`;
+                const key = fieldKey(tableSchema, table, field);
                 if (m[5]) {
                     arrayFields.set(key, {
                         line: index + 1,

@@ -283,6 +283,7 @@ describe('setup-status', () => {
             expect(res.statusCode).toBe(200);
             expect(res.json()).toEqual({
                 needsSetup: true,
+                setupTokenRequired: false,
                 passwordMinLength: 14,
                 mfaAvailable: false,
             });

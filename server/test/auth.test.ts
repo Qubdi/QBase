@@ -242,6 +242,22 @@ describe('auth throttling', () => {
         }
     });
 
+    it('records the lockout once, on the failure that caused it', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 3 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            for (let i = 0; i < 5; i++) await attempt(ctx, 'a@example.com', 'wrong-password');
+            // the rows are written after the answer has gone out
+            await vi.waitFor(async () => {
+                const rows = await ctx.db.select({ action: auditLog.action }).from(auditLog);
+                expect(rows.filter((r) => r.action === 'user.sign_in_failed')).toHaveLength(3);
+                expect(rows.filter((r) => r.action === 'user.locked')).toHaveLength(1);
+            });
+        } finally {
+            await ctx.close();
+        }
+    });
+
     it('locks out the address that failed, not the account for everyone', async () => {
         const ctx = await createTestApp({ authMaxFailures: 3 });
         try {
@@ -260,6 +276,29 @@ describe('auth throttling', () => {
             expect((await from('203.0.113.7', 'Password-123!')).statusCode).toBe(429);
             // ...but the owner, from their own address, is not
             expect((await from('198.51.100.9', 'Password-123!')).statusCode).toBe(200);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('locks an account that is guessed at from many addresses, though no one address is locked', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 2 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            const from = (n: number, password: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/login',
+                    payload: { email: 'a@example.com', password },
+                    remoteAddress: `203.0.113.${n}`,
+                });
+            // one failure per address: no address reaches its own limit of 2
+            for (let n = 1; n <= 10; n++) {
+                expect((await from(n, 'wrong-password')).statusCode).toBe(401);
+            }
+            const locked = await from(99, 'Password-123!');
+            expect(locked.statusCode).toBe(429);
+            expect(Number(locked.headers['retry-after'])).toBeGreaterThan(0);
         } finally {
             await ctx.close();
         }
@@ -395,6 +434,86 @@ describe('session cookie flags', () => {
             { 'x-forwarded-proto': 'https' }
         );
         expect(spoofed).not.toMatch(/Secure/i);
+    });
+
+    describe('__Host- name', () => {
+        it('is used over https: Secure, Path=/, no Domain, and the plain-named cookie is cleared', async () => {
+            const ctx = await createTestApp({ cookieSecure: true });
+            try {
+                const res = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/register',
+                    payload: { email: 'a@example.com', password: 'Password-123!' },
+                });
+                const fresh = res.cookies.find((c) => c.name === '__Host-qbase_session')!;
+                expect(fresh).toBeDefined();
+                expect(fresh.secure).toBe(true);
+                expect(fresh.path).toBe('/');
+                expect(fresh.domain).toBeUndefined();
+                expect(fresh.httpOnly).toBe(true);
+                const old = res.cookies.find((c) => c.name === 'qbase_session')!;
+                // an expired value: the browser drops any plain-named cookie it holds
+                expect(old.value).toBe('');
+                expect(new Date(old.expires as Date).getTime()).toBeLessThan(Date.now());
+                // the new cookie is a session
+                const me = await ctx.app.inject({
+                    url: '/auth/me',
+                    headers: { cookie: `__Host-qbase_session=${fresh.value}` },
+                });
+                expect(me.statusCode).toBe(200);
+            } finally {
+                await ctx.close();
+            }
+        });
+
+        it('is not used over plain http, where a browser would refuse it', async () => {
+            const ctx = await createTestApp({ cookieSecure: false });
+            try {
+                const res = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/register',
+                    payload: { email: 'a@example.com', password: 'Password-123!' },
+                });
+                expect(res.cookies.map((c) => c.name)).toEqual(['qbase_session']);
+            } finally {
+                await ctx.close();
+            }
+        });
+
+        it('refuses the plain name over https, where a sibling subdomain could have planted it', async () => {
+            const ctx = await createTestApp({ cookieSecure: true });
+            try {
+                const res = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/register',
+                    payload: { email: 'a@example.com', password: 'Password-123!' },
+                });
+                const token = res.cookies.find((c) => c.name === '__Host-qbase_session')!.value;
+                const me = await ctx.app.inject({
+                    url: '/auth/me',
+                    headers: { cookie: `qbase_session=${token}` },
+                });
+                expect(me.statusCode).toBe(401);
+                // signing out with the real cookie ends it, and both names are cleared
+                const out = await ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/logout',
+                    headers: { cookie: `__Host-qbase_session=${token}` },
+                });
+                expect(out.statusCode).toBe(200);
+                expect(out.cookies.map((c) => c.name).sort()).toEqual([
+                    '__Host-qbase_session',
+                    'qbase_session',
+                ]);
+                const after = await ctx.app.inject({
+                    url: '/auth/me',
+                    headers: { cookie: `__Host-qbase_session=${token}` },
+                });
+                expect(after.statusCode).toBe(401);
+            } finally {
+                await ctx.close();
+            }
+        });
     });
 });
 

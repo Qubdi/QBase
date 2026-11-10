@@ -1,13 +1,7 @@
 import React from 'react';
-import {
-    act,
-    fireEvent,
-    screen,
-    waitFor,
-    within,
-} from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useLocation } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceContext } from '@/components/qubdi/workspace-context';
 import { i18n } from '@/i18n/i18n';
 import { blank, NOW, withTables } from '@/core/testing/helpers';
@@ -16,7 +10,6 @@ import { OpenDesignDialog } from '@/features/designs/open-design-dialog';
 import type { MyProject } from '@/lib/qubdi/api';
 import { MemoryStorageAdapter } from '@/persistence/memory-adapter';
 import { Toaster } from '@/platform/toast/toaster';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { useStorageAdapter } from '@/qbase/storage-context';
 import { useOptionalEditorStoreApi } from '@/store/store-context';
 import { DiagramName } from '../navbar/diagram-name';
@@ -36,7 +29,6 @@ beforeEach(() => {
         value: { ...window.location, assign },
     });
 });
-afterEach(() => act(() => resetToasts()));
 
 const Where: React.FC = () => (
     <div data-testid="where">{useLocation().pathname}</div>

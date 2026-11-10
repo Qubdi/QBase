@@ -65,6 +65,20 @@ export async function mssqlAvailable(): Promise<boolean> {
 }
 
 /** Waits for the container to accept logins (it needs a while on first start). */
+/**
+ * Whether a missing SQL Server must fail the run instead of skipping it: when
+ * REQUIRE_MSSQL=1, or in CI once the job has given the container's password
+ * (a job that sets up the container expects the suite to run against it). A
+ * CI job with no SQL Server at all still skips, but says so out loud.
+ */
+export function mssqlRequired(env: NodeJS.ProcessEnv = process.env): boolean {
+    if (env.REQUIRE_MSSQL === '1') return true;
+    return Boolean(env.CI) && Boolean(env.MSSQL_SA_PASSWORD);
+}
+
+export const MSSQL_SKIP_NOTICE =
+    'SQL Server introspection tests SKIPPED: no reachable SQL Server. Start docker-compose.mssql.yml and set MSSQL_SA_PASSWORD, or set REQUIRE_MSSQL=1 to make this a failure.';
+
 export async function waitForMssql(timeoutMs = 90_000): Promise<boolean> {
     // no password, no container to reach: skip at once instead of waiting for one
     if (!MSSQL_PASSWORD) return false;

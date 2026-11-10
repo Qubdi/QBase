@@ -202,6 +202,7 @@ describe('PostgreSQL introspection: checks, custom types, domains, generated col
                     database: DB,
                     user: PG_USER,
                     password: PG_PASSWORD,
+                    ssl: false,
                 },
             },
         });

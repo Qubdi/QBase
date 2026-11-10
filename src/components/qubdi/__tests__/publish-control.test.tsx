@@ -15,7 +15,7 @@ import { DiagramAccessContext } from '../diagram-access-context';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { getBaseUpdatedAt } from '@/lib/qubdi/remote-version';
 
-const getDiagram = vi.fn();
+const getPublishStatus = vi.fn();
 const publish = vi.fn();
 const updateDiagram = vi.fn();
 const calls: string[] = [];
@@ -26,7 +26,7 @@ const syncDiagram = vi.fn(async () => {
 vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     api: {
-        getDiagram: (...a: unknown[]) => getDiagram(...a),
+        getPublishStatus: (...a: unknown[]) => getPublishStatus(...a),
         publish: (...a: unknown[]) => publish(...a),
         updateDiagram: (...a: unknown[]) => updateDiagram(...a),
     },
@@ -67,11 +67,11 @@ const show = () =>
 
 describe('PublishControl status', () => {
     beforeEach(() => {
-        getDiagram.mockReset();
+        getPublishStatus.mockReset();
     });
 
     it('is a badge inside the Publish button, with the full sentence on hover', async () => {
-        getDiagram.mockResolvedValue({
+        getPublishStatus.mockResolvedValue({
             publishedVersion: 3,
             unpublishedChanges: true,
             autoPublish: false,
@@ -90,7 +90,7 @@ describe('PublishControl status', () => {
     });
 
     it('shows just the version once everything is published', async () => {
-        getDiagram.mockResolvedValue({
+        getPublishStatus.mockResolvedValue({
             publishedVersion: 3,
             unpublishedChanges: false,
             autoPublish: false,
@@ -100,7 +100,7 @@ describe('PublishControl status', () => {
     });
 
     it('is a bare dot, with the words in the name, until it has heard from the server', () => {
-        getDiagram.mockReturnValue(new Promise(() => undefined));
+        getPublishStatus.mockReturnValue(new Promise(() => undefined));
         show();
         expect(screen.getByTestId('publish-status').textContent).toBe('');
         expect(
@@ -111,7 +111,7 @@ describe('PublishControl status', () => {
     });
 
     it('is a bare dot before the first publish', async () => {
-        getDiagram.mockResolvedValue({
+        getPublishStatus.mockResolvedValue({
             publishedVersion: null,
             unpublishedChanges: true,
             autoPublish: false,
@@ -128,11 +128,11 @@ describe('PublishControl status', () => {
 
 describe('PublishControl publishing', () => {
     beforeEach(() => {
-        getDiagram.mockReset();
+        getPublishStatus.mockReset();
         publish.mockReset();
         syncDiagram.mockClear();
         calls.length = 0;
-        getDiagram.mockResolvedValue({
+        getPublishStatus.mockResolvedValue({
             publishedVersion: 1,
             unpublishedChanges: true,
             autoPublish: false,
@@ -167,7 +167,7 @@ describe('PublishControl publishing', () => {
 describe('PublishControl saving the auto-publish setting', () => {
     beforeEach(() => {
         localStorage.clear();
-        getDiagram.mockReset().mockResolvedValue({
+        getPublishStatus.mockReset().mockResolvedValue({
             publishedVersion: 1,
             unpublishedChanges: false,
             autoPublish: false,
@@ -239,13 +239,13 @@ describe('PublishControl for people who cannot edit', () => {
 
     it('shows "unpublished changes" after a save without a click on Publish', async () => {
         resetSaveStatus();
-        getDiagram.mockResolvedValue({
+        getPublishStatus.mockResolvedValue({
             publishedVersion: 1,
             unpublishedChanges: false,
         });
         show();
         await screen.findByRole('button', { name: /Published v1$/ });
-        getDiagram.mockResolvedValue({
+        getPublishStatus.mockResolvedValue({
             publishedVersion: 1,
             unpublishedChanges: true,
         });

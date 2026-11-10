@@ -8,11 +8,11 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 16</b></div>
-  <h1>8 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Database &amp; scale Audit &middot; <b>rev 44</b></div>
+  <h1>1 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-09</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
+    <span><b>audit date</b> 2026-11-10</span>
+    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
     <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
   </div>
   <div class="split-nav">
@@ -30,19 +30,12 @@
 <main id="main">
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Database &amp; scale</h2></div>
-  <p class="section-note">8 open &middot; 10 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">1 open &middot; 21 fixed &middot; 1 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">DB-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout</td><td class="wrap-cell"><code>server/src/maintenance.ts:100</code>, <code>server/src/maintenance.ts:116</code>, <code>server/src/server.ts:38</code></td><td class="wrap-cell">Batch both deletes like purgeAuditLog</td></tr>
-        <tr><td class="svc-name">DB-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns</td><td class="wrap-cell"><code>server/src/diagrams/service.ts:58</code>, <code>server/src/diagrams/summary.ts:51</code></td><td class="wrap-cell">Add generated stat columns to snapshots, as diagrams have</td></tr>
-        <tr><td class="svc-name">DB-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Size checks serialise whole jsonb with <code>octet_length(content::text)</code>; 50 MB costs about 0.8 s</td><td class="wrap-cell"><code>server/src/lint/routes.ts:95</code>, <code>server/src/lint/routes.ts:116</code>, <code>server/src/drift/service.ts:236</code></td><td class="wrap-cell">Use pg_column_size or a stored size column</td></tr>
-        <tr><td class="svc-name">DB-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">SQL Server introspection drops columnstore, XML and spatial indexes; import maps them</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:105</code>, <code>src/formats/metadata/load.ts:41</code></td><td class="wrap-cell">Drop key_ordinal filter for non-key index types</td></tr>
-        <tr><td class="svc-name">DB-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server returns no custom types; PostgreSQL returns enums and composites</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:380</code></td><td class="wrap-cell">Read alias types from sys.types where is_user_defined</td></tr>
-        <tr><td class="svc-name">DB-007</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out</td><td class="wrap-cell"><code>server/src/db/schema.ts:273</code>, <code>server/src/db/schema.ts:169</code>, <code>server/src/db/schema.ts:373</code>, <code>server/src/db/schema.ts:401</code>, <code>server/src/db/schema.ts:446</code>, <code>server/src/auth/sessions.ts:50</code></td><td class="wrap-cell">Index diagram_locks.user_id; index the rest if tables grow</td></tr>
-        <tr><td class="svc-name">DB-012</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Generated stat columns re-parse whole jsonb on every content autosave</td><td class="wrap-cell"><code>server/src/db/migrations/0022_diagram_stats.sql:2</code></td><td class="wrap-cell">Compute stats in app; store as plain columns</td></tr>
-        <tr><td class="svc-name">DB-019</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server returns collation on every text column; Postgres only non-default ones</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:53</code>, <code>server/src/introspect/postgres.ts:69</code></td><td class="wrap-cell">Return collation only when it differs from database default</td></tr>
+        <tr><td class="svc-name">DB-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">SQL Server alias types arrive as column domain; no custom type list, as the metadata format has no slot</td><td class="wrap-cell"><code>server/src/introspect/sqlserver.ts:54</code>, <code>server/src/introspect/sqlserver.ts:56</code></td><td class="wrap-cell">Add an alias-type list to the metadata format</td></tr>
       </tbody>
     </table>
   </div>
@@ -50,11 +43,17 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (10)</summary>
+  <details><summary>Fixed (21)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DB-021</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Drift check holds a pooled connection for its whole run; 10 concurrent checks starve the pool</td></tr>
+        <tr><td class="svc-name">DB-004</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL Server index query returns columnstore, XML and spatial indexes; verified against SQL Server 2025</td></tr>
+        <tr><td class="svc-name">DB-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">SQL Server collation returned only when it differs from the default; verified against SQL Server 2025</td></tr>
+        <tr><td class="svc-name">DB-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Migration tests end the pool with no error listener, then drop DB with force; 57P01 unhandled</td></tr>
+        <tr><td class="svc-name">DB-023</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Activity group filter with cursor walks <code>audit_log_at_id_idx</code>: 144 ms, 100k rows filtered</td></tr>
+        <tr><td class="svc-name">DB-024</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Stats backfill selects null stat rows with no index; seq-scans 503k snapshots hourly</td></tr>
         <tr><td class="svc-name">DB-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">One pending MFA ticket per account is not enforced; concurrent logins leave two</td></tr>
         <tr><td class="svc-name">DB-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Audit rows are written after, not inside, the transaction of the change</td></tr>
         <tr><td class="svc-name">DB-010</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Backups section omits saving CONNECTION_KEY and SECRETS_KEY with the dump</td></tr>
@@ -65,6 +64,11 @@
         <tr><td class="svc-name">DB-017</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Postgres introspection skips foreign tables; SQL Server lists external tables</td></tr>
         <tr><td class="svc-name">DB-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Materialized views reported as plain views; definition rebuilt as CREATE VIEW</td></tr>
         <tr><td class="svc-name">DB-020</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones</td></tr>
+        <tr><td class="svc-name">DB-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout</td></tr>
+        <tr><td class="svc-name">DB-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns</td></tr>
+        <tr><td class="svc-name">DB-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Size checks serialise whole jsonb with <code>octet_length(content::text)</code>; 50 MB costs about 0.8 s</td></tr>
+        <tr><td class="svc-name">DB-007</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out</td></tr>
+        <tr><td class="svc-name">DB-012</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Generated stat columns re-parse whole jsonb on every content autosave</td></tr>
       </tbody>
     </table>
   </div>
@@ -121,9 +125,9 @@
         <tr><td class="wrap-cell">Boot migration lock</td><td class="wrap-cell">Session advisory lock, lock_timeout retry, 2-connection pool</td><td class="wrap-cell"><code>server/src/db/client.ts:111</code></td></tr>
         <tr><td class="wrap-cell">FK ON DELETE</td><td class="wrap-cell">Every FK states cascade, restrict or set null</td><td class="wrap-cell"><code>server/src/db/schema.ts:205</code></td></tr>
         <tr><td class="wrap-cell">Check-then-write</td><td class="wrap-cell">Unique index or lock backs each: email, project, connection, snapshot version, share cap; not MFA (DB-008, DB-016)</td><td class="wrap-cell"><code>server/src/diagrams/service.ts:218</code></td></tr>
-        <tr><td class="wrap-cell">Autosave</td><td class="wrap-cell">Compare-and-write in one UPDATE; content not returned</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:388</code></td></tr>
-        <tr><td class="wrap-cell">Lists</td><td class="wrap-cell">Paged, offset capped, content never selected; one project list unpaged (SRV-013)</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:126</code></td></tr>
-        <tr><td class="wrap-cell">Audit reads</td><td class="wrap-cell">Keyset cursor, indexed filters, name lookups by PK</td><td class="wrap-cell"><code>server/src/audit/activity.ts:133</code></td></tr>
+        <tr><td class="wrap-cell">Autosave</td><td class="wrap-cell">Compare-and-write in one UPDATE; content not returned</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:396</code></td></tr>
+        <tr><td class="wrap-cell">Lists</td><td class="wrap-cell">Paged, offset capped, content never selected; one project list unpaged (SRV-013)</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:134</code></td></tr>
+        <tr><td class="wrap-cell">Audit reads</td><td class="wrap-cell">Keyset cursor, indexed filters, name lookups by PK</td><td class="wrap-cell"><code>server/src/audit/activity.ts:140</code></td></tr>
         <tr><td class="wrap-cell">Audit retention</td><td class="wrap-cell">Batched 5000, indexed on <code>at</code></td><td class="wrap-cell"><code>server/src/maintenance.ts:71</code></td></tr>
         <tr><td class="wrap-cell">Pool</td><td class="wrap-cell">max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts</td><td class="wrap-cell"><code>server/src/db/client.ts:22</code></td></tr>
         <tr><td class="wrap-cell">Postgres introspection</td><td class="wrap-cell">READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address</td><td class="wrap-cell"><code>server/src/introspect/postgres.ts:162</code></td></tr>

@@ -11,10 +11,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConfirmDialog } from '@/features/designs/confirm-dialog';
 import { ToastAction } from '../toast';
 import { Toaster } from '../toaster';
-import { resetToasts, toast } from '../use-toast';
+import { toast } from '../use-toast';
 
 afterEach(() => {
-    act(() => resetToasts());
     vi.useRealTimers();
 });
 

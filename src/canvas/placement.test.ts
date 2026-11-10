@@ -9,7 +9,6 @@ import {
 import { dropNewItem } from './drop-items';
 import { chooseSides, SIDE_MARGIN } from './flow-model';
 import { intersects, sizeFor } from './geometry';
-import { forgetClipboard } from './clipboard';
 import { findFreeShift } from './placement';
 import { shop } from './test/fixtures';
 import { renderCanvas } from './test/render';
@@ -109,7 +108,6 @@ describe('collision-free placement', () => {
     it('EDT-232: a paste never lands on a table', () => {
         const s = shop();
         const store = createEditorStore({ design: s.design });
-        forgetClipboard();
         store.getState().select([s.users, s.orders]);
         copySelection(store);
         pasteClipboard(store);

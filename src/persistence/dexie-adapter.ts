@@ -65,12 +65,22 @@ export class DexieStorageAdapter implements StorageAdapter {
         return parse(record.doc);
     }
 
-    async save(design: Design): Promise<void> {
-        this.removed.delete(design.id);
+    async save(design: Design, options?: { update?: boolean }): Promise<void> {
+        // only an explicit create brings a deleted id back; an autosave that
+        // was already in flight must not
+        if (!options?.update) this.removed.delete(design.id);
+        let written = false;
         await this.db.transaction(
             'rw',
             [this.db.designs, this.db.design_index],
             async () => {
+                if (options?.update) {
+                    // the row is shared by every tab: if another tab deleted
+                    // the design, it is gone here and stays gone
+                    if (this.removed.has(design.id)) return;
+                    if (!(await this.db.designs.get(design.id))) return;
+                }
+                written = true;
                 await this.db.designs.put({
                     id: design.id,
                     doc: serialise(design),
@@ -78,7 +88,7 @@ export class DexieStorageAdapter implements StorageAdapter {
                 await this.db.design_index.put(summaryOf(design));
             }
         );
-        this.announce();
+        if (written) this.announce();
     }
 
     private readonly removed = new Set<string>();

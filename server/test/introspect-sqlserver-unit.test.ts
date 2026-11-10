@@ -8,6 +8,7 @@ import {
     buildPkDefs,
     mssqlColumnShape,
     pinnedConnector,
+    isPrivilegedRow,
 } from '../src/introspect/sqlserver.js';
 
 describe('mssqlColumnShape', () => {
@@ -129,7 +130,7 @@ describe('schema filter', () => {
         const filtered = Object.values(SQLSERVER_QUERIES).filter((q) => q.includes('@schemas'));
         expect(filtered.length).toBeGreaterThan(3);
         for (const q of filtered) {
-            expect(q).toContain('OPENJSON(@schemas)');
+            expect(q).toContain("OPENJSON(IIF(@schemas = '', '[]', @schemas))");
             expect(q).not.toContain('STRING_SPLIT');
         }
     });
@@ -195,18 +196,21 @@ describe('pinnedConnector', () => {
 describe('SQL Server metadata: checks, computed columns, index predicates (fake pool)', () => {
     const rows: Record<keyof typeof SQLSERVER_QUERIES, object[]> = {
         server: [{ database_name: 'shop', version: 'Microsoft SQL Server 2022\n(X64)' }],
+        privileges: [],
         tables: [{ schema: 'dbo', table: 'people', type: 'BASE TABLE', rows: 3 }],
         views: [],
         columns: [
             { schema: 'dbo', table: 'people', name: 'first', type: 'nvarchar', max_length: 40, precision: 0, scale: 0, ordinal_position: 1, nullable: false },
             { schema: 'dbo', table: 'people', name: 'upper_first', type: 'nvarchar', max_length: 40, precision: 0, scale: 0, ordinal_position: 2, nullable: true, generated_expression: '(upper([first]))', generated_stored: true },
             { schema: 'dbo', table: 'people', name: 'age', type: 'int', max_length: 4, precision: 10, scale: 0, ordinal_position: 3, nullable: true, generated_expression: null, generated_stored: null },
+            // an alias type over nvarchar(40): the query answers the base type and the alias as domain
+            { schema: 'dbo', table: 'people', name: 'nick', type: 'nvarchar', domain: 'nickname', collation: 'Latin1_General_CS_AS', max_length: 40, precision: 0, scale: 0, ordinal_position: 4, nullable: true },
         ],
         primaryKeys: [],
         foreignKeys: [],
         indexes: [
-            { schema: 'dbo', table: 'people', name: 'ix_age', column: 'age', index_type: 'NONCLUSTERED', unique: false, where: '([age] IS NOT NULL)', direction: 'DESC', column_position: 1 },
-            { schema: 'dbo', table: 'people', name: 'ix_first', column: 'first', index_type: 'NONCLUSTERED', unique: true, where: null, direction: 'ASC', column_position: 1 },
+            { schema: 'dbo', table: 'people', name: 'ix_age', column: 'age', index_type: 'NONCLUSTERED', unique: false, primary: false, where: '([age] IS NOT NULL)', direction: 'DESC', column_position: 1 },
+            { schema: 'dbo', table: 'people', name: 'ix_first', column: 'first', index_type: 'NONCLUSTERED', unique: true, primary: true, where: null, direction: 'ASC', column_position: 1 },
         ],
         checks: [{ schema: 'dbo', table: 'people', expression: '([age]>=(0))' }],
     };
@@ -232,11 +236,41 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
             null,
             { expression: '(upper([first]))', stored: true },
             null,
+            null,
         ]);
         expect(meta.indexes.map((i) => [i.direction, i.where])).toEqual([
             ['DESC', '([age] IS NOT NULL)'],
             ['ASC', null],
         ]);
+        // CLI-039: the catalog's is_primary_key travels as `primary`
+        expect(meta.indexes.map((i) => i.primary)).toEqual([false, true]);
+    });
+
+    it('DB-006: an alias type arrives as its base type plus the alias as domain, sized like the base', async () => {
+        const { SqlServerIntrospector } = await import('../src/introspect/sqlserver.js');
+        const meta = await new SqlServerIntrospector(pool as never).introspect({ schemas: [] });
+        const nick = meta.columns.find((c) => c.name === 'nick')!;
+        expect([nick.type, nick.domain, nick.character_maximum_length]).toEqual(['nvarchar', 'nickname', '20']);
+        // a column of a plain type has no domain
+        expect(meta.columns.filter((c) => c.name !== 'nick').every((c) => c.domain === null)).toBe(true);
+    });
+
+    it('DB-019: the collation is whatever the query answers, and the query answers NULL for the database default', async () => {
+        const { SqlServerIntrospector } = await import('../src/introspect/sqlserver.js');
+        const meta = await new SqlServerIntrospector(pool as never).introspect({ schemas: [] });
+        expect(meta.columns.map((c) => c.collation)).toEqual([null, null, null, 'Latin1_General_CS_AS']);
+        const q = SQLSERVER_QUERIES.columns;
+        expect(q).toContain("DATABASEPROPERTYEX(DB_NAME(), 'Collation')");
+        expect(q).toMatch(/THEN NULL ELSE c\.collation_name END AS collation/);
+    });
+
+    it('DB-004: columnstore, XML and spatial indexes are listed with every column, in their own order', () => {
+        const q = SQLSERVER_QUERIES.indexes;
+        expect(q).toContain('i.type IN (3, 4, 5, 6)');
+        // key indexes still read key columns only
+        expect(q).toContain('ic.is_included_column = 0 AND ic.key_ordinal > 0');
+        expect(q).toContain('ic.index_column_id');
+        expect(q).toContain('i.type_desc AS index_type');
     });
 
     it('the queries ask the catalog for them', () => {
@@ -244,5 +278,22 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         expect(SQLSERVER_QUERIES.columns).toContain('sys.computed_columns');
         expect(SQLSERVER_QUERIES.indexes).toContain('filter_definition');
         expect(SQLSERVER_QUERIES.indexes).toContain('is_descending_key');
+        expect(SQLSERVER_QUERIES.indexes).toContain('i.is_primary_key AS [primary]');
+    });
+});
+
+describe('SQL Server login privileges', () => {
+    it('refuses a sysadmin or a db_owner and accepts a plain login', () => {
+        expect(isPrivilegedRow({ is_sysadmin: 1, is_db_owner: 0 })).toBe(true);
+        expect(isPrivilegedRow({ is_sysadmin: 0, is_db_owner: 1 })).toBe(true);
+        expect(isPrivilegedRow({ is_sysadmin: 0, is_db_owner: 0 })).toBe(false);
+        // NULL is what the functions answer for a role that does not exist
+        expect(isPrivilegedRow({ is_sysadmin: null, is_db_owner: null })).toBe(false);
+        expect(isPrivilegedRow(undefined)).toBe(false);
+    });
+
+    it('reads both roles with one registered query', () => {
+        expect(SQLSERVER_QUERIES.privileges).toMatch(/IS_SRVROLEMEMBER\('sysadmin'\)/);
+        expect(SQLSERVER_QUERIES.privileges).toMatch(/IS_MEMBER\('db_owner'\)/);
     });
 });

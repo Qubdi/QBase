@@ -31,21 +31,33 @@ export const MembersDialog: React.FC<MembersDialogProps> = ({
     const cancelLoad = useCallback(() => {
         newestLoad.current += 1;
     }, []);
-    const reload = useCallback(async () => {
-        if (!remoteId) return;
+    const reload = useCallback(() => {
+        if (!remoteId) return Promise.resolve();
         const request = ++newestLoad.current;
-        try {
-            const list = await api.listMembers(remoteId);
-            if (request === newestLoad.current) setMembers(list);
-        } catch (e) {
-            if (request === newestLoad.current) setError(errorMessage(e));
-        }
+        return api.listMembers(remoteId).then(
+            (list) => {
+                if (request === newestLoad.current) setMembers(list);
+            },
+            (e: unknown) => {
+                if (request === newestLoad.current) setError(errorMessage(e));
+            }
+        );
     }, [remoteId]);
+
+    // each opening, and each other diagram while open, starts empty: reset
+    // while rendering, before the effect below starts the load
+    const [loadFor, setLoadFor] = useState<string | null>(null);
+    const wantedLoad = open ? `open:${remoteId ?? ''}` : null;
+    if (loadFor !== wantedLoad) {
+        setLoadFor(wantedLoad);
+        if (wantedLoad !== null) {
+            setError(null);
+            setMembers([]);
+        }
+    }
 
     useEffect(() => {
         if (!open) return;
-        setError(null);
-        setMembers([]);
         void reload();
         return cancelLoad;
     }, [open, reload, cancelLoad]);

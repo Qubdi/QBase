@@ -21,8 +21,3 @@ const TABLE = new Map<string, Dialect>(MODULES.map((d) => [d.id, d]));
 export function dialectFor(id: string): Dialect {
     return TABLE.get(id) ?? postgresql;
 }
-
-/** Dialects offered in pickers. */
-export function listDialects(): readonly Dialect[] {
-    return MODULES;
-}

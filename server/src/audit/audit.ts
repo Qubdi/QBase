@@ -1,6 +1,8 @@
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
+import { safeError } from '../lib/safe-error.js';
 import type { Db, Tx } from '../db/client.js';
 import { auditLog } from '../db/schema.js';
+import { requestIds } from './request-context.js';
 
 export const AUDIT_ACTIONS = [
     'user.register',
@@ -14,7 +16,9 @@ export const AUDIT_ACTIONS = [
     'user.logout',
     'user.sign_in_failed',
     'user.password_check_failed',
+    'user.locked',
     'user.password_change',
+    'mfa.setup',
     'mfa.enable',
     'mfa.disable',
     'mfa.reset',
@@ -90,6 +94,10 @@ export interface AuditMeta {
     version?: number;
     linkId?: string;
     access?: 'anyone' | 'signed_in' | 'off';
+    /** share.update: the link's expiry after the change (ISO, or null for none), when the request touched it */
+    expiresAt?: string | null;
+    /** share.update: whether the link follows the diagram live, when the request touched it */
+    live?: boolean;
     /** share.revoke: when the link was made (ISO), to tell links apart */
     madeAt?: string;
     /** the project's name or the diagram's title, for when it no longer exists */
@@ -148,8 +156,35 @@ const toRow = (entry: AuditEntry) => ({
     meta: cleanMeta(entry.meta),
 });
 
+/** A transaction handle has `rollback`; the pool's `db` does not. */
+const inTransaction = (db: Db | Tx): boolean => 'rollback' in db;
+
+const logLost = (what: string, err: unknown) => {
+    const id = requestIds.getStore();
+    console.error(
+        `Audit row lost (${what})${id ? ` [request ${id}]` : ''}:`,
+        safeError(err).message
+    );
+};
+
+/**
+ * Writes one audit row. The rule:
+ * - inside a transaction (`Tx`) the row is part of the action, so a failed
+ *   insert fails it and rolls the action back: the log is the point there;
+ * - on the plain `db` the action is already done, so a failed insert is logged
+ *   with the request id and the answer stays what the action earned, not a 500
+ *   for something that happened.
+ */
 export async function audit(db: Db | Tx, entry: AuditEntry) {
-    await db.insert(auditLog).values(toRow(entry));
+    if (inTransaction(db)) {
+        await db.insert(auditLog).values(toRow(entry));
+        return;
+    }
+    try {
+        await db.insert(auditLog).values(toRow(entry));
+    } catch (err) {
+        logLost(entry.action, err);
+    }
 }
 
 /**
@@ -163,29 +198,51 @@ export async function auditDiagramSave(
     entry: { userId: string; diagramId: string },
     everyMinutes: number
 ) {
-    if (everyMinutes > 0) {
-        const recent = await db
-            .select({ id: auditLog.id })
-            .from(auditLog)
-            .where(
-                and(
-                    eq(auditLog.diagramId, entry.diagramId),
-                    eq(auditLog.userId, entry.userId),
-                    eq(auditLog.action, 'diagram.update'),
-                    gt(
-                        auditLog.at,
-                        new Date(Date.now() - everyMinutes * 60_000)
+    if (everyMinutes === 0) {
+        await audit(db, { ...entry, action: 'diagram.update' });
+        return;
+    }
+    // look and write under one lock per person and diagram: two saves at the
+    // same moment would both find no recent row and each write one
+    try {
+        await db.transaction(async (tx) => {
+            await tx.execute(
+                sql`select pg_advisory_xact_lock(hashtextextended(${`audit-save:${entry.userId}:${entry.diagramId}`}, 0))`
+            );
+            const recent = await tx
+                .select({ id: auditLog.id })
+                .from(auditLog)
+                .where(
+                    and(
+                        eq(auditLog.diagramId, entry.diagramId),
+                        eq(auditLog.userId, entry.userId),
+                        eq(auditLog.action, 'diagram.update'),
+                        gt(
+                            auditLog.at,
+                            new Date(Date.now() - everyMinutes * 60_000)
+                        )
                     )
                 )
-            )
-            .limit(1);
-        if (recent.length > 0) return;
+                .limit(1);
+            if (recent.length === 0)
+                await audit(tx, { ...entry, action: 'diagram.update' });
+        });
+    } catch (err) {
+        // the save is already stored: its log row is not worth failing it for
+        logLost('diagram.update', err);
     }
-    await audit(db, { ...entry, action: 'diagram.update' });
 }
 
 /** Several rows in one statement, for an action done to many things at once. */
 export async function auditMany(db: Db | Tx, entries: AuditEntry[]) {
     if (entries.length === 0) return;
-    await db.insert(auditLog).values(entries.map(toRow));
+    if (inTransaction(db)) {
+        await db.insert(auditLog).values(entries.map(toRow));
+        return;
+    }
+    try {
+        await db.insert(auditLog).values(entries.map(toRow));
+    } catch (err) {
+        logLost(`${entries[0].action} x${entries.length}`, err);
+    }
 }

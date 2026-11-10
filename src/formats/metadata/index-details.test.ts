@@ -159,10 +159,10 @@ describe('MySQL and MariaDB: index direction, generated columns, checks', () => 
         const sql = writeMysql(design);
         expect(sql).toContain('(`score` DESC, `id`)');
         expect(sql).toMatch(
-            /`full_name` VARCHAR\(101\) GENERATED ALWAYS AS \(concat\(`first_name`,' ',`last_name`\)\) STORED/
+            /`full_name` VARCHAR\(101\)(?: COLLATE \w+)? GENERATED ALWAYS AS \(concat\(`first_name`,' ',`last_name`\)\) STORED/
         );
         expect(sql).toMatch(
-            /`initials` VARCHAR\(3\) GENERATED ALWAYS AS \(.*\) VIRTUAL/
+            /`initials` VARCHAR\(3\)(?: COLLATE \w+)? GENERATED ALWAYS AS \(.*\) VIRTUAL/
         );
     });
 });

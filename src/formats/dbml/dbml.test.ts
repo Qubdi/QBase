@@ -7,7 +7,7 @@ import {
     sampleS3,
 } from '@/dialects/testing/sample-designs';
 import { exportDbml } from './export-dbml';
-import { importDbml } from './import-dbml';
+import { importDbml, MAX_DBML_CHARS } from './import-dbml';
 import { checkExpression } from '../sql/check-expression';
 
 const names = (d: Design) =>
@@ -182,6 +182,47 @@ describe('IMP-045 to IMP-055 DBML import and round trip', () => {
         );
         expect(no.diagnostics[0].line).toBe(2);
     });
+    it('reads arrays and checks the same from a file with Windows line endings', () => {
+        const crlf = (text: string) => text.replace(/\n/g, '\r\n');
+        const ok = importDbml(
+            crlf('Table a {\n  tags text[]\n  n int [check: `n > 0`]\n}\n'),
+            'postgresql'
+        );
+        const columns = Object.values(ok.design!.columns);
+        expect(columns.find((c) => c.name === 'tags')).toMatchObject({
+            isArray: true,
+            type: { name: 'text' },
+        });
+        expect(
+            Object.values(ok.design!.rules).map((x) => x.expression)
+        ).toEqual(['n > 0']);
+    });
+    it('links a field to an enum whose name has capitals', () => {
+        const r = importDbml(
+            'enum Status {\n  open\n  closed\n}\nTable a {\n  s Status\n}\n',
+            'postgresql'
+        );
+        const d = r.design!;
+        const column = Object.values(d.columns).find((c) => c.name === 's')!;
+        expect(column.type.name).toBe('Status');
+        const types = Object.values(d.userTypes.byId);
+        expect(types.map((t) => t.name)).toEqual(['Status']);
+    });
+    it('keeps array and check settings apart for same-named tables in two schemas', () => {
+        const r = importDbml(
+            'Table a.t {\n  tags text[]\n  n int [check: `n > 0`]\n}\nTable b.t {\n  tags text\n  n int\n}\n',
+            'postgresql'
+        );
+        const d = r.design!;
+        const tagsOf = (schema: string) =>
+            Object.values(d.entities.byId)
+                .filter((e) => e.schema === schema)
+                .flatMap((e) => e.columnIds.map((id) => d.columns[id]))
+                .find((c) => c.name === 'tags')!;
+        expect(tagsOf('a').isArray).toBe(true);
+        expect(tagsOf('b').isArray).toBeUndefined();
+        expect(Object.values(d.rules)).toHaveLength(1);
+    });
     it('IMP-048 checks from the field setting and the checks block', () => {
         const r = importDbml(
             "Table a {\n  n int [check: `n > 0`]\n  m int\n  checks {\n    `m < 9` [name: 'c']\n  }\n}\n",
@@ -245,5 +286,14 @@ describe('EXP-049 check expression checker', () => {
         const p = checkExpression(expr);
         expect(!!p).toBe(bad);
         if (p) expect(p.line).toBeGreaterThan(0);
+    });
+});
+
+describe('DBML size cap', () => {
+    it('refuses text over the cap before the parser sees it', () => {
+        const r = importDbml(' '.repeat(MAX_DBML_CHARS + 1), 'postgresql');
+        expect(r.diagnostics[0]?.severity).toBe('error');
+        expect(r.diagnostics[0]?.message).toMatch(/too large/);
+        expect(r.counts).toEqual({ ...r.counts });
     });
 });

@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom';
 import { adminRoute } from '@/pages/admin-page/admin-route';
 import { BACKEND_ENABLED } from '@/platform/config/backend';
+import { RouteError } from './problem-page';
 import { RouteFallback } from './route-fallback';
 
 type Loader<T> = () => Promise<T>;
@@ -18,6 +19,8 @@ const lazyPage = <M,>(
 ): RouteObject => ({
     path,
     HydrateFallback: RouteFallback,
+    // a page that fails to load or to draw shows a message, not a blank screen
+    errorElement: <RouteError />,
     async lazy() {
         return { element: pick(await load()) };
     },

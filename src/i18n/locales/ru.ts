@@ -1,10 +1,5 @@
 export const ru = {
     translation: {
-        menu: {
-            actions: {
-                save: 'Сохранить',
-            },
-        },
         editor: {
             common: {
                 copyFailed: {
@@ -25,6 +20,11 @@ export const ru = {
                 notFound: {
                     title: 'Здесь ничего нет.',
                     body: 'Не удалось найти нужную страницу. Возможно, она была перемещена или ссылка неверна.',
+                },
+                problem: {
+                    title: 'Что-то пошло не так.',
+                    body: 'Не удалось показать страницу. Перезагрузите её и попробуйте снова; сохранённые диаграммы не пострадали.',
+                    reload: 'Перезагрузить',
                 },
                 colorPicker: {
                     change: 'Изменить цвет',
@@ -268,6 +268,8 @@ export const ru = {
                 foundWithViews: '{{tables}} и {{views}} для импорта.',
                 foundOnly: '{{tables}} для импорта.',
                 nothingToImport: 'Нечего импортировать',
+                invalidJson:
+                    'Недопустимый JSON. Исправьте его или напишите нам на support@qubdi.dev.',
                 nothingToExport: 'Нечего экспортировать',
                 emptyScript: 'Скрипт SQL пуст',
                 noStatements: 'Не найдено допустимых операторов SQL',
@@ -601,8 +603,6 @@ export const ru = {
                     filter: 'Фильтр',
                     clearFilter: 'Сбросить фильтр',
                     focus: 'Перейти к холсту',
-                    more: 'Другие действия',
-                    rename: 'Переименовать',
                     saveName: 'Сохранить название',
                     dragHandle: 'Перетащите, чтобы изменить порядок',
                     cancel: 'Отмена',
@@ -634,7 +634,6 @@ export const ru = {
                     checks: 'Ограничения CHECK',
                     description: 'Описание',
                     noDescription: 'Нет описания',
-                    color: 'Цвет таблицы',
                     duplicateName:
                         'В этой схеме уже есть таблица с названием «{{name}}».',
                     selectSchema: {
@@ -682,7 +681,6 @@ export const ru = {
                     delete: 'Удалить поле',
                     addNote: 'Добавить заметку',
                     showComment: 'Показать описание поля',
-                    foreignKey: 'Внешний ключ',
                     none: 'В этой таблице нет полей',
                 },
                 indexes: {
@@ -808,7 +806,6 @@ export const ru = {
                     emptyNote: 'Пустая заметка',
                     noteActions: 'Действия с заметкой',
                     deleteNote: 'Удалить заметку',
-                    colour: 'Цвет',
                 },
                 filters: {
                     title: 'Фильтр таблиц',
@@ -823,26 +820,6 @@ export const ru = {
                     createToStart: 'Создайте таблицу, чтобы начать',
                     noSchema: 'Без схемы',
                     noArea: 'Без области',
-                },
-                hover: {
-                    type: 'тип',
-                    nullability: 'null',
-                    nullable: 'допускает null',
-                    notNull: 'NOT NULL',
-                    key: 'ключ',
-                    primaryKey: 'первичный ключ',
-                    unique: 'уникальное',
-                    autoIncrement: 'автоинкремент',
-                    default: 'по умолчанию',
-                    check: 'проверка',
-                    references: 'ссылается на',
-                    referencedBy: 'на неё ссылаются',
-                },
-                clipboard: {
-                    copied: 'Таблица скопирована',
-                    copiedMany: 'Скопировано таблиц: {{count}}',
-                    pasted: 'Таблица вставлена',
-                    pastedMany: 'Вставлено таблиц: {{count}}',
                 },
                 dbml: {
                     title: 'DBML',

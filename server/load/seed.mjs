@@ -7,8 +7,12 @@ import { writeFileSync } from 'node:fs';
 const BASE = process.env.BASE_URL ?? 'http://localhost:3001';
 const USERS = Number(process.env.LOAD_USERS ?? 200);
 const TABLES = Number(process.env.LOAD_TABLES ?? 35);
-const PASSWORD = 'Load-Test-Pass-1!';
-const TEMP = 'Temp-Load-Pass-1!';
+// made fresh for each run by run.sh; nothing here is a password worth keeping
+const PASSWORD = process.env.LOAD_PASSWORD;
+const TEMP = process.env.LOAD_TEMP_PASSWORD;
+if (!PASSWORD || !TEMP) {
+    throw new Error('LOAD_PASSWORD and LOAD_TEMP_PASSWORD are not set: run this through run.sh');
+}
 const ADMIN = 'admin@load.test';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -81,7 +85,7 @@ console.log(`Seeding ${USERS} users, ${TABLES} tables per diagram on ${BASE}`);
 const admin = await ok(
     'register admin',
     call('POST', '/auth/register', {
-        body: { email: ADMIN, password: PASSWORD },
+        body: { email: ADMIN, password: PASSWORD, setupToken: process.env.LOAD_SETUP_TOKEN },
     })
 );
 const adminCookie = admin.cookie;

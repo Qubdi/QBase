@@ -43,3 +43,40 @@ describe('security headers', () => {
         expectHeaders(res.headers);
     });
 });
+
+describe('HSTS and caching', () => {
+    let ctx: TestCtx;
+    beforeAll(async () => {
+        ctx = await createTestApp({ trustProxy: true });
+    });
+    afterAll(() => ctx.close());
+
+    it('sends Strict-Transport-Security over https only', async () => {
+        const https = await ctx.app.inject({
+            url: '/auth/setup-status',
+            headers: { 'x-forwarded-proto': 'https' },
+        });
+        expect(https.headers['strict-transport-security']).toBe(
+            'max-age=63072000; includeSubDomains'
+        );
+        const http = await ctx.app.inject({ url: '/auth/setup-status' });
+        expect(http.headers['strict-transport-security']).toBeUndefined();
+    });
+
+    it('sends it whenever the cookie is forced secure', async () => {
+        const secure = await createTestApp({ cookieSecure: true });
+        try {
+            const res = await secure.app.inject({ url: '/auth/setup-status' });
+            expect(res.headers['strict-transport-security']).toBeDefined();
+        } finally {
+            await secure.close();
+        }
+    });
+
+    it('tells caches to keep no copy of an API answer', async () => {
+        const ok = await ctx.app.inject({ url: '/auth/setup-status' });
+        expect(ok.headers['cache-control']).toBe('no-store');
+        const err = await ctx.app.inject({ url: '/diagrams' });
+        expect(err.headers['cache-control']).toBe('no-store');
+    });
+});

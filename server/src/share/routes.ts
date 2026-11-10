@@ -1,18 +1,23 @@
+import { randomUUID } from 'node:crypto';
+import { createSseWriter } from '../lib/sse-write.js';
 import { and, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { audit } from '../audit/audit.js';
-import { SESSION_COOKIE, getSessionUser } from '../auth/sessions.js';
+import { sessionTokenOf, getSessionUser, isSecureRequest } from '../auth/sessions.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { shareLinks } from '../db/schema.js';
 import { CryptoBox } from '../introspect/crypto-box.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
-import { API_SECURITY_HEADERS } from '../lib/security-headers.js';
+import { safeError } from '../lib/safe-error.js';
+import { addressKey } from '../lib/rate-key.js';
+import { API_SECURITY_HEADERS, hstsHeaders } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
 import { activeLinkSql, countedLinkSql } from './active.js';
 import { resolveLinkById, resolveToken, type ShareLinkRow } from './access.js';
+import { acquireViewer, releaseViewer, renewViewer } from './viewers.js';
 import { createSnapshotCache } from './snapshot-cache.js';
 import { generateToken, hashToken } from './tokens.js';
 
@@ -75,11 +80,12 @@ export const shareManagementRoutes =
         const box = config.connectionKey
             ? new CryptoBox(config.connectionKey, 'share-link')
             : null;
-        const sealed = (token: string) => box?.encrypt(token) ?? null;
+        // the link's id is bound to its token, so a token copied to another link does not open
+        const sealed = (linkId: string, token: string) => box?.encrypt(token, linkId) ?? null;
         const unsealed = (l: ShareLinkRow) => {
             if (!box || !l.tokenEnc || l.revokedAt) return undefined;
             try {
-                return box.decrypt(l.tokenEnc);
+                return box.decrypt(l.tokenEnc, l.id);
             } catch {
                 // a changed key: the link works, only its URL cannot be shown
                 return undefined;
@@ -160,12 +166,15 @@ export const shareManagementRoutes =
                     
                     .where(and(eq(shareLinks.diagramId, id), countedLinkSql()));
                 if (open >= MAX_ACTIVE_LINKS) return null;
+                // the id is chosen here, not by the database, to be sealed with the token
+                const linkId = randomUUID();
                 const [created] = await tx
                     .insert(shareLinks)
                     .values({
+                        id: linkId,
                         diagramId: id,
                         tokenHash: hashToken(token),
-                        tokenEnc: sealed(token),
+                        tokenEnc: sealed(linkId, token),
                         access: body.access,
                         expiresAt: body.expiresAt
                             ? new Date(body.expiresAt)
@@ -198,6 +207,11 @@ export const shareManagementRoutes =
             if (!(await requireWriter(id, req.user!.id, reply))) return;
             const link = await findLink(id, linkId);
             if (!link) return reply.code(404).send({ error: 'not_found' });
+            // a revoked link is gone for good: changing it would tell viewers and
+            // the log about an edit that did nothing
+            if (link.revokedAt) {
+                return reply.code(409).send({ error: 'revoked' });
+            }
             const body = patchBody.parse(req.body);
             const nextExpiresAt =
                 body.expiresAt === undefined
@@ -238,20 +252,32 @@ export const shareManagementRoutes =
                                 ? undefined
                                 : nextExpiresAt,
                     })
-                    .where(eq(shareLinks.id, linkId))
+                    .where(and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt)))
                     .returning();
                 return row;
             });
-            if (!updated) {
+            // null: no room under the cap; undefined: the link went away meanwhile
+            if (updated === null) {
                 return reply.code(409).send({ error: 'too_many_links' });
             }
+            if (!updated) return reply.code(404).send({ error: 'not_found' });
+            // tell the viewers first: the change is done, and a log row that
+            // fails must not leave them on the old access
+            emitLinkChanged(linkId);
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.update',
                 diagramId: id,
-                meta: { linkId, access: updated.access },
+                meta: {
+                    linkId,
+                    access: updated.access,
+                    // the fields this request changed, in their new state
+                    ...(body.expiresAt !== undefined
+                        ? { expiresAt: updated.expiresAt?.toISOString() ?? null }
+                        : {}),
+                    ...(body.live !== undefined ? { live: updated.live } : {}),
+                },
             });
-            emitLinkChanged(linkId);
             return presentLink(updated);
         });
 
@@ -273,6 +299,8 @@ export const shareManagementRoutes =
                         )
                     )
                     .returning({ id: shareLinks.id });
+                // cut the viewers off first: a log row that fails must not leave them connected
+                emitLinkChanged(linkId);
                 if (revoked.length > 0) {
                     await audit(db, {
                         userId: req.user!.id,
@@ -285,8 +313,9 @@ export const shareManagementRoutes =
                         },
                     });
                 }
+            } else {
+                emitLinkChanged(linkId);
             }
-            emitLinkChanged(linkId);
             return reply.code(204).send();
         });
 
@@ -301,19 +330,20 @@ export const shareManagementRoutes =
             const token = generateToken();
             const [updated] = await db
                 .update(shareLinks)
-                .set({ tokenHash: hashToken(token), tokenEnc: sealed(token) })
+                .set({ tokenHash: hashToken(token), tokenEnc: sealed(linkId, token) })
                 // a revoke that landed after the check above must not be undone
                 .where(and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt)))
                 .returning();
             if (!updated) return reply.code(409).send({ error: 'revoked' });
+            // viewers on the old URL are cut off; the old token no longer resolves
+            // (before the log row, so a failing one cannot leave them connected)
+            emitLinkChanged(linkId);
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.regenerate',
                 diagramId: id,
                 meta: { linkId },
             });
-            // viewers on the old URL are cut off; the old token no longer resolves
-            emitLinkChanged(linkId);
             return { ...presentLink(updated), token };
         });
     };
@@ -342,10 +372,23 @@ export const publicShareRoutes =
         const snapshots = createSnapshotCache(db);
         app.addHook('onClose', async () => snapshots.close());
 
-        // open live viewers per link, so one link cannot hold unlimited sockets
-        const viewers = new Map<string, number>();
-        // ...and per client address over all links, so one address cannot take every slot
-        const viewersByIp = new Map<string, number>();
+        // every open live stream's close, so shutting the app down ends them: an
+        // open stream would otherwise keep the server from closing for ever
+        const openStreams = new Set<() => void>();
+        // preClose runs before the server waits for its connections to end
+        app.addHook('preClose', async () => {
+            for (const closeStream of [...openStreams]) closeStream();
+        });
+
+        // Open live viewers are counted in the database (see viewers.ts), per
+        // link so one link cannot hold unlimited sockets, and per client
+        // address over all links so one address cannot take every slot. A row
+        // counts for three heartbeats after the stream last renewed it.
+        const viewerCaps = {
+            maxPerLink: config.sseMaxPerLink,
+            maxPerIp: config.sseMaxPerIp,
+            ttlMs: config.sseHeartbeatSeconds * 3 * 1000,
+        };
         // One publish wakes every viewer of a link. They share one re-check
         // of the link instead of running a query each.
         const RECHECK_TTL_MS = 2_000;
@@ -421,14 +464,16 @@ export const publicShareRoutes =
             // a slot taken now would never be given back.
             if (req.raw.destroyed) return reply.hijack();
 
-            const open = viewers.get(linkId) ?? 0;
-            const ip = req.ip;
-            const openFromIp = viewersByIp.get(ip) ?? 0;
-            if (open >= config.sseMaxPerLink || openFromIp >= config.sseMaxPerIp) {
+            const ip = addressKey(req.ip);
+            const viewerId = await acquireViewer(db, linkId, ip, viewerCaps);
+            if (!viewerId) {
                 return reply.code(429).send({ error: 'too_many_viewers' });
             }
-            viewers.set(linkId, open + 1);
-            viewersByIp.set(ip, openFromIp + 1);
+            // the browser can also leave while the slot is being taken
+            if (req.raw.destroyed) {
+                await releaseViewer(db, viewerId).catch(() => undefined);
+                return reply.hijack();
+            }
 
             reply.hijack();
             const raw = reply.raw;
@@ -439,11 +484,13 @@ export const publicShareRoutes =
                 'x-accel-buffering': 'no',
                 // the stream bypasses the app's onSend hook
                 ...API_SECURITY_HEADERS,
+                ...hstsHeaders(req, config.cookieSecure),
                 connection: 'keep-alive',
                 ...(config.corsOrigin
                     ? {
                           'access-control-allow-origin': config.corsOrigin,
                           'access-control-allow-credentials': 'true',
+                          vary: 'Origin',
                       }
                     : {}),
             });
@@ -454,15 +501,20 @@ export const publicShareRoutes =
             const close = () => {
                 if (closed) return;
                 closed = true;
-                const left = (viewers.get(linkId) ?? 1) - 1;
-                if (left > 0) viewers.set(linkId, left);
-                else viewers.delete(linkId);
-                const fromIp = (viewersByIp.get(ip) ?? 1) - 1;
-                if (fromIp > 0) viewersByIp.set(ip, fromIp);
-                else viewersByIp.delete(ip);
+                openStreams.delete(close);
+                // a failure here only leaves a row that expires by itself
+                void releaseViewer(db, viewerId).catch((err) =>
+                    req.log.error({ err: safeError(err) }, 'share events: viewer release failed')
+                );
                 cleanup.forEach((fn) => fn());
                 raw.end();
             };
+
+            openStreams.add(close);
+
+            // one place for writes: a viewer that cannot keep up is cut off
+            // instead of buffering events in memory for ever
+            const send = createSseWriter(raw, close);
 
             // still allowed? (revoked, expired, access changed, live turned off,
             // or the token was regenerated so this URL is no longer the real one)
@@ -477,12 +529,10 @@ export const publicShareRoutes =
                     if (closed || changedDiagramId !== diagramId) return;
                     try {
                         if (!(await stillValid())) return close();
-                        raw.write(
-                            `event: version\ndata: ${JSON.stringify({ version })}\n\n`
-                        );
+                        send(`event: version\ndata: ${JSON.stringify({ version })}\n\n`);
                     } catch (err) {
                         req.log.error(
-                            { err },
+                            { err: safeError(err) },
                             'share events: publish check failed'
                         );
                         close();
@@ -496,7 +546,7 @@ export const publicShareRoutes =
                         if (!(await stillValid(true))) close();
                     } catch (err) {
                         req.log.error(
-                            { err },
+                            { err: safeError(err) },
                             'share events: link check failed'
                         );
                         close();
@@ -515,19 +565,32 @@ export const publicShareRoutes =
                     // opened: read it again instead of trusting what was seen then
                     const now = await stillValidShared(linkId, openedWith, req.user);
                     if (!now.valid) return close();
+                    await renewViewer(db, viewerId, linkId, ip, viewerCaps.ttlMs);
                     if (now.access === 'signed_in' && req.user) {
                         const still = await getSessionUser(
                             db,
-                            req.cookies[SESSION_COOKIE],
+                            sessionTokenOf(req.cookies, isSecureRequest(req, config.cookieSecure)),
                             config.sessionIdleDays * 86_400
                         );
                         if (!still || still.id !== req.user.id) return close();
                     }
                 } catch (err) {
-                    req.log.error({ err }, 'share events: heartbeat check failed');
+                    req.log.error({ err: safeError(err) }, 'share events: heartbeat check failed');
                     return close();
                 }
-                if (!closed) raw.write(': ping\n\n');
+                // The ping names the newest version: a publish that fell in a gap
+                // of the listening connection is never replayed, so a viewer
+                // that finds the number ahead of its own reloads. (A plain
+                // comment line would keep the socket open but say nothing.)
+                let version: number | undefined;
+                try {
+                    version = await snapshots.version(diagramId);
+                } catch (err) {
+                    req.log.error({ err: safeError(err) }, 'share events: version read failed');
+                }
+                if (closed) return;
+                if (version === undefined) send(': ping\n\n');
+                else send(`event: ping\ndata: ${JSON.stringify({ version })}\n\n`);
             }, config.sseHeartbeatSeconds * 1000);
             cleanup.push(() => clearInterval(heartbeat));
 

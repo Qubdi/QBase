@@ -219,6 +219,9 @@ describe('PostgreSQL introspection against a real database', () => {
         expect(pkIdx.map((i) => i.column)).toEqual(['order_id', 'line_no']);
         expect(pkIdx.map((i) => i.column_position)).toEqual([1, 2]);
         expect(pkIdx.every((i) => i.unique)).toBe(true);
+        // only the index behind the primary key says so (CLI-039)
+        expect(pkIdx.every((i) => i.primary === true)).toBe(true);
+        expect(idx('customers_email_key')[0].primary).toBe(false);
     });
 
     it('reads enum types', () => {

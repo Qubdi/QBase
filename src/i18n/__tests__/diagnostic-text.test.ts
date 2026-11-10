@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { diagnosticText } from '@/lib/diagnostic-text';
+import { INVALID_JSON_MESSAGE } from '@/formats/metadata/repair-text';
 
 describe('diagnosticText', () => {
     it('shows known engine messages from the language files', () => {
         expect(diagnosticText('Nothing to import')).toBe('Nothing to import');
+        expect(diagnosticText(INVALID_JSON_MESSAGE)).toBe(INVALID_JSON_MESSAGE);
         expect(diagnosticText('Found 1 table to import.')).toBe(
             'Found 1 table to import.'
         );

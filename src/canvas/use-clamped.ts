@@ -35,7 +35,7 @@ export function useClampedPlacement(
             left: clamp(at.x, left0 + EDGE, left0 + width - rect.width - EDGE),
             top: clamp(at.y, top0 + EDGE, top0 + height - rect.height - EDGE),
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `deps` is the caller's own list of re-clamp triggers
     }, [at.x, at.y, ref, ...deps]);
     return placed;
 }

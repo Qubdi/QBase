@@ -99,3 +99,17 @@ export function scopes(): (key: string) => Set<string> {
         return set;
     };
 }
+
+/**
+ * ` COLLATE name` for a column with a collation, or nothing. A name that is
+ * not a plain collation name is left out rather than written into the DDL.
+ */
+export function collateClause(
+    collation: string | undefined,
+    quote: (name: string) => string = (n) => n
+): string {
+    const name = collation?.trim();
+    if (!name || name.toLowerCase() === 'default') return '';
+    if (!/^[A-Za-z0-9_.$-]+$/.test(name)) return '';
+    return ` COLLATE ${quote(name)}`;
+}

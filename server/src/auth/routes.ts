@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { safeError } from '../lib/safe-error.js';
 import { eq, sql } from 'drizzle-orm';
 import type {
     FastifyPluginAsync,
@@ -9,13 +11,14 @@ import { audit } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { users } from '../db/schema.js';
-import { createFailureThrottle } from '../lib/failure-throttle.js';
 import { isUniqueViolation } from '../lib/pg-errors.js';
 import {
     hashPassword,
     verifyAgainstNobody,
     verifyPassword,
 } from './password.js';
+import { addressKey } from '../lib/rate-key.js';
+import { createAuthGuards, type AuthGuards } from './guards.js';
 import { createMfa, mfaAvailable } from './mfa.js';
 import { mfaRoutes } from './mfa-routes.js';
 import { weakPassword } from './password-rules.js';
@@ -24,6 +27,9 @@ import {
     destroyOtherSessions,
     destroySession,
     SESSION_COOKIE,
+    SECURE_SESSION_COOKIE,
+    sessionTokenOf,
+    isSecureRequest,
 } from './sessions.js';
 
 // advisory-lock key for the first-run sign-up (distinct from the admin-set lock)
@@ -33,14 +39,24 @@ const FIRST_USER_LOCK = 7_301_001;
 // apply when one is SET (see weakPassword), never here, so people who chose a
 // password under older rules can still get in.
 const signIn = z.object({
-    email: z.string().trim().toLowerCase().email(),
+    // 254 is the longest address there is: it also keeps the lockout key short
+    email: z.string().trim().toLowerCase().max(254).email(),
     password: z.string().min(1).max(200),
 });
 
 const newAccount = z.object({
     email: z.string().trim().toLowerCase().email(),
     password: z.string().max(200),
+    // only read by the first-run sign-up, and only when the server asks for one
+    setupToken: z.string().max(256).optional(),
 });
+
+/** Constant-time comparison: both sides are hashed first, so length does not leak either. */
+const sameToken = (given: string | undefined, expected: string) =>
+    timingSafeEqual(
+        createHash('sha256').update(given ?? '').digest(),
+        createHash('sha256').update(expected).digest()
+    );
 
 const changePassword = z.object({
     // as long as any password the server accepts: a hash of megabytes is a cheap attack
@@ -52,7 +68,12 @@ const changePassword = z.object({
 });
 
 export const authRoutes =
-    (db: Db, config: Config): FastifyPluginAsync =>
+    (
+        db: Db,
+        config: Config,
+        // shared with the admin step-up, so a lockout holds at every door
+        guards: AuthGuards = createAuthGuards(config)
+    ): FastifyPluginAsync =>
     async (app) => {
         // per client address; an account's failures are counted separately
         // below, so one account cannot be guessed at from many addresses
@@ -64,24 +85,10 @@ export const authRoutes =
                 },
             },
         };
-        const failures = createFailureThrottle({
-            max: config.authMaxFailures,
-            windowMs: config.authLockoutMinutes * 60_000,
-        });
-        const locked = (reply: FastifyReply, key: string) => {
-            const wait = failures.blockedFor(key);
-            if (wait === 0) return false;
-            reply
-                .code(429)
-                .header('retry-after', wait)
-                .send({ error: 'too_many_attempts' });
-            return true;
-        };
+        const { failures, accountFailures, locked, mfaGuard } = guards;
 
         const cookieSecure = (req: FastifyRequest) =>
-            config.cookieSecure === 'auto'
-                ? req.protocol === 'https'
-                : config.cookieSecure;
+            isSecureRequest(req, config.cookieSecure);
 
         const startSession = async (
             req: FastifyRequest,
@@ -94,19 +101,26 @@ export const authRoutes =
                 config.sessionDays,
                 req.headers['user-agent']
             );
-            reply.setCookie(SESSION_COOKIE, token, {
+            const secure = cookieSecure(req);
+            // over https the cookie takes the `__Host-` name (a browser only
+            // keeps that one when it is Secure, Path=/ and has no Domain);
+            // over plain http it cannot, so it keeps the plain name
+            reply.setCookie(secure ? SECURE_SESSION_COOKIE : SESSION_COOKIE, token, {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: cookieSecure(req),
+                secure,
                 expires: expiresAt,
             });
+            // a plain-named cookie from before the prefix would otherwise sit
+            // beside the new one for the rest of its life
+            if (secure) reply.clearCookie(SESSION_COOKIE, { path: '/', secure });
         };
 
         const mfa = createMfa(db, config);
 
         // lets the UI show the first-run "create admin" form only when it applies
-        app.get('/setup-status', async () => {
+        app.get('/setup-status', limit, async () => {
             // one row is enough to know; counting would visit every user
             const anyUser = await db
                 .select({ id: users.id })
@@ -115,6 +129,8 @@ export const authRoutes =
             // the form needs the minimum length to tick its checklist as people type
             return {
                 needsSetup: anyUser.length === 0,
+                // the form shows its token field only while it is needed; the token itself is never sent
+                setupTokenRequired: anyUser.length === 0 && config.setupToken !== null,
                 passwordMinLength: config.passwordMinLength,
                 // whether the account menu offers two-factor at all
                 mfaAvailable: mfaAvailable(config),
@@ -123,7 +139,7 @@ export const authRoutes =
 
         if (config.mfaEnabled) {
             await app.register(
-                mfaRoutes({ db, config, mfa, failures, locked, limit, startSession })
+                mfaRoutes({ db, config, mfa, failures, locked, mfaGuard, limit, startSession })
             );
         }
 
@@ -141,6 +157,11 @@ export const authRoutes =
                 .limit(1);
             if (anyUser.length > 0) {
                 return reply.code(403).send({ error: 'signup_disabled' });
+            }
+            // While the server is empty, only whoever read the token in its log
+            // (or set SETUP_TOKEN) may create the admin. Checked before the slow hash.
+            if (config.setupToken !== null && !sameToken(body.setupToken, config.setupToken)) {
+                return reply.code(403).send({ error: 'invalid_setup_token' });
             }
             const passwordHash = await hashPassword(body.password);
             // Counting and inserting happen under one lock: two first-run
@@ -196,8 +217,16 @@ export const authRoutes =
             // address for that account, so a stranger cannot keep someone else
             // out by guessing at their account on purpose. (Guesses spread over
             // many addresses are held back by the per-address rate limit.)
-            const key = `login:${body.email}:${req.ip}`;
-            if (locked(reply, key)) return;
+            const key = `login:${body.email}:${addressKey(req.ip)}`;
+            const accountKey = `login:${body.email}`;
+            if (await locked(reply, key)) return;
+            const accountWait = await accountFailures.blockedFor(accountKey);
+            if (accountWait > 0) {
+                return reply
+                    .code(429)
+                    .header('retry-after', accountWait)
+                    .send({ error: 'too_many_attempts' });
+            }
             const [user] = await db
                 .select()
                 .from(users)
@@ -205,8 +234,11 @@ export const authRoutes =
             const ok = user
                 ? await verifyPassword(user.passwordHash, body.password)
                 : await verifyAgainstNobody(body.password);
-            if (!user || !ok) {
-                failures.recordFailure(key);
+            // a disabled account is answered like a wrong password, so a correct
+            // password cannot confirm that the account exists but is switched off
+            if (!user || !user.isActive || !ok) {
+                const addressLocked = await failures.recordFailure(key);
+                const accountLocked = await accountFailures.recordFailure(accountKey);
                 reply.code(401).send({ error: 'invalid_credentials' });
                 // The row is written after the answer has gone out, and only for
                 // an account that exists (guesses at made-up emails would fill the
@@ -218,16 +250,18 @@ export const authRoutes =
                             userId: user.id,
                             action: 'user.sign_in_failed',
                         });
+                        // the failure that tripped a lockout is worth its own row
+                        if (addressLocked || accountLocked) {
+                            await audit(db, { userId: user.id, action: 'user.locked' });
+                        }
                     } catch (err) {
-                        req.log.error({ err }, 'sign-in failure was not logged');
+                        req.log.error({ err: safeError(err) }, 'sign-in failure was not logged');
                     }
                 }
                 return reply;
             }
-            failures.reset(key);
-            if (!user.isActive) {
-                return reply.code(403).send({ error: 'account_disabled' });
-            }
+            await failures.reset(key);
+            await accountFailures.reset(accountKey);
             // password right, but there is a second step: no cookie yet, only
             // a ticket for POST /auth/login/mfa
             if (config.mfaEnabled && user.mfaEnabledAt) {
@@ -251,16 +285,15 @@ export const authRoutes =
             };
         });
 
-        app.post('/logout', async (req, reply) => {
+        app.post('/logout', limit, async (req, reply) => {
             // a call with no live session signs nobody out, so it leaves no row
             if (req.user) {
                 await audit(db, { userId: req.user.id, action: 'user.logout' });
             }
-            await destroySession(db, req.cookies[SESSION_COOKIE]);
-            reply.clearCookie(SESSION_COOKIE, {
-                path: '/',
-                secure: cookieSecure(req),
-            });
+            await destroySession(db, sessionTokenOf(req.cookies, cookieSecure(req)));
+            const secure = cookieSecure(req);
+            reply.clearCookie(SESSION_COOKIE, { path: '/', secure });
+            if (secure) reply.clearCookie(SECURE_SESSION_COOKIE, { path: '/', secure });
             return { ok: true };
         });
 
@@ -281,7 +314,7 @@ export const authRoutes =
             }
             const body = changePassword.parse(req.body);
             const key = `password:${req.user.id}`;
-            if (locked(reply, key)) return;
+            if (await locked(reply, key)) return;
             const [user] = await db
                 .select()
                 .from(users)
@@ -289,7 +322,7 @@ export const authRoutes =
             if (
                 !(await verifyPassword(user.passwordHash, body.currentPassword))
             ) {
-                failures.recordFailure(key);
+                await failures.recordFailure(key);
                 // a signed-in person mistyping their password is not a sign-in attempt
                 await audit(db, {
                     userId: user.id,
@@ -313,36 +346,40 @@ export const authRoutes =
                 if (!config.secretsKey) {
                     return reply.code(503).send({ error: 'mfa_unavailable' });
                 }
-                const mfaKey = `mfa:${user.id}`;
-                if (locked(reply, mfaKey)) return;
+                if (await mfaGuard.locked(reply, req, user.id)) return;
                 const ok =
                     body.code !== undefined
                         ? await mfa.checkCode(user.id, body.code)
                         : await mfa.spendRecoveryCode(user.id, body.recoveryCode!);
                 if (!ok) {
-                    failures.recordFailure(mfaKey);
+                    await mfaGuard.fail(req, user.id);
                     await audit(db, { userId: user.id, action: 'mfa.failed' });
                     return reply.code(403).send({ error: 'invalid_code' });
                 }
-                failures.reset(mfaKey);
+                await mfaGuard.reset(req, user.id);
                 if (body.code === undefined) {
                     await audit(db, { userId: user.id, action: 'mfa.recovery_used' });
                 }
             }
-            failures.reset(key);
-            await db
-                .update(users)
-                .set({
-                    passwordHash: await hashPassword(body.newPassword),
-                    // their own password now, not the temporary one
-                    mustChangePassword: false,
-                })
-                .where(eq(users.id, user.id));
-            await destroyOtherSessions(
-                db,
-                user.id,
-                req.cookies[SESSION_COOKIE]
-            );
+            await failures.reset(key);
+            const newHash = await hashPassword(body.newPassword);
+            // together: a failure between the two would leave the old sessions
+            // valid under the new password
+            await db.transaction(async (tx) => {
+                await tx
+                    .update(users)
+                    .set({
+                        passwordHash: newHash,
+                        // their own password now, not the temporary one
+                        mustChangePassword: false,
+                    })
+                    .where(eq(users.id, user.id));
+                await destroyOtherSessions(
+                    tx,
+                    user.id,
+                    sessionTokenOf(req.cookies, cookieSecure(req))
+                );
+            });
             await audit(db, { userId: user.id, action: 'user.password_change' });
             return { ok: true };
         });

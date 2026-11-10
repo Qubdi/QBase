@@ -25,7 +25,7 @@ import { findFreeShift } from './placement';
 import { sizeFor } from './geometry';
 import type { ArrangeScope } from './auto-arrange';
 import { countPaste, recall, remember } from './clipboard';
-import { parseHandle } from './flow-model';
+import { handleId, parseHandle } from './flow-model';
 import type { Point } from './flow-model';
 
 type Measure = (entity: Entity) => Size;
@@ -337,6 +337,35 @@ export function connectFromHandles(
     const ends = endsOf(connection);
     if (!ends || !isUsableConnection(connection)) return undefined;
     return connectColumns(store, ends.from, ends.to);
+}
+
+/**
+ * A drag from a field dot has been released on a field row but not on one of
+ * its dots (the middle of the row, say): it joins the same two fields as a
+ * release on a dot. `over` is the element under the pointer. Nothing happens
+ * unless it is inside a field row of a table on the canvas.
+ */
+export function connectFromDrop(
+    store: EditorStore,
+    from: { nodeId: string; handleId?: string | null },
+    over: Element | null | undefined
+): ConnectOutcome | undefined {
+    const row = over?.closest('[data-testid^="field-"]');
+    const node = over?.closest('.react-flow__node-entity');
+    const columnId = row?.getAttribute('data-testid')?.slice('field-'.length);
+    const entityId = node?.getAttribute('data-id');
+    if (!columnId || !entityId) return undefined;
+    // the row must really be a field of that table: a look-alike test id is not one
+    const design = store.getState().design;
+    if (!design.entities.byId[entityId]?.columnIds.includes(columnId))
+        return undefined;
+    // the side does not matter to the link, only the two fields do
+    return connectFromHandles(store, {
+        source: from.nodeId,
+        sourceHandle: from.handleId,
+        target: entityId,
+        targetHandle: handleId(columnId, 'l'),
+    });
 }
 
 /**

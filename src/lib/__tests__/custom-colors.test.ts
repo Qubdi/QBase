@@ -5,7 +5,6 @@ import {
     MAX_CUSTOM_COLORS,
     normalizeHex,
     parseSaved,
-    readSavedColors,
     removeColor,
     writeSavedColors,
 } from '../custom-colors';
@@ -141,24 +140,13 @@ describe('storage', () => {
             },
         });
 
-    it('round-trips the colors through localStorage', () => {
+    it('writes the colors to localStorage', () => {
         expect(writeSavedColors(['#112233'])).toBe(true);
         expect(localStorage.getItem(CUSTOM_COLORS_KEY)).toBe('["#112233"]');
-        expect(readSavedColors()).toEqual(['#112233']);
-    });
-
-    it('reads nothing when nothing was saved', () => {
-        expect(readSavedColors()).toEqual([]);
     });
 
     it('reports failure instead of throwing when the browser refuses to store', () => {
         breakStorage({ set: true });
         expect(writeSavedColors(['#112233'])).toBe(false);
-    });
-
-    it('reads nothing instead of throwing when storage cannot be read', () => {
-        localStorage.setItem(CUSTOM_COLORS_KEY, '["#112233"]');
-        breakStorage({ get: true });
-        expect(readSavedColors()).toEqual([]);
     });
 });

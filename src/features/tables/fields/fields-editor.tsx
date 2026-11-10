@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { KeyRound, MessageSquareText, Plus, Trash } from 'lucide-react';
 import {
     planAddColumn,
@@ -86,7 +86,7 @@ export const FieldsEditor: React.FC<{
     const columns = columnsOf(design, entity);
     const userTypes = listOf(design.userTypes);
     const [popoverFor, setPopoverFor] = useState<string | undefined>();
-    const added = useRef<string | undefined>(undefined);
+    const [added, setAdded] = useState<string | undefined>(undefined);
 
     const removeColumn = (id: string) => {
         setPopoverFor(undefined);
@@ -135,7 +135,7 @@ export const FieldsEditor: React.FC<{
                             className={cn(
                                 'flex min-w-0 flex-1 items-center gap-1',
                                 compact && 'gap-2',
-                                (addedId ?? added.current) === column.id &&
+                                (addedId ?? added) === column.id &&
                                     'bg-sky-100/60'
                             )}
                         >
@@ -158,7 +158,7 @@ export const FieldsEditor: React.FC<{
                                     required
                                     readOnly={locked}
                                     focusOnMount={
-                                        (addedId ?? added.current) === column.id
+                                        (addedId ?? added) === column.id
                                     }
                                     placeholder={text('fields.namePlaceholder')}
                                     onCommit={(name) =>
@@ -301,7 +301,7 @@ export const FieldsEditor: React.FC<{
                     onClick={() => {
                         const command = planAddColumn(design, entity.id);
                         if (command?.type === 'part.insert') {
-                            added.current = command.item.id;
+                            setAdded(command.item.id);
                             onAdded?.(command.item.id);
                         }
                         edit(command);

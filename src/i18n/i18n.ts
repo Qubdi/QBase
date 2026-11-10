@@ -73,6 +73,15 @@ export const i18nReady: Promise<void> = i18n
             escapeValue: false,
         },
         fallbackLng: FALLBACK,
+        // a browser language the app has no file for falls back to English
+        // instead of setting <html lang> over English text. Only the detected
+        // language is filtered: a code set on purpose is kept as given.
+        detection: {
+            convertDetectedLanguage: (lng: string) =>
+                candidates(lng).find((c) =>
+                    languages.some((l) => l.code === c)
+                ) ?? FALLBACK,
+        },
         debug: false,
     })
     .then(() => ensureLocale(i18n.language))

@@ -109,7 +109,7 @@ describe('sign-in tracking', () => {
                 headers: as(admin),
                 payload: { isActive: false },
             });
-            expect((await signIn('dave@example.com')).statusCode).toBe(403);
+            expect((await signIn('dave@example.com')).statusCode).toBe(401);
             expect(await lastLogin(id)).toBeNull();
         });
     });

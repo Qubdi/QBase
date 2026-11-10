@@ -70,7 +70,9 @@ export function decodeTypmod(type: string, typmod: number): DecodedTypmod {
 
 /** "integer[]" -> { base: "integer", isArray: true } */
 export function splitArrayType(type: string): { base: string; isArray: boolean } {
-    return type.endsWith('[]')
-        ? { base: type.replace(/(\[\])+$/, ''), isArray: true }
-        : { base: type, isArray: false };
+    if (!type.endsWith('[]')) return { base: type, isArray: false };
+    // a loop, not /(\[\])+$/: that regex is quadratic on a long text of "[][]..."
+    let end = type.length;
+    while (end >= 2 && type.startsWith('[]', end - 2)) end -= 2;
+    return { base: type.slice(0, end), isArray: true };
 }

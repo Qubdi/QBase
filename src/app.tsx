@@ -6,6 +6,7 @@ import { Toaster } from '@/platform/toast/toaster';
 import { ForcedPasswordChange } from '@/components/qubdi/forced-password-change';
 import { QubdiProvider } from '@/context/qubdi-context/qubdi-provider';
 import { HelmetData } from '@/helmet/helmet-data';
+import { AppErrorBoundary } from '@/platform/router/problem-page';
 import { createAppRouter } from '@/platform/router/router';
 
 const router = createAppRouter();
@@ -17,12 +18,14 @@ const router = createAppRouter();
 export const App: React.FC = () => (
     <HelmetProvider>
         <HelmetData />
-        <TooltipProvider>
-            <QubdiProvider>
-                <ForcedPasswordChange />
-                <RouterProvider router={router} />
-                <Toaster />
-            </QubdiProvider>
-        </TooltipProvider>
+        <AppErrorBoundary>
+            <TooltipProvider>
+                <QubdiProvider>
+                    <ForcedPasswordChange />
+                    <RouterProvider router={router} />
+                    <Toaster />
+                </QubdiProvider>
+            </TooltipProvider>
+        </AppErrorBoundary>
     </HelmetProvider>
 );

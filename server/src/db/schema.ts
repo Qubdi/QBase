@@ -165,7 +165,6 @@ export const projects = pgTable(
         name: text('name').notNull().unique(),
         slug: text('slug').notNull(),
         description: text('description').notNull().default(''),
-        // no index on created_by: projects are few, and users are deleted rarely
         createdBy: uuid('created_by').references(() => users.id, {
             onDelete: 'set null',
         }),
@@ -176,6 +175,8 @@ export const projects = pgTable(
     (t) => [
         // the URL piece (/Qubdi/diagrams); unique ignoring case
         uniqueIndex('projects_slug_lower_idx').on(sql`lower(${t.slug})`),
+        // deleting a user sets created_by to null: without this it scans the table
+        index('projects_created_by_idx').on(t.createdBy),
     ]
 );
 
@@ -215,28 +216,22 @@ export const diagrams = pgTable(
         // reading a diagram never has to hash its (large) content. Null for a
         // row not yet hashed; the next read fills it in.
         contentHash: text('content_hash'),
-        // What the diagram list shows about each diagram, kept by the database
-        // as the content is written, so listing never reads the content itself.
-        // The same numbers `diagramStats` computes for content in memory.
-        statDatabaseType: text('stat_database_type').generatedAlwaysAs(
-            sql`nullif(content->>'databaseType', '')`
-        ),
-        statDatabaseEdition: text('stat_database_edition').generatedAlwaysAs(
-            sql`nullif(content->>'databaseEdition', '')`
-        ),
-        statTableCount: integer('stat_table_count')
-            .notNull()
-            .generatedAlwaysAs(
-                sql`case when jsonb_typeof(content->'tables') = 'array' then jsonb_array_length(content->'tables') else 0 end`
-            ),
+        // What the diagram list shows about each diagram, worked out by the app
+        // as the content is written (`diagramStats`) and stored as plain columns,
+        // so listing never reads the content and a save never makes the database
+        // parse it again. A row written before these were plain keeps the values
+        // its old generated columns had.
+        statDatabaseType: text('stat_database_type'),
+        statDatabaseEdition: text('stat_database_edition'),
+        statTableCount: integer('stat_table_count').notNull().default(0),
         statRelationshipCount: integer('stat_relationship_count')
             .notNull()
-            .generatedAlwaysAs(
-                sql`case when jsonb_typeof(content->'relationships') = 'array' then jsonb_array_length(content->'relationships') else 0 end`
-            ),
-        statCreatedAt: text('stat_created_at').generatedAlwaysAs(
-            sql`nullif(content->>'createdAt', '')`
-        ),
+            .default(0),
+        statCreatedAt: text('stat_created_at'),
+        // size in bytes of the content as compact JSON, written with the stats; the
+        // size checks read this instead of turning the content into text. Null
+        // until the start-up fill reaches the row: readers then measure it.
+        statContentBytes: integer('stat_content_bytes'),
         autoPublish: boolean('auto_publish').notNull().default(false),
         // per-diagram lint rule settings (enabled rules, severities, naming style)
         lintConfig: jsonb('lint_config').notNull().default({}),
@@ -267,16 +262,17 @@ export const diagramLocks = pgTable('diagram_locks', {
     diagramId: uuid('diagram_id')
         .primaryKey()
         .references(() => diagrams.id, { onDelete: 'cascade' }),
-    // no index on user_id: one row per diagram that is open for editing, so
-    // the table is small (a delete by user_id read 300 rows and was not faster
-    // with an index)
     userId: uuid('user_id')
         .notNull()
         .references(() => users.id, { onDelete: 'cascade' }),
     // one browser tab: the same user in a second tab is a second editor
     editorId: text('editor_id').notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-});
+},
+(t) => [
+    // sign-in and sign-out delete a user's locks, and deleting a user cascades here
+    index('diagram_locks_user_idx').on(t.userId),
+]);
 
 export const snapshots = pgTable(
     'snapshots',
@@ -299,6 +295,15 @@ export const snapshots = pgTable(
         // made by auto-publish (and so rewritten by the next one), as opposed to a
         // publish someone asked for, whatever note it carries
         auto: boolean('auto').notNull().default(false),
+        // the same numbers as on diagrams, copied when the snapshot is made, so the
+        // viewer list never reads each snapshot's content. All null for a snapshot
+        // the start-up fill has not reached: readers then take them from the content.
+        statDatabaseType: text('stat_database_type'),
+        statDatabaseEdition: text('stat_database_edition'),
+        statTableCount: integer('stat_table_count'),
+        statRelationshipCount: integer('stat_relationship_count'),
+        statCreatedAt: text('stat_created_at'),
+        statContentBytes: integer('stat_content_bytes'),
     },
     (t) => [
         // also serves diagram_id lookups (version history, latest version)
@@ -306,6 +311,11 @@ export const snapshots = pgTable(
         // the biggest table: deleting a user sets published_by to null, and
         // without this index that scans every row of it
         index('snapshots_published_by_idx').on(t.publishedBy),
+        // the hourly stats fill looks for rows it has not filled yet; the index
+        // holds only those, so it is empty once the fill has caught up
+        index('snapshots_stats_pending_idx')
+            .on(t.id)
+            .where(sql`${t.statTableCount} is null`),
     ]
 );
 
@@ -341,10 +351,12 @@ export const auditLog = pgTable(
             t.at.desc().nullsFirst(),
             t.id.desc().nullsFirst()
         ),
-        // GET /admin/audit?action=
+        // GET /admin/audit?action= and ?group= (a keyset cursor compares at and
+        // id, so id is part of the index: the page walks it and stops)
         index('audit_log_action_at_idx').on(
             t.action,
-            t.at.desc().nullsFirst()
+            t.at.desc().nullsFirst(),
+            t.id.desc().nullsFirst()
         ),
         // GET /admin/audit?diagramId=
         index('audit_log_diagram_at_idx').on(t.diagramId, t.at),
@@ -369,7 +381,6 @@ export const shareLinks = pgTable(
         access: shareAccess('access').notNull().default('anyone'),
         expiresAt: timestamp('expires_at', { withTimezone: true }),
         live: boolean('live').notNull().default(false),
-        // no index on created_by: users are deleted rarely
         createdBy: uuid('created_by').references(() => users.id, {
             onDelete: 'set null',
         }),
@@ -385,6 +396,8 @@ export const shareLinks = pgTable(
             t.diagramId,
             t.createdAt.desc().nullsFirst()
         ),
+        // deleting a user sets created_by to null
+        index('share_links_created_by_idx').on(t.createdBy),
     ]
 );
 
@@ -396,8 +409,7 @@ export const savedConnections = pgTable(
         projectId: uuid('project_id')
             .notNull()
             .references(() => projects.id, { onDelete: 'cascade' }),
-        // who saved it; the connection outlives that user (no index: a project
-        // holds a handful of connections)
+        // who saved it; the connection outlives that user
         ownerId: uuid('owner_id').references(() => users.id, {
             onDelete: 'set null',
         }),
@@ -422,6 +434,8 @@ export const savedConnections = pgTable(
             t.projectId,
             t.name
         ),
+        // deleting a user sets owner_id to null
+        index('saved_connections_owner_idx').on(t.ownerId),
     ]
 );
 
@@ -432,7 +446,7 @@ export const driftSettings = pgTable(
             .primaryKey()
             .references(() => diagrams.id, { onDelete: 'cascade' }),
         // connection_id is indexed: editing or deleting a connection finds the
-        // settings that use it. No index on updated_by: deleting a user is rare.
+        // settings that use it; so is updated_by, for deleting a user.
         connectionId: uuid('connection_id').references(() => savedConnections.id, {
             onDelete: 'set null',
         }),
@@ -450,7 +464,10 @@ export const driftSettings = pgTable(
             .notNull()
             .defaultNow(),
     },
-    (t) => [index('drift_settings_connection_idx').on(t.connectionId)]
+    (t) => [
+        index('drift_settings_connection_idx').on(t.connectionId),
+        index('drift_settings_updated_by_idx').on(t.updatedBy),
+    ]
 );
 
 export const driftReports = pgTable(
@@ -476,4 +493,38 @@ export const driftReports = pgTable(
         webhook: text('webhook'),
     },
     (t) => [index('drift_reports_diagram_idx').on(t.diagramId, t.runAt)]
+);
+
+// Counters that every server process shares: rate limits, sign-in lockout.
+// One row per key; a window opens at the first hit and the row is dead once
+// `expires_at` has passed (the hourly maintenance deletes dead rows). Created
+// UNLOGGED by the migration: losing the counts in a crash only forgets some
+// recent attempts, and writes are cheaper without the WAL.
+export const rateCounters = pgTable(
+    'rate_counters',
+    {
+        key: text('key').primaryKey(),
+        count: integer('count').notNull(),
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    },
+    (t) => [index('rate_counters_expires_idx').on(t.expiresAt)]
+);
+
+// One row per open live share stream, so the viewer caps hold across every
+// server process. A stream renews its row on each heartbeat; a process that
+// dies leaves rows that stop counting when they expire. UNLOGGED by the
+// migration: after a crash the viewers reconnect and are counted again.
+export const liveViewers = pgTable(
+    'live_viewers',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        linkId: uuid('link_id').notNull(),
+        ip: text('ip').notNull(),
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    },
+    (t) => [
+        index('live_viewers_link_idx').on(t.linkId),
+        index('live_viewers_ip_idx').on(t.ip),
+        index('live_viewers_expires_idx').on(t.expiresAt),
+    ]
 );

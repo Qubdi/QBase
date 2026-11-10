@@ -11,6 +11,7 @@ const savedParts = (d: Diagram): unknown[] => [
     d.areas,
     d.customTypes,
     d.notes,
+    d.filter,
 ];
 
 /**

@@ -82,6 +82,9 @@ function checkShape(diagram: Record<string, unknown>): void {
             if (!isObject(f) || !isObject(f.type)) {
                 throw new Error(`${where}: fields[${j}] needs an object "type"`);
             }
+            if (typeof f.name !== 'string') {
+                throw new Error(`${where}: fields[${j}] needs a text "name"`);
+            }
         });
         if (t.indexes !== undefined && !Array.isArray(t.indexes)) {
             throw new Error(`${where}: "indexes" is not an array`);
@@ -110,7 +113,6 @@ function diagramOf(json: unknown): LintInput {
             checkShape(diagram);
             return diagram as LintInput;
         }
-        if (o.content && typeof o.content === 'object') return o.content as LintInput;
     }
     throw new Error('the file does not look like a QBase diagram (no "tables")');
 }
@@ -141,7 +143,14 @@ export function runCli(argv: string[], io: CliIo): number {
     }
     if (args.databaseType) diagram = { ...diagram, databaseType: args.databaseType };
 
-    const findings = lint(diagram, config);
+    let findings: ReturnType<typeof lint>;
+    try {
+        findings = lint(diagram, config);
+    } catch (e) {
+        // exit 1 means "findings"; a diagram the linter cannot read is an input fault
+        io.err(`cannot lint this diagram: ${(e as Error).message}\n`);
+        return 2;
+    }
     const summary = summarizeFindings(findings);
     if (args.format === 'json') {
         io.out(`${JSON.stringify({ findings, summary }, null, 2)}\n`);

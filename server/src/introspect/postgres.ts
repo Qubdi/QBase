@@ -1,7 +1,8 @@
 import net, { isIP } from 'node:net';
 import pg from 'pg';
+import { watchConnection, type ConnectionWatch } from './connection-watch.js';
 import { limitReceivedBytes, MAX_RESPONSE_BYTES } from './byte-budget.js';
-import { assertReadOnlySql } from './readonly-guard.js';
+import { queryAllowlist } from './readonly-guard.js';
 import type { ResolvedTarget } from './net-guard.js';
 import { decodeTypmod, splitArrayType } from './typmod.js';
 import {
@@ -103,7 +104,7 @@ export const POSTGRES_QUERIES = {
     indexes: `
         SELECT n.nspname AS schema, t.relname AS "table", i.relname AS name,
                COALESCE(a.attname, pg_get_indexdef(ix.indexrelid, k.pos::int, true)) AS "column",
-               am.amname AS index_type, ix.indisunique AS "unique",
+               am.amname AS index_type, ix.indisunique AS "unique", ix.indisprimary AS "primary",
                pg_get_expr(ix.indpred, ix.indrelid) AS "where",
                CASE WHEN (ix.indoption[k.pos - 1] & 1) = 1 THEN 'DESC' ELSE 'ASC' END AS direction,
                k.pos AS column_position
@@ -174,13 +175,19 @@ export async function withReadOnlyTransaction<T>(
     }
 }
 
+const assertRegistered = queryAllowlist(POSTGRES_QUERIES);
+
 type Row = Record<string, unknown>;
 
 export class PostgresIntrospector implements Introspector {
-    constructor(private readonly client: pg.Client) {}
+    constructor(
+        private readonly client: pg.Client,
+        private readonly watch?: ConnectionWatch
+    ) {}
 
     private async query(sql: string, schemas: string[]): Promise<Row[]> {
-        assertReadOnlySql(sql);
+        this.watch?.assertAlive();
+        assertRegistered(sql);
         const hasFilter = sql.includes('$1');
         const res = await this.client.query(sql, hasFilter ? [schemas] : []);
         return res.rows;
@@ -308,6 +315,7 @@ export class PostgresIntrospector implements Introspector {
                     column: String(i.column),
                     index_type: String(i.index_type),
                     unique: Boolean(i.unique),
+                    primary: Boolean(i.primary),
                     direction: String(i.direction),
                     column_position: Number(i.column_position),
                     where: i.where ? String(i.where) : null,
@@ -378,6 +386,9 @@ export async function connectPostgres(
         query_timeout: STATEMENT_TIMEOUT_MS + 5_000,
         application_name: 'qbase-introspect',
     });
+    // before connecting: a connection dropped later emits 'error', which with
+    // no listener would end the process
+    const watch = watchConnection(client, params.password);
     await client.connect();
-    return new PostgresIntrospector(client);
+    return new PostgresIntrospector(client, watch);
 }

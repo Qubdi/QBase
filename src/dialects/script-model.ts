@@ -3,9 +3,15 @@ import type { KeyMethod } from '@/core/model/key';
 export type Severity = 'error' | 'warning' | 'info';
 
 /** A message about the text being read or the design being written. */
+/** The diagnostics the screens tell apart by code, not by their English text. */
+export type DiagnosticCode =
+    'nothing-to-import' | 'nothing-to-export' | 'found-tables';
+
 export interface Diagnostic {
     severity: Severity;
     message: string;
+    /** a stable id for the few diagnostics the screens act on; never shown */
+    code?: DiagnosticCode;
     line?: number;
     column?: number;
     suggestion?: string;

@@ -30,6 +30,9 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
     const { login, loginMfa, register } = useQubdi();
     // self-registration only exists on a brand-new server, to create its admin
     const [needsSetup, setNeedsSetup] = useState(false);
+    // the server asks for a token it printed in its log before it makes the first admin
+    const [tokenRequired, setTokenRequired] = useState(false);
+    const [setupToken, setSetupToken] = useState('');
     const mode = needsSetup ? 'register' : 'login';
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -48,8 +51,14 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
     useEffect(() => {
         if (!open) return;
         api.setupStatus()
-            .then((r) => setNeedsSetup(r.needsSetup))
-            .catch(() => setNeedsSetup(false));
+            .then((r) => {
+                setNeedsSetup(r.needsSetup);
+                setTokenRequired(r.needsSetup && r.setupTokenRequired === true);
+            })
+            .catch(() => {
+                setNeedsSetup(false);
+                setTokenRequired(false);
+            });
     }, [open]);
 
     const close = (o: boolean) => {
@@ -71,13 +80,16 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
             const result =
                 mode === 'login'
                     ? await login(email, password)
-                    : await register(email, password);
+                    : tokenRequired
+                      ? await register(email, password, setupToken.trim())
+                      : await register(email, password);
             if (result && 'mfaChallenge' in result) {
                 setChallenge(result.mfaChallenge);
                 setPassword('');
                 return;
             }
             setPassword('');
+            setSetupToken('');
             onOpenChange(false);
         } catch (err) {
             setError(errorMessage(err));
@@ -208,6 +220,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                     <Input
                         type="email"
                         placeholder={t('qubdi.account.authDialog.email')}
+                        aria-label={t('qubdi.account.authDialog.email')}
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -217,6 +230,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                         <Input
                             type="password"
                             placeholder={t('qubdi.account.authDialog.password')}
+                            aria-label={t('qubdi.account.authDialog.password')}
                             autoComplete="current-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -230,6 +244,31 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                             email={email}
                         />
                     )}
+                    {mode === 'register' && tokenRequired ? (
+                        <>
+                            <Input
+                                type="text"
+                                placeholder={t(
+                                    'qubdi.account.authDialog.setupToken'
+                                )}
+                                aria-label={t(
+                                    'qubdi.account.authDialog.setupToken'
+                                )}
+                                aria-describedby="setup-token-hint"
+                                autoComplete="off"
+                                spellCheck={false}
+                                value={setupToken}
+                                onChange={(e) => setSetupToken(e.target.value)}
+                                required
+                            />
+                            <p
+                                id="setup-token-hint"
+                                className="text-xs text-muted-foreground"
+                            >
+                                {t('qubdi.account.authDialog.setupTokenHint')}
+                            </p>
+                        </>
+                    ) : null}
                     {error ? (
                         <p role="alert" className="text-sm text-red-500">
                             {error}

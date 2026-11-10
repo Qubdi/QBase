@@ -6,9 +6,15 @@ vi.mock('../src/lib/hash.js', async (importOriginal) => {
     const real = await importOriginal<typeof import('../src/lib/hash.js')>();
     return {
         ...real,
-        diagramHash: (title: string, content: unknown) => {
+        // the routes hash with the sliced version: count its calls
+        diagramHashAsync: (title: string, content: unknown) => {
             hashed.calls++;
-            return real.diagramHash(title, content);
+            return real.diagramHashAsync(title, content);
+        },
+        // saves hash and measure in one walk
+        diagramFingerprintAsync: (title: string, content: unknown) => {
+            hashed.calls++;
+            return real.diagramFingerprintAsync(title, content);
         },
     };
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { columnsOf, entityOf } from '@/core/model/lookup';
@@ -29,10 +29,7 @@ export const QuickLinkCard: React.FC<LinkCardProps> = ({
     const design = store.getState().design;
     const source = entityOf(design, sourceEntityId);
     const target = entityOf(design, targetEntityId);
-    const suggestion = useMemo(
-        () => suggestTarget(design, sourceEntityId, targetEntityId),
-        [design, sourceEntityId, targetEntityId]
-    );
+    const suggestion = suggestTarget(design, sourceEntityId, targetEntityId);
     const [pick, setPick] = useState(
         suggestion?.choice.kind === 'existing'
             ? suggestion.choice.columnId

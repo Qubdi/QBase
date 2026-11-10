@@ -10,4 +10,4 @@ docker run --rm --ipc=host -u "$(id -u)" -e HOME=/tmp -e SHOTS=/shots \
     -e ONLY="$ONLY" -e DEBUG_EVENTS="$DEBUG_EVENTS" -e SKIP_BUILD="$SKIP_BUILD" \
     -v "$PWD":/w -v "$SHOTS":/shots -w /w \
     mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2 \
-    sh -c 'mkdir -p /tmp/pw && cd /tmp/pw && npm i --no-save --no-audit --no-fund playwright@1.49.1 >/dev/null && cd /w && node tools/e2e/flows.mjs'
+    sh -c 'mkdir -p /tmp/pw && cp /w/tools/e2e/package.json /w/tools/e2e/package-lock.json /tmp/pw/ && cd /tmp/pw && npm ci --no-audit --no-fund >/dev/null && cd /w && node tools/e2e/flows.mjs'

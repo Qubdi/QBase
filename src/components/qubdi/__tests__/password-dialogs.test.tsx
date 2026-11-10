@@ -1,7 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetPasswordMinLength } from '@/hooks/use-password-min-length';
 import { AuthDialog } from '../auth-dialog';
 import { ChangePasswordDialog } from '../change-password-dialog';
 
@@ -37,7 +36,6 @@ describe('password dialogs', () => {
         changePassword.mockReset();
         login.mockReset();
         register.mockReset();
-        resetPasswordMinLength();
     });
 
     describe('sign-in', () => {
@@ -46,6 +44,12 @@ describe('password dialogs', () => {
                 needsSetup: false,
                 passwordMinLength: 12,
             });
+        });
+
+        it('names the email and password fields, not by placeholder alone', () => {
+            render(<AuthDialog open onOpenChange={vi.fn()} />);
+            expect(screen.getByRole('textbox', { name: 'Email' })).toBeTruthy();
+            expect(screen.getByLabelText('Password')).toBeTruthy();
         });
 
         it('takes any password: the rules are for choosing one, not for signing in', async () => {
@@ -70,7 +74,13 @@ describe('password dialogs', () => {
     });
 
     describe('first admin account', () => {
-        beforeEach(() => {
+        // the minimum is asked for once per page load, so this block loads a
+        // dialog with a fresh copy of that answer
+        let FreshAuthDialog: typeof AuthDialog;
+
+        beforeEach(async () => {
+            vi.resetModules();
+            ({ AuthDialog: FreshAuthDialog } = await import('../auth-dialog'));
             setupStatus.mockResolvedValue({
                 needsSetup: true,
                 passwordMinLength: 14,
@@ -78,7 +88,7 @@ describe('password dialogs', () => {
         });
 
         it('shows the rules with the real minimum and holds the button until they are met', async () => {
-            render(<AuthDialog open onOpenChange={vi.fn()} />);
+            render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
             expect(
                 await screen.findByRole('button', {
                     name: 'Create admin account',
@@ -97,8 +107,61 @@ describe('password dialogs', () => {
             expect(button('Create admin account').disabled).toBe(false);
         });
 
+        it('asks for the setup token only when the server says it needs one, and sends it', async () => {
+            setupStatus.mockResolvedValue({
+                needsSetup: true,
+                setupTokenRequired: true,
+                passwordMinLength: 14,
+            });
+            register.mockResolvedValue(undefined);
+            render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
+            const token = await screen.findByLabelText('Setup token');
+            fireEvent.change(screen.getByPlaceholderText('Email'), {
+                target: { value: 'founder@corp.io' },
+            });
+            fireEvent.change(screen.getByLabelText('Password'), {
+                target: { value: 'Long-enough-pw-1!' },
+            });
+            fireEvent.change(token, {
+                target: { value: '  tok-from-the-log  ' },
+            });
+            fireEvent.click(button('Create admin account'));
+            await waitFor(() =>
+                expect(register).toHaveBeenCalledWith(
+                    'founder@corp.io',
+                    'Long-enough-pw-1!',
+                    'tok-from-the-log'
+                )
+            );
+        });
+
+        it('shows no token field when the server asks for none', async () => {
+            setupStatus.mockResolvedValue({
+                needsSetup: true,
+                setupTokenRequired: false,
+                passwordMinLength: 14,
+            });
+            register.mockResolvedValue(undefined);
+            render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
+            await screen.findByRole('button', { name: 'Create admin account' });
+            expect(screen.queryByLabelText('Setup token')).toBeNull();
+            fireEvent.change(screen.getByPlaceholderText('Email'), {
+                target: { value: 'founder@corp.io' },
+            });
+            fireEvent.change(screen.getByLabelText('Password'), {
+                target: { value: 'Long-enough-pw-1!' },
+            });
+            fireEvent.click(button('Create admin account'));
+            await waitFor(() =>
+                expect(register).toHaveBeenCalledWith(
+                    'founder@corp.io',
+                    'Long-enough-pw-1!'
+                )
+            );
+        });
+
         it('does not accept a password made from the email', async () => {
-            render(<AuthDialog open onOpenChange={vi.fn()} />);
+            render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
             await screen.findByText(/At least 14 characters/);
             fireEvent.change(screen.getByPlaceholderText('Email'), {
                 target: { value: 'founder@corp.io' },

@@ -7,17 +7,16 @@ import {
 } from '@/context/qubdi-context/qubdi-context';
 import { ApiError } from '@/lib/qubdi/api';
 import { Toaster } from '@/platform/toast/toaster';
-import { resetToasts } from '@/platform/toast/use-toast';
 import { DiagramAccessContext } from '../diagram-access-context';
 import { PublishControl } from '../publish-control';
 
-const getDiagram = vi.fn();
+const getPublishStatus = vi.fn();
 const publish = vi.fn();
 const syncDiagram = vi.fn(async () => 'r1');
 vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     api: {
-        getDiagram: (...a: unknown[]) => getDiagram(...a),
+        getPublishStatus: (...a: unknown[]) => getPublishStatus(...a),
         publish: (...a: unknown[]) => publish(...a),
         updateDiagram: vi.fn(),
     },
@@ -68,10 +67,9 @@ const publishWithNote = async (note?: string) => {
 };
 
 beforeEach(() => {
-    resetToasts();
-    getDiagram.mockReset();
+    getPublishStatus.mockReset();
     publish.mockReset();
-    getDiagram.mockResolvedValue({
+    getPublishStatus.mockResolvedValue({
         publishedVersion: 1,
         unpublishedChanges: true,
         autoPublish: false,
@@ -100,12 +98,14 @@ describe('QBS-032 publishing: optional note, success toast, red failure with the
 
     it('a failure shows the server message in a destructive toast and keeps the dialog usable', async () => {
         publish.mockRejectedValue(
-            new ApiError(423, 'locked', 'Someone else is editing')
+            new ApiError(423, 'locked', 'raw server text')
         );
         show();
         await publishWithNote();
         expect(await screen.findByText('Publish failed')).toBeInTheDocument();
-        expect(screen.getByText('Someone else is editing')).toBeInTheDocument();
+        expect(
+            screen.getByText('Someone else is editing this diagram.')
+        ).toBeInTheDocument();
         expect(screen.queryByText('Published v2')).toBeNull();
     });
 });

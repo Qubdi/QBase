@@ -42,6 +42,8 @@ import {
 } from '@/lib/qubdi/api';
 import { ago, exactTime } from '@/lib/qubdi/when';
 import { PasswordField } from '@/components/qubdi/password-field';
+import { Input } from '@/platform/ui/input';
+import { useQubdi } from '@/hooks/use-qubdi';
 import { usePasswordMinLength } from '@/hooks/use-password-min-length';
 import { checkPassword } from '../../../shared/password';
 import { NewUserDialog } from './new-user-dialog';
@@ -75,6 +77,44 @@ const bulkToast = (t: TFn, action: BulkUserAction, result: BulkUsersResult) => {
     };
 };
 
+/** The acting admin's own password, and a code when their account has two-factor on. */
+const ProofFields: React.FC<{
+    needsCode: boolean;
+    password: string;
+    onPassword: (v: string) => void;
+    code: string;
+    onCode: (v: string) => void;
+}> = ({ needsCode, password, onPassword, code, onCode }) => {
+    const { t } = useTranslation();
+    return (
+        <>
+            <p className="text-sm text-muted-foreground">
+                {needsCode
+                    ? t('qubdi.adminUsers.users.confirmItsYouCode')
+                    : t('qubdi.adminUsers.users.confirmItsYou')}
+            </p>
+            <Input
+                type="password"
+                autoComplete="current-password"
+                placeholder={t('qubdi.adminUsers.users.ownPassword')}
+                aria-label={t('qubdi.adminUsers.users.ownPassword')}
+                value={password}
+                onChange={(e) => onPassword(e.target.value)}
+            />
+            {needsCode ? (
+                <Input
+                    type="text"
+                    autoComplete="one-time-code"
+                    placeholder={t('qubdi.adminUsers.users.ownCode')}
+                    aria-label={t('qubdi.adminUsers.users.ownCode')}
+                    value={code}
+                    onChange={(e) => onCode(e.target.value)}
+                />
+            ) : null}
+        </>
+    );
+};
+
 export interface UsersPanelProps {
     currentUserId: string;
 }
@@ -93,6 +133,29 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
             .length > 0;
     const [deleteFor, setDeleteFor] = useState<AdminUser | null>(null);
     const [mfaResetFor, setMfaResetFor] = useState<AdminUser | null>(null);
+    // resetting another admin asks for this admin's own password (and code)
+    const { user: me } = useQubdi();
+    const needsOwnCode = me?.mfaEnabled === true;
+    const [ownPassword, setOwnPassword] = useState('');
+    const [ownCode, setOwnCode] = useState('');
+    const [proofError, setProofError] = useState<string | null>(null);
+    const startProof = () => {
+        setOwnPassword('');
+        setOwnCode('');
+        setProofError(null);
+    };
+    /** What the server wants with a change to this person, or nothing for an ordinary account. */
+    const proofFor = (target: AdminUser) =>
+        target.isAdmin
+            ? {
+                  adminPassword: ownPassword,
+                  ...(needsOwnCode ? { adminCode: ownCode.trim() } : {}),
+              }
+            : {};
+    const proofMissing = (target: AdminUser | null) =>
+        target !== null &&
+        target.isAdmin &&
+        (ownPassword === '' || (needsOwnCode && ownCode.trim() === ''));
     const [sessionsFor, setSessionsFor] = useState<AdminUser | null>(null);
     // the people ticked for a bulk action, and the action waiting to be confirmed
     const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -117,9 +180,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
     // a tick belongs to the rows it was made on: another page, search or
     // filter starts with nothing ticked, so "3 selected" never counts rows
     // that are out of sight
-    useEffect(() => {
+    const scope = `${list.page}\u0000${list.query}\u0000${statusFilter}`;
+    const [selectedScope, setSelectedScope] = useState(scope);
+    if (selectedScope !== scope) {
+        setSelectedScope(scope);
         setSelected(new Set());
-    }, [list.page, list.query, statusFilter]);
+    }
 
     // only rows that are on this page and that may be acted on in bulk (the
     // server refuses the caller in a disable or delete)
@@ -150,7 +216,9 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
 
     const run = async (
         fn: () => Promise<unknown>,
-        done?: { title: string; description?: string }
+        done?: { title: string; description?: string },
+        // where a failure is shown: the panel, or a dialog that stays open
+        onError: (message: string) => void = setError
     ) => {
         setError(null);
         setBusy(true);
@@ -159,7 +227,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
             list.reload();
             if (done) toast(done);
         } catch (e) {
-            setError(errorMessage(e));
+            onError(errorMessage(e));
         } finally {
             setBusy(false);
         }
@@ -607,6 +675,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         )}
                                                         onClick={() => {
                                                             setNewPassword('');
+                                                            startProof();
                                                             setResetFor(u);
                                                         }}
                                                     >
@@ -627,11 +696,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                                 'qubdi.adminUsers.users.resetTwoFactorHint'
                                                             )}
                                                             disabled={busy}
-                                                            onClick={() =>
+                                                            onClick={() => {
+                                                                startProof();
                                                                 setMfaResetFor(
                                                                     u
-                                                                )
-                                                            }
+                                                                );
+                                                            }}
                                                         >
                                                             <Smartphone />
                                                         </Button>
@@ -725,23 +795,29 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             e.preventDefault();
                             const target = resetFor;
                             if (!target) return;
-                            void run(async () => {
-                                await api.adminUpdateUser(target.id, {
-                                    password: newPassword,
-                                });
-                                setResetFor(null);
-                                toast({
-                                    title: t(
-                                        'qubdi.adminUsers.users.passwordChanged'
-                                    ),
-                                    description: t(
-                                        'qubdi.adminUsers.users.signedOutEverywhere',
-                                        {
-                                            email: target.email,
-                                        }
-                                    ),
-                                });
-                            });
+                            setProofError(null);
+                            void run(
+                                async () => {
+                                    await api.adminUpdateUser(target.id, {
+                                        password: newPassword,
+                                        ...proofFor(target),
+                                    });
+                                    setResetFor(null);
+                                    toast({
+                                        title: t(
+                                            'qubdi.adminUsers.users.passwordChanged'
+                                        ),
+                                        description: t(
+                                            'qubdi.adminUsers.users.signedOutEverywhere',
+                                            {
+                                                email: target.email,
+                                            }
+                                        ),
+                                    });
+                                },
+                                undefined,
+                                setProofError
+                            );
                         }}
                     >
                         <PasswordField
@@ -755,7 +831,26 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog opened on request; focus goes to its first field
                             autoFocus
                         />
-                        <Button type="submit" disabled={busy || resetWeak}>
+                        {resetFor?.isAdmin ? (
+                            <ProofFields
+                                needsCode={needsOwnCode}
+                                password={ownPassword}
+                                onPassword={setOwnPassword}
+                                code={ownCode}
+                                onCode={setOwnCode}
+                            />
+                        ) : null}
+                        {proofError ? (
+                            <p role="alert" className="text-sm text-red-500">
+                                {proofError}
+                            </p>
+                        ) : null}
+                        <Button
+                            type="submit"
+                            disabled={
+                                busy || resetWeak || proofMissing(resetFor)
+                            }
+                        >
                             {t('qubdi.adminUsers.users.setPassword')}
                         </Button>
                     </form>
@@ -818,16 +913,44 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                             })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    {mfaResetFor?.isAdmin ? (
+                        <div className="flex flex-col gap-3">
+                            <ProofFields
+                                needsCode={needsOwnCode}
+                                password={ownPassword}
+                                onPassword={setOwnPassword}
+                                code={ownCode}
+                                onCode={setOwnCode}
+                            />
+                        </div>
+                    ) : null}
+                    {proofError ? (
+                        <p role="alert" className="text-sm text-red-500">
+                            {proofError}
+                        </p>
+                    ) : null}
                     <AlertDialogFooter>
                         <AlertDialogCancel>
                             {t('qubdi.adminUsers.users.cancel')}
                         </AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={() => {
+                            disabled={busy || proofMissing(mfaResetFor)}
+                            onClick={(e) => {
+                                // stays open while it runs, so a wrong password can be corrected
+                                e.preventDefault();
                                 const target = mfaResetFor;
                                 if (target) {
+                                    setProofError(null);
                                     void run(
-                                        () => api.adminResetMfa(target.id),
+                                        async () => {
+                                            await (target.isAdmin
+                                                ? api.adminResetMfa(
+                                                      target.id,
+                                                      proofFor(target)
+                                                  )
+                                                : api.adminResetMfa(target.id));
+                                            setMfaResetFor(null);
+                                        },
                                         {
                                             title: t(
                                                 'qubdi.adminUsers.users.mfaResetDone'
@@ -838,7 +961,8 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                     email: target.email,
                                                 }
                                             ),
-                                        }
+                                        },
+                                        setProofError
                                     );
                                 }
                             }}

@@ -57,14 +57,7 @@ export const clearSyncState = (diagramId: string) => {
 // old id, so it waits here, by server id, until the new copy is made.
 const HANDOFF_KEY = 'qbase.sync-state-handoff';
 
-const readHandoff = (): All => {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(HANDOFF_KEY) ?? '{}');
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-        return {};
-    }
-};
+const readHandoff = (): All => readJsonMap<SyncState>(HANDOFF_KEY);
 
 /** Keeps `diagramId`'s sync state for the next local copy of `remoteId`. */
 export const handOffSyncState = (diagramId: string, remoteId: string) => {

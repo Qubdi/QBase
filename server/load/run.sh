@@ -13,6 +13,18 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 dc() { docker compose -f docker-compose.yml "$@"; }
+
+# Secrets for this run only: the database password, the key that encrypts saved
+# connections, and the passwords of the accounts the seed creates. Nothing in
+# the repository is a credential, and the stack is thrown away at the end. A
+# password needs a capital, a digit and a symbol, so each has "Ld-" and "-1".
+secret() { od -An -N"$1" -tx1 /dev/urandom | tr -d ' \n'; }
+export LOAD_DB_PASSWORD="${LOAD_DB_PASSWORD:-$(secret 16)}"
+export LOAD_CONNECTION_KEY="${LOAD_CONNECTION_KEY:-$(secret 24)}"
+# the first sign-up, which the seed makes, needs this token
+export LOAD_SETUP_TOKEN="${LOAD_SETUP_TOKEN:-$(secret 16)}"
+export LOAD_PASSWORD="${LOAD_PASSWORD:-Ld-$(secret 12)-1}"
+export LOAD_TEMP_PASSWORD="${LOAD_TEMP_PASSWORD:-Ld-$(secret 12)-2}"
 # helpers write into this folder: as the caller, not as root
 as_me=(--user "$(id -u):$(id -g)")
 what="${1:-all}"
@@ -49,13 +61,18 @@ k6run() {
 
 run_one() {
     fresh || return 1
+    # the callers run this in an `||` list, where `set -e` is off: keep the
+    # scenario's own status (k6 exits non-zero when a threshold fails; pipefail
+    # carries it through tee) and return it after the report below
+    local rc=0
     case "$1" in
-        sse) dc run --rm "${as_me[@]}" seed node sse-fanout.mjs | tee results/sse.txt ;;
-        *)   k6run "$1" ;;
+        sse) dc run --rm "${as_me[@]}" seed node sse-fanout.mjs | tee results/sse.txt || rc=$? ;;
+        *)   k6run "$1" || rc=$? ;;
     esac
     echo
     echo "--- server and database after $1 ---"
     dc exec -T db psql -U qbase -c "select left(query, 60) as query, calls, round(mean_exec_time::numeric, 2) as mean_ms, round(total_exec_time::numeric) as total_ms from pg_stat_statements order by total_exec_time desc limit 5" 2>/dev/null || true
+    return "$rc"
 }
 
 # the same read-heavy load against diagrams of different sizes: a model of 30-40

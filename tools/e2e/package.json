@@ -1,0 +1,10 @@
+{
+    "name": "qbase-e2e",
+    "private": true,
+    "description": "Browser-test dependencies of the tools/e2e scripts. The runners copy this file and the lockfile into the pinned Playwright image and run npm ci there.",
+    "dependencies": {
+        "axe-core": "4.10.2",
+        "pg": "8.23.1",
+        "playwright": "1.49.1"
+    }
+}

@@ -70,6 +70,8 @@ const SQLITE_SCRIPT = `SELECT json_object(
       'schema', '', 'table', m.name, 'name', i.name, 'column', c.name,
       'index_type', 'btree', 'unique', json(CASE WHEN i."unique" = 1
           THEN 'true' ELSE 'false' END),
+      'primary', json(CASE WHEN i.origin = 'pk'
+          THEN 'true' ELSE 'false' END),
       'direction', CASE WHEN c."desc" = 1 THEN 'desc' ELSE 'asc' END,
       'column_position', c.seqno + 1,
       'where', CASE WHEN i.partial = 1 THEN (

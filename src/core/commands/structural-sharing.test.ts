@@ -3,8 +3,8 @@ import type { Design } from '../model/design';
 import { applyOk, NOW, rng } from '../testing/helpers';
 import { parse } from '../wire/parse';
 import { shop } from '../wire/fixtures/shop';
-import { planMove } from './plan-visual';
 import { planUpdateColumn } from './plan-column';
+import type { Command } from './command';
 
 const design = (): Design => parse(shop, { now: NOW, random: rng() }).design;
 
@@ -14,11 +14,15 @@ describe('an edit copies only what it changes (large diagrams)', () => {
     const entity = base.entities.byId[id];
 
     it('renaming or moving a table keeps the column, index and check maps', () => {
-        for (const command of [
+        const commands: Command[] = [
             { type: 'entity.update', id, patch: { name: 'renamed_table' } },
             { type: 'entity.update', id, patch: { x: 123, y: 456 } },
-            planMove(base, [{ id, x: entity.x + 10, y: entity.y + 10 }]),
-        ] as const) {
+            {
+                type: 'entity.move',
+                moves: [{ id, x: entity.x + 10, y: entity.y + 10 }],
+            },
+        ];
+        for (const command of commands) {
             const next = applyOk(base, command).design;
             expect(next).not.toBe(base);
             expect(next.columns).toBe(base.columns);

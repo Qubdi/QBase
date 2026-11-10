@@ -10,7 +10,7 @@ import {
     subtitleParts,
     typeKind,
 } from './field-view';
-import { clampWidth, toggledWidth } from './geometry';
+import { clampWidth } from './geometry';
 import { createColumn } from '@/core/model/defaults';
 import { dimmedEntities } from './flow-model';
 import { commitShapes } from './commit-shapes';
@@ -420,14 +420,10 @@ describe('selection, fade and sizes', () => {
         );
     });
 
-    it('EDT-080, EDT-082: width stays in 224..450 and the button toggles between the two ends', () => {
+    it('EDT-080: width stays in 224..450', () => {
         expect(clampWidth(100)).toBe(224);
         expect(clampWidth(900)).toBe(450);
         expect(clampWidth(300)).toBe(300);
-        expect(toggledWidth(undefined)).toBe(450);
-        expect(toggledWidth(224)).toBe(450);
-        expect(toggledWidth(337)).toBe(450);
-        expect(toggledWidth(450)).toBe(224);
     });
 
     it('EDT-081: a resize sends one width command, clamped, and it is undoable', () => {

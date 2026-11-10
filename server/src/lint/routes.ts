@@ -6,8 +6,9 @@ import type { Db } from '../db/client.js';
 import { diagrams, snapshots } from '../db/schema.js';
 import type { Config } from '../config.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
-import { perUserLimit } from '../lib/rate-key.js';
+import { sharedUserLimit } from '../lib/rate-key.js';
 import { latestSnapshot } from '../diagrams/service.js';
+import { diagramBytesSql, snapshotBytesSql } from '../diagrams/summary.js';
 import {
     RULES,
     lint,
@@ -50,7 +51,12 @@ export const LINT_BODY_LIMIT = 5 * 1024 * 1024;
 export const lintRoutes =
     (db: Db, config: Pick<Config, 'lintRateLimit'>): FastifyPluginAsync =>
     async (app) => {
-        const limit = perUserLimit(config.lintRateLimit);
+        // Counted in a preHandler, once the session is known, and per user: a
+        // limit keyed at onRequest by the raw cookie lets a caller rotate junk
+        // cookies for a fresh allowance on every call. Each route has its own.
+        const limit = (name: string) => ({
+            preHandler: sharedUserLimit(config.lintRateLimit, 60_000, `lint:${name}`),
+        });
 
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
@@ -65,7 +71,7 @@ export const lintRoutes =
         app.post(
             '/lint',
             {
-                ...limit,
+                ...limit('post'),
                 // linting runs synchronously, so the input is capped
                 bodyLimit: LINT_BODY_LIMIT,
             },
@@ -76,7 +82,7 @@ export const lintRoutes =
             return { findings, summary: summarizeFindings(findings) };
         });
 
-        app.get('/diagrams/:id/lint', limit, async (req, reply) => {
+        app.get('/diagrams/:id/lint', limit('diagram'), async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const { source } = lintQuery.parse(req.query);
             const role = await getRole(db, id, req.user!.id);
@@ -92,7 +98,7 @@ export const lintRoutes =
                     lintConfig: diagrams.lintConfig,
                     size:
                         source === 'working'
-                            ? sql<number>`octet_length(${diagrams.content}::text)`.mapWith(Number)
+                            ? diagramBytesSql.mapWith(Number)
                             : sql<number>`0`,
                 })
                 .from(diagrams)
@@ -113,7 +119,7 @@ export const lintRoutes =
             } else {
                 const [latest] = await db
                     .select({
-                        size: sql<number>`octet_length(${snapshots.content}::text)`.mapWith(Number),
+                        size: snapshotBytesSql.mapWith(Number),
                     })
                     .from(snapshots)
                     .where(eq(snapshots.diagramId, id))
@@ -137,7 +143,7 @@ export const lintRoutes =
             return { source, findings, summary: summarizeFindings(findings), config };
         });
 
-        app.get('/diagrams/:id/lint-config', async (req, reply) => {
+        app.get('/diagrams/:id/lint-config', limit('config-read'), async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });
@@ -149,7 +155,7 @@ export const lintRoutes =
             return normalizeConfig(d.lintConfig);
         });
 
-        app.put('/diagrams/:id/lint-config', async (req, reply) => {
+        app.put('/diagrams/:id/lint-config', limit('config-write'), async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });

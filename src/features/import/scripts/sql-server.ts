@@ -156,6 +156,7 @@ const SECTIONS: Section[] = [
             str('column', 'c.name'),
             str('index_type', 'LOWER(i.type_desc)'),
             bool('unique', 'i.is_unique'),
+            bool('primary', 'i.is_primary_key'),
             str(
                 'direction',
                 `CASE WHEN ic.is_descending_key = 1 THEN 'desc' ELSE 'asc' END`

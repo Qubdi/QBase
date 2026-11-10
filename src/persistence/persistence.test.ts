@@ -512,7 +512,7 @@ function contract(label: string, make: () => Promise<StorageAdapter>) {
             expect(await a.readFilter('d2')).toEqual({ tableIds: [] });
         });
 
-        it('DAT-011 with no saved filter and several schemas only the first is shown at first', async () => {
+        it('DAT-011 with no saved filter everything is shown at first', async () => {
             const a = await make();
             const design = parse(shop, { now }).design;
             const withSchemas = {
@@ -526,12 +526,8 @@ function contract(label: string, make: () => Promise<StorageAdapter>) {
                 },
             };
             expect(await a.readFilter(design.id)).toBeUndefined();
-            expect(
-                initialFilter(listOf(withSchemas.entities), 'public')
-            ).toEqual({ schemaIds: ['public'] });
-            expect(initialFilter(listOf(design.entities), 'public')).toEqual(
-                {}
-            );
+            expect(withSchemas.filter).toBeUndefined();
+            expect(initialFilter()).toEqual({});
         });
 
         it('DAT-013 deleting a diagram removes it, its filter, and resets it as default', async () => {
