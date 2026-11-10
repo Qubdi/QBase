@@ -5,7 +5,7 @@ import { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/data
 import { loadFromDatabaseMetadata } from './load';
 
 // What the server's SQL Server introspection returns for the index types that
-// have no key columns (DB-004).
+// have no key columns (DB-004) and for an alias type (DB-006).
 
 const col = (table: string, name: string, type: string, position: number) => ({
     schema: 'dbo',
@@ -47,6 +47,7 @@ const META = {
     columns: [
         col('facts', 'a', 'int', 1),
         col('facts', 'b', 'int', 2),
+        { ...col('facts', 'ssn', 'varchar', 3), domain: 'ssn_type' },
         col('docs', 'body', 'xml', 1),
         col('places', 'shape', 'geometry', 1),
     ],
@@ -60,7 +61,7 @@ const META = {
     ],
 };
 
-describe('SQL Server metadata: indexes without key columns', () => {
+describe('SQL Server metadata: indexes without key columns, alias types', () => {
     const { design } = loadFromDatabaseMetadata({
         databaseType: 'sql_server',
         databaseMetadata: DatabaseMetadata.parse(META),
@@ -86,4 +87,12 @@ describe('SQL Server metadata: indexes without key columns', () => {
         expect(keysOf('places')[0].algorithm).toBe('spatial');
     });
 
+    it('a column of an alias type is its base type with the alias as domain', () => {
+        const entity = listOf(design.entities).find((e) => e.name === 'facts')!;
+        const ssn = entity.columnIds
+            .map((id) => design.columns[id])
+            .find((c) => c.name === 'ssn')!;
+        expect(ssn.domain).toBe('ssn_type');
+        expect(ssn.type.name).toBe('varchar');
+    });
 });

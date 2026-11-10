@@ -51,7 +51,11 @@ export const SQLSERVER_QUERIES = {
 
     columns: `
         SELECT s.name AS [schema], o.name AS [table], c.name AS name,
-               ty.name AS type, c.max_length AS max_length, c.precision AS [precision], c.scale AS scale,
+               CASE WHEN ty.is_user_defined = 1 AND ty.is_assembly_type = 0 AND bt.name IS NOT NULL
+                    THEN bt.name ELSE ty.name END AS type,
+               CASE WHEN ty.is_user_defined = 1 AND ty.is_assembly_type = 0 AND bt.name IS NOT NULL
+                    THEN ty.name END AS domain,
+               c.max_length AS max_length, c.precision AS [precision], c.scale AS scale,
                c.column_id AS ordinal_position, c.is_nullable AS nullable,
                dc.definition AS [default], CAST(ep.value AS nvarchar(4000)) AS comment,
                c.is_identity AS is_identity, c.collation_name AS collation,
@@ -60,6 +64,7 @@ export const SQLSERVER_QUERIES = {
         JOIN sys.objects o ON o.object_id = c.object_id AND o.type IN ('U', 'V')
         JOIN sys.schemas s ON s.schema_id = o.schema_id
         JOIN sys.types ty ON ty.user_type_id = c.user_type_id
+        LEFT JOIN sys.types bt ON bt.user_type_id = ty.system_type_id AND ty.is_user_defined = 1
         LEFT JOIN sys.default_constraints dc ON dc.object_id = c.default_object_id
         LEFT JOIN sys.computed_columns cmp ON cmp.object_id = c.object_id AND cmp.column_id = c.column_id
         LEFT JOIN sys.extended_properties ep
@@ -347,7 +352,9 @@ export class SqlServerIntrospector implements Introspector {
                     comment: c.comment ? String(c.comment) : null,
                     is_identity: Boolean(c.is_identity),
                     is_array: false,
-                    domain: null,
+                    // an alias type (sys.types, is_user_defined): `type` is its
+                    // base type and `domain` its name, as for a PostgreSQL domain
+                    domain: c.domain ? String(c.domain) : null,
                     generated: c.generated_expression
                         ? {
                               expression: String(c.generated_expression),
@@ -395,7 +402,8 @@ export class SqlServerIntrospector implements Introspector {
                 table: String(c.table),
                 expression: String(c.expression),
             })),
-            // SQL Server has no enum or composite types to list
+            // SQL Server has no enum or composite types to list; its alias
+            // types travel as `domain` on the columns that use them
             custom_types: [],
         };
     }

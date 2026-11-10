@@ -203,6 +203,8 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
             { schema: 'dbo', table: 'people', name: 'first', type: 'nvarchar', max_length: 40, precision: 0, scale: 0, ordinal_position: 1, nullable: false },
             { schema: 'dbo', table: 'people', name: 'upper_first', type: 'nvarchar', max_length: 40, precision: 0, scale: 0, ordinal_position: 2, nullable: true, generated_expression: '(upper([first]))', generated_stored: true },
             { schema: 'dbo', table: 'people', name: 'age', type: 'int', max_length: 4, precision: 10, scale: 0, ordinal_position: 3, nullable: true, generated_expression: null, generated_stored: null },
+            // an alias type over nvarchar(40): the query answers the base type and the alias as domain
+            { schema: 'dbo', table: 'people', name: 'nick', type: 'nvarchar', domain: 'nickname', max_length: 40, precision: 0, scale: 0, ordinal_position: 4, nullable: true },
         ],
         primaryKeys: [],
         foreignKeys: [],
@@ -234,6 +236,7 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
             null,
             { expression: '(upper([first]))', stored: true },
             null,
+            null,
         ]);
         expect(meta.indexes.map((i) => [i.direction, i.where])).toEqual([
             ['DESC', '([age] IS NOT NULL)'],
@@ -241,6 +244,15 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         ]);
         // CLI-039: the catalog's is_primary_key travels as `primary`
         expect(meta.indexes.map((i) => i.primary)).toEqual([false, true]);
+    });
+
+    it('DB-006: an alias type arrives as its base type plus the alias as domain, sized like the base', async () => {
+        const { SqlServerIntrospector } = await import('../src/introspect/sqlserver.js');
+        const meta = await new SqlServerIntrospector(pool as never).introspect({ schemas: [] });
+        const nick = meta.columns.find((c) => c.name === 'nick')!;
+        expect([nick.type, nick.domain, nick.character_maximum_length]).toEqual(['nvarchar', 'nickname', '20']);
+        // a column of a plain type has no domain
+        expect(meta.columns.filter((c) => c.name !== 'nick').every((c) => c.domain === null)).toBe(true);
     });
 
     it('DB-004: columnstore, XML and spatial indexes are listed with every column, in their own order', () => {
