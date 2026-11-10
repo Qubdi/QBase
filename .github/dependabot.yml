@@ -1,10 +1,12 @@
+# Version updates are paused: every ecosystem has open-pull-requests-limit: 0.
+# Restore the limits (5 for npm, the default for the rest) to turn them back on.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     groups:
       minor-and-patch:
         update-types: [minor, patch]
@@ -18,7 +20,7 @@ updates:
     directory: /server
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     groups:
       minor-and-patch:
         update-types: [minor, patch]
@@ -33,11 +35,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0
     # Node moves a major at a time on purpose: the even (LTS) release only,
     # kept in step with .nvmrc, engines and CI
     ignore:
@@ -51,6 +55,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0
     ignore:
       - dependency-name: postgres
         update-types: ["version-update:semver-major"]
