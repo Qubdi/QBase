@@ -8,6 +8,7 @@ import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, shareLinks, snapshots, users } from '../db/schema.js';
 import { emitLinkChanged } from '../events.js';
 import { getSessionUser, sessionTokenOf } from '../auth/sessions.js';
+import { sharedUserLimit } from '../lib/rate-key.js';
 import { gunzipBody } from './gzip-body.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
@@ -120,9 +121,13 @@ const publishBody = z
     .object({ note: z.string().trim().max(500).optional() })
     .default({});
 
+/** Versions one user may publish in a minute (the editor publishes on a click). */
+export const PUBLISH_RATE_LIMIT = 20;
+
 export const diagramRoutes =
     (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays'>): FastifyPluginAsync =>
     async (app) => {
+        const publishLimit = sharedUserLimit(PUBLISH_RATE_LIMIT);
         // Who is calling is settled before the body is read. A diagram body can
         // be tens of megabytes: someone with no session is turned away here and
         // never makes the server buffer, inflate or parse one. (The app's own
@@ -562,7 +567,9 @@ export const diagramRoutes =
             return reply.code(204).send();
         });
 
-        app.post('/:id/publish', async (req, reply) => {
+        // each publish stores a snapshot of up to the body limit: a script that
+        // loops over it would fill the table, so a user gets a few a minute
+        app.post('/:id/publish', { preHandler: publishLimit }, async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const role = await getRole(db, id, req.user!.id);
             if (!role) return reply.code(404).send({ error: 'not_found' });

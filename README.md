@@ -392,6 +392,7 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   ```
 - Drift checks compare the server's copy of the diagram, so the editor syncs it first.
 - Besides the limits above, one signed-in user is held to 600 calls a minute across the whole API (a fixed ceiling, not a setting; kept in each process's memory like the others).
+- Publishing a version is limited to 20 a minute per user, since each one stores a snapshot of the diagram.
 - Several server processes can share one database. Live share updates, the migrations at
   start-up and the hourly clean-up are coordinated through Postgres. Rate limits, the
   per-link live-viewer cap, the per-user allowance, the lint and outbound allowances and the guard against two
