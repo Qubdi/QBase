@@ -18,7 +18,7 @@ and schema lint.
 
 1. **Accounts and permissions**: email and password (argon2, with [password rules](#passwords)), owner / editor / viewer per diagram, audit log.
 2. **Published snapshots**: viewers only ever see numbered published versions, never the working copy.
-3. **Read-only share links**: unguessable tokens (only a hash is stored), expiry, revoke, live updates over SSE, rate limited.
+3. **Read-only share links**: unguessable tokens (a hash is stored, plus an encrypted copy, when `CONNECTION_KEY` is set, until the link is revoked so it stays copyable), expiry, revoke, live updates over SSE, rate limited.
 4. **Direct import** from PostgreSQL and SQL Server, read-only, with SSRF protection and encrypted saved connections.
 5. **Re-sync** a diagram from its database, keeping layout, colours, areas, notes and descriptions; undoable as one step.
 6. **Drift detection**: check a diagram against its live database on demand, severity classification, badge, optional webhook.
