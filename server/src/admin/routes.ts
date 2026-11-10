@@ -736,6 +736,8 @@ export const adminRoutes =
                     and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt))
                 )
                 .returning({ id: shareLinks.id });
+            // cut the viewers off first: a log row that fails must not leave them connected
+            emitLinkChanged(linkId);
             if (revoked.length > 0) {
                 await audit(db, {
                     userId: req.user!.id,
@@ -748,7 +750,6 @@ export const adminRoutes =
                     },
                 });
             }
-            emitLinkChanged(linkId);
             return reply.code(204).send();
         });
 

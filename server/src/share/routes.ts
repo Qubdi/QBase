@@ -248,13 +248,15 @@ export const shareManagementRoutes =
                 return reply.code(409).send({ error: 'too_many_links' });
             }
             if (!updated) return reply.code(404).send({ error: 'not_found' });
+            // tell the viewers first: the change is done, and a log row that
+            // fails must not leave them on the old access
+            emitLinkChanged(linkId);
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.update',
                 diagramId: id,
                 meta: { linkId, access: updated.access },
             });
-            emitLinkChanged(linkId);
             return presentLink(updated);
         });
 
@@ -276,6 +278,8 @@ export const shareManagementRoutes =
                         )
                     )
                     .returning({ id: shareLinks.id });
+                // cut the viewers off first: a log row that fails must not leave them connected
+                emitLinkChanged(linkId);
                 if (revoked.length > 0) {
                     await audit(db, {
                         userId: req.user!.id,
@@ -288,8 +292,9 @@ export const shareManagementRoutes =
                         },
                     });
                 }
+            } else {
+                emitLinkChanged(linkId);
             }
-            emitLinkChanged(linkId);
             return reply.code(204).send();
         });
 
@@ -309,14 +314,15 @@ export const shareManagementRoutes =
                 .where(and(eq(shareLinks.id, linkId), isNull(shareLinks.revokedAt)))
                 .returning();
             if (!updated) return reply.code(409).send({ error: 'revoked' });
+            // viewers on the old URL are cut off; the old token no longer resolves
+            // (before the log row, so a failing one cannot leave them connected)
+            emitLinkChanged(linkId);
             await audit(db, {
                 userId: req.user!.id,
                 action: 'share.regenerate',
                 diagramId: id,
                 meta: { linkId },
             });
-            // viewers on the old URL are cut off; the old token no longer resolves
-            emitLinkChanged(linkId);
             return { ...presentLink(updated), token };
         });
     };
