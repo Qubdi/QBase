@@ -148,7 +148,7 @@ jobs:
           images: |
             ${{ env.DOCKERHUB_IMAGE }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # the version, and latest: docker-compose.yml defaults to latest
+          # the version (docker-compose.yml defaults to it), and latest for anyone who asks for it
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest

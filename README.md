@@ -64,7 +64,7 @@ A secret in these steps means a long random string. Make one with `openssl rand 
 
    `SECRETS_KEY` is optional: it encrypts authenticator-app secrets for two-factor sign-in (see below). Keep these values; losing `CONNECTION_KEY` makes saved connections unreadable.
 
-4. **Start it.** The first run downloads the published image, `qubdi/qbase` from Docker Hub (the editor and its API in one, for amd64 and arm64). Pin a release with `QBASE_VERSION` in `.env`; unset, it runs `latest`.
+4. **Start it.** The first run downloads the published image, `qubdi/qbase` from Docker Hub (the editor and its API in one, for amd64 and arm64). `docker-compose.yml` names the release it belongs to; set `QBASE_VERSION` in `.env` to run another one (`latest` follows the newest release).
 
    ```bash
    docker compose up -d
@@ -87,7 +87,7 @@ Day to day:
 docker compose logs -f app        # follow the log
 docker compose down               # stop; your data stays in the postgres-data volume
 docker compose up -d              # start again
-docker compose pull && docker compose up -d   # update (to the QBASE_VERSION in .env, or latest)
+docker compose pull && docker compose up -d   # update (to the QBASE_VERSION in .env, or the release docker-compose.yml names)
 docker compose down -v            # stop AND delete all data
 ```
 
@@ -221,7 +221,7 @@ The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the conne
 
 All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 
-- Repository root `.env` (copy `.env.example`): read by `docker compose` and by the editor build. `QBASE_VERSION` picks the published image to run (unset = `latest`). It holds the core database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`), where it runs (`POSTGRES_HOST`, `POSTGRES_PORT`; point them at another machine to use an existing Postgres, see Option B), the secrets, and the bind address and port of each service (`*_BIND_IP`, `*_PUBLISH_PORT` / `APP_PORT`), `VITE_QUBDI_BACKEND_URL` (where `npm run dev` finds the backend; the image needs no such setting).
+- Repository root `.env` (copy `.env.example`): read by `docker compose` and by the editor build. `QBASE_VERSION` picks the published image to run (unset = the release `docker-compose.yml` names, not `latest`). It holds the core database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`), where it runs (`POSTGRES_HOST`, `POSTGRES_PORT`; point them at another machine to use an existing Postgres, see Option B), the secrets, and the bind address and port of each service (`*_BIND_IP`, `*_PUBLISH_PORT` / `APP_PORT`), `VITE_QUBDI_BACKEND_URL` (where `npm run dev` finds the backend; the image needs no such setting).
 - The backend settings below can also be put in the root `.env`: `docker-compose.yml` passes them to the server, except `DATABASE_URL` (built from the `POSTGRES_*` values), `PORT` (3001 inside the container; `APP_PORT` is the one you choose) and `HOST`, `WEB_DIR` and `CORS_ORIGIN`, which the image sets or does not need.
 - `server/.env` (copy `server/.env.example`): read by the backend when run outside Docker.
 

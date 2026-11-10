@@ -49,9 +49,10 @@ services:
 
   app:
     container_name: qbase-app
-    # the image published on Docker Hub; pin QBASE_VERSION in .env to a release
-    # so an update happens when you decide (`docker compose pull`)
-    image: qubdi/qbase:${QBASE_VERSION:-latest}
+    # the image published on Docker Hub, at the release this file belongs to (the
+    # release workflow keeps the version below current); set QBASE_VERSION in .env
+    # to run another one, and `docker compose pull` to update
+    image: qubdi/qbase:${QBASE_VERSION:-1.20.1} # x-release-please-version
     restart: unless-stopped
     # the server force-quits 10 s after SIGTERM; give it longer than Docker's default
     # 10 s before SIGKILL so a clean shutdown is never cut off

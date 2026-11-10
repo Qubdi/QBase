@@ -19,6 +19,10 @@
                     "type": "json",
                     "path": "server/package-lock.json",
                     "jsonpath": "$.packages[''].version"
+                },
+                {
+                    "type": "generic",
+                    "path": "docker-compose.yml"
                 }
             ]
         }
