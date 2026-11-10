@@ -267,6 +267,28 @@ export function inOrder(
     );
 }
 
+/**
+ * `built` in Tab order. The order is held (in `memory`) while a node has the
+ * focus and the same tables are drawn: moving the element that holds the focus
+ * in the page would drop the focus. Otherwise it is read afresh.
+ */
+export function orderedNodes(
+    built: readonly CanvasNode[],
+    memory: { held: Id[] }
+): CanvasNode[] {
+    const known = new Set(memory.held);
+    const focusedNode =
+        typeof document !== 'undefined' &&
+        document.activeElement?.closest?.('.react-flow__node');
+    if (!(
+        focusedNode &&
+        memory.held.length === built.length &&
+        built.every((n) => known.has(n.id))
+    ))
+        memory.held = readingOrder(built);
+    return inOrder(built, memory.held);
+}
+
 export function buildNodes(
     input: FlowInput,
     memory?: NodeMemory

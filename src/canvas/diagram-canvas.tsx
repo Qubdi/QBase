@@ -69,10 +69,9 @@ import {
     buildEdges,
     buildNodes,
     drawnEntityIds,
-    inOrder,
     NO_LIVE,
+    orderedNodes,
     parseDependencyHandle,
-    readingOrder,
 } from './flow-model';
 import type {
     LinkEdge,
@@ -164,7 +163,9 @@ function Surface({
     const diff = hooks?.diff;
     const design = diff?.design ?? stored;
     const diffRef = useRef(diff);
-    diffRef.current = diff;
+    useEffect(() => {
+        diffRef.current = diff;
+    }, [diff]);
     const selection = useEditorStore((s) => s.ui.selection);
     const filter = useEditorStore((s) => s.ui.filter);
     const locked = useEditorStore(selectLocked);
@@ -284,34 +285,27 @@ function Surface({
             diff,
         ]
     );
-    const nodeMemory = useRef<NodeMemory>(new Map());
-    // Tab walks the tables in reading order (top-left to bottom-right). The order
-    // is held while a node has the focus: moving the element that holds the focus
-    // in the page would drop the focus.
-    const tabOrder = useRef<Id[]>([]);
-    const nodes = useMemo(() => {
-        const built = buildNodes(input, nodeMemory.current);
-        const held = tabOrder.current;
-        const known = new Set(held);
-        const focusedNode =
-            typeof document !== 'undefined' &&
-            document.activeElement?.closest?.('.react-flow__node');
-        if (!(
-            focusedNode &&
-            held.length === built.length &&
-            built.every((n) => known.has(n.id))
-        ))
-            tabOrder.current = readingOrder(built);
-        return inOrder(built, tabOrder.current);
-    }, [input]);
-    const sideMemory = useRef(new Map<Id, [Side, Side]>());
-    const edgeMemory = useRef(new Map<Id, LinkEdge>());
+    // what the last build produced, kept so an unchanged node or edge keeps its
+    // identity; these objects are made once and only changed by the build code
+    const [memory] = useState(() => ({
+        nodes: new Map() as NodeMemory,
+        // Tab walks the tables in reading order (top-left to bottom-right). The
+        // order is held while a node has the focus: moving the element that holds
+        // the focus in the page would drop the focus.
+        tabOrder: { held: [] as Id[] },
+        sides: new Map<Id, [Side, Side]>(),
+        edges: new Map<Id, LinkEdge>(),
+    }));
+    const nodes = useMemo(
+        () => orderedNodes(buildNodes(input, memory.nodes), memory.tabOrder),
+        [input, memory]
+    );
     const edges = useMemo(
         () => [
-            ...buildEdges(input, sideMemory.current, edgeMemory.current),
+            ...buildEdges(input, memory.sides, memory.edges),
             ...buildDependencyEdges(input),
         ],
-        [input]
+        [input, memory]
     );
 
     const controls = useViewportControls([...visible], storeApi);
@@ -332,7 +326,9 @@ function Surface({
 
     // hand the camera to the frame once; the functions never change
     const readyRef = useRef(onReady);
-    readyRef.current = onReady;
+    useEffect(() => {
+        readyRef.current = onReady;
+    }, [onReady]);
     useEffect(() => {
         readyRef.current?.({
             fit: () => controls.fit(),
@@ -800,21 +796,27 @@ function Surface({
 
     // The edit card must open inside the window and above the toolbar: it is
     // limited in height, then the picture moves just far enough to show all of it.
-    const [editMaxHeight, setEditMaxHeight] = useState<number>();
+    const [measured, setMeasured] = useState<{
+        id: Id;
+        host: HTMLDivElement;
+        height: number;
+    }>();
+    // a height measured for another card or another frame says nothing here
+    const editMaxHeight =
+        measured && measured.id === editingId && measured.host === hostEl
+            ? measured.height
+            : undefined;
     useEffect(() => {
         // no size, no layout (a test environment): nothing to fit
-        if (
-            !editingId ||
-            !hostEl ||
-            hostEl.getBoundingClientRect().width === 0
-        ) {
-            setEditMaxHeight(undefined);
+        if (!editingId || !hostEl || hostEl.getBoundingClientRect().width === 0)
             return;
-        }
         const safe = safeArea(hostEl);
-        setEditMaxHeight(
-            Math.max(160, (safe.bottom - safe.top) / flow.getZoom())
-        );
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- the height comes from a layout measurement of the frame, which cannot be read while rendering
+        setMeasured({
+            id: editingId,
+            host: hostEl,
+            height: Math.max(160, (safe.bottom - safe.top) / flow.getZoom()),
+        });
         let frames = 0;
         let raf = 0;
         const tick = () => {
