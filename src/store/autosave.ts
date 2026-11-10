@@ -7,8 +7,9 @@ export const AUTOSAVE_MAX_WAIT_MS = 10_000;
 
 export interface AutosaveOptions {
     store: EditorStore;
-    adapter: Pick<StorageAdapter, 'save'> &
-        Partial<Pick<StorageAdapter, 'wasRemoved'>>;
+    adapter: {
+        save: StorageAdapter['save'];
+    } & Partial<Pick<StorageAdapter, 'wasRemoved'>>;
     /** quiet time after the last change before saving (default 1000 ms) */
     delayMs?: number;
     /** longest wait from the first unsaved change, however busy the editing (default 10 s) */
@@ -44,7 +45,7 @@ export function startAutosave(options: AutosaveOptions): Autosave {
         // a design deleted while it was open must not be written back
         if (adapter.wasRemoved?.(design.id)) return;
         try {
-            await adapter.save(design);
+            await adapter.save(design, { update: true });
             // a change made while writing leaves the flag set
             if (store.getState().design === design)
                 store.getState().markSaved();

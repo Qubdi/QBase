@@ -46,6 +46,17 @@ describe('review core-store 17: autosave and selectors', () => {
         autosave.dispose();
     });
 
+    it('an update save arriving after a removal does not bring the design back, a create does', async () => {
+        const adapter = new MemoryStorageAdapter();
+        const design = blank();
+        await adapter.save(design);
+        await adapter.remove(design.id);
+        await adapter.save(design, { update: true });
+        expect(await adapter.load(design.id)).toBeUndefined();
+        await adapter.save(design);
+        expect(await adapter.load(design.id)).toBeDefined();
+    });
+
     it('selectVisibleEntities returns the same array until something changes', () => {
         const store = createEditorStore({ design: blank(), now: () => NOW });
         store.getState().edit(addTable('a'));
