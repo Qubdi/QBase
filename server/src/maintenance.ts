@@ -111,42 +111,69 @@ export async function purgeAuditLog(
     }
 }
 
+const PRUNE_BATCH = 5000;
+
 /**
  * Applies the snapshot limit to diagrams published before it existed: removes
- * every version more than `keep` behind that diagram's newest one.
+ * every version more than `keep` behind that diagram's newest one, a batch at a
+ * time so a large backlog never holds one long lock or runs into the statement
+ * timeout.
  */
-export async function pruneSnapshots(db: Db, keep: number): Promise<number> {
+export async function pruneSnapshots(
+    db: Db,
+    keep: number,
+    batch = PRUNE_BATCH
+): Promise<number> {
     if (!(keep > 0)) return 0;
-    const res = await db.execute(sql`
-        delete from snapshots s
-        using (
-            select diagram_id, max(version) as newest
-            from snapshots
-            group by diagram_id
-        ) latest
-        where s.diagram_id = latest.diagram_id
-          and s.version <= latest.newest - ${keep}
-    `);
-    return res.rowCount ?? 0;
+    let total = 0;
+    for (;;) {
+        const res = await db.execute(sql`
+            delete from snapshots
+            where id in (
+                select s.id
+                from snapshots s
+                join (
+                    select diagram_id, max(version) as newest
+                    from snapshots
+                    group by diagram_id
+                ) latest on latest.diagram_id = s.diagram_id
+                where s.version <= latest.newest - ${keep}
+                limit ${batch}
+            )
+        `);
+        const n = res.rowCount ?? 0;
+        total += n;
+        if (n < batch) return total;
+    }
 }
 
-/** Removes every drift report beyond the newest `keep` of its diagram. */
-export async function pruneDriftReports(db: Db, keep: number): Promise<number> {
+/** Removes every drift report beyond the newest `keep` of each diagram, a batch at a time. */
+export async function pruneDriftReports(
+    db: Db,
+    keep: number,
+    batch = PRUNE_BATCH
+): Promise<number> {
     if (!(keep > 0)) return 0;
-    const res = await db.execute(sql`
-        delete from drift_reports
-        where id in (
-            select id from (
-                select id,
-                       row_number() over (
-                           partition by diagram_id order by run_at desc, id desc
-                       ) as place
-                from drift_reports
-            ) ranked
-            where place > ${keep}
-        )
-    `);
-    return res.rowCount ?? 0;
+    let total = 0;
+    for (;;) {
+        const res = await db.execute(sql`
+            delete from drift_reports
+            where id in (
+                select id from (
+                    select id,
+                           row_number() over (
+                               partition by diagram_id order by run_at desc, id desc
+                           ) as place
+                    from drift_reports
+                ) ranked
+                where place > ${keep}
+                limit ${batch}
+            )
+        `);
+        const n = res.rowCount ?? 0;
+        total += n;
+        if (n < batch) return total;
+    }
 }
 
 type MaintenanceConfig = Pick<
