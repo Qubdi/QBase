@@ -1,7 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetPasswordMinLength } from '@/hooks/use-password-min-length';
 import { ForcedPasswordChange } from '../forced-password-change';
 
 const { setupStatus, changePassword, logout, refreshUser, state } = vi.hoisted(
@@ -62,7 +61,6 @@ describe('ForcedPasswordChange', () => {
         logout.mockReset();
         refreshUser.mockReset();
         refreshUser.mockResolvedValue(undefined);
-        resetPasswordMinLength();
         state.user = null;
     });
 

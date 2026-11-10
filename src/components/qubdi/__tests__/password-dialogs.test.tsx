@@ -1,7 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetPasswordMinLength } from '@/hooks/use-password-min-length';
 import { AuthDialog } from '../auth-dialog';
 import { ChangePasswordDialog } from '../change-password-dialog';
 
@@ -37,7 +36,6 @@ describe('password dialogs', () => {
         changePassword.mockReset();
         login.mockReset();
         register.mockReset();
-        resetPasswordMinLength();
     });
 
     describe('sign-in', () => {
@@ -76,7 +74,13 @@ describe('password dialogs', () => {
     });
 
     describe('first admin account', () => {
-        beforeEach(() => {
+        // the minimum is asked for once per page load, so this block loads a
+        // dialog with a fresh copy of that answer
+        let FreshAuthDialog: typeof AuthDialog;
+
+        beforeEach(async () => {
+            vi.resetModules();
+            ({ AuthDialog: FreshAuthDialog } = await import('../auth-dialog'));
             setupStatus.mockResolvedValue({
                 needsSetup: true,
                 passwordMinLength: 14,
@@ -84,7 +88,7 @@ describe('password dialogs', () => {
         });
 
         it('shows the rules with the real minimum and holds the button until they are met', async () => {
-            render(<AuthDialog open onOpenChange={vi.fn()} />);
+            render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
             expect(
                 await screen.findByRole('button', {
                     name: 'Create admin account',
@@ -104,7 +108,7 @@ describe('password dialogs', () => {
         });
 
         it('does not accept a password made from the email', async () => {
-            render(<AuthDialog open onOpenChange={vi.fn()} />);
+            render(<FreshAuthDialog open onOpenChange={vi.fn()} />);
             await screen.findByText(/At least 14 characters/);
             fireEvent.change(screen.getByPlaceholderText('Email'), {
                 target: { value: 'founder@corp.io' },
