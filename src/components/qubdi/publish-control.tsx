@@ -57,26 +57,35 @@ export const PublishControl: React.FC = () => {
 
     const remoteId = remoteIdFor(currentDiagram.id);
 
-    const refresh = useCallback(async () => {
+    // a diagram that is not on the server has nothing published: reset while
+    // rendering, when the diagram's remote id goes away
+    const [seenRemoteId, setSeenRemoteId] = useState(remoteId);
+    if (seenRemoteId !== remoteId) {
+        setSeenRemoteId(remoteId);
         if (!remoteId) {
             setStatus({
                 synced: false,
                 publishedVersion: null,
                 unpublishedChanges: true,
             });
-            return;
         }
-        try {
-            const d = await api.getPublishStatus(remoteId);
-            setStatus({
-                synced: true,
-                publishedVersion: d.publishedVersion,
-                unpublishedChanges: d.unpublishedChanges ?? false,
-            });
-            setAutoPublish(d.autoPublish ?? false);
-        } catch {
-            // keep the previous status; the next action will surface any error
-        }
+    }
+
+    const refresh = useCallback(() => {
+        if (!remoteId) return Promise.resolve();
+        return api.getPublishStatus(remoteId).then(
+            (d) => {
+                setStatus({
+                    synced: true,
+                    publishedVersion: d.publishedVersion,
+                    unpublishedChanges: d.unpublishedChanges ?? false,
+                });
+                setAutoPublish(d.autoPublish ?? false);
+            },
+            () => {
+                // keep the previous status; the next action will surface any error
+            }
+        );
     }, [remoteId]);
 
     const canPublish = access.status === 'editor';

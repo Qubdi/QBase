@@ -44,10 +44,13 @@ export const LintControl: React.FC = () => {
         getLintConfig(currentDiagram.id)
     );
 
-    // settings follow the diagram being edited
-    useEffect(() => {
+    // settings follow the diagram being edited: reset while rendering, when
+    // the diagram changes
+    const [configFor, setConfigFor] = useState(currentDiagram.id);
+    if (configFor !== currentDiagram.id) {
+        setConfigFor(currentDiagram.id);
         setConfig(getLintConfig(currentDiagram.id));
-    }, [currentDiagram.id]);
+    }
 
     // a diagram opened on a new browser: adopt the settings stored on the server
     const remoteId = remoteIdFor(currentDiagram.id);
@@ -65,7 +68,9 @@ export const LintControl: React.FC = () => {
     // browser, the API) since they were read: look again whenever the panel
     // or the settings dialog opens
     const configRef = useRef(config);
-    configRef.current = config;
+    useEffect(() => {
+        configRef.current = config;
+    });
     const active = open || settingsOpen;
     useEffect(() => {
         if (!active || !user || !remoteId) return;

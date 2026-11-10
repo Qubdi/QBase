@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Dialog,
@@ -60,13 +60,16 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
 
     const state = open ? getSyncState(currentDiagram.id) : undefined;
 
-    useEffect(() => {
+    // each opening starts clean: reset while rendering, not in an effect
+    const [openSeen, setOpenSeen] = useState(false);
+    if (openSeen !== open) {
+        setOpenSeen(open);
         if (open) {
             setPlan(null);
             setError(null);
             setPassword('');
         }
-    }, [open]);
+    }
 
     const groups = useMemo(
         () => (plan ? groupChanges(plan.cs.changes) : []),
