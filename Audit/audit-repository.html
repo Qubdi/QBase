@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 29</b></div>
-  <h1>12 open (0 Crit, 1 High).</h1>
+  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 30</b></div>
+  <h1>2 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -28,27 +28,16 @@
 </header>
 
 <main id="main">
-<div class="note crit"><span class="pill crit">Act first</span><span><b>REPO-005</b> CI secret scan fails on main; publish <code>verify</code> job blocked</span></div>
 
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">12 open &middot; 44 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
+  <p class="section-note">2 open &middot; 54 fixed &middot; 0 accepted. Source of truth: <code>Audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">REPO-001</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>bootstrap-sha</code> commit is not an ancestor of main</td><td class="wrap-cell"><code>release-please-config.json:4</code></td><td class="wrap-cell">Set bootstrap-sha to a commit in main</td></tr>
-        <tr><td class="svc-name">REPO-002</td><td><span class="pill warn">Med</span></td><td class="wrap-cell"><code>latest</code> tag moves on every <code>v*</code> tag, including prereleases</td><td class="wrap-cell"><code>.github/workflows/publish.yaml:154</code>, <code>run.sh:84</code></td><td class="wrap-cell">Tag latest only for non-prerelease versions</td></tr>
-        <tr><td class="svc-name">REPO-003</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Similarity check runs only on <code>rewrite/clean-room</code>, never on main</td><td class="wrap-cell"><code>.github/workflows/similarity.yaml:11</code>, <code>.github/workflows/similarity.yaml:13</code></td><td class="wrap-cell">Add main to similarity triggers</td></tr>
         <tr><td class="svc-name">REPO-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish workflow ships images while TODO says do not publish</td><td class="wrap-cell"><code>TODO.md:7</code>, <code>rewrite/TODO.md:11</code>, <code>.github/workflows/publish.yaml:5</code></td><td class="wrap-cell">Reconcile TODO with publish; gate publish on rewrite status</td></tr>
-        <tr><td class="svc-name">REPO-005</td><td><span class="pill crit">High</span></td><td class="wrap-cell">CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored</td><td class="wrap-cell"><code>.gitleaksignore:3</code>, <code>server/test/share-token-copy.test.ts:25</code>, <code>.github/workflows/ci.yaml:126</code>, <code>.github/workflows/publish.yaml:106</code></td><td class="wrap-cell">Regenerate ignore fingerprints from main history; rerun scan</td></tr>
-        <tr><td class="svc-name">REPO-006</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">npm version updates paused; both npm entries have limit 0</td><td class="wrap-cell"><code>.github/dependabot.yml:11</code>, <code>.github/dependabot.yml:25</code></td><td class="wrap-cell">Restore limit to 5 or document accepted pause</td></tr>
-        <tr><td class="svc-name">REPO-013</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Playwright npm package installed at run time without a lockfile</td><td class="wrap-cell"><code>tools/e2e/run-smoke.sh:18</code></td><td class="wrap-cell">Install Playwright from a committed lockfile</td></tr>
-        <tr><td class="svc-name">REPO-015</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">1.1 MB <code>audit-ui-differences.html</code> tracked, not an owned audit file</td><td class="wrap-cell"><code>Audit/audit-ui-differences.html:1</code></td><td class="wrap-cell">Untrack or move out of Audit/</td></tr>
         <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CODEOWNERS lists a personal email, no team; single point of review</td><td class="wrap-cell"><code>.github/CODEOWNERS:5</code></td><td class="wrap-cell">Use a verified <code>@org/team</code> owner</td></tr>
-        <tr><td class="svc-name">REPO-027</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Load run.sh never fails on a k6 threshold; README says it gates CI</td><td class="wrap-cell"><code>server/load/run.sh:58</code>, <code>server/load/run.sh:69</code>, <code>server/load/README.md:18</code></td><td class="wrap-cell">Return k6run status from run_one</td></tr>
-        <tr><td class="svc-name">REPO-028</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">README feature line says only a share-token hash is stored; code also encrypts token</td><td class="wrap-cell"><code>README.md:21</code>, <code>server/src/share/routes.ts:168</code></td><td class="wrap-cell">Reword feature line to hash plus encrypted token</td></tr>
-        <tr><td class="svc-name">REPO-059</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CI tests only PostgreSQL 18, though README says 16 or newer</td><td class="wrap-cell"><code>.github/workflows/ci.yaml:57</code></td><td class="wrap-cell">Add a PostgreSQL 16 leg to the server CI job</td></tr>
       </tbody>
     </table>
   </div>
@@ -56,7 +45,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (44)</summary>
+  <details><summary>Fixed (54)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -105,6 +94,16 @@
         <tr><td class="svc-name">REPO-018</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Code of Conduct enforcement contact is not actionable</td></tr>
         <tr><td class="svc-name">REPO-019</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">QBase-build-tasks says hashed share tokens and keep-all versions; both differ now</td></tr>
         <tr><td class="svc-name">REPO-040</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">make-clean-checkout comment cites rewrite/clean-author-brief.md, which does not exist</td></tr>
+        <tr><td class="svc-name">REPO-001</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>bootstrap-sha</code> commit is not an ancestor of main</td></tr>
+        <tr><td class="svc-name">REPO-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>latest</code> tag moves on every <code>v*</code> tag, including prereleases</td></tr>
+        <tr><td class="svc-name">REPO-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Similarity check runs only on <code>rewrite/clean-room</code>, never on main</td></tr>
+        <tr><td class="svc-name">REPO-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored</td></tr>
+        <tr><td class="svc-name">REPO-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">npm version updates paused; both npm entries have limit 0</td></tr>
+        <tr><td class="svc-name">REPO-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Playwright npm package installed at run time without a lockfile</td></tr>
+        <tr><td class="svc-name">REPO-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">1.1 MB <code>audit-ui-differences.html</code> tracked, not an owned audit file</td></tr>
+        <tr><td class="svc-name">REPO-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Load run.sh never fails on a k6 threshold; README says it gates CI</td></tr>
+        <tr><td class="svc-name">REPO-028</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README feature line says only a share-token hash is stored; code also encrypts token</td></tr>
+        <tr><td class="svc-name">REPO-059</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI tests only PostgreSQL 18, though README says 16 or newer</td></tr>
       </tbody>
     </table>
   </div>

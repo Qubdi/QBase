@@ -1,22 +1,21 @@
 # QBase — Audit
 
-**rev** 29 · **date** 2026-11-10
+**rev** 30 · **date** 2026-11-10
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db `qbase_test` (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 1 | 0 | 0 | 32 | 0 |
-| Repository | 12 | 0 | 1 | 44 | 0 |
+| Repository | 2 | 0 | 0 | 54 | 0 |
 | Server | 16 | 0 | 4 | 20 | 0 |
 | Database | 8 | 0 | 0 | 10 | 1 |
 | Client | 0 | 0 | 0 | 94 | 0 |
 | Dead code | 0 | 0 | 0 | 40 | 0 |
-| **Total** | 37 | 0 | 5 | 240 | 1 |
+| **Total** | 27 | 0 | 4 | 250 | 1 |
 
 ## Act first
 
-- `REPO-005` — CI secret scan fails on main; publish `verify` job blocked
 - `SRV-001` — Auth runs in preHandler, so anonymous 50 MB bodies are read and parsed first
 - `SRV-002` — Error handler logs Drizzle error whose message embeds all query params
 - `SRV-021` — Quadratic regex on field type name hangs event loop; 100k chars takes 9 s
@@ -36,18 +35,8 @@
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| REPO-001 | Med | `bootstrap-sha` commit is not an ancestor of main | `release-please-config.json:4` | Set bootstrap-sha to a commit in main |
-| REPO-002 | Med | `latest` tag moves on every `v*` tag, including prereleases | `.github/workflows/publish.yaml:154`, `run.sh:84` | Tag latest only for non-prerelease versions |
-| REPO-003 | Med | Similarity check runs only on `rewrite/clean-room`, never on main | `.github/workflows/similarity.yaml:11`, `.github/workflows/similarity.yaml:13` | Add main to similarity triggers |
 | REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:7`, `rewrite/TODO.md:11`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
-| REPO-005 | High | CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored | `.gitleaksignore:3`, `server/test/share-token-copy.test.ts:25`, `.github/workflows/ci.yaml:126`, `.github/workflows/publish.yaml:106` | Regenerate ignore fingerprints from main history; rerun scan |
-| REPO-006 | Med | npm version updates paused; both npm entries have limit 0 | `.github/dependabot.yml:11`, `.github/dependabot.yml:25` | Restore limit to 5 or document accepted pause |
-| REPO-013 | Low | Playwright npm package installed at run time without a lockfile | `tools/e2e/run-smoke.sh:18` | Install Playwright from a committed lockfile |
-| REPO-015 | Low | 1.1 MB `audit-ui-differences.html` tracked, not an owned audit file | `Audit/audit-ui-differences.html:1` | Untrack or move out of Audit/ |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
-| REPO-027 | Med | Load run.sh never fails on a k6 threshold; README says it gates CI | `server/load/run.sh:58`, `server/load/run.sh:69`, `server/load/README.md:18` | Return k6run status from run_one |
-| REPO-028 | Med | README feature line says only a share-token hash is stored; code also encrypts token | `README.md:21`, `server/src/share/routes.ts:168` | Reword feature line to hash plus encrypted token |
-| REPO-059 | Low | CI tests only PostgreSQL 18, though README says 16 or newer | `.github/workflows/ci.yaml:57` | Add a PostgreSQL 16 leg to the server CI job |
 
 ### Server
 
@@ -165,6 +154,16 @@
 | REPO-018 | Repository | Code of Conduct enforcement contact is not actionable |
 | REPO-019 | Repository | QBase-build-tasks says hashed share tokens and keep-all versions; both differ now |
 | REPO-040 | Repository | make-clean-checkout comment cites rewrite/clean-author-brief.md, which does not exist |
+| REPO-001 | Repository | `bootstrap-sha` commit is not an ancestor of main |
+| REPO-002 | Repository | `latest` tag moves on every `v*` tag, including prereleases |
+| REPO-003 | Repository | Similarity check runs only on `rewrite/clean-room`, never on main |
+| REPO-005 | Repository | CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored |
+| REPO-006 | Repository | npm version updates paused; both npm entries have limit 0 |
+| REPO-013 | Repository | Playwright npm package installed at run time without a lockfile |
+| REPO-015 | Repository | 1.1 MB `audit-ui-differences.html` tracked, not an owned audit file |
+| REPO-027 | Repository | Load run.sh never fails on a k6 threshold; README says it gates CI |
+| REPO-028 | Repository | README feature line says only a share-token hash is stored; code also encrypts token |
+| REPO-059 | Repository | CI tests only PostgreSQL 18, though README says 16 or newer |
 | DB-008 | Database | One pending MFA ticket per account is not enforced; concurrent logins leave two |
 | DB-009 | Database | Audit rows are written after, not inside, the transaction of the change |
 | DB-010 | Database | Backups section omits saving CONNECTION_KEY and SECRETS_KEY with the dump |
@@ -408,6 +407,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 30 | 2026-11-10 | 10 fixed (repository batch: REPO-001, 002, 003, 005, 006, 013, 015, 027, 028, 059), 1 High cleared; anchors not remapped |
 | 29 | 2026-11-10 | 11 fixed (security batch 3: SEC-003, 010, 011, 012, 013, 014, 018, 019, 022, 024, 031), SEC-001 narrowed; anchors not remapped |
 | 28 | 2026-11-10 | 5 fixed (client batch 3: CLI-005, 006, 007, 039, 069); client lens has no open findings; anchors not remapped |
 | 27 | 2026-11-10 | 1 fixed (DEAD-024, the three remaining reset hooks removed); anchors not remapped |

@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 29</b></div>
-  <h1>37 open across six lenses.</h1>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 30</b></div>
+  <h1>27 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-10</span>
     <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run (node:24-slim, scratch copy) · server vitest run vs srvaudit-pg throwaway db <code>qbase_test</code> (scratch copy) · srvaudit-pg read-only EXPLAIN and catalog · gitleaks v8.30.1 (CI pin) · npm audit · vite build to scratch · no secret read</span>
@@ -35,12 +35,12 @@
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
         <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>0</td><td>32</td><td>0</td></tr>
-        <tr><td>Repository</td><td>12</td><td>0</td><td>1</td><td>44</td><td>0</td></tr>
+        <tr><td>Repository</td><td>2</td><td>0</td><td>0</td><td>54</td><td>0</td></tr>
         <tr><td>Server</td><td>16</td><td>0</td><td>4</td><td>20</td><td>0</td></tr>
         <tr><td>Database</td><td>8</td><td>0</td><td>0</td><td>10</td><td>1</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>94</td><td>0</td></tr>
         <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>40</td><td>0</td></tr>
-        <tr><td>Total</td><td>37</td><td>0</td><td>5</td><td>240</td><td>1</td></tr>
+        <tr><td>Total</td><td>27</td><td>0</td><td>4</td><td>250</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -56,7 +56,7 @@
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
     <p>1 open finding.</p>
-    <p class="lbl">12 open &middot; 0 Crit &middot; 1 High &middot; 44 fixed &middot; 0 accepted</p>
+    <p class="lbl">2 open &middot; 0 Crit &middot; 0 High &middot; 54 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
@@ -86,6 +86,7 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
+        <tr><td>30</td><td>2026-11-10</td><td class="wrap-cell">10 fixed (repository batch: REPO-001, 002, 003, 005, 006, 013, 015, 027, 028, 059), 1 High cleared; anchors not remapped</td></tr>
         <tr><td>29</td><td>2026-11-10</td><td class="wrap-cell">11 fixed (security batch 3: SEC-003, 010, 011, 012, 013, 014, 018, 019, 022, 024, 031), SEC-001 narrowed; anchors not remapped</td></tr>
         <tr><td>28</td><td>2026-11-10</td><td class="wrap-cell">5 fixed (client batch 3: CLI-005, 006, 007, 039, 069); client lens has no open findings; anchors not remapped</td></tr>
         <tr><td>27</td><td>2026-11-10</td><td class="wrap-cell">1 fixed (DEAD-024, the three remaining reset hooks removed); anchors not remapped</td></tr>
