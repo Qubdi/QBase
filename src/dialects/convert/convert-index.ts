@@ -113,7 +113,9 @@ export function convertIndex(
                     regular: false,
                 };
             if (asked === 'fulltext' && !around.kinds.every(isTextKind))
-                return refuses(`a fulltext index in ${name} needs text columns`);
+                return refuses(
+                    `a fulltext index in ${name} needs text columns`
+                );
             if (
                 asked === 'spatial' &&
                 !(around.kinds.length === 1 && around.kinds[0] === 'geo')
