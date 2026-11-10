@@ -35,7 +35,17 @@ export interface AppDeps {
     db: Db;
     /** test seams for the introspection endpoints */
     introspect?: Pick<IntrospectDeps, 'factory' | 'lookup'>;
+    /** calls a minute one signed-in user may make in all (tests lower or raise it) */
+    userRateLimit?: number;
 }
+
+/**
+ * Calls a minute one signed-in user may make across the whole API. It is far
+ * above what the editor does (saves are debounced) and only stops a script
+ * from sending the heavy routes (saves, shares, admin) without end; routes
+ * with a tighter limit of their own keep it.
+ */
+export const USER_RATE_LIMIT = 600;
 
 /** Trust the nearest `hops` proxies (Fastify's types only take a function here). */
 const trustHops = (hops: number) => (_address: string, hop: number) =>
@@ -88,7 +98,12 @@ export const REQUEST_TIMEOUT_MS = 120_000;
 // an idle socket is closed after this; SSE heartbeats (25 s by default) keep a live stream busy
 export const CONNECTION_TIMEOUT_MS = 120_000;
 
-export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
+export function buildApp({
+    config,
+    db,
+    introspect,
+    userRateLimit = USER_RATE_LIMIT,
+}: AppDeps): FastifyInstance {
     const prefix = config.webDir ? API_PREFIX : '';
     const app = Fastify({
         // closing the server drops idle connections only: a request being answered
@@ -200,6 +215,15 @@ export function buildApp({ config, db, introspect }: AppDeps): FastifyInstance {
             req.cookies[SESSION_COOKIE],
             config.sessionIdleDays * 86_400
         );
+    });
+
+    // Every signed-in call draws on one allowance per user. Counting waits for
+    // the session lookup above, so only a real user is counted (a made-up
+    // cookie adds nothing); the routes open to anyone have limits of their own.
+    const userLimit = sharedUserLimit(userRateLimit);
+    api.addHook('preHandler', async (req, reply) => {
+        if (!req.user) return;
+        return userLimit(req, reply);
     });
 
     // someone on a temporary password may only change it, ask who they are, or
