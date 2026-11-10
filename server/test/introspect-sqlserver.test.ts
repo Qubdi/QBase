@@ -12,7 +12,9 @@ import {
     MSSQL_HOST,
     MSSQL_PASSWORD,
     MSSQL_PORT,
+    MSSQL_SKIP_NOTICE,
     MSSQL_USER,
+    mssqlRequired,
     mssqlConfig,
     resetMssqlSample,
     waitForMssql,
@@ -20,8 +22,20 @@ import {
 
 // Needs the optional container and its password: see docker-compose.mssql.yml
 const up = await waitForMssql(Number(process.env.MSSQL_WAIT_MS ?? 90_000));
+const required = mssqlRequired();
+// a skip nobody sees is how a suite stops running: say it, loudly
+if (!up && !required) console.warn(MSSQL_SKIP_NOTICE);
 
-describe.skipIf(!up)('SQL Server introspection against a real database', () => {
+// where the run needs SQL Server (CI with the container set up, or REQUIRE_MSSQL=1)
+// an unreachable one is a failure, not a quiet skip
+describe.runIf(required)('SQL Server is reachable where the suite requires it', () => {
+    it('answers on the configured port', () => {
+        expect(up, 'SQL Server did not answer, but this run requires it (REQUIRE_MSSQL=1, or CI with MSSQL_SA_PASSWORD set)').toBe(true);
+    });
+});
+
+// the skip is in the suite's name too: a reporter shows names, and a console line of a skipped file is dropped
+describe.skipIf(!up)(`SQL Server introspection against a real database${up ? '' : ' [NOT RUN: no reachable SQL Server, see docker-compose.mssql.yml; REQUIRE_MSSQL=1 makes this a failure]'}`, () => {
     let intro: SqlServerIntrospector;
     let pool: sql.ConnectionPool;
     let meta: DatabaseMetadata;
