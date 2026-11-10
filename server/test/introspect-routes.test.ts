@@ -73,6 +73,7 @@ const conn = (over: object = {}) => ({
     database: 'shop',
     user: 'reader',
     password: 'p@ss-w0rd-SECRET',
+    ssl: false, // the default is true; these tests talk to a fake or a local driver
     ...over,
 });
 
@@ -170,6 +171,14 @@ describe('introspect HTTP layer (fake driver)', () => {
         expect(calls.at(-1)!.params.port).toBe(1433);
         await post(alice, '/introspect/catalog', { connection: conn({ port: 6543 }) });
         expect(calls.at(-1)!.params.port).toBe(6543);
+    });
+
+    it('encrypts the connection unless the caller opts out', async () => {
+        const { ssl: _ssl, ...bare } = conn();
+        await post(alice, '/introspect/catalog', { connection: bare });
+        expect(calls.at(-1)!.params.ssl).toBe(true);
+        await post(alice, '/introspect/catalog', { connection: conn({ ssl: false }) });
+        expect(calls.at(-1)!.params.ssl).toBe(false);
     });
 
     it('returns metadata, honouring the table selection and dropping dangling foreign keys', async () => {
@@ -784,6 +793,7 @@ describe('introspect end to end against the real sample database', () => {
         database: SAMPLE_DB,
         user: PG_USER,
         password: PG_PASSWORD,
+        ssl: false, // the sample database speaks plain TCP
         ...over,
     });
 

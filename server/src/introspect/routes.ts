@@ -44,7 +44,8 @@ const connectionFields = z.object({
     database: z.string().min(1).max(128),
     user: z.string().min(1).max(128),
     password: z.string().max(1000),
-    ssl: z.boolean().default(false),
+    // encrypted unless the caller says otherwise; the editor always sends it
+    ssl: z.boolean().default(true),
     trustServerCertificate: z.boolean().default(false),
 });
 
