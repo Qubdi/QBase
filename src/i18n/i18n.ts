@@ -73,6 +73,10 @@ export const i18nReady: Promise<void> = i18n
             escapeValue: false,
         },
         fallbackLng: FALLBACK,
+        // a browser language the app has no file for falls back to English
+        // instead of setting <html lang> over English text
+        supportedLngs: languages.map((l) => l.code),
+        nonExplicitSupportedLngs: true,
         debug: false,
     })
     .then(() => ensureLocale(i18n.language))
