@@ -94,7 +94,9 @@ describe('titles of the other pages (SHL-102)', () => {
             </HelmetProvider>
         );
         await waitFor(() =>
-            expect(document.title).toBe(i18n.t('qubdi.viewerPage.pageTitle'))
+            expect(document.title).toBe(
+                i18n.t('qubdi.workspace.viewerPage.pageTitle')
+            )
         );
         expect(screen.getByText('Loading…')).toBeTruthy();
     });

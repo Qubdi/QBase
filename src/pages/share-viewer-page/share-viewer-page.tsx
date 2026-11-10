@@ -350,7 +350,7 @@ export const ShareViewerPage: React.FC = () => {
     return (
         <>
             <Helmet>
-                <title>{t('qubdi.viewerPage.pageTitle')}</title>
+                <title>{t('qubdi.workspace.viewerPage.pageTitle')}</title>
             </Helmet>
             <ViewerBody />
         </>
