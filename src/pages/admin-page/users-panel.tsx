@@ -117,9 +117,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
     // a tick belongs to the rows it was made on: another page, search or
     // filter starts with nothing ticked, so "3 selected" never counts rows
     // that are out of sight
-    useEffect(() => {
+    const scope = `${list.page}\u0000${list.query}\u0000${statusFilter}`;
+    const [selectedScope, setSelectedScope] = useState(scope);
+    if (selectedScope !== scope) {
+        setSelectedScope(scope);
         setSelected(new Set());
-    }, [list.page, list.query, statusFilter]);
+    }
 
     // only rows that are on this page and that may be acted on in bulk (the
     // server refuses the caller in a disable or delete)
