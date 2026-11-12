@@ -30,7 +30,11 @@ export const CHROME_CSS = `
 .qb-minimap svg { width:100% !important; height:100% !important; }
 .react-flow__edge.selected .react-flow__edge-path:not(.react-flow__edge-interaction) { animation:qb-dash 0.5s linear infinite; }
 @keyframes qb-dash { to { stroke-dashoffset:-10; } }
+/* tables, areas and notes show the grab hand; a column row and a line show the
+   pointing finger (field-row.tsx, xyflow), and the dots the crosshair */
 .react-flow__node:hover { cursor:grab; }
+/* while a node is dragged the whole of it shows grabbing, even a row that has its own cursor */
+.react-flow__node.dragging, .react-flow__node.dragging * { cursor:grabbing; }
 /* the table being edited sits above the tables around it, so its card is never covered */
 .react-flow__node:has([data-edit-card]) { z-index:1000 !important; }
 /* keyboard focus on a table, area, note or line: xyflow removes its outline */

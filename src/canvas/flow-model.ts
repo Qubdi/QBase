@@ -430,6 +430,9 @@ export function buildNodes(
     return nodes;
 }
 
+/** Layer of the lines that stand back: one under the default layer (0) of the others. */
+export const DIMMED_EDGE_Z = -1;
+
 /**
  * `memory` holds the sides each link had last time; it is read for the
  * hysteresis and updated with the sides chosen now.
@@ -470,6 +473,10 @@ export function buildEdges(
         const pair = [from.id, to.id].sort().join('|');
         const n = rank.get(pair) ?? 0;
         rank.set(pair, n + 1);
+        // with a field in focus only the lines at that field stay bright
+        const dimmed = field
+            ? !touchesField(link, field)
+            : dim.has(from.id) || dim.has(to.id);
         const edge: LinkEdge = {
             id,
             type: 'link',
@@ -479,14 +486,14 @@ export function buildEdges(
             targetHandle: handleId(link.targetColumnId, b),
             ariaLabel: `${from.name} - ${to.name}`,
             selected: input.selection.has(id),
+            // a line that stands back is a solid pale colour (see link-edge.tsx),
+            // so it is drawn under the lines that do not, never over them
+            ...(dimmed ? { zIndex: DIMMED_EDGE_Z } : {}),
             data: {
                 reach: (selfLoop ? 36 : 22) + n * 14,
                 selfLoop,
                 mark: input.diff?.links[id],
-                // with a field in focus only the lines at that field stay bright
-                dimmed: field
-                    ? !touchesField(link, field)
-                    : dim.has(from.id) || dim.has(to.id),
+                dimmed,
             },
         };
         // the edge of last time when nothing about it changed

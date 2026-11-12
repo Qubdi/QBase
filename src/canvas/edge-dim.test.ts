@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEdges, NO_LIVE } from './flow-model';
+import { buildEdges, DIMMED_EDGE_Z, NO_LIVE } from './flow-model';
 import { shop } from './test/fixtures';
 
 const input = (design: ReturnType<typeof shop>['design'], pick: string[]) => ({
@@ -33,5 +33,15 @@ describe('EDT-032 a line stands back with its table', () => {
         expect(buildEdges(input(s.design, [s.items]))[0].data?.dimmed).toBe(
             true
         );
+    });
+
+    it('is drawn under the lines that do not stand back, never over them', () => {
+        const s = shop();
+        // a line that stands back is a solid pale colour, so it must not cover a bright one
+        const [bright] = buildEdges(input(s.design, [s.users]));
+        const [dimmed] = buildEdges(input(s.design, [s.items]));
+        expect(bright.zIndex).toBeUndefined();
+        expect(dimmed.zIndex).toBe(DIMMED_EDGE_Z);
+        expect(DIMMED_EDGE_Z).toBeLessThan(0);
     });
 });
