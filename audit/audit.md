@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 44 · **date** 2026-11-10
+**rev** 45 · **date** 2026-11-13
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 4 | 0 | 0 | 59 | 0 |
 | Server | 0 | 0 | 0 | 40 | 0 |
 | Database | 1 | 0 | 0 | 21 | 1 |
-| Client | 0 | 0 | 0 | 102 | 0 |
+| Client | 2 | 0 | 0 | 102 | 0 |
 | Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 8 | 0 | 0 | 305 | 1 |
+| **Total** | 10 | 0 | 0 | 305 | 1 |
 
 ## Act first
 
@@ -51,7 +51,10 @@ None.
 
 ### Client
 
-None.
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| CLI-110 | Med | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru | `src/i18n/locales/en.ts:30` | Translate the five `qubdi` text files into de, fr, it, ru |
+| CLI-111 | Low | Locale parity test skips `qubdi.*`, so missing translations pass CI | `src/i18n/__tests__/locale-parity.test.ts:40` | Drop the `qubdi.` exemption once translated |
 
 ### Dead code
 
@@ -441,6 +444,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 45 | 2026-11-13 | 2 new (CLI-110: `qubdi.*` text and the navbar right side are English in de, fr, it, ru, supersedes the README note of CLI-106; CLI-111: parity test skips `qubdi.*`); 10 open, 0 Crit, 0 High; anchors not remapped |
 | 44 | 2026-11-10 | 1 fixed (SRV-009: default diagram body limit 50 MB to 25 MB, set with `DIAGRAM_BODY_LIMIT_MB` in .env; blocking at the cap about 0.5 s instead of 0.9 s at 40 MB; a worker thread measured no better); server lens has no open findings; 8 open, 0 Crit, 0 High; anchors not remapped |
 | 43 | 2026-11-10 | 1 fixed (SRV-008: live-viewer caps held in Postgres, table `live_viewers`, migration 0030, renewed on each heartbeat); SRV-009 re-measured (see its row): 40 MB body parses in 285 ms on the main thread and a worker hands the object back at 311 ms, so a worker does not help; 9 open, 0 Crit, 0 High; anchors not remapped |
 | 42 | 2026-11-10 | 3 fixed (CLI-103: failed autosave retries with capped backoff and jitter, honours Retry-After; CLI-109: DBML text over 2 MB refused; CLI-106: English-only server screens documented in README); client lens has no open findings; 10 open, 0 Crit, 0 High; anchors not remapped |
