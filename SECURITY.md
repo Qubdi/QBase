@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please do not open a public issue for a security problem. Email
-**support@qubdi.dev** with:
+**support@qubdi.com** with:
 
 - what you found and where (route, file or setting),
 - the steps to reproduce it,
