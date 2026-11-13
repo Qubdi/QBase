@@ -87,7 +87,7 @@ describe('document direction', () => {
 });
 
 describe('the server screens in other languages', () => {
-    it('show their English text until a language translates them', async () => {
+    it('are translated, not left in English', async () => {
         const english = i18n.getFixedT('en')(
             'qubdi.adminUsers.sessions.unknownBrowser'
         );
@@ -96,8 +96,7 @@ describe('the server screens in other languages', () => {
         await expect
             .poll(() => i18n.hasResourceBundle('fr', 'translation'))
             .toBe(true);
-        // French has no `qubdi` text yet: the key must still read as English
-        expect(i18n.t('qubdi.adminUsers.sessions.unknownBrowser')).toBe(
+        expect(i18n.t('qubdi.adminUsers.sessions.unknownBrowser')).not.toBe(
             english
         );
         await i18n.changeLanguage('en');

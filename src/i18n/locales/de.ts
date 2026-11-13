@@ -1,3 +1,5 @@
+import { de as deQubdi } from '../qubdi-locales/de';
+
 export const de = {
     translation: {
         editor: {
@@ -970,5 +972,6 @@ export const de = {
                 hint: 'Klicken Sie auf die Tabelle, die den Fremdschlüssel enthält',
             },
         },
+        qubdi: deQubdi,
     },
 };

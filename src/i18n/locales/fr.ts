@@ -1,3 +1,5 @@
+import { fr as frQubdi } from '../qubdi-locales/fr';
+
 export const fr = {
     translation: {
         editor: {
@@ -993,5 +995,6 @@ export const fr = {
                 hint: 'Cliquez sur la table qui contient la clé étrangère',
             },
         },
+        qubdi: frQubdi,
     },
 };

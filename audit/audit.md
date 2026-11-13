@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 44 · **date** 2026-11-10
+**rev** 46 · **date** 2026-11-13
 **method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
 
@@ -10,9 +10,9 @@
 | Repository | 4 | 0 | 0 | 59 | 0 |
 | Server | 0 | 0 | 0 | 40 | 0 |
 | Database | 1 | 0 | 0 | 21 | 1 |
-| Client | 0 | 0 | 0 | 102 | 0 |
+| Client | 0 | 0 | 0 | 104 | 0 |
 | Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 8 | 0 | 0 | 305 | 1 |
+| **Total** | 8 | 0 | 0 | 307 | 1 |
 
 ## Act first
 
@@ -171,6 +171,8 @@ None.
 | DB-017 | Database | Postgres introspection skips foreign tables; SQL Server lists external tables |
 | DB-018 | Database | Materialized views reported as plain views; definition rebuilt as CREATE VIEW |
 | DB-020 | Database | Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones |
+| CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
+| CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |
 | CLI-106 | Client | Qubdi UI keys (907 of 1586) are English-only in de, fr, it, ru; documented in README |
 | CLI-109 | Client | DBML import is superlinear in `@dbml/core` Parser.parse; text over 2 MB refused |
@@ -441,6 +443,8 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 46 | 2026-11-13 | 2 fixed (CLI-110: all `qubdi.*` text translated into de, fr, it, ru, in `src/i18n/qubdi-locales/`; CLI-111: parity test now covers `qubdi.*`); client lens has no open findings; 8 open, 0 Crit, 0 High; anchors not remapped |
+| 45 | 2026-11-13 | 2 new (CLI-110: `qubdi.*` text and the navbar right side are English in de, fr, it, ru, supersedes the README note of CLI-106; CLI-111: parity test skips `qubdi.*`); 10 open, 0 Crit, 0 High; anchors not remapped |
 | 44 | 2026-11-10 | 1 fixed (SRV-009: default diagram body limit 50 MB to 25 MB, set with `DIAGRAM_BODY_LIMIT_MB` in .env; blocking at the cap about 0.5 s instead of 0.9 s at 40 MB; a worker thread measured no better); server lens has no open findings; 8 open, 0 Crit, 0 High; anchors not remapped |
 | 43 | 2026-11-10 | 1 fixed (SRV-008: live-viewer caps held in Postgres, table `live_viewers`, migration 0030, renewed on each heartbeat); SRV-009 re-measured (see its row): 40 MB body parses in 285 ms on the main thread and a worker hands the object back at 311 ms, so a worker does not help; 9 open, 0 Crit, 0 High; anchors not remapped |
 | 42 | 2026-11-10 | 3 fixed (CLI-103: failed autosave retries with capped backoff and jitter, honours Retry-After; CLI-109: DBML text over 2 MB refused; CLI-106: English-only server screens documented in README); client lens has no open findings; 10 open, 0 Crit, 0 High; anchors not remapped |

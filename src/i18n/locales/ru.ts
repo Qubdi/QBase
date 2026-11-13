@@ -1,3 +1,5 @@
+import { ru as ruQubdi } from '../qubdi-locales/ru';
+
 export const ru = {
     translation: {
         editor: {
@@ -990,5 +992,6 @@ export const ru = {
                 hint: 'Щёлкните таблицу, в которой находится внешний ключ',
             },
         },
+        qubdi: ruQubdi,
     },
 };

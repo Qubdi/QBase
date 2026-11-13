@@ -1,3 +1,5 @@
+import { it as itQubdi } from '../qubdi-locales/it';
+
 export const it = {
     translation: {
         editor: {
@@ -987,5 +989,6 @@ export const it = {
                 hint: 'Fare clic sulla tabella che contiene la chiave esterna',
             },
         },
+        qubdi: itQubdi,
     },
 };
