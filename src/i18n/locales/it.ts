@@ -268,7 +268,7 @@ export const it = {
                 foundOnly: '{{tables}} da importare.',
                 nothingToImport: 'Niente da importare',
                 invalidJson:
-                    'JSON non valido. Correggilo o contattaci a support@qubdi.dev.',
+                    'JSON non valido. Correggilo o contattaci a support@qubdi.com.',
                 nothingToExport: 'Niente da esportare',
                 emptyScript: 'Lo script SQL è vuoto',
                 noStatements: 'Nessuna istruzione SQL valida trovata',

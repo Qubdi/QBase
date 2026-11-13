@@ -21,7 +21,7 @@ To submit a pull request:
 
 If you find a bug, check [GitHub issues](https://github.com/qubdi/qbase/issues) to see if it’s already reported. If not, feel free to [report it](https://github.com/qubdi/qbase/issues/new?labels=bug).
 
-For questions about using QBase, [email the project maintainers](mailto:support@qubdi.dev). For feature requests, create a [new feature](https://github.com/qubdi/qbase/issues/new?labels=enhancement).
+For questions about using QBase, [email the project maintainers](mailto:support@qubdi.com). For feature requests, create a [new feature](https://github.com/qubdi/qbase/issues/new?labels=enhancement).
 
 ### Creating a Branch
 
@@ -59,7 +59,7 @@ By contributing, you agree that your work will be licensed under QBase's [licens
 
 ## Questions?
 
-[Email the project maintainers](mailto:support@qubdi.dev) if you have questions about our process, how to proceed, etc.
+[Email the project maintainers](mailto:support@qubdi.com) if you have questions about our process, how to proceed, etc.
 
 ---
 

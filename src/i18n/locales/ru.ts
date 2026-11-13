@@ -271,7 +271,7 @@ export const ru = {
                 foundOnly: '{{tables}} для импорта.',
                 nothingToImport: 'Нечего импортировать',
                 invalidJson:
-                    'Недопустимый JSON. Исправьте его или напишите нам на support@qubdi.dev.',
+                    'Недопустимый JSON. Исправьте его или напишите нам на support@qubdi.com.',
                 nothingToExport: 'Нечего экспортировать',
                 emptyScript: 'Скрипт SQL пуст',
                 noStatements: 'Не найдено допустимых операторов SQL',

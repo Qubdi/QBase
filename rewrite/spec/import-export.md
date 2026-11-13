@@ -517,7 +517,7 @@ characters (terminal decoration), trailing commas, leading commas in arrays, `"p
 that double all quotes; the wrapper `[{"metadata_json_to_import": "{...}"}]` (inner object found by
 counting braces); text that is a JSON string with escaped quotes. If still invalid the text is
 left changed and the error stays "Invalid JSON. Please correct it or contact us at
-support@qubdi.dev for help." (the address is a product value, see Q12). A box with no `{`/`}` shows
+support@qubdi.com for help." (the address is a product value, see Q12). A box with no `{`/`}` shows
 that error at once.
 
 ### 5.4 Building the diagram

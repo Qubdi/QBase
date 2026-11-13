@@ -1,7 +1,7 @@
 import { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 
 export const INVALID_JSON_MESSAGE =
-    'Invalid JSON. Please correct it or contact us at support@qubdi.dev for help.';
+    'Invalid JSON. Please correct it or contact us at support@qubdi.com for help.';
 
 export type ParsedMetadata =
     { ok: true; metadata: DatabaseMetadata } | { ok: false; message: string };
