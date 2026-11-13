@@ -34,7 +34,7 @@ Regenerate the inventory of files outside `src/`:
 
 ```bash
 node tools/similarity.mjs --upstream <chartdb> --tracked \
-  --exclude src/ --exclude server/ --exclude shared/ --exclude Audit/ \
+  --exclude src/ --exclude server/ --exclude shared/ --exclude audit/ \
   --exclude rewrite/ --exclude tools/ --csv rewrite/inventory/other.csv
 ```
 

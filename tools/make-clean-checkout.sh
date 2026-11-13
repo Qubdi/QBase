@@ -45,7 +45,7 @@ if [ "$phase" = 5 ]; then
   [ -d src/core/model ] || { echo "phase 5 needs the accepted src/core on this branch" >&2; exit 1; }
 fi
 # Inventories name ChartDB's files; plans and logs of the process are not the author's business.
-rm -rf rewrite/lawyer-brief.md rewrite/inventory rewrite/PLAN.md rewrite/TODO.md rewrite/README.md Audit tools/similarity.mjs \
+rm -rf rewrite/lawyer-brief.md rewrite/inventory rewrite/PLAN.md rewrite/TODO.md rewrite/README.md audit tools/similarity.mjs \
        tools/licences.mjs tools/spec-check.mjs tools/make-clean-checkout.sh .github/workflows/similarity.yaml
 # Specs and parity rows outside this phase's scope.
 rm -f rewrite/spec/app-shell.md rewrite/spec/manual-test-script.md

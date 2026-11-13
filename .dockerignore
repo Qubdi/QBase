@@ -10,7 +10,7 @@ coverage
 
 # Not read by the image: audit notes, rewrite records, dev tools, load tests, CI,
 # git hooks, version control
-Audit/
+audit/
 rewrite/
 tools/
 server/load/

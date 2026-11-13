@@ -1,7 +1,7 @@
 # Audit Agent — Prompt
 
 Paste the block below as the agent's task. It re-audits the whole repo, rewrites
-`Audit/audit.md` (source of truth), and regenerates the HTML lens files from it.
+`audit/audit.md` (source of truth), and regenerates the HTML lens files from it.
 
 ---
 
@@ -14,15 +14,15 @@ You report findings. You do **not** fix code unless explicitly asked.
 
 | File | Role |
 |------|------|
-| `Audit/audit.md` | Source of truth. Every finding lives here. You edit this first. |
-| `Audit/audit-security.html` | Rendered view — Security & secrets lens |
-| `Audit/audit-repository.html` | Rendered view — Repository & governance lens |
-| `Audit/audit-server.html` | Rendered view — Server (Fastify API, drift) lens |
-| `Audit/audit-database.html` | Rendered view — Database & scale (schema, queries, migrations) lens |
-| `Audit/audit-client.html` | Rendered view — Client (React editor) lens |
-| `Audit/audit-deadcode.html` | Rendered view — Dead code (unused files, exports, vars, deps) lens |
-| `Audit/audit.html` | Rendered index — summary + links to the six lenses |
-| `Audit/audit-shared.css` | **Read-only. Never edit.** |
+| `audit/audit.md` | Source of truth. Every finding lives here. You edit this first. |
+| `audit/audit-security.html` | Rendered view — Security & secrets lens |
+| `audit/audit-repository.html` | Rendered view — Repository & governance lens |
+| `audit/audit-server.html` | Rendered view — Server (Fastify API, drift) lens |
+| `audit/audit-database.html` | Rendered view — Database & scale (schema, queries, migrations) lens |
+| `audit/audit-client.html` | Rendered view — Client (React editor) lens |
+| `audit/audit-deadcode.html` | Rendered view — Dead code (unused files, exports, vars, deps) lens |
+| `audit/audit.html` | Rendered index — summary + links to the six lenses |
+| `audit/audit-shared.css` | **Read-only. Never edit.** |
 
 HTML is generated *from* `audit.md`. Never put a finding in HTML that is not in `audit.md`.
 
@@ -38,7 +38,7 @@ Out of scope: `node_modules/`, `.git/` internals, `stats/` (ignored build output
 still count), `server/src/db/migrations/meta/` (generated), upstream package contents.
 
 Never print or store a secret value. Never run anything that mutates the tree or writes outside
-`Audit/`. Read-only checks that are allowed: `eslint`, `tsc`, `vitest run` (client), `npm audit`
+`audit/`. Read-only checks that are allowed: `eslint`, `tsc`, `vitest run` (client), `npm audit`
 (advisory lookup only), `knip` / `depcheck` only if already in `node_modules/.bin`.
 Server tests and the database lens's live checks need a live Postgres; run them only against a
 throwaway instance (container or one already up), never a shared or production database, and
@@ -47,7 +47,7 @@ say which in `method`. Live DB checks are read-only: `EXPLAIN`, catalog queries,
 
 ## PASS WORKFLOW
 
-1. **Read** `Audit/audit.md`. If missing, start from the template below.
+1. **Read** `audit/audit.md`. If missing, start from the template below.
 2. **Re-verify every Open finding** against the current tree. Each becomes exactly one of:
    `Open` (still reproduces) · `Fixed` (evidence it is gone) · `Accepted` (deliberate
    trade-off) · `Dropped` (out of scope or was wrong — say so in one clause).

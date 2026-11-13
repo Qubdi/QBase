@@ -1,6 +1,6 @@
 # The default rules, with nothing allowed past them. A password that was once
 # the default of the optional SQL Server test container is gone from the tree
 # and from this history; it is not written here, even as an allowlist entry.
-# Old remote refs that still hold it are covered by SEC-001 in Audit/audit.md.
+# Old remote refs that still hold it are covered by SEC-001 in audit/audit.md.
 [extend]
 useDefault = true

@@ -128,4 +128,4 @@ server/load/.seed.json
 server/load/results/
 
 # a generated comparison page, not one of the audit files
-Audit/audit-ui-differences.html
+audit/audit-ui-differences.html
