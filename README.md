@@ -431,10 +431,8 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   It happens once; do it in a quiet moment, and lower `AUDIT_RETENTION_DAYS` and let the
   clean-up run first if the log is very large.
 
-- Languages: the editor is translated into German, French, Italian and Russian. The
-  screens that talk to the server (sign-in, projects, members, share links, connections,
-  drift, admin) are English only for now: about 900 of their keys have no translation in
-  those four languages and show the English text. Contributions of translations are welcome.
+- Languages: the editor and the screens that talk to the server (sign-in, projects, members,
+  share links, connections, drift, admin) are translated into German, French, Italian and Russian.
 - The default `DIAGRAM_BODY_LIMIT_MB` went from 50 to 25. A diagram body is parsed, checked and
   written on the server's single event loop (about 0.9 s at 40 MB), and reading one back costs
   the parse again in the database driver. An installation that saves diagrams over 25 MB (a

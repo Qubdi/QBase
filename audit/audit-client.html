@@ -8,7 +8,7 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 45</b></div>
+  <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 46</b></div>
   <h1>0 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-13</span>
@@ -31,25 +31,19 @@
 
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">2 open &middot; 102 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
-      <tbody>
-        <tr><td class="svc-name">CLI-110</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Navbar publish, account, drift, lint and all <code>qubdi.*</code> screens show English in de, fr, it, ru</td><td class="wrap-cell"><code>src/i18n/locales/en.ts:30</code></td><td class="wrap-cell">Translate the five <code>qubdi</code> text files into de, fr, it, ru</td></tr>
-        <tr><td class="svc-name">CLI-111</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Locale parity test skips <code>qubdi.*</code>, so missing translations pass CI</td><td class="wrap-cell"><code>src/i18n/__tests__/locale-parity.test.ts:40</code></td><td class="wrap-cell">Drop the <code>qubdi.</code> exemption once translated</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <p class="section-note">0 open &middot; 104 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
+  <p>None.</p>
 </section>
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (102)</summary>
+  <details><summary>Fixed (104)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-110</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Navbar publish, account, drift, lint and all <code>qubdi.*</code> screens show English in de, fr, it, ru</td></tr>
+        <tr><td class="svc-name">CLI-111</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Locale parity test skips <code>qubdi.*</code>, so missing translations pass CI</td></tr>
         <tr><td class="svc-name">CLI-103</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Failed autosave (5xx, 429, network) never retries without a new edit</td></tr>
         <tr><td class="svc-name">CLI-106</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Qubdi UI keys (907 of 1586) are English-only in de, fr, it, ru; documented in README</td></tr>
         <tr><td class="svc-name">CLI-109</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">DBML import is superlinear in <code>@dbml/core</code> Parser.parse; text over 2 MB refused</td></tr>

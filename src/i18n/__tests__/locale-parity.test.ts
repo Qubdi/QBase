@@ -33,21 +33,14 @@ const placeholders = (texts: string[]) =>
         ...new Set(texts.flatMap((t) => t.match(/\{\{\s*\w+\s*\}\}/g) ?? [])),
     ].sort();
 
-// The editor and the canvas must be complete in every language that ships;
-// the account and admin texts (`qubdi.*`) may fall back to English (SHL-098).
-const covered = (flat: Record<string, string>) =>
-    Object.fromEntries(
-        Object.entries(flat).filter(([path]) => !path.startsWith('qubdi.'))
-    );
-
-const english = grouped(covered(flatten(en.translation as Tree)));
+const english = grouped(flatten(en.translation as Tree));
 
 describe('translated languages (SHL-098)', () => {
     for (const [file, load] of Object.entries(files)) {
         const code = file.replace(/^.*\//, '').replace(/\.ts$/, '');
         it(`${code} is either empty or complete and keeps placeholders`, async () => {
             const translation = (await load())[code].translation;
-            const flat = covered(flatten(translation));
+            const flat = flatten(translation);
             if (Object.keys(flat).length === 0) return; // falls back to English
             const mine = grouped(flat);
             const missing = [...english.keys()].filter((k) => !mine.has(k));
