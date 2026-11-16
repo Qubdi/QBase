@@ -15,8 +15,9 @@ export default defineConfig({
         // parser, the admin pages), and a full run uses one worker per core.
         // 5 s is too short on a busy machine; the server tests allow 20 s too.
         testTimeout: 20_000,
-        // server/ has its own vitest run
-        exclude: [...configDefaults.exclude, 'server/**'],
+        // server/ has its own vitest run; .claude/ holds third-party agent
+        // skills whose *.test.cjs files use node:test, not vitest
+        exclude: [...configDefaults.exclude, 'server/**', '.claude/**'],
         coverage: {
             reporter: ['text', 'json', 'html'],
             exclude: ['node_modules/', 'src/test/setup.ts'],

@@ -54,7 +54,14 @@ const ourRules = {
 
 export default [
     {
-        ignores: ['server/**', '**/dist', '**/coverage', 'tailwind.config.js'],
+        // .claude/ holds third-party agent skills (some ship their own .cjs scripts)
+        ignores: [
+            'server/**',
+            '**/dist',
+            '**/coverage',
+            'tailwind.config.js',
+            '.claude/**',
+        ],
     },
     ...presets,
     {
