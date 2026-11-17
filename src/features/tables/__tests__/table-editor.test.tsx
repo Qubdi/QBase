@@ -127,6 +127,112 @@ describe('EDT-133 EDT-134 the N and key toggles', () => {
     });
 });
 
+describe('the Allow null box of Field Attributes and the N toggle are one setting', () => {
+    /** the second row, a new field that may be null, with its popover open */
+    async function withPopover() {
+        const view = await openFirst();
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Add Field' }).at(-1)!
+        );
+        const toggle = () =>
+            screen.getAllByRole('button', { name: 'Allow null' })[1];
+        const open = async () => {
+            await userEvent.click(
+                screen.getAllByRole('button', { name: 'Field Attributes' })[1]
+            );
+            const pop = await screen.findByRole('dialog');
+            return within(pop).getByRole('checkbox', { name: 'Allow null' });
+        };
+        return { ...view, toggle, open };
+    }
+    const checked = (box: HTMLElement) => box.getAttribute('aria-checked');
+
+    it('shows the same state as the N toggle', async () => {
+        const { toggle, open } = await withPopover();
+        expect(toggle().getAttribute('aria-pressed')).toBe('true');
+        const box = await open();
+        expect(checked(box)).toBe('true');
+    });
+
+    it('turns the N toggle off when the box is cleared, and on when it is ticked again', async () => {
+        const { store, toggle, open } = await withPopover();
+        const box = await open();
+
+        await userEvent.click(box);
+        expect(first(store).columns[1].nullable).toBe(false);
+        expect(checked(box)).toBe('false');
+        expect(toggle().getAttribute('aria-pressed')).toBe('false');
+
+        await userEvent.click(box);
+        expect(first(store).columns[1].nullable).toBe(true);
+        expect(checked(box)).toBe('true');
+        expect(toggle().getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('shows in the box what was done with the N toggle outside', async () => {
+        const { store, toggle, open } = await withPopover();
+        await userEvent.click(toggle());
+        expect(first(store).columns[1].nullable).toBe(false);
+        expect(checked(await open())).toBe('false');
+    });
+
+    it('is one change for undo, whichever control made it', async () => {
+        const { store, open } = await withPopover();
+        await userEvent.click(await open());
+        expect(first(store).columns[1].nullable).toBe(false);
+        store.getState().undo();
+        expect(first(store).columns[1].nullable).toBe(true);
+    });
+
+    it('is locked, in both places, for a key', async () => {
+        await openFirst();
+        expect(
+            screen.getAllByRole('button', { name: 'Allow null' })[0]
+        ).toHaveProperty('disabled', true);
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Field Attributes' })[0]
+        );
+        const pop = await screen.findByRole('dialog');
+        expect(
+            within(pop).getByRole('checkbox', { name: 'Allow null' })
+        ).toHaveProperty('disabled', true);
+    });
+
+    it('is locked, in both places, for the serial family', async () => {
+        const { store } = await openFirst();
+        await userEvent.click(screen.getByRole('combobox'));
+        await userEvent.click(
+            await screen.findByRole('option', { name: /^serial$/ })
+        );
+        expect(first(store).columns[0].nullable).toBe(false);
+        // the key is cleared so that only the type is what locks it
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Primary key' })[0]
+        );
+        expect(first(store).columns[0].primaryKey).toBe(false);
+        expect(
+            screen.getAllByRole('button', { name: 'Allow null' })[0]
+        ).toHaveProperty('disabled', true);
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Field Attributes' })[0]
+        );
+        const pop = await screen.findByRole('dialog');
+        expect(
+            within(pop).getByRole('checkbox', { name: 'Allow null' })
+        ).toHaveProperty('disabled', true);
+    });
+
+    it('lists Allow null first, before Unique', async () => {
+        const { open } = await withPopover();
+        const box = await open();
+        const pop = box.closest('[role=dialog]')!;
+        const labels = within(pop as HTMLElement)
+            .getAllByRole('checkbox')
+            .map((b) => b.closest('label')?.textContent);
+        expect(labels.slice(0, 2)).toEqual(['Allow null', 'Unique']);
+    });
+});
+
 describe('EDT-119 EDT-121 EDT-123 EDT-124 the type picker', () => {
     it('lists types, filters, and says when none match', async () => {
         await openFirst();

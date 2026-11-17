@@ -78,6 +78,17 @@ export const AttributesPopover: React.FC<{
                 <h4 className="border-b pb-2 text-sm font-semibold">
                     {text('fields.attributes')}
                 </h4>
+                {/* the same setting as the N toggle of the row: change either */}
+                <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                    {text('fields.nullable')}
+                    <Checkbox
+                        checked={column.nullable}
+                        disabled={readOnly || state.nullableLocked}
+                        onCheckedChange={(v) =>
+                            onChange({ nullable: v === true })
+                        }
+                    />
+                </Label>
                 <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                     {text('fields.unique')}
                     <Checkbox

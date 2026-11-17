@@ -165,6 +165,30 @@ describe('EDT-125 to EDT-130 the attributes popover', () => {
         ).toBe(false);
     });
 
+    it('locks Allow null (and so the N toggle) for a key and for the serial family only', () => {
+        const locked = (over: Partial<Column>) =>
+            fieldAttributeState('postgresql', col(over), [col(over)])
+                .nullableLocked;
+        expect(locked({ primaryKey: true, nullable: false })).toBe(true);
+        expect(
+            locked({
+                type: { id: 'serial', name: 'serial' },
+                nullable: false,
+            })
+        ).toBe(true);
+        expect(
+            locked({
+                type: { id: 'BIGSERIAL', name: 'bigserial' },
+                nullable: false,
+            })
+        ).toBe(true);
+        expect(locked({ nullable: true })).toBe(false);
+        expect(locked({ nullable: false })).toBe(false);
+        expect(
+            locked({ type: { id: 'integer', name: 'integer' }, nullable: true })
+        ).toBe(false);
+    });
+
     it('offers Auto Increment for integer types, locked while nullable or serial', () => {
         const int = col({
             type: { id: 'integer', name: 'integer' },

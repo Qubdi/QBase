@@ -9,6 +9,11 @@ import type { TypeOption } from './type-options';
 import { capabilitiesOf, traitsOfType } from './type-traits';
 
 export interface FieldAttributeState {
+    /**
+     * The Allow null box and the N toggle of the row are one setting, and are
+     * locked together: a key is never null, and neither is the serial family.
+     */
+    nullableLocked: boolean;
     /** the Unique box is shown but cannot be changed: a lone primary key is unique */
     uniqueLocked: boolean;
     showIncrement: boolean;
@@ -29,6 +34,7 @@ export function fieldAttributeState(
     const traits = traitsOfType(databaseType, column.type.id);
     const keyCount = columnsOfEntity.filter((c) => c.primaryKey).length;
     return {
+        nullableLocked: column.primaryKey || traits.serial,
         uniqueLocked: column.primaryKey && keyCount === 1,
         showIncrement: traits.canIncrement,
         incrementLocked: traits.serial || column.nullable,

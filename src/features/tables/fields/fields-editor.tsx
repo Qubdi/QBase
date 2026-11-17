@@ -7,7 +7,6 @@ import {
     planUpdateColumn,
 } from '@/core/commands/plan-column';
 import { planAddNote } from '@/core/commands/plan-visual';
-import { isSerialType } from '@/core/commands/settle-column';
 import { listOf } from '@/core/model/collection';
 import type { Entity } from '@/core/model/entity';
 import { columnsOf, linksOfColumn } from '@/core/model/lookup';
@@ -19,7 +18,7 @@ import { useText } from '@/platform/panel/use-text';
 import { toast } from '@/platform/toast/use-toast';
 import { Button } from '@/platform/ui/button';
 import { AttributesPopover } from './attributes-popover';
-import { planPickType, reorderedIds } from './field-rules';
+import { fieldAttributeState, planPickType, reorderedIds } from './field-rules';
 import { TypePicker } from './type-picker';
 
 const Toggle: React.FC<{
@@ -209,8 +208,11 @@ export const FieldsEditor: React.FC<{
                                     compact={compact}
                                     disabled={
                                         locked ||
-                                        column.primaryKey ||
-                                        isSerialType(column.type.id)
+                                        fieldAttributeState(
+                                            design.databaseType,
+                                            column,
+                                            columns
+                                        ).nullableLocked
                                     }
                                     onClick={() =>
                                         update(column.id, {

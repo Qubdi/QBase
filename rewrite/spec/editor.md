@@ -494,6 +494,9 @@ word only, so "double precision" shows "double") plus its attributes (see 4.5); 
 Opened by the "..." button at the right of a field row in the side panel. A small popover
 titled **Field Attributes**; changes apply 0.3 s after the last edit. Contents:
 
+- **Allow null** checkbox, first in the list. It is the same setting as the "N" toggle of
+  the row (4.7): ticking or clearing it turns the toggle on or off, and the other way
+  round. Disabled, as the toggle is, for primary-key fields and the serial family.
 - **Unique** checkbox. Disabled when the field is the only primary key (a lone PK is
   implicitly unique). Turning a field into the first primary key sets Unique on.
 - **Auto Increment** checkbox, only for integer-like types (integer, int, bigint, smallint,
@@ -517,6 +520,8 @@ titled **Field Attributes**; changes apply 0.3 s after the last edit. Contents:
 
 - Toggle on = the field may be null. Disabled (and forced off) for primary-key fields and
   the serial family. Turning on nullable clears Auto Increment. Updates apply 0.1 s later.
+- The same setting is the **Allow null** checkbox in Field Attributes (4.6); either control
+  changes it and the other shows the result.
 
 ### 4.8 Primary key (the key toggle)
 
