@@ -668,6 +668,10 @@ export const de = {
                     selectFields: 'Felder auswählen',
                     noFields: 'Keine Felder gefunden',
                     unique: 'Eindeutig',
+                    uniqueBlocked:
+                        'Kann nicht eindeutig sein: die Datenbank kann {{fields}} nicht indizieren',
+                    uniqueBlockedType:
+                        'Kann nicht eindeutig sein: ein {{type}}-Index kann nicht eindeutig sein. Ändern Sie zuerst den Indextyp in {{other}}.',
                     attributes: 'Indexattribute',
                     name: 'Name',
                     type: 'Indextyp',

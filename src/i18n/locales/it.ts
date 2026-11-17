@@ -683,6 +683,10 @@ export const it = {
                     selectFields: 'Seleziona campi',
                     noFields: 'Nessun campo trovato',
                     unique: 'Univoco',
+                    uniqueBlocked:
+                        'Non può essere univoco: il database non può indicizzare {{fields}}',
+                    uniqueBlockedType:
+                        'Non può essere univoco: un indice {{type}} non può essere univoco. Cambia prima il tipo di indice in {{other}}.',
                     attributes: "Attributi dell'indice",
                     name: 'Nome',
                     type: 'Tipo di indice',

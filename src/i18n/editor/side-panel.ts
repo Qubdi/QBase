@@ -92,6 +92,9 @@ export const sidePanelStrings = {
         selectFields: 'Select fields',
         noFields: 'No fields found',
         unique: 'Unique',
+        uniqueBlocked: 'Cannot be unique: the database cannot index {{fields}}',
+        uniqueBlockedType:
+            'Cannot be unique: a {{type}} index cannot be unique. Change the index type to {{other}} first.',
         attributes: 'Index attributes',
         name: 'Name',
         type: 'Index type',

@@ -565,10 +565,28 @@ some databases.
 - Each row: a field multi-select ("Select fields"), a **Unique** toggle, and a "..." popover
   **Index Attributes** with: **Name**, **Unique**, **Index Type** (only for databases that
   offer a choice: PostgreSQL and CockroachDB offer btree, hash, gin), a description, and
-  **Delete Index**.
+  **Delete Index**. Unique there is a switch, like those in Field Attributes (4.6).
 - **GIN** is only available when the chosen fields can use it (array fields, json, jsonb,
   tsvector, hstore); otherwise the option is disabled, and removing such a field from the
   selection while the type is gin resets the type.
+- **Unique** (the key toggle and the switch in the popover) is greyed out and cannot be
+  switched on while the index has a field whose type the database cannot put in a unique
+  index: PostgreSQL
+  json, xml and the geometric types; MySQL and MariaDB text, blob, json and spatial types;
+  SQL Server text, ntext, image, xml, json, geometry, geography and varchar, nvarchar or
+  varbinary with a `max` length; Oracle clob, nclob, blob, bfile, long raw and xmltype.
+  SQLite has none. The key toggle's tooltip and a line under the switch name the fields
+  and their types. An index that is already unique stays switchable, so it can be turned
+  off. Choosing such a field for an index that is already unique does not change the flag.
+  (`columnsBlockingUnique` in `src/core/model/index-methods.ts`.)
+- **Unique** is also greyed out, with its own reason, while the index is of a type that can
+  never be unique: PostgreSQL hash, gist, gin, spgist and brin (only btree can be unique);
+  MySQL and MariaDB fulltext and spatial; SQL Server columnstore and xml; Oracle bitmap. The
+  reason says to change the index type first, and names the database's first type. Unique
+  does not change the type any more: it stays what it was, and Unique opens as soon as the
+  type is changed to one that can be unique. (`methodCannotBeUnique`; the command level is
+  unchanged: `planUpdateKey` still resets such a type when the flag is set another way,
+  EDT-144.)
 - The primary-key index (4.8) is listed first, shows a lit PK toggle and the label "Primary
   Key". Its Unique and description can be changed; its fields cannot.
 - Other indexes sort after it. Index names are not validated.

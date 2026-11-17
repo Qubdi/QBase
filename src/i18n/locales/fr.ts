@@ -689,6 +689,10 @@ export const fr = {
                     selectFields: 'Sélectionner des champs',
                     noFields: 'Aucun champ trouvé',
                     unique: 'Unique',
+                    uniqueBlocked:
+                        'Ne peut pas être unique : la base de données ne peut pas indexer {{fields}}',
+                    uniqueBlockedType:
+                        "Ne peut pas être unique : un index {{type}} ne peut pas être unique. Changez d'abord le type d'index en {{other}}.",
                     attributes: "Attributs de l'index",
                     name: 'Nom',
                     type: "Type d'index",
