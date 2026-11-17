@@ -230,6 +230,11 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                                     api.closeCreateDiagramDialog();
                                     leaveIfEmpty();
                                 }}
+                                // a switch to the examples is not a dismissal: stay on the page
+                                onExamples={() => {
+                                    api.closeCreateDiagramDialog();
+                                    api.openExamplesDialog();
+                                }}
                             />
                         ) : null}
                         {open.open ? (
@@ -269,7 +274,14 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                     </>
                 )}
                 {open.examples ? (
-                    <ExamplesDialog onClose={api.closeExamplesDialog} />
+                    <ExamplesDialog
+                        onClose={api.closeExamplesDialog}
+                        // backing out of the examples, with no diagram behind them, leaves like the other start dialogs
+                        onDismiss={() => {
+                            api.closeExamplesDialog();
+                            leaveIfEmpty();
+                        }}
+                    />
                 ) : null}
                 {open.importFile ? (
                     <ImportDiagramDialog dialog={{ open: true }} />

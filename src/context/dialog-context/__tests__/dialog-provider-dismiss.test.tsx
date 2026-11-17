@@ -26,6 +26,17 @@ vi.mock('@/components/qubdi/project-open-dialog', () => ({
     ),
 }));
 
+vi.mock('@/components/qubdi/project-create-dialog', () => ({
+    ProjectCreateDialog: (p: { onExamples?: () => void }) => (
+        <button onClick={p.onExamples}>to-examples</button>
+    ),
+}));
+vi.mock('@/features/examples/examples-dialog', () => ({
+    ExamplesDialog: (p: { onDismiss?: () => void }) => (
+        <button onClick={p.onDismiss}>dismiss-examples</button>
+    ),
+}));
+
 import { DialogProvider } from '../dialog-provider';
 import { useDialog } from '@/hooks/use-dialog';
 
@@ -36,6 +47,10 @@ const Opener: React.FC = () => {
             start
         </button>
     );
+};
+const CreateOpener: React.FC = () => {
+    const d = useDialog();
+    return <button onClick={() => d.openCreateDiagramDialog()}>create</button>;
 };
 const Where: React.FC = () => (
     <p data-testid="where">{useLocation().pathname}</p>
@@ -71,6 +86,43 @@ describe('project start dialog with no diagram open', () => {
         fireEvent.click(screen.getByText('start'));
         const dismiss = await screen.findByText('dismiss-open');
         expect(dismiss.getAttribute('data-can-close')).toBe('true');
+        fireEvent.click(dismiss);
+        await waitFor(() =>
+            expect(screen.getByTestId('where').textContent).toBe(
+                '/admin/projects'
+            )
+        );
+    });
+
+    it('switching from the new-diagram dialog to the examples stays on the page', async () => {
+        window.history.replaceState({ idx: 1 }, '');
+        render(
+            <MemoryRouter
+                initialEntries={['/admin/projects', '/p']}
+                initialIndex={1}
+            >
+                <DialogProvider>
+                    <Routes>
+                        <Route
+                            path="*"
+                            element={
+                                <>
+                                    <CreateOpener />
+                                    <Where />
+                                </>
+                            }
+                        />
+                    </Routes>
+                </DialogProvider>
+            </MemoryRouter>
+        );
+        fireEvent.click(screen.getByText('create'));
+        fireEvent.click(await screen.findByText('to-examples'));
+        const dismiss = await screen.findByText('dismiss-examples');
+        // give a (wrong) leave a chance to happen
+        await new Promise((r) => setTimeout(r, 20));
+        expect(screen.getByTestId('where').textContent).toBe('/p');
+        // backing out of the examples leaves, like the other start dialogs
         fireEvent.click(dismiss);
         await waitFor(() =>
             expect(screen.getByTestId('where').textContent).toBe(
