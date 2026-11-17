@@ -142,6 +142,8 @@ export const it = {
             digitsPlaceholder: 'Codice di 6 cifre',
         },
         passwordField: {
+            show: 'Mostra password',
+            hide: 'Nascondi password',
             placeholder: 'Password',
             rules: 'Regole della password',
             met: ' (rispettata)',

@@ -149,6 +149,8 @@ export const fr = {
             digitsPlaceholder: 'Code à 6 chiffres',
         },
         passwordField: {
+            show: 'Afficher le mot de passe',
+            hide: 'Masquer le mot de passe',
             placeholder: 'Mot de passe',
             rules: 'Règles du mot de passe',
             met: ' (respectée)',

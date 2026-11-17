@@ -8,7 +8,6 @@ import {
     DialogTitle,
 } from '@/platform/ui/dialog';
 import { Button } from '@/platform/ui/button';
-import { Input } from '@/platform/ui/input';
 import { api, errorMessage } from '@/lib/qubdi/api';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { usePasswordMinLength } from '@/hooks/use-password-min-length';
@@ -16,6 +15,7 @@ import { factorFrom } from '@/lib/qubdi/second-factor';
 import { CodeField } from './code-field';
 import { PasswordField } from './password-field';
 import { checkPassword } from '../../../shared/password';
+import { PasswordInput } from './password-input';
 
 export interface ChangePasswordDialogProps {
     open: boolean;
@@ -114,8 +114,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="flex flex-col gap-3">
-                    <Input
-                        type="password"
+                    <PasswordInput
                         placeholder={t(
                             'qubdi.account.changePassword.currentPassword'
                         )}

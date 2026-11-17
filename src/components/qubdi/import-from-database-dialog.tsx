@@ -33,6 +33,7 @@ import {
     summarizeSelection,
     tableKey,
 } from '@/lib/qubdi/import-from-db';
+import { PasswordInput } from './password-input';
 
 export interface ImportFromDatabaseDialogProps {
     open: boolean;
@@ -363,8 +364,7 @@ export const ImportFromDatabaseDialog: React.FC<
                             onChange={(e) => set('user', e.target.value)}
                             required
                         />
-                        <Input
-                            type="password"
+                        <PasswordInput
                             placeholder={
                                 savedId
                                     ? t(

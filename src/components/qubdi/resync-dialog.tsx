@@ -8,7 +8,6 @@ import {
     DialogTitle,
 } from '@/platform/ui/dialog';
 import { Button } from '@/platform/ui/button';
-import { Input } from '@/platform/ui/input';
 import { useToast } from '@/platform/toast/use-toast';
 import { useDiagram } from '@/qbase/use-diagram';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -34,6 +33,7 @@ import {
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import type { ChangeSet } from '../../../shared/reconcile';
 import { uiLocale } from '@/lib/qubdi/locale';
+import { PasswordInput } from './password-input';
 
 export interface ResyncDialogProps {
     open: boolean;
@@ -201,8 +201,7 @@ export const ResyncDialog: React.FC<ResyncDialogProps> = ({
                         </p>
                         {needsPassword(state) ||
                         state.source.kind === 'inline' ? (
-                            <Input
-                                type="password"
+                            <PasswordInput
                                 aria-label={t(
                                     'qubdi.database.resync.passwordLabel'
                                 )}

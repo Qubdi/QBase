@@ -140,6 +140,8 @@ export const account = {
         digitsPlaceholder: '6-digit code',
     },
     passwordField: {
+        show: 'Show password',
+        hide: 'Hide password',
         placeholder: 'Password',
         rules: 'Password rules',
         met: ' (met)',

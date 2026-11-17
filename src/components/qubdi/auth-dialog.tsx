@@ -16,6 +16,7 @@ import { usePasswordMinLength } from '@/hooks/use-password-min-length';
 import { CodeField } from './code-field';
 import { PasswordField } from './password-field';
 import { checkPassword } from '../../../shared/password';
+import { PasswordInput } from './password-input';
 
 export interface AuthDialogProps {
     open: boolean;
@@ -227,8 +228,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                         required
                     />
                     {mode === 'login' ? (
-                        <Input
-                            type="password"
+                        <PasswordInput
                             placeholder={t('qubdi.account.authDialog.password')}
                             aria-label={t('qubdi.account.authDialog.password')}
                             autoComplete="current-password"

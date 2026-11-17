@@ -48,6 +48,7 @@ import { usePasswordMinLength } from '@/hooks/use-password-min-length';
 import { checkPassword } from '../../../shared/password';
 import { NewUserDialog } from './new-user-dialog';
 import { UserSessionsDialog } from './user-sessions-dialog';
+import { PasswordInput } from '@/components/qubdi/password-input';
 
 const PAGE_SIZE = 10;
 
@@ -93,8 +94,7 @@ const ProofFields: React.FC<{
                     ? t('qubdi.adminUsers.users.confirmItsYouCode')
                     : t('qubdi.adminUsers.users.confirmItsYou')}
             </p>
-            <Input
-                type="password"
+            <PasswordInput
                 autoComplete="current-password"
                 placeholder={t('qubdi.adminUsers.users.ownPassword')}
                 aria-label={t('qubdi.adminUsers.users.ownPassword')}

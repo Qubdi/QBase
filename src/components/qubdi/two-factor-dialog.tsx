@@ -10,7 +10,6 @@ import {
 } from '@/platform/ui/dialog';
 import { Button } from '@/platform/ui/button';
 import { Checkbox } from '@/platform/ui/checkbox';
-import { Input } from '@/platform/ui/input';
 import { api, errorMessage, type MfaStatus } from '@/lib/qubdi/api';
 import { saveBlob } from '@/lib/qubdi/save-blob';
 import {
@@ -22,6 +21,7 @@ import {
 import { useQubdi } from '@/hooks/use-qubdi';
 import { exactTime } from '@/lib/qubdi/when';
 import { CodeField } from './code-field';
+import { PasswordInput } from './password-input';
 
 export interface TwoFactorDialogProps {
     open: boolean;
@@ -317,8 +317,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                             <li>
                                 {t('qubdi.account.twoFactor.stepPassword')}
                                 <div className="mt-2">
-                                    <Input
-                                        type="password"
+                                    <PasswordInput
                                         placeholder={t(
                                             'qubdi.account.twoFactor.password'
                                         )}
@@ -487,8 +486,7 @@ export const TwoFactorDialog: React.FC<TwoFactorDialogProps> = ({
                                 ? t('qubdi.account.twoFactor.renewHelp')
                                 : t('qubdi.account.twoFactor.disableHelp')}
                         </p>
-                        <Input
-                            type="password"
+                        <PasswordInput
                             placeholder={t('qubdi.account.twoFactor.password')}
                             aria-label={t('qubdi.account.twoFactor.password')}
                             autoComplete="current-password"
