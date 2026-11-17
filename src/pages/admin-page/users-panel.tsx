@@ -40,7 +40,7 @@ import {
     type BulkUsersResult,
     type UserStatus,
 } from '@/lib/qubdi/api';
-import { ago, exactTime } from '@/lib/qubdi/when';
+import { Ago } from '@/components/qubdi/ago-time';
 import { PasswordField } from '@/components/qubdi/password-field';
 import { Input } from '@/platform/ui/input';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -557,14 +557,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                             </TableCell>
                                             <TableCell className="whitespace-nowrap">
                                                 {u.lastLoginAt ? (
-                                                    <time
-                                                        dateTime={u.lastLoginAt}
-                                                        title={exactTime(
-                                                            u.lastLoginAt
-                                                        )}
-                                                    >
-                                                        {ago(u.lastLoginAt)}
-                                                    </time>
+                                                    <Ago iso={u.lastLoginAt} />
                                                 ) : (
                                                     <span className="text-muted-foreground">
                                                         {t(
