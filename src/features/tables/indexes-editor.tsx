@@ -262,7 +262,10 @@ const IndexRow: React.FC<{
                             />
                             {methods.map((m) => {
                                 const problem = problems.get(m);
-                                return problem ? (
+                                // "cannot be unique" is not written out for every type: with
+                                // Unique on, those types are greyed in the list, and the
+                                // Unique row above says why when it is the type that refuses
+                                return problem && problem !== 'notUnique' ? (
                                     <p
                                         key={m}
                                         className="text-xs text-slate-600 dark:text-slate-300"

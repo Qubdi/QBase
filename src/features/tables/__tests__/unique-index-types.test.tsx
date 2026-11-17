@@ -17,7 +17,7 @@ import { IndexesEditor } from '../indexes-editor';
 // The Unique key button and the Unique switch stay grey for such a column, so the index
 // cannot be marked unique. An index that is already unique can always be turned off.
 
-/** The reason, shown in the attributes popover (not the "hash: Cannot be unique" lines). */
+/** The reason a field type refuses Unique, shown in the attributes popover. */
 const HINT = /Cannot be unique: the database cannot index/;
 
 /**
@@ -269,6 +269,43 @@ describe('Unique on an index of a type that cannot be unique', () => {
             (pk.getByRole('button', { name: 'Unique' }) as HTMLButtonElement)
                 .disabled
         ).toBe(false);
+    });
+});
+
+describe('the lines under the Index type list', () => {
+    const openTypeList = async () => {
+        await userEvent.click(
+            screen.getByRole('combobox', { name: 'Index type' })
+        );
+        return screen.findAllByRole('option');
+    };
+
+    it('do not say "cannot be unique" for every type when Unique is on and btree is chosen', async () => {
+        show(design('postgresql', 'integer', {}, true, 'btree'));
+        await openAttributes();
+        // nothing is written under the list...
+        expect(screen.queryAllByText(/Cannot be unique/)).toHaveLength(0);
+        // ...and the types that cannot be unique are still greyed in it
+        const options = await openTypeList();
+        const state = (name: string) =>
+            options
+                .find((o) => o.textContent === name)
+                ?.getAttribute('aria-disabled');
+        for (const name of ['hash', 'gist', 'gin', 'spgist', 'brin'])
+            expect(state(name), name).toBe('true');
+        expect(state('btree')).not.toBe('true');
+    });
+
+    it('still say what else is wrong with a type, such as gin needing json fields', async () => {
+        show(design('postgresql', 'integer'));
+        await openAttributes();
+        expect(
+            screen.getByText(
+                /gin: Needs array, json, jsonb, tsvector or hstore fields/
+            )
+        ).toBeTruthy();
+        // no "Cannot be unique" lines, as Unique is off
+        expect(screen.queryAllByText(/Cannot be unique/)).toHaveLength(0);
     });
 });
 

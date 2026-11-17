@@ -584,9 +584,11 @@ some databases.
   MySQL and MariaDB fulltext and spatial; SQL Server columnstore and xml; Oracle bitmap. The
   reason says to change the index type first, and names the database's first type. Unique
   does not change the type any more: it stays what it was, and Unique opens as soon as the
-  type is changed to one that can be unique. (`methodCannotBeUnique`; the command level is
-  unchanged: `planUpdateKey` still resets such a type when the flag is set another way,
-  EDT-144.)
+  type is changed to one that can be unique. With Unique on, the types that cannot be
+  unique are greyed in the Index type list and are not named one by one under it; the other
+  kinds of line there (gin needs json fields, hash takes one field...) stay.
+  (`methodCannotBeUnique`; the command level is unchanged: `planUpdateKey` still resets
+  such a type when the flag is set another way, EDT-144.)
 - The primary-key index (4.8) is listed first, shows a lit PK toggle and the label "Primary
   Key". Its Unique and description can be changed; its fields cannot.
 - Other indexes sort after it. Index names are not validated.
