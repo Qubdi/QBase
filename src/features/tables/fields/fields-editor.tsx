@@ -18,6 +18,7 @@ import { useText } from '@/platform/panel/use-text';
 import { toast } from '@/platform/toast/use-toast';
 import { Button } from '@/platform/ui/button';
 import { AttributesPopover } from './attributes-popover';
+import { DescriptionPopover } from './description-popover';
 import { fieldAttributeState, planPickType, reorderedIds } from './field-rules';
 import { TypePicker } from './type-picker';
 
@@ -189,19 +190,10 @@ export const FieldsEditor: React.FC<{
                                                 <MessageSquareText className="size-4" />
                                             </span>
                                         ) : (
-                                            <button
-                                                type="button"
-                                                aria-label={text(
-                                                    'fields.showComment'
-                                                )}
-                                                title={column.comments}
-                                                onClick={() =>
-                                                    setPopoverFor(column.id)
-                                                }
-                                                className="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                            >
-                                                <MessageSquareText className="size-4" />
-                                            </button>
+                                            // a click shows only the description
+                                            <DescriptionPopover
+                                                description={column.comments}
+                                            />
                                         )
                                     ) : null}
                                 </div>

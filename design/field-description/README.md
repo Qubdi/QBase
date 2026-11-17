@@ -20,7 +20,8 @@ every row, with or without a description, and a row without one loses no space.
 - Where: `src/features/tables/fields/fields-editor.tsx`. The name field sits in a box
   (`relative flex min-w-[3.5rem] flex-1`) and the icon is laid over its right end.
 - Side panel: the icon is a button (`size-6`, 4 px from the edge). Its tooltip is the
-  description, and a click opens Field Attributes, as before.
+  description, and a click shows only the description in a small popover (since 2026-11-18;
+  before, it opened the whole of Field Attributes). Changing the description is in Field Attributes.
 - Card on the canvas: the icon is no longer a button. The card has no Field Attributes to open,
   so the click did nothing; it now only shows the description as a tooltip (`size-5`, 8 px from
   the edge).

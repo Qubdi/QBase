@@ -188,7 +188,7 @@ Use a PostgreSQL diagram unless said otherwise.
 - [ ] **MT-114** Open Max Length -> None, Max (only on types where it is allowed, such as SQL Server varchar) and Custom with a number box (rows: EDT-129, IMP-038, DAT-034)
 - [ ] **MT-115** Open Precision and Scale on a numeric field -> the allowed range and the default are shown as placeholders (rows: EDT-130)
 - [ ] **MT-116** Type `'abc'::text` into Default Value, then empty it -> any text is accepted verbatim; empty clears the default (rows: EDT-131)
-- [ ] **MT-117** Type a Description for a field -> a comment icon appears beside the name; clicking it reopens the popover; the placeholder reads "No description" (rows: EDT-132)
+- [ ] **MT-117** Type a Description for a field -> a comment icon appears beside the name; clicking it shows only the description in a small popover (the "..." button still opens all of Field Attributes); the placeholder reads "No description" (rows: EDT-132)
 - [ ] **MT-118** Toggle N (nullable) and PK on several fields; make two fields primary keys -> setting PK makes the field not null and, for the first key, unique; a table may have several primary keys; the N toggle is disabled for primary-key and serial fields (rows: EDT-133, EDT-134, DAT-042)
 - [ ] **MT-119** Reorder fields by dragging in the side panel -> the canvas follows; Undo restores; in the canvas edit card drag a field row too -> reordering works there as well (new behaviour) (rows: EDT-136, EDT-137)
 - [ ] **MT-120** Delete a field with the Delete Field button, then Undo -> no confirmation; Undo brings it back (rows: EDT-138)

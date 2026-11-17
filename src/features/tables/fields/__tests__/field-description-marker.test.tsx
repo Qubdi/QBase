@@ -111,12 +111,55 @@ describe('the description marker in the side panel', () => {
         ).toHaveLength(1);
     });
 
-    it('opens Field Attributes of that column when clicked', async () => {
+    it('shows only the description of that column when clicked, not Field Attributes', async () => {
         show(false);
         await userEvent.click(icon()!);
         const pop = await screen.findByRole('dialog');
-        expect(pop.getAttribute('aria-label')).toBe('Field Attributes');
-        // and it is the description of this column that is in it
+        expect(pop.getAttribute('aria-label')).toBe('Description');
+        expect(within(pop).getByText(DESCRIPTION)).toBeTruthy();
+        // nothing of Field Attributes is in it: no switches, no delete, no inputs
+        expect(within(pop).queryAllByRole('switch')).toHaveLength(0);
+        expect(within(pop).queryAllByRole('button')).toHaveLength(0);
+        expect(within(pop).queryAllByRole('textbox')).toHaveLength(0);
+        expect(
+            screen.queryByRole('dialog', { name: 'Field Attributes' })
+        ).toBeNull();
+    });
+
+    it('keeps the line breaks of the description, and closes on Escape', async () => {
+        const base = withTables(['orders']);
+        const table = base.entities.byId[base.entities.order[0]];
+        const multi = applyOk(
+            base,
+            planUpdateColumn(table.id, table.columnIds[0], {
+                comments: 'first line\nsecond line',
+            })
+        ).design;
+        renderPanel(
+            <FieldsEditor
+                entity={multi.entities.byId[multi.entities.order[0]]}
+                compact={false}
+            />,
+            multi
+        );
+        await userEvent.click(icon()!);
+        const text = await screen.findByText(/first line/);
+        expect(text.textContent).toBe('first line\nsecond line');
+        // the test has no stylesheet to compute from: the class is what keeps them
+        expect(text.className).toContain('whitespace-pre-wrap');
+        await userEvent.keyboard('{Escape}');
+        expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('leaves Field Attributes to the "..." button, which still opens all of it', async () => {
+        show(false);
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Field Attributes' })[1]
+        );
+        const pop = await screen.findByRole('dialog', {
+            name: 'Field Attributes',
+        });
+        expect(within(pop).getAllByRole('switch').length).toBeGreaterThan(0);
         expect(
             (
                 within(pop).getByPlaceholderText(
