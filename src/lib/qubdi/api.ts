@@ -7,6 +7,10 @@ import { gzipText } from './gzip';
 import { listQuery, type ListParams, type Page } from './paging';
 import { InvalidServerDiagramError } from './open-remote';
 
+/** How the admin project list is ordered: by name or by creation date. */
+export type ProjectSort =
+    'name_asc' | 'name_desc' | 'created_desc' | 'created_asc';
+
 export type MemberRole = 'owner' | 'editor' | 'viewer';
 
 export interface RemoteUser {
@@ -892,10 +896,14 @@ export function createApi(
                 truncated: res.headers.get('x-truncated') === 'true',
             };
         },
-        adminListProjects: (params?: ListParams) =>
+        adminListProjects: (params?: ListParams & { sort?: ProjectSort }) =>
             request<Page<AdminProject>>(
                 'GET',
-                `/admin/projects${listQuery(params)}`,
+                `/admin/projects${listQuery(params, {
+                    // the server's default (name, A to Z) needs no parameter
+                    sort:
+                        params?.sort === 'name_asc' ? undefined : params?.sort,
+                })}`,
                 undefined,
                 undefined,
                 shape.page(shape.adminProject)
