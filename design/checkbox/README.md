@@ -28,12 +28,22 @@ like the N toggle of the field row, and they have no tick to get wrong.
   theme's deep teal, a near-black knob on the dark theme's bright teal).
 - A button with `role="switch"` and `aria-checked`, so a label around it names it and a click
   on the label flips it; Space and Enter work. Disabled is 50 % opacity.
+- The knob is placed from the track's top-left corner by a transform (`absolute left-0 top-0`,
+  then `translate-x-0.5 translate-y-0.5`), not centred with flex, and it has no shadow. Checked
+  with headless Edge at 100, 125, 150, 175 and 200 % display scale, and with the switch at
+  fractional vertical offsets: the old flex-centred knob sat up to 1.9 device pixels off
+  (on a 125 % screen the 20 px track holds a 15 px knob, and layout rounds the 5 spare pixels
+  to 2 above and 3 below), and its shadow darkened only the lower gap. A transform is painted
+  at the half pixel, so the gap is the same above and below (measured to within 0.02 px).
 - Allow null is the same setting as the N toggle of the row: change either, the other follows.
+- Also used for **Unique** in the index's "..." popover (`src/features/tables/indexes-editor.tsx`),
+  in the same row layout: the label on the left, the switch on the right. The field chooser in an
+  index row keeps its checkboxes, because it is a list to tick.
 
 ### D, Roomier: every other checkbox
 
 The shared `Checkbox` in `src/platform/ui/checkbox.tsx`, used by the settings dialog, export,
-import (table picker), lint settings, two-factor and the index editor. Lists to tick and
+import (table picker), lint settings, two-factor and the index editor's field chooser. Lists to tick and
 acknowledgements stay boxes: a switch would be the wrong control there.
 
 ![D, Roomier](D-roomier.png)

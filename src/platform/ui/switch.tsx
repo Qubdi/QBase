@@ -24,7 +24,7 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
             aria-checked={checked}
             data-state={checked ? 'checked' : 'unchecked'}
             className={cn(
-                'group peer relative inline-flex h-4 w-7 shrink-0 cursor-pointer items-center rounded-full bg-muted-foreground/35 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ring-offset-popover disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary motion-reduce:transition-none',
+                'group peer relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full bg-muted-foreground/35 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ring-offset-popover disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary motion-reduce:transition-none',
                 className
             )}
             onClick={(event) => {
@@ -33,9 +33,14 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
             }}
             {...props}
         >
+            {/* The knob is placed by a transform from the track's corner, not centred by
+                flex. On a screen scaled to 125 % the track is 20 device pixels tall and
+                the knob 15, and layout rounds the 5 spare pixels to 2 above and 3 below.
+                A transform is painted at the half pixel, 2.5 above and 2.5 below. No
+                shadow either: it darkened only the lower gap. */}
             <span
                 aria-hidden="true"
-                className="pointer-events-none block size-3 translate-x-0.5 rounded-full bg-popover shadow-sm transition-transform group-data-[state=checked]:translate-x-3.5 group-data-[state=checked]:bg-primary-foreground motion-reduce:transition-none"
+                className="pointer-events-none absolute left-0 top-0 block size-3 translate-x-0.5 translate-y-0.5 rounded-full bg-popover transition-transform group-data-[state=checked]:translate-x-3.5 group-data-[state=checked]:bg-primary-foreground motion-reduce:transition-none"
             />
         </button>
     )
