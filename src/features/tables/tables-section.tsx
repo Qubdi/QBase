@@ -38,6 +38,9 @@ export const TablesSection: React.FC = () => {
         if (expanded) setOpenId(expanded);
     }
 
+    // the table that was open when its drag began, to open again when it ends
+    const reopen = useRef<string | undefined>(undefined);
+
     // a table added from here opens its form at once
     const knownIds = useRef(new Set(design.entities.order));
     const justAdded = useRef(false);
@@ -151,6 +154,18 @@ export const TablesSection: React.FC = () => {
                 ids={rows.map((r) => r.id)}
                 disabled={locked}
                 onMove={(a, b) => edit(planReorderTables(design, a, b))}
+                // an open table folds up while it is carried (a whole form is too
+                // big to drag past the others) and opens again where it lands
+                onStart={(id) => {
+                    if (id !== openId) return;
+                    reopen.current = id;
+                    setOpenId(undefined);
+                }}
+                onFinish={() => {
+                    const id = reopen.current;
+                    reopen.current = undefined;
+                    if (id) setOpenId(id);
+                }}
             >
                 <div className="space-y-1">
                     <WindowedList

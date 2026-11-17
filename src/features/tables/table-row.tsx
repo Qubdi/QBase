@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Crosshair, MoreVertical } from 'lucide-react';
 import { ChevronDownIcon } from '@/platform/ui/radix-icons';
 import {
@@ -14,7 +16,7 @@ import { cn } from '@/lib/utils/utils';
 import { InlineName } from '@/platform/panel/inline-name';
 import { useHoldMenu } from '@/platform/panel/hold-menu';
 import { useFocus } from '@/platform/panel/panel-context';
-import { SortableRow } from '@/platform/panel/sortable-list';
+import { SortableHandle } from '@/platform/panel/sortable-list';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
@@ -43,6 +45,16 @@ export const TableRow: React.FC<{
     const [changing, setChanging] = useState(false);
     const root = useRef<HTMLDivElement>(null);
     const { menu, hold } = useHoldMenu();
+    const dragOff = !sortable || locked;
+    const {
+        setNodeRef,
+        setActivatorNodeRef,
+        transform,
+        transition,
+        isDragging,
+        attributes,
+        listeners,
+    } = useSortable({ id: entity.id, disabled: dragOff });
     const view = entity.kind === 'view';
     const hasSchemas = traitsOf(design.databaseType).hasSchemas;
 
@@ -120,9 +132,21 @@ export const TableRow: React.FC<{
     );
 
     return (
+        // The whole card is what moves while it is dragged, so the other tables
+        // make room for it live and none of them is cut off by the card's edge.
         <div
-            ref={root}
-            className="relative overflow-hidden rounded-[10px] border bg-card"
+            ref={(node) => {
+                root.current = node;
+                setNodeRef(node);
+            }}
+            style={{
+                transform: CSS.Transform.toString(transform),
+                transition,
+            }}
+            className={cn(
+                'relative overflow-hidden rounded-[10px] border bg-card',
+                isDragging && 'z-10 opacity-80 shadow-md'
+            )}
             data-testid="table-row"
         >
             <span
@@ -131,16 +155,21 @@ export const TableRow: React.FC<{
                 style={{ backgroundColor: entity.color }}
             />
             <div {...hold}>
-                <SortableRow
-                    id={entity.id}
-                    disabled={!sortable || locked}
-                    handleLabel={text('common.dragHandle')}
-                    leading={chevron}
+                <div
                     className={cn(
-                        'group h-11 gap-1 pl-3 pr-1 hover:bg-accent/70',
+                        'group flex h-11 items-center gap-1 pl-3 pr-1 hover:bg-accent/70',
                         open && 'bg-accent/70'
                     )}
                 >
+                    {chevron}
+                    {dragOff ? null : (
+                        <SortableHandle
+                            label={text('common.dragHandle')}
+                            activatorRef={setActivatorNodeRef}
+                            attributes={attributes}
+                            listeners={listeners}
+                        />
+                    )}
                     {header}
                     <DropdownMenu {...menu}>
                         <DropdownMenuTrigger asChild>
@@ -208,7 +237,7 @@ export const TableRow: React.FC<{
                             )}
                         </DropdownMenuContent>
                     </DropdownMenu>
-                </SortableRow>
+                </div>
             </div>
             {open ? (
                 <div className="pl-1">

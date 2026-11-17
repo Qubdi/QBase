@@ -7,7 +7,7 @@ import {
     useSensor,
     useSensors,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import {
     SortableContext,
     sortableKeyboardCoordinates,
@@ -23,23 +23,34 @@ export const SortableList: React.FC<{
     ids: readonly string[];
     onMove: (activeId: string, overId: string) => void;
     disabled?: boolean;
+    /** a row was picked up (the list is not disabled) */
+    onStart?: (activeId: string) => void;
+    /** the drag is over: dropped (after `onMove`) or cancelled */
+    onFinish?: () => void;
     children: React.ReactNode;
-}> = ({ ids, onMove, disabled, children }) => {
+}> = ({ ids, onMove, disabled, onStart, onFinish, children }) => {
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
+    const start = ({ active }: DragStartEvent) => {
+        if (!disabled) onStart?.(String(active.id));
+    };
     const end = ({ active, over }: DragEndEvent) => {
-        if (!over || active.id === over.id || disabled) return;
-        onMove(String(active.id), String(over.id));
+        if (over && active.id !== over.id && !disabled) {
+            onMove(String(active.id), String(over.id));
+        }
+        onFinish?.();
     };
     return (
         <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={start}
             onDragEnd={end}
+            onDragCancel={() => onFinish?.()}
         >
             <SortableContext
                 items={[...ids]}
@@ -50,6 +61,40 @@ export const SortableList: React.FC<{
         </DndContext>
     );
 };
+
+type Sortable = ReturnType<typeof useSortable>;
+
+/**
+ * The grip button that starts a drag. Give it what `useSortable` returned for
+ * the item: `setActivatorNodeRef`, `attributes` and `listeners`.
+ *
+ * While a drag is on, the other items make room for the dragged one live, so
+ * what `useSortable` moves (its `setNodeRef` element) must be the whole item.
+ * A part of it that moves inside a box that clips (a card with a border and
+ * `overflow-hidden`) is cut off and seems to vanish: that is why a table's card
+ * is the moving element, and its grip sits inside it.
+ */
+export const SortableHandle: React.FC<{
+    label: string;
+    className?: string;
+    activatorRef: Sortable['setActivatorNodeRef'];
+    attributes: Sortable['attributes'];
+    listeners: Sortable['listeners'];
+}> = ({ label, className, activatorRef, attributes, listeners }) => (
+    <button
+        type="button"
+        aria-label={label}
+        ref={activatorRef}
+        {...attributes}
+        {...listeners}
+        className={cn(
+            'flex h-8 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground',
+            className
+        )}
+    >
+        <GripVertical className="size-3.5" />
+    </button>
+);
 
 export const SortableRow: React.FC<{
     id: string;
@@ -94,19 +139,13 @@ export const SortableRow: React.FC<{
         >
             {leading}
             {disabled ? null : (
-                <button
-                    type="button"
-                    aria-label={handleLabel}
-                    ref={setActivatorNodeRef}
-                    {...attributes}
-                    {...listeners}
-                    className={cn(
-                        'flex h-8 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground',
-                        handleClassName
-                    )}
-                >
-                    <GripVertical className="size-3.5" />
-                </button>
+                <SortableHandle
+                    label={handleLabel}
+                    className={handleClassName}
+                    activatorRef={setActivatorNodeRef}
+                    attributes={attributes}
+                    listeners={listeners}
+                />
             )}
             {children}
         </div>
