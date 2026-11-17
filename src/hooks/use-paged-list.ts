@@ -21,12 +21,23 @@ export interface PagedFetch {
  * pause before asking the server, a new search starts again at page 1, the
  * previous rows stay visible while the next page loads, and a page that
  * emptied (its last row was deleted) steps back to the last real page.
+ *
+ * With `refreshMs` the page on screen is also fetched again in the background
+ * at that interval, and when a hidden tab is shown again. A refresh is silent:
+ * `loading` stays false, the rows are swapped in place, and a failed one is
+ * ignored (the next one tries again).
  */
 export function usePagedList<T>(
     fetchPage: (params: PagedFetch) => Promise<Page<T>>,
-    options: { limit: number; debounceMs?: number; filter?: string }
+    options: {
+        limit: number;
+        debounceMs?: number;
+        filter?: string;
+        /** background refresh interval in milliseconds; none when omitted */
+        refreshMs?: number;
+    }
 ) {
-    const { limit, debounceMs = 300, filter = '' } = options;
+    const { limit, debounceMs = 300, filter = '', refreshMs } = options;
     const [query, setQuery] = useState('');
     const [committed, setCommitted] = useState({ q: '', page: 1, filter });
     const [data, setData] = useState<Page<T> | null>(null);
@@ -90,6 +101,50 @@ export function usePagedList<T>(
             stale = true;
         };
     }, [committed, limit, tick]);
+
+    // the background refresh of the page on screen; a different page, search or
+    // reload starts it over, and an answer to the old view is thrown away
+    useEffect(() => {
+        if (!refreshMs) return;
+        let alive = true;
+        let running = false;
+        const refresh = () => {
+            if (document.hidden || running) return;
+            running = true;
+            fetchRef
+                .current({
+                    page: committed.page,
+                    limit,
+                    q: committed.q,
+                    filter: committed.filter,
+                })
+                .then((loaded) => {
+                    if (!alive) return;
+                    if (
+                        pageToFallBackTo(committed.page, limit, loaded) !== null
+                    ) {
+                        // the page emptied: let the normal load step back
+                        setTick((t) => t + 1);
+                        return;
+                    }
+                    setData(loaded);
+                })
+                .catch(() => undefined)
+                .finally(() => {
+                    running = false;
+                });
+        };
+        const onVisible = () => {
+            if (!document.hidden) refresh();
+        };
+        const timer = setInterval(refresh, refreshMs);
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            alive = false;
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
+    }, [refreshMs, committed, limit, tick]);
 
     const setPage = useCallback(
         (page: number) => setCommitted((c) => ({ ...c, page })),

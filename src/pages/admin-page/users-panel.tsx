@@ -50,6 +50,9 @@ import { NewUserDialog } from './new-user-dialog';
 import { UserSessionsDialog } from './user-sessions-dialog';
 import { PasswordInput } from '@/components/qubdi/password-input';
 
+/** How often the user list is fetched again in the background. */
+const USERS_REFRESH_MS = 30_000;
+
 const PAGE_SIZE = 10;
 
 type TFn = ReturnType<typeof useTranslation>['t'];
@@ -174,7 +177,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                 q,
                 status: filter ? (filter as UserStatus) : undefined,
             }),
-        { limit: PAGE_SIZE, filter: statusFilter === 'all' ? '' : statusFilter }
+        {
+            limit: PAGE_SIZE,
+            filter: statusFilter === 'all' ? '' : statusFilter,
+            // sign-ins and sessions change while the page is open
+            refreshMs: USERS_REFRESH_MS,
+        }
     );
 
     // a tick belongs to the rows it was made on: another page, search or
