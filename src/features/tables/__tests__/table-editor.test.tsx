@@ -400,7 +400,7 @@ describe('EDT-125 to EDT-132 the attributes popover', () => {
         expect(first(store).columns[0].default).toBeUndefined();
     });
 
-    it('a description shows a comment icon beside the name (EDT-132)', async () => {
+    it('a description shows a comment icon inside the name box (EDT-132)', async () => {
         const { store } = await openFirst();
         await userEvent.click(
             screen.getByRole('button', { name: 'Field Attributes' })

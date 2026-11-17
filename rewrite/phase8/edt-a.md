@@ -134,5 +134,5 @@ Source fix: src/workspace/entity-editor.tsx (table name delay 1000 ms).
 | EDT-129 | covered (new test) | src/features/tables/__tests__/p8-edt-a-panels.test.tsx::EDT-129 SQL Server offers None, Max and Custom...; PostgreSQL has no Max |
 | EDT-130 | covered (new test) | src/features/tables/__tests__/p8-edt-a-panels.test.tsx::EDT-130 precision and scale show the default as placeholder and the range limits |
 | EDT-131 | covered | src/features/tables/__tests__/table-editor.test.tsx::keeps the default value verbatim and an empty one clears it |
-| EDT-132 | covered | src/features/tables/__tests__/table-editor.test.tsx::a description shows a comment icon beside the name (EDT-132) |
+| EDT-132 | covered | src/features/tables/__tests__/table-editor.test.tsx::a description shows a comment icon inside the name box (EDT-132); src/features/tables/fields/__tests__/field-description-marker.test.tsx |
 | EDT-133 | covered | src/features/tables/__tests__/table-editor.test.tsx::EDT-133 EDT-134 the N and key toggles + commands.test.ts::EDT-133 |

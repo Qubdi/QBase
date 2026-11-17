@@ -513,8 +513,10 @@ are small on/off switches (not boxes). Contents:
 - **Default Value** text box, placeholder "No default". Stored as typed (so `0`,
   `'abc'`, `now()` and `CURRENT_TIMESTAMP` are all accepted verbatim); empty clears it.
 - **Description** text area, placeholder "No description". Used as the column comment in SQL
-  export where the database supports comments, and shown as a small comment icon next to
-  the field name (clicking the icon reopens the popover).
+  export where the database supports comments. It is shown as a small comment icon inside the
+  right end of the field's name box, so the box is the same width on every row, with or without
+  a description (clicking the icon reopens the popover; in the card on the canvas the icon only
+  shows the description as a tooltip).
 - **Delete Field** button (hidden in read-only mode).
 
 ### 4.7 Nullable (the "N" toggle)
