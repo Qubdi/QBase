@@ -131,3 +131,17 @@
 .react-flow .react-flow__attribution a {
     color: hsl(var(--muted-foreground));
 }
+
+/*
+ * Scroll areas draw their own scrollbar. Radix hides the browser's one with a
+ * <style> tag it injects at run time, and the server's Content-Security-Policy
+ * (style-src with a nonce) refuses that tag, so both bars showed. Hide it here,
+ * in the stylesheet, where the policy allows it.
+ */
+[data-radix-scroll-area-viewport] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+[data-radix-scroll-area-viewport]::-webkit-scrollbar {
+    display: none;
+}
