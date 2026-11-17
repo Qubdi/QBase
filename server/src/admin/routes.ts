@@ -1,6 +1,7 @@
 import { MAX_UNPAGED_ROWS } from '../lib/limits.js';
 import {
     and,
+    asc,
     count,
     desc,
     eq,
@@ -56,6 +57,23 @@ import {
     shareLinks,
     users,
 } from '../db/schema.js';
+
+const PROJECT_SORTS = ['name_asc', 'name_desc', 'created_desc', 'created_asc'] as const;
+const projectSortQuery = z.object({ sort: z.enum(PROJECT_SORTS).default('name_asc') });
+
+/** The ORDER BY of the project list; the id keeps rows with the same value in a fixed order across pages. */
+const projectOrder = (sort: (typeof PROJECT_SORTS)[number]) => {
+    switch (sort) {
+        case 'name_desc':
+            return [desc(projects.name), desc(projects.id)] as const;
+        case 'created_desc':
+            return [desc(projects.createdAt), desc(projects.id)] as const;
+        case 'created_asc':
+            return [asc(projects.createdAt), asc(projects.id)] as const;
+        default:
+            return [asc(projects.name), asc(projects.id)] as const;
+    }
+};
 
 const idParam = z.object({ id: z.string().uuid() });
 const linkParam = z.object({
@@ -789,9 +807,11 @@ export const adminRoutes =
 
         // ---- projects ----
 
-        // paged and searchable: q matches the project's name or web address
+        // paged, searchable and sortable: q matches the project's name or web
+        // address; sort is the name (default) or the creation date, either way round
         app.get('/projects', async (req) => {
             const paging = pagingQuery.parse(req.query);
+            const { sort } = projectSortQuery.parse(req.query);
             const where = paging.q
                 ? or(
                       ilike(projects.name, containsPattern(paging.q)),
@@ -816,7 +836,7 @@ export const adminRoutes =
                 })
                 .from(projects)
                 .where(where)
-                .orderBy(projects.name, projects.id)
+                .orderBy(...projectOrder(sort))
                 .limit(paging.limit)
                 .offset(offsetOf(paging));
             return pageOf(items, total, paging);

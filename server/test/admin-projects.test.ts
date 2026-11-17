@@ -353,6 +353,74 @@ describe('admin panel and projects', () => {
         });
     });
 
+    describe('project list order', () => {
+        // created one after another: Mango, Apple, Zebra (the search keeps the
+        // other tests' projects out of the list)
+        const names = async (query: string) =>
+            (await call('GET', `/admin/projects?q=Sortx${query}`, admin))
+                .json()
+                .items.map((p: { name: string }) => p.name);
+
+        beforeAll(async () => {
+            for (const n of ['Sortx Mango', 'Sortx Apple', 'Sortx Zebra']) {
+                await call('POST', '/admin/projects', admin, { name: n });
+                await new Promise((r) => setTimeout(r, 5));
+            }
+        });
+
+        it('is by name, A to Z, unless asked otherwise', async () => {
+            const all = ['Sortx Apple', 'Sortx Mango', 'Sortx Zebra'];
+            expect(await names('')).toEqual(all);
+            expect(await names('&sort=name_asc')).toEqual(all);
+        });
+
+        it('can be by name, Z to A', async () => {
+            expect(await names('&sort=name_desc')).toEqual([
+                'Sortx Zebra',
+                'Sortx Mango',
+                'Sortx Apple',
+            ]);
+        });
+
+        it('can be by creation date, newest or oldest first', async () => {
+            expect(await names('&sort=created_desc')).toEqual([
+                'Sortx Zebra',
+                'Sortx Apple',
+                'Sortx Mango',
+            ]);
+            expect(await names('&sort=created_asc')).toEqual([
+                'Sortx Mango',
+                'Sortx Apple',
+                'Sortx Zebra',
+            ]);
+        });
+
+        it('keeps the order across pages', async () => {
+            const first = await call(
+                'GET',
+                '/admin/projects?q=Sortx&sort=name_desc&limit=2',
+                admin
+            );
+            const second = await call(
+                'GET',
+                '/admin/projects?q=Sortx&sort=name_desc&limit=2&page=2',
+                admin
+            );
+            expect(first.json().items.map((p: { name: string }) => p.name)).toEqual([
+                'Sortx Zebra',
+                'Sortx Mango',
+            ]);
+            expect(second.json().items.map((p: { name: string }) => p.name)).toEqual([
+                'Sortx Apple',
+            ]);
+        });
+
+        it('refuses an unknown order', async () => {
+            const res = await call('GET', '/admin/projects?sort=random', admin);
+            expect(res.statusCode).toBe(400);
+        });
+    });
+
     describe('cleanup rules', () => {
         it('deletes a project together with its diagrams and everything attached', async () => {
             const p = (await call('POST', '/admin/projects', admin, { name: 'Doomed' })).json();
