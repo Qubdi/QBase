@@ -21,6 +21,7 @@ import { visibleSchemas } from '@/features/tables/table-list';
 import { useHoldMenu } from '@/platform/panel/hold-menu';
 import { InlineName } from '@/platform/panel/inline-name';
 import { Notice } from '@/platform/panel/notice';
+import { PANEL_LIST } from '@/platform/panel/panel-list';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
@@ -495,7 +496,7 @@ export const UserTypesSection: React.FC = () => {
                 />
                 {add}
             </div>
-            <div data-window-root className="min-h-0 flex-1 overflow-y-auto">
+            <div data-window-root className={PANEL_LIST}>
                 {body}
             </div>
         </div>
