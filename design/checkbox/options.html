@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Checkbox options for the Field Attributes popover, drawn with the app's own colours
+  (src/globals.css). Open this file in a browser; click the boxes, tab for the focus ring.
+  Show one option only with  options.html?only=F  (or ?only=D,F), size with  &zoom=2 .
+  See README.md in this folder for what was chosen and why.
+-->
+<title>Field Attributes Checkboxes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700&display=swap">
+<style>
+/* Layout: a comparison sheet. A short intro, then one card per treatment; each card shows the
+   Field Attributes popover (with its field row) in the app's light and dark themes. */
+:root {
+  --bg: #f4f7f7;
+  --surface: #ffffff;
+  --fg: #13201f;
+  --muted: #566866;
+  --line: #d9e2e1;
+  --accent: #0d6f66;
+  --chip: #e6efee;
+  --zoom: 2;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Manrope", "Inter", system-ui, sans-serif;
+  /* tick shapes: the same check path, drawn with different stroke weights */
+  --m2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  --m3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  --m32: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  --m34: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1313; --surface: #131c1c; --fg: #e7f0ef; --muted: #9bb0ad; --line: #243332;
+    --accent: #3fd0bd; --chip: #1a2727; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1313; --surface: #131c1c; --fg: #e7f0ef; --muted: #9bb0ad; --line: #243332;
+  --accent: #3fd0bd; --chip: #1a2727; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font-ui);
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px; }
+
+header { display: grid; gap: 10px; max-width: 62ch; }
+h1 { font: 700 26px/1.2 var(--font-head); margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.bar > span { color: var(--muted); font-size: 13px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button {
+  font: 500 13px var(--font-ui); color: var(--muted); background: none; border: 0;
+  padding: 6px 14px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--chip); color: var(--fg); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+#grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 14px; min-width: 0; align-content: start; }
+.card h2 { font: 700 16px/1.3 var(--font-head); margin: 0; display: flex; align-items: baseline; gap: 10px; }
+.card h2 .id { font: 700 12px var(--font-ui); color: var(--accent); background: var(--chip); border-radius: 6px; padding: 2px 8px; }
+.card p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+.stages { display: flex; flex-wrap: wrap; gap: 14px; }
+.tag { position: absolute; }
+
+/* ---- the app's own tokens (src/globals.css), as H S L triplets ---- */
+.stage { width: calc(272px * var(--zoom)); max-width: 100%; }
+.stage .inner { zoom: var(--zoom); width: 272px; border-radius: 10px; padding: 14px 16px 16px; background: hsl(var(--bg)); color: hsl(var(--fg)); font: 14px/1.4 var(--font-ui); border: 1px solid hsl(var(--border)); }
+.light { --bg: 180 25% 99%; --pop: 0 0% 100%; --fg: 200 30% 10%; --muted: 200 12% 40%; --border: 190 16% 88%; --input: 190 16% 86%; --primary: 173 82% 27%; --primary-fg: 0 0% 100%; --ring: 173 82% 29%; --accent: 174 40% 93%; --orange: #ea580c; }
+.dark { --bg: 200 28% 7%; --pop: 200 26% 9%; --fg: 180 20% 96%; --muted: 195 12% 66%; --border: 200 15% 18%; --input: 200 15% 20%; --primary: 172 66% 46%; --primary-fg: 200 40% 6%; --ring: 172 66% 46%; --accent: 190 30% 16%; --orange: #fb923c; }
+.stage .label { display: block; font: 600 10px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: hsl(var(--muted)); margin-bottom: 8px; }
+
+/* the field row above the popover */
+.frow { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+.fname { flex: 1; min-width: 0; height: 28px; line-height: 26px; padding: 0 8px; border: 1px solid hsl(var(--input)); border-radius: 6px; font-weight: 500; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ftype { height: 28px; line-height: 28px; padding: 0 8px; border-radius: 6px; background: hsl(var(--muted) / .12); font-size: 12px; font-weight: 500; }
+.ib { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 6px; border: 0; background: none; color: hsl(var(--muted)); font: 600 12px var(--font-ui); flex: none; }
+.ib svg { width: 14px; height: 14px; }
+.nbtn { cursor: pointer; color: hsl(var(--fg)); }
+.nbtn[aria-pressed="true"] { background: hsl(var(--accent)); color: var(--orange); }
+.nbtn:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+.ib.on { background: hsl(var(--accent)); color: hsl(var(--fg)); }
+
+.pop { width: 208px; margin-left: auto; background: hsl(var(--pop)); border: 1px solid hsl(var(--border)); border-radius: 10px; padding: 16px; display: grid; gap: 12px; box-shadow: 0 6px 18px rgb(0 0 0 / .10); }
+.pop h4 { margin: 0; font-size: 14px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid hsl(var(--border)); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 500; }
+
+/* ---- checkbox, written the way the shared component draws it ---- */
+.cb {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative; cursor: pointer; display: inline-block;
+  width: var(--sz, 16px); height: var(--sz, 16px); border-radius: var(--rad, 4px);
+  border: var(--bw, 1px) solid var(--cb-border); background: var(--cb-bg); color: var(--cb-mark);
+  transition: background-color .12s, border-color .12s, box-shadow .12s;
+}
+.cb::after {
+  content: ""; position: absolute; inset: 0; background: currentColor;
+  -webkit-mask: var(--mark) center / var(--mark-size) no-repeat; mask: var(--mark) center / var(--mark-size) no-repeat;
+  opacity: 0; transform: scale(.6); transition: opacity .12s, transform .12s;
+}
+.cb:checked { background: var(--cb-on-bg); border-color: var(--cb-on-border); }
+.cb:checked::after { opacity: 1; transform: none; }
+.cb:hover:not(:disabled):not(:checked) { border-color: var(--cb-hover); }
+.cb:focus-visible, .sw:focus-visible { outline: none; box-shadow: 0 0 0 2px hsl(var(--pop)), 0 0 0 4px hsl(var(--ring)); }
+.cb:disabled, .sw:disabled { opacity: .5; cursor: not-allowed; }
+
+/* A  current */
+.v-a { --sz: 16px; --rad: 4px; --bw: 1px; --mark: var(--m2); --mark-size: 16px;
+  --cb-border: hsl(var(--input) / .7); --cb-bg: hsl(var(--bg)); --cb-hover: hsl(var(--input));
+  --cb-on-bg: hsl(var(--primary)); --cb-on-border: hsl(var(--primary)); --cb-mark: hsl(var(--primary-fg)); }
+/* B  crisp tick */
+.v-b { --sz: 16px; --rad: 4px; --bw: 1px; --mark: var(--m32); --mark-size: 13px;
+  --cb-border: hsl(var(--muted) / .5); --cb-bg: hsl(var(--pop)); --cb-hover: hsl(var(--muted) / .8);
+  --cb-on-bg: hsl(var(--primary)); --cb-on-border: hsl(var(--primary)); --cb-mark: hsl(var(--primary-fg)); }
+/* C  tinted */
+.v-c { --sz: 16px; --rad: 4px; --bw: 1.5px; --mark: var(--m3); --mark-size: 12px;
+  --cb-border: hsl(var(--muted) / .5); --cb-bg: hsl(var(--pop)); --cb-hover: hsl(var(--muted) / .8);
+  --cb-on-bg: hsl(var(--primary) / .14); --cb-on-border: hsl(var(--primary)); --cb-mark: hsl(var(--primary)); }
+/* D  roomier */
+.v-d { --sz: 18px; --rad: 6px; --bw: 1.5px; --mark: var(--m3); --mark-size: 14px;
+  --cb-border: hsl(var(--muted) / .55); --cb-bg: hsl(var(--pop)); --cb-hover: hsl(var(--muted) / .85);
+  --cb-on-bg: hsl(var(--primary)); --cb-on-border: hsl(var(--primary)); --cb-mark: hsl(var(--primary-fg)); }
+/* E  round */
+.v-e { --sz: 18px; --rad: 50%; --bw: 1.5px; --mark: var(--m34); --mark-size: 11px;
+  --cb-border: hsl(var(--muted) / .55); --cb-bg: hsl(var(--pop)); --cb-hover: hsl(var(--muted) / .85);
+  --cb-on-bg: hsl(var(--primary)); --cb-on-border: hsl(var(--primary)); --cb-mark: hsl(var(--primary-fg)); }
+/* F  switch */
+.sw { appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative; cursor: pointer; width: 28px; height: 16px; border-radius: 999px; background: hsl(var(--muted) / .35); transition: background-color .15s; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: hsl(var(--pop)); box-shadow: 0 1px 2px rgb(0 0 0 / .3); transition: transform .15s, background-color .15s; }
+.sw:checked { background: hsl(var(--primary)); }
+.sw:checked::after { transform: translateX(12px); background: hsl(var(--primary-fg)); }
+/* G  Allow null borrows the orange of the pressed N button */
+.v-g { --sz: 16px; --rad: 4px; --bw: 1.5px; --mark: var(--m32); --mark-size: 13px;
+  --cb-border: hsl(var(--muted) / .5); --cb-bg: hsl(var(--pop)); --cb-hover: hsl(var(--muted) / .8);
+  --cb-on-bg: hsl(var(--primary)); --cb-on-border: hsl(var(--primary)); --cb-mark: hsl(var(--primary-fg)); }
+.v-g .cb[data-nullable] { --cb-on-bg: hsl(var(--accent)); --cb-on-border: var(--orange); --cb-mark: var(--orange); }
+
+footer { color: var(--muted); max-width: 62ch; }
+.shot header, .shot footer { display: none; }
+.shot { padding-block: 16px; }
+.shot .wrap { max-width: none; }
+@media (prefers-reduced-motion: reduce) { .cb, .cb::after, .sw, .sw::after { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Checkbox options</h1>
+    <p>Seven looks for the checkboxes in Field Attributes, in the app's light and dark themes. Click a box, or the N button above it, and tab through them to see the focus ring. A is how they looked before. F is now used for the settings in Field Attributes, and D for every other checkbox.</p>
+    <div class="bar" role="group" aria-label="Size">
+      <span>Size</span>
+      <div class="seg">
+        <button type="button" id="z1" data-zoom="1" aria-pressed="false">Actual</button>
+        <button type="button" id="z2" data-zoom="2" aria-pressed="true">2×</button>
+        <button type="button" id="z3" data-zoom="3" aria-pressed="false">3×</button>
+      </div>
+    </div>
+  </header>
+
+  <section id="grid" aria-label="Checkbox options"></section>
+
+  <footer>Tell me a letter, or a mix, for example the tick of B on the round box of E.</footer>
+</div>
+
+<script>
+const KEY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>';
+const DOTS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
+
+const variants = [
+  { id: 'A', cls: 'v-a', name: 'Previous', note: 'How the checkbox looked before: the box and its tick are both 16 px, so the tick reaches the edges of the box.' },
+  { id: 'B', cls: 'v-b', name: 'Crisp tick', note: 'Same box, a smaller and heavier tick with space around it, and a slightly stronger border.' },
+  { id: 'C', cls: 'v-c', name: 'Tinted', note: 'A soft teal fill with a teal tick instead of a solid block. Calmer next to the dark theme.' },
+  { id: 'D', cls: 'v-d', name: 'Roomier', note: '18 px box with rounder corners and a bold tick. Easier to hit, still square. Now the look of every checkbox except the Field Attributes settings.' },
+  { id: 'E', cls: 'v-e', name: 'Round', note: 'A circle with a small tick, like a done mark.' },
+  { id: 'F', cls: 'v-f', name: 'Switch', note: 'A small switch instead of a box. It reads as on and off, like the N button.', sw: true },
+  { id: 'G', cls: 'v-g', name: 'Matches the N button', note: 'Allow null borrows the orange of the pressed N button, so the link between the two shows. The other boxes use the crisp tick.' }
+];
+
+const row = (v, mode, key, text, attrs) =>
+  `<label class="row"><span>${text}</span><input id="${v.id}-${mode}-${key}" type="checkbox" class="${v.sw ? 'sw' : 'cb'}" ${attrs}></label>`;
+
+const stage = (v, mode) => `
+  <div class="stage ${mode} ${v.cls}">
+    <div class="inner">
+      <span class="label">${mode === 'light' ? 'Light theme' : 'Dark theme'}</span>
+      <div class="frow">
+        <span class="fname">user_id</span><span class="ftype">integer</span>
+        <button type="button" class="ib nbtn" aria-pressed="true" aria-label="Allow null">N</button>
+        <span class="ib" aria-hidden="true">${KEY}</span>
+        <span class="ib on" aria-hidden="true">${DOTS}</span>
+      </div>
+      <div class="pop" role="group" aria-label="Field Attributes">
+        <h4>Field Attributes</h4>
+        ${row(v, mode, 'null', 'Allow null', 'data-nullable checked')}
+        ${row(v, mode, 'unique', 'Unique', 'checked disabled')}
+        ${row(v, mode, 'inc', 'Auto Increment', 'data-increment')}
+        ${row(v, mode, 'array', 'Array', '')}
+      </div>
+    </div>
+  </div>`;
+
+// ?only=F,D shows just those options; ?zoom=1|2|3 sets the size; ?shot=1 hides the page text (for screenshots)
+const params = new URLSearchParams(location.search);
+const only = (params.get('only') || '').toUpperCase().split(',').filter(Boolean);
+const shown = only.length ? variants.filter((v) => only.includes(v.id)) : variants;
+const zoomParam = params.get('zoom');
+if (['1', '2', '3'].includes(zoomParam)) {
+  document.documentElement.style.setProperty('--zoom', zoomParam);
+  document.querySelectorAll('[data-zoom]').forEach((o) => o.setAttribute('aria-pressed', String(o.dataset.zoom === zoomParam)));
+}
+if (params.get('shot')) {
+  document.body.classList.add('shot');
+  document.documentElement.dataset.theme = 'light';
+}
+
+document.getElementById('grid').innerHTML = shown.map((v) => `
+  <article class="card">
+    <div>
+      <h2><span class="id">${v.id}</span>${v.name}</h2>
+      <p>${v.note}</p>
+    </div>
+    <div class="stages">${stage(v, 'light')}${stage(v, 'dark')}</div>
+  </article>`).join('');
+
+// the N button and Allow null are one setting; Auto Increment needs not null (as in the app)
+document.querySelectorAll('.stage').forEach((stageEl) => {
+  const nul = stageEl.querySelector('[data-nullable]');
+  const nBtn = stageEl.querySelector('.nbtn');
+  const inc = stageEl.querySelector('[data-increment]');
+  const sync = () => {
+    nBtn.setAttribute('aria-pressed', String(nul.checked));
+    inc.disabled = nul.checked;
+    if (nul.checked) inc.checked = false;
+  };
+  nul.addEventListener('change', sync);
+  nBtn.addEventListener('click', () => { nul.checked = !nul.checked; sync(); });
+  sync();
+});
+
+document.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
+  document.documentElement.style.setProperty('--zoom', b.dataset.zoom);
+  document.querySelectorAll('[data-zoom]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+}));
+</script>
+</body>
+</html>

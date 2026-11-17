@@ -1,0 +1,27 @@
+# Design references
+
+Design explorations: what was tried, what was chosen, and what was saved for later. Kept in
+git so the pictures and the reasons stay with the code.
+
+One folder per topic. Each has:
+
+- `README.md`, the decision record: the question, what was chosen and where it lives in the
+  code, what was saved for later (with a recipe to apply it), and what was rejected and why;
+- screenshots of the options that matter, named after the option;
+- the options page, when there is one (`options.html`), with the real colours from
+  `src/globals.css`.
+
+This folder is not part of the app and is left out of the Docker image (`.dockerignore`).
+
+| Topic | Date | Chosen | Saved for later |
+| --- | --- | --- | --- |
+| [Checkboxes and switches](checkbox/README.md) | 2026-11-17 | F, Switch (Field Attributes); D, Roomier (every other checkbox) | nothing: both are in use |
+
+## Adding a topic
+
+1. Make `design/<topic>/`.
+2. Put the options page and the screenshots in it. Name a screenshot after its option, such as
+   `F-switch.png`.
+3. Write its `README.md`: question, chosen (with the file that implements it), saved for later
+   (with the recipe), rejected (with the reason).
+4. Add a row to the table above.
