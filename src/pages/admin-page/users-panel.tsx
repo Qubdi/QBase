@@ -380,7 +380,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                     </div>
                 ) : null}
                 <div className="max-h-[26rem] min-h-40 overflow-y-auto [&_td]:px-2.5 [&_th]:px-2.5">
-                    <Table>
+                    <Table containerClassName="overflow-visible">
                         <TableHeader className="sticky top-0 z-10 bg-card">
                             <TableRow>
                                 <TableHead className="w-10">

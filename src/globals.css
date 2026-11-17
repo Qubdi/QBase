@@ -133,7 +133,7 @@
 }
 
 /*
- * Scroll areas draw their own scrollbar. Radix hides the browser's one with a
+ * Scroll areas and select lists draw their own scrollbar. Radix hides the browser's one with a
  * <style> tag it injects at run time, and the server's Content-Security-Policy
  * (style-src with a nonce) refuses that tag, so both bars showed. Hide it here,
  * in the stylesheet, where the policy allows it.
@@ -143,5 +143,12 @@
     -ms-overflow-style: none;
 }
 [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+    display: none;
+}
+[data-radix-select-viewport] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+[data-radix-select-viewport]::-webkit-scrollbar {
     display: none;
 }

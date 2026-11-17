@@ -201,7 +201,7 @@ export const OpenDesignDialog: React.FC<OpenDesignDialogProps> = ({
                                     : t('editor.designs.open.empty')}
                             </p>
                         ) : (
-                            <Table>
+                            <Table containerClassName="overflow-visible">
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead colSpan={2}>
