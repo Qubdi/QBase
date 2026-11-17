@@ -16,6 +16,7 @@ This folder is not part of the app and is left out of the Docker image (`.docker
 | Topic | Date | Chosen | Saved for later |
 | --- | --- | --- | --- |
 | [Checkboxes and switches](checkbox/README.md) | 2026-11-17 | F, Switch (Field Attributes); D, Roomier (every other checkbox) | nothing: both are in use |
+| [Description marker in the field rows](field-description/README.md) | 2026-11-17 | B, Icon inside the name box | nothing: the other options are in the record |
 
 ## Adding a topic
 

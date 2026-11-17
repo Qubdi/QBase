@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Options for marking a field's description in the side panel's field rows, drawn with the
+  app's own colours (src/globals.css) and the real pieces of a row. Open this file in a
+  browser. Show one option only with  options.html?only=B  and the size with  &zoom=1.25 .
+  See README.md in this folder for what was chosen and why.
+-->
+<title>Field Description Marker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700&display=swap">
+<style>
+/* Layout: a comparison sheet. A short intro, then one card per option; each card draws the field
+   rows of the side panel in the app's light and dark themes, with a guide line at the right
+   edge of the first name box and the measured width of each name box underneath. */
+:root {
+  --bg: #f4f7f7; --surface: #ffffff; --fg: #13201f; --muted: #566866; --line: #d9e2e1;
+  --accent: #0d6f66; --chip: #e6efee; --good: #0d7a45; --bad: #c2362b; --zoom: 1.25;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Manrope", "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1313; --surface: #131c1c; --fg: #e7f0ef; --muted: #9bb0ad; --line: #243332;
+    --accent: #3fd0bd; --chip: #1a2727; --good: #4fd08a; --bad: #ff7a70; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1313; --surface: #131c1c; --fg: #e7f0ef; --muted: #9bb0ad; --line: #243332;
+  --accent: #3fd0bd; --chip: #1a2727; --good: #4fd08a; --bad: #ff7a70; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font-ui);
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
+header { display: grid; gap: 10px; max-width: 66ch; }
+h1 { font: 700 26px/1.2 var(--font-head); margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.bar > span { color: var(--muted); font-size: 13px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px var(--font-ui); color: var(--muted); background: none; border: 0; padding: 6px 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--chip); color: var(--fg); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+#grid { display: grid; gap: 20px; grid-template-columns: 1fr; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 14px; min-width: 0; align-content: start; }
+.card h2 { font: 700 16px/1.3 var(--font-head); margin: 0; display: flex; align-items: baseline; gap: 10px; }
+.card h2 .id { font: 700 12px var(--font-ui); color: var(--accent); background: var(--chip); border-radius: 6px; padding: 2px 8px; }
+.card p { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
+.pro { display: grid; gap: 2px; font-size: 13px; }
+.pro b { font-weight: 600; }
+.pro .plus::before { content: "+ "; color: var(--good); font-weight: 700; }
+.pro .minus::before { content: "- "; color: var(--bad); font-weight: 700; }
+.stages { display: flex; flex-wrap: wrap; gap: 14px; }
+
+/* ---- the app's own tokens (src/globals.css), as H S L triplets ---- */
+.stage { width: calc(416px * var(--zoom)); max-width: 100%; }
+.stage .inner { zoom: var(--zoom); width: 416px; border-radius: 12px; padding: 12px 14px 12px; background: hsl(var(--bg)); color: hsl(var(--fg)); font: 14px/1.4 var(--font-ui); border: 1px solid hsl(var(--border)); }
+.light { --bg: 180 25% 99%; --pop: 0 0% 100%; --fg: 200 30% 10%; --muted: 200 12% 40%; --border: 190 16% 88%; --input: 190 16% 86%; --primary: 173 82% 27%; --ring: 173 82% 29%; --accent: 174 40% 93%; --orange: #ea580c; --chipbg: #f1f5f9; --chipfg: #1e293b; --icon: #475569; --keyc: #334155; --guide: #d8403a; }
+.dark { --bg: 200 28% 7%; --pop: 200 26% 9%; --fg: 180 20% 96%; --muted: 195 12% 66%; --border: 200 15% 18%; --input: 200 15% 20%; --primary: 172 66% 46%; --ring: 172 66% 46%; --accent: 190 30% 16%; --orange: #fb923c; --chipbg: #1e293b; --chipfg: #f1f5f9; --icon: #94a3b8; --keyc: #cbd5e1; --guide: #ff7a70; }
+.stage .label { display: block; font: 600 10px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: hsl(var(--muted)); margin-bottom: 8px; }
+
+/* a field row of the side panel: grip, name, [marker], type, N, key, "..." */
+.rows { position: relative; display: grid; gap: 4px; }
+.guide { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 1px dashed var(--guide); pointer-events: none; z-index: 3; }
+.frow { display: flex; align-items: center; gap: 4px; }
+.grip { width: 16px; height: 32px; display: grid; place-items: center; color: hsl(var(--muted)); flex: none; }
+.grip svg { width: 14px; height: 14px; }
+.namewrap { position: relative; flex: 1; min-width: 56px; display: flex; }
+.fname { flex: 1; min-width: 0; width: 100%; height: 32px; padding: 0 8px; border: 1px solid hsl(var(--input)); border-radius: 10px; background: transparent; color: hsl(var(--fg)); font: 14px/20px var(--font-ui); text-overflow: ellipsis; box-shadow: 0 1px 2px rgb(0 0 0 / .05); outline: none; }
+.fname.padr { padding-right: 30px; }
+svg { display: block; }
+.mark { flex: none; display: grid; place-items: center; color: hsl(var(--muted)); background: none; border: 0; padding: 0; cursor: default; }
+.mark svg { width: 16px; height: 16px; }
+.mark.slot { width: 16px; }
+.mark.dim { opacity: .38; }
+.mark.inside { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; }
+.type { flex: none; width: 84px; height: 32px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; border-radius: 10px; background: var(--chipbg); color: var(--chipfg); font: 500 14px var(--font-ui); }
+.type svg { width: 12px; height: 12px; opacity: .7; }
+.ib { position: relative; flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 10px; color: var(--icon); font: 500 12px var(--font-ui); }
+.ib svg { width: 16px; height: 16px; }
+.ib.n { color: hsl(var(--fg)); } .ib.n.on { background: hsl(var(--accent)); color: var(--orange); font-weight: 600; }
+.ib.key { color: var(--keyc); }
+.dot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--primary)); box-shadow: 0 0 0 2px hsl(var(--bg)); }
+.measure { margin-top: 10px; font: 500 12px var(--font-ui); color: hsl(var(--muted)); font-variant-numeric: tabular-nums; }
+.measure b { font-weight: 600; }
+.measure .ok { color: var(--good); } .measure .no { color: var(--bad); }
+footer { color: var(--muted); max-width: 66ch; }
+.shot header, .shot footer { display: none; }
+.shot { padding-block: 16px; }
+.shot .wrap { max-width: none; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Description marker in the field rows</h1>
+    <p>A column with a description shows a small comment icon after its name, so its name box is 20 px shorter than the others. Below are the options for fixing that, in the app's light and dark themes. The dashed line sits at the right edge of the first name box; the numbers are the measured width of each name box.</p>
+    <div class="bar" role="group" aria-label="Size">
+      <span>Size</span>
+      <div class="seg">
+        <button type="button" data-zoom="1" aria-pressed="false">Actual</button>
+        <button type="button" data-zoom="1.25" aria-pressed="true">1.25&times;</button>
+        <button type="button" data-zoom="1.5" aria-pressed="false">1.5&times;</button>
+      </div>
+    </div>
+  </header>
+  <section id="grid" aria-label="Options"></section>
+  <footer>Tell me a letter, or a mix. Hover the icon in the real app to see the description as a tooltip; that stays whichever option is chosen, except E.</footer>
+</div>
+
+<script>
+const I = {
+  grip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>',
+  msg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>',
+  key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>',
+  dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>'
+};
+
+// three sample columns; the middle one has a description (a long name, to show how each option treats it)
+const ROWS = [
+  { name: 'customer_id', type: 'integer', n: true, desc: false },
+  { name: 'billing_email_address', type: 'varchar', n: false, desc: true },
+  { name: 'created_at', type: 'timestamp', n: true, desc: false }
+];
+
+// per option: what goes after the name box, inside it, or on the "..." button
+const options = [
+  { id: 'Now', name: 'As it is today', cls: 'o-now',
+    note: 'The icon is drawn after the name box, only when the column has a description. That row\'s box is 20 px shorter than the others.',
+    plus: ['Nothing to change'], minus: ['Name boxes are different widths'] },
+  { id: 'A', name: 'Keep the icon, keep its place free', cls: 'o-a', after: (r) => r.desc ? mark(r, '') : '<span class="mark slot" aria-hidden="true"></span>',
+    note: 'The icon stays, and every row keeps a 16 px slot for it, empty where there is no description.',
+    plus: ['Same widths', 'Simplest change', 'Keeps the icon and its click to the popover'], minus: ['Every name box is 20 px shorter, with or without a description'] },
+  { id: 'B', name: 'Icon inside the name box', cls: 'o-b', inside: true,
+    note: 'The icon sits inside the right end of the name box, like a suffix. The box is the same width on every row; on a row with a description the text stops a little earlier.',
+    plus: ['Same widths, and the widest possible', 'Keeps the icon and its click', 'No space lost on rows without one'], minus: ['A long name is cut a little earlier on rows with a description'] },
+  { id: 'C', name: 'Dot on the "..." button', cls: 'o-c', dot: true,
+    note: 'No icon. The "..." button, which opens Field Attributes where the description lives, gets a small dot when there is one.',
+    plus: ['Same widths, the widest possible', 'No new icon in the row'], minus: ['Easy to miss', 'The dot means one thing only, and "..." holds many'] },
+  { id: 'D', name: 'Icon on every row, dim when empty', cls: 'o-d', after: (r) => mark(r, r.desc ? '' : 'dim'),
+    note: 'The icon is always there: full colour when the column has a description, faint when it has none. It also invites adding one.',
+    plus: ['Same widths', 'Shows the state either way', 'A visible way to add a description'], minus: ['Every name box is 20 px shorter', 'One more icon on every row'] },
+  { id: 'E', name: 'Remove the icon', cls: 'o-e', title: true,
+    note: 'No icon and no dot. Hovering the name box shows the description as a tooltip, and it stays in Field Attributes.',
+    plus: ['Same widths, the widest possible', 'The cleanest row'], minus: ['Nothing shows that a description exists until you hover or open the popover'] }
+];
+
+function mark(r, extra) {
+  return `<button type="button" class="mark ${extra}" aria-label="Show field description" title="Customer's billing contact">${I.msg}</button>`;
+}
+
+function row(o, r) {
+  const inside = o.inside && r.desc ? mark(r, 'inside') : '';
+  const after = o.id === 'Now' ? (r.desc ? mark(r, '') : '') : (o.after ? o.after(r) : '');
+  const padr = o.inside && r.desc ? ' padr' : '';
+  const tip = o.title && r.desc ? ' title="Customer\'s billing contact"' : '';
+  const dot = o.dot && r.desc ? '<span class="dot" aria-hidden="true"></span>' : '';
+  return `<div class="frow">
+    <span class="grip" aria-hidden="true">${I.grip}</span>
+    <div class="namewrap"><input class="fname${padr}" readonly value="${r.name}" aria-label="Field name"${tip}>${inside}</div>
+    ${after}
+    <span class="type">${r.type}${I.chev}</span>
+    <span class="ib n ${r.n ? 'on' : ''}" aria-hidden="true">N</span>
+    <span class="ib key" aria-hidden="true">${I.key}</span>
+    <span class="ib dots" aria-hidden="true">${I.dots}${dot}</span>
+  </div>`;
+}
+
+const stage = (o, mode) => `
+  <div class="stage ${mode}" data-option="${o.id}">
+    <div class="inner">
+      <span class="label">${mode === 'light' ? 'Light theme' : 'Dark theme'}</span>
+      <div class="rows">${ROWS.map((r) => row(o, r)).join('')}<span class="guide"></span></div>
+      <div class="measure"></div>
+    </div>
+  </div>`;
+
+// ?only=B (or ?only=A,B) shows just those options; ?zoom=1|1.25|1.5 sets the size; ?shot=1 hides the page text (for screenshots)
+const params = new URLSearchParams(location.search);
+const only = (params.get('only') || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+const shown = only.length ? options.filter((o) => only.includes(o.id.toLowerCase())) : options;
+const zoomParam = params.get('zoom');
+if (['1', '1.25', '1.5'].includes(zoomParam)) {
+  document.documentElement.style.setProperty('--zoom', zoomParam);
+  document.querySelectorAll('[data-zoom]').forEach((o) => o.setAttribute('aria-pressed', String(o.dataset.zoom === zoomParam)));
+}
+if (params.get('shot')) {
+  document.body.classList.add('shot');
+  document.documentElement.dataset.theme = 'light';
+}
+
+document.getElementById('grid').innerHTML = shown.map((o) => `
+  <article class="card">
+    <div>
+      <h2><span class="id">${o.id}</span>${o.name}</h2>
+      <p>${o.note}</p>
+    </div>
+    <div class="pro">${o.plus.map((t) => `<span class="plus">${t}</span>`).join('')}${o.minus.map((t) => `<span class="minus">${t}</span>`).join('')}</div>
+    <div class="stages">${stage(o, 'light')}${stage(o, 'dark')}</div>
+  </article>`).join('');
+
+// measure the name boxes (as a share of the row, so the zoom does not matter) and draw the guide
+function measure() {
+  document.querySelectorAll('.stage').forEach((st) => {
+    const rows = st.querySelector('.rows');
+    const R = rows.getBoundingClientRect();
+    const first = rows.querySelector('.fname').getBoundingClientRect();
+    const widths = [...rows.querySelectorAll('.fname')].map((el) => el.getBoundingClientRect().width / R.width * 388);
+    const rounded = widths.map((w) => Math.round(w));
+    const same = Math.max(...rounded) - Math.min(...rounded) <= 1;
+    st.querySelector('.guide').style.left = ((first.right - R.left) / R.width * 388) + 'px';
+    st.querySelector('.measure').innerHTML =
+      'Name boxes: <b>' + rounded.join(' / ') + ' px</b> ' +
+      (same ? '<span class="ok">all the same</span>' : '<span class="no">differ by ' + (Math.max(...rounded) - Math.min(...rounded)) + ' px</span>');
+  });
+}
+measure();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+window.addEventListener('resize', measure);
+
+document.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
+  document.documentElement.style.setProperty('--zoom', b.dataset.zoom);
+  document.querySelectorAll('[data-zoom]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+  requestAnimationFrame(measure);
+}));
+</script>
+</body>
+</html>
