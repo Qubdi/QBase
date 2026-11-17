@@ -492,17 +492,18 @@ word only, so "double precision" shows "double") plus its attributes (see 4.5); 
 ### 4.6 The field attributes popover ("Field Attributes")
 
 Opened by the "..." button at the right of a field row in the side panel. A small popover
-titled **Field Attributes**; changes apply 0.3 s after the last edit. Contents:
+titled **Field Attributes**; changes apply 0.3 s after the last edit. The yes-or-no settings
+are small on/off switches (not boxes). Contents:
 
-- **Allow null** checkbox, first in the list. It is the same setting as the "N" toggle of
-  the row (4.7): ticking or clearing it turns the toggle on or off, and the other way
+- **Allow null** switch, first in the list. It is the same setting as the "N" toggle of
+  the row (4.7): switching it on or off turns the toggle on or off, and the other way
   round. Disabled, as the toggle is, for primary-key fields and the serial family.
-- **Unique** checkbox. Disabled when the field is the only primary key (a lone PK is
+- **Unique** switch. Disabled when the field is the only primary key (a lone PK is
   implicitly unique). Turning a field into the first primary key sets Unique on.
-- **Auto Increment** checkbox, only for integer-like types (integer, int, bigint, smallint,
+- **Auto Increment** switch, only for integer-like types (integer, int, bigint, smallint,
   tinyint, mediumint, and the serial family). Disabled while the field is nullable (auto
   increment needs not null) and permanently on for the serial family.
-- **Array** checkbox, only when the database supports arrays (14.1) and the type is not
+- **Array** switch, only when the database supports arrays (14.1) and the type is not
   serial-like.
 - **Max Length** for character types: a choice among **None**, **Max** (only for types
   that accept it, e.g. SQL Server varchar/nvarchar) and **Custom**, where a number box
@@ -520,7 +521,7 @@ titled **Field Attributes**; changes apply 0.3 s after the last edit. Contents:
 
 - Toggle on = the field may be null. Disabled (and forced off) for primary-key fields and
   the serial family. Turning on nullable clears Auto Increment. Updates apply 0.1 s later.
-- The same setting is the **Allow null** checkbox in Field Attributes (4.6); either control
+- The same setting is the **Allow null** switch in Field Attributes (4.6); either control
   changes it and the other shows the result.
 
 ### 4.8 Primary key (the key toggle)

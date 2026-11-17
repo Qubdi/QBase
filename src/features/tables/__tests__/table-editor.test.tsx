@@ -127,7 +127,7 @@ describe('EDT-133 EDT-134 the N and key toggles', () => {
     });
 });
 
-describe('the Allow null box of Field Attributes and the N toggle are one setting', () => {
+describe('the Allow null switch of Field Attributes and the N toggle are one setting', () => {
     /** the second row, a new field that may be null, with its popover open */
     async function withPopover() {
         const view = await openFirst();
@@ -141,7 +141,7 @@ describe('the Allow null box of Field Attributes and the N toggle are one settin
                 screen.getAllByRole('button', { name: 'Field Attributes' })[1]
             );
             const pop = await screen.findByRole('dialog');
-            return within(pop).getByRole('checkbox', { name: 'Allow null' });
+            return within(pop).getByRole('switch', { name: 'Allow null' });
         };
         return { ...view, toggle, open };
     }
@@ -154,7 +154,7 @@ describe('the Allow null box of Field Attributes and the N toggle are one settin
         expect(checked(box)).toBe('true');
     });
 
-    it('turns the N toggle off when the box is cleared, and on when it is ticked again', async () => {
+    it('turns the N toggle off when the switch goes off, and on when it goes on again', async () => {
         const { store, toggle, open } = await withPopover();
         const box = await open();
 
@@ -169,7 +169,7 @@ describe('the Allow null box of Field Attributes and the N toggle are one settin
         expect(toggle().getAttribute('aria-pressed')).toBe('true');
     });
 
-    it('shows in the box what was done with the N toggle outside', async () => {
+    it('shows in the switch what was done with the N toggle outside', async () => {
         const { store, toggle, open } = await withPopover();
         await userEvent.click(toggle());
         expect(first(store).columns[1].nullable).toBe(false);
@@ -194,7 +194,7 @@ describe('the Allow null box of Field Attributes and the N toggle are one settin
         );
         const pop = await screen.findByRole('dialog');
         expect(
-            within(pop).getByRole('checkbox', { name: 'Allow null' })
+            within(pop).getByRole('switch', { name: 'Allow null' })
         ).toHaveProperty('disabled', true);
     });
 
@@ -218,7 +218,7 @@ describe('the Allow null box of Field Attributes and the N toggle are one settin
         );
         const pop = await screen.findByRole('dialog');
         expect(
-            within(pop).getByRole('checkbox', { name: 'Allow null' })
+            within(pop).getByRole('switch', { name: 'Allow null' })
         ).toHaveProperty('disabled', true);
     });
 
@@ -227,9 +227,80 @@ describe('the Allow null box of Field Attributes and the N toggle are one settin
         const box = await open();
         const pop = box.closest('[role=dialog]')!;
         const labels = within(pop as HTMLElement)
-            .getAllByRole('checkbox')
+            .getAllByRole('switch')
             .map((b) => b.closest('label')?.textContent);
-        expect(labels.slice(0, 2)).toEqual(['Allow null', 'Unique']);
+        expect(labels).toEqual([
+            'Allow null',
+            'Unique',
+            'Auto Increment',
+            'Array',
+        ]);
+    });
+});
+
+describe('the yes-or-no settings of Field Attributes are switches', () => {
+    it('turns Unique, Auto Increment and Array on and off, each its own setting', async () => {
+        const { store } = await openFirst();
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Add Field' }).at(-1)!
+        );
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'Field Attributes' })[1]
+        );
+        const pop = await screen.findByRole('dialog');
+        const toggle = (name: string) =>
+            within(pop).getByRole('switch', { name });
+        const column = () => first(store).columns[1];
+
+        await userEvent.click(toggle('Unique'));
+        expect(column().unique).toBe(true);
+        await userEvent.click(toggle('Unique'));
+        expect(column().unique).toBe(false);
+
+        // auto increment needs not null: locked while the field may be null
+        expect(toggle('Auto Increment')).toHaveProperty('disabled', true);
+        await userEvent.click(toggle('Allow null'));
+        expect(column().nullable).toBe(false);
+        expect(toggle('Auto Increment')).toHaveProperty('disabled', false);
+        await userEvent.click(toggle('Auto Increment'));
+        expect(column().increment).toBe(true);
+        // and turning null on again takes auto increment away
+        await userEvent.click(toggle('Allow null'));
+        expect(column().nullable).toBe(true);
+        expect(column().increment).not.toBe(true);
+
+        await userEvent.click(toggle('Array'));
+        expect(column().isArray).toBe(true);
+        await userEvent.click(toggle('Array'));
+        expect(column().isArray).toBeUndefined();
+    });
+
+    it('are all locked, and change nothing, in a read-only diagram', async () => {
+        const { store } = renderPanel(
+            <TablesSection />,
+            withTables(['orders']),
+            { readonly: true }
+        );
+        await userEvent.click(
+            screen.getByRole('button', { name: /^Show or hide the details/ })
+        );
+        await userEvent.click(
+            screen.getByRole('button', { name: 'Field Attributes' })
+        );
+        const pop = await screen.findByRole('dialog');
+        const switches = within(pop).getAllByRole('switch');
+        expect(switches.map((s) => s.closest('label')?.textContent)).toEqual([
+            'Allow null',
+            'Unique',
+            'Auto Increment',
+            'Array',
+        ]);
+        const before = JSON.stringify(first(store).columns);
+        for (const sw of switches) {
+            expect(sw).toHaveProperty('disabled', true);
+            await userEvent.click(sw);
+        }
+        expect(JSON.stringify(first(store).columns)).toBe(before);
     });
 });
 

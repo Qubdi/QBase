@@ -8,10 +8,10 @@ import {
 } from '@/platform/panel/debounced-input';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
-import { Checkbox } from '@/platform/ui/checkbox';
 import { Input } from '@/platform/ui/input';
 import { Label } from '@/platform/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/ui/popover';
+import { Switch } from '@/platform/ui/switch';
 import { OptionSelect } from '@/components/option-select/option-select';
 import { fieldAttributeState, lengthModeOf } from './field-rules';
 import type { LengthMode } from './field-rules';
@@ -81,46 +81,38 @@ export const AttributesPopover: React.FC<{
                 {/* the same setting as the N toggle of the row: change either */}
                 <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                     {text('fields.nullable')}
-                    <Checkbox
+                    <Switch
                         checked={column.nullable}
                         disabled={readOnly || state.nullableLocked}
-                        onCheckedChange={(v) =>
-                            onChange({ nullable: v === true })
-                        }
+                        onCheckedChange={(v) => onChange({ nullable: v })}
                     />
                 </Label>
                 <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                     {text('fields.unique')}
-                    <Checkbox
+                    <Switch
                         checked={column.unique}
                         disabled={readOnly || state.uniqueLocked}
-                        onCheckedChange={(v) =>
-                            onChange({ unique: v === true })
-                        }
+                        onCheckedChange={(v) => onChange({ unique: v })}
                     />
                 </Label>
                 {state.showIncrement ? (
                     <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                         {text('fields.autoIncrement')}
-                        <Checkbox
+                        <Switch
                             checked={column.increment === true}
                             disabled={readOnly || state.incrementLocked}
-                            onCheckedChange={(v) =>
-                                onChange({ increment: v === true })
-                            }
+                            onCheckedChange={(v) => onChange({ increment: v })}
                         />
                     </Label>
                 ) : null}
                 {state.showArray ? (
                     <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                         {text('fields.array')}
-                        <Checkbox
+                        <Switch
                             checked={column.isArray === true}
                             disabled={readOnly}
                             onCheckedChange={(v) =>
-                                onChange({
-                                    isArray: v === true ? true : undefined,
-                                })
+                                onChange({ isArray: v ? true : undefined })
                             }
                         />
                     </Label>
