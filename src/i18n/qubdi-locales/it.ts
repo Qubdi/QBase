@@ -66,6 +66,16 @@ export const it = {
             requestFailed: 'Richiesta non riuscita ({{code}}).',
             locked: 'Qualcun altro sta modificando questo diagramma.',
             lockedBy: '{{holder}} sta modificando questo diagramma.',
+            poke_cooldown:
+                'Hai appena fatto una richiesta. Attendi qualche minuto prima di riprovare.',
+            poke_pending:
+                'Qualcuno ha già chiesto a chi sta modificando di uscire. Attendi la risposta, poi riprova.',
+            poke_expired: 'Il tempo per questa richiesta è scaduto.',
+            poke_answered: 'A questa richiesta è già stata data una risposta.',
+            lock_changed:
+                'Questo diagramma non è più in modifica da questa pagina.',
+            lock_busy:
+                'Questo diagramma sta passando di mano in questo momento. Riprova tra un attimo.',
             target_blocked:
                 'Questo indirizzo di database non è consentito. Chiedi a un amministratore di consentire il suo host.',
             privileged_login:
@@ -1042,13 +1052,42 @@ export const it = {
             relationship_other: '{{count}} relazioni',
         },
         accessBanner: {
-            getLatest: "Ottieni l'ultima versione e modifica",
             moveAria: 'Progetto in cui spostare questo diagramma',
             choosePlaceholder: 'Scegli un progetto…',
             move: 'Sposta nel progetto',
             askAdmin:
                 'Chiedi a un amministratore di aggiungerti a un progetto.',
             retry: 'Riprova',
+            takenHint:
+                'Deve uscire dal diagramma prima che tu possa continuare a lavorare.',
+            takenSelfHint:
+                "Chiudi l'altra scheda o finestra per continuare a lavorare qui.",
+            poke: 'Sollecita',
+            poking: 'Invio…',
+            pokeWaiting: 'In attesa di risposta…',
+            pokeLoading: 'Caricamento…',
+            pokeAgainIn: 'Sollecita di nuovo tra {{time}}',
+            pokeHint: 'Chiedi a {{holder}} di uscire da questo diagramma',
+            pokeSent:
+                'Richiesta inviata. In attesa della risposta di {{holder}}… ({{seconds}} s)',
+            pokeDeclined: 'La tua richiesta è stata rifiutata; riprova.',
+            pokeUnanswered: '{{holder}} non ha risposto. Riprova.',
+            pokeAccepted:
+                "{{holder}} ha lasciato il diagramma. Caricamento dell'ultima versione…",
+        },
+        poke: {
+            request: {
+                title: '{{requester}} vuole modificare questo diagramma',
+                description:
+                    "Ti è stato chiesto di uscire. Se accetti, le tue ultime modifiche vengono salvate prima e il diagramma diventa di sola lettura per te. Se rifiuti, l'altra persona viene avvisata e puoi continuare a lavorare.",
+                decline: 'Rifiuta',
+                agree: 'Accetta ed esci',
+                saving: 'Salvataggio…',
+                failedTitle: 'Impossibile rispondere alla richiesta',
+                saveFailedTitle: 'Le tue modifiche non sono state salvate',
+                saveFailed:
+                    'Sei ancora tu a modificare questo diagramma. Riprova oppure rifiuta la richiesta.',
+            },
         },
         diagramAccess: {
             backToProjects: 'Torna ai progetti',

@@ -1020,6 +1020,42 @@ export function createApi(
                 undefined,
                 options
             ),
+        /**
+         * Asks whoever holds the lock to step out. `granted` means nobody did
+         * after all and the diagram is set aside for this user; `sent` means
+         * the request is on its way, and the answer comes on the lock stream.
+         */
+        pokeLock: (id: string, editorId: string) =>
+            request<
+                | { status: 'granted' }
+                | {
+                      status: 'sent';
+                      pokeId: string;
+                      waitSeconds: number;
+                      holder: string;
+                  }
+            >(
+                'POST',
+                `/diagrams/${encodeURIComponent(id)}/lock/poke`,
+                { editorId },
+                undefined,
+                shape.pokeAnswer
+            ),
+        /** The holder's answer to a poke; agreeing hands the lock to the one who asked. */
+        answerPoke: (
+            id: string,
+            pokeId: string,
+            editorId: string,
+            accept: boolean
+        ) =>
+            request<void>(
+                'POST',
+                `/diagrams/${encodeURIComponent(id)}/lock/pokes/${encodeURIComponent(pokeId)}/answer`,
+                { editorId, accept }
+            ),
+        /** Where an open editor hears about its lock the moment something happens (an EventSource). */
+        lockEventsUrl: (id: string, editorId: string) =>
+            `${baseUrl}/diagrams/${encodeURIComponent(id)}/lock/events?editorId=${encodeURIComponent(editorId)}`,
         publish: (id: string, note?: string) =>
             request<{
                 version: number;

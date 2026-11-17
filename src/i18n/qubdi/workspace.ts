@@ -53,12 +53,40 @@ export const workspace = {
         relationship_other: '{{count}} relationships',
     },
     accessBanner: {
-        getLatest: 'Get latest and edit',
         moveAria: 'Project to move this diagram into',
         choosePlaceholder: 'Choose a project…',
         move: 'Move into project',
         askAdmin: 'Ask an admin to add you to a project.',
         retry: 'Try again',
+        takenHint:
+            'They need to leave the diagram before you can continue working.',
+        takenSelfHint:
+            'Close the other tab or window to continue working here.',
+        poke: 'Poke',
+        poking: 'Poking…',
+        pokeWaiting: 'Waiting for an answer…',
+        pokeLoading: 'Loading…',
+        pokeAgainIn: 'Poke again in {{time}}',
+        pokeHint: 'Ask {{holder}} to step out of this diagram',
+        pokeSent:
+            'Request sent. Waiting for {{holder}} to answer… ({{seconds}} s)',
+        pokeDeclined: 'Your request was rejected; please try again.',
+        pokeUnanswered: '{{holder}} did not answer. Please try again.',
+        pokeAccepted: '{{holder}} has stepped out. Loading the latest version…',
+    },
+    poke: {
+        request: {
+            title: '{{requester}} wants to edit this diagram',
+            description:
+                'They asked you to step out. If you agree, your latest changes are saved first and this diagram becomes read-only for you. If you decline, they are told so and you can keep working.',
+            decline: 'Decline',
+            agree: 'Agree and step out',
+            saving: 'Saving…',
+            failedTitle: 'Could not answer the request',
+            saveFailedTitle: 'Your changes could not be saved',
+            saveFailed:
+                'You are still the editor of this diagram. Try again, or decline the request.',
+        },
     },
     diagramAccess: {
         backToProjects: 'Back to projects',

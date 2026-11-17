@@ -218,6 +218,13 @@
       "when": 1794316032880,
       "tag": "0030_live_viewers",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794928183139,
+      "tag": "0031_lock_pokes",
+      "breakpoints": true
     }
   ]
 }

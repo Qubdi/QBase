@@ -65,6 +65,15 @@ export const account = {
         requestFailed: 'Request failed ({{code}}).',
         locked: 'Someone else is editing this diagram.',
         lockedBy: '{{holder}} is editing this diagram.',
+        poke_cooldown:
+            'You asked a moment ago. Wait a few minutes before asking again.',
+        poke_pending:
+            'Someone has already asked the editor to step out. Wait for the answer, then try again.',
+        poke_expired: 'This request has run out of time.',
+        poke_answered: 'This request was already answered.',
+        lock_changed: 'This diagram is no longer being edited from this page.',
+        lock_busy:
+            'This diagram is changing hands right now. Try again in a moment.',
         target_blocked:
             'This database address is not allowed. Ask an admin to allow its host.',
         privileged_login:

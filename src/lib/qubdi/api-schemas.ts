@@ -204,6 +204,32 @@ export const lockAnswer = z.union([
     z.looseObject({ held: z.literal(true) }),
     z.looseObject({ held: z.literal(false), holder: z.string() }),
 ]);
+/** The answer to asking the diagram's editor to step out (a "poke"). */
+export const pokeAnswer = z.union([
+    // nobody was editing after all: the lock is set aside for this user
+    z.looseObject({ status: z.literal('granted') }),
+    z.looseObject({
+        status: z.literal('sent'),
+        pokeId: id,
+        /** how long the request waits for an answer, in seconds */
+        waitSeconds: z.number(),
+        /** who was asked, by email */
+        holder: z.string(),
+    }),
+]);
+/** What the lock stream says to the editor that was asked to step out. */
+export const pokeEvent = z.looseObject({
+    pokeId: id,
+    /** who asks, by email */
+    from: z.string(),
+    /** how long is left to answer, in seconds */
+    waitSeconds: z.number(),
+});
+/** What the lock stream says to the editor that asked: how the request ended. */
+export const pokeResultEvent = z.looseObject({
+    pokeId: id,
+    outcome: z.enum(['accepted', 'declined', 'left']),
+});
 export const publishResult = z.looseObject({
     version: z.number(),
     note: z.string().nullable(),

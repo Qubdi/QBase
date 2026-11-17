@@ -5,6 +5,7 @@ import { purgeExpiredViewers } from './share/viewers.js';
 import { MAINTENANCE_LOCK, withAdvisoryLock, type Db } from './db/client.js';
 import {
     diagramLocks,
+    lockPokes,
     mfaChallenges,
     rateCounters,
     shareLinks,
@@ -59,6 +60,19 @@ export async function purgeExpiredLocks(
     const res = await db
         .delete(diagramLocks)
         .where(lt(diagramLocks.expiresAt, now));
+    return res.rowCount ?? 0;
+}
+
+/** How long a request to step out is kept, after it was made, for the wait between pokes. */
+const POKE_KEEP_DAYS = 1;
+
+/** Deletes requests to step out (pokes) a day after they were made. They are already over. */
+export async function purgeOldPokes(
+    db: Db,
+    now: Date = new Date()
+): Promise<number> {
+    const cutoff = new Date(now.getTime() - POKE_KEEP_DAYS * DAY_MS);
+    const res = await db.delete(lockPokes).where(lt(lockPokes.createdAt, cutoff));
     return res.rowCount ?? 0;
 }
 
@@ -239,6 +253,7 @@ export async function runMaintenance(
         sessions: () => purgeExpiredSessions(db, now),
         mfaChallenges: () => purgeExpiredMfaChallenges(db, now),
         locks: () => purgeExpiredLocks(db, now),
+        pokes: () => purgeOldPokes(db, now),
         counters: () => purgeExpiredCounters(db, now),
         viewers: () => purgeExpiredViewers(db, now),
         links: () => purgeDeadLinks(db, config.deadLinkKeepDays, now),

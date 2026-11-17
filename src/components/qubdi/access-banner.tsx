@@ -9,7 +9,7 @@ import { isLocked, lockedReason } from '@/lib/qubdi/access';
 import { api, errorMessage, type MyProject } from '@/lib/qubdi/api';
 import { fetchAllPages } from '@/lib/qubdi/paging';
 import { useDiagramAccess } from './diagram-access-context';
-import { GetLatestDialog } from './get-latest-control';
+import { TakenBanner } from './taken-banner';
 
 /** Explains why the open diagram is read-only and, if it can, how to fix it. */
 export const AccessBanner: React.FC = () => {
@@ -22,7 +22,6 @@ export const AccessBanner: React.FC = () => {
     const [choice, setChoice] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [latestOpen, setLatestOpen] = useState(false);
 
     const unbound = access.status === 'unbound';
     const projectId =
@@ -65,6 +64,18 @@ export const AccessBanner: React.FC = () => {
 
     if (!reason) return null;
 
+    // someone else is editing: the one case that has to be hard to miss
+    if (access.status === 'taken') {
+        return (
+            <TakenBanner
+                remoteId={access.remoteId}
+                reason={reason}
+                holder={access.holder}
+                ownTab={access.holder !== null && access.holder === user?.email}
+            />
+        );
+    }
+
     const move = async () => {
         if (!choice) return;
         setBusy(true);
@@ -86,17 +97,6 @@ export const AccessBanner: React.FC = () => {
         >
             <Lock className="size-4 shrink-0" />
             <span className="flex-1">{reason}</span>
-            {access.status === 'taken' ? (
-                <>
-                    <Button size="sm" onClick={() => setLatestOpen(true)}>
-                        {t('qubdi.workspace.accessBanner.getLatest')}
-                    </Button>
-                    <GetLatestDialog
-                        open={latestOpen}
-                        onOpenChange={setLatestOpen}
-                    />
-                </>
-            ) : null}
             {access.status === 'error' ? (
                 // the server could not be asked (the lock, the diagram list): ask again
                 <Button size="sm" onClick={refresh}>

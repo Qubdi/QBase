@@ -31,7 +31,10 @@ import {
 import { generateId } from '@/lib/utils';
 import { SessionEndedNotice } from './session-ended-notice';
 import { SignInPrompt } from './sign-in-prompt';
+import { LockChannelContext } from './lock-channel-context';
+import { PokeRequestDialog } from './poke-request-dialog';
 import { useEditLock } from './use-edit-lock';
+import { useLockStream } from './use-lock-stream';
 import {
     DiagramAccessContext,
     type DiagramAccessValue,
@@ -220,9 +223,12 @@ const WorkspaceGate: React.FC<GateProps> = ({ children, fallback }) => {
     const refresh = useCallback(() => navigate(0), [navigate]);
     const granted = resolution.kind === 'ready' ? resolution.access : null;
     // only one editor at a time: an editor edits only while holding the lock
-    const lock = useEditLock(
-        user && granted?.status === 'editor' ? granted.remoteId : undefined
-    );
+    const lockedDiagram =
+        user && granted?.status === 'editor' ? granted.remoteId : undefined;
+    const lock = useEditLock(lockedDiagram);
+    // what the server says about the lock the moment it happens: a request to
+    // step out (for the holder) or the answer to one (for the one who asked)
+    const lockChannel = useLockStream(lockedDiagram);
     const value = useMemo<DiagramAccessValue | null>(() => {
         const access = granted ? applyLock(granted, lock) : null;
         return access ? { access, refresh } : null;
@@ -268,12 +274,16 @@ const WorkspaceGate: React.FC<GateProps> = ({ children, fallback }) => {
     return (
         <WorkspaceContext.Provider value={resolution.workspace}>
             <DiagramAccessContext.Provider value={value}>
-                <DiagramProvider
-                    readonly={isLocked(value.access) || undefined}
-                    fallback={fallback}
-                >
-                    {children}
-                </DiagramProvider>
+                <LockChannelContext.Provider value={lockChannel}>
+                    <DiagramProvider
+                        readonly={isLocked(value.access) || undefined}
+                        fallback={fallback}
+                    >
+                        {children}
+                    </DiagramProvider>
+                    {/* another editor asks the holder to step out */}
+                    <PokeRequestDialog />
+                </LockChannelContext.Provider>
             </DiagramAccessContext.Provider>
         </WorkspaceContext.Provider>
     );

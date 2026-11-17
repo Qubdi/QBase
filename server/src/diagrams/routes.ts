@@ -6,12 +6,21 @@ import { audit, auditDiagramSave } from '../audit/audit.js';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { diagrams, projectMembers, shareLinks, snapshots, users } from '../db/schema.js';
-import { emitLinkChanged } from '../events.js';
+import { emitLinkChanged, onLockEvent, type LockEvent } from '../events.js';
 import { getSessionUser, isSecureRequest, sessionTokenOf } from '../auth/sessions.js';
 import { sharedUserLimit } from '../lib/rate-key.js';
+import { safeError } from '../lib/safe-error.js';
+import { API_SECURITY_HEADERS, hstsHeaders } from '../lib/security-headers.js';
+import { createSseWriter } from '../lib/sse-write.js';
 import { gunzipBody } from './gzip-body.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
+import {
+    answerPoke,
+    pokeSnapshot,
+    sendPoke,
+    settlePokesOnRelease,
+} from './poke.js';
 import { statsColumns, statValues } from './summary.js';
 import {
     AUTO_PUBLISH_NOTE,
@@ -116,6 +125,14 @@ const updateBody = z
     });
 
 const lockBody = z.object({ editorId: editorIdSchema });
+/** Whole seconds until a time, never below zero. */
+const secondsLeft = (at: Date) =>
+    Math.max(0, Math.round((at.getTime() - Date.now()) / 1000));
+const answerBody = z.object({ editorId: editorIdSchema, accept: z.boolean() });
+const pokeParam = z.object({
+    id: z.string().uuid(),
+    pokeId: z.string().uuid(),
+});
 
 const publishBody = z
     .object({ note: z.string().trim().max(500).optional() })
@@ -125,9 +142,16 @@ const publishBody = z
 export const PUBLISH_RATE_LIMIT = 20;
 
 export const diagramRoutes =
-    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays' | 'cookieSecure'>): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays' | 'cookieSecure' | 'corsOrigin' | 'sseHeartbeatSeconds'>): FastifyPluginAsync =>
     async (app) => {
         const publishLimit = sharedUserLimit(PUBLISH_RATE_LIMIT);
+        // every open lock stream's close, so shutting the app down ends them: an
+        // open stream would otherwise keep the server from closing for ever
+        const openStreams = new Set<() => void>();
+        // preClose runs before the server waits for its connections to end
+        app.addHook('preClose', async () => {
+            for (const closeStream of [...openStreams]) closeStream();
+        });
         // Who is calling is settled before the body is read. A diagram body can
         // be tens of megabytes: someone with no session is turned away here and
         // never makes the server buffer, inflate or parse one. (The app's own
@@ -540,8 +564,211 @@ export const diagramRoutes =
         app.delete('/:id/lock', async (req, reply) => {
             const { id } = idParam.parse(req.params);
             const { editorId } = lockBody.parse(req.query);
-            await releaseLock(db, id, req.user!.id, editorId);
+            const released = await releaseLock(db, id, req.user!.id, editorId);
+            // someone who asked this editor to step out can have the diagram now
+            if (released) {
+                await settlePokesOnRelease(db, id, req.user!.id, editorId).catch(
+                    (err) =>
+                        req.log.error(
+                            { err: safeError(err) },
+                            'lock release: telling the waiting editor failed'
+                        )
+                );
+            }
             return reply.code(204).send();
+        });
+
+        // An editor who finds the diagram locked asks its holder to step out. The
+        // answer comes back on the lock stream below; the holder is told there too.
+        app.post('/:id/lock/poke', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const role = await getRole(db, id, req.user!.id);
+            if (!role) return reply.code(404).send({ error: 'not_found' });
+            if (!canWrite(role)) {
+                return reply.code(403).send({ error: 'forbidden' });
+            }
+            const { editorId } = lockBody.parse(req.body);
+            const res = await sendPoke(
+                db,
+                id,
+                { id: req.user!.id, email: req.user!.email },
+                editorId
+            );
+            if (!res) return reply.code(404).send({ error: 'not_found' });
+            switch (res.status) {
+                case 'granted':
+                    return { status: 'granted' };
+                case 'sent':
+                    return reply.code(202).send({
+                        status: 'sent',
+                        pokeId: res.pokeId,
+                        waitSeconds: secondsLeft(res.expiresAt),
+                        holder: res.holder,
+                    });
+                case 'cooldown':
+                    return reply
+                        .code(429)
+                        .header('retry-after', String(res.retryAfterSeconds))
+                        .send({
+                            error: 'poke_cooldown',
+                            retryAfterSeconds: res.retryAfterSeconds,
+                        });
+                case 'pending':
+                    return reply.code(409).send({ error: 'poke_pending' });
+                case 'unavailable':
+                    return reply.code(409).send({ error: 'lock_busy' });
+            }
+        });
+
+        // The holder's answer to a poke: agreeing hands it the lock.
+        app.post('/:id/lock/pokes/:pokeId/answer', async (req, reply) => {
+            const { id, pokeId } = pokeParam.parse(req.params);
+            const role = await getRole(db, id, req.user!.id);
+            if (!role) return reply.code(404).send({ error: 'not_found' });
+            if (!canWrite(role)) {
+                return reply.code(403).send({ error: 'forbidden' });
+            }
+            const { editorId, accept } = answerBody.parse(req.body);
+            const res = await answerPoke(
+                db,
+                id,
+                pokeId,
+                { id: req.user!.id },
+                editorId,
+                accept
+            );
+            switch (res.status) {
+                case 'ok':
+                    return reply.code(204).send();
+                case 'not_found':
+                    return reply.code(404).send({ error: 'not_found' });
+                case 'expired':
+                    return reply.code(410).send({ error: 'poke_expired' });
+                case 'answered':
+                    return reply.code(409).send({ error: 'poke_answered' });
+                case 'lock_changed':
+                    return reply.code(409).send({ error: 'lock_changed' });
+            }
+        });
+
+        // What an open editor hears about the lock the moment it happens: for the
+        // holder, a request to step out; for the one who asked, the answer.
+        app.get('/:id/lock/events', async (req, reply) => {
+            const { id } = idParam.parse(req.params);
+            const user = req.user!;
+            const role = await getRole(db, id, user.id);
+            if (!role) return reply.code(404).send({ error: 'not_found' });
+            if (!canWrite(role)) {
+                return reply.code(403).send({ error: 'forbidden' });
+            }
+            const { editorId } = lockBody.parse(req.query);
+
+            // The browser can leave while the role is being looked up. Its
+            // 'close' event has then already fired and will not fire again.
+            if (req.raw.destroyed) return reply.hijack();
+
+            reply.hijack();
+            const raw = reply.raw;
+            raw.writeHead(200, {
+                'content-type': 'text/event-stream',
+                'cache-control': 'no-cache, no-transform',
+                // nginx would hold events back in a buffer until it fills
+                'x-accel-buffering': 'no',
+                // the stream bypasses the app's onSend hook
+                ...API_SECURITY_HEADERS,
+                ...hstsHeaders(req, config.cookieSecure),
+                connection: 'keep-alive',
+                ...(config.corsOrigin
+                    ? {
+                          'access-control-allow-origin': config.corsOrigin,
+                          'access-control-allow-credentials': 'true',
+                          vary: 'Origin',
+                      }
+                    : {}),
+            });
+            raw.write(': connected\n\n');
+
+            let closed = false;
+            const cleanup: Array<() => void> = [];
+            const close = () => {
+                if (closed) return;
+                closed = true;
+                openStreams.delete(close);
+                cleanup.forEach((fn) => fn());
+                raw.end();
+            };
+            openStreams.add(close);
+
+            // a viewer that cannot keep up is cut off instead of buffering for ever
+            const send = createSseWriter(raw, close);
+            const tell = (ev: LockEvent) => {
+                // what the editor needs, not who it was addressed to
+                const data =
+                    ev.kind === 'poke'
+                        ? {
+                              pokeId: ev.pokeId,
+                              from: ev.from,
+                              // how long is left, so a browser whose clock is off
+                              // still counts it right
+                              waitSeconds: secondsLeft(new Date(ev.expiresAt)),
+                          }
+                        : { pokeId: ev.pokeId, outcome: ev.outcome };
+                send(`event: ${ev.kind}\ndata: ${JSON.stringify(data)}\n\n`);
+            };
+
+            // listen first, then read what was missed, so nothing falls between
+            cleanup.push(
+                onLockEvent((ev) => {
+                    if (
+                        closed ||
+                        ev.diagramId !== id ||
+                        ev.toUser !== user.id ||
+                        ev.toEditor !== editorId
+                    ) {
+                        return;
+                    }
+                    tell(ev);
+                })
+            );
+            pokeSnapshot(db, id, user.id, editorId)
+                .then((missed) => {
+                    if (!closed) missed.forEach(tell);
+                })
+                .catch((err) =>
+                    req.log.error(
+                        { err: safeError(err) },
+                        'lock events: reading what was missed failed'
+                    )
+                );
+
+            // The stream is only for the signed-in editor who opened it: each ping
+            // first checks the session and the right to edit are still there.
+            const heartbeat = setInterval(async () => {
+                if (closed) return;
+                try {
+                    const still = await getSessionUser(
+                        db,
+                        sessionTokenOf(
+                            req.cookies,
+                            isSecureRequest(req, config.cookieSecure)
+                        ),
+                        config.sessionIdleDays * 86_400
+                    );
+                    if (!still || still.id !== user.id) return close();
+                    const now = await getRole(db, id, user.id);
+                    if (!now || !canWrite(now)) return close();
+                } catch (err) {
+                    req.log.error(
+                        { err: safeError(err) },
+                        'lock events: heartbeat check failed'
+                    );
+                    return close();
+                }
+                if (!closed) send(': ping\n\n');
+            }, config.sseHeartbeatSeconds * 1000);
+            cleanup.push(() => clearInterval(heartbeat));
+
+            req.raw.on('close', close);
         });
 
         app.delete('/:id', async (req, reply) => {

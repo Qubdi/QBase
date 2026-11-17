@@ -20,9 +20,57 @@ export const listenClientConfig = (databaseUrl: string): pg.ClientConfig => ({
 export type PublishListener = (diagramId: string, version: number) => void;
 export type LinkListener = (linkId: string) => void;
 
+/**
+ * Something said to one open editor (one browser tab: a user and its editor
+ * id) about a diagram's edit lock. Each editor's stream keeps the events
+ * addressed to it and ignores the rest.
+ */
+export type LockEvent = {
+    diagramId: string;
+    toUser: string;
+    toEditor: string;
+    pokeId: string;
+} & (
+    | {
+          /** to the holder: someone asks it to step out */
+          kind: 'poke';
+          /** who asks */
+          from: string;
+          /** when the request stops waiting for an answer (ISO time) */
+          expiresAt: string;
+      }
+    | {
+          /**
+           * to the one who asked: what the holder answered, or that it let
+           * go of the diagram on its own while the request waited
+           */
+          kind: 'poke-result';
+          outcome: 'accepted' | 'declined' | 'left';
+      }
+);
+export type LockListener = (event: LockEvent) => void;
+
 type Wire =
     | { o: string; t: 'publish'; d: string; v: number }
-    | { o: string; t: 'link'; l: string };
+    | { o: string; t: 'link'; l: string }
+    | { o: string; t: 'lock'; e: LockEvent };
+
+/** A NOTIFY from outside is untrusted input: only a well-formed lock event gets through. */
+function isLockEvent(e: unknown): e is LockEvent {
+    if (typeof e !== 'object' || e === null) return false;
+    const v = e as Record<string, unknown>;
+    const strings = ['diagramId', 'toUser', 'toEditor', 'pokeId'];
+    if (!strings.every((k) => typeof v[k] === 'string')) return false;
+    if (v.kind === 'poke') {
+        return typeof v.from === 'string' && typeof v.expiresAt === 'string';
+    }
+    return (
+        v.kind === 'poke-result' &&
+        (v.outcome === 'accepted' ||
+            v.outcome === 'declined' ||
+            v.outcome === 'left')
+    );
+}
 
 // `Omit` on a union would merge its members' keys away
 type DistributiveOmit<T, K extends string> = T extends unknown
@@ -76,6 +124,8 @@ export function createEventBus() {
             bus.emit('publish', msg.d, msg.v);
         } else if (msg.t === 'link' && typeof msg.l === 'string') {
             bus.emit('link', msg.l);
+        } else if (msg.t === 'lock' && isLockEvent(msg.e)) {
+            bus.emit('lock', msg.e);
         }
     };
 
@@ -88,9 +138,18 @@ export function createEventBus() {
         relay({ t: 'link', l: linkId });
     };
 
+    const emitLockEvent = (event: LockEvent) => {
+        bus.emit('lock', event);
+        relay({ t: 'lock', e: event });
+    };
+
     const onPublish = (fn: PublishListener) => {
         bus.on('publish', fn);
         return () => bus.off('publish', fn);
+    };
+    const onLockEvent = (fn: LockListener) => {
+        bus.on('lock', fn);
+        return () => bus.off('lock', fn);
     };
     const onLinkChanged = (fn: LinkListener) => {
         bus.on('link', fn);
@@ -165,8 +224,10 @@ export function createEventBus() {
     return {
         emitPublish,
         emitLinkChanged,
+        emitLockEvent,
         onPublish,
         onLinkChanged,
+        onLockEvent,
         startBridge,
     };
 }
@@ -174,6 +235,8 @@ export function createEventBus() {
 const defaultBus = createEventBus();
 export const emitPublish = defaultBus.emitPublish;
 export const emitLinkChanged = defaultBus.emitLinkChanged;
+export const emitLockEvent = defaultBus.emitLockEvent;
 export const onPublish = defaultBus.onPublish;
 export const onLinkChanged = defaultBus.onLinkChanged;
+export const onLockEvent = defaultBus.onLockEvent;
 export const startEventBridge = defaultBus.startBridge;

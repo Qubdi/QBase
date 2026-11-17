@@ -24,9 +24,9 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
         getProject: (id: unknown) => getProject(id),
     },
 }));
-vi.mock('../get-latest-control', () => ({
-    GetLatestDialog: ({ open }: { open: boolean }) =>
-        open ? <div>latest dialog</div> : null,
+// the banner of a diagram someone else is editing can load the latest version
+vi.mock('@/qbase/use-storage', () => ({
+    useStorage: () => ({ deleteDiagram: vi.fn() }),
 }));
 
 // the banner looks up the project list when it mounts: let that settle
@@ -55,34 +55,40 @@ const taken = (holder: string | null): AccessState => ({
 });
 
 describe('AccessBanner when someone else is editing', () => {
-    it('says who is editing', async () => {
+    it('says who is editing, that they have to leave, and offers to poke them', async () => {
         await show(taken('sam@corp.io'));
-        expect(screen.getByRole('status').textContent).toContain(
-            'sam@corp.io is editing this diagram'
+        const text = screen.getByRole('status').textContent;
+        expect(text).toContain(
+            'sam@corp.io is editing this diagram, so it is read-only for you for now.'
         );
+        expect(text).toContain(
+            'They need to leave the diagram before you can continue working.'
+        );
+        expect(screen.getByRole('button', { name: 'Poke' })).toBeTruthy();
     });
 
-    it("recognises the user's own other tab", async () => {
+    it('can poke an editor it cannot name', async () => {
+        await show(taken(null));
+        expect(screen.getByRole('button', { name: 'Poke' })).toBeTruthy();
+    });
+
+    it("recognises the user's own other tab, which is not for poking", async () => {
         await show(taken('me@corp.io'));
         expect(screen.getByRole('status').textContent).toContain(
             'another tab or window'
         );
+        expect(screen.queryByRole('button', { name: 'Poke' })).toBeNull();
     });
 
-    it('offers to get the latest version and edit, asking first', async () => {
+    it('has no button of its own to fetch the latest version: taking the diagram does that', async () => {
         await show(taken('sam@corp.io'));
-        expect(screen.queryByText('latest dialog')).toBeNull();
-        fireEvent.click(
-            screen.getByRole('button', { name: 'Get latest and edit' })
-        );
-        expect(screen.getByText('latest dialog')).toBeTruthy();
+        expect(screen.getAllByRole('button')).toHaveLength(1);
+        expect(screen.queryByRole('button', { name: /latest/i })).toBeNull();
     });
 
     it('has no such button when the reason is a role or a missing project', async () => {
         await show({ status: 'viewer', projectId: 'p', remoteId: 'r' });
-        expect(
-            screen.queryByRole('button', { name: 'Get latest and edit' })
-        ).toBeNull();
+        expect(screen.queryByRole('button', { name: /latest/i })).toBeNull();
     });
 
     it('stays away from an editor who holds the lock', async () => {
