@@ -63,15 +63,14 @@ export const adminProjects = {
         discard: 'Discard',
         deleteLabel: 'Delete project',
         deleteHeading: 'Delete this project',
-        blocked_one:
-            'It still holds {{count}} diagram. Delete them, or move them to another project in the editor, then it can be deleted.',
-        blocked_other:
-            'It still holds {{count}} diagrams. Delete them, or move them to another project in the editor, then it can be deleted.',
-        removes: 'Removes the project and who was assigned to it.',
+        removes:
+            'Permanently removes the project, all its diagrams with their history and share links, and who was assigned to it.',
         deleteButton: 'Delete project',
         confirmTitle: 'Delete project?',
         confirmBody:
-            '{{name}} and its member assignments will be removed. This cannot be undone.',
+            '<strong>{{name}}</strong>, all its diagrams and all its member assignments will be deleted. This cannot be undone.',
+        confirmPrompt:
+            'To confirm, type the project name: <strong>{{name}}</strong>',
         cancel: 'Cancel',
     },
     newProject: {

@@ -918,27 +918,22 @@ export const adminRoutes =
                 .from(projects)
                 .where(eq(projects.id, id));
             if (!exists) return reply.code(404).send({ error: 'not_found' });
-            const [{ value: inside }] = await db
-                .select({ value: count() })
-                .from(diagrams)
-                .where(eq(diagrams.projectId, id));
-            if (inside > 0) {
-                return reply.code(409).send({ error: 'project_not_empty' });
-            }
-            try {
-                await db.delete(projects).where(eq(projects.id, id));
-            } catch (err) {
-                // a diagram was created after the check above; the foreign key decides
-                if (isForeignKeyViolation(err)) {
-                    return reply.code(409).send({ error: 'project_not_empty' });
-                }
-                throw err;
-            }
+            // Everything inside goes with the project: diagrams, and through the
+            // foreign keys their locks, snapshots, share links and drift data, plus
+            // memberships and saved connections. One transaction: all or nothing.
+            const removed = await db.transaction(async (tx) => {
+                const gone = await tx
+                    .delete(diagrams)
+                    .where(eq(diagrams.projectId, id))
+                    .returning({ id: diagrams.id });
+                await tx.delete(projects).where(eq(projects.id, id));
+                return gone.length;
+            });
             await audit(db, {
                 userId: req.user!.id,
                 action: 'project.delete',
                 // the project is gone, so keep its name for the log
-                meta: { projectId: id, name: exists.name },
+                meta: { projectId: id, name: exists.name, diagrams: removed },
             });
             return reply.code(204).send();
         });

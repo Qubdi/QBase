@@ -337,15 +337,14 @@ export const it = {
             discard: 'Scarta',
             deleteLabel: 'Elimina progetto',
             deleteHeading: 'Elimina questo progetto',
-            blocked_one:
-                "Contiene ancora {{count}} diagramma. Eliminalo, oppure spostalo in un altro progetto nell'editor, poi il progetto potrà essere eliminato.",
-            blocked_other:
-                "Contiene ancora {{count}} diagrammi. Eliminali, oppure spostali in un altro progetto nell'editor, poi il progetto potrà essere eliminato.",
-            removes: 'Rimuove il progetto e le persone che vi erano assegnate.',
+            removes:
+                'Rimuove definitivamente il progetto, tutti i suoi diagrammi con cronologia e link di condivisione, e le persone che vi erano assegnate.',
             deleteButton: 'Elimina progetto',
             confirmTitle: 'Eliminare il progetto?',
             confirmBody:
-                "{{name}} e le assegnazioni dei suoi membri saranno rimossi. L'operazione non può essere annullata.",
+                "<strong>{{name}}</strong>, tutti i suoi diagrammi e le assegnazioni dei suoi membri saranno eliminati. L'operazione non può essere annullata.",
+            confirmPrompt:
+                'Per confermare, digita il nome del progetto: <strong>{{name}}</strong>',
             cancel: 'Annulla',
         },
         newProject: {

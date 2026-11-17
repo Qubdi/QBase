@@ -354,38 +354,22 @@ describe('admin panel and projects', () => {
     });
 
     describe('cleanup rules', () => {
-        it('refuses to delete a project that still has diagrams', async () => {
-            const res = await call('DELETE', `/admin/projects/${projectId}`, admin);
-            expect(res.statusCode).toBe(409);
-            expect(res.json().error).toBe('project_not_empty');
-        });
-
-        it('answers 409, not 500, when a diagram lands between the check and the delete', async () => {
-            const p = (await call('POST', '/admin/projects', admin, { name: 'Racy' })).json();
-            let release!: () => void;
-            const held = new Promise<void>((resolve) => (release = resolve));
-            let inserted!: () => void;
-            const insertedFirst = new Promise<void>((resolve) => (inserted = resolve));
-            // an open transaction holds a new diagram in the project, uncommitted:
-            // the route's count sees nothing, and its delete waits on the row lock
-            const creating = ctx.db.transaction(async (tx) => {
-                await tx.insert(diagrams).values({
+        it('deletes a project together with its diagrams and everything attached', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Doomed' })).json();
+            const [d] = await ctx.db
+                .insert(diagrams)
+                .values({
                     ownerId: admin.id,
                     projectId: p.id,
-                    title: 'Late',
+                    title: 'Inside',
                     content: sampleContent,
-                });
-                inserted();
-                await held;
-            });
-            await insertedFirst;
-            const deleting = call('DELETE', `/admin/projects/${p.id}`, admin);
-            await new Promise((r) => setTimeout(r, 300));
-            release();
-            await creating;
-            const res = await deleting;
-            expect(res.statusCode).toBe(409);
-            expect(res.json().error).toBe('project_not_empty');
+                })
+                .returning({ id: diagrams.id });
+            const res = await call('DELETE', `/admin/projects/${p.id}`, admin);
+            expect(res.statusCode).toBe(204);
+            const left = await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, d.id));
+            expect(left).toHaveLength(0);
+            expect((await call('GET', `/admin/projects/${p.id}/members`, admin)).statusCode).toBe(404);
         });
 
         it('deletes an empty project', async () => {

@@ -349,15 +349,14 @@ export const de = {
             discard: 'Verwerfen',
             deleteLabel: 'Projekt löschen',
             deleteHeading: 'Dieses Projekt löschen',
-            blocked_one:
-                'Es enthält noch {{count}} Diagramm. Löschen Sie es oder verschieben Sie es im Editor in ein anderes Projekt, dann kann das Projekt gelöscht werden.',
-            blocked_other:
-                'Es enthält noch {{count}} Diagramme. Löschen Sie sie oder verschieben Sie sie im Editor in ein anderes Projekt, dann kann das Projekt gelöscht werden.',
-            removes: 'Entfernt das Projekt und die zugewiesenen Personen.',
+            removes:
+                'Entfernt das Projekt endgültig, mit allen Diagrammen samt Verlauf und Freigabelinks und den zugewiesenen Personen.',
             deleteButton: 'Projekt löschen',
             confirmTitle: 'Projekt löschen?',
             confirmBody:
-                '{{name}} und die Zuweisungen seiner Mitglieder werden entfernt. Dies kann nicht rückgängig gemacht werden.',
+                '<strong>{{name}}</strong>, alle seine Diagramme und die Zuweisungen seiner Mitglieder werden gelöscht. Dies kann nicht rückgängig gemacht werden.',
+            confirmPrompt:
+                'Geben Sie zur Bestätigung den Projektnamen ein: <strong>{{name}}</strong>',
             cancel: 'Abbrechen',
         },
         newProject: {

@@ -366,21 +366,6 @@ describe('admin ProjectsPanel', () => {
             );
         });
 
-        it('does not let a project with diagrams be deleted, and says why', async () => {
-            await openSettings();
-            const del = screen.getByRole('region', { name: 'Delete project' });
-            expect(
-                within(del).getByText(/still holds 3 diagrams/)
-            ).toBeTruthy();
-            expect(
-                (
-                    within(del).getByRole('button', {
-                        name: 'Delete project',
-                    }) as HTMLButtonElement
-                ).disabled
-            ).toBe(true);
-        });
-
         it('asks first, then deletes an empty project and moves on without an error', async () => {
             calls.remove.mockImplementation(async (id: string) => {
                 projects = projects.filter((p) => p.id !== id);
@@ -392,13 +377,19 @@ describe('admin ProjectsPanel', () => {
             await userEvent.click(tab('Settings'));
 
             const del = screen.getByRole('region', { name: 'Delete project' });
-            expect(within(del).getByText(/Removes the project/)).toBeTruthy();
+            expect(
+                within(del).getByText(/Permanently removes the project/)
+            ).toBeTruthy();
             await userEvent.click(
                 within(del).getByRole('button', { name: 'Delete project' })
             );
             expect(calls.remove).not.toHaveBeenCalled();
 
             const confirm = await screen.findByRole('alertdialog');
+            await userEvent.type(
+                within(confirm).getByLabelText(/type the project name/),
+                'Scratch'
+            );
             await userEvent.click(
                 within(confirm).getByRole('button', { name: 'Delete project' })
             );

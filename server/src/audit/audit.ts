@@ -105,6 +105,8 @@ export interface AuditMeta {
     /** introspect.run: the kind of database and the host it was read from */
     dialect?: 'postgresql' | 'sqlserver';
     host?: string;
+    /** project.delete: how many diagrams went with the project */
+    diagrams?: number;
     /** audit.export: how many rows the file held */
     rows?: number;
     /** drift.configure: what the request did to the webhook, if it touched it (its host goes in `host`) */

@@ -349,16 +349,14 @@ export const fr = {
             discard: 'Abandonner',
             deleteLabel: 'Supprimer le projet',
             deleteHeading: 'Supprimer ce projet',
-            blocked_one:
-                'Il contient encore {{count}} diagramme. Supprimez-le, ou déplacez-le vers un autre projet dans l’éditeur, pour pouvoir supprimer le projet.',
-            blocked_other:
-                'Il contient encore {{count}} diagrammes. Supprimez-les, ou déplacez-les vers un autre projet dans l’éditeur, pour pouvoir supprimer le projet.',
             removes:
-                'Supprime le projet et les personnes qui y étaient affectées.',
+                'Supprime définitivement le projet, tous ses diagrammes avec leur historique et leurs liens de partage, et les personnes qui y étaient affectées.',
             deleteButton: 'Supprimer le projet',
             confirmTitle: 'Supprimer le projet ?',
             confirmBody:
-                '{{name}} et les affectations de ses membres seront supprimés. Cette action est irréversible.',
+                '<strong>{{name}}</strong>, tous ses diagrammes et les affectations de ses membres seront supprimés. Cette action est irréversible.',
+            confirmPrompt:
+                'Pour confirmer, saisissez le nom du projet : <strong>{{name}}</strong>',
             cancel: 'Annuler',
         },
         newProject: {

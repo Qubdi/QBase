@@ -5,23 +5,64 @@ import { useReturnFocus } from './use-return-focus';
 import { cn } from '@/lib/utils/utils';
 import { buttonVariants } from './button';
 
-const AlertDialog = AlertDialogPrimitive.Root;
+// Radix keeps an alert dialog open on an outside click. Here every popup closes
+// the same way: Escape, the Cancel button, or a click on the dark area around
+// it. The overlay asks the root to close through this context, so the dialog's
+// own onOpenChange (and any guard in it) still decides.
+const CloseRequest = React.createContext<(() => void) | null>(null);
+
+const AlertDialog: React.FC<AlertDialogPrimitive.AlertDialogProps> = ({
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    ...props
+}) => {
+    const [inner, setInner] = React.useState(defaultOpen);
+    const controlled = openProp !== undefined;
+    const open = controlled ? openProp : inner;
+    const change = React.useCallback(
+        (next: boolean) => {
+            if (!controlled) setInner(next);
+            onOpenChange?.(next);
+        },
+        [controlled, onOpenChange]
+    );
+    const requestClose = React.useCallback(() => change(false), [change]);
+    return (
+        <CloseRequest.Provider value={requestClose}>
+            <AlertDialogPrimitive.Root
+                {...props}
+                open={open}
+                onOpenChange={change}
+            />
+        </CloseRequest.Provider>
+    );
+};
 
 const AlertDialogPortal = AlertDialogPrimitive.Portal;
 
 const AlertDialogOverlay = React.forwardRef<
     React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
     React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-    <AlertDialogPrimitive.Overlay
-        className={cn(
-            'fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] duration-150 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            className
-        )}
-        {...props}
-        ref={ref}
-    />
-));
+>(({ className, onClick, ...props }, ref) => {
+    const requestClose = React.useContext(CloseRequest);
+    return (
+        <AlertDialogPrimitive.Overlay
+            className={cn(
+                'fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] duration-150 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+                className
+            )}
+            {...props}
+            onClick={(e) => {
+                onClick?.(e);
+                if (!e.defaultPrevented && e.target === e.currentTarget) {
+                    requestClose?.();
+                }
+            }}
+            ref={ref}
+        />
+    );
+});
 AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 
 const AlertDialogContent = React.forwardRef<
