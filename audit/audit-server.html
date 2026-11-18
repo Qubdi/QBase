@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Server Audit &middot; <b>rev 51</b></div>
-  <h1>4 open (0 Crit, 0 High).</h1>
+  <h1>3 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the <code>it.fails</code> tests and KNOWN BUG flow steps · all containers removed · no secret read</span>
@@ -30,7 +30,7 @@
 <main id="main">
 <section id="reg" class="dev-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Server</h2></div>
-  <p class="section-note">4 open &middot; 42 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
+  <p class="section-note">3 open &middot; 43 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -38,7 +38,6 @@
         <tr><td class="svc-name">SRV-042</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Lock event streams uncapped per user; probe opened 60 for one user</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:656</code>, <code>server/src/diagrams/routes.ts:700</code></td><td class="wrap-cell">Cap open lock streams per user, like share <code>acquireViewer</code></td></tr>
         <tr><td class="svc-name">SRV-044</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lock stream reads missed pokes only at open; a LISTEN gap loses them</td><td class="wrap-cell"><code>server/src/diagrams/routes.ts:733</code>, <code>server/src/diagrams/routes.ts:767</code></td><td class="wrap-cell">Re-run <code>pokeSnapshot</code> on each heartbeat</td></tr>
         <tr><td class="svc-name">SRV-045</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Release tells requester <code>left</code> even when the handoff insert lost the race</td><td class="wrap-cell"><code>server/src/diagrams/poke.ts:297</code>, <code>server/src/diagrams/poke.ts:304</code></td><td class="wrap-cell">Emit <code>left</code> only when the insert returned a row</td></tr>
-        <tr><td class="svc-name">SRV-046</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Admin project delete never tells open share streams their links died</td><td class="wrap-cell"><code>server/src/admin/routes.ts:944</code>, <code>server/src/diagrams/routes.ts:801</code></td><td class="wrap-cell">Collect link ids; call <code>emitLinkChanged</code> for each after commit</td></tr>
       </tbody>
     </table>
   </div>
@@ -46,12 +45,13 @@
 
 <section id="closed" class="dev-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (42)</summary>
+  <details><summary>Fixed (43)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
         <tr><td class="svc-name">SRV-047</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">NUL character in a diagram title or content answers 500, not 400</td></tr>
+        <tr><td class="svc-name">SRV-046</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Admin project delete never tells open share streams their links died</td></tr>
         <tr><td class="svc-name">SRV-043</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Server test fails: <code>project.delete</code> audit meta now has <code>diagrams</code>, test lacks it</td></tr>
         <tr><td class="svc-name">SRV-009</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Default diagram body limit 50 MB blocked the event loop about 0.9 s at 40 MB; now 25 MB, set with <code>DIAGRAM_BODY_LIMIT_MB</code></td></tr>
         <tr><td class="svc-name">SRV-008</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Live-viewer caps count per process; held in Postgres by <code>live_viewers</code>, shared by all replicas</td></tr>

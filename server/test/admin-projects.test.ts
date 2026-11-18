@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
-import { auditLog, diagramLocks, diagrams, projects, sessions } from '../src/db/schema.js';
+import { auditLog, diagramLocks, diagrams, projects, sessions, shareLinks } from '../src/db/schema.js';
+import { onLinkChanged } from '../src/events.js';
 import {
     as,
     createTestApp,
@@ -438,6 +439,36 @@ describe('admin panel and projects', () => {
             const left = await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, d.id));
             expect(left).toHaveLength(0);
             expect((await call('GET', `/admin/projects/${p.id}/members`, admin)).statusCode).toBe(404);
+        });
+
+        it('SRV-046: tells the open share streams of its diagrams that their links are gone, once the delete is done', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Doomed links' })).json();
+            const ids: string[] = [];
+            for (const title of ['One', 'Two']) {
+                const [d] = await ctx.db
+                    .insert(diagrams)
+                    .values({ ownerId: admin.id, projectId: p.id, title, content: sampleContent })
+                    .returning({ id: diagrams.id });
+                const [link] = await ctx.db
+                    .insert(shareLinks)
+                    .values({
+                        diagramId: d.id,
+                        tokenHash: `srv046-${title}-${Math.random()}`,
+                        createdBy: admin.id,
+                        live: true,
+                    })
+                    .returning({ id: shareLinks.id });
+                ids.push(link.id);
+            }
+            const heard: string[] = [];
+            const stop = onLinkChanged((id: string) => heard.push(id));
+            try {
+                const res = await call('DELETE', `/admin/projects/${p.id}`, admin);
+                expect(res.statusCode).toBe(204);
+            } finally {
+                stop();
+            }
+            expect(heard.sort()).toEqual([...ids].sort());
         });
 
         it('answers 404 for a project that does not exist', async () => {

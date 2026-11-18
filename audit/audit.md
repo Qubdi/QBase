@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 0 | 42 | 0 |
 | Repository | 12 | 0 | 0 | 58 | 0 |
-| Server | 4 | 0 | 0 | 42 | 0 |
+| Server | 3 | 0 | 0 | 43 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 21 | 0 | 0 | 340 | 2 |
+| **Total** | 20 | 0 | 0 | 341 | 2 |
 
 ## Act first
 
@@ -56,7 +56,6 @@ None.
 | SRV-042 | Med | Lock event streams uncapped per user; probe opened 60 for one user | `server/src/diagrams/routes.ts:656`, `server/src/diagrams/routes.ts:700` | Cap open lock streams per user, like share `acquireViewer` |
 | SRV-044 | Low | Lock stream reads missed pokes only at open; a LISTEN gap loses them | `server/src/diagrams/routes.ts:733`, `server/src/diagrams/routes.ts:767` | Re-run `pokeSnapshot` on each heartbeat |
 | SRV-045 | Low | Release tells requester `left` even when the handoff insert lost the race | `server/src/diagrams/poke.ts:297`, `server/src/diagrams/poke.ts:304` | Emit `left` only when the insert returned a row |
-| SRV-046 | Low | Admin project delete never tells open share streams their links died | `server/src/admin/routes.ts:944`, `server/src/diagrams/routes.ts:801` | Collect link ids; call `emitLinkChanged` for each after commit |
 
 ### Database
 
@@ -81,6 +80,7 @@ None.
 | SEC-021 | Security & secrets | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked |
 | SEC-025 | Security & secrets | `.gitignore` lacks key and certificate patterns (`*.pem`, `*.key`) |
 | SRV-047 | Server | NUL character in a diagram title or content answers 500, not 400 |
+| SRV-046 | Server | Admin project delete never tells open share streams their links died |
 | SRV-043 | Server | Server test fails: `project.delete` audit meta now has `diagrams`, test lacks it |
 | SRV-009 | Server | Default diagram body limit 50 MB blocked the event loop about 0.9 s at 40 MB; now 25 MB, set with `DIAGRAM_BODY_LIMIT_MB` |
 | SRV-008 | Server | Live-viewer caps count per process; held in Postgres by `live_viewers`, shared by all replicas |

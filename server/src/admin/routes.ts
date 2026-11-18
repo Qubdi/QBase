@@ -946,6 +946,13 @@ export const adminRoutes =
                     .where(eq(projects.id, id))
                     .for('update');
                 if (!exists) return null;
+                // the links of those diagrams die with them: note which, so their
+                // open live streams can be told once the delete is committed
+                const links = await tx
+                    .select({ id: shareLinks.id })
+                    .from(shareLinks)
+                    .innerJoin(diagrams, eq(diagrams.id, shareLinks.diagramId))
+                    .where(eq(diagrams.projectId, id));
                 const gone = await tx
                     .delete(diagrams)
                     .where(eq(diagrams.projectId, id))
@@ -957,9 +964,11 @@ export const adminRoutes =
                     // the project is gone, so keep its name for the log
                     meta: { projectId: id, name: exists.name, diagrams: gone.length },
                 });
-                return gone.length;
+                return { count: gone.length, linkIds: links.map((l) => l.id) };
             });
             if (removed === null) return reply.code(404).send({ error: 'not_found' });
+            // tell the open share streams to look again: their links are gone
+            removed.linkIds.forEach(emitLinkChanged);
             return reply.code(204).send();
         });
 
