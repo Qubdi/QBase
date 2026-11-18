@@ -24,7 +24,6 @@ import { TABLE_COLOR, TABLE_WIDTH, VIEW_COLOR } from './entity';
 import { idFromSeed, newDesignId, newId, seededRandom } from './ids';
 import { regionMembership } from './region-membership';
 import {
-    initialFilter,
     isUnrestricted,
     isVisible,
     schemaIdOf,
@@ -574,8 +573,7 @@ describe('DAT-058 the visibility filter', () => {
     });
 
     it('DAT-011 with no saved filter everything is shown, whatever the schemas', () => {
-        expect(initialFilter()).toEqual({});
-        expect(isUnrestricted(initialFilter())).toBe(true);
+        expect(isUnrestricted({})).toBe(true);
         expect(isUnrestricted(undefined)).toBe(true);
         expect(isUnrestricted({ tableIds: [] })).toBe(false);
         expect(isUnrestricted({ schemaIds: ['public'] })).toBe(false);

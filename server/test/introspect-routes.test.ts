@@ -3,7 +3,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { SESSION_COOKIE } from '../src/auth/sessions.js';
 import { auditLog, savedConnections } from '../src/db/schema.js';
 import { CryptoBox } from '../src/introspect/crypto-box.js';
-import { defaultIntrospectorFactory } from '../src/introspect/routes.js';
 import type {
     ConnectionParams,
     DatabaseMetadata,
@@ -21,6 +20,7 @@ import {
     as,
     registerUser,
     createTestApp,
+    defaultIntrospectorFactory,
     grant,
     projectFor,
     type TestCtx,

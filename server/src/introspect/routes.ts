@@ -38,11 +38,6 @@ export const createIntrospectorFactory =
             ? connectPostgres(params, target)
             : connectSqlServer(params, target, config.introspectAllowPrivileged);
 
-/** The factory with no privileged logins allowed. */
-export const defaultIntrospectorFactory = createIntrospectorFactory({
-    introspectAllowPrivileged: false,
-});
-
 const connectionFields = z.object({
     dialect: z.enum(['postgresql', 'sqlserver']),
     host: z.string().trim().min(1).max(255),
