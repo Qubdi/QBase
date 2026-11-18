@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 50 · **date** 2026-11-18
-**method** static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local `timeago.js` install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine `aud47-srv` 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs `aud47-srv` · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 `aud47-mssql` (live alias-type checks), throwaway postgres:18-alpine `aud47-db` seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in `node:24-slim` `aud47-dead` · all containers removed · no secret read
+**rev** 51 · **date** 2026-11-18
+**method** static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local `timeago.js` install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine `aud47-srv` 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs `aud47-srv` · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 `aud47-mssql` (live alias-type checks), throwaway postgres:18-alpine `aud47-db` seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in `node:24-slim` `aud47-dead` · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the `it.fails` tests and KNOWN BUG flow steps · all containers removed · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content; `.claude/skills/` content checked for secrets and licensing only
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 0 | 42 | 0 |
 | Repository | 12 | 0 | 0 | 58 | 0 |
-| Server | 4 | 0 | 0 | 41 | 0 |
+| Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 5 | 0 | 0 | 103 | 0 |
+| Client | 28 | 0 | 0 | 103 | 0 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 26 | 0 | 0 | 312 | 1 |
+| **Total** | 50 | 0 | 0 | 312 | 1 |
 
 ## Act first
 
@@ -57,6 +57,7 @@ None.
 | SRV-044 | Low | Lock stream reads missed pokes only at open; a LISTEN gap loses them | `server/src/diagrams/routes.ts:733`, `server/src/diagrams/routes.ts:767` | Re-run `pokeSnapshot` on each heartbeat |
 | SRV-045 | Low | Release tells requester `left` even when the handoff insert lost the race | `server/src/diagrams/poke.ts:297`, `server/src/diagrams/poke.ts:304` | Emit `left` only when the insert returned a row |
 | SRV-046 | Low | Admin project delete never tells open share streams their links died | `server/src/admin/routes.ts:944`, `server/src/diagrams/routes.ts:801` | Collect link ids; call `emitLinkChanged` for each after commit |
+| SRV-047 | Med | NUL character in a diagram title or content answers 500, not 400 | `server/src/diagrams/routes.ts:91`, `server/src/app.ts:263` | Reject `\u0000` in zod strings; map 22021 and 22P05 to 400 |
 
 ### Database
 
@@ -71,6 +72,29 @@ None.
 | CLI-113 | Low | Toggle buttons flip `aria-label` while also setting `aria-pressed` | `src/components/qubdi/password-input.tsx:33`, `src/features/filters/filter-panel.tsx:46` | Keep one fixed label with `aria-pressed` |
 | CLI-114 | Low | Admin nav scroll test asserts synchronously; fails in full parallel run | `src/pages/admin-page/__tests__/admin-page.test.tsx:143` | Wrap the `scrolled` assertion in `waitFor` |
 | CLI-115 | Low | Poke request dialog title drops requester name during close animation | `src/components/qubdi/poke-request-dialog.tsx:85` | Keep the last poke in state until close ends |
+| CLI-117 | Med | Local autosave loses edits made in the last second before a reload or tab close | `src/store/autosave.ts:35`, `src/store/editor-provider.tsx:17` | Flush autosave on `pagehide`; warn on `beforeunload` while dirty |
+| CLI-118 | Med | pg_dump COPY row with an apostrophe blocks the whole SQL import | `src/dialects/shared/make-reader.ts:13`, `src/dialects/shared/read-script.ts:642` | Blank COPY data before `validateText` |
+| CLI-119 | Med | Nested block comment drops the next table; validator still counts it | `src/dialects/shared/tokenizer.ts:109`, `src/dialects/shared/validate.ts:29` | Track comment depth in the lexer and `maskCode` |
+| CLI-120 | Med | SQL Server `GO <count>` silently drops the next batch | `src/dialects/shared/statements.ts:56` | Accept `GO n` as a batch separator |
+| CLI-121 | Med | Dollar tag with a digit not recognised; function body imported as real tables | `src/dialects/shared/tokenizer.ts:161`, `src/dialects/shared/validate.ts:107` | Allow digits after the first tag character |
+| CLI-122 | Med | PostgreSQL E-string with an escaped quote refused as unterminated | `src/dialects/shared/validate.ts:29` | Teach `maskCode` E-strings |
+| CLI-123 | Med | MySQL double-quoted string refused as unterminated text | `src/dialects/shared/validate.ts:29` | Treat `"` as a string quote for MySQL in `maskCode` |
+| CLI-124 | Low | SQL Server `]]` escape in a name reported as unclosed parenthesis | `src/dialects/shared/validate.ts:101` | End a bracketed name only at an unpaired `]` |
+| CLI-125 | Low | Unterminated `[name` gives a misleading skipped-statement warning, no error | `src/dialects/shared/read-script.ts:642` | Surface the lexer problems from `readStatements` |
+| CLI-126 | Med | MySQL `CONSTRAINT x KEY idx (...)` loses the constraint or its columns | `src/dialects/shared/read-table.ts:608`, `src/dialects/shared/read-table.ts:612` | Read the index name even when CONSTRAINT named it |
+| CLI-127 | Low | `text ARRAY` imports as type "text array", not an array | `src/dialects/shared/read-table.ts:148` | Consume ARRAY into `isArray` before the type name |
+| CLI-128 | Low | Quoted commas and backslashes in PostgreSQL array defaults mis-split on conversion | `src/dialects/convert/convert-default.ts:195` | Parse the array literal with a quote-aware reader |
+| CLI-129 | Med | MySQL backslash-escaped default blocks the MySQL export | `src/formats/sql/unsafe-text.ts:13` | Make `breaksStatement` honour backslash escapes for MySQL |
+| CLI-130 | Low | Round trip drops a named single-column unique index | `src/dialects/postgresql/write.ts:221` | Write the index when its name differs from inline UNIQUE |
+| CLI-131 | Low | Long shell flags such as `--no-data` coloured as comments | `src/features/import/code-highlight.ts:76` | Test shell flags before the `--` comment rule |
+| CLI-132 | Low | Patching `generatedStored` alone wipes the computed column expression | `src/qbase/wire-edits.ts:55` | Keep `generated` when only `generatedStored` changes |
+| CLI-133 | Low | Table picker lists a blank schema, same value as All schemas | `src/features/import/table-picker.tsx:31` | Drop empty schemas from the list, or label them |
+| CLI-134 | Low | Lint findings and rule text not translated in de, fr, it, ru | `src/components/qubdi/lint-settings-dialog.tsx:142`, `src/components/qubdi/lint-control.tsx:276` | Route rule and message text through `t()` |
+| CLI-135 | Low | Database cards ignore arrow keys; every card is its own Tab stop | `src/dialogs/create-diagram-dialog/database-picker.tsx:22` | Add roving tabindex and arrow-key handling |
+| CLI-136 | Low | File uploader nests an `<input>` inside a `<button>`; invalid HTML | `src/components/file-uploader/file-uploader.tsx:35`, `src/components/file-uploader/file-uploader.tsx:62` | Place the input beside the button |
+| CLI-137 | Med | Cross-dialect SQL export is O(n²): 455 ms at 4000 tables | `src/dialects/convert/engine.ts:140`, `src/dialects/convert/engine.ts:450` | Look tables up in a Map keyed by id |
+| CLI-138 | Low | Orphan-table lint rule scans every relationship once per table | `shared/lint.ts:478` | Build a set of linked table ids once |
+| CLI-139 | Low | Every part edit copies the whole columns map; 2 ms at 1000 tables | `src/core/commands/apply.ts:283` | Update the one record without copying the map |
 
 ### Dead code
 
@@ -468,6 +492,7 @@ Rows up to Stock Postgres from an earlier pass; last three measured in rev 47 on
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 51 | 2026-11-18 | 24 new (CLI-117 to 139: SQL and DBML import, export and highlight defects, local autosave loses the last second of edits, lint text untranslated, cross-dialect export O(n²); SRV-047: NUL in text answers 500); about 700 tests added, known bugs kept as `it.fails`; 50 open, 0 Crit, 0 High; anchors not remapped |
 | 50 | 2026-11-18 | 1 fixed (DB-006: alias type is a third custom-type kind with a base type; listed by the SQL Server introspection and both hand-run scripts, carried in the diagram file and shown in the Custom Types panel; verified against throwaway SQL Server 2025 `aud47-mssql`, server suite 1331 passed, client suite 4178 passed); database lens has no open findings; 26 open, 0 Crit, 0 High; anchors not remapped |
 | 49 | 2026-11-18 | 3 fixed (DB-009, DB-025: admin project delete locks the project row and writes its audit row inside the transaction, a missing project answers 404, two tests added; SRV-043: audit-meta test expects the diagram count); DB-006 left (needs a third user-type kind in the model and file format); 27 open, 0 Crit, 0 High; anchors not remapped |
 | 48 | 2026-11-18 | 4 fixed (dead code lens: DEAD-043 four unused account error texts removed; DEAD-044 one `openEventStream` helper for the lock and share streams; DEAD-045 test-only exports moved into test helpers; DEAD-046 save time uses `ago()`, `words-function.ts` removed); export and import round-trip tests added in `src/formats/export-import-cases.test.ts`; dead code lens has no open findings; 30 open, 0 Crit, 0 High; anchors not remapped |

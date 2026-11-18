@@ -8,7 +8,7 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 50</b></div>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 51</b></div>
   <h1>26 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
@@ -36,11 +36,11 @@
       <tbody>
         <tr><td>Security &amp; secrets</td><td>5</td><td>0</td><td>0</td><td>42</td><td>0</td></tr>
         <tr><td>Repository</td><td>12</td><td>0</td><td>0</td><td>58</td><td>0</td></tr>
-        <tr><td>Server</td><td>4</td><td>0</td><td>0</td><td>41</td><td>0</td></tr>
+        <tr><td>Server</td><td>5</td><td>0</td><td>0</td><td>41</td><td>0</td></tr>
         <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>23</td><td>1</td></tr>
-        <tr><td>Client</td><td>5</td><td>0</td><td>0</td><td>103</td><td>0</td></tr>
+        <tr><td>Client</td><td>28</td><td>0</td><td>0</td><td>103</td><td>0</td></tr>
         <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>45</td><td>0</td></tr>
-        <tr><td><b>Total</b></td><td>26</td><td>0</td><td>0</td><td>312</td><td>1</td></tr>
+        <tr><td><b>Total</b></td><td>50</td><td>0</td><td>0</td><td>312</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -60,8 +60,8 @@
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
-    <p>4 open findings.</p>
-    <p class="lbl">4 open &middot; 0 Crit &middot; 0 High &middot; 41 fixed &middot; 0 accepted</p>
+    <p>5 open findings.</p>
+    <p class="lbl">5 open &middot; 0 Crit &middot; 0 High &middot; 41 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-database.html">
     <h3>Database &amp; scale</h3>
@@ -70,8 +70,8 @@
   </a>
   <a class="idx-card stg" href="audit-client.html">
     <h3>Client</h3>
-    <p>5 open findings.</p>
-    <p class="lbl">5 open &middot; 0 Crit &middot; 0 High &middot; 103 fixed &middot; 0 accepted</p>
+    <p>28 open findings.</p>
+    <p class="lbl">28 open &middot; 0 Crit &middot; 0 High &middot; 103 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card repo" href="audit-deadcode.html">
     <h3>Dead code</h3>
@@ -86,6 +86,7 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
+        <tr><td>51</td><td>2026-11-18</td><td class="wrap-cell">24 new (CLI-117 to 139: SQL and DBML import, export and highlight defects, local autosave loses the last second of edits, lint text untranslated, cross-dialect export O(n²); SRV-047: NUL in text answers 500); about 700 tests added, known bugs kept as <code>it.fails</code>; 50 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>50</td><td>2026-11-18</td><td class="wrap-cell">1 fixed (DB-006: alias type is a third custom-type kind with a base type; listed by the SQL Server introspection and both hand-run scripts, carried in the diagram file and shown in the Custom Types panel; verified against throwaway SQL Server 2025 <code>aud47-mssql</code>, server suite 1331 passed, client suite 4178 passed); database lens has no open findings; 26 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>49</td><td>2026-11-18</td><td class="wrap-cell">3 fixed (DB-009, DB-025: admin project delete locks the project row and writes its audit row inside the transaction, a missing project answers 404, two tests added; SRV-043: audit-meta test expects the diagram count); DB-006 left (needs a third user-type kind in the model and file format); 27 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>48</td><td>2026-11-18</td><td class="wrap-cell">4 fixed (dead code lens: DEAD-043 four unused account error texts removed; DEAD-044 one <code>openEventStream</code> helper for the lock and share streams; DEAD-045 test-only exports moved into test helpers; DEAD-046 save time uses <code>ago()</code>, <code>words-function.ts</code> removed); export and import round-trip tests added in <code>src/formats/export-import-cases.test.ts</code>; dead code lens has no open findings; 30 open, 0 Crit, 0 High; anchors not remapped</td></tr>
