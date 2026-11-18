@@ -100,7 +100,14 @@ export function maskCode(source: string, profile: LexProfile): Masked {
             i = end;
         } else if (c === '[' && profile.identifierQuotes.includes('[')) {
             const close = source.indexOf(']', i + 1);
-            const end = close < 0 ? i + 1 : close + 1;
+            if (close < 0)
+                problems.push({
+                    severity: 'error',
+                    message: 'Unterminated quoted text',
+                    line,
+                    suggestion: 'Close the name with ]',
+                });
+            const end = close < 0 ? n : close + 1;
             blank(i, end);
             i = end;
         } else if (

@@ -186,11 +186,7 @@ CREATE TABLE t ( -- the key
         expect(r.tables.map((t) => t.name)).toEqual(['t']);
     });
 
-    // BUG: an unterminated [bracket] name is not reported. The lexer's
-    // "Unterminated quoted text" problem is dropped by readStatements and
-    // maskCode blanks only the `[`, so the user gets a misleading
-    // "CREATE TABLE ... AS, LIKE or PARTITION OF statement skipped" warning.
-    it.fails('reports an unterminated [name] in SQL Server as an error', () => {
+    it('CLI-125: reports an unterminated [name] in SQL Server as an error', () => {
         const r = readSqlServer('CREATE TABLE [foo (id int)');
         expect(errors(r)).toContain('Unterminated quoted text');
     });
