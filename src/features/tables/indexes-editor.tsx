@@ -209,7 +209,7 @@ const IndexRow: React.FC<{
                         <MoreHorizontal />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-72 space-y-3">
+                <PopoverContent className="w-72 space-y-3">
                     <h4 className="text-sm font-semibold">
                         {text('indexes.attributes')}
                     </h4>

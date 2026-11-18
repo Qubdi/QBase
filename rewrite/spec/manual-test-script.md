@@ -195,6 +195,7 @@ Use a PostgreSQL diagram unless said otherwise.
 - [ ] **MT-121** Delete a field that is used by a relationship -> the relationship is removed or a warning is shown first; no dangling line stays (new behaviour) (rows: EDT-139)
 - [ ] **MT-122** Open the old-format file from the appendix (a field type stored as plain text, nullable stored as the text "true", a primary key that is also nullable) -> types show as normal types, nullable dots are correct, the primary key shows as not null (rows: DAT-003, DAT-004, EDT-135)
 - [ ] **MT-123** Type a column-level check into a field, if the editor offers one (see EDT-148) -> the new behaviour decided for DAT-040 applies: either the check lives in the table check list or a field check is shown; it survives export and reload (rows: DAT-040)
+- [ ] **MT-399** In the side panel open, one after the other: the field type list, the comment icon of a field with a description, a field's "..." (Field Attributes), an index's "..." (Index Attributes), a check's "..." and the "..." menu of a table, of a custom type and of an area; also the arrow of Add Table and the colour square of a table -> each opens with its left edge on the button that opened it and grows to the right, over the canvas, so the row it was opened from stays in view; the account menu and the language picker, at the right edge of the window, still open toward the left (rows: EDT-104, EDT-125, EDT-132, EDT-142, EDT-195)
 
 ## 7. Indexes and check constraints
 

@@ -10,13 +10,17 @@ const itemBase =
 const panelBase =
     'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95';
 
+// Like a popover (see popover.tsx), a menu opens with its left edge on its
+// button and grows to the right. A menu at the right edge of the window asks
+// for `align="end"`.
 const DropdownMenuContent = React.forwardRef<
     React.ComponentRef<typeof MenuPrimitive.Content>,
     React.ComponentPropsWithoutRef<typeof MenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
+>(({ className, align = 'start', sideOffset = 4, ...props }, ref) => (
     <MenuPrimitive.Portal>
         <MenuPrimitive.Content
             ref={ref}
+            align={align}
             sideOffset={sideOffset}
             className={cn(panelBase, 'shadow-md', className)}
             {...props}

@@ -101,6 +101,11 @@ const PopoverTrigger = React.forwardRef<
 });
 PopoverTrigger.displayName = PopoverPrimitive.Trigger.displayName;
 
+// A popover opens with its left edge on its trigger and grows to the right, so
+// the side panel (which is on the left) stays in view and the popover lies over
+// the canvas, as the type list does (see design/popup-side). Only something at
+// the right edge of the window, where there is no room to the right, asks for
+// `align="end"`.
 const PopoverContent = React.forwardRef<
     React.ElementRef<typeof PopoverPrimitive.Content>,
     React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
@@ -108,7 +113,7 @@ const PopoverContent = React.forwardRef<
     (
         {
             className,
-            align = 'center',
+            align = 'start',
             sideOffset = 4,
             onPointerDownCapture,
             ...props

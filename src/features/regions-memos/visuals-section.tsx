@@ -77,7 +77,7 @@ const ActionsMenu: React.FC<{
                 <MoreVertical />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent>
             {items.map((item) => (
                 <DropdownMenuItem key={item.label} onSelect={item.onSelect}>
                     {item.label}

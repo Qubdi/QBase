@@ -295,7 +295,7 @@ const TypeRow: React.FC<{
                             <MoreVertical />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent>
                         <DropdownMenuItem
                             onSelect={() =>
                                 store

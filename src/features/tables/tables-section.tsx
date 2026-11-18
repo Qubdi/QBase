@@ -88,7 +88,7 @@ export const TablesSection: React.FC = () => {
                             <ChevronDown />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent>
                         <DropdownMenuItem
                             onSelect={() => add('view')}
                             {...newItemDragProps('view')}

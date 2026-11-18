@@ -71,7 +71,6 @@ export const AttributesPopover: React.FC<{
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                align="end"
                 className="w-52 space-y-3 rounded-[10px]"
                 aria-label={text('fields.attributes')}
             >

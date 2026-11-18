@@ -183,7 +183,7 @@ export const TableRow: React.FC<{
                                 <MoreVertical />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent>
                             <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
                                 {text('tables.actions')}
                             </DropdownMenuLabel>

@@ -27,7 +27,6 @@ export const DescriptionPopover: React.FC<{ description: string }> = ({
                 </button>
             </PopoverTrigger>
             <PopoverContent
-                align="end"
                 className="w-64 space-y-2 rounded-[10px]"
                 aria-label={text('fields.description')}
             >

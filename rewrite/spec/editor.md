@@ -44,6 +44,15 @@ database (only some databases have them).
   panel collapses it to zero width and disables the handle.
 - The **canvas** fills the rest.
 - The panel is visible when the editor first opens on desktop.
+- Popups and menus opened from the side panel open like the column type list: the **left edge
+  on the button** that opened them, growing **to the right**, over the canvas, so the list
+  they were opened from stays in view. That is the type list, the description, Field
+  Attributes, Index Attributes, Check constraint, the "..." menus of a table, a custom type,
+  an area and a note, the arrow of Add Table, and the colour picker. Something at the right
+  edge of the window (the account menu, the language picker, the type legend on the canvas)
+  opens toward the left, where there is room. Near the edge of the window a popup is moved
+  in so that it stays on screen (since 2026-11-18; before, all of them except the type list
+  grew to the left, and the colour picker was centred on its swatch).
 
 ### 1.2 Mobile (narrower than 768 px)
 

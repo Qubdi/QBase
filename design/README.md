@@ -17,6 +17,7 @@ This folder is not part of the app and is left out of the Docker image (`.docker
 | --- | --- | --- | --- |
 | [Checkboxes and switches](checkbox/README.md) | 2026-11-17 | F, Switch (Field Attributes); D, Roomier (every other checkbox) | nothing: both are in use |
 | [Description marker in the field rows](field-description/README.md) | 2026-11-17 | B, Icon inside the name box | nothing: the other options are in the record |
+| [Where the side-panel popups open](popup-side/README.md) | 2026-11-18 | A, Like the column type: left edge on the button, growing to the right | B, Beside the panel (recipe in the record) |
 
 ## Adding a topic
 
