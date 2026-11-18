@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 48 · **date** 2026-11-18
+**rev** 49 · **date** 2026-11-18
 **method** static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local `timeago.js` install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine `aud47-srv` 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs `aud47-srv` · drizzle-kit generate diff in scratch copy (empty) · throwaway postgres:18-alpine `aud47-db` seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in `node:24-slim` `aud47-dead` · all containers removed · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content; `.claude/skills/` content checked for secrets and licensing only
 
@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 0 | 42 | 0 |
 | Repository | 12 | 0 | 0 | 58 | 0 |
-| Server | 5 | 0 | 0 | 40 | 0 |
-| Database | 3 | 0 | 0 | 20 | 1 |
+| Server | 4 | 0 | 0 | 41 | 0 |
+| Database | 1 | 0 | 0 | 22 | 1 |
 | Client | 5 | 0 | 0 | 103 | 0 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 30 | 0 | 0 | 308 | 1 |
+| **Total** | 27 | 0 | 0 | 311 | 1 |
 
 ## Act first
 
@@ -54,7 +54,6 @@ None.
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SRV-042 | Med | Lock event streams uncapped per user; probe opened 60 for one user | `server/src/diagrams/routes.ts:656`, `server/src/diagrams/routes.ts:700` | Cap open lock streams per user, like share `acquireViewer` |
-| SRV-043 | Med | Server test fails: `project.delete` audit meta now has `diagrams`, test lacks it | `server/test/audit-meta.test.ts:104`, `server/src/admin/routes.ts:952` | Add `diagrams: 0` to the expected meta |
 | SRV-044 | Low | Lock stream reads missed pokes only at open; a LISTEN gap loses them | `server/src/diagrams/routes.ts:733`, `server/src/diagrams/routes.ts:767` | Re-run `pokeSnapshot` on each heartbeat |
 | SRV-045 | Low | Release tells requester `left` even when the handoff insert lost the race | `server/src/diagrams/poke.ts:297`, `server/src/diagrams/poke.ts:304` | Emit `left` only when the insert returned a row |
 | SRV-046 | Low | Admin project delete never tells open share streams their links died | `server/src/admin/routes.ts:944`, `server/src/diagrams/routes.ts:801` | Collect link ids; call `emitLinkChanged` for each after commit |
@@ -64,8 +63,6 @@ None.
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | DB-006 | Low | SQL Server alias types arrive as column domain; metadata format has no custom-type slot | `server/src/introspect/sqlserver.ts:56`, `server/src/introspect/sqlserver.ts:409` | Add an alias-type list to the metadata format |
-| DB-009 | Med | `project.delete` audit row written after commit, outside the delete transaction | `server/src/admin/routes.ts:952` | Write the audit with `tx` inside the transaction |
-| DB-025 | Low | Diagram insert racing admin project delete hits restrict FK; answers 500 | `server/src/admin/routes.ts:944`, `server/src/admin/routes.ts:949` | Lock project row `FOR UPDATE` before deleting its diagrams |
 
 ### Client
 
@@ -90,6 +87,7 @@ None.
 | SEC-016 | Security & secrets | `user.create` audit omits whether the new account was made admin |
 | SEC-021 | Security & secrets | INTROSPECT_ALLOW_HOSTS accepts `0.0.0.0/0` and junk entries unchecked |
 | SEC-025 | Security & secrets | `.gitignore` lacks key and certificate patterns (`*.pem`, `*.key`) |
+| SRV-043 | Server | Server test fails: `project.delete` audit meta now has `diagrams`, test lacks it |
 | SRV-009 | Server | Default diagram body limit 50 MB blocked the event loop about 0.9 s at 40 MB; now 25 MB, set with `DIAGRAM_BODY_LIMIT_MB` |
 | SRV-008 | Server | Live-viewer caps count per process; held in Postgres by `live_viewers`, shared by all replicas |
 | SRV-030 | Server | SQL Server tests skip in CI: `ci.yaml` has no SQL Server service |
@@ -174,6 +172,8 @@ None.
 | REPO-027 | Repository | Load run.sh never fails on a k6 threshold; README says it gates CI |
 | REPO-028 | Repository | README feature line says only a share-token hash is stored; code also encrypts token |
 | REPO-059 | Repository | CI tests only PostgreSQL 18, though README says 16 or newer |
+| DB-025 | Database | Diagram insert racing admin project delete hits restrict FK; answers 500 |
+| DB-009 | Database | Audit rows are written after, not inside, the transaction of the change |
 | DB-001 | Database | Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout |
 | DB-002 | Database | Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns |
 | DB-003 | Database | Size checks serialise whole jsonb with `octet_length(content::text)`; 50 MB costs about 0.8 s |
@@ -469,6 +469,7 @@ Rows up to Stock Postgres from an earlier pass; last three measured in rev 47 on
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 49 | 2026-11-18 | 3 fixed (DB-009, DB-025: admin project delete locks the project row and writes its audit row inside the transaction, a missing project answers 404, two tests added; SRV-043: audit-meta test expects the diagram count); DB-006 left (needs a third user-type kind in the model and file format); 27 open, 0 Crit, 0 High; anchors not remapped |
 | 48 | 2026-11-18 | 4 fixed (dead code lens: DEAD-043 four unused account error texts removed; DEAD-044 one `openEventStream` helper for the lock and share streams; DEAD-045 test-only exports moved into test helpers; DEAD-046 save time uses `ago()`, `words-function.ts` removed); export and import round-trip tests added in `src/formats/export-import-cases.test.ts`; dead code lens has no open findings; 30 open, 0 Crit, 0 High; anchors not remapped |
 | 47 | 2026-11-18 | Deep sweep of the lock-poke feature, admin project delete, client rework and vendored skills: 23 new (SEC-048, 049; REPO-077 to 083; SRV-042 to 046; DB-025; CLI-112 to 115; DEAD-043 to 046), 3 regressed (DB-009, CLI-019, REPO-006), 1 dropped (CLI-116), SEC-001 narrowed to pull refs; DB-001, 002, 003, 007, 012 moved from Accepted to Fixed where rev 32 put them; stray table fragment removed; 34 open, 0 Crit, 0 High; anchors remapped for open rows |
 | 46 | 2026-11-13 | 2 fixed (CLI-110: all `qubdi.*` text translated into de, fr, it, ru, in `src/i18n/qubdi-locales/`; CLI-111: parity test now covers `qubdi.*`); client lens has no open findings; 8 open, 0 Crit, 0 High; anchors not remapped |
