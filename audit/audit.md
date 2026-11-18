@@ -7,12 +7,12 @@
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 0 | 42 | 0 |
-| Repository | 10 | 0 | 0 | 60 | 0 |
+| Repository | 9 | 0 | 0 | 61 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 15 | 0 | 0 | 346 | 2 |
+| **Total** | 14 | 0 | 0 | 347 | 2 |
 
 ## Act first
 
@@ -45,7 +45,6 @@ None.
 | REPO-078 | Med | NOTICE omits vendored third-party skills and their MIT and Apache-2.0 licences | `NOTICE:31`, `.claude/skills/superpowers/LICENSE:3`, `.claude/skills/mattpocock-skills/LICENSE:3`, `.claude/skills/LICENSE-modern-web-guidance:2` | List each vendored skill and its licence in NOTICE |
 | REPO-079 | Med | Five vendored skills carry no licence text or source | `.claude/skills/chrome-extensions/SKILL.md:2`, `.claude/skills/fastapi/SKILL.md:2`, `.claude/skills/security-audit/SKILL.md:2`, `.claude/skills/vulnerability-triage-brocards/SKILL.md:2`, `.claude/skills/supabase-postgres-best-practices/SKILL.md:4` | Add licence and source for each, or untrack them |
 | REPO-080 | Med | 34 of 36 commits since 2026-11-14 not Conventional; release-please skips them | `CONTRIBUTING.md:13`, `release-please-config.json:3` | Enforce squash merge, or add a commitlint `commit-msg` hook |
-| REPO-081 | Low | Dev advisory GHSA-fc5q-39xc-vjpf (picomatch) unseen; CI audits prod only | `package-lock.json`, `.github/workflows/ci.yaml:187` | Bump picomatch past 4.0.7; audit dev deps on a schedule |
 
 ### Server
 
@@ -108,6 +107,7 @@ None.
 | SRV-029 | Server | Session end deletes sessions and locks in separate statements, not one transaction |
 | REPO-083 | Repository | README never mentions the tracked `.claude/skills/` and `design/` folders |
 | REPO-082 | Repository | TODO says four React Compiler rules are off; eslint has them on |
+| REPO-081 | Repository | Dev advisory GHSA-fc5q-39xc-vjpf (picomatch) unseen; CI audits prod only |
 | REPO-071 | Repository | Dependabot header says npm updates paused; both entries have limit 5 |
 | REPO-072 | Repository | `INTROSPECT_ALLOW_PRIVILEGED` read outside `config.ts`, absent from compose and `.env.example` |
 | REPO-073 | Repository | `WEB_DIR` read in `config.ts` but absent from `server/.env.example` |

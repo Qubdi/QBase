@@ -182,7 +182,8 @@ jobs:
         with:
           node-version: 24.x
 
-      # Fails on high and critical advisories in what ships.
+      # Fails on high and critical advisories in what ships. Development
+      # tools are audited weekly by audit-dev.yaml.
       - name: Audit editor dependencies
         run: npm audit --omit=dev --audit-level=high
 

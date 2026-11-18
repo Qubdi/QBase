@@ -1,0 +1,39 @@
+name: Dependency audit (all)
+
+# CI audits what ships (`npm audit --omit=dev`, high and above). Development
+# tools are not in the image, but a flaw in one can still reach a developer's
+# machine or the build, so this looks at every dependency, including dev, and at
+# moderate advisories too. It runs weekly, and by hand, so a new advisory is seen
+# even when no pull request is open.
+
+on:
+  schedule:
+    # Mondays, 06:17 UTC (off the hour, when scheduled runs queue up)
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit every dependency
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.x
+
+      - name: Audit editor dependencies, dev included
+        run: npm audit --audit-level=moderate
+
+      - name: Audit server dependencies, dev included
+        run: npm audit --audit-level=moderate
+        working-directory: server
