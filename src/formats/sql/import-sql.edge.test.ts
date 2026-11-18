@@ -346,23 +346,15 @@ describe('importSql: round-trip losses', () => {
         }
     );
 
-    // BUG (round-trip instability): importSql keeps a named single-column
-    // unique index as a unique key and also marks the column unique; the
-    // PostgreSQL writer (postgresql/write.ts:221-229) then writes only the
-    // column's UNIQUE and skips the index, so the index name is lost and a
-    // second import has one key less than the first.
-    it.fails(
-        'keeps a named single-column unique index through a round trip',
-        () => {
-            const first = importSql(
-                'CREATE TABLE t (id int PRIMARY KEY, note text); CREATE UNIQUE INDEX t_note ON t (note);',
-                'postgresql'
-            );
-            const second = importSql(
-                exportSql(first.design!, 'postgresql').text,
-                'postgresql'
-            );
-            expect(shape(second.design!)).toEqual(shape(first.design!));
-        }
-    );
+    it('CLI-130: keeps a named single-column unique index through a round trip', () => {
+        const first = importSql(
+            'CREATE TABLE t (id int PRIMARY KEY, note text); CREATE UNIQUE INDEX t_note ON t (note);',
+            'postgresql'
+        );
+        const second = importSql(
+            exportSql(first.design!, 'postgresql').text,
+            'postgresql'
+        );
+        expect(shape(second.design!)).toEqual(shape(first.design!));
+    });
 });

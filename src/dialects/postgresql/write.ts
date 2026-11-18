@@ -149,8 +149,11 @@ function domainsOf(
 function columnLine(
     column: Column,
     userTypes: UserTypes,
-    domains: Map<string, string>
+    domains: Map<string, string>,
+    /** the column has its own named unique index, which carries the uniqueness */
+    namedUnique = false
 ): string {
+    const inlineUnique = !column.primaryKey && column.unique && !namedUnique;
     const comment = column.comments
         ? linesOf(column.comments)
               .map((l) => `    -- ${l}\n`)
@@ -175,10 +178,10 @@ function columnLine(
         line += ` GENERATED ALWAYS AS (${column.generated.expression}) ${
             column.generated.stored ? 'STORED' : 'VIRTUAL'
         }`;
-        if (!column.primaryKey && column.unique) line += ' UNIQUE';
+        if (inlineUnique) line += ' UNIQUE';
         return `${comment}    ${line}`;
     }
-    if (!column.primaryKey && column.unique) line += ' UNIQUE';
+    if (inlineUnique) line += ' UNIQUE';
     const isSerialType = /^(?:big|small)?serial$/.test(lowerType);
     const skipDefault =
         identity ||
@@ -210,6 +213,42 @@ function indexNames(
     return out;
 }
 
+/**
+ * A unique index on one column that has a name of its own (written as
+ * CREATE UNIQUE INDEX, so it is read back as an index) is not the same as the
+ * column's inline UNIQUE: writing only the inline form would lose the name.
+ */
+function isInlineUnique(
+    key: ExportTable['keys'][number]['key'],
+    columns: readonly Column[]
+): boolean {
+    return (
+        key.distinct &&
+        !key.label &&
+        columns.length === 1 &&
+        columns[0].unique &&
+        !columns[0].primaryKey &&
+        !key.where &&
+        !key.descending?.length
+    );
+}
+
+/** Ids of the columns whose uniqueness is carried by a named unique index. */
+function namedUniqueColumns(table: ExportTable): Set<string> {
+    const out = new Set<string>();
+    for (const { key, columns } of indexKeys(table, { byColumns: true }))
+        if (
+            key.distinct &&
+            key.label &&
+            columns.length === 1 &&
+            !columns[0].primaryKey &&
+            !key.where &&
+            !key.descending?.length
+        )
+            out.add(columns[0].id);
+    return out;
+}
+
 function indexStatements(
     table: ExportTable,
     qualified: string,
@@ -218,15 +257,7 @@ function indexStatements(
     const out: string[] = [];
     for (const { key, columns } of indexKeys(table, { byColumns: true })) {
         const name = names.get(key.id)!;
-        if (
-            key.distinct &&
-            columns.length === 1 &&
-            columns[0].unique &&
-            !columns[0].primaryKey &&
-            !key.where &&
-            !key.descending?.length
-        )
-            continue;
+        if (isInlineUnique(key, columns)) continue;
         const method =
             key.algorithm &&
             key.algorithm !== 'btree' &&
@@ -270,7 +301,10 @@ function tableText(
 ): string {
     const { entity } = table;
     const qualified = qualify(quoteDouble, entity.schema, entity.name);
-    const parts = table.columns.map((c) => columnLine(c, userTypes, domains));
+    const named = namedUniqueColumns(table);
+    const parts = table.columns.map((c) =>
+        columnLine(c, userTypes, domains, named.has(c.id))
+    );
     if (table.primary.length > 0)
         parts.push(
             `    PRIMARY KEY (${commaList(
