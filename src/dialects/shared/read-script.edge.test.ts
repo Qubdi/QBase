@@ -231,10 +231,7 @@ CREATE TABLE u (id int);`);
         expect(r.tables.map((t) => t.name)).toEqual(['t', 'u']);
     });
 
-    // BUG: readStatements blanks COPY ... FROM stdin rows (blankCopyData), but
-    // makeReader validates the raw text first, so an apostrophe in a data row
-    // (O'Brien) is "Unterminated quoted text" and the whole pg_dump is refused.
-    it.fails('accepts COPY data rows holding an apostrophe', () => {
+    it('CLI-118: accepts COPY data rows holding an apostrophe', () => {
         const r = readPostgres(`CREATE TABLE t (id int, s text);
 COPY public.t (id, s) FROM stdin;
 1\tO'Brien
