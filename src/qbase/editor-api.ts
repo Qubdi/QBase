@@ -95,7 +95,10 @@ function build(store: EditorStore): EditorApi {
                 entityId: tableId,
                 part: 'columns',
                 id: fieldId,
-                patch: columnPatchFromWire(patch),
+                patch: columnPatchFromWire(
+                    patch,
+                    state().design.columns[fieldId]
+                ),
             }),
         updateTable: (tableId, patch) =>
             edit({

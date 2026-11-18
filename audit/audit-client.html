@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 51</b></div>
-  <h1>21 open (0 Crit, 0 High).</h1>
+  <h1>20 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the <code>it.fails</code> tests and KNOWN BUG flow steps · all containers removed · no secret read</span>
@@ -55,7 +55,6 @@
         <tr><td class="svc-name">CLI-129</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">MySQL backslash-escaped default blocks the MySQL export</td><td class="wrap-cell"><code>src/formats/sql/unsafe-text.ts:13</code></td><td class="wrap-cell">Make <code>breaksStatement</code> honour backslash escapes for MySQL</td></tr>
         <tr><td class="svc-name">CLI-130</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Round trip drops a named single-column unique index</td><td class="wrap-cell"><code>src/dialects/postgresql/write.ts:221</code></td><td class="wrap-cell">Write the index when its name differs from inline UNIQUE</td></tr>
         <tr><td class="svc-name">CLI-131</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Long shell flags such as <code>--no-data</code> coloured as comments</td><td class="wrap-cell"><code>src/features/import/code-highlight.ts:76</code></td><td class="wrap-cell">Test shell flags before the <code>--</code> comment rule</td></tr>
-        <tr><td class="svc-name">CLI-132</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Patching <code>generatedStored</code> alone wipes the computed column expression</td><td class="wrap-cell"><code>src/qbase/wire-edits.ts:55</code></td><td class="wrap-cell">Keep <code>generated</code> when only <code>generatedStored</code> changes</td></tr>
       </tbody>
     </table>
   </div>
@@ -63,11 +62,12 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (109)</summary>
+  <details><summary>Fixed (110)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-132</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Patching <code>generatedStored</code> alone wipes the computed column expression</td></tr>
         <tr><td class="svc-name">CLI-133</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Table picker lists a blank schema, same value as All schemas</td></tr>
         <tr><td class="svc-name">CLI-134</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lint findings and rule text not translated in de, fr, it, ru</td></tr>
         <tr><td class="svc-name">CLI-135</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Database cards ignore arrow keys; every card is its own Tab stop</td></tr>

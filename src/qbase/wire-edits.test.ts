@@ -163,19 +163,19 @@ describe('columnPatchFromWire', () => {
         expect(columnPatchFromWire({})).toEqual({});
     });
 
-    // BUG: a patch that only flips `generatedStored` (for example the editor
-    // API's updateField(id, { generatedStored: false }) on a computed column)
-    // has no expression in it, so the function sets `generated: undefined` and
-    // the edit wipes the column's computed expression instead of changing
-    // whether it is stored. Expected: the patch leaves `generated` alone (or
-    // only changes `stored`); actual: `{ generated: undefined }`.
-    it.fails(
-        'changing only whether a computed column is stored does not drop its expression',
-        () => {
-            const patch = columnPatchFromWire({ generatedStored: false });
-            expect(patch).not.toHaveProperty('generated', undefined);
-        }
-    );
+    it('CLI-132: changing only whether a computed column is stored keeps its expression', () => {
+        expect(
+            columnPatchFromWire(
+                { generatedStored: false },
+                { generated: { expression: 'a + 1', stored: true } }
+            )
+        ).toEqual({ generated: { expression: 'a + 1', stored: false } });
+    });
+
+    it('CLI-132: flipping generatedStored on a column that is not computed changes nothing', () => {
+        expect(columnPatchFromWire({ generatedStored: false })).toEqual({});
+        expect(columnPatchFromWire({ generatedStored: false }, {})).toEqual({});
+    });
 });
 
 describe('entityPatchFromWire', () => {
