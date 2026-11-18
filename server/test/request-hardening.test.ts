@@ -177,25 +177,17 @@ describe('request hardening', () => {
     });
 
     describe('text Postgres cannot store', () => {
-        // Postgres refuses the NUL character in text ("invalid byte sequence for
-        // encoding UTF8: 0x00") and in jsonb ("unsupported Unicode escape
-        // sequence"). No schema strips or refuses U+0000, so the insert fails in
-        // the database and the caller gets a 500 (logged as a server failure)
-        // for what is their own bad input. Found by this suite; expected a 400.
-        // Marked as failing until the schemas refuse NUL (or the error handler
-        // maps Postgres 22021/22P05 to 400).
-        it.fails('answers a diagram title with a NUL character as a client error', async () => {
+        it('SRV-047: answers a diagram title with a NUL character as a client error', async () => {
             const res = await ctx.app.inject({
                 method: 'POST',
                 url: '/diagrams',
                 headers: as(editor),
                 payload: { title: 'bad\u0000title', content: sampleContent, projectId },
             });
-            expect(res.statusCode).toBeGreaterThanOrEqual(400);
-            expect(res.statusCode).toBeLessThan(500);
+            expect(res.statusCode).toBe(400);
         });
 
-        it.fails('answers diagram content with a NUL character as a client error', async () => {
+        it('SRV-047: answers diagram content with a NUL character as a client error', async () => {
             const res = await ctx.app.inject({
                 method: 'POST',
                 url: '/diagrams',
@@ -206,8 +198,7 @@ describe('request hardening', () => {
                     projectId,
                 },
             });
-            expect(res.statusCode).toBeGreaterThanOrEqual(400);
-            expect(res.statusCode).toBeLessThan(500);
+            expect(res.statusCode).toBe(400);
         });
 
         it('answers a sign-in with a NUL character in the password as a failed sign-in', async () => {

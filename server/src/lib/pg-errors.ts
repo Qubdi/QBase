@@ -27,3 +27,13 @@ export function isUniqueViolation(err: unknown): boolean {
 export function isForeignKeyViolation(err: unknown): boolean {
     return hasPgCode(err, '23503') || hasPgCode(err, '23001');
 }
+
+/**
+ * True when Postgres refused text it cannot store: a NUL character in text
+ * ("invalid byte sequence for encoding UTF8: 0x00", 22021) or in jsonb
+ * ("unsupported Unicode escape sequence", 22P05). That is the caller's own
+ * input, so it answers 400, not a server failure.
+ */
+export function isUnstorableText(err: unknown): boolean {
+    return hasPgCode(err, '22021') || hasPgCode(err, '22P05');
+}

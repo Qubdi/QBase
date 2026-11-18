@@ -29,7 +29,7 @@ import {
     presentSaved,
     publishSnapshot,
 } from './service.js';
-import { exceedsDepth } from '../lib/depth.js';
+import { containsNul, exceedsDepth } from '../lib/depth.js';
 import { diagramFingerprintAsync } from '../lib/hash.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { pgDate } from '../lib/pg-date.js';
@@ -85,10 +85,22 @@ const diagramContent = z
     // overflow the recursive hash, so it is refused as a bad request
     .refine((content) => !exceedsDepth(content, MAX_CONTENT_DEPTH), {
         message: `content nests deeper than ${MAX_CONTENT_DEPTH} levels`,
+    })
+    // the database cannot store U+0000 in jsonb: refuse it here, as a bad request
+    .refine((content) => !containsNul(content), {
+        message: 'content holds a NUL character',
     });
 
+/** A title: trimmed, 1 to 200 characters, and no NUL (Postgres cannot store it). */
+const titleText = z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .refine((t) => !t.includes('\u0000'), { message: 'title holds a NUL character' });
+
 const createBody = z.object({
-    title: z.string().trim().min(1).max(200),
+    title: titleText,
     content: diagramContent,
     // every diagram lives in a project
     projectId: z.string().uuid(),
@@ -96,7 +108,7 @@ const createBody = z.object({
 
 const updateBody = z
     .object({
-        title: z.string().trim().min(1).max(200).optional(),
+        title: titleText.optional(),
         content: diagramContent.optional(),
         autoPublish: z.boolean().optional(),
         /**

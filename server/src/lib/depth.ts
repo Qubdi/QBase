@@ -14,3 +14,25 @@ export function exceedsDepth(value: unknown, max: number): boolean {
     }
     return false;
 }
+
+/**
+ * True when a string anywhere in `value` (or a key) holds the NUL character,
+ * which Postgres cannot store in text or jsonb. A loop, like `exceedsDepth`.
+ */
+export function containsNul(value: unknown): boolean {
+    const stack: unknown[] = [value];
+    while (stack.length > 0) {
+        const node = stack.pop();
+        if (typeof node === 'string') {
+            if (node.includes('\u0000')) return true;
+        } else if (node !== null && typeof node === 'object') {
+            if (Array.isArray(node)) for (const child of node) stack.push(child);
+            else
+                for (const [key, child] of Object.entries(node)) {
+                    if (key.includes('\u0000')) return true;
+                    stack.push(child);
+                }
+        }
+    }
+    return false;
+}
