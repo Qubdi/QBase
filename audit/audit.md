@@ -6,13 +6,13 @@
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 3 | 0 | 0 | 44 | 0 |
+| Security & secrets | 2 | 0 | 0 | 45 | 0 |
 | Repository | 3 | 0 | 0 | 64 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 6 | 0 | 0 | 352 | 2 |
+| **Total** | 5 | 0 | 0 | 353 | 2 |
 
 ## Act first
 
@@ -28,7 +28,6 @@ None.
 |----|-----|---------|-------|-----|
 | SEC-001 | Med | Old SA password in 65 pull refs; old `.env.example` keys in 30 | `.gitleaks.toml:4` | Rotate both; ask GitHub to purge pull refs |
 | SEC-036 | Med | Account-wide sign-in lockout checked before password; strangers lock out any account | `server/src/auth/routes.ts:223`, `server/src/auth/guards.ts:41` | Add delay instead of hard 429, or let correct password through |
-| SEC-037 | Med | Stolen admin session creates or promotes an admin with no step-up | `server/src/admin/routes.ts:92`, `server/src/admin/routes.ts:389`, `server/src/admin/routes.ts:431` | Require step-up when granting isAdmin or creating an admin |
 
 ### Repository
 
@@ -62,6 +61,7 @@ None.
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-037 | Security & secrets | Stolen admin session creates or promotes an admin with no step-up |
 | SEC-048 | Security & secrets | Stolen admin session deletes a project and all its diagrams, no step-up |
 | SEC-049 | Security & secrets | Writer picks `editorId` starting `handoff:`; its lock then refuses every poke |
 | SEC-016 | Security & secrets | `user.create` audit omits whether the new account was made admin |

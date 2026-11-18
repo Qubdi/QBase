@@ -132,7 +132,10 @@ describe('the admin API, route by route', () => {
 
     it('drops admin rights at once when an admin is demoted, session and all', async () => {
         const deputy = await registerUser(ctx.app, 'deputy@example.com');
-        const promote = await call(admin, 'PATCH', `/admin/users/${deputy.id}`, { isAdmin: true });
+        const promote = await call(admin, 'PATCH', `/admin/users/${deputy.id}`, {
+            isAdmin: true,
+            adminPassword: 'Password-123!',
+        });
         expect(promote.statusCode).toBe(200);
         expect((await call(deputy, 'GET', '/admin/users')).statusCode).toBe(200);
         // as an admin, the deputy is an owner of every diagram

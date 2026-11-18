@@ -746,6 +746,9 @@ export function createApi(
             email: string;
             password: string;
             isAdmin?: boolean;
+            /** the acting admin's own proof, needed to make an admin */
+            adminPassword?: string;
+            adminCode?: string;
         }) =>
             request<AdminUser>(
                 'POST',

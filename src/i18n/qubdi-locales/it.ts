@@ -733,6 +733,13 @@ export const it = {
             madeAdmin: 'Reso admin',
             removeAdmin: 'Rimuovi admin',
             makeAdmin: 'Rendi admin',
+            makeAdminTitle: 'Rendere questa persona un amministratore?',
+            makeAdminDescription:
+                '{{email}} potrà fare tutto ciò che fa un amministratore: gestire utenti, progetti e tutti i diagrammi.',
+            confirmGrant:
+                'Questo dà a qualcuno tutti i diritti di amministratore. Inserisci la tua password per confermare che sei tu.',
+            confirmGrantCode:
+                'Questo dà a qualcuno tutti i diritti di amministratore. Inserisci la tua password e un codice della tua app di autenticazione (o un codice di recupero) per confermare che sei tu.',
             userDisabled: 'Utente disattivato',
             userEnabled: 'Utente attivato',
             resetPasswordOf: 'Reimposta la password di {{email}}',

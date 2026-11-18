@@ -358,7 +358,7 @@ describe('GET /admin/audit', () => {
 
         it('records whether an account was created as an admin', async () => {
             const plain = await call('POST', '/admin/users', { email: 'plain@example.com', password: 'Password-123!' });
-            const boss = await call('POST', '/admin/users', { email: 'boss@example.com', password: 'Password-123!', isAdmin: true });
+            const boss = await call('POST', '/admin/users', { email: 'boss@example.com', password: 'Password-123!', isAdmin: true, adminPassword: 'Password-123!' });
             const rows = (await page('?action=user.create&limit=10')).items;
             const adminFlag = (id: string) => rows.find((r) => r.targetUserId === id)?.meta?.isAdmin;
             expect(adminFlag(plain.json().id)).toBe(false);

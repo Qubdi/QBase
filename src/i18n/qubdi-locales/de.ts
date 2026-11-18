@@ -746,6 +746,13 @@ export const de = {
             madeAdmin: 'Zum Admin gemacht',
             removeAdmin: 'Admin entziehen',
             makeAdmin: 'Zum Admin machen',
+            makeAdminTitle: 'Diese Person zum Admin machen?',
+            makeAdminDescription:
+                '{{email}} kann alles tun, was ein Administrator darf: Benutzer, Projekte und alle Diagramme verwalten.',
+            confirmGrant:
+                'Dies gibt jemandem volle Administratorrechte. Geben Sie Ihr eigenes Passwort ein, um zu bestätigen, dass Sie es sind.',
+            confirmGrantCode:
+                'Dies gibt jemandem volle Administratorrechte. Geben Sie Ihr eigenes Passwort und einen Code aus Ihrer Authenticator-App (oder einen Wiederherstellungscode) ein, um zu bestätigen, dass Sie es sind.',
             userDisabled: 'Benutzer deaktiviert',
             userEnabled: 'Benutzer aktiviert',
             resetPasswordOf: 'Passwort von {{email}} zurücksetzen',

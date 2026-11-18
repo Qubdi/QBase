@@ -137,6 +137,7 @@ describe('audit meta: what an action was done to', () => {
 
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
                 isAdmin: true,
+                adminPassword: 'Password-123!',
             });
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,
@@ -157,6 +158,7 @@ describe('audit meta: what an action was done to', () => {
             // the next test expects the target to be an admin again
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
                 isAdmin: true,
+                adminPassword: 'Password-123!',
             });
         });
 

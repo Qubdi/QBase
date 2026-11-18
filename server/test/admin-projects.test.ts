@@ -98,6 +98,7 @@ describe('admin panel and projects', () => {
 
             const promote = await call('PATCH', `/admin/users/${login.id}`, admin, {
                 isAdmin: true,
+                adminPassword: 'Password-123!',
             });
             expect(promote.statusCode).toBe(200);
             const me = await call('GET', '/auth/me', login);

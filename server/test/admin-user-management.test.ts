@@ -450,7 +450,10 @@ describe('managing users: last sign-in, sessions and bulk actions', () => {
 
             it('may delete an admin while another can still sign in', async () => {
                 const other = await person('x3@example.com');
-                await call(admin, 'PATCH', `/admin/users/${other.id}`, { isAdmin: true });
+                await call(admin, 'PATCH', `/admin/users/${other.id}`, {
+                    isAdmin: true,
+                    adminPassword: 'Password-123!',
+                });
                 const res = await bulk(admin, 'delete', [other.id]);
                 expect(res.statusCode).toBe(200);
                 expect(res.json().changed).toBe(1);
@@ -458,7 +461,10 @@ describe('managing users: last sign-in, sessions and bulk actions', () => {
 
             it('may delete an admin who is already disabled', async () => {
                 const other = await person('x4@example.com');
-                await call(admin, 'PATCH', `/admin/users/${other.id}`, { isAdmin: true });
+                await call(admin, 'PATCH', `/admin/users/${other.id}`, {
+                    isAdmin: true,
+                    adminPassword: 'Password-123!',
+                });
                 await call(admin, 'PATCH', `/admin/users/${other.id}`, { isActive: false });
                 expect((await bulk(admin, 'delete', [other.id])).statusCode).toBe(200);
             });
@@ -563,7 +569,7 @@ describe('bulk actions by two admins at once', () => {
             method: 'PATCH',
             url: `/admin/users/${b.id}`,
             headers: as(a),
-            payload: { isAdmin: true },
+            payload: { isAdmin: true, adminPassword: 'Password-123!' },
         });
         expect(res.statusCode).toBe(200);
     });
