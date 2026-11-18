@@ -23,6 +23,8 @@ export interface LexProfile {
     dollarStrings: boolean;
     /** a backslash escapes a quote inside a string */
     backslashEscapes: boolean;
+    /** `"..."` is a string, not a name (MySQL and MariaDB, unless ANSI_QUOTES) */
+    doubleQuotedStrings?: boolean;
 }
 
 export interface LexResult {
@@ -118,11 +120,12 @@ export function lex(text: string, profile: LexProfile): LexResult {
             } else advanceTo(close + 2);
             continue;
         }
-        if (c === "'") {
+        if (c === "'" || (c === '"' && profile.doubleQuotedStrings)) {
             const prev = text[i - 1];
             const escapes =
                 profile.backslashEscapes ||
-                ((prev === 'e' || prev === 'E') &&
+                (c === "'" &&
+                    (prev === 'e' || prev === 'E') &&
                     !isWordChar(text[i - 2] ?? ' '));
             let j = i + 1;
             let value = '';
@@ -133,9 +136,9 @@ export function lex(text: string, profile: LexProfile): LexResult {
                     j += 2;
                     continue;
                 }
-                if (text[j] === "'") {
-                    if (text[j + 1] === "'") {
-                        value += "'";
+                if (text[j] === c) {
+                    if (text[j + 1] === c) {
+                        value += c;
                         j += 2;
                         continue;
                     }

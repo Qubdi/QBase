@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 9 | 0 | 0 | 121 | 1 |
+| Client | 8 | 0 | 0 | 122 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 31 | 0 | 0 | 330 | 2 |
+| **Total** | 30 | 0 | 0 | 331 | 2 |
 
 ## Act first
 
@@ -75,7 +75,6 @@ None.
 | CLI-120 | Med | SQL Server `GO <count>` silently drops the next batch | `src/dialects/shared/statements.ts:56` | Accept `GO n` as a batch separator |
 | CLI-121 | Med | Dollar tag with a digit not recognised; function body imported as real tables | `src/dialects/shared/tokenizer.ts:161`, `src/dialects/shared/validate.ts:107` | Allow digits after the first tag character |
 | CLI-122 | Med | PostgreSQL E-string with an escaped quote refused as unterminated | `src/dialects/shared/validate.ts:29` | Teach `maskCode` E-strings |
-| CLI-123 | Med | MySQL double-quoted string refused as unterminated text | `src/dialects/shared/validate.ts:29` | Treat `"` as a string quote for MySQL in `maskCode` |
 
 ### Dead code
 
@@ -216,6 +215,7 @@ None.
 | CLI-113 | Client | Toggle buttons flip `aria-label` while also setting `aria-pressed` |
 | CLI-129 | Client | MySQL backslash-escaped default blocks the MySQL export |
 | CLI-126 | Client | MySQL `CONSTRAINT x KEY idx (...)` loses the constraint or its columns |
+| CLI-123 | Client | MySQL double-quoted string refused as unterminated text |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |

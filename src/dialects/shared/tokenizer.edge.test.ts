@@ -81,6 +81,15 @@ describe('lex: strings', () => {
         expect(kinds("'it\\'s'", MYSQL)).toEqual(["string:it's"]);
     });
 
+    it('CLI-123: reads "..." as a string when the profile says so', () => {
+        const strings = { ...MYSQL, doubleQuotedStrings: true };
+        expect(kinds('"it\'s"', strings)).toEqual(["string:it's"]);
+        expect(kinds('"a""b"', strings)).toEqual(['string:a"b']);
+        expect(kinds('"a\\"b"', strings)).toEqual(['string:a"b']);
+        // without the flag a double quote is not a string
+        expect(kinds('"x"', MYSQL)).not.toEqual(['string:x']);
+    });
+
     it('reads a backslash escape in a PostgreSQL E-string only', () => {
         expect(kinds("E'it\\'s'", PG)).toEqual(['word:E', "string:it's"]);
         expect(kinds("e'a\\nb'", PG)).toEqual(['word:e', 'string:anb']);

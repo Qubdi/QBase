@@ -8,6 +8,7 @@ const PROFILE: ReaderProfile = {
         hashComments: true,
         dollarStrings: false,
         backslashEscapes: true,
+        doubleQuotedStrings: true,
     },
     goBatches: false,
     arrayTypes: false,

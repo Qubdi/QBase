@@ -163,17 +163,11 @@ CREATE TABLE t ( -- the key
         expect(table(r, 't').columns).toHaveLength(2);
     });
 
-    // BUG: MySQL (default sql_mode) takes "..." as a string, but the MySQL
-    // profile lexes and masks " as plain punctuation, so the apostrophe in
-    // "it's" opens a quoted text that never closes and the script is refused.
-    it.fails(
-        'accepts a MySQL double-quoted string holding an apostrophe',
-        () => {
-            const r = readMysql('CREATE TABLE t (id int COMMENT "it\'s");');
-            expect(errors(r)).toEqual([]);
-            expect(col(r, 't', 'id').comment).toBe("it's");
-        }
-    );
+    it('CLI-123: accepts a MySQL double-quoted string holding an apostrophe', () => {
+        const r = readMysql('CREATE TABLE t (id int COMMENT "it\'s");');
+        expect(errors(r)).toEqual([]);
+        expect(col(r, 't', 'id').comment).toBe("it's");
+    });
 
     // BUG: PostgreSQL nests block comments. The lexer and the validator close
     // the comment at the first */, so the rest of the comment becomes code in

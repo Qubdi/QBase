@@ -62,7 +62,9 @@ export function maskCode(source: string, profile: LexProfile): Masked {
             i = end;
         } else if (
             c === "'" ||
-            (c === '"' && profile.identifierQuotes.includes('"')) ||
+            (c === '"' &&
+                (profile.identifierQuotes.includes('"') ||
+                    profile.doubleQuotedStrings)) ||
             (c === '`' && profile.identifierQuotes.includes('`'))
         ) {
             const startLine = line;
@@ -71,7 +73,7 @@ export function maskCode(source: string, profile: LexProfile): Masked {
             while (j < n) {
                 if (
                     profile.backslashEscapes &&
-                    c === "'" &&
+                    (c === "'" || c === '"') &&
                     source[j] === '\\'
                 ) {
                     j += 2;
