@@ -15,7 +15,7 @@ import { planAddNote, planAddRegion } from '@/core/commands/plan-visual';
 import type { Design } from '@/core/model/design';
 import type { Entity, EntityKind } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
-import type { MemoAnchor } from '@/core/model/memo';
+import { anchorExists, type MemoAnchor } from '@/core/model/memo';
 import { nearestOwner } from '@/core/model/memo-owner';
 import { REGION_SIZE } from '@/core/model/region';
 import type { Size } from '@/core/model/region-membership';
@@ -183,9 +183,24 @@ export function addNoteTo(
     return command.item.id;
 }
 
-/** Adds a note where it was dropped, attached to the area it lies in or the nearest table. */
-export function addNoteAt(store: EditorStore, at: Point): Id | undefined {
-    const owner = nearestOwner(store.getState().design, at.x, at.y);
+/**
+ * Adds a note where it was dropped. It is attached to the column the drop
+ * landed on (`columnId`, read from the row under the pointer), else to the
+ * area it lies in or the nearest table.
+ */
+export function addNoteAt(
+    store: EditorStore,
+    at: Point,
+    columnId?: Id
+): Id | undefined {
+    const design = store.getState().design;
+    const onColumn: MemoAnchor | undefined = columnId
+        ? { kind: 'column', id: columnId }
+        : undefined;
+    const owner =
+        onColumn && anchorExists(design, onColumn)
+            ? onColumn
+            : nearestOwner(design, at.x, at.y);
     return owner ? addNoteTo(store, owner, at) : undefined;
 }
 

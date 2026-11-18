@@ -52,7 +52,7 @@ export const ChecksEditor: React.FC<{ entity: Entity }> = ({ entity }) => {
                                 <MoreHorizontal />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="end" className="w-64 space-y-3">
+                        <PopoverContent className="w-64 space-y-3">
                             <h4 className="text-sm font-semibold">
                                 {text('checks.attributes')}
                             </h4>

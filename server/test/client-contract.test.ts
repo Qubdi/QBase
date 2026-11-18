@@ -141,6 +141,75 @@ describe('the editor accepts what the server answers', () => {
         );
     });
 
+    it('asking the holder to step out, and what the lock stream says about it', async () => {
+        const base = await ctx.app.listen({ port: 0, host: '127.0.0.1' });
+        /** the first event of this name on one editor's lock stream, read off a real socket */
+        const heard = async (
+            who: TestUser,
+            editorId: string,
+            id: string,
+            name: string
+        ) => {
+            const controller = new AbortController();
+            const res = await fetch(
+                `${base}/diagrams/${id}/lock/events?editorId=${editorId}`,
+                { headers: as(who), signal: controller.signal }
+            );
+            const reader = res.body!.getReader();
+            const decoder = new TextDecoder();
+            let text = '';
+            const deadline = Date.now() + 4000;
+            try {
+                for (;;) {
+                    const found = new RegExp(`event: ${name}\\ndata: (.*)\\n\\n`).exec(text);
+                    if (found) return JSON.parse(found[1]) as unknown;
+                    if (Date.now() > deadline) throw new Error(`no ${name}: ${text}`);
+                    const chunk = await reader.read();
+                    if (chunk.done) throw new Error(`ended before ${name}: ${text}`);
+                    text += decoder.decode(chunk.value);
+                }
+            } finally {
+                controller.abort();
+            }
+        };
+
+        // nobody is editing: the diagram is set aside for the one who asks
+        const free = await createDiagram(ctx.app, editor, 'Free');
+        const granted = await call(admin, 'POST', `/diagrams/${free}/lock/poke`, {
+            editorId: 'tab-asker',
+        });
+        accepts(shape.pokeAnswer, granted, 'poke of a free diagram');
+        expect(granted.status).toBe('granted');
+
+        // someone is: the request goes to them
+        const busy = await createDiagram(ctx.app, editor, 'Busy');
+        await call(editor, 'POST', `/diagrams/${busy}/lock`, { editorId: 'tab-holder' });
+        const sent = await call(admin, 'POST', `/diagrams/${busy}/lock/poke`, {
+            editorId: 'tab-asker',
+        });
+        accepts(shape.pokeAnswer, sent, 'poke of a busy diagram');
+        expect(sent.status).toBe('sent');
+
+        accepts(
+            shape.pokeEvent,
+            await heard(editor, 'tab-holder', busy, 'poke'),
+            'request to step out'
+        );
+
+        const answered = await ctx.app.inject({
+            method: 'POST',
+            url: `/diagrams/${busy}/lock/pokes/${sent.pokeId}/answer`,
+            headers: as(editor),
+            payload: { editorId: 'tab-holder', accept: false },
+        });
+        expect(answered.statusCode).toBe(204);
+        accepts(
+            shape.pokeResultEvent,
+            await heard(admin, 'tab-asker', busy, 'poke-result'),
+            'answer to a request'
+        );
+    });
+
     it('share links, a public share, lint and drift', async () => {
         const link = await call(
             editor,

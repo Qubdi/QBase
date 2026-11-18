@@ -14,7 +14,7 @@ Rows whose test sits in a describe block that names the ID are listed with the f
 | EDT-138 | covered | src/core/commands/commands.test.ts::EDT-138 / EDT-139 deleting a column |
 | EDT-140 | covered | src/features/tables/__tests__/table-editor.test.tsx::indexes and checks are not offered for a view (EDT-140, EDT-147) |
 | EDT-141 | covered | src/core/commands/commands.test.ts::EDT-141 a new index is btree on PostgreSQL and has no method elsewhere |
-| EDT-142 | covered | src/features/tables/__tests__/p8-edt-b-indexes.test.tsx::EDT-142 the Index Attributes popover > has Name, Unique, Index Type, a description and Delete (new) |
+| EDT-142 | covered | src/features/tables/__tests__/p8-edt-b-indexes.test.tsx::EDT-142 the Index Attributes popover > has Name, Unique, Index Type, a description and Delete (new); also src/features/tables/__tests__/unique-index-types.test.tsx (the Unique toggle and switch are greyed for a field type the database cannot index, and for an index type that cannot be unique) |
 | EDT-143 | covered | src/features/tables/__tests__/p8-edt-b-indexes.test.tsx::EDT-143 Index Type only where the database has a choice (new); also src/core/commands/p8-edt-b-model.test.ts::EDT-143 / EDT-276 per-database features |
 | EDT-144 | covered | src/core/commands/commands.test.ts::DAT-044 / EDT-144 gin needs array, json, jsonb, tsvector or hstore columns; removing one resets the method |
 | EDT-145 | covered | src/core/commands/commands.test.ts::EDT-145 the primary-key index cannot be edited by hand and sits first |

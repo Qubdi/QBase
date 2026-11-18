@@ -67,19 +67,19 @@ describe('the canvas in the editor frame (EDT-011, EDT-012)', () => {
         expect(columns()).toBe(before);
     });
 
-    it('EDT-042: the Filter button opens the Filter tables panel, and Ctrl+F toggles it', async () => {
+    it('EDT-042: the Filter button opens the Search & Filter panel, and Ctrl+F toggles it', async () => {
         mount();
         const button = await screen.findByRole('button', {
-            name: /Filter Tables/,
+            name: /Search & Filter/,
         });
         fireEvent.click(button);
         expect(
-            await screen.findByRole('dialog', { name: 'Filter Tables' })
+            await screen.findByRole('dialog', { name: 'Search & Filter' })
         ).toBeTruthy();
         fireEvent.keyDown(document.body, { key: 'f', ctrlKey: true });
         await waitFor(() =>
             expect(
-                screen.queryByRole('dialog', { name: 'Filter Tables' })
+                screen.queryByRole('dialog', { name: 'Search & Filter' })
             ).toBeNull()
         );
     });

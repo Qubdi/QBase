@@ -7,7 +7,6 @@ import {
     planUpdateColumn,
 } from '@/core/commands/plan-column';
 import { planAddNote } from '@/core/commands/plan-visual';
-import { isSerialType } from '@/core/commands/settle-column';
 import { listOf } from '@/core/model/collection';
 import type { Entity } from '@/core/model/entity';
 import { columnsOf, linksOfColumn } from '@/core/model/lookup';
@@ -19,7 +18,8 @@ import { useText } from '@/platform/panel/use-text';
 import { toast } from '@/platform/toast/use-toast';
 import { Button } from '@/platform/ui/button';
 import { AttributesPopover } from './attributes-popover';
-import { planPickType, reorderedIds } from './field-rules';
+import { DescriptionPopover } from './description-popover';
+import { fieldAttributeState, planPickType, reorderedIds } from './field-rules';
 import { TypePicker } from './type-picker';
 
 const Toggle: React.FC<{
@@ -146,36 +146,57 @@ export const FieldsEditor: React.FC<{
                                         : 'contents'
                                 }
                             >
-                                <DebouncedInput
-                                    aria-label={text('fields.name')}
-                                    className={cn(
-                                        'h-8 min-w-[3.5rem] flex-1 text-sm',
-                                        compact
-                                            ? 'border-transparent bg-transparent px-3 font-medium shadow-none hover:border-input'
-                                            : 'px-2'
-                                    )}
-                                    value={column.name}
-                                    required
-                                    readOnly={locked}
-                                    focusOnMount={
-                                        (addedId ?? added) === column.id
-                                    }
-                                    placeholder={text('fields.namePlaceholder')}
-                                    onCommit={(name) =>
-                                        update(column.id, { name })
-                                    }
-                                />
-                                {column.comments ? (
-                                    <button
-                                        type="button"
-                                        aria-label={text('fields.showComment')}
-                                        title={column.comments}
-                                        onClick={() => setPopoverFor(column.id)}
-                                        className="text-muted-foreground"
-                                    >
-                                        <MessageSquareText className="size-4" />
-                                    </button>
-                                ) : null}
+                                {/*
+                                  The name box. A description is marked by a small
+                                  comment icon inside its right end, so the box is
+                                  the same width on every row, with or without one;
+                                  only the text stops a little earlier where the
+                                  icon is (see design/field-description).
+                                */}
+                                <div className="relative flex min-w-[3.5rem] flex-1">
+                                    <DebouncedInput
+                                        aria-label={text('fields.name')}
+                                        className={cn(
+                                            'h-8 min-w-0 flex-1 text-sm',
+                                            compact
+                                                ? 'border-transparent bg-transparent px-3 font-medium shadow-none hover:border-input'
+                                                : 'px-2',
+                                            column.comments &&
+                                                (compact ? 'pr-9' : 'pr-8')
+                                        )}
+                                        value={column.name}
+                                        required
+                                        readOnly={locked}
+                                        focusOnMount={
+                                            (addedId ?? added) === column.id
+                                        }
+                                        placeholder={text(
+                                            'fields.namePlaceholder'
+                                        )}
+                                        onCommit={(name) =>
+                                            update(column.id, { name })
+                                        }
+                                    />
+                                    {column.comments ? (
+                                        compact ? (
+                                            // the card has no Field Attributes to open: the
+                                            // icon only shows the description on hover
+                                            <span
+                                                role="img"
+                                                aria-label={column.comments}
+                                                title={column.comments}
+                                                className="absolute right-2 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center text-muted-foreground"
+                                            >
+                                                <MessageSquareText className="size-4" />
+                                            </span>
+                                        ) : (
+                                            // a click shows only the description
+                                            <DescriptionPopover
+                                                description={column.comments}
+                                            />
+                                        )
+                                    ) : null}
+                                </div>
                                 <TypePicker
                                     databaseType={design.databaseType}
                                     userTypes={userTypes}
@@ -209,8 +230,11 @@ export const FieldsEditor: React.FC<{
                                     compact={compact}
                                     disabled={
                                         locked ||
-                                        column.primaryKey ||
-                                        isSerialType(column.type.id)
+                                        fieldAttributeState(
+                                            design.databaseType,
+                                            column,
+                                            columns
+                                        ).nullableLocked
                                     }
                                     onClick={() =>
                                         update(column.id, {

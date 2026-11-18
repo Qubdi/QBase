@@ -68,6 +68,101 @@ export function canUseGin(columns: readonly Column[]): boolean {
 
 const typeOf = (c: Column): string => c.type.id.toLowerCase();
 
+/** The text and binary types of MySQL and MariaDB: an index on one needs a prefix length. */
+const MYSQL_LONG_TYPES = [
+    'tinytext',
+    'text',
+    'mediumtext',
+    'longtext',
+    'tinyblob',
+    'blob',
+    'mediumblob',
+    'longblob',
+];
+
+/**
+ * The types each database refuses in a unique index. PostgreSQL has no btree
+ * operators for json, xml and the geometric types. MySQL and MariaDB need a
+ * prefix length on text, blob and spatial types (which an index here cannot
+ * carry) and cannot index json. SQL Server and Oracle cannot use their large
+ * object, xml and spatial types as an index key. SQLite takes every type.
+ */
+const NO_UNIQUE_TYPES: Readonly<Record<DatabaseType, readonly string[]>> = {
+    postgresql: [
+        'json',
+        'xml',
+        'point',
+        'line',
+        'lseg',
+        'box',
+        'path',
+        'polygon',
+        'circle',
+    ],
+    mysql: [...MYSQL_LONG_TYPES, 'json', ...GEOMETRY_TYPES],
+    mariadb: [...MYSQL_LONG_TYPES, 'json', ...GEOMETRY_TYPES],
+    sql_server: [
+        'text',
+        'ntext',
+        'image',
+        'xml',
+        'json',
+        'geometry',
+        'geography',
+    ],
+    sqlite: [],
+    oracle: ['clob', 'nclob', 'blob', 'bfile', 'long_raw', 'xmltype'],
+};
+
+/**
+ * The index types that cannot be unique, whatever fields they cover. It is the
+ * `notUnique` answer of `methodProblem`, without the other reasons that come
+ * first there (a test keeps the two the same).
+ */
+const NEVER_UNIQUE_METHODS: Readonly<Record<DatabaseType, readonly string[]>> =
+    {
+        postgresql: ['hash', 'gist', 'gin', 'spgist', 'brin'],
+        mysql: ['fulltext', 'spatial'],
+        mariadb: ['fulltext', 'spatial'],
+        sql_server: ['columnstore', 'xml'],
+        sqlite: [],
+        oracle: ['bitmap'],
+    };
+
+/** Whether an index of this type can never be unique (only btree can, on PostgreSQL). */
+export function methodCannotBeUnique(
+    database: DatabaseType,
+    method: KeyMethod | undefined
+): boolean {
+    return (
+        method !== undefined && NEVER_UNIQUE_METHODS[database].includes(method)
+    );
+}
+
+/** SQL Server types whose `max` length makes them too large to be an index key. */
+const SQL_SERVER_MAX_TYPES = ['varchar', 'nvarchar', 'varbinary'];
+
+/**
+ * The columns among these that the database cannot put in a unique index,
+ * because of their type. The ids of types with a space are written with an
+ * underscore (`long raw` is `long_raw`).
+ */
+export function columnsBlockingUnique(
+    database: DatabaseType,
+    columns: readonly Column[]
+): Column[] {
+    const refused = NO_UNIQUE_TYPES[database];
+    return columns.filter((c) => {
+        const id = typeOf(c).trim().replace(/\s+/g, '_');
+        return (
+            refused.includes(id) ||
+            (database === 'sql_server' &&
+                c.length === 'max' &&
+                SQL_SERVER_MAX_TYPES.includes(id))
+        );
+    });
+}
+
 /** What is already on the table that an index type must not be doubled with. */
 export interface IndexSurroundings {
     /** the other indexes of the table, this one left out */

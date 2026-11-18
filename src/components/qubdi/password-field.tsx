@@ -1,7 +1,6 @@
 import React from 'react';
 import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/platform/ui/input';
 import { cn } from '@/lib/utils';
 import {
     checkPassword,
@@ -9,6 +8,7 @@ import {
     passwordRules,
     type PasswordRuleId,
 } from '../../../shared/password';
+import { PasswordInput } from './password-input';
 
 export interface PasswordFieldProps {
     value: string;
@@ -44,8 +44,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
 
     return (
         <div className="flex flex-col gap-2">
-            <Input
-                type="password"
+            <PasswordInput
                 placeholder={label}
                 aria-label={label}
                 aria-describedby={listId}

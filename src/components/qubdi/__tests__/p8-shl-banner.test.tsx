@@ -26,7 +26,10 @@ vi.mock('@/lib/qubdi/api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     api,
 }));
-vi.mock('../get-latest-control', () => ({ GetLatestDialog: () => null }));
+// the banner of a diagram someone else is editing can load the latest version
+vi.mock('@/qbase/use-storage', () => ({
+    useStorage: () => ({ deleteDiagram: vi.fn() }),
+}));
 
 beforeAll(() => {
     Element.prototype.hasPointerCapture ??= () => false;

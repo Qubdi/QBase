@@ -122,6 +122,8 @@ export const FieldRow = memo(function FieldRow({
     return (
         <div
             data-testid={`field-${column.id}`}
+            // lets a drop on the canvas tell which column it landed on
+            data-column-id={column.id}
             data-highlighted={highlighted || undefined}
             data-link-end={linkEnd || undefined}
             className={cn(

@@ -131,3 +131,37 @@
 .react-flow .react-flow__attribution a {
     color: hsl(var(--muted-foreground));
 }
+
+/*
+ * One look for every scrollbar: the thin, rounded one of the scroll areas
+ * (thumb in the border colour, no track). Lists that scroll by themselves use
+ * the browser's own bar, so they get the same look here. In the base layer so a
+ * utility class can still change it.
+ */
+@layer base {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(var(--border)) transparent;
+    }
+}
+
+/*
+ * Scroll areas and select lists draw their own scrollbar. Radix hides the browser's one with a
+ * <style> tag it injects at run time, and the server's Content-Security-Policy
+ * (style-src with a nonce) refuses that tag, so both bars showed. Hide it here,
+ * in the stylesheet, where the policy allows it.
+ */
+[data-radix-scroll-area-viewport] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+[data-radix-scroll-area-viewport]::-webkit-scrollbar {
+    display: none;
+}
+[data-radix-select-viewport] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+[data-radix-select-viewport]::-webkit-scrollbar {
+    display: none;
+}

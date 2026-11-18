@@ -7,6 +7,8 @@ export interface ProjectCreateDialogProps {
     open: boolean;
     project: MyProject;
     onClose: () => void;
+    /** Switches to the examples list (closing this dialog is not a dismissal). */
+    onExamples?: () => void;
 }
 
 /**
@@ -17,6 +19,7 @@ export const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
     open,
     project,
     onClose,
+    onExamples,
 }) => {
     const [importOpen, setImportOpen] = useState(false);
 
@@ -31,6 +34,7 @@ export const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
                 projectName={project.name}
                 projectSlug={project.slug}
                 onImport={() => setImportOpen(true)}
+                onExamples={onExamples}
             />
             <ImportFromDatabaseDialog
                 open={open && importOpen}

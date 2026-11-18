@@ -216,4 +216,98 @@ describe('usePagedList', () => {
         expect(result.current.error).toBeNull();
         expect(result.current.items).toEqual(['ok']);
     });
+
+    describe('background refresh', () => {
+        it('fetches the page on screen again at the interval, silently', async () => {
+            let n = 0;
+            const fetcher = vi.fn(async (p: PagedFetch) =>
+                pageOf([`v${++n}`], 1, p)
+            );
+            const { result } = renderHook(() =>
+                usePagedList(fetcher, { limit: 10, refreshMs: 30_000 })
+            );
+            await flush();
+            expect(result.current.items).toEqual(['v1']);
+
+            await wait(29_000);
+            expect(fetcher).toHaveBeenCalledTimes(1);
+            await wait(1_100);
+            expect(fetcher).toHaveBeenCalledTimes(2);
+            // swapped in place, and never reported as loading
+            expect(result.current.items).toEqual(['v2']);
+            expect(result.current.loading).toBe(false);
+            await wait(30_000);
+            expect(result.current.items).toEqual(['v3']);
+        });
+
+        it('does not refresh when no interval is given', async () => {
+            const { fetcher } = makeFetcher();
+            renderHook(() => usePagedList(fetcher, { limit: 10 }));
+            await flush();
+            await wait(120_000);
+            expect(fetcher).toHaveBeenCalledTimes(1);
+        });
+
+        it('asks for the page and search the user is on', async () => {
+            const { fetcher, calls } = makeFetcher();
+            const { result } = renderHook(() =>
+                usePagedList(fetcher, { limit: 10, refreshMs: 30_000 })
+            );
+            await flush();
+            act(() => result.current.setPage(2));
+            await flush();
+            await wait(30_100);
+            expect(calls.at(-1)).toMatchObject({ page: 2, limit: 10 });
+        });
+
+        it('keeps the rows when a refresh fails, and tries again', async () => {
+            let fail = false;
+            const fetcher = vi.fn(async (p: PagedFetch) => {
+                if (fail) throw new Error('offline');
+                return pageOf(['ok'], 1, p);
+            });
+            const { result } = renderHook(() =>
+                usePagedList(fetcher, { limit: 10, refreshMs: 30_000 })
+            );
+            await flush();
+            fail = true;
+            await wait(30_100);
+            expect(result.current.items).toEqual(['ok']);
+            expect(result.current.error).toBeNull();
+            fail = false;
+            await wait(30_000);
+            expect(fetcher).toHaveBeenCalledTimes(3);
+        });
+
+        it('waits while the tab is hidden and refreshes when it is shown', async () => {
+            const { fetcher } = makeFetcher();
+            renderHook(() =>
+                usePagedList(fetcher, { limit: 10, refreshMs: 30_000 })
+            );
+            await flush();
+            const hidden = vi
+                .spyOn(document, 'hidden', 'get')
+                .mockReturnValue(true);
+            await wait(95_000);
+            expect(fetcher).toHaveBeenCalledTimes(1);
+            hidden.mockReturnValue(false);
+            await act(async () => {
+                document.dispatchEvent(new Event('visibilitychange'));
+                await vi.advanceTimersByTimeAsync(0);
+            });
+            expect(fetcher).toHaveBeenCalledTimes(2);
+            hidden.mockRestore();
+        });
+
+        it('stops when the component goes away', async () => {
+            const { fetcher } = makeFetcher();
+            const { unmount } = renderHook(() =>
+                usePagedList(fetcher, { limit: 10, refreshMs: 30_000 })
+            );
+            await flush();
+            unmount();
+            await wait(120_000);
+            expect(fetcher).toHaveBeenCalledTimes(1);
+        });
+    });
 });

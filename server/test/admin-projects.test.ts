@@ -353,39 +353,91 @@ describe('admin panel and projects', () => {
         });
     });
 
-    describe('cleanup rules', () => {
-        it('refuses to delete a project that still has diagrams', async () => {
-            const res = await call('DELETE', `/admin/projects/${projectId}`, admin);
-            expect(res.statusCode).toBe(409);
-            expect(res.json().error).toBe('project_not_empty');
+    describe('project list order', () => {
+        // created one after another: Mango, Apple, Zebra (the search keeps the
+        // other tests' projects out of the list)
+        const names = async (query: string) =>
+            (await call('GET', `/admin/projects?q=Sortx${query}`, admin))
+                .json()
+                .items.map((p: { name: string }) => p.name);
+
+        beforeAll(async () => {
+            for (const n of ['Sortx Mango', 'Sortx Apple', 'Sortx Zebra']) {
+                await call('POST', '/admin/projects', admin, { name: n });
+                await new Promise((r) => setTimeout(r, 5));
+            }
         });
 
-        it('answers 409, not 500, when a diagram lands between the check and the delete', async () => {
-            const p = (await call('POST', '/admin/projects', admin, { name: 'Racy' })).json();
-            let release!: () => void;
-            const held = new Promise<void>((resolve) => (release = resolve));
-            let inserted!: () => void;
-            const insertedFirst = new Promise<void>((resolve) => (inserted = resolve));
-            // an open transaction holds a new diagram in the project, uncommitted:
-            // the route's count sees nothing, and its delete waits on the row lock
-            const creating = ctx.db.transaction(async (tx) => {
-                await tx.insert(diagrams).values({
+        it('is by name, A to Z, unless asked otherwise', async () => {
+            const all = ['Sortx Apple', 'Sortx Mango', 'Sortx Zebra'];
+            expect(await names('')).toEqual(all);
+            expect(await names('&sort=name_asc')).toEqual(all);
+        });
+
+        it('can be by name, Z to A', async () => {
+            expect(await names('&sort=name_desc')).toEqual([
+                'Sortx Zebra',
+                'Sortx Mango',
+                'Sortx Apple',
+            ]);
+        });
+
+        it('can be by creation date, newest or oldest first', async () => {
+            expect(await names('&sort=created_desc')).toEqual([
+                'Sortx Zebra',
+                'Sortx Apple',
+                'Sortx Mango',
+            ]);
+            expect(await names('&sort=created_asc')).toEqual([
+                'Sortx Mango',
+                'Sortx Apple',
+                'Sortx Zebra',
+            ]);
+        });
+
+        it('keeps the order across pages', async () => {
+            const first = await call(
+                'GET',
+                '/admin/projects?q=Sortx&sort=name_desc&limit=2',
+                admin
+            );
+            const second = await call(
+                'GET',
+                '/admin/projects?q=Sortx&sort=name_desc&limit=2&page=2',
+                admin
+            );
+            expect(first.json().items.map((p: { name: string }) => p.name)).toEqual([
+                'Sortx Zebra',
+                'Sortx Mango',
+            ]);
+            expect(second.json().items.map((p: { name: string }) => p.name)).toEqual([
+                'Sortx Apple',
+            ]);
+        });
+
+        it('refuses an unknown order', async () => {
+            const res = await call('GET', '/admin/projects?sort=random', admin);
+            expect(res.statusCode).toBe(400);
+        });
+    });
+
+    describe('cleanup rules', () => {
+        it('deletes a project together with its diagrams and everything attached', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Doomed' })).json();
+            const [d] = await ctx.db
+                .insert(diagrams)
+                .values({
                     ownerId: admin.id,
                     projectId: p.id,
-                    title: 'Late',
+                    title: 'Inside',
                     content: sampleContent,
-                });
-                inserted();
-                await held;
-            });
-            await insertedFirst;
-            const deleting = call('DELETE', `/admin/projects/${p.id}`, admin);
-            await new Promise((r) => setTimeout(r, 300));
-            release();
-            await creating;
-            const res = await deleting;
-            expect(res.statusCode).toBe(409);
-            expect(res.json().error).toBe('project_not_empty');
+                })
+                .returning({ id: diagrams.id });
+            const res = await call('DELETE', `/admin/projects/${p.id}`, admin);
+            expect(res.statusCode).toBe(204);
+            const left = await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, d.id));
+            expect(left).toHaveLength(0);
+            expect((await call('GET', `/admin/projects/${p.id}/members`, admin)).statusCode).toBe(404);
         });
 
         it('deletes an empty project', async () => {

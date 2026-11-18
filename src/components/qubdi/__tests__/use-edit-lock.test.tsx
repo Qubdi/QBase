@@ -71,6 +71,39 @@ describe('useEditLock', () => {
         expect(release).toHaveBeenCalledTimes(1);
     });
 
+    describe('stepping out when asked to', () => {
+        it('turns read-only and names who has the diagram now', async () => {
+            acquire.mockResolvedValue(held);
+            const { result } = renderHook(() => useEditLock('r1'));
+            await tick();
+            act(() => reportLockLost('r1', 'sam@corp.io'));
+            expect(result.current).toEqual({
+                status: 'taken',
+                holder: 'sam@corp.io',
+            });
+            // it has nothing left to renew or give back
+            await tick(LOCK_HEARTBEAT_MS * 2);
+            expect(acquire).toHaveBeenCalledTimes(1);
+            expect(release).not.toHaveBeenCalled();
+        });
+
+        it('says "someone else" when nobody is named', async () => {
+            acquire.mockResolvedValue(held);
+            const { result } = renderHook(() => useEditLock('r1'));
+            await tick();
+            act(() => reportLockLost('r1'));
+            expect(result.current).toEqual({ status: 'taken', holder: null });
+        });
+
+        it('ignores another diagram stepping out', async () => {
+            acquire.mockResolvedValue(held);
+            const { result } = renderHook(() => useEditLock('r1'));
+            await tick();
+            act(() => reportLockLost('other', 'sam@corp.io'));
+            expect(result.current).toEqual({ status: 'held' });
+        });
+    });
+
     describe('holding the lock', () => {
         it('renews it on a heartbeat', async () => {
             acquire.mockResolvedValue(held);

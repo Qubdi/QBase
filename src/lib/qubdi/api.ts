@@ -7,6 +7,10 @@ import { gzipText } from './gzip';
 import { listQuery, type ListParams, type Page } from './paging';
 import { InvalidServerDiagramError } from './open-remote';
 
+/** How the admin project list is ordered: by name or by creation date. */
+export type ProjectSort =
+    'name_asc' | 'name_desc' | 'created_desc' | 'created_asc';
+
 export type MemberRole = 'owner' | 'editor' | 'viewer';
 
 export interface RemoteUser {
@@ -892,10 +896,14 @@ export function createApi(
                 truncated: res.headers.get('x-truncated') === 'true',
             };
         },
-        adminListProjects: (params?: ListParams) =>
+        adminListProjects: (params?: ListParams & { sort?: ProjectSort }) =>
             request<Page<AdminProject>>(
                 'GET',
-                `/admin/projects${listQuery(params)}`,
+                `/admin/projects${listQuery(params, {
+                    // the server's default (name, A to Z) needs no parameter
+                    sort:
+                        params?.sort === 'name_asc' ? undefined : params?.sort,
+                })}`,
                 undefined,
                 undefined,
                 shape.page(shape.adminProject)
@@ -1012,6 +1020,42 @@ export function createApi(
                 undefined,
                 options
             ),
+        /**
+         * Asks whoever holds the lock to step out. `granted` means nobody did
+         * after all and the diagram is set aside for this user; `sent` means
+         * the request is on its way, and the answer comes on the lock stream.
+         */
+        pokeLock: (id: string, editorId: string) =>
+            request<
+                | { status: 'granted' }
+                | {
+                      status: 'sent';
+                      pokeId: string;
+                      waitSeconds: number;
+                      holder: string;
+                  }
+            >(
+                'POST',
+                `/diagrams/${encodeURIComponent(id)}/lock/poke`,
+                { editorId },
+                undefined,
+                shape.pokeAnswer
+            ),
+        /** The holder's answer to a poke; agreeing hands the lock to the one who asked. */
+        answerPoke: (
+            id: string,
+            pokeId: string,
+            editorId: string,
+            accept: boolean
+        ) =>
+            request<void>(
+                'POST',
+                `/diagrams/${encodeURIComponent(id)}/lock/pokes/${encodeURIComponent(pokeId)}/answer`,
+                { editorId, accept }
+            ),
+        /** Where an open editor hears about its lock the moment something happens (an EventSource). */
+        lockEventsUrl: (id: string, editorId: string) =>
+            `${baseUrl}/diagrams/${encodeURIComponent(id)}/lock/events?editorId=${encodeURIComponent(editorId)}`,
         publish: (id: string, note?: string) =>
             request<{
                 version: number;

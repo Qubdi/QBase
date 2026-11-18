@@ -146,7 +146,7 @@ export const ExportImageDialog: React.FC<ExportImageDialogProps> = ({
                             <div className="flex items-start gap-2">
                                 <Checkbox
                                     id="export-pattern"
-                                    className="mt-0.5"
+                                    className="mt-px"
                                     checked={pattern}
                                     onCheckedChange={(v) =>
                                         setPattern(v === true)
@@ -166,7 +166,7 @@ export const ExportImageDialog: React.FC<ExportImageDialogProps> = ({
                             <div className="flex items-start gap-2">
                                 <Checkbox
                                     id="export-transparent"
-                                    className="mt-0.5"
+                                    className="mt-px"
                                     checked={transparent}
                                     onCheckedChange={(v) =>
                                         setTransparent(v === true)

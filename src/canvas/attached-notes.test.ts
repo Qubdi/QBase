@@ -229,6 +229,50 @@ describe('making and deleting attached notes', () => {
         ]);
     });
 
+    it('a table menu opened on one of its fields offers the note for that field, and only that', () => {
+        const s = shop();
+        const column = s.design.entities.byId[s.orders].columnIds[0];
+        const lines = buildMenu({
+            design: s.design,
+            selection: [],
+            target: { kind: 'entity', id: s.orders, columnId: column },
+            at: { x: 0, y: 0 },
+            showViews: true,
+            canOpenLinkDialog: true,
+            canEditEntity: true,
+        });
+        const notes = lines.flatMap((l) =>
+            l.kind === 'item' && /Note$/.test(l.label) ? [l] : []
+        );
+        expect(notes.map((l) => l.label)).toEqual(['addFieldNote']);
+        expect(notes[0].action).toEqual({
+            type: 'new-note',
+            anchor: { kind: 'column', id: column },
+        });
+    });
+
+    it('a field that is not in the table the menu is for falls back to the table note', () => {
+        const s = shop();
+        const other = s.design.entities.byId[s.users].columnIds[0];
+        const lines = buildMenu({
+            design: s.design,
+            selection: [],
+            target: { kind: 'entity', id: s.orders, columnId: other },
+            at: { x: 0, y: 0 },
+            showViews: true,
+            canOpenLinkDialog: true,
+            canEditEntity: true,
+        });
+        const note = lines.find(
+            (l) => l.kind === 'item' && /Note$/.test(l.label)
+        );
+        expect(note?.kind === 'item' && note.label).toBe('addNote');
+        expect(note?.kind === 'item' && note.action).toEqual({
+            type: 'new-note',
+            anchor: { kind: 'entity', id: s.orders },
+        });
+    });
+
     it('the pane menu has no note line: a note needs an owner', () => {
         const s = shop();
         const lines = buildMenu({

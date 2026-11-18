@@ -24,10 +24,12 @@ import {
     type AdminUser,
     type ProjectMember,
     type ProjectRole,
+    type ProjectSort,
 } from '@/lib/qubdi/api';
 import { NewProjectDialog } from './new-project-dialog';
 import { ProjectMembers } from './project-members';
 import { ProjectSettings } from './project-settings';
+import { DEFAULT_PROJECT_SORT, ProjectSortMenu } from './project-sort-menu';
 
 const PAGE_SIZE = 5;
 
@@ -56,9 +58,17 @@ export const ProjectsPanel: React.FC = () => {
     const detail = useRef<HTMLElement>(null);
 
     // a fixed page size keeps the list the same height however many projects exist
+    // the sort travels as the list's extra criterion: a new order starts at page 1
+    const [sort, setSort] = useState<ProjectSort>(DEFAULT_PROJECT_SORT);
     const list = usePagedList(
-        ({ page, limit, q }) => api.adminListProjects({ page, limit, q }),
-        { limit: PAGE_SIZE }
+        ({ page, limit, q, filter }) =>
+            api.adminListProjects({
+                page,
+                limit,
+                q,
+                sort: filter as ProjectSort,
+            }),
+        { limit: PAGE_SIZE, filter: sort }
     );
 
     const choose = useCallback((p: AdminProject | null) => {
@@ -264,14 +274,18 @@ export const ProjectsPanel: React.FC = () => {
                         {list.error}
                     </p>
                 ) : null}
-                <SearchInput
-                    value={list.query}
-                    onChange={list.setQuery}
-                    placeholder={t(
-                        'qubdi.adminProjects.projects.searchPlaceholder'
-                    )}
-                    label={t('qubdi.adminProjects.projects.searchLabel')}
-                />
+                <div className="flex gap-2">
+                    <SearchInput
+                        className="min-w-0 flex-1"
+                        value={list.query}
+                        onChange={list.setQuery}
+                        placeholder={t(
+                            'qubdi.adminProjects.projects.searchPlaceholder'
+                        )}
+                        label={t('qubdi.adminProjects.projects.searchLabel')}
+                    />
+                    <ProjectSortMenu value={sort} onChange={setSort} />
+                </div>
                 <ul
                     className="flex max-h-[22rem] min-h-32 flex-col gap-1 overflow-y-auto"
                     aria-label={t('qubdi.adminProjects.projects.listLabel')}

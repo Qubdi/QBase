@@ -26,9 +26,11 @@ import type { Example } from './examples';
  * makes a new diagram: in the open project when there is one, otherwise in
  * this browser.
  */
-export const ExamplesDialog: React.FC<{ onClose: () => void }> = ({
-    onClose,
-}) => {
+export const ExamplesDialog: React.FC<{
+    onClose: () => void;
+    /** Backing out (Cancel, Escape, outside click); defaults to `onClose`. */
+    onDismiss?: () => void;
+}> = ({ onClose, onDismiss }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const adapter = useStorageAdapter();
@@ -74,7 +76,10 @@ export const ExamplesDialog: React.FC<{ onClose: () => void }> = ({
     };
 
     return (
-        <Dialog open onOpenChange={(next) => !next && !busy && onClose()}>
+        <Dialog
+            open
+            onOpenChange={(next) => !next && !busy && (onDismiss ?? onClose)()}
+        >
             <DialogContent className="max-w-[900px]">
                 <DialogHeader>
                     <DialogTitle>
@@ -93,7 +98,7 @@ export const ExamplesDialog: React.FC<{ onClose: () => void }> = ({
                 <DialogFooter>
                     <Button
                         variant="secondary"
-                        onClick={onClose}
+                        onClick={onDismiss ?? onClose}
                         disabled={busy}
                     >
                         {t('editor.common.cancel')}

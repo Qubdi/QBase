@@ -1,8 +1,9 @@
 import { traitsOf } from '@/core/model/database';
+import type { Column } from '@/core/model/column';
 import type { Design } from '@/core/model/design';
 import type { Entity } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
-import { entityList } from '@/core/model/lookup';
+import { columnsOf, entityList } from '@/core/model/lookup';
 import {
     isVisible,
     schemaIdOf,
@@ -17,6 +18,8 @@ export type Shown = 'all' | 'some' | 'none';
 export interface TreeTable {
     entity: Entity;
     shown: boolean;
+    /** the fields whose names match the search text; none when there is none */
+    fields: Column[];
 }
 
 export interface TreeGroup {
@@ -98,25 +101,43 @@ function groupShown(tables: TreeTable[]): Shown {
     return on === tables.length ? 'all' : 'some';
 }
 
+/** Where the search text is looked for: in table names, in field names, or in both. */
+export interface SearchScope {
+    tables: boolean;
+    fields: boolean;
+}
+
+export const SEARCH_BOTH: SearchScope = { tables: true, fields: true };
+
 export interface TreeInput {
     design: Design;
     filter: VisibilityFilter;
     groupBy: GroupBy;
-    /** narrows the rows by table name; it never changes what is hidden (EDT-066) */
+    /**
+     * narrows the rows to the tables whose name, or one of whose field names,
+     * contains it; it never changes what is hidden (EDT-066)
+     */
     text?: string;
+    /** where `text` is looked for; both by default */
+    scope?: SearchScope;
     showViews: boolean;
 }
 
 /**
- * The tree of the Filter Tables panel (EDT-062 to EDT-068): groups by schema
- * or by area, each with its tables. Groups left empty by the search are
- * dropped. A database without schemas has a single flat group.
+ * The tree of the Search & Filter panel (EDT-062 to EDT-068): groups by schema
+ * or by area, each with its tables. A table is listed when its name or one of
+ * its field names contains the search text (ignoring case); the fields that
+ * match come with it. `scope` says where the text is looked for: with only
+ * tables, field names are not read and no fields are listed; with only fields,
+ * a table is listed only for a field that matches. Groups left empty by the
+ * search are dropped. A database without schemas has a single flat group.
  */
 export function buildTree({
     design,
     filter,
     groupBy,
     text = '',
+    scope = SEARCH_BOTH,
     showViews,
 }: TreeInput): TreeGroup[] {
     const needle = text.trim().toLowerCase();
@@ -140,7 +161,15 @@ export function buildTree({
 
     for (const entity of entityList(design)) {
         if (!showViews && entity.kind === 'view') continue;
-        if (needle && !entity.name.toLowerCase().includes(needle)) continue;
+        const fields =
+            needle && scope.fields
+                ? columnsOf(design, entity).filter((c) =>
+                      c.name.toLowerCase().includes(needle)
+                  )
+                : [];
+        const byName =
+            scope.tables && entity.name.toLowerCase().includes(needle);
+        if (needle && fields.length === 0 && !byName) continue;
         const { key, label } = groupFor(entity);
         let group = groups.get(key);
         if (!group) {
@@ -150,6 +179,7 @@ export function buildTree({
         group.tables.push({
             entity,
             shown: isVisible(filter, entity, defaultSchema),
+            fields,
         });
     }
     const list = [...groups.values()];

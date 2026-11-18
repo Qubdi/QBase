@@ -115,12 +115,13 @@ export function useEditLock(remoteId: string | undefined): LockState {
             void sendRelease();
         };
 
-        // a save was refused with 423: the lock is someone else's now
-        const stopListening = onLockLost((lostId) => {
+        // a save was refused with 423, or this editor agreed to step out: the
+        // lock is someone else's now
+        const stopListening = onLockLost((lostId, holder) => {
             if (lostId !== remoteId) return;
             held = false;
             clearInterval(timer);
-            setLock({ status: 'taken', holder: null });
+            setLock({ status: 'taken', holder: holder ?? null });
         });
 
         void ask().then(() => {

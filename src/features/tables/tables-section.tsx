@@ -3,6 +3,7 @@ import { ChevronDown, Table } from 'lucide-react';
 import { hidesEverything } from '@/features/filters/filter-tree';
 import { cn } from '@/lib/utils/utils';
 import { Notice } from '@/platform/panel/notice';
+import { PANEL_LIST } from '@/platform/panel/panel-list';
 import { SortableList } from '@/platform/panel/sortable-list';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
@@ -36,6 +37,9 @@ export const TablesSection: React.FC = () => {
         setSeenExpanded(expanded);
         if (expanded) setOpenId(expanded);
     }
+
+    // the table that was open when its drag began, to open again when it ends
+    const reopen = useRef<string | undefined>(undefined);
 
     // a table added from here opens its form at once
     const knownIds = useRef(new Set(design.entities.order));
@@ -84,7 +88,7 @@ export const TablesSection: React.FC = () => {
                             <ChevronDown />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent>
                         <DropdownMenuItem
                             onSelect={() => add('view')}
                             {...newItemDragProps('view')}
@@ -150,6 +154,18 @@ export const TablesSection: React.FC = () => {
                 ids={rows.map((r) => r.id)}
                 disabled={locked}
                 onMove={(a, b) => edit(planReorderTables(design, a, b))}
+                // an open table folds up while it is carried (a whole form is too
+                // big to drag past the others) and opens again where it lands
+                onStart={(id) => {
+                    if (id !== openId) return;
+                    reopen.current = id;
+                    setOpenId(undefined);
+                }}
+                onFinish={() => {
+                    const id = reopen.current;
+                    reopen.current = undefined;
+                    if (id) setOpenId(id);
+                }}
             >
                 <div className="space-y-1">
                     <WindowedList
@@ -190,7 +206,7 @@ export const TablesSection: React.FC = () => {
                 />
                 {addButton}
             </div>
-            <div data-window-root className="min-h-0 flex-1 overflow-y-auto">
+            <div data-window-root className={PANEL_LIST}>
                 {body}
             </div>
             {dialog}

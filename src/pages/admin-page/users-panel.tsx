@@ -40,7 +40,7 @@ import {
     type BulkUsersResult,
     type UserStatus,
 } from '@/lib/qubdi/api';
-import { ago, exactTime } from '@/lib/qubdi/when';
+import { Ago } from '@/components/qubdi/ago-time';
 import { PasswordField } from '@/components/qubdi/password-field';
 import { Input } from '@/platform/ui/input';
 import { useQubdi } from '@/hooks/use-qubdi';
@@ -48,6 +48,10 @@ import { usePasswordMinLength } from '@/hooks/use-password-min-length';
 import { checkPassword } from '../../../shared/password';
 import { NewUserDialog } from './new-user-dialog';
 import { UserSessionsDialog } from './user-sessions-dialog';
+import { PasswordInput } from '@/components/qubdi/password-input';
+
+/** How often the user list is fetched again in the background. */
+const USERS_REFRESH_MS = 30_000;
 
 const PAGE_SIZE = 10;
 
@@ -93,8 +97,7 @@ const ProofFields: React.FC<{
                     ? t('qubdi.adminUsers.users.confirmItsYouCode')
                     : t('qubdi.adminUsers.users.confirmItsYou')}
             </p>
-            <Input
-                type="password"
+            <PasswordInput
                 autoComplete="current-password"
                 placeholder={t('qubdi.adminUsers.users.ownPassword')}
                 aria-label={t('qubdi.adminUsers.users.ownPassword')}
@@ -174,7 +177,12 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                 q,
                 status: filter ? (filter as UserStatus) : undefined,
             }),
-        { limit: PAGE_SIZE, filter: statusFilter === 'all' ? '' : statusFilter }
+        {
+            limit: PAGE_SIZE,
+            filter: statusFilter === 'all' ? '' : statusFilter,
+            // sign-ins and sessions change while the page is open
+            refreshMs: USERS_REFRESH_MS,
+        }
     );
 
     // a tick belongs to the rows it was made on: another page, search or
@@ -380,7 +388,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                     </div>
                 ) : null}
                 <div className="max-h-[26rem] min-h-40 overflow-y-auto [&_td]:px-2.5 [&_th]:px-2.5">
-                    <Table>
+                    <Table containerClassName="overflow-visible">
                         <TableHeader className="sticky top-0 z-10 bg-card">
                             <TableRow>
                                 <TableHead className="w-10">
@@ -557,14 +565,7 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                             </TableCell>
                                             <TableCell className="whitespace-nowrap">
                                                 {u.lastLoginAt ? (
-                                                    <time
-                                                        dateTime={u.lastLoginAt}
-                                                        title={exactTime(
-                                                            u.lastLoginAt
-                                                        )}
-                                                    >
-                                                        {ago(u.lastLoginAt)}
-                                                    </time>
+                                                    <Ago iso={u.lastLoginAt} />
                                                 ) : (
                                                     <span className="text-muted-foreground">
                                                         {t(

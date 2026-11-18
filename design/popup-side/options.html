@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Where the popups of the side panel open. Drawn with the app's own colours (src/globals.css)
+  and sizes: rail 52 px, panel 350 px, popup widths 16rem / 13rem / 18rem as in the code.
+  Open in a browser. Choose the popup with  ?tab=desc | field | index  and the theme with
+  &theme=dark . Show some cards only with  &only=ref,today,a,b . &shot=1 hides the page text.
+-->
+<title>Popup Position Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700&display=swap">
+<style>
+:root {
+  --bg: #f4f7f7; --surface: #ffffff; --fg: #13201f; --muted: #566866; --line: #d9e2e1;
+  --accent: #0d6f66; --chip: #e6efee;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Manrope", "Inter", system-ui, sans-serif;
+}
+:root[data-theme="dark"] {
+  --bg: #0c1313; --surface: #131c1c; --fg: #e7f0ef; --muted: #9bb0ad; --line: #243332;
+  --accent: #3fd0bd; --chip: #1a2727; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font-ui); margin: 0; padding: 28px 16px 56px; }
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+header { display: grid; gap: 10px; max-width: 70ch; }
+h1 { font: 700 26px/1.2 var(--font-head); margin: 0; }
+header p { margin: 0; color: var(--muted); }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px var(--font-ui); color: var(--muted); background: none; border: 0; padding: 6px 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--chip); color: var(--fg); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { font: 700 16px/1.3 var(--font-head); margin: 0; display: flex; align-items: baseline; gap: 10px; }
+.card h2 .id { font: 700 12px var(--font-ui); color: var(--accent); background: var(--chip); border-radius: 6px; padding: 2px 8px; }
+.card p { margin: 0; color: var(--muted); max-width: 90ch; }
+.scroll { overflow-x: auto; }
+body.shot header, body.shot .bar { display: none; }
+
+/* ---- the app's own tokens, as H S L triplets ---- */
+.light { --b: 180 25% 99%; --pop: 0 0% 100%; --f: 200 30% 10%; --mu: 200 12% 40%; --bd: 190 16% 88%; --in: 190 16% 86%; --pr: 173 82% 27%; --prf: 0 0% 100%; --sec: 185 22% 94%; --ac: 174 40% 93%; --acf: 173 80% 20%; --or: #ea580c; --cv: 185 22% 96%; }
+.dark  { --b: 200 28% 7%;  --pop: 200 26% 9%;  --f: 180 20% 96%; --mu: 195 12% 66%; --bd: 200 15% 18%; --in: 200 15% 20%; --pr: 172 66% 46%; --prf: 200 40% 6%; --sec: 200 18% 15%; --ac: 190 30% 16%; --acf: 172 60% 80%; --or: #fb923c; --cv: 200 28% 5%; }
+
+.win { position: relative; display: flex; width: 1000px; height: 380px; border: 1px solid hsl(var(--bd)); border-radius: 10px; overflow: hidden; background: hsl(var(--cv)); color: hsl(var(--f)); font: 13px/1.4 var(--font-ui); }
+.rail { width: 52px; flex: none; background: hsl(var(--b)); border-right: 1px solid hsl(var(--bd)); display: grid; align-content: start; gap: 8px; padding: 10px 0; justify-items: center; }
+.rail i { width: 28px; height: 28px; border-radius: 8px; background: hsl(var(--sec)); }
+.rail i:first-child { background: hsl(var(--ac)); }
+.panel { width: 350px; flex: none; background: hsl(var(--b)); border-right: 1px solid hsl(var(--bd)); padding: 12px; }
+.panel h3 { margin: 0 0 8px; font: 600 12px var(--font-ui); letter-spacing: .02em; color: hsl(var(--mu)); }
+.canvas { position: relative; flex: 1; background-image: radial-gradient(hsl(var(--bd)) 1px, transparent 1px); background-size: 16px 16px; }
+.card-t { position: absolute; width: 190px; background: hsl(var(--pop)); border: 1px solid hsl(var(--bd)); border-radius: 8px; box-shadow: 0 1px 3px rgb(0 0 0 / .08); overflow: hidden; }
+.card-t b { display: block; padding: 6px 10px; font-size: 12px; background: hsl(var(--ac)); }
+.card-t span { display: block; padding: 5px 10px; font-size: 11px; color: hsl(var(--mu)); border-top: 1px solid hsl(var(--bd)); }
+
+.row { display: flex; align-items: center; gap: 4px; height: 36px; }
+.grip { width: 12px; flex: none; color: hsl(var(--mu) / .6); font-size: 10px; line-height: 1; text-align: center; letter-spacing: -2px; }
+.name { position: relative; flex: 1; min-width: 0; height: 32px; border: 1px solid hsl(var(--in)); border-radius: 6px; padding: 0 8px; line-height: 30px; font-size: 13px; white-space: nowrap; overflow: hidden; background: hsl(var(--b)); }
+.name.has { padding-right: 32px; }
+.nbox { position: relative; flex: 1; min-width: 0; display: flex; }
+.nbox .name { flex: 1; }
+.cmt { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: grid; place-items: center; color: hsl(var(--mu)); border-radius: 4px; }
+.cmt.on { color: hsl(var(--f)); background: hsl(var(--ac)); }
+.type { width: 84px; flex: none; height: 32px; border-radius: 6px; background: #f1f5f9; color: #1e293b; font-weight: 500; font-size: 13px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; }
+.dark .type { background: #1e293b; color: #f1f5f9; }
+.type.on { box-shadow: 0 0 0 2px hsl(var(--ring, var(--pr))); }
+.ib { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 6px; color: #334155; font-size: 12px; }
+.dark .ib { color: #cbd5e1; }
+.ib.on { background: hsl(var(--ac)); }
+.ib.act { background: hsl(var(--ac)); }
+.ib.pressed { background: hsl(var(--ac)); color: var(--or); font-weight: 600; }
+svg { display: block; flex: none; }
+
+.chooser { flex: 1; min-width: 0; height: 32px; border: 1px solid hsl(var(--in)); border-radius: 6px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 12px; background: hsl(var(--b)); }
+.chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; border: 1px solid hsl(var(--in)); border-radius: 999px; padding: 0 8px; background: hsl(var(--sec)); font-size: 12px; }
+.pkb { font-size: 11px; background: hsl(var(--ac)); color: hsl(var(--acf)); border-radius: 4px; padding: 2px 6px; flex: none; }
+.addrow { margin-top: 6px; height: 28px; padding: 0 8px; display: flex; align-items: center; color: hsl(var(--mu)); font-size: 12px; }
+
+/* a popup, as the app draws it (PopoverContent) */
+.pop { position: absolute; z-index: 5; background: hsl(var(--pop)); color: hsl(var(--f)); border: 1px solid hsl(var(--bd)); border-radius: 10px; box-shadow: 0 4px 10px rgb(0 0 0 / .12); padding: 16px; display: grid; gap: 12px; }
+.pop h4 { margin: 0; font-size: 14px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid hsl(var(--bd)); }
+.pop h4.plain { border: 0; padding: 0; }
+.pop .sw { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 500; color: #334155; }
+.dark .pop .sw { color: #e2e8f0; }
+.knob { width: 36px; height: 20px; border-radius: 999px; background: hsl(var(--in)); position: relative; }
+.knob::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .3); }
+.knob.on { background: hsl(var(--pr)); }
+.knob.on::after { left: 18px; }
+.pop label { display: grid; gap: 4px; font-size: 14px; font-weight: 500; color: #334155; }
+.dark .pop label { color: #e2e8f0; }
+.fld { height: 36px; border: 1px solid hsl(var(--in)); border-radius: 6px; background: hsl(var(--sec)); padding: 0 10px; line-height: 34px; font-weight: 400; font-size: 14px; color: hsl(var(--mu)); }
+.fld.ta { height: 62px; }
+.fld.sel { background: hsl(var(--b)); color: hsl(var(--f)); display: flex; justify-content: space-between; align-items: center; }
+.btn { height: 36px; border: 1px solid hsl(var(--in)); border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 500; }
+.btn.del { color: hsl(0 72% 45%); }
+.btn.destr { background: hsl(0 72% 51%); color: #fff; border-color: transparent; height: 32px; }
+.sep { border-top: 1px solid hsl(var(--bd)); padding-top: 12px; display: grid; gap: 8px; }
+.pop p.body { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pop .note { margin: 0; font-size: 12px; color: hsl(var(--mu)); }
+.tp { padding: 0; overflow: hidden; gap: 0; border-radius: 6px; }
+.tp .s { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid hsl(var(--bd)); padding: 0 12px; height: 40px; color: hsl(var(--mu)); font-size: 14px; }
+.tp .l { padding: 4px; }
+.tp .l div { height: 32px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; border-radius: 4px; }
+.tp .l div.cur { background: hsl(var(--ac)); }
+/* a menu (DropdownMenuContent): min-w 8rem, p-1, rounded-md */
+.pop.menu { padding: 4px; gap: 0; border-radius: 6px; font-size: 14px; }
+.pop.menu .lbl { padding: 6px 8px; font-size: 12px; color: hsl(var(--mu)); }
+.pop.menu .it { padding: 6px 8px; border-radius: 4px; }
+.pop.menu .it:first-of-type { background: hsl(var(--ac)); }
+/* the colour popup: palette, custom colour */
+.sw6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.sw6 i { aspect-ratio: 1; border-radius: 8px; }
+.pop .cap { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: hsl(var(--mu)); }
+.crow { display: flex; align-items: center; gap: 6px; }
+.crow .sq { width: 32px; height: 32px; border-radius: 6px; background: #ea580c; flex: none; }
+.crow .fld { flex: 1; height: 32px; line-height: 30px; }
+.crow .go { height: 32px; padding: 0 12px; border-radius: 6px; background: hsl(var(--pr)); color: hsl(var(--prf)); line-height: 32px; font-size: 13px; opacity: .5; }
+/* the Tables list and the table form */
+.split { display: flex; height: 32px; margin-bottom: 8px; }
+.split .a { flex: 1; background: hsl(var(--pr)); color: hsl(var(--prf)); border-radius: 6px 0 0 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; }
+.split .b { width: 28px; background: hsl(var(--sec)); border-left: 1px solid hsl(var(--bd)); border-radius: 0 6px 6px 0; display: grid; place-items: center; }
+.trow { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 0 0 4px; }
+.trow .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.trow .tn { flex: 1; font-size: 13px; font-weight: 500; }
+.trow .cnt { font-size: 11px; font-weight: 600; color: hsl(var(--mu)); background: hsl(var(--sec)); border-radius: 999px; padding: 0 6px; }
+.panel.form { display: flex; flex-direction: column; }
+.panel.form .foot { margin-top: auto; display: flex; align-items: center; gap: 8px; border-top: 1px solid hsl(var(--bd)); padding: 6px 4px 0; }
+.panel.form .foot .sp { flex: 1; }
+.panel.form .foot .swatch { width: 32px; height: 24px; border-radius: 10px; border: 2px solid hsl(var(--bd)); background: #ea580c; }
+.panel.form .foot .swatch.act { box-shadow: 0 0 0 2px hsl(var(--pr)); }
+.panel.form .foot .dl { font-size: 13px; color: hsl(0 72% 45%); padding: 4px 8px; }
+.panel.form .frm { display: grid; gap: 10px; }
+.panel.form .frm .fld { height: 32px; line-height: 30px; font-size: 13px; background: hsl(var(--b)); color: hsl(var(--f)); }
+.panel.form .frm .fld.ta { height: 56px; color: hsl(var(--mu)); }
+.chip-note { position: absolute; z-index: 6; font: 600 11px var(--font-ui); background: hsl(var(--f)); color: hsl(var(--b)); border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Where the side-panel popups open</h1>
+    <p>The column type list opens with its left edge on its button and grows to the right, over the canvas, so the list stays in view. The description popover, Field Attributes, Index Attributes, Check Attributes and the table, type and note menus are anchored by their right edge and grow to the left, over the list; the colour picker is centred on its swatch. These cards compare ways to make them open the way the type list does. <b>A was chosen</b> for the first three; the other tabs show the same rule applied to the rest of the side panel.</p>
+    <div class="bar">
+      <div class="seg" id="tabs" role="group" aria-label="Popup">
+        <button data-tab="desc" aria-pressed="true">Description</button>
+        <button data-tab="field" aria-pressed="false">Field Attributes</button>
+        <button data-tab="index" aria-pressed="false">Index Attributes</button>
+        <button data-tab="check" aria-pressed="false">Check Attributes</button>
+        <button data-tab="menu" aria-pressed="false">Table menu</button>
+        <button data-tab="color" aria-pressed="false">Colour</button>
+      </div>
+      <div class="seg" id="themes" role="group" aria-label="Theme">
+        <button data-theme="light" aria-pressed="true">Light</button>
+        <button data-theme="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </header>
+  <div id="cards" class="wrap" style="gap:22px"></div>
+</div>
+
+<script>
+const ICON = {
+  more: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+  key: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>',
+  msg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg>',
+  upd: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.7"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>',
+  search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  trash: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  note: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>',
+  x: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+};
+
+/* the popups, with the widths of the code: w-64, w-52, w-72 */
+const POPUPS = {
+  desc: { width: 256, trigger: 'cmt', rowTop: 'r2', html:
+    `<h4>Description</h4><p class="body">The order's current state in the shop.\nSet by the payment webhook, never by hand.</p>` },
+  field: { width: 208, trigger: 'more', rowTop: 'r2', html:
+    `<h4>Field Attributes</h4>
+     <div class="sw">Nullable<span class="knob"></span></div>
+     <div class="sw">Unique<span class="knob"></span></div>
+     <label>Max length<div class="fld sel">Custom ${ICON.upd}</div></label>
+     <label>Default<div class="fld">No default</div></label>
+     <label>Description<div class="fld ta">The order's current state…</div></label>
+     <div class="sep"><div class="btn">${ICON.note}Add note</div><div class="btn del">${ICON.trash}Delete field</div></div>` },
+  index: { width: 288, trigger: 'more', rowTop: 'r2', html:
+    `<h4 class="plain">Index Attributes</h4>
+     <label>Name<div class="fld sel" style="background:hsl(var(--b))">idx_orders_status</div></label>
+     <div class="sw">Unique<span class="knob"></span></div>
+     <label>Type<div class="fld sel">btree ${ICON.upd}</div></label>
+     <label>Description<div class="fld ta">No description</div></label>
+     <div class="btn destr">${ICON.trash}Delete index</div>` },
+};
+
+/* the rest of the side panel: Check Attributes (w-64), the table menu, the colour picker (w-64) */
+POPUPS.check = { width: 256, trigger: 'more', html:
+  `<h4 class="plain">Check Attributes</h4><div class="btn destr">${ICON.trash}Delete check constraint</div>` };
+POPUPS.menu = { width: 176, trigger: 'more', menu: true, html:
+  `<div class="lbl">Table Actions</div><div class="it">Add Field</div><div class="it">Add Index</div><div class="it">Duplicate Table</div><div class="it">Delete Table</div>` };
+const SW = ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#10b981','#14b8a6','#06b6d4','#0ea5e9','#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef','#ec4899','#f43f5e','#64748b'];
+POPUPS.color = { width: 256, trigger: 'swatch', flip: true, html:
+  `<div class="sw6">${SW.map(c => `<i style="background:${c}"></i>`).join('')}</div>
+   <div><p class="cap">Custom colour</p><div class="crow"><span class="sq"></span><div class="fld">#ea580c</div><span class="go">Use</span></div></div>` };
+
+const dots = '⋮⋮';
+const fieldRows = `
+  <div class="row"><span class="grip">${dots}</span><div class="nbox"><div class="name">id</div></div><div class="type">bigint ${ICON.upd}</div><span class="ib">N</span><span class="ib pressed">${ICON.key}</span><span class="ib">${ICON.more}</span></div>
+  <div class="row" data-r="r2"><span class="grip">${dots}</span><div class="nbox"><div class="name has">status</div><span class="cmt" data-t="cmt">${ICON.msg}</span></div><div class="type" data-t="type">varchar(20) ${ICON.upd}</div><span class="ib pressed">N</span><span class="ib">${ICON.key}</span><span class="ib" data-t="more">${ICON.more}</span></div>
+  <div class="row"><span class="grip">${dots}</span><div class="nbox"><div class="name">customer_id</div></div><div class="type">bigint ${ICON.upd}</div><span class="ib">N</span><span class="ib">${ICON.key}</span><span class="ib">${ICON.more}</span></div>
+  <div class="row"><span class="grip">${dots}</span><div class="nbox"><div class="name">total</div></div><div class="type">numeric ${ICON.upd}</div><span class="ib">N</span><span class="ib">${ICON.key}</span><span class="ib">${ICON.more}</span></div>
+  <div class="row"><span class="grip">${dots}</span><div class="nbox"><div class="name">created_at</div></div><div class="type">timestamp ${ICON.upd}</div><span class="ib">N</span><span class="ib">${ICON.key}</span><span class="ib">${ICON.more}</span></div>
+  <div class="addrow">+ Add field</div>`;
+const indexRows = `
+  <div class="row"><span class="pkb">PK</span><div class="chooser"><span class="chip">id</span><span style="color:hsl(var(--mu))">⇅</span></div><span class="ib">${ICON.key}</span><span class="ib">${ICON.more}</span></div>
+  <div class="row" data-r="r2"><div class="chooser"><span class="chip">status ${ICON.x}</span><span style="color:hsl(var(--mu))">⇅</span></div><span class="ib">${ICON.key}</span><span class="ib" data-t="more">${ICON.more}</span></div>
+  <div class="row"><div class="chooser"><span class="chip">customer_id ${ICON.x}</span><span style="color:hsl(var(--mu))">⇅</span></div><span class="ib on" style="color:var(--or)">${ICON.key}</span><span class="ib">${ICON.more}</span></div>
+  <div class="addrow">+ Add index</div>`;
+
+const checkRows = `
+  <div class="row"><div class="chooser" style="font-family:ui-monospace,monospace"><span>total &gt;= 0</span></div><span class="ib">${ICON.more}</span></div>
+  <div class="row" data-r="r2"><div class="chooser" style="font-family:ui-monospace,monospace"><span>status &lt;&gt; ''</span></div><span class="ib" data-t="more">${ICON.more}</span></div>
+  <div class="addrow">+ Add check</div>`;
+const tableRows = `
+  <div class="split"><div class="a">+ Add Table</div><div class="b">${ICON.upd}</div></div>
+  <div class="trow"><span class="dot" style="background:#0ea5e9"></span><span class="tn">customers</span><span class="cnt">4</span><span class="ib">${ICON.more}</span></div>
+  <div class="trow" data-r="r2"><span class="dot" style="background:#ea580c"></span><span class="tn">orders</span><span class="cnt">5</span><span class="ib" data-t="more">${ICON.more}</span></div>
+  <div class="trow"><span class="dot" style="background:#22c55e"></span><span class="tn">order_items</span><span class="cnt">6</span><span class="ib">${ICON.more}</span></div>
+  <div class="trow"><span class="dot" style="background:#8b5cf6"></span><span class="tn">products</span><span class="cnt">7</span><span class="ib">${ICON.more}</span></div>`;
+const formPanel = `
+  <div class="frm"><div class="fld">orders</div><div class="fld ta">Customer orders.</div></div>
+  <div class="foot"><span class="swatch" data-t="swatch"></span><span class="sp"></span><span class="dl">Delete</span></div>`;
+
+const canvas = `
+  <div class="card-t" style="left:64px;top:38px"><b>orders</b><span>id &nbsp; bigint</span><span>status &nbsp; varchar(20)</span><span>customer_id &nbsp; bigint</span><span>total &nbsp; numeric</span></div>
+  <div class="card-t" style="left:330px;top:150px"><b>customers</b><span>id &nbsp; bigint</span><span>email &nbsp; varchar(255)</span><span>name &nbsp; varchar(120)</span></div>`;
+
+const typeList = `<div class="pop tp" data-pop style="width:348px"><div class="s">${ICON.search} Search type…</div><div class="l"><div>varchar(20)<span>✓</span></div><div>text</div><div>bigint</div><div>integer</div><div>numeric</div><div>boolean</div></div></div>`;
+
+const CARDS = [
+  { id: 'ref', mark: 'Reference', title: 'Column type, as it opens today', text: 'Not a change. This is the behaviour the others should copy: the list starts at the left edge of its button, opens below it and grows to the right over the canvas. The field list stays in view.', kind: 'ref' },
+  { id: 'today', mark: 'Today', title: 'Right edge on the trigger, grows to the left', text: 'The popup is anchored by its right edge (align="end"), so it grows to the left and sits on top of the names and types of the rows you are editing. The description popover, Field Attributes and Index Attributes all behave like this.', kind: 'today' },
+  { id: 'a', mark: 'A', title: 'Like the column type: left edge on the trigger, grows to the right', text: 'Only the anchor changes (align="start"): the same position, size and animation as the type list. The popup covers the rows below and the canvas, and does not cover the row it was opened from. The "..." buttons sit at the right end of the row, so Field Attributes and Index Attributes land almost entirely on the canvas; the description icon sits in the name box, so its popover starts in the panel and runs over to the canvas. Recommended.', kind: 'a' },
+  { id: 'b', mark: 'B', title: 'Beside the panel: one fixed place, on the canvas', text: 'Every popup opens at the panel\'s right edge, level with its row, so it never covers the list. Same place for all of them, which is the tidiest, but it is not what the type list does, it needs the panel as a shared anchor (a little more code), and the popup is far from the small icon that opened it.', kind: 'b' },
+];
+
+/* what is specific to each popup, added to the card text */
+const EXTRA = {
+  check: { today: 'Check Attributes sits under the "..." of a check row and grows to the left, over the expressions.', a: 'The same one-line change as Field Attributes and Index Attributes.' },
+  menu: {
+    today: 'The "⋮" of a table row, the "⋮" of a type or an area/note, and the "▾" of Add Table all anchor by the right edge, so each menu grows to the left over the list.',
+    a: 'A menu is smaller than a form (8 rem wide and up), so the change is quieter, but the rule is the same: left edge on the button, growing toward the canvas. The "▾" of Add Table and the "⋮" of types, areas and notes follow.',
+  },
+  color: {
+    today: 'The colour picker has no alignment of its own, so it is centred on its swatch: it grows both ways, over the panel and onto the canvas. In the table form the swatch is in the footer, so the popup opens upward.',
+    a: 'Left edge on the swatch, as the type list. It still opens upward because the footer is at the bottom of the panel (the browser flips it, as for the type list near the bottom). The same picker is used for area colours in the panel and in a note on the canvas; there it behaves the same way.',
+  },
+};
+
+const q = new URLSearchParams(location.search);
+let tab = q.get('tab') || 'desc';
+let theme = q.get('theme') || 'light';
+const only = (q.get('only') || '').split(',').filter(Boolean);
+if (q.get('shot')) document.body.classList.add('shot');
+
+function build() {
+  document.documentElement.dataset.theme = theme;
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === tab)));
+  document.querySelectorAll('#themes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === theme)));
+  const host = document.getElementById('cards');
+  host.innerHTML = '';
+  for (const c of CARDS) {
+    if (only.length && !only.includes(c.id)) continue;
+    /* the column type list is only a useful reference next to the field rows */
+    if (c.kind === 'ref' && tab !== 'desc' && tab !== 'field') continue;
+    const card = document.createElement('section');
+    card.className = 'card';
+    const P = {
+      desc:  { h: 'FIELDS · orders',  body: fieldRows },
+      field: { h: 'FIELDS · orders',  body: fieldRows },
+      index: { h: 'INDEXES · orders', body: indexRows },
+      check: { h: 'CHECKS · orders',  body: checkRows },
+      menu:  { h: 'TABLES',           body: tableRows },
+      color: { h: 'TABLE · orders',   body: formPanel, form: true },
+    }[tab];
+    const extra = (EXTRA[tab] || {})[c.kind] || '';
+    card.innerHTML = `<h2><span class="id">${c.mark}</span>${c.title}</h2><p>${c.text}${extra ? ' ' + extra : ''}</p>
+      <div class="scroll"><div class="win ${theme}" data-kind="${c.kind}">
+        <div class="rail"><i></i><i></i><i></i><i></i></div>
+        <div class="panel${P.form ? ' form' : ''}"><h3>${P.h}</h3>${P.body}</div>
+        <div class="canvas">${canvas}</div>
+      </div></div>`;
+    host.appendChild(card);
+    place(card.querySelector('.win'), c.kind);
+  }
+}
+
+function place(win, kind) {
+  if (tab === 'color') win.style.height = '470px'; /* the footer sits at the bottom of the panel */
+  const W = win.clientWidth, panel = win.querySelector('.panel');
+  const rel = (el) => { const a = el.getBoundingClientRect(), b = win.getBoundingClientRect(); return { l: a.left - b.left - 1, t: a.top - b.top - 1, r: a.right - b.left - 1, b: a.bottom - b.top - 1 }; };
+  const place1 = (el, trig, align, w, tiny) => {
+    const t = rel(trig); const p = rel(panel);
+    el.style.width = w + 'px';
+    win.appendChild(el);
+    const h = el.offsetHeight;
+    const rowEl = rel(trig.closest('.row, .trow, .foot') || trig);
+    const up = !!(POPUPS[tab] && POPUPS[tab].flip); /* no room below: opens above, as Radix flips it */
+    let left, top = up ? t.t - h - 4 : t.b + 4;
+    if (align === 'end') left = t.r - w;
+    else if (align === 'start') left = t.l;
+    else if (align === 'center') left = t.l + (t.r - t.l) / 2 - w / 2;
+    else { left = p.r + 4; top = up ? rowEl.b - h : rowEl.t; }
+    left = Math.max(4, Math.min(left, W - w - 4));
+    el.style.left = left + 'px'; el.style.top = top + 'px';
+    return { left, top, h, w };
+  };
+
+  const type = win.querySelector('[data-t="type"]');
+  let bottom = 380;
+  if (kind === 'ref') {
+    const el = document.createElement('div'); el.innerHTML = typeList; const pop = el.firstChild;
+    const r = place1(pop, type, 'start', 348);
+    type.classList.add('on');
+    bottom = r.top + r.h + 20;
+    note(win, 'opens here', r.left + 12, r.top - 24 - 4 + 28 + 4 - 28);
+  } else {
+    const def = POPUPS[tab];
+    const trig = win.querySelector(`[data-t="${def.trigger}"]`);
+    trig.classList.add(trig.classList.contains('cmt') ? 'on' : 'act');
+    const pop = document.createElement('div'); pop.className = 'pop' + (def.menu ? ' menu' : ''); pop.innerHTML = def.html;
+    /* today: menus and the other popups anchor by the right edge; the colour picker has no alignment, so it is centred */
+    const align = kind === 'today' ? (tab === 'color' ? 'center' : 'end') : kind === 'a' ? 'start' : 'side';
+    if (tab === 'color') trig.classList.add('act');
+    const r = place1(pop, trig, align, def.width);
+    bottom = r.top + r.h + 20;
+  }
+  win.style.height = Math.max(tab === 'color' ? 470 : 380, bottom) + 'px';
+}
+function note(win, text, left, top) {
+  const n = document.createElement('div'); n.className = 'chip-note'; n.textContent = text;
+  n.style.left = left + 'px'; n.style.top = top + 'px'; /* placed by hand above the list */
+  n.style.display = 'none'; win.appendChild(n);
+}
+
+document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { tab = b.dataset.tab; build(); } });
+document.getElementById('themes').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { theme = b.dataset.theme; build(); } });
+(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(build);
+build();
+</script>
+</body>
+</html>

@@ -33,6 +33,12 @@ export interface NewDiagramDialogProps {
     projectSlug: string;
     /** Shows an "Import from database" shortcut when given. */
     onImport?: () => void;
+    /**
+     * Switches to the examples list. Without it the dialog just closes and
+     * asks the editor's dialogs for the list; with it, the caller decides how
+     * the switch happens (so that it is not mistaken for dismissing the dialog).
+     */
+    onExamples?: () => void;
 }
 
 /** The cards, in the order of the New dialog in the editor: the common databases first. */
@@ -93,6 +99,7 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
     projectName,
     projectSlug,
     onImport,
+    onExamples,
 }) => {
     const { t } = useTranslation();
     const { addDiagram, deleteDiagram } = useStorage();
@@ -128,6 +135,10 @@ export const NewDiagramDialog: React.FC<NewDiagramDialogProps> = ({
 
     const dialogs = useDialog();
     const showExamples = () => {
+        if (onExamples) {
+            onExamples();
+            return;
+        }
         onOpenChange(false);
         dialogs.openExamplesDialog();
     };

@@ -61,35 +61,54 @@ describe('ProjectSettings', () => {
         expect(save()).toBeDisabled();
     });
 
-    it('a project that holds diagrams cannot be deleted, and says why', () => {
+    it('a project that holds diagrams can be deleted, and the warning says they go too', () => {
         setup(project({ diagrams: 2 }));
-        expect(screen.getByText(/It still holds 2 diagrams/)).toBeTruthy();
+        expect(screen.getByText(/all its diagrams/)).toBeTruthy();
         const section = screen.getByRole('region', { name: 'Delete project' });
         expect(
             within(section).getByRole('button', { name: 'Delete project' })
-        ).toBeDisabled();
+        ).toBeEnabled();
     });
 
-    it('deleting an empty project asks first, and Cancel deletes nothing', () => {
+    it('deleting asks for the project name; Cancel deletes nothing', () => {
         const { onDelete } = setup();
         const section = screen.getByRole('region', { name: 'Delete project' });
         fireEvent.click(
             within(section).getByRole('button', { name: 'Delete project' })
         );
         const confirm = screen.getByRole('alertdialog');
+        const del = within(confirm).getByRole('button', {
+            name: 'Delete project',
+        });
+        // nothing typed, or the wrong name: the button stays off
+        expect(del).toBeDisabled();
+        const input = within(confirm).getByLabelText(/type the project name/);
+        fireEvent.change(input, { target: { value: 'shop' } });
+        expect(del).toBeDisabled();
+        fireEvent.click(del);
         expect(onDelete).not.toHaveBeenCalled();
         fireEvent.click(
             within(confirm).getByRole('button', { name: 'Cancel' })
         );
         expect(onDelete).not.toHaveBeenCalled();
+    });
+
+    it('typing the exact name enables Delete and deletes once', () => {
+        const { onDelete } = setup();
+        const section = screen.getByRole('region', { name: 'Delete project' });
         fireEvent.click(
             within(section).getByRole('button', { name: 'Delete project' })
         );
-        fireEvent.click(
-            within(screen.getByRole('alertdialog')).getByRole('button', {
-                name: 'Delete project',
-            })
+        const confirm = screen.getByRole('alertdialog');
+        fireEvent.change(
+            within(confirm).getByLabelText(/type the project name/),
+            { target: { value: 'Shop' } }
         );
+        const del = within(confirm).getByRole('button', {
+            name: 'Delete project',
+        });
+        expect(del).toBeEnabled();
+        fireEvent.click(del);
         expect(onDelete).toHaveBeenCalledTimes(1);
     });
 });

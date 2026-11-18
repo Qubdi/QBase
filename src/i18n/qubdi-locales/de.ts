@@ -72,6 +72,16 @@ export const de = {
             requestFailed: 'Anfrage fehlgeschlagen ({{code}}).',
             locked: 'Jemand anderes bearbeitet dieses Diagramm.',
             lockedBy: '{{holder}} bearbeitet dieses Diagramm.',
+            poke_cooldown:
+                'Sie haben gerade erst gefragt. Warten Sie einige Minuten, bevor Sie erneut fragen.',
+            poke_pending:
+                'Jemand hat die bearbeitende Person bereits gebeten, das Diagramm zu verlassen. Warten Sie auf die Antwort und versuchen Sie es dann erneut.',
+            poke_expired: 'Für diese Anfrage ist die Zeit abgelaufen.',
+            poke_answered: 'Diese Anfrage wurde bereits beantwortet.',
+            lock_changed:
+                'Dieses Diagramm wird nicht mehr von dieser Seite aus bearbeitet.',
+            lock_busy:
+                'Dieses Diagramm wechselt gerade den Bearbeiter. Versuchen Sie es gleich noch einmal.',
             target_blocked:
                 'Diese Datenbankadresse ist nicht erlaubt. Bitten Sie einen Admin, ihren Host freizugeben.',
             privileged_login:
@@ -149,6 +159,8 @@ export const de = {
             digitsPlaceholder: '6-stelliger Code',
         },
         passwordField: {
+            show: 'Passwort anzeigen',
+            hide: 'Passwort verbergen',
             placeholder: 'Passwort',
             rules: 'Passwortregeln',
             met: ' (erfüllt)',
@@ -287,6 +299,12 @@ export const de = {
             newProject: 'Neues Projekt',
             searchPlaceholder: 'Projekte suchen…',
             searchLabel: 'Projekte suchen',
+            sortLabel: 'Projekte sortieren',
+            sortHeading: 'Sortieren nach',
+            sortNameAsc: 'Name (A bis Z)',
+            sortNameDesc: 'Name (Z bis A)',
+            sortNewest: 'Neueste zuerst',
+            sortOldest: 'Älteste zuerst',
             listLabel: 'Projekte',
             loading: 'Wird geladen…',
             noMatch: 'Kein Projekt entspricht „{{query}}“.',
@@ -349,15 +367,14 @@ export const de = {
             discard: 'Verwerfen',
             deleteLabel: 'Projekt löschen',
             deleteHeading: 'Dieses Projekt löschen',
-            blocked_one:
-                'Es enthält noch {{count}} Diagramm. Löschen Sie es oder verschieben Sie es im Editor in ein anderes Projekt, dann kann das Projekt gelöscht werden.',
-            blocked_other:
-                'Es enthält noch {{count}} Diagramme. Löschen Sie sie oder verschieben Sie sie im Editor in ein anderes Projekt, dann kann das Projekt gelöscht werden.',
-            removes: 'Entfernt das Projekt und die zugewiesenen Personen.',
+            removes:
+                'Entfernt das Projekt endgültig, mit allen Diagrammen samt Verlauf und Freigabelinks und den zugewiesenen Personen.',
             deleteButton: 'Projekt löschen',
             confirmTitle: 'Projekt löschen?',
             confirmBody:
-                '{{name}} und die Zuweisungen seiner Mitglieder werden entfernt. Dies kann nicht rückgängig gemacht werden.',
+                '<strong>{{name}}</strong>, alle seine Diagramme und die Zuweisungen seiner Mitglieder werden gelöscht. Dies kann nicht rückgängig gemacht werden.',
+            confirmPrompt:
+                'Geben Sie zur Bestätigung den Projektnamen ein: <strong>{{name}}</strong>',
             cancel: 'Abbrechen',
         },
         newProject: {
@@ -1054,13 +1071,45 @@ export const de = {
             relationship_other: '{{count}} Beziehungen',
         },
         accessBanner: {
-            getLatest: 'Neueste abrufen und bearbeiten',
             moveAria: 'Projekt, in das dieses Diagramm verschoben wird',
             choosePlaceholder: 'Projekt wählen…',
             move: 'In Projekt verschieben',
             askAdmin:
                 'Bitten Sie einen Admin, Sie zu einem Projekt hinzuzufügen.',
             retry: 'Erneut versuchen',
+            takenHint:
+                'Die Person muss das Diagramm verlassen, bevor Sie weiterarbeiten können.',
+            takenSelfHint:
+                'Schließen Sie den anderen Tab oder das andere Fenster, um hier weiterzuarbeiten.',
+            poke: 'Anstupsen',
+            poking: 'Stupse an…',
+            pokeWaiting: 'Warte auf Antwort…',
+            pokeLoading: 'Lädt…',
+            pokeAgainIn: 'Erneut anstupsen in {{time}}',
+            pokeHint: '{{holder}} bitten, dieses Diagramm zu verlassen',
+            pokeSent:
+                'Anfrage gesendet. Warte auf die Antwort von {{holder}}… ({{seconds}} s)',
+            pokeDeclined:
+                'Ihre Anfrage wurde abgelehnt; bitte versuchen Sie es erneut.',
+            pokeUnanswered:
+                '{{holder}} hat nicht geantwortet. Bitte versuchen Sie es erneut.',
+            pokeAccepted:
+                '{{holder}} hat das Diagramm verlassen. Die neueste Version wird geladen…',
+        },
+        poke: {
+            request: {
+                title: '{{requester}} möchte dieses Diagramm bearbeiten',
+                description:
+                    'Sie wurden gebeten, das Diagramm zu verlassen. Wenn Sie zustimmen, werden Ihre letzten Änderungen zuerst gespeichert, und das Diagramm ist danach für Sie schreibgeschützt. Wenn Sie ablehnen, wird die Person informiert, und Sie können weiterarbeiten.',
+                decline: 'Ablehnen',
+                agree: 'Zustimmen und verlassen',
+                saving: 'Speichern…',
+                failedTitle: 'Die Anfrage konnte nicht beantwortet werden',
+                saveFailedTitle:
+                    'Ihre Änderungen konnten nicht gespeichert werden',
+                saveFailed:
+                    'Sie bearbeiten dieses Diagramm weiterhin. Versuchen Sie es erneut oder lehnen Sie die Anfrage ab.',
+            },
         },
         diagramAccess: {
             backToProjects: 'Zurück zu den Projekten',

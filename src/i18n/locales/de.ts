@@ -668,6 +668,10 @@ export const de = {
                     selectFields: 'Felder auswählen',
                     noFields: 'Keine Felder gefunden',
                     unique: 'Eindeutig',
+                    uniqueBlocked:
+                        'Kann nicht eindeutig sein: die Datenbank kann {{fields}} nicht indizieren',
+                    uniqueBlockedType:
+                        'Kann nicht eindeutig sein: ein {{type}}-Index kann nicht eindeutig sein. Ändern Sie zuerst den Indextyp in {{other}}.',
                     attributes: 'Indexattribute',
                     name: 'Name',
                     type: 'Indextyp',
@@ -779,6 +783,11 @@ export const de = {
                     areaActions: 'Bereichsaktionen',
                     editName: 'Namen bearbeiten',
                     deleteArea: 'Bereich löschen',
+                    toggleTables:
+                        'Tabellen des Bereichs ein- oder ausblenden: {{name}}',
+                    tableCount: 'Tabellen: {{count}}',
+                    noTablesInArea: 'Keine Tabellen in diesem Bereich',
+                    outsideAreas: 'Tabellen außerhalb aller Bereiche',
                     addNote: 'Notiz hinzufügen',
                     attachedTo: 'Gehört zu {{name}}',
                     selectOwner:
@@ -792,8 +801,15 @@ export const de = {
                     deleteNote: 'Notiz löschen',
                 },
                 filters: {
-                    title: 'Tabellen filtern',
-                    search: 'Tabellen suchen ...',
+                    title: 'Suchen & Filtern',
+                    search: 'Tabellen oder Felder suchen ...',
+                    searchOnlyTables: 'Tabellen suchen ...',
+                    searchOnlyFields: 'Felder suchen ...',
+                    searchInTables: 'In Tabellennamen suchen',
+                    searchInFields: 'In Feldnamen suchen',
+                    showMoreFields: 'Noch {{count}} anzeigen',
+                    showFewerFields: 'Weniger anzeigen',
+                    focusField: 'Fokussieren: {{table}}.{{field}}',
                     groupBySchema: 'Nach Schema gruppieren',
                     groupByArea: 'Nach Bereich gruppieren',
                     show: 'Anzeigen',
@@ -864,7 +880,7 @@ export const de = {
             },
             toolbar: {
                 label: 'Zeichenflächen-Werkzeuge',
-                filter: 'Tabellen filtern ({{shortcut}})',
+                filter: 'Suchen & Filtern ({{shortcut}})',
                 showAll: 'Alle anzeigen ({{shortcut}})',
                 zoomOut: 'Verkleinern',
                 zoomIn: 'Vergrößern',
@@ -942,6 +958,7 @@ export const de = {
                 newRelationship: 'Neue Beziehung',
                 newArea: 'Neuer Bereich',
                 addNote: 'Notiz hinzufügen',
+                addFieldNote: 'Notiz zum Feld hinzufügen',
                 arrange: 'Diagramm automatisch anordnen',
                 moveToArea: 'In Bereich verschieben',
                 moveToAreaCount: 'In Bereich verschieben ({{count}})',

@@ -180,4 +180,45 @@ describe('admin ProjectsPanel paging', () => {
             expect.objectContaining({ page: 1, limit: 5, q: 'project 1' })
         );
     });
+
+    it('sorts by name A to Z at first, and asks the server for another order when one is chosen', async () => {
+        // jsdom lacks what the dropdown asks of a browser
+        Element.prototype.hasPointerCapture ??= () => false;
+        Element.prototype.releasePointerCapture ??= () => undefined;
+        Element.prototype.scrollIntoView ??= () => undefined;
+        renderPanel();
+        await within(list()).findByText('Project 1');
+        expect(adminListProjects).toHaveBeenLastCalledWith(
+            expect.objectContaining({ sort: 'name_asc' })
+        );
+
+        const sort = screen.getByRole('button', { name: 'Sort projects' });
+        // the default order shows no mark on the button
+        expect(screen.queryByTestId('sort-changed')).toBeNull();
+        fireEvent.keyDown(sort, { key: 'Enter' });
+        const options = await screen.findAllByRole('menuitemradio');
+        expect(options.map((o) => o.textContent)).toEqual([
+            'Name (A to Z)',
+            'Name (Z to A)',
+            'Newest first',
+            'Oldest first',
+        ]);
+        // the current order carries the tick
+        expect(options.map((o) => o.getAttribute('aria-checked'))).toEqual([
+            'true',
+            'false',
+            'false',
+            'false',
+        ]);
+        fireEvent.click(
+            screen.getByRole('menuitemradio', { name: 'Newest first' })
+        );
+        await waitFor(() =>
+            expect(adminListProjects).toHaveBeenLastCalledWith(
+                expect.objectContaining({ page: 1, sort: 'created_desc' })
+            )
+        );
+        // a different order puts a dot on the button, not a border around it
+        expect(screen.getByTestId('sort-changed')).toBeTruthy();
+    });
 });

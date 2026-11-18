@@ -35,6 +35,7 @@ import {
     formToConnection,
     type ConnectionForm,
 } from '@/lib/qubdi/connection-form';
+import { PasswordInput } from './password-input';
 
 export interface ConnectionsDialogProps {
     open: boolean;
@@ -447,8 +448,7 @@ export const ConnectionsDialog: React.FC<ConnectionsDialogProps> = ({
                                 onChange={(e) => set('user', e.target.value)}
                                 required
                             />
-                            <Input
-                                type="password"
+                            <PasswordInput
                                 placeholder={
                                     isNew
                                         ? t(

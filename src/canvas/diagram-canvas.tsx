@@ -61,6 +61,7 @@ import { useLongPress } from './use-long-press';
 import { commitQuickLink, suggestTarget } from './link-draft';
 import { LinkDraftLayer } from './link-draft-layer';
 import { HANDLES_MIN_ZOOM } from './field-row';
+import { columnAt } from './field-view';
 import { LinkPopover } from './link-popover';
 import { reportConnect, reportCopied, reportPasted } from './notify';
 import { commitShapes } from './commit-shapes';
@@ -633,7 +634,8 @@ function Surface({
                 .closest('.react-flow__node')
                 ?.getAttribute('data-id');
             const state = storeApi.getState().design;
-            if (id && state.entities.byId[id]) return { kind: 'entity', id };
+            if (id && state.entities.byId[id])
+                return { kind: 'entity', id, columnId: columnAt(element) };
             if (id && state.regions.byId[id]) return { kind: 'region', id };
             if (id && state.memos.byId[id]) return { kind: 'memo', id };
             return { kind: 'pane' };
@@ -1039,7 +1041,9 @@ function Surface({
                                 y: event.clientY,
                             }),
                             hooks?.visibleSchemas,
-                            measure
+                            measure,
+                            // a note dropped on a field row belongs to that field
+                            columnAt(event.target)
                         );
                     }}
                     data-multiselect={shiftHeld}
@@ -1114,7 +1118,15 @@ function Surface({
                                 'entity' | 'region' | 'memo';
                             openMenu(
                                 { x: event.clientX, y: event.clientY },
-                                { kind, id: node.id }
+                                kind === 'entity'
+                                    ? {
+                                          kind,
+                                          id: node.id,
+                                          // a right-click on a field row
+                                          // is about that field
+                                          columnId: columnAt(event.target),
+                                      }
+                                    : { kind, id: node.id }
                             );
                         }}
                         onPaneClick={() => {

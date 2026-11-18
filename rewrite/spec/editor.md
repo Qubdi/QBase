@@ -44,6 +44,15 @@ database (only some databases have them).
   panel collapses it to zero width and disables the handle.
 - The **canvas** fills the rest.
 - The panel is visible when the editor first opens on desktop.
+- Popups and menus opened from the side panel open like the column type list: the **left edge
+  on the button** that opened them, growing **to the right**, over the canvas, so the list
+  they were opened from stays in view. That is the type list, the description, Field
+  Attributes, Index Attributes, Check constraint, the "..." menus of a table, a custom type,
+  an area and a note, the arrow of Add Table, and the colour picker. Something at the right
+  edge of the window (the account menu, the language picker, the type legend on the canvas)
+  opens toward the left, where there is room. Near the edge of the window a popup is moved
+  in so that it stays on screen (since 2026-11-18; before, all of them except the type list
+  grew to the left, and the colour picker was centred on its swatch).
 
 ### 1.2 Mobile (narrower than 768 px)
 
@@ -173,7 +182,7 @@ server features.
 A floating pill at the bottom-centre (top-centre on mobile). Left to right, with vertical
 dividers:
 
-1. **Filter Tables** (magnifier). Tooltip includes the shortcut Mod+F. Highlighted teal
+1. **Search & Filter** (magnifier; "Filter Tables" before 2026-11-18). Tooltip includes the shortcut Mod+F. Highlighted teal
    while any filter hides something. Toggles the filter panel (2.12).
 2. **Show All** (frame). Tooltip shows Mod+0.
 3. **Zoom Out**, the **zoom percentage** button, **Zoom In**.
@@ -243,16 +252,35 @@ growing the area if they do not fit), **Delete Area**.
 
 - Opened by the toolbar Filter button or Mod+F (works even while typing in a field;
   pressing again closes it). Closed with its X button. It floats over the canvas.
-- Title **Filter Tables**. A search box "Search tables..." (auto-focused). A two-way
-  toggle **Group by Schema** / **Group by Area**.
+- Title **Search & Filter** (it was **Filter Tables** until 2026-11-18, when the search
+  began to look at fields too). A search box "Search tables or fields..." (auto-focused).
+  A two-way toggle **Group by Schema** / **Group by Area**.
 - Below, a tree: top-level groups (each schema, or each area, plus a group for tables with
   none) containing tables. Every group and every table has an **eye** control that shows
   or hides it on the canvas. Hiding a group hides all of its tables. Groups also have a
   "zoom to this group" control, and rows for tables have "zoom to table". Clicking a table
   row makes it visible if hidden, selects it, flashes it briefly, and zooms to it.
-- Typing in the search box narrows the tree to matching table names (case-insensitive,
-  substring). Clearing the box does **not** change which tables are hidden: show/hide
-  choices are separate from the search text.
+- Typing in the search box narrows the tree to the tables whose **name**, or the name of
+  one of whose **fields**, contains the text (case-insensitive, substring). Clearing the
+  box does **not** change which tables are hidden: show/hide choices are separate from the
+  search text.
+- **Fields that match** (since 2026-11-18): a table found through its fields lists those
+  fields under its row, the first three and then "Show n more" (and "Show fewer"), each
+  with the text found marked and its type in grey. A table found by its name only has no
+  fields under it. A click on a field makes the table visible if hidden, selects it,
+  centres it and **focuses the field** on the canvas, as a click on the field's row in
+  the table card does: the field is marked and the tables not related to it stand back.
+  Hidden tables that match are listed, greyed.
+- **Where the text is looked for** (since 2026-11-18): two small icon switches sit inside
+  the right end of the search box, **Search in table names** (table icon) and **Search in
+  field names** (list icon), both on to begin with. With only tables on, the box reads
+  "Search tables...", field names are not read and no fields are listed (the panel as it was
+  before field search). With only fields on, it reads "Search fields...", and a table is
+  listed only for a field that matches: a table found by its name alone is left out. One
+  switch always stays on (the last one cannot be switched off). A click on a switch leaves
+  the focus in the box. With no text in the box the switches change nothing. They are kept
+  with the panel: closing it, like clearing the text or the Group by choice, puts both back
+  on.
 - When nothing matches: "No tables found" with the hint "Try adjusting your search or
   filter" and a **Clear filter** button. If the diagram has no tables at all: "No tables
   found" with "Create a table to get started".
@@ -380,6 +408,16 @@ schemas are currently displayed. Select one for the new table." with **Cancel** 
   its schema in brackets (the schema is only shown when more than one schema is visible),
   a "View" tag for views, a pencil (rename), a "focus on the canvas" button (selects and
   centres the table at 100% zoom), and a "More actions" menu.
+- An open table shows its form as a second accordion: **Fields**, **Indexes**, **Check
+  Constraints** (the last two not for views) and **Description**, one open at a time, with a
+  footer (colour, Add Index, Add Field). Opening a section folds the one that was open,
+  usually the long Fields above it. **The header that was clicked stays where it is on
+  screen**: the panel is scrolled by as much as the layout above it moved, so the opened
+  section is under the pointer, also when the table is taller than the panel (since
+  2026-11-18; before, the panel was left scrolled to the rows further down the list and the
+  section had to be scrolled back into view). Add Index and Add Field in the footer do the
+  same; if the header of the section they open was out of view, it is scrolled to the top
+  of the panel.
 - **More actions menu (titled "Table Actions"):** **Change Schema** (offered when the
   database has schemas or the diagram has some), **Add Field**, **Add Index** (not for
   views), **Duplicate Table**, **Delete Table**.
@@ -492,14 +530,18 @@ word only, so "double precision" shows "double") plus its attributes (see 4.5); 
 ### 4.6 The field attributes popover ("Field Attributes")
 
 Opened by the "..." button at the right of a field row in the side panel. A small popover
-titled **Field Attributes**; changes apply 0.3 s after the last edit. Contents:
+titled **Field Attributes**; changes apply 0.3 s after the last edit. The yes-or-no settings
+are small on/off switches (not boxes). Contents:
 
-- **Unique** checkbox. Disabled when the field is the only primary key (a lone PK is
+- **Allow null** switch, first in the list. It is the same setting as the "N" toggle of
+  the row (4.7): switching it on or off turns the toggle on or off, and the other way
+  round. Disabled, as the toggle is, for primary-key fields and the serial family.
+- **Unique** switch. Disabled when the field is the only primary key (a lone PK is
   implicitly unique). Turning a field into the first primary key sets Unique on.
-- **Auto Increment** checkbox, only for integer-like types (integer, int, bigint, smallint,
+- **Auto Increment** switch, only for integer-like types (integer, int, bigint, smallint,
   tinyint, mediumint, and the serial family). Disabled while the field is nullable (auto
   increment needs not null) and permanently on for the serial family.
-- **Array** checkbox, only when the database supports arrays (14.1) and the type is not
+- **Array** switch, only when the database supports arrays (14.1) and the type is not
   serial-like.
 - **Max Length** for character types: a choice among **None**, **Max** (only for types
   that accept it, e.g. SQL Server varchar/nvarchar) and **Custom**, where a number box
@@ -509,14 +551,19 @@ titled **Field Attributes**; changes apply 0.3 s after the last edit. Contents:
 - **Default Value** text box, placeholder "No default". Stored as typed (so `0`,
   `'abc'`, `now()` and `CURRENT_TIMESTAMP` are all accepted verbatim); empty clears it.
 - **Description** text area, placeholder "No description". Used as the column comment in SQL
-  export where the database supports comments, and shown as a small comment icon next to
-  the field name (clicking the icon reopens the popover).
+  export where the database supports comments. It is shown as a small comment icon inside the
+  right end of the field's name box, so the box is the same width on every row, with or without
+  a description (clicking the icon shows only the description, in a small popover; changing it
+  is in Field Attributes. In the card on the canvas the icon only
+  shows the description as a tooltip).
 - **Delete Field** button (hidden in read-only mode).
 
 ### 4.7 Nullable (the "N" toggle)
 
 - Toggle on = the field may be null. Disabled (and forced off) for primary-key fields and
   the serial family. Turning on nullable clears Auto Increment. Updates apply 0.1 s later.
+- The same setting is the **Allow null** switch in Field Attributes (4.6); either control
+  changes it and the other shows the result.
 
 ### 4.8 Primary key (the key toggle)
 
@@ -557,10 +604,30 @@ some databases.
 - Each row: a field multi-select ("Select fields"), a **Unique** toggle, and a "..." popover
   **Index Attributes** with: **Name**, **Unique**, **Index Type** (only for databases that
   offer a choice: PostgreSQL and CockroachDB offer btree, hash, gin), a description, and
-  **Delete Index**.
+  **Delete Index**. Unique there is a switch, like those in Field Attributes (4.6).
 - **GIN** is only available when the chosen fields can use it (array fields, json, jsonb,
   tsvector, hstore); otherwise the option is disabled, and removing such a field from the
   selection while the type is gin resets the type.
+- **Unique** (the key toggle and the switch in the popover) is greyed out and cannot be
+  switched on while the index has a field whose type the database cannot put in a unique
+  index: PostgreSQL
+  json, xml and the geometric types; MySQL and MariaDB text, blob, json and spatial types;
+  SQL Server text, ntext, image, xml, json, geometry, geography and varchar, nvarchar or
+  varbinary with a `max` length; Oracle clob, nclob, blob, bfile, long raw and xmltype.
+  SQLite has none. The key toggle's tooltip and a line under the switch name the fields
+  and their types. An index that is already unique stays switchable, so it can be turned
+  off. Choosing such a field for an index that is already unique does not change the flag.
+  (`columnsBlockingUnique` in `src/core/model/index-methods.ts`.)
+- **Unique** is also greyed out, with its own reason, while the index is of a type that can
+  never be unique: PostgreSQL hash, gist, gin, spgist and brin (only btree can be unique);
+  MySQL and MariaDB fulltext and spatial; SQL Server columnstore and xml; Oracle bitmap. The
+  reason says to change the index type first, and names the database's first type. Unique
+  does not change the type any more: it stays what it was, and Unique opens as soon as the
+  type is changed to one that can be unique. With Unique on, the types that cannot be
+  unique are greyed in the Index type list and are not named one by one under it; the other
+  kinds of line there (gin needs json fields, hash takes one field...) stay.
+  (`methodCannotBeUnique`; the command level is unchanged: `planUpdateKey` still resets
+  such a type when the flag is set another way, EDT-144.)
 - The primary-key index (4.8) is listed first, shows a lit PK toggle and the label "Primary
   Key". Its Unique and description can be changed; its fields cannot.
 - Other indexes sort after it. Index names are not validated.
@@ -783,6 +850,17 @@ Types** section and its rail entry do not exist.
   colour picker, "focus on canvas", and a More actions menu (titled "Area Actions":
   **Edit Name**, **Delete Area**). Empty: "No areas" / "Create an area to get started".
   Filtered empty: "No areas found matching your filter."
+- **Which tables are in an area** (since 2026-11-18): each row has a chevron and a count
+  of its tables. The chevron, or a click on the name, opens the row to the tables of the
+  area, in the order of the Tables list, the schema in grey when the Tables list names
+  schemas; double-click or the pencil still renames. A click on a table selects it and
+  centres it on the canvas, as the focus button of the area does. An open area with no
+  tables says "No tables in this area". Rows start closed. The tables are those whose
+  stored area is this one (see 10.3), so the list agrees with the canvas; views are left
+  out while Database Views is off.
+- **Tables outside every area:** a last row, after the areas, with a count; it opens to
+  the tables that are in no area. It is not shown while the list is narrowed by the
+  filter, when there is no area at all, or when every table is in an area.
 
 ---
 

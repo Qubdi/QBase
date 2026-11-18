@@ -16,6 +16,10 @@ import {
 } from '@/core/commands/plan-column';
 import type { Column } from '@/core/model/column';
 import type { Entity } from '@/core/model/entity';
+import {
+    columnsBlockingUnique,
+    methodCannotBeUnique,
+} from '@/core/model/index-methods';
 import type { Key, KeyMethod } from '@/core/model/key';
 import { columnsOf, keysOf } from '@/core/model/lookup';
 import {
@@ -29,6 +33,7 @@ import { Button } from '@/platform/ui/button';
 import { Checkbox } from '@/platform/ui/checkbox';
 import { Label } from '@/platform/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/ui/popover';
+import { Switch } from '@/platform/ui/switch';
 
 const FieldChooser: React.FC<{
     columns: readonly Column[];
@@ -119,6 +124,38 @@ const IndexRow: React.FC<{
         methods.map((m) => [m, indexMethodProblem(design, entity.id, index, m)])
     );
     const primary = index.pk === true;
+    // Why Unique cannot be switched on: a column whose type the database cannot
+    // put in a unique index, or an index type that cannot be unique (hash, gin...;
+    // switching it on used to change the type to btree behind the user's back).
+    // An index that is already unique can always be turned off, so it is only
+    // closed to being marked.
+    const blockers = columnsBlockingUnique(
+        design.databaseType,
+        columns.filter((c) => index.members.includes(c.id))
+    );
+    const method = index.algorithm ?? methods[0];
+    const typeBlocked =
+        !primary && methodCannotBeUnique(design.databaseType, method);
+    const reasons = [
+        ...(blockers.length > 0
+            ? [
+                  text('indexes.uniqueBlocked', {
+                      fields: blockers
+                          .map((c) => `${c.name} (${c.type.name})`)
+                          .join(', '),
+                  }),
+              ]
+            : []),
+        ...(typeBlocked
+            ? [
+                  text('indexes.uniqueBlockedType', {
+                      type: method ?? '',
+                      other: methods[0] ?? '',
+                  }),
+              ]
+            : []),
+    ];
+    const uniqueBlocked = reasons.length > 0 && !index.distinct;
 
     return (
         <div
@@ -138,22 +175,28 @@ const IndexRow: React.FC<{
                     edit(planSetKeyColumns(design, entity.id, index.id, ids))
                 }
             />
-            <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                aria-label={text('indexes.unique')}
-                aria-pressed={index.distinct}
-                disabled={locked}
-                className={
-                    index.distinct
-                        ? 'size-8 shrink-0 bg-accent text-orange-700 dark:text-orange-400'
-                        : 'size-8 shrink-0 text-slate-700 dark:text-slate-300'
-                }
-                onClick={() => patch({ distinct: !index.distinct })}
+            {/* a disabled button takes no pointer events, so the reason is the span's tooltip */}
+            <span
+                className="shrink-0"
+                title={uniqueBlocked ? reasons.join('\n') : undefined}
             >
-                <KeyIcon />
-            </Button>
+                <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label={text('indexes.unique')}
+                    aria-pressed={index.distinct}
+                    disabled={locked || uniqueBlocked}
+                    className={
+                        index.distinct
+                            ? 'size-8 shrink-0 bg-accent text-orange-700 dark:text-orange-400'
+                            : 'size-8 shrink-0 text-slate-700 dark:text-slate-300'
+                    }
+                    onClick={() => patch({ distinct: !index.distinct })}
+                >
+                    <KeyIcon />
+                </Button>
+            </span>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button
@@ -166,7 +209,7 @@ const IndexRow: React.FC<{
                         <MoreHorizontal />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-72 space-y-3">
+                <PopoverContent className="w-72 space-y-3">
                     <h4 className="text-sm font-semibold">
                         {text('indexes.attributes')}
                     </h4>
@@ -180,16 +223,25 @@ const IndexRow: React.FC<{
                             />
                         </Label>
                     )}
-                    <Label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                            checked={index.distinct}
-                            disabled={locked}
-                            onCheckedChange={(v) =>
-                                patch({ distinct: v === true })
-                            }
-                        />
-                        {text('indexes.unique')}
-                    </Label>
+                    <div className="space-y-1">
+                        {/* the same switch row as Field Attributes */}
+                        <Label className="flex items-center justify-between gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                            {text('indexes.unique')}
+                            <Switch
+                                checked={index.distinct}
+                                disabled={locked || uniqueBlocked}
+                                onCheckedChange={(v) => patch({ distinct: v })}
+                            />
+                        </Label>
+                        {reasons.map((reason) => (
+                            <p
+                                key={reason}
+                                className="text-xs text-slate-600 dark:text-slate-300"
+                            >
+                                {reason}
+                            </p>
+                        ))}
+                    </div>
                     {methods.length > 0 && !primary ? (
                         <div className="space-y-1">
                             <Label className="text-sm">
@@ -197,7 +249,7 @@ const IndexRow: React.FC<{
                             </Label>
                             <OptionSelect
                                 aria-label={text('indexes.type')}
-                                value={index.algorithm ?? methods[0]}
+                                value={method}
                                 disabled={locked}
                                 onValueChange={(v) =>
                                     patch({ algorithm: v as KeyMethod })
@@ -210,7 +262,10 @@ const IndexRow: React.FC<{
                             />
                             {methods.map((m) => {
                                 const problem = problems.get(m);
-                                return problem ? (
+                                // "cannot be unique" is not written out for every type: with
+                                // Unique on, those types are greyed in the list, and the
+                                // Unique row above says why when it is the type that refuses
+                                return problem && problem !== 'notUnique' ? (
                                     <p
                                         key={m}
                                         className="text-xs text-slate-600 dark:text-slate-300"

@@ -70,6 +70,15 @@ export const fr = {
             requestFailed: 'Échec de la requête ({{code}}).',
             locked: 'Quelqu’un d’autre modifie ce diagramme.',
             lockedBy: '{{holder}} modifie ce diagramme.',
+            poke_cooldown:
+                'Vous avez fait une demande à l’instant. Patientez quelques minutes avant de recommencer.',
+            poke_pending:
+                'Quelqu’un a déjà demandé à l’éditeur de quitter le diagramme. Attendez la réponse, puis réessayez.',
+            poke_expired: 'Le délai de cette demande est dépassé.',
+            poke_answered: 'Cette demande a déjà reçu une réponse.',
+            lock_changed: 'Ce diagramme n’est plus modifié depuis cette page.',
+            lock_busy:
+                'Ce diagramme change de main en ce moment. Réessayez dans un instant.',
             target_blocked:
                 'Cette adresse de base de données n’est pas autorisée. Demandez à un administrateur d’autoriser son hôte.',
             privileged_login:
@@ -149,6 +158,8 @@ export const fr = {
             digitsPlaceholder: 'Code à 6 chiffres',
         },
         passwordField: {
+            show: 'Afficher le mot de passe',
+            hide: 'Masquer le mot de passe',
             placeholder: 'Mot de passe',
             rules: 'Règles du mot de passe',
             met: ' (respectée)',
@@ -288,6 +299,12 @@ export const fr = {
             newProject: 'Nouveau projet',
             searchPlaceholder: 'Rechercher des projets…',
             searchLabel: 'Rechercher des projets',
+            sortLabel: 'Trier les projets',
+            sortHeading: 'Trier par',
+            sortNameAsc: 'Nom (A à Z)',
+            sortNameDesc: 'Nom (Z à A)',
+            sortNewest: 'Plus récents d’abord',
+            sortOldest: 'Plus anciens d’abord',
             listLabel: 'Projets',
             loading: 'Chargement…',
             noMatch: 'Aucun projet ne correspond à « {{query}} ».',
@@ -349,16 +366,14 @@ export const fr = {
             discard: 'Abandonner',
             deleteLabel: 'Supprimer le projet',
             deleteHeading: 'Supprimer ce projet',
-            blocked_one:
-                'Il contient encore {{count}} diagramme. Supprimez-le, ou déplacez-le vers un autre projet dans l’éditeur, pour pouvoir supprimer le projet.',
-            blocked_other:
-                'Il contient encore {{count}} diagrammes. Supprimez-les, ou déplacez-les vers un autre projet dans l’éditeur, pour pouvoir supprimer le projet.',
             removes:
-                'Supprime le projet et les personnes qui y étaient affectées.',
+                'Supprime définitivement le projet, tous ses diagrammes avec leur historique et leurs liens de partage, et les personnes qui y étaient affectées.',
             deleteButton: 'Supprimer le projet',
             confirmTitle: 'Supprimer le projet ?',
             confirmBody:
-                '{{name}} et les affectations de ses membres seront supprimés. Cette action est irréversible.',
+                '<strong>{{name}}</strong>, tous ses diagrammes et les affectations de ses membres seront supprimés. Cette action est irréversible.',
+            confirmPrompt:
+                'Pour confirmer, saisissez le nom du projet : <strong>{{name}}</strong>',
             cancel: 'Annuler',
         },
         newProject: {
@@ -1054,13 +1069,43 @@ export const fr = {
             relationship_other: '{{count}} relations',
         },
         accessBanner: {
-            getLatest: 'Obtenir la dernière version et modifier',
             moveAria: 'Projet dans lequel déplacer ce diagramme',
             choosePlaceholder: 'Choisir un projet…',
             move: 'Déplacer dans le projet',
             askAdmin:
                 'Demandez à un administrateur de vous ajouter à un projet.',
             retry: 'Réessayer',
+            takenHint:
+                'Cette personne doit quitter le diagramme avant que vous puissiez continuer à travailler.',
+            takenSelfHint:
+                'Fermez l’autre onglet ou l’autre fenêtre pour continuer à travailler ici.',
+            poke: 'Solliciter',
+            poking: 'Envoi…',
+            pokeWaiting: 'En attente de réponse…',
+            pokeLoading: 'Chargement…',
+            pokeAgainIn: 'Solliciter de nouveau dans {{time}}',
+            pokeHint: 'Demander à {{holder}} de quitter ce diagramme',
+            pokeSent:
+                'Demande envoyée. En attente de la réponse de {{holder}}… ({{seconds}} s)',
+            pokeDeclined: 'Votre demande a été refusée ; veuillez réessayer.',
+            pokeUnanswered: '{{holder}} n’a pas répondu. Veuillez réessayer.',
+            pokeAccepted:
+                '{{holder}} a quitté le diagramme. Chargement de la dernière version…',
+        },
+        poke: {
+            request: {
+                title: '{{requester}} souhaite modifier ce diagramme',
+                description:
+                    'On vous demande de quitter le diagramme. Si vous acceptez, vos dernières modifications sont d’abord enregistrées, puis le diagramme passe en lecture seule pour vous. Si vous refusez, la personne en est informée et vous pouvez continuer à travailler.',
+                decline: 'Refuser',
+                agree: 'Accepter et quitter',
+                saving: 'Enregistrement…',
+                failedTitle: 'Impossible de répondre à la demande',
+                saveFailedTitle:
+                    'Vos modifications n’ont pas pu être enregistrées',
+                saveFailed:
+                    'Vous restez l’éditeur de ce diagramme. Réessayez ou refusez la demande.',
+            },
         },
         diagramAccess: {
             backToProjects: 'Retour aux projets',

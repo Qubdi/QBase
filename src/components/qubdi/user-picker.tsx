@@ -56,7 +56,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     const more = list.total > list.items.length;
 
     return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
             <SearchInput
                 value={list.query}
                 onChange={list.setQuery}

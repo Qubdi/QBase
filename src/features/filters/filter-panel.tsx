@@ -6,12 +6,16 @@ import {
     Database,
     Eye,
     EyeOff,
+    List,
     Search,
     Table2,
     X,
     ZoomIn,
 } from 'lucide-react';
 import { shortcutLabel } from '@/canvas/keyboard';
+import type { Column } from '@/core/model/column';
+import type { Entity } from '@/core/model/entity';
+import { typeLabel } from '@/core/model/type-suffix';
 import { cn } from '@/lib/utils/utils';
 import { Notice } from '@/platform/panel/notice';
 import { useFocus } from '@/platform/panel/panel-context';
@@ -20,8 +24,13 @@ import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
 import { Input } from '@/platform/ui/input';
 import { useEditorStoreApi } from '@/store/store-context';
-import { buildTree, setTableShown, setTablesShown } from './filter-tree';
-import type { GroupBy } from './filter-tree';
+import {
+    buildTree,
+    SEARCH_BOTH,
+    setTableShown,
+    setTablesShown,
+} from './filter-tree';
+import type { GroupBy, SearchScope } from './filter-tree';
 import type { Id } from '@/core/model/id';
 
 const ToggleEye: React.FC<{
@@ -42,11 +51,74 @@ const ToggleEye: React.FC<{
     </Button>
 );
 
+/** One of the two switches inside the search box: where the text is looked for. */
+const ScopeSwitch: React.FC<{
+    label: string;
+    on: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+}> = ({ label, on, onToggle, children }) => (
+    <button
+        type="button"
+        aria-label={label}
+        title={label}
+        aria-pressed={on}
+        className={cn(
+            'flex h-[22px] w-6 items-center justify-center rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5',
+            on
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+        )}
+        // a click leaves the focus in the box, so typing can go on
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onToggle}
+    >
+        {children}
+    </button>
+);
+
+/** How many matching fields a table shows before "Show n more". */
+const FIELD_LIMIT = 3;
+
+/** The text with every part that matches the search marked (ignoring case). */
+const Marked: React.FC<{ value: string; needle: string }> = ({
+    value,
+    needle,
+}) => {
+    const low = value.toLowerCase();
+    const find = needle.toLowerCase();
+    const parts: React.ReactNode[] = [];
+    let from = 0;
+    for (
+        let at = find ? low.indexOf(find) : -1;
+        at >= 0;
+        at = low.indexOf(find, from)
+    ) {
+        parts.push(value.slice(from, at));
+        from = at + find.length;
+        parts.push(
+            <mark
+                key={at}
+                className="rounded-[2px] bg-yellow-200 px-px text-inherit dark:bg-yellow-700/60"
+            >
+                {value.slice(at, from)}
+            </mark>
+        );
+    }
+    parts.push(value.slice(from));
+    return <>{parts}</>;
+};
+
 /**
- * The floating Filter Tables panel (EDT-061 to EDT-073): a search box, a
- * schema/area switch and a tree with an eye on every group and table. Choices
- * are written to the store's filter; the canvas refits when it changes.
- * `onZoomToGroup` lets the canvas show several tables at once.
+ * The floating Search & Filter panel (EDT-061 to EDT-073): a search box that
+ * finds tables by their name and by the names of their fields, a schema/area
+ * switch and a tree with an eye on every group and table. The fields that match
+ * are listed under their table; a click on one shows the table, centres it and
+ * focuses the field on the canvas. Two small switches inside the box say where
+ * the text is looked for: in table names, in field names, or in both (one of
+ * them stays on; both to begin with). Choices are written to the store's
+ * filter; the canvas refits when it changes. `onZoomToGroup` lets the canvas
+ * show several tables at once.
  */
 export const FilterPanel: React.FC<{
     onClose: () => void;
@@ -58,7 +130,11 @@ export const FilterPanel: React.FC<{
     const focus = useFocus();
     const [search, setSearch] = useState('');
     const [groupBy, setGroupBy] = useState<GroupBy>('schema');
+    // where the text is looked for: table names, field names, or both
+    const [scope, setScope] = useState<SearchScope>(SEARCH_BOTH);
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+    // the tables that show all their matching fields, not just the first few
+    const [allFields, setAllFields] = useState<ReadonlySet<Id>>(new Set());
     const box = useRef<HTMLInputElement>(null);
     useEffect(() => box.current?.focus(), []);
     // Escape closes the panel unless a list or popover inside it took the key
@@ -75,10 +151,35 @@ export const FilterPanel: React.FC<{
         filter,
         groupBy,
         text: search,
+        scope,
         showViews,
     });
     const set = (next: ReturnType<typeof setTableShown>) =>
         store.getState().setFilter(next);
+    const needle = search.trim();
+    // one of the two switches stays on: the last one cannot be switched off
+    const toggleScope = (key: keyof SearchScope) => {
+        const other = key === 'tables' ? 'fields' : 'tables';
+        setScope((now) =>
+            now[key] && !now[other] ? now : { ...now, [key]: !now[key] }
+        );
+    };
+    const searchLabel = text(
+        scope.tables && scope.fields
+            ? 'filters.search'
+            : scope.tables
+              ? 'filters.searchOnlyTables'
+              : 'filters.searchOnlyFields'
+    );
+    // a field found: its table is shown if hidden, selected and centred, and the
+    // field is focused, as when its row is clicked on the canvas card
+    const openField = (entity: Entity, field: Column, shown: boolean) => {
+        if (!shown) set(setTableShown(design, filter, entity.id, true));
+        focus(entity.id);
+        store
+            .getState()
+            .setFocusColumn({ entityId: entity.id, columnId: field.id });
+    };
 
     return (
         <div
@@ -110,12 +211,28 @@ export const FilterPanel: React.FC<{
                     <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                     <Input
                         ref={box}
-                        aria-label={text('filters.search')}
-                        placeholder={text('filters.search')}
-                        className="h-9 border-2 pl-9"
+                        aria-label={searchLabel}
+                        placeholder={searchLabel}
+                        className="h-9 border-2 pl-9 pr-16"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
+                    <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 gap-0.5">
+                        <ScopeSwitch
+                            label={text('filters.searchInTables')}
+                            on={scope.tables}
+                            onToggle={() => toggleScope('tables')}
+                        >
+                            <Table2 />
+                        </ScopeSwitch>
+                        <ScopeSwitch
+                            label={text('filters.searchInFields')}
+                            on={scope.fields}
+                            onToggle={() => toggleScope('fields')}
+                        >
+                            <List />
+                        </ScopeSwitch>
+                    </div>
                 </div>
             </div>
             <div className="flex gap-1 border-y px-2 py-2" role="group">
@@ -264,54 +381,164 @@ export const FilterPanel: React.FC<{
                                     </div>
                                 ) : null}
                                 {isOpen
-                                    ? group.tables.map(({ entity, shown }) => (
-                                          <div
-                                              key={entity.id}
-                                              data-testid="filter-table"
-                                              className={cn(
-                                                  'flex items-center gap-1',
-                                                  framed ? 'pl-8' : 'pl-1'
-                                              )}
-                                          >
-                                              <Table2 className="size-3.5 shrink-0 text-muted-foreground" />
-                                              <button
-                                                  type="button"
-                                                  className={cn(
-                                                      'flex-1 truncate rounded-sm py-1 text-left text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                                                      !shown &&
-                                                          'text-muted-foreground'
-                                                  )}
-                                                  onClick={() => {
-                                                      if (!shown)
-                                                          set(
-                                                              setTableShown(
-                                                                  design,
-                                                                  filter,
-                                                                  entity.id,
-                                                                  true
+                                    ? group.tables.map(
+                                          ({ entity, shown, fields }) => (
+                                              <React.Fragment key={entity.id}>
+                                                  <div
+                                                      data-testid="filter-table"
+                                                      className={cn(
+                                                          'flex items-center gap-1',
+                                                          framed
+                                                              ? 'pl-8'
+                                                              : 'pl-1'
+                                                      )}
+                                                  >
+                                                      <Table2 className="size-3.5 shrink-0 text-muted-foreground" />
+                                                      <button
+                                                          type="button"
+                                                          className={cn(
+                                                              'flex-1 truncate rounded-sm py-1 text-left text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                                              !shown &&
+                                                                  'text-muted-foreground'
+                                                          )}
+                                                          onClick={() => {
+                                                              if (!shown)
+                                                                  set(
+                                                                      setTableShown(
+                                                                          design,
+                                                                          filter,
+                                                                          entity.id,
+                                                                          true
+                                                                      )
+                                                                  );
+                                                              focus(entity.id);
+                                                          }}
+                                                      >
+                                                          {entity.name}
+                                                      </button>
+                                                      <ToggleEye
+                                                          shown={shown}
+                                                          label={`${shown ? text('filters.hide') : text('filters.show')} ${entity.name}`}
+                                                          onClick={() =>
+                                                              set(
+                                                                  setTableShown(
+                                                                      design,
+                                                                      filter,
+                                                                      entity.id,
+                                                                      !shown
+                                                                  )
                                                               )
-                                                          );
-                                                      focus(entity.id);
-                                                  }}
-                                              >
-                                                  {entity.name}
-                                              </button>
-                                              <ToggleEye
-                                                  shown={shown}
-                                                  label={`${shown ? text('filters.hide') : text('filters.show')} ${entity.name}`}
-                                                  onClick={() =>
-                                                      set(
-                                                          setTableShown(
-                                                              design,
-                                                              filter,
-                                                              entity.id,
-                                                              !shown
+                                                          }
+                                                      />
+                                                  </div>
+                                                  {fields.length > 0 ? (
+                                                      <div
+                                                          data-testid="filter-fields"
+                                                          className={
+                                                              framed
+                                                                  ? 'pl-[3.25rem]'
+                                                                  : 'pl-6'
+                                                          }
+                                                      >
+                                                          {(allFields.has(
+                                                              entity.id
                                                           )
-                                                      )
-                                                  }
-                                              />
-                                          </div>
-                                      ))
+                                                              ? fields
+                                                              : fields.slice(
+                                                                    0,
+                                                                    FIELD_LIMIT
+                                                                )
+                                                          ).map((field) => (
+                                                              <button
+                                                                  key={field.id}
+                                                                  type="button"
+                                                                  aria-label={text(
+                                                                      'filters.focusField',
+                                                                      {
+                                                                          table: entity.name,
+                                                                          field: field.name,
+                                                                      }
+                                                                  )}
+                                                                  className={cn(
+                                                                      'flex h-7 w-full items-center gap-1.5 rounded-sm px-1.5 text-left text-[13px] hover:bg-accent focus-visible:bg-accent focus-visible:outline-none',
+                                                                      !shown &&
+                                                                          'text-muted-foreground'
+                                                                  )}
+                                                                  onClick={() =>
+                                                                      openField(
+                                                                          entity,
+                                                                          field,
+                                                                          shown
+                                                                      )
+                                                                  }
+                                                              >
+                                                                  <List className="size-3 shrink-0 text-muted-foreground" />
+                                                                  <span className="min-w-0 flex-1 truncate">
+                                                                      <Marked
+                                                                          value={
+                                                                              field.name
+                                                                          }
+                                                                          needle={
+                                                                              needle
+                                                                          }
+                                                                      />
+                                                                  </span>
+                                                                  <span className="shrink-0 text-[11px] text-muted-foreground">
+                                                                      {typeLabel(
+                                                                          field,
+                                                                          design.databaseType
+                                                                      )}
+                                                                  </span>
+                                                              </button>
+                                                          ))}
+                                                          {fields.length >
+                                                          FIELD_LIMIT ? (
+                                                              <button
+                                                                  type="button"
+                                                                  className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                                  onClick={() =>
+                                                                      setAllFields(
+                                                                          (
+                                                                              now
+                                                                          ) => {
+                                                                              const next =
+                                                                                  new Set(
+                                                                                      now
+                                                                                  );
+                                                                              if (
+                                                                                  !next.delete(
+                                                                                      entity.id
+                                                                                  )
+                                                                              )
+                                                                                  next.add(
+                                                                                      entity.id
+                                                                                  );
+                                                                              return next;
+                                                                          }
+                                                                      )
+                                                                  }
+                                                              >
+                                                                  {allFields.has(
+                                                                      entity.id
+                                                                  )
+                                                                      ? text(
+                                                                            'filters.showFewerFields'
+                                                                        )
+                                                                      : text(
+                                                                            'filters.showMoreFields',
+                                                                            {
+                                                                                count:
+                                                                                    fields.length -
+                                                                                    FIELD_LIMIT,
+                                                                            }
+                                                                        )}
+                                                              </button>
+                                                          ) : null}
+                                                      </div>
+                                                  ) : null}
+                                              </React.Fragment>
+                                          )
+                                      )
                                     : null}
                             </div>
                         );

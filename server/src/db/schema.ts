@@ -274,6 +274,60 @@ export const diagramLocks = pgTable('diagram_locks', {
     index('diagram_locks_user_idx').on(t.userId),
 ]);
 
+/**
+ * A request to whoever holds a diagram's edit lock to step out (a "poke"),
+ * sent by another editor who found the diagram locked. At most one poke waits
+ * for an answer per diagram. The rows also remember when each person last
+ * poked, which is what the wait between pokes is counted from.
+ */
+export const lockPokes = pgTable(
+    'lock_pokes',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        diagramId: uuid('diagram_id')
+            .notNull()
+            .references(() => diagrams.id, { onDelete: 'cascade' }),
+        requesterId: uuid('requester_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        // the requester's tab: it is the one told the answer
+        requesterEditorId: text('requester_editor_id').notNull(),
+        holderId: uuid('holder_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        // the tab that held the lock when it was asked: only it may answer
+        holderEditorId: text('holder_editor_id').notNull(),
+        status: text('status').notNull().default('pending'),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        // a pending poke stops waiting here
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+        answeredAt: timestamp('answered_at', { withTimezone: true }),
+    },
+    (t) => [
+        check(
+            'lock_pokes_status_check',
+            sql`${t.status} in ('pending', 'accepted', 'declined', 'left', 'expired')`
+        ),
+        // one poke at a time waits for an answer on a diagram
+        uniqueIndex('lock_pokes_pending_idx')
+            .on(t.diagramId)
+            .where(sql`${t.status} = 'pending'`),
+        // the wait between pokes reads a person's latest poke on a diagram
+        index('lock_pokes_requester_idx').on(
+            t.diagramId,
+            t.requesterId,
+            t.createdAt
+        ),
+        // the user columns are cascaded on delete
+        index('lock_pokes_holder_idx').on(t.holderId),
+        index('lock_pokes_requester_user_idx').on(t.requesterId),
+        // old rows are pruned by age
+        index('lock_pokes_created_idx').on(t.createdAt),
+    ]
+);
+
 export const snapshots = pgTable(
     'snapshots',
     {

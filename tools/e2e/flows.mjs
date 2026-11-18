@@ -868,7 +868,7 @@ await flow('F4', 'filter panel and zoom to group', {}, async () => {
             await pane().click({ position: { x: 5, y: 5 } });
             await page.keyboard.press('ControlOrMeta+f');
             const search = page.getByRole('textbox', {
-                name: 'Search tables...',
+                name: 'Search tables or fields...',
             });
             await search.waitFor();
             await shot('filter-panel');

@@ -473,6 +473,128 @@ describe('qubdi api client', () => {
             expect(init.keepalive).toBe(true);
         });
 
+        describe('asking the holder to step out', () => {
+            const callOf = async (
+                answer: Response,
+                run: (api: ReturnType<typeof createApi>) => Promise<unknown>
+            ) => {
+                const fetchMock = vi.fn(async () => answer);
+                const api = createApi(
+                    'http://srv',
+                    fetchMock as unknown as typeof fetch
+                );
+                const result = await run(api).catch((e: unknown) => e);
+                const [url, init] = fetchMock.mock.calls[0] as unknown as [
+                    string,
+                    RequestInit,
+                ];
+                return { result, url, init };
+            };
+
+            it('pokes on behalf of one editor and reads how long the request waits', async () => {
+                const { result, url, init } = await callOf(
+                    jsonResponse(202, {
+                        status: 'sent',
+                        pokeId: 'p1',
+                        waitSeconds: 60,
+                        holder: 'sam@corp.io',
+                    }),
+                    (api) => api.pokeLock('d1', 'tab-1')
+                );
+                expect(result).toEqual({
+                    status: 'sent',
+                    pokeId: 'p1',
+                    waitSeconds: 60,
+                    holder: 'sam@corp.io',
+                });
+                expect(url).toBe('http://srv/diagrams/d1/lock/poke');
+                expect(init.method).toBe('POST');
+                expect(JSON.parse(init.body as string)).toEqual({
+                    editorId: 'tab-1',
+                });
+            });
+
+            it('learns when nobody was editing after all', async () => {
+                const { result } = await callOf(
+                    jsonResponse(200, { status: 'granted' }),
+                    (api) => api.pokeLock('d1', 'tab-1')
+                );
+                expect(result).toEqual({ status: 'granted' });
+            });
+
+            it('refuses an answer it cannot read', async () => {
+                const { result } = await callOf(
+                    jsonResponse(202, { status: 'sent', pokeId: 'p1' }),
+                    (api) => api.pokeLock('d1', 'tab-1')
+                );
+                expect(result).toMatchObject({ code: 'invalid_response' });
+            });
+
+            it('carries the wait the server asks for when poked too soon', async () => {
+                const { result } = await callOf(
+                    new Response(JSON.stringify({ error: 'poke_cooldown' }), {
+                        status: 429,
+                        headers: {
+                            'content-type': 'application/json',
+                            'retry-after': '120',
+                        },
+                    }),
+                    (api) => api.pokeLock('d1', 'tab-1')
+                );
+                expect(result).toMatchObject({
+                    status: 429,
+                    code: 'poke_cooldown',
+                    retryAfterMs: 120_000,
+                });
+            });
+
+            it('answers a poke with the pokeId in the path, whichever way', async () => {
+                const { result, url, init } = await callOf(
+                    new Response(null, { status: 204 }),
+                    (api) => api.answerPoke('d 1', 'p/1', 'tab-1', true)
+                );
+                expect(result).toBeUndefined();
+                expect(url).toBe(
+                    'http://srv/diagrams/d%201/lock/pokes/p%2F1/answer'
+                );
+                expect(init.method).toBe('POST');
+                expect(JSON.parse(init.body as string)).toEqual({
+                    editorId: 'tab-1',
+                    accept: true,
+                });
+            });
+
+            it('names the lock stream of an editor', () => {
+                expect(
+                    createApi('http://srv').lockEventsUrl('d 1', 'tab/1')
+                ).toBe(
+                    'http://srv/diagrams/d%201/lock/events?editorId=tab%2F1'
+                );
+            });
+
+            it('words each way a request can fail', () => {
+                const text = (code: string) =>
+                    errorMessage(new ApiError(409, code));
+                expect(text('poke_cooldown')).toMatch(/wait a few minutes/i);
+                expect(text('poke_pending')).toMatch(/already asked/i);
+                expect(text('poke_expired')).toMatch(/run out of time/i);
+                expect(text('poke_answered')).toMatch(/already answered/i);
+                expect(text('lock_changed')).toMatch(/no longer/i);
+                expect(text('lock_busy')).toMatch(/changing hands/i);
+                // not the fallback that names the code
+                for (const code of [
+                    'poke_cooldown',
+                    'poke_pending',
+                    'poke_expired',
+                    'poke_answered',
+                    'lock_changed',
+                    'lock_busy',
+                ]) {
+                    expect(text(code)).not.toContain(code);
+                }
+            });
+        });
+
         it('says who is editing when a save is refused', () => {
             expect(
                 errorMessage(

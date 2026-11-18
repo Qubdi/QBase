@@ -24,7 +24,7 @@ export const canvas = {
     },
     toolbar: {
         label: 'Canvas tools',
-        filter: 'Filter Tables ({{shortcut}})',
+        filter: 'Search & Filter ({{shortcut}})',
         showAll: 'Show All ({{shortcut}})',
         zoomOut: 'Zoom Out',
         zoomIn: 'Zoom In',
@@ -100,6 +100,7 @@ export const canvas = {
         newRelationship: 'New Relationship',
         newArea: 'New Area',
         addNote: 'Add Note',
+        addFieldNote: 'Add Note to Field',
         arrange: 'Auto Arrange Diagram',
         moveToArea: 'Move to Area',
         moveToAreaCount: 'Move to Area ({{count}})',

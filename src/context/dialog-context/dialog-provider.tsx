@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useMemo, useReducer } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/platform/theme/theme-context';
 import { toast } from '@/platform/toast/use-toast';
 import { useWorkspace } from '@/components/qubdi/workspace-context';
@@ -129,6 +130,7 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
     const { t } = useTranslation();
     const [open, dispatch] = useReducer(reduce, NONE);
     const workspace = useWorkspace();
+    const navigate = useNavigate();
     const adapter = useStorageAdapter();
     const store = useOptionalEditorStoreApi();
     const canvas = useCanvasActions();
@@ -189,6 +191,21 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
         };
     }, [store, canvas, resolvedTheme, t]);
 
+    // A project dialog shown with no diagram behind it (the workspace's start
+    // flow) can be dismissed: the user leaves for the page they came from. The
+    // check waits a tick so that opening or creating a diagram, which also
+    // closes the dialog, is not undone by going back.
+    const leaveIfEmpty = () => {
+        if (store) return;
+        const here = window.location.pathname;
+        setTimeout(() => {
+            if (window.location.pathname !== here) return;
+            const idx = (window.history.state as { idx?: number } | null)?.idx;
+            if (idx) navigate(-1);
+            else navigate('/');
+        }, 0);
+    };
+
     const mac = getOperatingSystem() === 'mac';
     const shortcutRows = useMemo(
         () =>
@@ -209,15 +226,26 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                             <ProjectCreateDialog
                                 open
                                 project={workspace.project}
-                                onClose={api.closeCreateDiagramDialog}
+                                onClose={() => {
+                                    api.closeCreateDiagramDialog();
+                                    leaveIfEmpty();
+                                }}
+                                // a switch to the examples is not a dismissal: stay on the page
+                                onExamples={() => {
+                                    api.closeCreateDiagramDialog();
+                                    api.openExamplesDialog();
+                                }}
                             />
                         ) : null}
                         {open.open ? (
                             <ProjectOpenDialog
                                 open
                                 project={workspace.project}
-                                canClose={open.open.canClose}
-                                onClose={api.closeOpenDiagramDialog}
+                                canClose
+                                onClose={() => {
+                                    api.closeOpenDiagramDialog();
+                                    leaveIfEmpty();
+                                }}
                                 onCreate={() => {
                                     api.closeOpenDiagramDialog();
                                     api.openCreateDiagramDialog();
@@ -246,7 +274,14 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                     </>
                 )}
                 {open.examples ? (
-                    <ExamplesDialog onClose={api.closeExamplesDialog} />
+                    <ExamplesDialog
+                        onClose={api.closeExamplesDialog}
+                        // backing out of the examples, with no diagram behind them, leaves like the other start dialogs
+                        onDismiss={() => {
+                            api.closeExamplesDialog();
+                            leaveIfEmpty();
+                        }}
+                    />
                 ) : null}
                 {open.importFile ? (
                     <ImportDiagramDialog dialog={{ open: true }} />

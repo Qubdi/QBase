@@ -166,6 +166,7 @@ Start from S1 plus 10 extra tables made with Add Table so that the diagram does 
 - [ ] **MT-097** Type a name part in the Tables filter box; type something that matches nothing -> the list narrows; the empty text reads "No tables found matching your filter" with a Clear Filter button (rows: EDT-109, EDT-108)
 - [ ] **MT-098** Delete every table -> the Tables section reads "No tables" with "Create a table to get started" and an Add Table button (rows: EDT-110)
 - [ ] **MT-099** Hover a field row of a table in the panel for a moment -> a detail card shows the full information and the references / referenced by links (rows: EDT-116)
+- [ ] **MT-400** Open a table with many fields (taller than the panel) in a diagram of several tables and scroll down inside it until the Indexes, Check Constraints and Description headers are in view; click Indexes, then Check Constraints, then Description -> each header stays where you clicked it and its section opens right under it (Fields folds); the panel does not jump to the tables further down the list. Then scroll back up to the top of the table and press Add Index in the footer -> Indexes is scrolled into view with the new index (rows: EDT-103)
 
 ## 6. Fields
 
@@ -188,13 +189,14 @@ Use a PostgreSQL diagram unless said otherwise.
 - [ ] **MT-114** Open Max Length -> None, Max (only on types where it is allowed, such as SQL Server varchar) and Custom with a number box (rows: EDT-129, IMP-038, DAT-034)
 - [ ] **MT-115** Open Precision and Scale on a numeric field -> the allowed range and the default are shown as placeholders (rows: EDT-130)
 - [ ] **MT-116** Type `'abc'::text` into Default Value, then empty it -> any text is accepted verbatim; empty clears the default (rows: EDT-131)
-- [ ] **MT-117** Type a Description for a field -> a comment icon appears beside the name; clicking it reopens the popover; the placeholder reads "No description" (rows: EDT-132)
+- [ ] **MT-117** Type a Description for a field -> a comment icon appears beside the name; clicking it shows only the description in a small popover (the "..." button still opens all of Field Attributes); the placeholder reads "No description" (rows: EDT-132)
 - [ ] **MT-118** Toggle N (nullable) and PK on several fields; make two fields primary keys -> setting PK makes the field not null and, for the first key, unique; a table may have several primary keys; the N toggle is disabled for primary-key and serial fields (rows: EDT-133, EDT-134, DAT-042)
 - [ ] **MT-119** Reorder fields by dragging in the side panel -> the canvas follows; Undo restores; in the canvas edit card drag a field row too -> reordering works there as well (new behaviour) (rows: EDT-136, EDT-137)
 - [ ] **MT-120** Delete a field with the Delete Field button, then Undo -> no confirmation; Undo brings it back (rows: EDT-138)
 - [ ] **MT-121** Delete a field that is used by a relationship -> the relationship is removed or a warning is shown first; no dangling line stays (new behaviour) (rows: EDT-139)
 - [ ] **MT-122** Open the old-format file from the appendix (a field type stored as plain text, nullable stored as the text "true", a primary key that is also nullable) -> types show as normal types, nullable dots are correct, the primary key shows as not null (rows: DAT-003, DAT-004, EDT-135)
 - [ ] **MT-123** Type a column-level check into a field, if the editor offers one (see EDT-148) -> the new behaviour decided for DAT-040 applies: either the check lives in the table check list or a field check is shown; it survives export and reload (rows: DAT-040)
+- [ ] **MT-399** In the side panel open, one after the other: the field type list, the comment icon of a field with a description, a field's "..." (Field Attributes), an index's "..." (Index Attributes), a check's "..." and the "..." menu of a table, of a custom type and of an area; also the arrow of Add Table and the colour square of a table -> each opens with its left edge on the button that opened it and grows to the right, over the canvas, so the row it was opened from stays in view; the account menu and the language picker, at the right edge of the window, still open toward the left (rows: EDT-104, EDT-125, EDT-132, EDT-142, EDT-195)
 
 ## 7. Indexes and check constraints
 
@@ -259,6 +261,7 @@ Use S1 plus two more tables.
 - [ ] **MT-171** Rename an area by double-click on its name (Enter, then click-away, then Escape, then an empty name) and by Edit Area Name -> Enter and click-away save, Escape cancels, an empty name is ignored (rows: EDT-206)
 - [ ] **MT-172** Delete an area holding tables -> the tables stay and are no longer members (rows: EDT-207)
 - [ ] **MT-173** Open the Areas list -> filter, Add Area, rows with colour picker, focus and More actions (Edit Name, Delete Area); empty text "No areas" / "Create an area to get started"; a filter with no hit says "No areas found matching your filter" (rows: EDT-208, EDT-209)
+- [ ] **MT-401** Make two areas with tables inside them (drag tables in) and leave a few tables outside; open Visuals > Areas -> each area row has a count; click the chevron or the name -> the row opens to the tables that are inside that area on the canvas, with the schema in grey when several schemas are shown; click a table -> it is selected and centred on the canvas; an area with no tables says "No tables in this area". The last row, "Tables outside every area", lists the rest. Drag a table from one area into the other -> after a moment the lists follow. Type in the filter -> the outside row goes away; delete every area -> the list reads "No areas" (rows: EDT-208)
 - [ ] **MT-174** Canvas menu > New Note, and Visuals > Notes > Add Note -> an empty 200 x 150 yellow (`#ffe374`) note appears (rows: EDT-211, DAT-056)
 - [ ] **MT-175** Look at a note in light and in dark theme; change its colour; resize it -> a coloured header with a colour picker, a pale body that differs by theme, resizable (rows: EDT-212)
 - [ ] **MT-176** Double-click a note body, type, click away; edit again and press Escape -> click-away saves, Escape abandons the edit (rows: EDT-213)
@@ -268,11 +271,13 @@ Use S1 plus two more tables.
 
 ## 11. Filters and visibility
 
-- [ ] **MT-180** Press Mod+F, then the toolbar Filter button -> a floating "Filter Tables" panel opens and closes on each press; Mod+F works while typing in a text box too (rows: EDT-061, EDT-265)
-- [ ] **MT-181** Look at the panel -> a focused box "Search tables..." and a toggle "Group by Schema" / "Group by Area" (rows: EDT-062)
+- [ ] **MT-180** Press Mod+F, then the toolbar Filter button -> a floating "Search & Filter" panel opens and closes on each press; Mod+F works while typing in a text box too (rows: EDT-061, EDT-265)
+- [ ] **MT-181** Look at the panel -> a focused box "Search tables or fields..." and a toggle "Group by Schema" / "Group by Area" (rows: EDT-062)
 - [ ] **MT-182** Use the eye of a table and of a group; use zoom-to on both -> the table or all tables of the group hide and show; zoom-to moves the view; after every filter change the canvas refits (rows: EDT-063, EDT-064, EDT-073, EDT-024)
 - [ ] **MT-183** Hide a table, then click its row in the panel -> it becomes visible, is selected, flashes and the canvas zooms to it (rows: EDT-065)
 - [ ] **MT-184** Type part of a table name in uppercase in the panel search -> the tree narrows by a case-insensitive substring and the hidden state of tables does not change (rows: EDT-066)
+- [ ] **MT-402** Open the panel (Mod+F) and type part of a field name that no table name contains, for example `email` -> the tables that have such a field are listed, each with the matching fields under it (the first three, the text found marked, the type in grey, and "Show n more" for the rest); a table found by its name only has no fields under it; clicking a field shows the table if it was hidden, selects it, centres it and marks that field on the canvas while the tables not related to it stand back; clearing the box brings back the plain list, and the hidden state of the tables never changed (rows: EDT-066)
+- [ ] **MT-403** In the panel search box look at the two small icons at its right end (table, list), both on -> hovering shows "Search in table names" and "Search in field names". Switch Fields off and type `email` -> the box reads "Search tables...", nothing is found and no fields are listed; type part of a table name -> it is found. Switch Fields on and Tables off and type a table name -> nothing is found, and `email` finds the tables with such a field; the box reads "Search fields...". Try to switch off the last one that is on -> it stays on. Click a switch while typing -> the cursor stays in the box. Close and reopen the panel -> both are on again (rows: EDT-066)
 - [ ] **MT-185** Search for a word that exists nowhere -> "No tables found", "Try adjusting your search or filter" and a Clear filter button; in an empty diagram "No tables found" and "Create a table to get started" (rows: EDT-067, EDT-068)
 - [ ] **MT-186** Hide every table -> a centred message "All tables are hidden" with a Show all button on the canvas and in the Tables section; the button shows everything (rows: EDT-069)
 - [ ] **MT-187** Hide a table with relationships -> its lines disappear too (rows: EDT-070)

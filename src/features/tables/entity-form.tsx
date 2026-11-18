@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     ChevronDown,
     ChevronUp,
@@ -10,6 +10,7 @@ import {
 import { planAddColumn, planAddKey } from '@/core/commands/plan-column';
 import type { Entity } from '@/core/model/entity';
 import { DebouncedTextarea } from '@/platform/panel/debounced-input';
+import { useKeepInPlace } from '@/platform/panel/keep-in-place';
 import { useEditorEnv } from '@/platform/panel/use-editor';
 import { useText } from '@/platform/panel/use-text';
 import { Button } from '@/platform/ui/button';
@@ -21,21 +22,23 @@ import { IndexesEditor } from './indexes-editor';
 
 /**
  * One accordion section of a table form: a 24 px header (icon, title, chevron)
- * that opens and closes its body.
+ * that opens and closes its body. `onToggle` is given the header, which the
+ * form keeps in place on screen when the sections change.
  */
 export const Section: React.FC<{
+    name: string;
     title: string;
     icon: React.ReactNode;
     open: boolean;
-    onToggle: () => void;
+    onToggle: (header: HTMLElement) => void;
     children: React.ReactNode;
-}> = ({ title, icon, open, onToggle, children }) => (
-    <section className="border-t py-1 first:border-t-0">
+}> = ({ name, title, icon, open, onToggle, children }) => (
+    <section data-section={name} className="border-t py-1 first:border-t-0">
         <h3 className="m-0">
             <button
                 type="button"
                 aria-expanded={open}
-                onClick={onToggle}
+                onClick={(e) => onToggle(e.currentTarget)}
                 className="flex h-7 w-full items-center gap-2 rounded-sm px-2 text-xs font-semibold text-slate-700 hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-slate-200"
             >
                 <span className="shrink-0 [&_svg]:size-4">{icon}</span>
@@ -66,21 +69,38 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
         'fields'
     );
     const [addedId, setAddedId] = useState<string | undefined>();
-    const toggle = (name: string) =>
+    const form = useRef<HTMLDivElement>(null);
+    // Opening a section folds the one that was open, which is usually the long
+    // Fields above it: the panel is then scrolled to somewhere else. The header
+    // that was clicked is kept where it is, so the result is under the pointer.
+    const keep = useKeepInPlace(openSection);
+    const toggle = (name: string, header: HTMLElement) => {
+        keep(header);
         setOpenSection(openSection === name ? undefined : name);
+    };
+    // opened by a button elsewhere (the footer): the section's own header
+    const show = (name: string) => {
+        if (openSection === name) return;
+        const header = form.current?.querySelector<HTMLElement>(
+            `[data-section="${name}"] > h3 > button`
+        );
+        if (header) keep(header);
+        setOpenSection(name);
+    };
     const showChecks = !view;
     return (
-        <div>
+        <div ref={form}>
             {hasDuplicateName(design, entity) ? (
                 <p role="alert" className="px-2 py-1 text-xs text-amber-700">
                     {text('tables.duplicateName', { name: entity.name })}
                 </p>
             ) : null}
             <Section
+                name="fields"
                 title={text('tables.fields')}
                 icon={<FileTypeCorner />}
                 open={openSection === 'fields'}
-                onToggle={() => toggle('fields')}
+                onToggle={(header) => toggle('fields', header)}
             >
                 <FieldsEditor
                     entity={entity}
@@ -90,29 +110,32 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
             </Section>
             {view ? null : (
                 <Section
+                    name="indexes"
                     title={text('tables.indexes')}
                     icon={<FileKey />}
                     open={openSection === 'indexes'}
-                    onToggle={() => toggle('indexes')}
+                    onToggle={(header) => toggle('indexes', header)}
                 >
                     <IndexesEditor entity={entity} />
                 </Section>
             )}
             {showChecks ? (
                 <Section
+                    name="checks"
                     title={text('tables.checks')}
                     icon={<ListChecks />}
                     open={openSection === 'checks'}
-                    onToggle={() => toggle('checks')}
+                    onToggle={(header) => toggle('checks', header)}
                 >
                     <ChecksEditor entity={entity} />
                 </Section>
             ) : null}
             <Section
+                name="description"
                 title={text('tables.description')}
                 icon={<MessageCircleMore />}
                 open={openSection === 'description'}
-                onToggle={() => toggle('description')}
+                onToggle={(header) => toggle('description', header)}
             >
                 <DebouncedTextarea
                     aria-label={text('tables.description')}
@@ -156,7 +179,7 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
                                 size="sm"
                                 onClick={() => {
                                     edit(planAddKey(design, entity.id));
-                                    setOpenSection('indexes');
+                                    show('indexes');
                                 }}
                             >
                                 <FileKey />
@@ -175,7 +198,7 @@ export const EntityForm: React.FC<{ entity: Entity }> = ({ entity }) => {
                                 if (command?.type === 'part.insert')
                                     setAddedId(command.item.id);
                                 edit(command);
-                                setOpenSection('fields');
+                                show('fields');
                             }}
                         >
                             <FileTypeCorner />

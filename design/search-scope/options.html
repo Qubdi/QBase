@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Where the Search & Filter panel searches: tables, fields or both. Small icon controls under the
+  Group by buttons; options drawn with the app's own colours (src/globals.css) and the panel's real
+  size (w-80 = 320 px). Open in a browser. Theme: ?theme=dark . &only=a,b,c . &shot=1 hides the text.
+-->
+<title>Search Scope Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700&display=swap">
+<style>
+:root {
+  --bg: #f4f7f7; --surface: #ffffff; --fg: #13201f; --muted: #566866; --line: #d9e2e1;
+  --accent: #0d6f66; --chip: #e6efee;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Manrope", "Inter", system-ui, sans-serif;
+}
+:root[data-theme="dark"] { --bg: #0c1313; --surface: #131c1c; --fg: #e7f0ef; --muted: #9bb0ad; --line: #243332; --accent: #3fd0bd; --chip: #1a2727; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font-ui); margin: 0; padding: 28px 16px 56px; }
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+header { display: grid; gap: 10px; max-width: 76ch; }
+h1 { font: 700 26px/1.2 var(--font-head); margin: 0; }
+header p { margin: 0; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); width: max-content; }
+.seg button { font: 500 13px var(--font-ui); color: var(--muted); background: none; border: 0; padding: 6px 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--chip); color: var(--fg); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { font: 700 16px/1.3 var(--font-head); margin: 0; display: flex; align-items: baseline; gap: 10px; }
+.card h2 .id { font: 700 12px var(--font-ui); color: var(--accent); background: var(--chip); border-radius: 6px; padding: 2px 8px; flex: none; }
+.card p { margin: 0; color: var(--muted); max-width: 100ch; }
+.row { display: flex; flex-wrap: wrap; gap: 14px; }
+.cap { font: 600 11px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+body.shot header, body.shot .seg { display: none; }
+
+.light { --b: 180 25% 99%; --pop: 0 0% 100%; --f: 200 30% 10%; --mu: 200 12% 40%; --bd: 190 16% 88%; --in: 190 16% 86%; --pr: 173 82% 27%; --prf: 0 0% 100%; --sec: 185 22% 94%; --ac: 174 40% 93%; --acf: 173 80% 20%; --cv: 185 22% 96%; --hl: 48 96% 78%; }
+.dark  { --b: 200 28% 7%;  --pop: 200 26% 9%;  --f: 180 20% 96%; --mu: 195 12% 66%; --bd: 200 15% 18%; --in: 200 15% 20%; --pr: 172 66% 46%; --prf: 200 40% 6%; --sec: 200 18% 15%; --ac: 190 30% 16%; --acf: 172 60% 80%; --cv: 200 28% 5%; --hl: 48 70% 30%; }
+.stage { padding: 14px; border-radius: 10px; border: 1px solid hsl(var(--bd)); background: hsl(var(--cv)); background-image: radial-gradient(hsl(var(--bd)) 1px, transparent 1px); background-size: 16px 16px; display: flex; justify-content: center; }
+
+.fp { width: 320px; position: relative; border: 1px solid hsl(var(--bd)); border-radius: 10px; background: hsl(var(--pop)); color: hsl(var(--f)); box-shadow: 0 4px 10px rgb(0 0 0 / .12); font: 13px/1.4 var(--font-ui); }
+.fp .hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-bottom: 1px solid hsl(var(--bd)); }
+.fp .hd h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.fp .hd small { font-size: 12px; font-weight: 400; color: hsl(var(--pr)); }
+.fp .sb { padding: 8px; }
+.in { position: relative; height: 36px; border: 2px solid hsl(var(--pr)); border-radius: 6px; padding-left: 36px; line-height: 32px; font-size: 14px; background: hsl(var(--b)); }
+.in > svg { position: absolute; left: 10px; top: 9px; color: hsl(var(--mu)); }
+.in .x { position: absolute; right: 8px; top: 7px; width: 18px; height: 18px; display: grid; place-items: center; color: hsl(var(--mu)); }
+.gb { display: flex; gap: 4px; border-top: 1px solid hsl(var(--bd)); border-bottom: 1px solid hsl(var(--bd)); padding: 8px; }
+.gb span { flex: 1; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 500; }
+.gb span.on { background: hsl(var(--ac)); color: hsl(var(--acf)); }
+.tree { padding: 8px; }
+.g { display: flex; align-items: center; gap: 4px; padding: 4px 0; }
+.g .n { font-size: 12px; }
+.g .k { font-size: 11px; background: hsl(var(--sec)); color: hsl(var(--mu)); border-radius: 999px; padding: 0 6px; }
+.g .sp { flex: 1; }
+.ic { width: 24px; height: 24px; display: grid; place-items: center; color: hsl(var(--mu)); flex: none; }
+.ic.sm { width: 14px; height: 14px; }
+.t { display: flex; align-items: center; gap: 4px; padding-left: 32px; }
+.t .nm { flex: 1; font-size: 14px; padding: 4px 0; }
+.col { display: flex; align-items: center; gap: 6px; margin-left: 52px; height: 26px; padding: 0 6px; border-radius: 4px; font-size: 13px; }
+.col .cn { flex: 1; min-width: 0; }
+.col .ty { color: hsl(var(--mu)); font-size: 11px; }
+mark { background: hsl(var(--hl)); color: inherit; border-radius: 2px; padding: 0 1px; }
+
+/* the new controls: small icon buttons, 28 px, tooltips and accessible names in the app */
+.sc { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 1px solid hsl(var(--bd)); }
+.sc .lbl { font-size: 12px; color: hsl(var(--mu)); }
+.sc .sp { flex: 1; }
+.segi { display: inline-flex; border: 1px solid hsl(var(--in)); border-radius: 6px; }
+.segi i:first-child { border-radius: 5px 0 0 5px; }
+.segi i:last-child { border-radius: 0 5px 5px 0; }
+.segi i { width: 30px; height: 26px; display: grid; place-items: center; color: hsl(var(--mu)); position: relative; font-style: normal; }
+.segi i + i { border-left: 1px solid hsl(var(--in)); }
+.segi i.on { background: hsl(var(--ac)); color: hsl(var(--acf)); }
+.tog { display: inline-flex; gap: 4px; }
+.tog i { width: 28px; height: 26px; display: grid; place-items: center; border: 1px solid hsl(var(--in)); border-radius: 6px; color: hsl(var(--mu)); font-style: normal; position: relative; }
+.tog i.on { background: hsl(var(--ac)); color: hsl(var(--acf)); border-color: hsl(var(--pr) / .5); }
+.both { display: inline-flex; gap: 1px; align-items: center; }
+.tip { position: absolute; top: 32px; left: 50%; transform: translateX(-50%); z-index: 3; white-space: nowrap; font: 500 11px var(--font-ui); background: hsl(var(--f)); color: hsl(var(--b)); border-radius: 5px; padding: 3px 8px; }
+/* option C: inside the box */
+.in .inside { position: absolute; right: 30px; top: 5px; display: inline-flex; gap: 2px; }
+.in .inside i { width: 24px; height: 22px; display: grid; place-items: center; border-radius: 4px; color: hsl(var(--mu)); font-style: normal; }
+.in .inside i.on { background: hsl(var(--ac)); color: hsl(var(--acf)); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Search in: tables, fields or both</h1>
+    <p>The Search &amp; Filter box looks at table names and field names together. These cards add small icon controls that say where it looks: tables only (as before), fields only, or both. Every card uses the search text "user" over the same tables: <i>users</i>, <i>orders</i> (field user_id), <i>customers</i> (field username) and <i>products</i>. The controls have tooltips and accessible names ("Tables", "Fields", "Tables and fields").</p>
+    <div class="seg" id="themes" role="group" aria-label="Theme">
+      <button data-theme="light" aria-pressed="true">Light</button>
+      <button data-theme="dark" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+  <div id="cards" class="wrap" style="gap:22px"></div>
+</div>
+<script>
+const I = {
+  search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+  chev: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  db: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>',
+  area: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/></svg>',
+  eye: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+  zoom: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>',
+};
+const tbl = (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>`;
+const fld = (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`;
+const both = `<span class="both">${tbl(12)}${fld(12)}</span>`;
+const hl = s => s.replace(/(user)/ig, '<mark>$1</mark>');
+
+/* what "user" finds, by where the search looks */
+const RESULT = {
+  tables: [['users', []]],
+  fields: [['orders', [['user_id', 'bigint']]], ['customers', [['username', 'varchar(60)']]]],
+  both:   [['users', []], ['orders', [['user_id', 'bigint']]], ['customers', [['username', 'varchar(60)']]]],
+};
+const TIP = { tables: 'Tables', fields: 'Fields', both: 'Tables and fields' };
+
+function panel(mode, ctl) {
+  const rows = RESULT[mode].map(([n, cols]) => `<div class="t"><span class="ic sm">${tbl(14)}</span><span class="nm">${n}</span><span class="ic">${I.eye}</span></div>` +
+    cols.map(c => `<div class="col"><span class="ic sm">${fld(13)}</span><span class="cn">${hl(c[0])}</span><span class="ty">${c[1]}</span></div>`).join('')).join('');
+  const k = RESULT[mode].length;
+  const search = `<div class="in">${I.search}user${ctl === 'inside' ? inside(mode) : ''}<span class="x">${I.x}</span></div>`;
+  return `<div class="fp"><div class="hd"><h3>${I.search} Search &amp; Filter <small>(Ctrl+F)</small></h3><span class="ic">${I.x}</span></div>
+    <div class="sb">${search}</div>
+    <div class="gb"><span class="on">${I.db} Group by Schema</span><span>${I.area} Group by Area</span></div>
+    ${ctl === 'seg' ? seg(mode) : ctl === 'tog' ? tog(mode) : ''}
+    <div class="tree"><div class="g"><span class="ic">${I.chev}</span><span class="ic sm">${I.db}</span><span class="n">public</span><span class="k">${k}/${k}</span><span class="sp"></span><span class="ic">${I.zoom}</span><span class="ic">${I.eye}</span></div>${rows}</div></div>`;
+}
+const seg = mode => `<div class="sc"><span class="lbl">Search in</span><span class="segi">
+  <i class="${mode === 'tables' ? 'on' : ''}">${tbl()}</i><i class="${mode === 'fields' ? 'on' : ''}">${fld()}${mode === 'fields' ? `<span class="tip">${TIP.fields}</span>` : ''}</i><i class="${mode === 'both' ? 'on' : ''}">${both}</i></span></div>`;
+const tog = mode => `<div class="sc"><span class="lbl">Search in</span><span class="tog">
+  <i class="${mode !== 'fields' ? 'on' : ''}">${tbl()}</i><i class="${mode !== 'tables' ? 'on' : ''}">${fld()}</i></span></div>`;
+const inside = mode => `<span class="inside"><i class="${mode !== 'fields' ? 'on' : ''}">${tbl(14)}</i><i class="${mode !== 'tables' ? 'on' : ''}">${fld(14)}</i></span>`;
+
+const CARDS = [
+  { id: 'a', mark: 'A', wide: true, title: 'Three icons in one control: Tables, Fields, Both (recommended)',
+    text: 'A row under Group by Schema / Group by Area with a faint "Search in" and one segmented control of three 30 px icon buttons. One of them is always selected, "Tables and fields" to begin with. Tables is today\'s behaviour: only table names are searched and no fields are listed. Fields searches field names only, so a table is listed only for a field that matches, and a table found only by its name is left out. Both is what the panel does now. With no text in the box the control changes nothing: every table is listed. Below, the same search in each of the three states.',
+    show: () => ['tables', 'fields', 'both'].map(m => `<div><div class="cap">${TIP[m]}</div>${panel(m, 'seg')}</div>`).join('') },
+  { id: 'b', mark: 'B', title: 'Two icons you switch on and off: Tables and Fields',
+    text: 'The same row with two separate buttons, both on to begin with. "Both" is both on, "Tables" is Fields off, "Fields" is Tables off. Switching both off is not allowed (the last one stays on). The same three states as A, with the model of two switches instead of three choices: shown here with Tables off.',
+    show: () => `<div>${panel('fields', 'tog')}</div>` },
+  { id: 'c', mark: 'C', title: 'The two switches inside the search box',
+    text: 'The same two switches drawn at the right end of the box, left of its X. No extra row, so the panel stays as tall as it is now; the icons are 24 px and sit in the 36 px box. It is not "under Group by" as you asked, and the box gets busier, but it is the most compact. Shown here with Tables off.',
+    show: () => `<div>${panel('fields', 'inside')}</div>` },
+];
+
+const q = new URLSearchParams(location.search);
+let theme = q.get('theme') || 'light';
+const only = (q.get('only') || '').split(',').filter(Boolean);
+if (q.get('shot')) document.body.classList.add('shot');
+function build() {
+  document.documentElement.dataset.theme = theme;
+  document.querySelectorAll('#themes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === theme)));
+  const host = document.getElementById('cards'); host.innerHTML = '';
+  for (const c of CARDS) {
+    if (only.length && !only.includes(c.id)) continue;
+    const s = document.createElement('section'); s.className = 'card';
+    s.innerHTML = `<h2><span class="id">${c.mark}</span>${c.title}</h2><p>${c.text}</p><div class="stage ${theme}"><div class="row" style="justify-content:center">${c.show()}</div></div>`;
+    host.appendChild(s);
+  }
+}
+document.getElementById('themes').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { theme = b.dataset.theme; build(); } });
+build();
+</script>
+</body>
+</html>

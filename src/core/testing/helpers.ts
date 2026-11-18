@@ -5,6 +5,7 @@ import { seededRandom } from '../model/ids';
 import type { DatabaseType } from '../model/database';
 import { createEntityParts } from '../model/defaults';
 import { apply } from '../commands/apply';
+import { planAddColumn } from '../commands/plan-column';
 import type { ApplyOptions, Command } from '../commands/command';
 
 export const NOW = Date.UTC(2026, 10, 7, 12, 0, 0);
@@ -50,6 +51,28 @@ export function withTables(
     for (const name of names) {
         const parts = createEntityParts(design, { name, now: NOW, random });
         design = applyOk(design, { type: 'entity.insert', parts }).design;
+    }
+    return design;
+}
+
+/**
+ * `withTables`, and then the named fields added to each table after its `id`:
+ * `withFields({ users: ['email', 'name'] })`.
+ */
+export function withFields(
+    fields: Record<string, string[]>,
+    databaseType: DatabaseType = 'postgresql'
+): Design {
+    let design = withTables(Object.keys(fields), databaseType);
+    for (const [table, names] of Object.entries(fields)) {
+        const id = design.entities.order.find(
+            (i) => design.entities.byId[i].name === table
+        )!;
+        for (const name of names)
+            design = applyOk(
+                design,
+                planAddColumn(design, id, { name })!
+            ).design;
     }
     return design;
 }

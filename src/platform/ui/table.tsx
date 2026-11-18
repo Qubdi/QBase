@@ -2,18 +2,28 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils/utils';
 
-const Table = React.forwardRef<
-    HTMLTableElement,
-    React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-        <table
-            ref={ref}
-            className={cn('w-full caption-bottom text-sm', className)}
-            {...props}
-        />
-    </div>
-));
+export interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
+    /**
+     * Classes for the wrapper, which scrolls sideways by default. A table inside
+     * a box that already scrolls passes `overflow-visible`, so the page has one
+     * scroll area, not a second one nested in the first.
+     */
+    containerClassName?: string;
+}
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+    ({ className, containerClassName, ...props }, ref) => (
+        <div
+            className={cn('relative w-full overflow-auto', containerClassName)}
+        >
+            <table
+                ref={ref}
+                className={cn('w-full caption-bottom text-sm', className)}
+                {...props}
+            />
+        </div>
+    )
+);
 Table.displayName = 'Table';
 
 const TableHeader = React.forwardRef<
