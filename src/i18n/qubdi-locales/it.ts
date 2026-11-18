@@ -967,6 +967,103 @@ export const it = {
                 'Le impostazioni lint non sono state salvate sul server',
             saveFailedBody: 'Sono tornate le impostazioni precedenti. Riprova.',
         },
+        lintText: {
+            messages: {
+                noPrimaryKey:
+                    'La tabella {{table}} non ha una chiave primaria.',
+                orphanTable: 'La tabella {{table}} non ha relazioni.',
+                noDescription: 'La tabella {{table}} non ha una descrizione.',
+                reservedTable:
+                    'Il nome di tabella “{{table}}” è una parola riservata.',
+                reservedColumn:
+                    'La colonna “{{table}}.{{column}}” è una parola riservata.',
+                varcharNoLength:
+                    'La colonna {{table}}.{{column}} è {{type}} senza lunghezza.',
+                nullableInUniqueIndex:
+                    'La colonna {{table}}.{{column}} è nullable ma fa parte dell’indice univoco {{index}}.',
+                nullableUnique:
+                    'La colonna {{table}}.{{column}} è nullable ma univoca.',
+                indexRepeatsPk:
+                    'L’indice {{index}} su {{table}} ripete la chiave primaria.',
+                indexDuplicate:
+                    'L’indice {{index}} su {{table}} duplica {{other}}.',
+                indexCovered:
+                    'L’indice {{index}} su {{table}} è già coperto da {{other}}.',
+                indexCoveredByPk:
+                    'L’indice {{index}} su {{table}} è già coperto dalla chiave primaria.',
+                fkTypeMismatch:
+                    '{{from}}.{{column}} è {{type}} ma fa riferimento a {{to}}.{{toColumn}} che è {{toType}}.',
+                fkNoIndex:
+                    'La chiave esterna {{from}}({{columns}}) → {{to}} non ha un indice.',
+                tableCase: 'La tabella “{{name}}” non è in {{style}}.',
+                columnCase:
+                    'La colonna “{{table}}.{{name}}” non è in {{style}}.',
+                tableSingular:
+                    'La tabella “{{table}}” è al singolare, ma la maggior parte delle tabelle è al plurale.',
+                tablePlural:
+                    'La tabella “{{table}}” è al plurale, ma la maggior parte delle tabelle è al singolare.',
+            },
+            rules: {
+                'table-without-primary-key': {
+                    title: 'Tabella senza chiave primaria',
+                    description:
+                        'Ogni tabella dovrebbe avere una chiave primaria.',
+                },
+                'foreign-key-without-index': {
+                    title: 'Chiave esterna senza indice',
+                    description:
+                        'I join e le eliminazioni sulla tabella padre sono lenti senza un indice sulla colonna della chiave esterna.',
+                },
+                'foreign-key-type-mismatch': {
+                    title: 'Tipo della chiave esterna diverso dalla colonna referenziata',
+                    description:
+                        'Le due colonne di una relazione dovrebbero avere lo stesso tipo.',
+                },
+                'nullable-in-unique-key': {
+                    title: 'Colonna nullable in una chiave univoca',
+                    description:
+                        'La maggior parte dei database consente molti NULL in una chiave univoca, che quindi non impone ciò che sembra imporre.',
+                },
+                'duplicate-index': {
+                    title: 'Indice duplicato',
+                    description:
+                        'Due indici sulle stesse colonne, o un indice che ripete la chiave primaria.',
+                },
+                'overlapping-index': {
+                    title: 'Indice sovrapposto',
+                    description:
+                        'Un indice che è solo l’inizio di un altro indice aumenta il costo di scrittura senza alcun vantaggio.',
+                },
+                'naming-case': {
+                    title: 'Stile dei nomi incoerente',
+                    description: 'Mescolanza di snake_case e camelCase.',
+                },
+                'naming-plural': {
+                    title: 'Numero incoerente nei nomi delle tabelle',
+                    description:
+                        'Mescolanza di nomi di tabella al singolare e al plurale.',
+                },
+                'reserved-word': {
+                    title: 'Parola riservata come nome',
+                    description:
+                        'I nomi che sono parole riservate SQL vanno sempre racchiusi tra virgolette.',
+                },
+                'orphan-table': {
+                    title: 'Tabella senza relazioni',
+                    description:
+                        'Una tabella che nessuno referenzia e che non referenzia nulla.',
+                },
+                'missing-table-description': {
+                    title: 'Tabella senza descrizione',
+                    description: 'Documentate a cosa serve ogni tabella.',
+                },
+                'varchar-without-length': {
+                    title: 'varchar senza lunghezza',
+                    description:
+                        'In SQL Server un varchar semplice è lungo un carattere; MySQL e MariaDB lo rifiutano.',
+                },
+            },
+        },
         lintSettings: {
             title: 'Impostazioni lint',
             description:

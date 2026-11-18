@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 23 | 0 | 0 | 107 | 1 |
+| Client | 22 | 0 | 0 | 108 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 45 | 0 | 0 | 316 | 2 |
+| **Total** | 44 | 0 | 0 | 317 | 2 |
 
 ## Act first
 
@@ -89,7 +89,6 @@ None.
 | CLI-131 | Low | Long shell flags such as `--no-data` coloured as comments | `src/features/import/code-highlight.ts:76` | Test shell flags before the `--` comment rule |
 | CLI-132 | Low | Patching `generatedStored` alone wipes the computed column expression | `src/qbase/wire-edits.ts:55` | Keep `generated` when only `generatedStored` changes |
 | CLI-133 | Low | Table picker lists a blank schema, same value as All schemas | `src/features/import/table-picker.tsx:31` | Drop empty schemas from the list, or label them |
-| CLI-134 | Low | Lint findings and rule text not translated in de, fr, it, ru | `src/components/qubdi/lint-settings-dialog.tsx:142`, `src/components/qubdi/lint-control.tsx:276` | Route rule and message text through `t()` |
 
 ### Dead code
 
@@ -216,6 +215,7 @@ None.
 | CLI-137 | Client | Cross-dialect SQL export is O(n²): 455 ms at 4000 tables |
 | CLI-136 | Client | File uploader nests an `<input>` inside a `<button>`; invalid HTML |
 | CLI-135 | Client | Database cards ignore arrow keys; every card is its own Tab stop |
+| CLI-134 | Client | Lint findings and rule text not translated in de, fr, it, ru |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |

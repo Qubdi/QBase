@@ -1021,6 +1021,101 @@ export const ru = {
             saveFailedTitle: 'Настройки линтера не сохранились на сервере',
             saveFailedBody: 'Прежние настройки возвращены. Попробуйте снова.',
         },
+        lintText: {
+            messages: {
+                noPrimaryKey: 'У таблицы {{table}} нет первичного ключа.',
+                orphanTable: 'У таблицы {{table}} нет связей.',
+                noDescription: 'У таблицы {{table}} нет описания.',
+                reservedTable:
+                    'Имя таблицы «{{table}}» является зарезервированным словом.',
+                reservedColumn:
+                    'Столбец «{{table}}.{{column}}» является зарезервированным словом.',
+                varcharNoLength:
+                    'Столбец {{table}}.{{column}} имеет тип {{type}} без длины.',
+                nullableInUniqueIndex:
+                    'Столбец {{table}}.{{column}} допускает NULL, но входит в уникальный индекс {{index}}.',
+                nullableUnique:
+                    'Столбец {{table}}.{{column}} допускает NULL, но уникален.',
+                indexRepeatsPk:
+                    'Индекс {{index}} в {{table}} повторяет первичный ключ.',
+                indexDuplicate:
+                    'Индекс {{index}} в {{table}} дублирует {{other}}.',
+                indexCovered:
+                    'Индекс {{index}} в {{table}} уже покрывается индексом {{other}}.',
+                indexCoveredByPk:
+                    'Индекс {{index}} в {{table}} уже покрывается первичным ключом.',
+                fkTypeMismatch:
+                    '{{from}}.{{column}} имеет тип {{type}}, но ссылается на {{to}}.{{toColumn}} типа {{toType}}.',
+                fkNoIndex:
+                    'У внешнего ключа {{from}}({{columns}}) → {{to}} нет индекса.',
+                tableCase: 'Имя таблицы «{{name}}» не в стиле {{style}}.',
+                columnCase:
+                    'Имя столбца «{{table}}.{{name}}» не в стиле {{style}}.',
+                tableSingular:
+                    'Имя таблицы «{{table}}» в единственном числе, а большинство таблиц — во множественном.',
+                tablePlural:
+                    'Имя таблицы «{{table}}» во множественном числе, а большинство таблиц — в единственном.',
+            },
+            rules: {
+                'table-without-primary-key': {
+                    title: 'Таблица без первичного ключа',
+                    description: 'У каждой таблицы должен быть первичный ключ.',
+                },
+                'foreign-key-without-index': {
+                    title: 'Внешний ключ без индекса',
+                    description:
+                        'Соединения и удаления в родительской таблице медленны без индекса по столбцу внешнего ключа.',
+                },
+                'foreign-key-type-mismatch': {
+                    title: 'Тип внешнего ключа отличается от столбца, на который он ссылается',
+                    description:
+                        'Два столбца связи должны иметь один и тот же тип.',
+                },
+                'nullable-in-unique-key': {
+                    title: 'Столбец с NULL в уникальном ключе',
+                    description:
+                        'Большинство баз допускает много NULL в уникальном ключе, поэтому он не обеспечивает того, что кажется.',
+                },
+                'duplicate-index': {
+                    title: 'Дублирующий индекс',
+                    description:
+                        'Два индекса по одним и тем же столбцам или индекс, повторяющий первичный ключ.',
+                },
+                'overlapping-index': {
+                    title: 'Перекрывающийся индекс',
+                    description:
+                        'Индекс, являющийся лишь началом другого индекса, увеличивает стоимость записи без пользы.',
+                },
+                'naming-case': {
+                    title: 'Непоследовательный стиль имён',
+                    description: 'Смесь snake_case и camelCase.',
+                },
+                'naming-plural': {
+                    title: 'Непоследовательное число в именах таблиц',
+                    description:
+                        'Смесь имён таблиц в единственном и множественном числе.',
+                },
+                'reserved-word': {
+                    title: 'Зарезервированное слово в качестве имени',
+                    description:
+                        'Имена, совпадающие с зарезервированными словами SQL, везде нужно заключать в кавычки.',
+                },
+                'orphan-table': {
+                    title: 'Таблица без связей',
+                    description:
+                        'Таблица, на которую никто не ссылается и которая ни на что не ссылается.',
+                },
+                'missing-table-description': {
+                    title: 'Таблица без описания',
+                    description: 'Опишите, для чего нужна каждая таблица.',
+                },
+                'varchar-without-length': {
+                    title: 'varchar без длины',
+                    description:
+                        'В SQL Server varchar без длины — это один символ; MySQL и MariaDB его отвергают.',
+                },
+            },
+        },
         lintSettings: {
             title: 'Настройки линтера',
             description:
