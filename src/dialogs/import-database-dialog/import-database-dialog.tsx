@@ -54,8 +54,7 @@ export const ImportDatabaseDialog: React.FC<ImportDatabaseDialogProps> = ({
             imported
                 ? mergeImported(store.getState().design, imported, 0)
                 : undefined,
-        // the store is read once per analysis so the summary matches what is applied
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- the store is read once per analysis, so the summary matches what is applied; `dialog.open` only re-reads it
         [imported, store, dialog.open]
     );
     const canApply =

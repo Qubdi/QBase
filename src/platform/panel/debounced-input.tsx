@@ -105,8 +105,7 @@ export const DebouncedInput: React.FC<
         if (!focusOnMount) return;
         ref.current?.focus();
         ref.current?.select();
-        // only when it appears
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- focus and select only when the field first appears
     }, []);
     const [text, change, flush] = useDebounced({
         value,
