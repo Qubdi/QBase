@@ -3,3 +3,9 @@
 1da78b13f4635989f29b19fbbbff8fc52a2d9fc4:server/test/share-token-copy.test.ts:generic-api-key:25
 # A fixed test key that the start-up re-seal tests encrypt with.
 1a5bffed3b13e1e426dd25abafb93dba3cc96d34:server/test/reseal.test.ts:generic-api-key:24
+# The same share-link test key as it stands in the two earlier commits that carry that file.
+6bb2ee17591ae5cfd3c48749b9abee4709edf893:server/test/share-token-copy.test.ts:generic-api-key:25
+74c1cd13126a6e095b71af09ee613bfb4d3f6a1e:server/test/share-token-copy.test.ts:generic-api-key:25
+# Fixed test keys ("a-secrets-key-of-32-characters-yes") the start-up and drift re-seal tests encrypt with.
+6cb478d1d02664a6365e93c1ab27cca9986a7f6f:server/test/startup.test.ts:generic-api-key:8
+6cb478d1d02664a6365e93c1ab27cca9986a7f6f:server/test/drift-reseal.test.ts:generic-api-key:9
