@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 13 | 0 | 0 | 117 | 1 |
+| Client | 12 | 0 | 0 | 118 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 35 | 0 | 0 | 326 | 2 |
+| **Total** | 34 | 0 | 0 | 327 | 2 |
 
 ## Act first
 
@@ -70,7 +70,6 @@ None.
 | CLI-019 | Low | Four bare `exhaustive-deps` disables give no reason | `src/platform/panel/debounced-input.tsx:109`, `src/components/qubdi/diagram-access.tsx:307`, `src/dialogs/import-database-dialog/import-database-dialog.tsx:58`, `src/workspace/start-flow.tsx:32` | Add a `--` reason to each, or fix the deps |
 | CLI-112 | Low | Taken banner status region re-announces its countdown every second | `src/components/qubdi/taken-banner.tsx:85`, `src/components/qubdi/use-poke.ts:95` | Move countdown out of `role="status"`; announce outcomes only |
 | CLI-113 | Low | Toggle buttons flip `aria-label` while also setting `aria-pressed` | `src/components/qubdi/password-input.tsx:33`, `src/features/filters/filter-panel.tsx:46` | Keep one fixed label with `aria-pressed` |
-| CLI-114 | Low | Admin nav scroll test asserts synchronously; fails in full parallel run | `src/pages/admin-page/__tests__/admin-page.test.tsx:143` | Wrap the `scrolled` assertion in `waitFor` |
 | CLI-117 | Med | Local autosave loses edits made in the last second before a reload or tab close | `src/store/autosave.ts:35`, `src/store/editor-provider.tsx:17` | Flush autosave on `pagehide`; warn on `beforeunload` while dirty |
 | CLI-118 | Med | pg_dump COPY row with an apostrophe blocks the whole SQL import | `src/dialects/shared/make-reader.ts:13`, `src/dialects/shared/read-script.ts:642` | Blank COPY data before `validateText` |
 | CLI-119 | Med | Nested block comment drops the next table; validator still counts it | `src/dialects/shared/tokenizer.ts:109`, `src/dialects/shared/validate.ts:29` | Track comment depth in the lexer and `maskCode` |
@@ -216,6 +215,7 @@ None.
 | CLI-125 | Client | Unterminated `[name` gives a misleading skipped-statement warning, no error |
 | CLI-124 | Client | SQL Server `]]` escape in a name reported as unclosed parenthesis |
 | CLI-115 | Client | Poke request dialog title drops requester name during close animation |
+| CLI-114 | Client | Admin nav scroll test asserts synchronously; fails in full parallel run |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |
