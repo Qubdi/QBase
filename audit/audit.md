@@ -7,12 +7,12 @@
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 0 | 42 | 0 |
-| Repository | 11 | 0 | 0 | 59 | 0 |
+| Repository | 10 | 0 | 0 | 60 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 16 | 0 | 0 | 345 | 2 |
+| **Total** | 15 | 0 | 0 | 346 | 2 |
 
 ## Act first
 
@@ -46,7 +46,6 @@ None.
 | REPO-079 | Med | Five vendored skills carry no licence text or source | `.claude/skills/chrome-extensions/SKILL.md:2`, `.claude/skills/fastapi/SKILL.md:2`, `.claude/skills/security-audit/SKILL.md:2`, `.claude/skills/vulnerability-triage-brocards/SKILL.md:2`, `.claude/skills/supabase-postgres-best-practices/SKILL.md:4` | Add licence and source for each, or untrack them |
 | REPO-080 | Med | 34 of 36 commits since 2026-11-14 not Conventional; release-please skips them | `CONTRIBUTING.md:13`, `release-please-config.json:3` | Enforce squash merge, or add a commitlint `commit-msg` hook |
 | REPO-081 | Low | Dev advisory GHSA-fc5q-39xc-vjpf (picomatch) unseen; CI audits prod only | `package-lock.json`, `.github/workflows/ci.yaml:187` | Bump picomatch past 4.0.7; audit dev deps on a schedule |
-| REPO-082 | Low | TODO says four React Compiler rules are off; eslint has them on | `TODO.md:12`, `eslint.config.mjs:50` | Tick the TODO item |
 
 ### Server
 
@@ -108,6 +107,7 @@ None.
 | SRV-027 | Server | Lint-config GET and PUT have no rate limit unlike /lint |
 | SRV-029 | Server | Session end deletes sessions and locks in separate statements, not one transaction |
 | REPO-083 | Repository | README never mentions the tracked `.claude/skills/` and `design/` folders |
+| REPO-082 | Repository | TODO says four React Compiler rules are off; eslint has them on |
 | REPO-071 | Repository | Dependabot header says npm updates paused; both entries have limit 5 |
 | REPO-072 | Repository | `INTROSPECT_ALLOW_PRIVILEGED` read outside `config.ts`, absent from compose and `.env.example` |
 | REPO-073 | Repository | `WEB_DIR` read in `config.ts` but absent from `server/.env.example` |

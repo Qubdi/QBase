@@ -9,6 +9,6 @@ changed to Elastic License 2.0 on 2026-11-08; do not publish until it is finishe
 
 ## Editor: React Compiler lint rules
 
-- [ ] Four `react-hooks` rules from react-hooks 7 are switched off in `eslint.config.mjs`
-      (`set-state-in-effect`, `refs`, `preserve-manual-memoization`, `use-memo`). Fix what they
-      report in the components (for example refs written during render), then turn them on.
+- [x] Four `react-hooks` rules from react-hooks 7 (`set-state-in-effect`, `refs`,
+      `preserve-manual-memoization`, `use-memo`) are on as errors in `eslint.config.mjs`, with no
+      file excepted. Shipped in `aee036d` (CLI-007).
