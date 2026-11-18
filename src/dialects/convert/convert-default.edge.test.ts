@@ -153,20 +153,13 @@ describe('convertDefault: strings', () => {
         ).toEqual({ text: "'2020-01-01'" });
     });
 
-    // BUG: convert-default.ts:193-196 splits a PostgreSQL array literal with
-    // a plain split(',') that ignores double quotes, so the one element
-    // "a,b" becomes two elements a and b.
-    it.fails('keeps a quoted array element holding a comma', () => {
+    it('CLI-128: keeps a quoted array element holding a comma', () => {
         expect(convertDefault(`'{"a,b",c}'`, INT_ARRAY, 'sqlserver')).toEqual({
             text: `'["a,b", "c"]'`,
         });
     });
 
-    // BUG: convert-default.ts:196 strips the outer double quotes of an array
-    // element but does not undo its backslash escapes, so {"a\\b"} (the
-    // one-backslash text a\b) is written as JSON "a\\\\b" (two backslashes)
-    // and {"say \"hi\""} keeps its backslashes.
-    it.fails('undoes backslash escapes inside a quoted array element', () => {
+    it('CLI-128: undoes backslash escapes inside a quoted array element', () => {
         expect(convertDefault(`'{"a\\\\b"}'`, INT_ARRAY, 'sqlserver')).toEqual({
             text: `'["a\\\\b"]'`,
         });

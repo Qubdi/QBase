@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 18 | 0 | 0 | 112 | 1 |
+| Client | 17 | 0 | 0 | 113 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 40 | 0 | 0 | 321 | 2 |
+| **Total** | 39 | 0 | 0 | 322 | 2 |
 
 ## Act first
 
@@ -83,7 +83,6 @@ None.
 | CLI-125 | Low | Unterminated `[name` gives a misleading skipped-statement warning, no error | `src/dialects/shared/read-script.ts:642` | Surface the lexer problems from `readStatements` |
 | CLI-126 | Med | MySQL `CONSTRAINT x KEY idx (...)` loses the constraint or its columns | `src/dialects/shared/read-table.ts:608`, `src/dialects/shared/read-table.ts:612` | Read the index name even when CONSTRAINT named it |
 | CLI-127 | Low | `text ARRAY` imports as type "text array", not an array | `src/dialects/shared/read-table.ts:148` | Consume ARRAY into `isArray` before the type name |
-| CLI-128 | Low | Quoted commas and backslashes in PostgreSQL array defaults mis-split on conversion | `src/dialects/convert/convert-default.ts:195` | Parse the array literal with a quote-aware reader |
 | CLI-129 | Med | MySQL backslash-escaped default blocks the MySQL export | `src/formats/sql/unsafe-text.ts:13` | Make `breaksStatement` honour backslash escapes for MySQL |
 
 ### Dead code
@@ -216,6 +215,7 @@ None.
 | CLI-132 | Client | Patching `generatedStored` alone wipes the computed column expression |
 | CLI-131 | Client | Long shell flags such as `--no-data` coloured as comments |
 | CLI-130 | Client | Round trip drops a named single-column unique index |
+| CLI-128 | Client | Quoted commas and backslashes in PostgreSQL array defaults mis-split on conversion |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |
