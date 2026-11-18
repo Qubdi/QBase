@@ -12,7 +12,7 @@ import { sharedUserLimit } from '../lib/rate-key.js';
 import { safeError } from '../lib/safe-error.js';
 import { createSseWriter, openEventStream } from '../lib/sse-write.js';
 import { gunzipBody } from './gzip-body.js';
-import { acquireLock, releaseLock } from './lock.js';
+import { acquireLock, HANDOFF_PREFIX, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import {
     answerPoke,
@@ -52,8 +52,19 @@ const listQuery = z.object({
     /** only this project's diagrams */
     projectId: z.string().uuid().optional(),
 });
-/** Names one open editor (a browser tab) for the diagram's edit lock. */
-const editorIdSchema = z.string().min(1).max(100);
+/**
+ * Names one open editor (a browser tab) for the diagram's edit lock. The
+ * `handoff:` names are the server's own, for a lock set aside for a page that
+ * is about to claim it: an editor that chose one would hold a lock every poke
+ * refuses to ask about.
+ */
+const editorIdSchema = z
+    .string()
+    .min(1)
+    .max(100)
+    .refine((id) => !id.startsWith(HANDOFF_PREFIX), {
+        message: `an editor id cannot start with "${HANDOFF_PREFIX}"`,
+    });
 const versionParam = z.object({
     id: z.string().uuid(),
     version: z.coerce.number().int().positive().max(2147483647),
