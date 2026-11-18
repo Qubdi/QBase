@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 52</b></div>
-  <h1>9 open (0 Crit, 0 High).</h1>
+  <h1>8 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the <code>it.fails</code> tests and KNOWN BUG flow steps · all containers removed · no secret read</span>
@@ -30,7 +30,7 @@
 <main id="main">
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">9 open &middot; 61 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
+  <p class="section-note">8 open &middot; 62 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -43,7 +43,6 @@
         <tr><td class="svc-name">REPO-077</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Vendored skill doc adds two gitleaks hits; CI and publish secret scans fail</td><td class="wrap-cell"><code>.claude/skills/modern-web-guidance/guides/security/client-side-encryption.md:187</code>, <code>.claude/skills/modern-web-guidance/guides/security/client-side-encryption.md:201</code>, <code>.github/workflows/ci.yaml:196</code></td><td class="wrap-cell">Path-allowlist <code>.claude/skills/</code> in <code>.gitleaks.toml</code></td></tr>
         <tr><td class="svc-name">REPO-078</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">NOTICE omits vendored third-party skills and their MIT and Apache-2.0 licences</td><td class="wrap-cell"><code>NOTICE:31</code>, <code>.claude/skills/superpowers/LICENSE:3</code>, <code>.claude/skills/mattpocock-skills/LICENSE:3</code>, <code>.claude/skills/LICENSE-modern-web-guidance:2</code></td><td class="wrap-cell">List each vendored skill and its licence in NOTICE</td></tr>
         <tr><td class="svc-name">REPO-079</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Five vendored skills carry no licence text or source</td><td class="wrap-cell"><code>.claude/skills/chrome-extensions/SKILL.md:2</code>, <code>.claude/skills/fastapi/SKILL.md:2</code>, <code>.claude/skills/security-audit/SKILL.md:2</code>, <code>.claude/skills/vulnerability-triage-brocards/SKILL.md:2</code>, <code>.claude/skills/supabase-postgres-best-practices/SKILL.md:4</code></td><td class="wrap-cell">Add licence and source for each, or untrack them</td></tr>
-        <tr><td class="svc-name">REPO-080</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">34 of 36 commits since 2026-11-14 not Conventional; release-please skips them</td><td class="wrap-cell"><code>CONTRIBUTING.md:13</code>, <code>release-please-config.json:3</code></td><td class="wrap-cell">Enforce squash merge, or add a commitlint <code>commit-msg</code> hook</td></tr>
       </tbody>
     </table>
   </div>
@@ -51,7 +50,7 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (61)</summary>
+  <details><summary>Fixed (62)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -59,6 +58,7 @@
         <tr><td class="svc-name">REPO-083</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README never mentions the tracked <code>.claude/skills/</code> and <code>design/</code> folders</td></tr>
         <tr><td class="svc-name">REPO-082</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">TODO says four React Compiler rules are off; eslint has them on</td></tr>
         <tr><td class="svc-name">REPO-081</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dev advisory GHSA-fc5q-39xc-vjpf (picomatch) unseen; CI audits prod only</td></tr>
+        <tr><td class="svc-name">REPO-080</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">34 of 36 commits since 2026-11-14 not Conventional; release-please skips them</td></tr>
         <tr><td class="svc-name">REPO-071</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dependabot header says npm updates paused; both entries have limit 5</td></tr>
         <tr><td class="svc-name">REPO-072</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>INTROSPECT_ALLOW_PRIVILEGED</code> read outside <code>config.ts</code>, absent from compose and <code>.env.example</code></td></tr>
         <tr><td class="svc-name">REPO-073</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>WEB_DIR</code> read in <code>config.ts</code> but absent from <code>server/.env.example</code></td></tr>

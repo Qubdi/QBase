@@ -1,0 +1,19 @@
+#!/bin/sh
+# release-please builds the changelog and the next version from commit messages,
+# and skips any that are not Conventional Commits. The same form is checked for
+# a pull request title in .github/workflows/pr-title.yaml (keep the two in step).
+#
+# Left alone: merge commits and reverts (git writes them), and fixup!/squash!
+# commits (they are folded into another commit before the push).
+first_line=$(head -n 1 "$1")
+
+case "$first_line" in
+    "Merge "*|'Revert "'*|"fixup! "*|"squash! "*|"amend! "*) exit 0 ;;
+esac
+
+pattern='^(feat|fix|perf|docs|test|build|ci|chore|refactor|style|revert)(\([a-z0-9._/-]+\))?!?: .+'
+if ! printf '%s' "$first_line" | grep -Eq "$pattern"; then
+    echo "The commit message must follow Conventional Commits, e.g. \"fix(server): reject empty names\"." >&2
+    echo "Types: feat fix perf docs test build ci chore refactor style revert. Got: $first_line" >&2
+    exit 1
+fi
