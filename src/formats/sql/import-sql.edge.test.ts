@@ -326,25 +326,17 @@ describe('importSql: read, write, read again keeps the design', () => {
 });
 
 describe('importSql: round-trip losses', () => {
-    // BUG: a MySQL default written with a backslash escape ('it\'s', what
-    // mysqldump writes) is imported as written, and then unsafeText
-    // (breaksStatement in unsafe-text.ts) reads the \' as the end of the string
-    // and refuses the whole MySQL export: "the default value could end the
-    // statement".
-    it.fails(
-        'exports a MySQL default holding a backslash-escaped quote',
-        () => {
-            const first = importSql(
-                "CREATE TABLE t (id int PRIMARY KEY, note varchar(9) DEFAULT 'it\\'s');",
-                'mysql'
-            );
-            expect(first.design).toBeDefined();
-            const written = exportSql(first.design!, 'mysql');
-            expect(
-                written.diagnostics.filter((d) => d.severity === 'error')
-            ).toEqual([]);
-        }
-    );
+    it('CLI-129: exports a MySQL default holding a backslash-escaped quote', () => {
+        const first = importSql(
+            "CREATE TABLE t (id int PRIMARY KEY, note varchar(9) DEFAULT 'it\\'s');",
+            'mysql'
+        );
+        expect(first.design).toBeDefined();
+        const written = exportSql(first.design!, 'mysql');
+        expect(
+            written.diagnostics.filter((d) => d.severity === 'error')
+        ).toEqual([]);
+    });
 
     it('CLI-130: keeps a named single-column unique index through a round trip', () => {
         const first = importSql(

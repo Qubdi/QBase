@@ -6,6 +6,7 @@ import type {
     TableName,
 } from '../script-model';
 import { Cursor, splitTop } from './cursor';
+import { plainStringDefault } from './defaults';
 import type { ReaderProfile } from './profile';
 import type { Token } from './tokenizer';
 import { isKeyMethod } from '@/core/model/key';
@@ -361,7 +362,11 @@ export function readColumn(
         else if (cur.acceptWords('NOT', 'NULL')) column.nullable = false;
         else if (cur.acceptWord('NULL')) column.nullable = true;
         else if (cur.acceptWord('DEFAULT')) {
-            const text = readDefault(cur, ctx);
+            const read = readDefault(cur, ctx);
+            const text =
+                read !== undefined && ctx.profile.lex.backslashEscapes
+                    ? plainStringDefault(read)
+                    : read;
             if (text !== undefined) {
                 column.default = text;
                 if (/nextval\s*\(/i.test(text)) column.numbered = true;

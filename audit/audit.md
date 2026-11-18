@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 11 | 0 | 0 | 119 | 1 |
+| Client | 10 | 0 | 0 | 120 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 33 | 0 | 0 | 328 | 2 |
+| **Total** | 32 | 0 | 0 | 329 | 2 |
 
 ## Act first
 
@@ -77,7 +77,6 @@ None.
 | CLI-122 | Med | PostgreSQL E-string with an escaped quote refused as unterminated | `src/dialects/shared/validate.ts:29` | Teach `maskCode` E-strings |
 | CLI-123 | Med | MySQL double-quoted string refused as unterminated text | `src/dialects/shared/validate.ts:29` | Treat `"` as a string quote for MySQL in `maskCode` |
 | CLI-126 | Med | MySQL `CONSTRAINT x KEY idx (...)` loses the constraint or its columns | `src/dialects/shared/read-table.ts:608`, `src/dialects/shared/read-table.ts:612` | Read the index name even when CONSTRAINT named it |
-| CLI-129 | Med | MySQL backslash-escaped default blocks the MySQL export | `src/formats/sql/unsafe-text.ts:13` | Make `breaksStatement` honour backslash escapes for MySQL |
 
 ### Dead code
 
@@ -216,6 +215,7 @@ None.
 | CLI-115 | Client | Poke request dialog title drops requester name during close animation |
 | CLI-114 | Client | Admin nav scroll test asserts synchronously; fails in full parallel run |
 | CLI-113 | Client | Toggle buttons flip `aria-label` while also setting `aria-pressed` |
+| CLI-129 | Client | MySQL backslash-escaped default blocks the MySQL export |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |

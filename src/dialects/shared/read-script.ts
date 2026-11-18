@@ -1,3 +1,4 @@
+import { plainStringDefault } from './defaults';
 import { isKeyMethod } from '@/core/model/key';
 import type { KeyMethod } from '@/core/model/key';
 import type {
@@ -609,10 +610,14 @@ function applyAlter(
                 }
             } else if (cur.acceptWords('SET', 'DEFAULT')) {
                 const first = cur.peek();
-                if (first)
-                    column.default = ctx.source
+                if (first) {
+                    const text = ctx.source
                         .slice(first.start, action[action.length - 1].end)
                         .trim();
+                    column.default = ctx.profile.lex.backslashEscapes
+                        ? plainStringDefault(text)
+                        : text;
+                }
             } else if (cur.acceptWords('SET', 'NOT', 'NULL'))
                 column.nullable = false;
             else if (cur.acceptWords('DROP', 'NOT', 'NULL'))

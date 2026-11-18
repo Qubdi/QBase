@@ -146,9 +146,9 @@ CREATE TABLE t ( -- the key
         expect(col(r, 't', 's').default).toBe("'it''s'");
     });
 
-    it('reads a backslash-escaped quote in a MySQL default', () => {
+    it('reads a backslash-escaped quote in a MySQL default as a doubled quote', () => {
         const r = readMysql("CREATE TABLE t (s varchar(9) DEFAULT 'it\\'s');");
-        expect(col(r, 't', 's').default).toBe("'it\\'s'");
+        expect(col(r, 't', 's').default).toBe("'it''s'");
     });
 
     // BUG: the validator (maskCode in validate.ts) does not know PostgreSQL
