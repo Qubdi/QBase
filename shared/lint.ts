@@ -434,8 +434,14 @@ export function lint(input: LintInput, config: LintConfig = {}): Finding[] {
     const real = desc.tables.filter((t) => !t.isView);
     const byKey = new Map(desc.tables.map((t) => [t.key, t]));
 
+    const linkedKeys = new Set<string>();
+    for (const r of desc.relationships) {
+        linkedKeys.add(r.fromTable);
+        linkedKeys.add(r.toTable);
+    }
+
     for (const t of real) {
-        tableRules(t, desc, dialect, emit);
+        tableRules(t, desc, linkedKeys, dialect, emit);
     }
     relationshipRules(desc, byKey, emit);
     namingRules(desc, config, emit);
@@ -462,6 +468,7 @@ type Emit = (
 function tableRules(
     t: TableDesc,
     desc: SchemaDesc,
+    linkedKeys: ReadonlySet<string>,
     dialect: string,
     emit: Emit
 ) {
@@ -475,10 +482,7 @@ function tableRules(
     }
 
     if (desc.tables.length > 1) {
-        const linked = desc.relationships.some(
-            (r) => r.fromTable === t.key || r.toTable === t.key
-        );
-        if (!linked) {
+        if (!linkedKeys.has(t.key)) {
             emit(
                 'orphan-table',
                 t.key,
