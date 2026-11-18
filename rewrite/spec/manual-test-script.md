@@ -166,6 +166,7 @@ Start from S1 plus 10 extra tables made with Add Table so that the diagram does 
 - [ ] **MT-097** Type a name part in the Tables filter box; type something that matches nothing -> the list narrows; the empty text reads "No tables found matching your filter" with a Clear Filter button (rows: EDT-109, EDT-108)
 - [ ] **MT-098** Delete every table -> the Tables section reads "No tables" with "Create a table to get started" and an Add Table button (rows: EDT-110)
 - [ ] **MT-099** Hover a field row of a table in the panel for a moment -> a detail card shows the full information and the references / referenced by links (rows: EDT-116)
+- [ ] **MT-400** Open a table with many fields (taller than the panel) in a diagram of several tables and scroll down inside it until the Indexes, Check Constraints and Description headers are in view; click Indexes, then Check Constraints, then Description -> each header stays where you clicked it and its section opens right under it (Fields folds); the panel does not jump to the tables further down the list. Then scroll back up to the top of the table and press Add Index in the footer -> Indexes is scrolled into view with the new index (rows: EDT-103)
 
 ## 6. Fields
 

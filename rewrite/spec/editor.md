@@ -389,6 +389,16 @@ schemas are currently displayed. Select one for the new table." with **Cancel** 
   its schema in brackets (the schema is only shown when more than one schema is visible),
   a "View" tag for views, a pencil (rename), a "focus on the canvas" button (selects and
   centres the table at 100% zoom), and a "More actions" menu.
+- An open table shows its form as a second accordion: **Fields**, **Indexes**, **Check
+  Constraints** (the last two not for views) and **Description**, one open at a time, with a
+  footer (colour, Add Index, Add Field). Opening a section folds the one that was open,
+  usually the long Fields above it. **The header that was clicked stays where it is on
+  screen**: the panel is scrolled by as much as the layout above it moved, so the opened
+  section is under the pointer, also when the table is taller than the panel (since
+  2026-11-18; before, the panel was left scrolled to the rows further down the list and the
+  section had to be scrolled back into view). Add Index and Add Field in the footer do the
+  same; if the header of the section they open was out of view, it is scrolled to the top
+  of the panel.
 - **More actions menu (titled "Table Actions"):** **Change Schema** (offered when the
   database has schemas or the diagram has some), **Add Field**, **Add Index** (not for
   views), **Duplicate Table**, **Delete Table**.
