@@ -928,10 +928,15 @@ export function createApi(
                 undefined,
                 shape.adminProjectRow
             ),
-        adminDeleteProject: (id: string) =>
+        /** Deleting a project removes everything in it: it needs the admin's own proof. */
+        adminDeleteProject: (
+            id: string,
+            proof: { adminPassword: string; adminCode?: string }
+        ) =>
             request<void>(
                 'DELETE',
-                `/admin/projects/${encodeURIComponent(id)}`
+                `/admin/projects/${encodeURIComponent(id)}`,
+                proof
             ),
         adminListProjectMembers: (id: string) =>
             request<ProjectMember[]>(

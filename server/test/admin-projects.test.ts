@@ -21,6 +21,9 @@ describe('admin panel and projects', () => {
     let projectId: string;
     let diagramId: string;
 
+    // what the admin sends to delete a project: their own password (SEC-048)
+    const proof = { adminPassword: 'Password-123!' };
+
     const call = (
         method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
         url: string,
@@ -434,7 +437,7 @@ describe('admin panel and projects', () => {
                     content: sampleContent,
                 })
                 .returning({ id: diagrams.id });
-            const res = await call('DELETE', `/admin/projects/${p.id}`, admin);
+            const res = await call('DELETE', `/admin/projects/${p.id}`, admin, proof);
             expect(res.statusCode).toBe(204);
             const left = await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, d.id));
             expect(left).toHaveLength(0);
@@ -463,7 +466,7 @@ describe('admin panel and projects', () => {
             const heard: string[] = [];
             const stop = onLinkChanged((id: string) => heard.push(id));
             try {
-                const res = await call('DELETE', `/admin/projects/${p.id}`, admin);
+                const res = await call('DELETE', `/admin/projects/${p.id}`, admin, proof);
                 expect(res.statusCode).toBe(204);
             } finally {
                 stop();
@@ -471,8 +474,40 @@ describe('admin panel and projects', () => {
             expect(heard.sort()).toEqual([...ids].sort());
         });
 
-        it('answers 404 for a project that does not exist', async () => {
+        it('SEC-048: asks for the admin\'s own password before it deletes anything', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Needs proof' })).json();
+            const [d] = await ctx.db
+                .insert(diagrams)
+                .values({ ownerId: admin.id, projectId: p.id, title: 'Inside', content: sampleContent })
+                .returning({ id: diagrams.id });
+            const intact = async () => ({
+                project: (await ctx.db.select({ id: projects.id }).from(projects).where(eq(projects.id, p.id))).length,
+                diagram: (await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, d.id))).length,
+            });
+
+            // a stolen session sends nothing more than the cookie
+            const none = await call('DELETE', `/admin/projects/${p.id}`, admin);
+            expect(none.statusCode).toBe(403);
+            expect(none.json()).toEqual({ error: 'step_up_required' });
+            expect(await intact()).toEqual({ project: 1, diagram: 1 });
+
+            const wrong = await call('DELETE', `/admin/projects/${p.id}`, admin, { adminPassword: 'not-it' });
+            expect(wrong.statusCode).toBe(403);
+            expect(wrong.json()).toEqual({ error: 'wrong_password' });
+            expect(await intact()).toEqual({ project: 1, diagram: 1 });
+
+            const ok = await call('DELETE', `/admin/projects/${p.id}`, admin, proof);
+            expect(ok.statusCode).toBe(204);
+            expect(await intact()).toEqual({ project: 0, diagram: 0 });
+        });
+
+        it('SEC-048: asks before saying a project does not exist, so a probe learns nothing', async () => {
             const res = await call('DELETE', '/admin/projects/00000000-0000-4000-8000-000000000000', admin);
+            expect(res.statusCode).toBe(403);
+        });
+
+        it('answers 404 for a project that does not exist', async () => {
+            const res = await call('DELETE', '/admin/projects/00000000-0000-4000-8000-000000000000', admin, proof);
             expect(res.statusCode).toBe(404);
         });
 
@@ -490,7 +525,7 @@ describe('admin panel and projects', () => {
                 sql`create trigger aud_refuse before insert on audit_log for each row execute function aud_refuse_project_delete()`
             );
             try {
-                const res = await call('DELETE', `/admin/projects/${p.id}`, admin);
+                const res = await call('DELETE', `/admin/projects/${p.id}`, admin, proof);
                 expect(res.statusCode).toBe(500);
             } finally {
                 await ctx.db.execute(sql`drop trigger aud_refuse on audit_log`);
@@ -520,7 +555,7 @@ describe('admin panel and projects', () => {
                 await gate;
             });
             await vi.waitFor(() => expect(created).not.toBe(''));
-            const deleting = call('DELETE', `/admin/projects/${p.id}`, admin);
+            const deleting = call('DELETE', `/admin/projects/${p.id}`, admin, proof);
             // the delete is waiting for the insert; let it commit
             await new Promise((r) => setTimeout(r, 200));
             release();
@@ -533,7 +568,7 @@ describe('admin panel and projects', () => {
 
         it('deletes an empty project', async () => {
             const p = await call('POST', '/admin/projects', admin, { name: 'Scratch' });
-            const res = await call('DELETE', `/admin/projects/${p.json().id}`, admin);
+            const res = await call('DELETE', `/admin/projects/${p.json().id}`, admin, proof);
             expect(res.statusCode).toBe(204);
         });
 

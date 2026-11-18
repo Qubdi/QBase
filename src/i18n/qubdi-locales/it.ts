@@ -356,6 +356,10 @@ export const it = {
                 "<strong>{{name}}</strong>, tutti i suoi diagrammi e le assegnazioni dei suoi membri saranno eliminati. L'operazione non può essere annullata.",
             confirmPrompt:
                 'Per confermare, digita il nome del progetto: <strong>{{name}}</strong>',
+            confirmItsYou:
+                'L’eliminazione di un progetto rimuove tutto ciò che contiene. Inserisci la tua password per confermare che sei tu.',
+            confirmItsYouCode:
+                'L’eliminazione di un progetto rimuove tutto ciò che contiene. Inserisci la tua password e un codice della tua app di autenticazione (o un codice di recupero) per confermare che sei tu.',
             cancel: 'Annulla',
         },
         newProject: {

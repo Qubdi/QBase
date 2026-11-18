@@ -42,13 +42,12 @@ import {
 } from '@/lib/qubdi/api';
 import { Ago } from '@/components/qubdi/ago-time';
 import { PasswordField } from '@/components/qubdi/password-field';
-import { Input } from '@/platform/ui/input';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { usePasswordMinLength } from '@/hooks/use-password-min-length';
 import { checkPassword } from '../../../shared/password';
 import { NewUserDialog } from './new-user-dialog';
 import { UserSessionsDialog } from './user-sessions-dialog';
-import { PasswordInput } from '@/components/qubdi/password-input';
+import { ProofFields } from './proof-fields';
 
 /** How often the user list is fetched again in the background. */
 const USERS_REFRESH_MS = 30_000;
@@ -79,43 +78,6 @@ const bulkToast = (t: TFn, action: BulkUserAction, result: BulkUsersResult) => {
                   })
                 : undefined,
     };
-};
-
-/** The acting admin's own password, and a code when their account has two-factor on. */
-const ProofFields: React.FC<{
-    needsCode: boolean;
-    password: string;
-    onPassword: (v: string) => void;
-    code: string;
-    onCode: (v: string) => void;
-}> = ({ needsCode, password, onPassword, code, onCode }) => {
-    const { t } = useTranslation();
-    return (
-        <>
-            <p className="text-sm text-muted-foreground">
-                {needsCode
-                    ? t('qubdi.adminUsers.users.confirmItsYouCode')
-                    : t('qubdi.adminUsers.users.confirmItsYou')}
-            </p>
-            <PasswordInput
-                autoComplete="current-password"
-                placeholder={t('qubdi.adminUsers.users.ownPassword')}
-                aria-label={t('qubdi.adminUsers.users.ownPassword')}
-                value={password}
-                onChange={(e) => onPassword(e.target.value)}
-            />
-            {needsCode ? (
-                <Input
-                    type="text"
-                    autoComplete="one-time-code"
-                    placeholder={t('qubdi.adminUsers.users.ownCode')}
-                    aria-label={t('qubdi.adminUsers.users.ownCode')}
-                    value={code}
-                    onChange={(e) => onCode(e.target.value)}
-                />
-            ) : null}
-        </>
-    );
 };
 
 export interface UsersPanelProps {
@@ -834,6 +796,11 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                         />
                         {resetFor?.isAdmin ? (
                             <ProofFields
+                                message={t(
+                                    needsOwnCode
+                                        ? 'qubdi.adminUsers.users.confirmItsYouCode'
+                                        : 'qubdi.adminUsers.users.confirmItsYou'
+                                )}
                                 needsCode={needsOwnCode}
                                 password={ownPassword}
                                 onPassword={setOwnPassword}
@@ -917,6 +884,11 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                     {mfaResetFor?.isAdmin ? (
                         <div className="flex flex-col gap-3">
                             <ProofFields
+                                message={t(
+                                    needsOwnCode
+                                        ? 'qubdi.adminUsers.users.confirmItsYouCode'
+                                        : 'qubdi.adminUsers.users.confirmItsYou'
+                                )}
                                 needsCode={needsOwnCode}
                                 password={ownPassword}
                                 onPassword={setOwnPassword}

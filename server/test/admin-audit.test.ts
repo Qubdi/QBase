@@ -323,7 +323,7 @@ describe('GET /admin/audit', () => {
 
             // once they are gone, what the row recorded
             await call('DELETE', `/diagrams/${titled}`);
-            await call('DELETE', `/admin/projects/${projectId}`);
+            await call('DELETE', `/admin/projects/${projectId}`, { adminPassword: 'Password-123!' });
             const afterCreate = await latest('project.create');
             expect(afterCreate.projectId).toBe(projectId);
             expect(afterCreate.projectName).toBe('Billing'); // as it was named then

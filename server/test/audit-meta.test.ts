@@ -98,7 +98,8 @@ describe('audit meta: what an action was done to', () => {
             const gone = await call(
                 admin,
                 'DELETE',
-                `/admin/projects/${projectId}`
+                `/admin/projects/${projectId}`,
+                { adminPassword: 'Password-123!' }
             );
             expect(gone.statusCode).toBe(204);
             expect((await latest('project.delete')).meta).toEqual({

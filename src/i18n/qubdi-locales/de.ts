@@ -367,6 +367,10 @@ export const de = {
                 '<strong>{{name}}</strong>, alle seine Diagramme und die Zuweisungen seiner Mitglieder werden gelöscht. Dies kann nicht rückgängig gemacht werden.',
             confirmPrompt:
                 'Geben Sie zur Bestätigung den Projektnamen ein: <strong>{{name}}</strong>',
+            confirmItsYou:
+                'Beim Löschen eines Projekts wird alles darin entfernt. Geben Sie Ihr eigenes Passwort ein, um zu bestätigen, dass Sie es sind.',
+            confirmItsYouCode:
+                'Beim Löschen eines Projekts wird alles darin entfernt. Geben Sie Ihr eigenes Passwort und einen Code aus Ihrer Authenticator-App (oder einen Wiederherstellungscode) ein, um zu bestätigen, dass Sie es sind.',
             cancel: 'Abbrechen',
         },
         newProject: {

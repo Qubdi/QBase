@@ -933,6 +933,11 @@ export const adminRoutes =
 
         app.delete('/projects/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
+            // This removes every diagram in the project, with their snapshots and
+            // share links, and cannot be undone: the admin's own password (and
+            // code) are asked for first, so a stolen session alone cannot do it.
+            const proof = z.object(stepUpFields).partial().parse(req.body ?? {});
+            if (!(await stepUp(req, reply, proof))) return;
             // Everything inside goes with the project: diagrams, and through the
             // foreign keys their locks, snapshots, share links and drift data, plus
             // memberships and saved connections. One transaction: all or nothing,

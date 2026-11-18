@@ -367,6 +367,10 @@ export const fr = {
                 '<strong>{{name}}</strong>, tous ses diagrammes et les affectations de ses membres seront supprimés. Cette action est irréversible.',
             confirmPrompt:
                 'Pour confirmer, saisissez le nom du projet : <strong>{{name}}</strong>',
+            confirmItsYou:
+                'La suppression d’un projet supprime tout ce qu’il contient. Saisissez votre propre mot de passe pour confirmer que c’est bien vous.',
+            confirmItsYouCode:
+                'La suppression d’un projet supprime tout ce qu’il contient. Saisissez votre propre mot de passe et un code de votre application d’authentification (ou un code de récupération) pour confirmer que c’est bien vous.',
             cancel: 'Annuler',
         },
         newProject: {
