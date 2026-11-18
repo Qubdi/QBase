@@ -38,6 +38,10 @@ export const PokeRequestDialog: React.FC = () => {
     // only the editor that holds the lock has anything to step out of
     const remoteId = access.status === 'editor' ? access.remoteId : undefined;
     const poke = remoteId ? incoming : null;
+    // the dialog fades out after the request is over: keep the last one so its
+    // title still names the requester while it does
+    const [last, setLast] = useState(poke);
+    if (poke && poke !== last) setLast(poke);
 
     const answer = async (accept: boolean) => {
         if (!remoteId || !poke || busy) return;
@@ -83,7 +87,7 @@ export const PokeRequestDialog: React.FC = () => {
                 <AlertDialogHeader>
                     <AlertDialogTitle>
                         {t('qubdi.workspace.poke.request.title', {
-                            requester: poke?.from,
+                            requester: (poke ?? last)?.from,
                         })}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
