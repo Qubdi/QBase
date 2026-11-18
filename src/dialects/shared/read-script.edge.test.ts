@@ -259,10 +259,7 @@ CREATE TABLE real (id int);`);
         expect(r.tables.map((t) => t.name)).toEqual(['real']);
     });
 
-    // BUG: a dollar tag with a digit ($q1$) is not recognised by the lexer or
-    // the validator, so a CREATE TABLE inside the function body is imported
-    // as a real table.
-    it.fails('skips a function body quoted with a $q1$ tag', () => {
+    it('CLI-121: skips a function body quoted with a $q1$ tag', () => {
         const r =
             readPostgres(`CREATE FUNCTION f() RETURNS int AS $q1$ SELECT 1; CREATE TABLE fake (x int); $q1$ LANGUAGE sql;
 CREATE TABLE real (id int);`);

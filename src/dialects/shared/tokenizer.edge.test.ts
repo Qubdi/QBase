@@ -134,10 +134,7 @@ describe('lex: dollar-quoted strings', () => {
         expect(kinds('$1', PG)).toEqual(['punct:$', 'number:1']);
     });
 
-    // BUG: PostgreSQL allows digits in a dollar tag after its first character
-    // ($q1$), but the tag pattern is /^\$[A-Za-z_]*\$/, so `$q1$` is not
-    // recognised and the body is lexed as code.
-    it.fails('reads a tag with a digit ($q1$) as one string', () => {
+    it('CLI-121: reads a tag with a digit ($q1$) as one string', () => {
         expect(kinds('$q1$ ; $q1$', PG)).toEqual(['string: ; ']);
     });
 });

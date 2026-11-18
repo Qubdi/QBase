@@ -45,6 +45,9 @@ const TWO_CHAR = new Set([
 ]);
 
 const isWordStart = (c: string): boolean => /[A-Za-z_\u0080-￿]/.test(c);
+/** `$tag$`: the tag is empty, or a letter or `_` followed by letters, digits and `_`. */
+export const DOLLAR_TAG = /^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/;
+
 export const isWordChar = (c: string): boolean =>
     /[A-Za-z0-9_$\u0080-￿]/.test(c);
 const isDigit = (c: string): boolean => c >= '0' && c <= '9';
@@ -162,7 +165,7 @@ export function lex(text: string, profile: LexProfile): LexResult {
             continue;
         }
         if (c === '$' && profile.dollarStrings) {
-            const tag = /^\$[A-Za-z_]*\$/.exec(text.slice(i, i + 64));
+            const tag = DOLLAR_TAG.exec(text.slice(i, i + 64));
             if (tag) {
                 const close = text.indexOf(tag[0], i + tag[0].length);
                 const end = close < 0 ? n : close + tag[0].length;

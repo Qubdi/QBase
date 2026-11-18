@@ -1,5 +1,5 @@
 import type { Diagnostic } from '../script-model';
-import { isWordChar, type LexProfile } from './tokenizer';
+import { DOLLAR_TAG, isWordChar, type LexProfile } from './tokenizer';
 
 /** A rule that looks for foreign syntax, line by line, in the masked text. */
 export interface LineRule {
@@ -121,9 +121,9 @@ export function maskCode(source: string, profile: LexProfile): Masked {
         } else if (
             c === '$' &&
             profile.dollarStrings &&
-            /^\$[A-Za-z_]*\$/.test(source.slice(i, i + 64))
+            DOLLAR_TAG.test(source.slice(i, i + 64))
         ) {
-            const tag = /^\$[A-Za-z_]*\$/.exec(source.slice(i, i + 64))![0];
+            const tag = DOLLAR_TAG.exec(source.slice(i, i + 64))![0];
             const close = source.indexOf(tag, i + tag.length);
             const end = close < 0 ? n : close + tag.length;
             blank(i, end);
