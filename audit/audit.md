@@ -1,18 +1,18 @@
 # QBase — Audit
 
-**rev** 46 · **date** 2026-11-13
-**method** static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine `srvaudit-pg2` and `srvaudit-pg3` (both removed after) · `srvaudit-pg3` seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read
-**scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content
+**rev** 47 · **date** 2026-11-18
+**method** static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local `timeago.js` install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine `aud47-srv` 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs `aud47-srv` · drizzle-kit generate diff in scratch copy (empty) · throwaway postgres:18-alpine `aud47-db` seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in `node:24-slim` `aud47-dead` · all containers removed · no secret read
+**scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content; `.claude/skills/` content checked for secrets and licensing only
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 3 | 0 | 0 | 42 | 0 |
-| Repository | 4 | 0 | 0 | 59 | 0 |
-| Server | 0 | 0 | 0 | 40 | 0 |
-| Database | 1 | 0 | 0 | 21 | 1 |
-| Client | 0 | 0 | 0 | 104 | 0 |
-| Dead code | 0 | 0 | 0 | 41 | 0 |
-| **Total** | 8 | 0 | 0 | 307 | 1 |
+| Security & secrets | 5 | 0 | 0 | 42 | 0 |
+| Repository | 12 | 0 | 0 | 58 | 0 |
+| Server | 5 | 0 | 0 | 40 | 0 |
+| Database | 3 | 0 | 0 | 20 | 1 |
+| Client | 5 | 0 | 0 | 103 | 0 |
+| Dead code | 4 | 0 | 0 | 41 | 0 |
+| **Total** | 34 | 0 | 0 | 304 | 1 |
 
 ## Act first
 
@@ -26,40 +26,65 @@ None.
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| SEC-001 | Med | Old SA password literal in 67 `refs/pull/N/head` and three branch refs (`main-old`, `origin/main-old`, `audit/db-deadcode-lenses`) | `.gitleaks.toml:4` | Rotate the password; delete stale branches; ask GitHub to purge pull refs |
-| SEC-036 | Med | Account-wide sign-in lockout checked before password; strangers lock out any account | `server/src/auth/routes.ts:221`, `server/src/auth/guards.ts:39` | Add delay instead of hard 429, or let correct password through |
-| SEC-037 | Med | Stolen admin session creates or promotes an admin with no step-up | `server/src/admin/routes.ts:74`, `server/src/admin/routes.ts:347`, `server/src/admin/routes.ts:389` | Require step-up when granting isAdmin or creating an admin |
+| SEC-001 | Med | Old SA password in 65 pull refs; old `.env.example` keys in 30 | `.gitleaks.toml:4` | Rotate both; ask GitHub to purge pull refs |
+| SEC-036 | Med | Account-wide sign-in lockout checked before password; strangers lock out any account | `server/src/auth/routes.ts:223`, `server/src/auth/guards.ts:41` | Add delay instead of hard 429, or let correct password through |
+| SEC-037 | Med | Stolen admin session creates or promotes an admin with no step-up | `server/src/admin/routes.ts:92`, `server/src/admin/routes.ts:389`, `server/src/admin/routes.ts:431` | Require step-up when granting isAdmin or creating an admin |
+| SEC-048 | Med | Stolen admin session deletes a project and all its diagrams, no step-up | `server/src/admin/routes.ts:934` | Require `stepUp` before admin project delete |
+| SEC-049 | Low | Writer picks `editorId` starting `handoff:`; its lock then refuses every poke | `server/src/diagrams/routes.ts:57`, `server/src/diagrams/poke.ts:68` | Reject `HANDOFF_PREFIX` editor ids in `editorIdSchema` |
 
 ### Repository
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:8`, `rewrite/TODO.md:11`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
+| REPO-006 | Low | Dependabot version updates paused: all five ecosystems have limit 0 | `.github/dependabot.yml:1`, `.github/dependabot.yml:9` | Restore the limits, or record the pause as Accepted |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
 | REPO-070 | Med | Full-history gitleaks fails: two test keys missing from `.gitleaksignore` | `server/test/startup.test.ts:8`, `server/test/drift-reseal.test.ts:9`, `.gitleaksignore:1` | Add their fingerprints, or build the keys at run time |
 | REPO-074 | Med | Publish pushes to Docker Hub and GHCR with no environment gate or main-ancestry check | `.github/workflows/publish.yaml:5`, `.github/workflows/publish.yaml:109` | Add `environment:` with reviewers; verify tag commit is on main |
+| REPO-077 | Med | Vendored skill doc adds two gitleaks hits; CI and publish secret scans fail | `.claude/skills/modern-web-guidance/guides/security/client-side-encryption.md:187`, `.claude/skills/modern-web-guidance/guides/security/client-side-encryption.md:201`, `.github/workflows/ci.yaml:196` | Path-allowlist `.claude/skills/` in `.gitleaks.toml` |
+| REPO-078 | Med | NOTICE omits vendored third-party skills and their MIT and Apache-2.0 licences | `NOTICE:31`, `.claude/skills/superpowers/LICENSE:3`, `.claude/skills/mattpocock-skills/LICENSE:3`, `.claude/skills/LICENSE-modern-web-guidance:2` | List each vendored skill and its licence in NOTICE |
+| REPO-079 | Med | Five vendored skills carry no licence text or source | `.claude/skills/chrome-extensions/SKILL.md:2`, `.claude/skills/fastapi/SKILL.md:2`, `.claude/skills/security-audit/SKILL.md:2`, `.claude/skills/vulnerability-triage-brocards/SKILL.md:2`, `.claude/skills/supabase-postgres-best-practices/SKILL.md:4` | Add licence and source for each, or untrack them |
+| REPO-080 | Med | 34 of 36 commits since 2026-11-14 not Conventional; release-please skips them | `CONTRIBUTING.md:13`, `release-please-config.json:3` | Enforce squash merge, or add a commitlint `commit-msg` hook |
+| REPO-081 | Low | Dev advisory GHSA-fc5q-39xc-vjpf (picomatch) unseen; CI audits prod only | `package-lock.json`, `.github/workflows/ci.yaml:187` | Bump picomatch past 4.0.7; audit dev deps on a schedule |
+| REPO-082 | Low | TODO says four React Compiler rules are off; eslint has them on | `TODO.md:12`, `eslint.config.mjs:50` | Tick the TODO item |
+| REPO-083 | Low | README never mentions the tracked `.claude/skills/` and `design/` folders | `README.md:9` | Add both folders to README "What is in here" |
 
 ### Server
 
-None.
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| SRV-042 | Med | Lock event streams uncapped per user; probe opened 60 for one user | `server/src/diagrams/routes.ts:656`, `server/src/diagrams/routes.ts:700` | Cap open lock streams per user, like share `acquireViewer` |
+| SRV-043 | Med | Server test fails: `project.delete` audit meta now has `diagrams`, test lacks it | `server/test/audit-meta.test.ts:104`, `server/src/admin/routes.ts:952` | Add `diagrams: 0` to the expected meta |
+| SRV-044 | Low | Lock stream reads missed pokes only at open; a LISTEN gap loses them | `server/src/diagrams/routes.ts:733`, `server/src/diagrams/routes.ts:767` | Re-run `pokeSnapshot` on each heartbeat |
+| SRV-045 | Low | Release tells requester `left` even when the handoff insert lost the race | `server/src/diagrams/poke.ts:297`, `server/src/diagrams/poke.ts:304` | Emit `left` only when the insert returned a row |
+| SRV-046 | Low | Admin project delete never tells open share streams their links died | `server/src/admin/routes.ts:944`, `server/src/diagrams/routes.ts:801` | Collect link ids; call `emitLinkChanged` for each after commit |
 
 ### Database
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| DB-006 | Low | SQL Server alias types arrive as column domain; no custom type list, as the metadata format has no slot | `server/src/introspect/sqlserver.ts:54`, `server/src/introspect/sqlserver.ts:56` | Add an alias-type list to the metadata format |
+| DB-006 | Low | SQL Server alias types arrive as column domain; metadata format has no custom-type slot | `server/src/introspect/sqlserver.ts:56`, `server/src/introspect/sqlserver.ts:409` | Add an alias-type list to the metadata format |
+| DB-009 | Med | `project.delete` audit row written after commit, outside the delete transaction | `server/src/admin/routes.ts:952` | Write the audit with `tx` inside the transaction |
+| DB-025 | Low | Diagram insert racing admin project delete hits restrict FK; answers 500 | `server/src/admin/routes.ts:944`, `server/src/admin/routes.ts:949` | Lock project row `FOR UPDATE` before deleting its diagrams |
 
 ### Client
 
-None.
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| CLI-019 | Low | Four bare `exhaustive-deps` disables give no reason | `src/platform/panel/debounced-input.tsx:109`, `src/components/qubdi/diagram-access.tsx:307`, `src/dialogs/import-database-dialog/import-database-dialog.tsx:58`, `src/workspace/start-flow.tsx:32` | Add a `--` reason to each, or fix the deps |
+| CLI-112 | Low | Taken banner status region re-announces its countdown every second | `src/components/qubdi/taken-banner.tsx:85`, `src/components/qubdi/use-poke.ts:95` | Move countdown out of `role="status"`; announce outcomes only |
+| CLI-113 | Low | Toggle buttons flip `aria-label` while also setting `aria-pressed` | `src/components/qubdi/password-input.tsx:33`, `src/features/filters/filter-panel.tsx:46` | Keep one fixed label with `aria-pressed` |
+| CLI-114 | Low | Admin nav scroll test asserts synchronously; fails in full parallel run | `src/pages/admin-page/__tests__/admin-page.test.tsx:143` | Wrap the `scrolled` assertion in `waitFor` |
+| CLI-115 | Low | Poke request dialog title drops requester name during close animation | `src/components/qubdi/poke-request-dialog.tsx:85` | Keep the last poke in state until close ends |
 
 ### Dead code
 
-None.
-
-----|-----|---------|-------|-----|
-| DEAD-037 | Low | JSON-map localStorage reader still copied beside shared `readJsonMap` | `src/lib/qubdi/sent-content.ts:128`, `src/lib/qubdi/sync-state.ts:62` | Call `readJsonMap` from local-map.ts in both |
-| DEAD-042 | Low | `isCurrentFormat` exported; zero references in src, server, shared, tools, CI | `server/src/introspect/crypto-box.ts:142` | Delete the export |
+| ID | Sev | Finding | Where | Fix |
+|----|-----|---------|-------|-----|
+| DEAD-043 | Low | Error text for four codes the server never sends, in five locales | `src/i18n/qubdi/account.ts:32`, `src/i18n/qubdi/account.ts:33`, `src/i18n/qubdi/account.ts:59`, `src/i18n/qubdi/account.ts:61` | Delete the four keys in all five locales |
+| DEAD-044 | Low | Lock-events SSE handshake duplicates the share SSE handshake | `server/src/diagrams/routes.ts:672`, `server/src/share/routes.ts:480` | Extract one shared `openSseStream` helper |
+| DEAD-045 | Low | Exports used only by tests: `initialFilter`, `defaultIntrospectorFactory` | `src/core/model/visibility-filter.ts:93`, `server/src/introspect/routes.ts:42` | Move both into test helpers |
+| DEAD-046 | Low | Two relative-time setups: timeago lang files beside i18n `ago.*` words | `src/pages/editor-page/top-navbar/last-saved.tsx:33`, `src/lib/qubdi/when.ts:19` | Use `ago()` from when.ts; drop timeago lang imports |
 
 ---
 
@@ -149,12 +174,16 @@ None.
 | REPO-002 | Repository | `latest` tag moves on every `v*` tag, including prereleases |
 | REPO-003 | Repository | Similarity check runs only on `rewrite/clean-room`, never on main |
 | REPO-005 | Repository | CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored |
-| REPO-006 | Repository | npm version updates paused; both npm entries have limit 0 |
 | REPO-013 | Repository | Playwright npm package installed at run time without a lockfile |
 | REPO-015 | Repository | 1.1 MB `audit-ui-differences.html` tracked, not an owned audit file |
 | REPO-027 | Repository | Load run.sh never fails on a k6 threshold; README says it gates CI |
 | REPO-028 | Repository | README feature line says only a share-token hash is stored; code also encrypts token |
 | REPO-059 | Repository | CI tests only PostgreSQL 18, though README says 16 or newer |
+| DB-001 | Database | Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout |
+| DB-002 | Database | Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns |
+| DB-003 | Database | Size checks serialise whole jsonb with `octet_length(content::text)`; 50 MB costs about 0.8 s |
+| DB-007 | Database | Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out |
+| DB-012 | Database | Generated stat columns re-parse whole jsonb on every content autosave |
 | DB-021 | Database | Drift check holds a pooled connection for its whole run; 10 concurrent checks starve the pool |
 | DB-004 | Database | SQL Server index query returns columnstore, XML and spatial indexes; verified against SQL Server 2025 |
 | DB-019 | Database | SQL Server collation returned only when it differs from the default; verified against SQL Server 2025 |
@@ -162,7 +191,6 @@ None.
 | DB-023 | Database | Activity group filter with cursor walks `audit_log_at_id_idx`: 144 ms, 100k rows filtered |
 | DB-024 | Database | Stats backfill selects null stat rows with no index; seq-scans 503k snapshots hourly |
 | DB-008 | Database | One pending MFA ticket per account is not enforced; concurrent logins leave two |
-| DB-009 | Database | Audit rows are written after, not inside, the transaction of the change |
 | DB-010 | Database | Backups section omits saving CONNECTION_KEY and SECRETS_KEY with the dump |
 | DB-011 | Database | View definition spliced unquoted into CREATE VIEW; odd schema or view names break the text |
 | DB-014 | Database | Migration 0015 rewrites audit_log under exclusive lock to widen id to bigint |
@@ -352,7 +380,6 @@ None.
 | CLI-013 | Client | Server `detail` text shown raw, bypasses i18n |
 | CLI-015 | Client | Favicon is empty `data:,`; no app icon in tabs |
 | CLI-018 | Client | No tests import `ProjectCreateDialog`, `NewProjectDialog`, `ProjectSettings` |
-| CLI-019 | Client | Eslint-disable `exhaustive-deps` without reason; two files carry `no-explicit-any` file-wide |
 | CLI-025 | Client | Index conversion keeps fulltext, spatial, gin without checking column types; DDL fails |
 | CLI-026 | Client | Removed-diagram guard lives in one tab; another tab's autosave rewrites the deleted diagram |
 | CLI-027 | Client | `save` clears removed flag, so an in-flight autosave resurrects a just-deleted diagram |
@@ -377,12 +404,6 @@ None.
 | ID | Lens | Finding | Why |
 |----|------|---------|-----|
 | DB-013 | Database | Migrations build audit_log indexes without CONCURRENTLY, blocking audit writes | Applied migrations cannot be edited; the one-off lock is documented in README under DB-014 |
-| DB-001 | Database | Snapshot and drift prune deletes are unbatched; a big backlog hits the 120s timeout |
-| DB-002 | Database | Viewer list reads each snapshot's full jsonb for five stats; snapshots lack stored stat columns |
-| DB-003 | Database | Size checks serialise whole jsonb with `octet_length(content::text)`; 50 MB costs about 0.8 s |
-| DB-007 | Database | Five FKs lack an index; diagram_locks.user_id is scanned on every sign-in and sign-out |
-| DB-012 | Database | Generated stat columns re-parse whole jsonb on every content autosave |
-
 ---
 
 ## Dropped
@@ -399,13 +420,14 @@ None.
 | DB-005 | SQL Server introspection has no database-level read-only guard; only the text check | Duplicate of SEC-014 |
 | SEC-035 | Gitleaks flags two TOTP test secrets in two-factor test | CI-pinned gitleaks v8.30.1 does not flag them |
 | REPO-047 | Gitleaks flags two-factor test lines; secret scan fails | CI-pinned gitleaks v8.30.1 does not flag them; root cause is REPO-005 |
+| CLI-116 | `timeago.js` range `^4.0.2` admits 4.3.0, whose exports break tsc | Local install gap: node_modules has 4.3.0, lockfile pins 4.0.2 |
 | CLI-004 | Vitest: 4 files fail, `fake-indexeddb` declared but missing from node_modules; tsc reports 4 errors | Local install gap, not a repo defect |
 
 ---
 
 ## Database scale check
 
-Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
+Rows up to Stock Postgres from an earlier pass; last three measured in rev 47 on `aud47-db`.
 
 ### Measured
 
@@ -419,22 +441,27 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 | Viewer list after fix, 100 diagrams × 50 versions | 48 ms, was 2,055 ms on the same data |
 | 43 MB diagram in Node | `JSON.parse` 122 ms · `JSON.stringify` 137 ms |
 | Stock Postgres | `max_connections` 100 · `shared_buffers` 128MB · `work_mem` 4MB |
+| Rev 47 seed | users 2k · projects 500 · diagrams 20k · snapshots 60k · locks 3k · pokes 200.5k |
+| Poke cooldown lookup, 200k pokes | Index Only Scan Backward · 0.08 ms |
+| Admin project list, name sort, offset 480 | Incremental sort on index · 5.5 ms |
 
 ### Verified fine
 
 | Area | Result | Where |
 |------|--------|-------|
-| Schema vs migrations | drizzle-kit empty diff; journal ordered, no gaps | `server/src/db/migrations/meta/_journal.json` |
+| Schema vs migrations | drizzle-kit empty diff; journal 0 to 31 ordered, no gaps | `server/src/db/migrations/meta/_journal.json` |
 | Boot migration lock | Session advisory lock, lock_timeout retry, 2-connection pool | `server/src/db/client.ts:111` |
 | FK ON DELETE | Every FK states cascade, restrict or set null | `server/src/db/schema.ts:205` |
-| Check-then-write | Unique index or lock backs each: email, project, connection, snapshot version, share cap; not MFA (DB-008, DB-016) | `server/src/diagrams/service.ts:218` |
+| Check-then-write | Unique index or lock backs each: email, project, connection, snapshot version, share cap, one pending poke | `server/src/diagrams/service.ts:218` |
 | Autosave | Compare-and-write in one UPDATE; content not returned | `server/src/diagrams/routes.ts:396` |
-| Lists | Paged, offset capped, content never selected; one project list unpaged (SRV-013) | `server/src/diagrams/routes.ts:134` |
+| Lists | Paged, offset capped, content never selected; admin project sorts tie-break on id | `server/src/diagrams/routes.ts:134` |
 | Audit reads | Keyset cursor, indexed filters, name lookups by PK | `server/src/audit/activity.ts:140` |
 | Audit retention | Batched 5000, indexed on `at` | `server/src/maintenance.ts:71` |
 | Pool | max 10 plus 1 listener vs max_connections 200; statement and idle-in-tx timeouts | `server/src/db/client.ts:22` |
 | Postgres introspection | READ ONLY transaction, SET LOCAL timeout, 64 MB byte cap, pinned address | `server/src/introspect/postgres.ts:162` |
 | Read-only guard | Single SELECT/WITH, denylist after stripping literals | `server/src/introspect/readonly-guard.ts:102` |
+| FK coverage | 23 FKs, each indexed and with explicit ON DELETE; 0031 adds 3 cascade FKs | `server/src/db/migrations/0031_lock_pokes.sql:17` |
+| Poke and viewer retention | Hourly job, advisory lock; pokes kept 1 day, live viewers by expiry index | `server/src/maintenance.ts:70` |
 | Postgres image and backups | Digest-pinned in compose and CI; dump and restore documented | `docker-compose.yml:15` |
 
 ---
@@ -443,6 +470,7 @@ Measured in an earlier pass; not re-run in rev 3 (srvaudit-pg holds no seed).
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 47 | 2026-11-18 | Deep sweep of the lock-poke feature, admin project delete, client rework and vendored skills: 23 new (SEC-048, 049; REPO-077 to 083; SRV-042 to 046; DB-025; CLI-112 to 115; DEAD-043 to 046), 3 regressed (DB-009, CLI-019, REPO-006), 1 dropped (CLI-116), SEC-001 narrowed to pull refs; DB-001, 002, 003, 007, 012 moved from Accepted to Fixed where rev 32 put them; stray table fragment removed; 34 open, 0 Crit, 0 High; anchors remapped for open rows |
 | 46 | 2026-11-13 | 2 fixed (CLI-110: all `qubdi.*` text translated into de, fr, it, ru, in `src/i18n/qubdi-locales/`; CLI-111: parity test now covers `qubdi.*`); client lens has no open findings; 8 open, 0 Crit, 0 High; anchors not remapped |
 | 45 | 2026-11-13 | 2 new (CLI-110: `qubdi.*` text and the navbar right side are English in de, fr, it, ru, supersedes the README note of CLI-106; CLI-111: parity test skips `qubdi.*`); 10 open, 0 Crit, 0 High; anchors not remapped |
 | 44 | 2026-11-10 | 1 fixed (SRV-009: default diagram body limit 50 MB to 25 MB, set with `DIAGRAM_BODY_LIMIT_MB` in .env; blocking at the cap about 0.5 s instead of 0.9 s at 40 MB; a worker thread measured no better); server lens has no open findings; 8 open, 0 Crit, 0 High; anchors not remapped |
