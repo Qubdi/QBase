@@ -39,7 +39,27 @@ export const EditorStoreProvider: React.FC<EditorStoreProviderProps> = ({
             delayMs: autosaveDelayMs,
             onError: (error) => errorRef.current?.(error),
         });
+        // The save waits for a quiet second, so a reload or a closed tab in that
+        // second would lose the last edits: write them as the page is left,
+        // and ask first while something is still unsaved.
+        const flushOnLeave = () => void autosave.flush();
+        const flushWhenHidden = () => {
+            if (document.visibilityState === 'hidden') flushOnLeave();
+        };
+        const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+            const { session } = store.getState();
+            if (!session.dirty || session.readonly) return;
+            event.preventDefault();
+            // some browsers only ask when a return value is set
+            event.returnValue = '';
+        };
+        window.addEventListener('pagehide', flushOnLeave);
+        document.addEventListener('visibilitychange', flushWhenHidden);
+        window.addEventListener('beforeunload', warnBeforeLeaving);
         return () => {
+            window.removeEventListener('pagehide', flushOnLeave);
+            document.removeEventListener('visibilitychange', flushWhenHidden);
+            window.removeEventListener('beforeunload', warnBeforeLeaving);
             void autosave.flush().finally(() => autosave.dispose());
         };
     }, [store, adapter, autosaveDelayMs]);
