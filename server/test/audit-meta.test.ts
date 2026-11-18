@@ -104,6 +104,7 @@ describe('audit meta: what an action was done to', () => {
             expect((await latest('project.delete')).meta).toEqual({
                 projectId,
                 name: 'Billing and invoices',
+                diagrams: 0,
             });
         });
     });
