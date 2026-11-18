@@ -7,12 +7,12 @@
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 0 | 42 | 0 |
-| Repository | 6 | 0 | 0 | 64 | 0 |
+| Repository | 3 | 0 | 0 | 64 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 11 | 0 | 0 | 350 | 2 |
+| **Total** | 8 | 0 | 0 | 350 | 2 |
 
 ## Act first
 
@@ -39,9 +39,6 @@ None.
 | REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:8`, `rewrite/TODO.md:11`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
 | REPO-006 | Low | Dependabot version updates paused: all five ecosystems have limit 0 | `.github/dependabot.yml:1`, `.github/dependabot.yml:9` | Restore the limits, or record the pause as Accepted |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
-| REPO-077 | Med | Vendored skill doc adds two gitleaks hits; CI and publish secret scans fail | `.claude/skills/modern-web-guidance/guides/security/client-side-encryption.md:187`, `.claude/skills/modern-web-guidance/guides/security/client-side-encryption.md:201`, `.github/workflows/ci.yaml:196` | Path-allowlist `.claude/skills/` in `.gitleaks.toml` |
-| REPO-078 | Med | NOTICE omits vendored third-party skills and their MIT and Apache-2.0 licences | `NOTICE:31`, `.claude/skills/superpowers/LICENSE:3`, `.claude/skills/mattpocock-skills/LICENSE:3`, `.claude/skills/LICENSE-modern-web-guidance:2` | List each vendored skill and its licence in NOTICE |
-| REPO-079 | Med | Five vendored skills carry no licence text or source | `.claude/skills/chrome-extensions/SKILL.md:2`, `.claude/skills/fastapi/SKILL.md:2`, `.claude/skills/security-audit/SKILL.md:2`, `.claude/skills/vulnerability-triage-brocards/SKILL.md:2`, `.claude/skills/supabase-postgres-best-practices/SKILL.md:4` | Add licence and source for each, or untrack them |
 
 ### Server
 
@@ -444,6 +441,9 @@ None.
 | REPO-047 | Gitleaks flags two-factor test lines; secret scan fails | CI-pinned gitleaks v8.30.1 does not flag them; root cause is REPO-005 |
 | CLI-116 | `timeago.js` range `^4.0.2` admits 4.3.0, whose exports break tsc | Local install gap: node_modules has 4.3.0, lockfile pins 4.0.2 |
 | CLI-004 | Vitest: 4 files fail, `fake-indexeddb` declared but missing from node_modules; tsc reports 4 errors | Local install gap, not a repo defect |
+| REPO-077 | Vendored skill doc adds two gitleaks hits; CI and publish secret scans fail | Removed from the audit at the owner's request; not fixed |
+| REPO-078 | NOTICE omits vendored third-party skills and their MIT and Apache-2.0 licences | Removed from the audit at the owner's request; not fixed |
+| REPO-079 | Five vendored skills carry no licence text or source | Removed from the audit at the owner's request; not fixed |
 
 ---
 

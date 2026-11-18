@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 52</b></div>
-  <h1>6 open (0 Crit, 0 High).</h1>
+  <h1>3 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the <code>it.fails</code> tests and KNOWN BUG flow steps · all containers removed · no secret read</span>
@@ -30,7 +30,7 @@
 <main id="main">
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">6 open &middot; 64 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
+  <p class="section-note">3 open &middot; 64 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -38,9 +38,6 @@
         <tr><td class="svc-name">REPO-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish workflow ships images while TODO says do not publish</td><td class="wrap-cell"><code>TODO.md:8</code>, <code>rewrite/TODO.md:11</code>, <code>.github/workflows/publish.yaml:5</code></td><td class="wrap-cell">Reconcile TODO with publish; gate publish on rewrite status</td></tr>
         <tr><td class="svc-name">REPO-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Dependabot version updates paused: all five ecosystems have limit 0</td><td class="wrap-cell"><code>.github/dependabot.yml:1</code>, <code>.github/dependabot.yml:9</code></td><td class="wrap-cell">Restore the limits, or record the pause as Accepted</td></tr>
         <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CODEOWNERS lists a personal email, no team; single point of review</td><td class="wrap-cell"><code>.github/CODEOWNERS:5</code></td><td class="wrap-cell">Use a verified <code>@org/team</code> owner</td></tr>
-        <tr><td class="svc-name">REPO-077</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Vendored skill doc adds two gitleaks hits; CI and publish secret scans fail</td><td class="wrap-cell"><code>.claude/skills/modern-web-guidance/guides/security/client-side-encryption.md:187</code>, <code>.claude/skills/modern-web-guidance/guides/security/client-side-encryption.md:201</code>, <code>.github/workflows/ci.yaml:196</code></td><td class="wrap-cell">Path-allowlist <code>.claude/skills/</code> in <code>.gitleaks.toml</code></td></tr>
-        <tr><td class="svc-name">REPO-078</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">NOTICE omits vendored third-party skills and their MIT and Apache-2.0 licences</td><td class="wrap-cell"><code>NOTICE:31</code>, <code>.claude/skills/superpowers/LICENSE:3</code>, <code>.claude/skills/mattpocock-skills/LICENSE:3</code>, <code>.claude/skills/LICENSE-modern-web-guidance:2</code></td><td class="wrap-cell">List each vendored skill and its licence in NOTICE</td></tr>
-        <tr><td class="svc-name">REPO-079</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Five vendored skills carry no licence text or source</td><td class="wrap-cell"><code>.claude/skills/chrome-extensions/SKILL.md:2</code>, <code>.claude/skills/fastapi/SKILL.md:2</code>, <code>.claude/skills/security-audit/SKILL.md:2</code>, <code>.claude/skills/vulnerability-triage-brocards/SKILL.md:2</code>, <code>.claude/skills/supabase-postgres-best-practices/SKILL.md:4</code></td><td class="wrap-cell">Add licence and source for each, or untrack them</td></tr>
       </tbody>
     </table>
   </div>
@@ -130,7 +127,7 @@
     </table>
   </div>
   </details>
-  <details><summary>Dropped (3)</summary>
+  <details><summary>Dropped (6)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Reason</th></tr></thead>
@@ -138,6 +135,9 @@
         <tr><td class="svc-name">REPO-026</td><td class="wrap-cell">Husky pre-commit skips server lint silently when server deps absent</td><td class="wrap-cell">Wrong: the hook prints a skip notice, and CI runs the server lint</td></tr>
         <tr><td class="svc-name">REPO-007</td><td class="wrap-cell">Gitleaks config cites SEC-001 which does not exist at rev 0</td><td class="wrap-cell">SEC-001 now exists; reference valid</td></tr>
         <tr><td class="svc-name">REPO-047</td><td class="wrap-cell">Gitleaks flags two-factor test lines; secret scan fails</td><td class="wrap-cell">CI-pinned gitleaks v8.30.1 does not flag them; root cause is REPO-005</td></tr>
+        <tr><td class="svc-name">REPO-077</td><td class="wrap-cell">Vendored skill doc adds two gitleaks hits; CI and publish secret scans fail</td><td class="wrap-cell">Removed from the audit at the owner's request; not fixed</td></tr>
+        <tr><td class="svc-name">REPO-078</td><td class="wrap-cell">NOTICE omits vendored third-party skills and their MIT and Apache-2.0 licences</td><td class="wrap-cell">Removed from the audit at the owner's request; not fixed</td></tr>
+        <tr><td class="svc-name">REPO-079</td><td class="wrap-cell">Five vendored skills carry no licence text or source</td><td class="wrap-cell">Removed from the audit at the owner's request; not fixed</td></tr>
       </tbody>
     </table>
   </div>
