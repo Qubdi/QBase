@@ -10,8 +10,7 @@ import { emitLinkChanged, onLockEvent, type LockEvent } from '../events.js';
 import { getSessionUser, isSecureRequest, sessionTokenOf } from '../auth/sessions.js';
 import { sharedUserLimit } from '../lib/rate-key.js';
 import { safeError } from '../lib/safe-error.js';
-import { API_SECURITY_HEADERS, hstsHeaders } from '../lib/security-headers.js';
-import { createSseWriter } from '../lib/sse-write.js';
+import { createSseWriter, openEventStream } from '../lib/sse-write.js';
 import { gunzipBody } from './gzip-body.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
@@ -667,26 +666,7 @@ export const diagramRoutes =
             // 'close' event has then already fired and will not fire again.
             if (req.raw.destroyed) return reply.hijack();
 
-            reply.hijack();
-            const raw = reply.raw;
-            raw.writeHead(200, {
-                'content-type': 'text/event-stream',
-                'cache-control': 'no-cache, no-transform',
-                // nginx would hold events back in a buffer until it fills
-                'x-accel-buffering': 'no',
-                // the stream bypasses the app's onSend hook
-                ...API_SECURITY_HEADERS,
-                ...hstsHeaders(req, config.cookieSecure),
-                connection: 'keep-alive',
-                ...(config.corsOrigin
-                    ? {
-                          'access-control-allow-origin': config.corsOrigin,
-                          'access-control-allow-credentials': 'true',
-                          vary: 'Origin',
-                      }
-                    : {}),
-            });
-            raw.write(': connected\n\n');
+            const raw = openEventStream(req, reply, config);
 
             let closed = false;
             const cleanup: Array<() => void> = [];
