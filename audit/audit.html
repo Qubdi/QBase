@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 52</b></div>
-  <h1>17 open across six lenses.</h1>
+  <h1>16 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · all containers removed · no secret read</span>
@@ -35,12 +35,12 @@
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
         <tr><td>Security &amp; secrets</td><td>5</td><td>0</td><td>0</td><td>42</td><td>0</td></tr>
-        <tr><td>Repository</td><td>12</td><td>0</td><td>0</td><td>58</td><td>0</td></tr>
+        <tr><td>Repository</td><td>11</td><td>0</td><td>0</td><td>59</td><td>0</td></tr>
         <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>46</td><td>0</td></tr>
         <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>23</td><td>1</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>130</td><td>1</td></tr>
         <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>45</td><td>0</td></tr>
-        <tr><td><b>Total</b></td><td>17</td><td>0</td><td>0</td><td>344</td><td>2</td></tr>
+        <tr><td><b>Total</b></td><td>16</td><td>0</td><td>0</td><td>345</td><td>2</td></tr>
       </tbody>
     </table>
   </div>
@@ -55,8 +55,8 @@
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
-    <p>12 open findings.</p>
-    <p class="lbl">12 open &middot; 0 Crit &middot; 0 High &middot; 58 fixed &middot; 0 accepted</p>
+    <p>11 open findings.</p>
+    <p class="lbl">11 open &middot; 0 Crit &middot; 0 High &middot; 59 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>

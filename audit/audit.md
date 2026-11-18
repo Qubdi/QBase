@@ -7,12 +7,12 @@
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 0 | 42 | 0 |
-| Repository | 12 | 0 | 0 | 58 | 0 |
+| Repository | 11 | 0 | 0 | 59 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 17 | 0 | 0 | 344 | 2 |
+| **Total** | 16 | 0 | 0 | 345 | 2 |
 
 ## Act first
 
@@ -47,7 +47,6 @@ None.
 | REPO-080 | Med | 34 of 36 commits since 2026-11-14 not Conventional; release-please skips them | `CONTRIBUTING.md:13`, `release-please-config.json:3` | Enforce squash merge, or add a commitlint `commit-msg` hook |
 | REPO-081 | Low | Dev advisory GHSA-fc5q-39xc-vjpf (picomatch) unseen; CI audits prod only | `package-lock.json`, `.github/workflows/ci.yaml:187` | Bump picomatch past 4.0.7; audit dev deps on a schedule |
 | REPO-082 | Low | TODO says four React Compiler rules are off; eslint has them on | `TODO.md:12`, `eslint.config.mjs:50` | Tick the TODO item |
-| REPO-083 | Low | README never mentions the tracked `.claude/skills/` and `design/` folders | `README.md:9` | Add both folders to README "What is in here" |
 
 ### Server
 
@@ -108,6 +107,7 @@ None.
 | SRV-024 | Server | SESSION_DAYS has no maximum; large value makes expiry Invalid Date, sign-in 500s |
 | SRV-027 | Server | Lint-config GET and PUT have no rate limit unlike /lint |
 | SRV-029 | Server | Session end deletes sessions and locks in separate statements, not one transaction |
+| REPO-083 | Repository | README never mentions the tracked `.claude/skills/` and `design/` folders |
 | REPO-071 | Repository | Dependabot header says npm updates paused; both entries have limit 5 |
 | REPO-072 | Repository | `INTROSPECT_ALLOW_PRIVILEGED` read outside `config.ts`, absent from compose and `.env.example` |
 | REPO-073 | Repository | `WEB_DIR` read in `config.ts` but absent from `server/.env.example` |

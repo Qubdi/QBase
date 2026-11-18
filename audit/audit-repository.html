@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 52</b></div>
-  <h1>12 open (0 Crit, 0 High).</h1>
+  <h1>11 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the <code>it.fails</code> tests and KNOWN BUG flow steps · all containers removed · no secret read</span>
@@ -30,7 +30,7 @@
 <main id="main">
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">12 open &middot; 58 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
+  <p class="section-note">11 open &middot; 59 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -46,7 +46,6 @@
         <tr><td class="svc-name">REPO-080</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">34 of 36 commits since 2026-11-14 not Conventional; release-please skips them</td><td class="wrap-cell"><code>CONTRIBUTING.md:13</code>, <code>release-please-config.json:3</code></td><td class="wrap-cell">Enforce squash merge, or add a commitlint <code>commit-msg</code> hook</td></tr>
         <tr><td class="svc-name">REPO-081</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Dev advisory GHSA-fc5q-39xc-vjpf (picomatch) unseen; CI audits prod only</td><td class="wrap-cell"><code>package-lock.json</code>, <code>.github/workflows/ci.yaml:187</code></td><td class="wrap-cell">Bump picomatch past 4.0.7; audit dev deps on a schedule</td></tr>
         <tr><td class="svc-name">REPO-082</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">TODO says four React Compiler rules are off; eslint has them on</td><td class="wrap-cell"><code>TODO.md:12</code>, <code>eslint.config.mjs:50</code></td><td class="wrap-cell">Tick the TODO item</td></tr>
-        <tr><td class="svc-name">REPO-083</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">README never mentions the tracked <code>.claude/skills/</code> and <code>design/</code> folders</td><td class="wrap-cell"><code>README.md:9</code></td><td class="wrap-cell">Add both folders to README "What is in here"</td></tr>
       </tbody>
     </table>
   </div>
@@ -54,11 +53,12 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (58)</summary>
+  <details><summary>Fixed (59)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-083</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README never mentions the tracked <code>.claude/skills/</code> and <code>design/</code> folders</td></tr>
         <tr><td class="svc-name">REPO-071</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dependabot header says npm updates paused; both entries have limit 5</td></tr>
         <tr><td class="svc-name">REPO-072</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>INTROSPECT_ALLOW_PRIVILEGED</code> read outside <code>config.ts</code>, absent from compose and <code>.env.example</code></td></tr>
         <tr><td class="svc-name">REPO-073</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>WEB_DIR</code> read in <code>config.ts</code> but absent from <code>server/.env.example</code></td></tr>
