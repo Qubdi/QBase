@@ -58,6 +58,16 @@ jobs:
             package-lock.json
             server/package-lock.json
 
+      # A tag can be pushed on any branch, and a release comes from main: the
+      # checkout above fetched every branch (fetch-depth 0), so the tagged
+      # commit can be looked for in main's history.
+      - name: Check the tagged commit is on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::tag $GITHUB_REF_NAME points at $GITHUB_SHA, which is not on main"
+            exit 1
+          fi
+
       # an image tagged v1.2.3 must come from a tree that says 1.2.3: a tag
       # pushed on the wrong commit would otherwise ship under the wrong version
       - name: Check the tag matches the package versions
@@ -110,6 +120,11 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # Pushing to the registries waits for a person. Create the environment
+    # "release" in the repository settings (Settings > Environments), add the
+    # required reviewers, and limit it to tags matching v*; the run then pauses
+    # here until a reviewer approves it. The Docker Hub secrets can live there too.
+    environment: release
     permissions:
       contents: read
       packages: write
