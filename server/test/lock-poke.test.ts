@@ -2,7 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { diagramLocks, lockPokes, sessions } from '../src/db/schema.js';
-import { POKE_COOLDOWN_SECONDS, POKE_WAIT_SECONDS } from '../src/diagrams/poke.js';
+import {
+    POKE_COOLDOWN_SECONDS,
+    POKE_WAIT_SECONDS,
+    settlePokesOnRelease,
+} from '../src/diagrams/poke.js';
 import { purgeOldPokes } from '../src/maintenance.js';
 import {
     as,
@@ -471,6 +475,23 @@ describe('asking the editor of a locked diagram to step out', () => {
             });
             expect((await lock(c, 'tab-c')).json()).toMatchObject({ held: false });
             expect((await lock(b, 'tab-b-reloaded')).json()).toEqual({ held: true });
+        });
+    });
+
+    describe('when the holder leaves and someone else is first', () => {
+        it('SRV-045: tells the one who waited nothing when another tab already holds the diagram', async () => {
+            await poked();
+            const requester = await stream(b, 'tab-b');
+            await requester.text(': connected');
+            // a's lock goes and c takes the free diagram before the leaving is settled
+            await ctx.db.delete(diagramLocks);
+            expect((await lock(c, 'tab-c')).json()).toEqual({ held: true });
+
+            await settlePokesOnRelease(ctx.db, id, a.id, 'tab-a');
+
+            // the diagram was not set aside for b, so b is not told it can have it
+            expect(await requester.quiet(300)).toBe(true);
+            expect(await lockRow()).toMatchObject({ userId: c.id, editorId: 'tab-c' });
         });
     });
 
