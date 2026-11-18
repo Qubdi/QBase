@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MyProject } from '@/lib/qubdi/api';
 import { ApiError } from '@/lib/qubdi/api';
@@ -393,5 +393,33 @@ describe('TakenBanner', () => {
             expect(note()).toContain('Could not reach the server.');
             expect(pokeButton().disabled).toBe(false);
         });
+    });
+});
+
+describe('TakenBanner announcements (CLI-112)', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        pokeLock.mockReset().mockResolvedValue(sent);
+        getLatest.mockReset().mockResolvedValue(undefined);
+        toast.mockReset();
+        refresh.mockReset();
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('keeps the ticking countdown out of what a screen reader gets', async () => {
+        show();
+        await click();
+        const live = screen.getByRole('status');
+        // the seconds are shown, but hidden from assistive technology
+        const shown = within(live).getByText(/\(\d+ s\)/);
+        expect(shown.getAttribute('aria-hidden')).toBe('true');
+        // what is read out is the one steady line
+        expect(
+            within(live).getByText('Waiting for an answer…', {
+                selector: '.sr-only',
+            })
+        ).toBeTruthy();
+        // and the button's own countdown is not announced either
+        expect(pokeButton().getAttribute('aria-live')).toBe('off');
     });
 });

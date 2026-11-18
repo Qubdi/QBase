@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 2 | 0 | 0 | 128 | 1 |
+| Client | 1 | 0 | 0 | 129 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 24 | 0 | 0 | 337 | 2 |
+| **Total** | 23 | 0 | 0 | 338 | 2 |
 
 ## Act first
 
@@ -68,7 +68,6 @@ None.
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | CLI-019 | Low | Four bare `exhaustive-deps` disables give no reason | `src/platform/panel/debounced-input.tsx:109`, `src/components/qubdi/diagram-access.tsx:307`, `src/dialogs/import-database-dialog/import-database-dialog.tsx:58`, `src/workspace/start-flow.tsx:32` | Add a `--` reason to each, or fix the deps |
-| CLI-112 | Low | Taken banner status region re-announces its countdown every second | `src/components/qubdi/taken-banner.tsx:85`, `src/components/qubdi/use-poke.ts:95` | Move countdown out of `role="status"`; announce outcomes only |
 
 ### Dead code
 
@@ -216,6 +215,7 @@ None.
 | CLI-119 | Client | Nested block comment drops the next table; validator still counts it |
 | CLI-118 | Client | pg_dump COPY row with an apostrophe blocks the whole SQL import |
 | CLI-117 | Client | Local autosave loses edits made in the last second before a reload or tab close |
+| CLI-112 | Client | Taken banner status region re-announces its countdown every second |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |

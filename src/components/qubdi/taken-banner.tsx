@@ -96,13 +96,28 @@ export const TakenBanner: React.FC<TakenBannerProps> = ({
                 {note ? (
                     <>
                         {' '}
-                        <span className="font-medium">{note}</span>
+                        {/* the countdown changes every second, and a live region
+                            would read it out each time: screen readers get
+                            the sent request once, and then only the outcome */}
+                        <span
+                            className="font-medium"
+                            aria-hidden={view.kind === 'waiting'}
+                        >
+                            {note}
+                        </span>
+                        {view.kind === 'waiting' ? (
+                            <span className="sr-only">
+                                {t('qubdi.workspace.accessBanner.pokeWaiting')}
+                            </span>
+                        ) : null}
                     </>
                 ) : null}
             </p>
             {ownTab ? null : (
                 <Button
                     size="sm"
+                    // its "Poke again in 4:05" counts down: not read out each second
+                    aria-live="off"
                     disabled={inFlight || cooling}
                     title={t('qubdi.workspace.accessBanner.pokeHint', {
                         holder: who,
