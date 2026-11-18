@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 20 | 0 | 0 | 110 | 1 |
+| Client | 19 | 0 | 0 | 111 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 42 | 0 | 0 | 319 | 2 |
+| **Total** | 41 | 0 | 0 | 320 | 2 |
 
 ## Act first
 
@@ -86,7 +86,6 @@ None.
 | CLI-128 | Low | Quoted commas and backslashes in PostgreSQL array defaults mis-split on conversion | `src/dialects/convert/convert-default.ts:195` | Parse the array literal with a quote-aware reader |
 | CLI-129 | Med | MySQL backslash-escaped default blocks the MySQL export | `src/formats/sql/unsafe-text.ts:13` | Make `breaksStatement` honour backslash escapes for MySQL |
 | CLI-130 | Low | Round trip drops a named single-column unique index | `src/dialects/postgresql/write.ts:221` | Write the index when its name differs from inline UNIQUE |
-| CLI-131 | Low | Long shell flags such as `--no-data` coloured as comments | `src/features/import/code-highlight.ts:76` | Test shell flags before the `--` comment rule |
 
 ### Dead code
 
@@ -216,6 +215,7 @@ None.
 | CLI-134 | Client | Lint findings and rule text not translated in de, fr, it, ru |
 | CLI-133 | Client | Table picker lists a blank schema, same value as All schemas |
 | CLI-132 | Client | Patching `generatedStored` alone wipes the computed column expression |
+| CLI-131 | Client | Long shell flags such as `--no-data` coloured as comments |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |

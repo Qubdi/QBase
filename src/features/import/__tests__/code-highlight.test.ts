@@ -119,11 +119,7 @@ describe('highlightLine', () => {
         expect(kinds('a -b')).toEqual(['ident:a', 'plain: -', 'ident:b']);
     });
 
-    // BUG: code-highlight.ts:75-81 tests for a `--` comment before the shell
-    // flag branch, for every language, so a long flag such as `--no-data`
-    // (shown in the mysqldump instructions) and the rest of its line are
-    // coloured as a comment in shell snippets.
-    it.fails('colours a long shell flag as a flag, not a comment', () => {
+    it('CLI-131: colours a long shell flag as a flag, not a comment', () => {
         expect(kinds('mysqldump --no-data db', 'shell')).toEqual([
             'ident:mysqldump',
             'plain: ',

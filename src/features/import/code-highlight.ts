@@ -72,6 +72,15 @@ export function highlightLine(
             i += 2;
             continue;
         }
+        // before the `--` comment rule: `--no-data` is a flag in a shell line
+        if (language === 'shell' && rest.startsWith('-')) {
+            const m = /^--?[A-Za-z][A-Za-z0-9-]*/.exec(rest);
+            if (m) {
+                push('flag', m[0]);
+                i += m[0].length;
+                continue;
+            }
+        }
         if (
             rest.startsWith('--') ||
             (language !== 'sql' && rest.startsWith('//'))
@@ -90,12 +99,6 @@ export function highlightLine(
         if (/[0-9]/.test(ch)) {
             const m = /^[0-9][0-9.]*/.exec(rest)!;
             push('number', m[0]);
-            i += m[0].length;
-            continue;
-        }
-        if (language === 'shell' && ch === '-' && /^-[A-Za-z-]/.test(rest)) {
-            const m = /^-+[A-Za-z]*/.exec(rest)!;
-            push('flag', m[0]);
             i += m[0].length;
             continue;
         }
