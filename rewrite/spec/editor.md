@@ -831,6 +831,17 @@ Types** section and its rail entry do not exist.
   colour picker, "focus on canvas", and a More actions menu (titled "Area Actions":
   **Edit Name**, **Delete Area**). Empty: "No areas" / "Create an area to get started".
   Filtered empty: "No areas found matching your filter."
+- **Which tables are in an area** (since 2026-11-18): each row has a chevron and a count
+  of its tables. The chevron, or a click on the name, opens the row to the tables of the
+  area, in the order of the Tables list, the schema in grey when the Tables list names
+  schemas; double-click or the pencil still renames. A click on a table selects it and
+  centres it on the canvas, as the focus button of the area does. An open area with no
+  tables says "No tables in this area". Rows start closed. The tables are those whose
+  stored area is this one (see 10.3), so the list agrees with the canvas; views are left
+  out while Database Views is off.
+- **Tables outside every area:** a last row, after the areas, with a count; it opens to
+  the tables that are in no area. It is not shown while the list is narrowed by the
+  filter, when there is no area at all, or when every table is in an area.
 
 ---
 

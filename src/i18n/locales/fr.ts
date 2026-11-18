@@ -804,6 +804,11 @@ export const fr = {
                     areaActions: 'Actions de la zone',
                     editName: 'Modifier le nom',
                     deleteArea: 'Supprimer la zone',
+                    toggleTables:
+                        'Afficher ou masquer les tables de la zone : {{name}}',
+                    tableCount: 'Tables : {{count}}',
+                    noTablesInArea: 'Aucune table dans cette zone',
+                    outsideAreas: 'Tables hors de toute zone',
                     addNote: 'Ajouter une note',
                     attachedTo: 'Attachée à {{name}}',
                     selectOwner: 'Sélectionnez d’abord une table ou une zone',

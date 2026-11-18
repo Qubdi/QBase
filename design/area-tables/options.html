@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Which tables are in which area: options for the Areas list of the Visuals section, drawn with the
+  app's own colours (src/globals.css) and sizes (rail 52 px, panel 350 px). Open in a browser.
+  Theme: ?theme=dark . Show some cards only: &only=now,a,b . &shot=1 hides the page text.
+-->
+<title>Tables in an Area Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700&display=swap">
+<style>
+:root {
+  --bg: #f4f7f7; --surface: #ffffff; --fg: #13201f; --muted: #566866; --line: #d9e2e1;
+  --accent: #0d6f66; --chip: #e6efee;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Manrope", "Inter", system-ui, sans-serif;
+}
+:root[data-theme="dark"] { --bg: #0c1313; --surface: #131c1c; --fg: #e7f0ef; --muted: #9bb0ad; --line: #243332; --accent: #3fd0bd; --chip: #1a2727; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font-ui); margin: 0; padding: 28px 16px 56px; }
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+header { display: grid; gap: 10px; max-width: 74ch; }
+h1 { font: 700 26px/1.2 var(--font-head); margin: 0; }
+header p { margin: 0; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); width: max-content; }
+.seg button { font: 500 13px var(--font-ui); color: var(--muted); background: none; border: 0; padding: 6px 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--chip); color: var(--fg); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { font: 700 16px/1.3 var(--font-head); margin: 0; display: flex; align-items: baseline; gap: 10px; }
+.card h2 .id { font: 700 12px var(--font-ui); color: var(--accent); background: var(--chip); border-radius: 6px; padding: 2px 8px; }
+.card p { margin: 0; color: var(--muted); max-width: 92ch; }
+.scroll { overflow-x: auto; }
+body.shot header, body.shot .seg { display: none; }
+
+.light { --b: 180 25% 99%; --pop: 0 0% 100%; --f: 200 30% 10%; --mu: 200 12% 40%; --bd: 190 16% 88%; --in: 190 16% 86%; --pr: 173 82% 27%; --prf: 0 0% 100%; --sec: 185 22% 94%; --ac: 174 40% 93%; --cv: 185 22% 96%; }
+.dark  { --b: 200 28% 7%;  --pop: 200 26% 9%;  --f: 180 20% 96%; --mu: 195 12% 66%; --bd: 200 15% 18%; --in: 200 15% 20%; --pr: 172 66% 46%; --prf: 200 40% 6%; --sec: 200 18% 15%; --ac: 190 30% 16%; --cv: 200 28% 5%; }
+.win { display: flex; width: 1000px; border: 1px solid hsl(var(--bd)); border-radius: 10px; overflow: hidden; background: hsl(var(--cv)); color: hsl(var(--f)); font: 13px/1.4 var(--font-ui); }
+.rail { width: 52px; flex: none; background: hsl(var(--b)); border-right: 1px solid hsl(var(--bd)); display: grid; align-content: start; gap: 8px; padding: 10px 0; justify-items: center; }
+.rail i { width: 28px; height: 28px; border-radius: 8px; background: hsl(var(--sec)); }
+.rail i.on { background: hsl(var(--ac)); }
+.panel { width: 350px; flex: none; background: hsl(var(--b)); border-right: 1px solid hsl(var(--bd)); padding: 8px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.tabs span { flex: 1; text-align: center; padding: 5px 0; border-radius: 6px; font-weight: 500; color: hsl(var(--mu)); }
+.tabs span.on { background: hsl(var(--sec)); color: hsl(var(--f)); }
+.head { display: flex; gap: 8px; margin-bottom: 8px; }
+.head .in { flex: 1; height: 32px; border: 1px solid hsl(var(--in)); border-radius: 6px; padding: 0 10px; line-height: 30px; color: hsl(var(--mu)); background: hsl(var(--b)); }
+.head .add { height: 32px; padding: 0 10px; border-radius: 6px; background: hsl(var(--sec)); font-weight: 500; line-height: 32px; white-space: nowrap; }
+
+/* an area row, as ActionRow draws it: a stripe, rounded-[10px], border, bg-card */
+.arow { position: relative; border: 1px solid hsl(var(--bd)); border-radius: 10px; background: hsl(var(--pop)); margin-bottom: 8px; overflow: hidden; }
+.arow .stripe { position: absolute; inset: 0 auto 0 0; width: 4px; }
+.arow .top { display: flex; align-items: center; gap: 4px; min-height: 44px; padding: 4px 4px 4px 16px; }
+.arow .nm { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chev { width: 20px; height: 20px; display: grid; place-items: center; color: hsl(var(--mu)); flex: none; margin-left: -8px; }
+.chev.up svg { transform: rotate(180deg); }
+.cnt { font-size: 11px; font-weight: 600; color: hsl(var(--mu)); background: hsl(var(--sec)); border-radius: 999px; padding: 1px 8px; flex: none; }
+.sw { width: 32px; height: 24px; border-radius: 10px; border: 2px solid hsl(var(--bd)); flex: none; }
+.ib { width: 32px; height: 32px; display: grid; place-items: center; color: hsl(var(--mu)); flex: none; border-radius: 6px; }
+.open > .top { background: hsl(var(--ac) / .7); }
+.list { border-top: 1px solid hsl(var(--bd)); padding: 4px 4px 4px 16px; display: grid; }
+.list .t { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border-radius: 6px; }
+.list .t:hover, .list .t.hv { background: hsl(var(--ac)); }
+.list .t .d { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.list .t .n { flex: 1; min-width: 0; font-weight: 500; }
+.list .t .s { color: hsl(var(--mu)); font-size: 12px; }
+.list .t .go { color: hsl(var(--mu)); opacity: 0; }
+.list .t.hv .go { opacity: 1; }
+.list .none { padding: 8px; color: hsl(var(--mu)); font-size: 12px; }
+.chips { border-top: 1px solid hsl(var(--bd)); padding: 8px 8px 8px 16px; display: flex; flex-wrap: wrap; gap: 4px; }
+.chips span { font-size: 12px; border: 1px solid hsl(var(--in)); background: hsl(var(--sec)); border-radius: 999px; padding: 0 8px; line-height: 20px; }
+.chips span.none { border: 0; background: none; color: hsl(var(--mu)); padding: 0; }
+.group { margin-top: 12px; }
+.group h5 { margin: 0 0 4px; padding: 0 4px; font-size: 12px; font-weight: 500; color: hsl(var(--mu)); display: flex; justify-content: space-between; }
+.group .arow .stripe { background: repeating-linear-gradient(hsl(var(--mu) / .5) 0 4px, transparent 4px 8px); }
+.tag { font: 600 10px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: hsl(var(--mu)); border: 1px dashed hsl(var(--bd)); border-radius: 4px; padding: 0 5px; margin-left: 6px; }
+
+.canvas { position: relative; flex: 1; background-image: radial-gradient(hsl(var(--bd)) 1px, transparent 1px); background-size: 16px 16px; min-height: 100%; }
+.area { position: absolute; border: 2px solid; border-radius: 4px; }
+.area b { position: absolute; left: 0; top: 0; font-size: 11px; padding: 2px 8px; color: #fff; border-bottom-right-radius: 6px; }
+.tb { position: absolute; width: 112px; background: hsl(var(--pop)); border: 1px solid hsl(var(--bd)); border-radius: 6px; overflow: hidden; font-size: 10px; box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.tb b { display: block; padding: 3px 8px; background: hsl(var(--ac)); font-size: 10px; }
+.tb s { display: block; text-decoration: none; padding: 2px 8px; color: hsl(var(--mu)); border-top: 1px solid hsl(var(--bd)); }
+.tb.out { opacity: .85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Which tables are in which area</h1>
+    <p>Today the Areas list shows only the area (its name, colour, focus and menu). To see which tables sit in an area you look at the canvas. These cards compare ways to show the member tables in the list, the way the Refs list shows the tables and fields of a relationship. Each table already records its area, so the list can show it without measuring anything. The canvas on the right shows the areas the lists describe.</p>
+    <div class="seg" id="themes" role="group" aria-label="Theme">
+      <button data-theme="light" aria-pressed="true">Light</button>
+      <button data-theme="dark" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+  <div id="cards" class="wrap" style="gap:22px"></div>
+</div>
+<script>
+const CH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+const FOCUS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg>';
+const MORE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>';
+
+const AREAS = [
+  { n: 'Sales',   c: '#3b82f6', tables: [['orders','public'],['customers','public'],['order_items','public']] },
+  { n: 'Billing', c: '#f97316', tables: [['invoices','billing'],['payments','billing']] },
+  { n: 'Archive', c: '#8b5cf6', tables: [] },
+];
+const OUTSIDE = [['products','public'],['categories','public'],['audit_log','ops'],['users','public']];
+
+const rowTop = (a, open, chev) => `<div class="top">${chev ? `<span class="chev ${open ? 'up' : ''}">${CH}</span>` : ''}<span class="nm">${a.n}</span>${chev ? `<span class="cnt">${a.tables.length} ${a.tables.length === 1 ? 'table' : 'tables'}</span>` : ''}<span class="sw" style="background:${a.c}"></span><span class="ib">${FOCUS}</span><span class="ib">${MORE}</span></div>`;
+
+function now() { /* today */
+  return AREAS.map(a => `<div class="arow"><span class="stripe" style="background:${a.c}"></span>${rowTop(a, false, false)}</div>`).join('');
+}
+function optA(withGroup) {
+  const rows = AREAS.map((a, i) => {
+    const open = i < 2;
+    const body = !open ? '' : a.tables.length === 0 ? '<div class="list"><div class="none">No tables in this area</div></div>'
+      : `<div class="list">${a.tables.map((t, j) => `<div class="t ${i === 0 && j === 1 ? 'hv' : ''}"><span class="d" style="background:${a.c}"></span><span class="n">${t[0]}</span><span class="s">${t[1]}</span><span class="go">${FOCUS}</span></div>`).join('')}</div>`;
+    return `<div class="arow ${open ? 'open' : ''}"><span class="stripe" style="background:${a.c}"></span>${rowTop(a, open, true)}${body}</div>`;
+  }).join('');
+  const group = !withGroup ? '' : `<div class="group"><h5><span>Not in an area <span class="tag">optional</span></span><span>${OUTSIDE.length} tables</span></h5>
+    <div class="arow"><span class="stripe"></span><div class="top"><span class="chev">${CH}</span><span class="nm" style="color:hsl(var(--mu))">Tables outside every area</span><span class="cnt">${OUTSIDE.length}</span></div></div></div>`;
+  return rows + group;
+}
+function optB() {
+  return AREAS.map(a => `<div class="arow"><span class="stripe" style="background:${a.c}"></span>${rowTop(a, false, false)}
+    <div class="chips">${a.tables.length ? a.tables.map(t => `<span>${t[0]}</span>`).join('') : '<span class="none">No tables</span>'}</div></div>`).join('');
+}
+
+const canvasHtml = `
+  <div class="area" style="left:24px;top:24px;width:360px;height:190px;border-color:#3b82f6;background:#3b82f622"><b style="background:#3b82f6">Sales</b></div>
+  <div class="tb" style="left:40px;top:60px"><b>orders</b><s>id</s><s>customer_id</s></div>
+  <div class="tb" style="left:168px;top:60px"><b>customers</b><s>id</s><s>email</s></div>
+  <div class="tb" style="left:268px;top:130px"><b>order_items</b><s>order_id</s></div>
+  <div class="area" style="left:24px;top:240px;width:260px;height:150px;border-color:#f97316;background:#f9731622"><b style="background:#f97316">Billing</b></div>
+  <div class="tb" style="left:40px;top:278px"><b>invoices</b><s>id</s><s>order_id</s></div>
+  <div class="tb" style="left:156px;top:300px"><b>payments</b><s>invoice_id</s></div>
+  <div class="area" style="left:310px;top:260px;width:150px;height:110px;border-color:#8b5cf6;background:#8b5cf622"><b style="background:#8b5cf6">Archive</b></div>
+  <div class="tb out" style="left:420px;top:60px"><b>products</b><s>id</s></div>
+  <div class="tb out" style="left:420px;top:120px"><b>categories</b><s>id</s></div>
+  <div class="tb out" style="left:480px;top:215px"><b>audit_log</b><s>id</s></div>
+  <div class="tb out" style="left:380px;top:400px"><b>users</b><s>id</s></div>`;
+
+const CARDS = [
+  { id: 'now', mark: 'Today', title: 'An area row: name, colour, focus, menu', text: 'The Areas list says nothing about the tables of an area. To find out you look at the canvas and judge which tables lie inside the rectangle.', body: now },
+  { id: 'a', mark: 'A', title: 'Like Refs: a row that opens to its tables (recommended)', text: 'Each area row gets a chevron and a count ("3 tables"). A click opens the row and lists its tables, with the schema in grey; clicking a table selects it and centres it on the canvas, as the focus button of the area does. Closed rows stay as short as they are today, so a long list of areas is still short. An empty area says "No tables in this area". The dashed group at the bottom is an optional extra: the tables that are in no area.', body: () => optA(true) },
+  { id: 'b', mark: 'B', title: 'Always listed: table names under each area', text: 'The names of the tables are always shown under the area, as small chips. Nothing to click to find out, but an area with twenty tables is a tall block, the list of areas grows with the tables, and the chips cannot say the schema or be used to find the table on the canvas.', body: optB },
+];
+
+const q = new URLSearchParams(location.search);
+let theme = q.get('theme') || 'light';
+const only = (q.get('only') || '').split(',').filter(Boolean);
+if (q.get('shot')) document.body.classList.add('shot');
+function build() {
+  document.documentElement.dataset.theme = theme;
+  document.querySelectorAll('#themes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === theme)));
+  const host = document.getElementById('cards'); host.innerHTML = '';
+  for (const c of CARDS) {
+    if (only.length && !only.includes(c.id)) continue;
+    const s = document.createElement('section'); s.className = 'card';
+    s.innerHTML = `<h2><span class="id">${c.mark}</span>${c.title}</h2><p>${c.text}</p>
+      <div class="scroll"><div class="win ${theme}" style="height:${c.id === 'a' ? 560 : 440}px">
+        <div class="rail"><i></i><i></i><i></i><i class="on"></i></div>
+        <div class="panel"><div class="tabs"><span class="on">Areas</span><span>Notes</span></div>
+          <div class="head"><div class="in">Filter</div><div class="add">Add Area</div></div>${c.body()}</div>
+        <div class="canvas">${canvasHtml}</div></div></div>`;
+    host.appendChild(s);
+  }
+}
+document.getElementById('themes').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { theme = b.dataset.theme; build(); } });
+build();
+</script>
+</body>
+</html>

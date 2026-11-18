@@ -783,6 +783,11 @@ export const de = {
                     areaActions: 'Bereichsaktionen',
                     editName: 'Namen bearbeiten',
                     deleteArea: 'Bereich löschen',
+                    toggleTables:
+                        'Tabellen des Bereichs ein- oder ausblenden: {{name}}',
+                    tableCount: 'Tabellen: {{count}}',
+                    noTablesInArea: 'Keine Tabellen in diesem Bereich',
+                    outsideAreas: 'Tabellen außerhalb aller Bereiche',
                     addNote: 'Notiz hinzufügen',
                     attachedTo: 'Gehört zu {{name}}',
                     selectOwner:

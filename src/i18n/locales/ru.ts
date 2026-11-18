@@ -802,6 +802,11 @@ export const ru = {
                     areaActions: 'Действия с областью',
                     editName: 'Изменить название',
                     deleteArea: 'Удалить область',
+                    toggleTables:
+                        'Показать или скрыть таблицы области: {{name}}',
+                    tableCount: 'Таблиц: {{count}}',
+                    noTablesInArea: 'В этой области нет таблиц',
+                    outsideAreas: 'Таблицы вне областей',
                     addNote: 'Добавить заметку',
                     attachedTo: 'Прикреплена к «{{name}}»',
                     selectOwner: 'Сначала выберите таблицу или область',

@@ -799,6 +799,11 @@ export const it = {
                     areaActions: "Azioni dell'area",
                     editName: 'Modifica nome',
                     deleteArea: 'Elimina area',
+                    toggleTables:
+                        'Mostra o nascondi le tabelle dell’area: {{name}}',
+                    tableCount: 'Tabelle: {{count}}',
+                    noTablesInArea: 'Nessuna tabella in quest’area',
+                    outsideAreas: 'Tabelle fuori da ogni area',
                     addNote: 'Aggiungi nota',
                     attachedTo: 'Collegata a {{name}}',
                     selectOwner: 'Seleziona prima una tabella o un’area',

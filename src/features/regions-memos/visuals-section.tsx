@@ -7,7 +7,9 @@ import {
     FileText,
 } from 'lucide-react';
 import { planAddNote, planAddRegion } from '@/core/commands/plan-visual';
+import type { Entity } from '@/core/model/entity';
 import { ownerFromSelection, ownerName } from '@/core/model/memo-owner';
+import { cn } from '@/lib/utils/utils';
 import { toast } from '@/platform/toast/use-toast';
 import { ColorPicker } from '@/components/color-picker/color-picker';
 import { InlineName } from '@/platform/panel/inline-name';
@@ -23,39 +25,137 @@ import {
     DropdownMenuTrigger,
 } from '@/platform/ui/dropdown-menu';
 import { Input } from '@/platform/ui/input';
+import { ChevronDownIcon } from '@/platform/ui/radix-icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/ui/tabs';
 import { newItemDragProps } from '@/canvas/drop-items';
 import { useHoldMenu } from '@/platform/panel/hold-menu';
 import { selectPanel } from '@/store/selectors';
 import { useEditorStore, useEditorStoreApi } from '@/store/store-context';
+import { visibleSchemas } from '@/features/tables/table-list';
 import { WindowedList } from '@/features/tables/windowed-list';
-import { firstLine, listMemos, listRegions } from './visual-lists';
+import { areaTables, firstLine, listMemos, listRegions } from './visual-lists';
 import type { VisualsTab } from '@/store/editor-state';
 
-/** A list row with its actions menu; a touch hold on the row opens the menu (EDT-009). */
+/**
+ * A list row with its actions menu; a touch hold on the row opens the menu
+ * (EDT-009). `below` is what an open row shows under its line.
+ */
 const ActionRow: React.FC<{
     testId: string;
     accent: string;
     label: string;
     items: { label: string; onSelect: () => void }[] | null;
+    below?: React.ReactNode;
     children: React.ReactNode;
-}> = ({ testId, accent, label, items, children }) => {
+}> = ({ testId, accent, label, items, below, children }) => {
     const { menu, hold } = useHoldMenu(items !== null);
     return (
         <div
             data-testid={testId}
-            className="group relative flex min-h-11 items-center gap-1 overflow-hidden rounded-[10px] border bg-card py-1 pl-4 pr-1 hover:bg-accent/70"
-            {...hold}
+            className="group relative overflow-hidden rounded-[10px] border bg-card"
         >
             <span
                 aria-hidden="true"
                 className="absolute inset-y-0 left-0 w-1"
                 style={{ backgroundColor: accent }}
             />
-            {children}
-            {items ? (
-                <ActionsMenu label={label} items={items} menu={menu} />
-            ) : null}
+            <div
+                className="flex min-h-11 items-center gap-1 py-1 pl-4 pr-1 hover:bg-accent/70"
+                {...hold}
+            >
+                {children}
+                {items ? (
+                    <ActionsMenu label={label} items={items} menu={menu} />
+                ) : null}
+            </div>
+            {below}
+        </div>
+    );
+};
+
+/** The chevron that opens a row to its tables. */
+const OpenButton: React.FC<{
+    open: boolean;
+    label: string;
+    onToggle: () => void;
+}> = ({ open, label, onToggle }) => (
+    <button
+        type="button"
+        aria-expanded={open}
+        aria-label={label}
+        className="-ml-2 flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onToggle}
+    >
+        <ChevronDownIcon
+            className={cn(
+                'size-4 shrink-0 transition-transform duration-200',
+                open && 'rotate-180'
+            )}
+        />
+    </button>
+);
+
+/** How many tables: the number is drawn; "Tables: 3" is read out and is the tooltip. */
+const Count: React.FC<{ count: number }> = ({ count }) => {
+    const text = useText();
+    const label = text('visuals.tableCount', { count });
+    return (
+        <span
+            title={label}
+            className="shrink-0 rounded-full bg-secondary px-2 text-[11px] font-semibold leading-5 text-muted-foreground"
+        >
+            <span aria-hidden="true">{count}</span>
+            <span className="sr-only">{label}</span>
+        </span>
+    );
+};
+
+/**
+ * The tables of an area, or the ones in no area, under their row. A click on a
+ * table selects it and centres it on the canvas, as the focus button of an
+ * area does.
+ */
+const TableLines: React.FC<{
+    tables: readonly Entity[];
+    accent: string;
+    showSchema: boolean;
+    emptyText: string;
+}> = ({ tables, accent, showSchema, emptyText }) => {
+    const focus = useFocus();
+    return (
+        <div className="border-t py-1 pl-4 pr-1" data-testid="area-tables">
+            {tables.length === 0 ? (
+                <p className="px-2 py-2 text-xs text-muted-foreground">
+                    {emptyText}
+                </p>
+            ) : (
+                tables.map((table) => (
+                    <button
+                        key={table.id}
+                        type="button"
+                        className="group/line flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                        onClick={() => focus(table.id)}
+                    >
+                        <span
+                            aria-hidden="true"
+                            className="size-2 shrink-0 rounded-[2px]"
+                            style={{ backgroundColor: accent }}
+                        />
+                        <span className="min-w-0 flex-1 truncate font-medium">
+                            {table.name}
+                        </span>
+                        {showSchema && table.schema ? (
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                                {table.schema}
+                            </span>
+                        ) : null}
+                        <Crosshair
+                            aria-hidden="true"
+                            className="size-4 shrink-0 text-muted-foreground opacity-0 group-hover/line:opacity-100 group-focus-visible/line:opacity-100"
+                        />
+                    </button>
+                ))
+            )}
         </div>
     );
 };
@@ -133,12 +233,28 @@ const Header: React.FC<{
     </div>
 );
 
+/** The key of the row of the tables that are in no area, among the open rows. */
+const OUTSIDE = 'outside';
+
 const AreasList: React.FC = () => {
-    const { design, locked, edit } = useEditorEnv();
+    const { design, filter, showViews, locked, edit } = useEditorEnv();
     const text = useText();
     const focus = useFocus();
     const [filterText, setFilterText] = useState('');
+    // the rows that are open to their tables; they start closed
+    const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set());
+    const toggle = (id: string) =>
+        setOpenIds((current) => {
+            const next = new Set(current);
+            if (!next.delete(id)) next.add(id);
+            return next;
+        });
     const regions = listRegions(design, filterText);
+    const { inside, outside } = areaTables(design, showViews);
+    // the schema is only named when the Tables list names it too
+    const showSchema = visibleSchemas(design, filter, showViews).length > 1;
+    // the tables of no area are for the whole list: not while it is narrowed
+    const showOutside = filterText.trim() === '' && outside.length > 0;
     return (
         <div className="space-y-2 p-2">
             <Header
@@ -173,67 +289,133 @@ const AreasList: React.FC = () => {
                     items={regions}
                     getId={(r) => r.id}
                     gap={8}
-                    renderItem={(region) => (
-                        <ActionRow
-                            testId="area-row"
-                            accent={region.tint}
-                            label={text('visuals.areaActions')}
-                            items={
-                                locked
-                                    ? null
-                                    : [
-                                          {
-                                              label: text('visuals.deleteArea'),
-                                              onSelect: () =>
-                                                  edit({
-                                                      type: 'item.remove',
-                                                      collection: 'regions',
-                                                      id: region.id,
-                                                  }),
-                                          },
-                                      ]
-                            }
-                        >
-                            <InlineName
-                                value={region.label}
-                                readOnly={locked}
-                                editLabel={text('visuals.editName')}
-                                className="text-sm font-medium"
-                                onSave={(label) =>
-                                    edit({
-                                        type: 'item.update',
-                                        collection: 'regions',
-                                        id: region.id,
-                                        patch: { label },
-                                    })
+                    keepIds={[...openIds]}
+                    renderItem={(region) => {
+                        const tables = inside.get(region.id) ?? [];
+                        const open = openIds.has(region.id);
+                        return (
+                            <ActionRow
+                                testId="area-row"
+                                accent={region.tint}
+                                label={text('visuals.areaActions')}
+                                below={
+                                    open ? (
+                                        <TableLines
+                                            tables={tables}
+                                            accent={region.tint}
+                                            showSchema={showSchema}
+                                            emptyText={text(
+                                                'visuals.noTablesInArea'
+                                            )}
+                                        />
+                                    ) : null
                                 }
-                            />
-                            <ColorPicker
-                                color={region.tint}
-                                disabled={locked}
-                                onChange={(tint) =>
-                                    edit({
-                                        type: 'item.update',
-                                        collection: 'regions',
-                                        id: region.id,
-                                        patch: { tint },
-                                    })
+                                items={
+                                    locked
+                                        ? null
+                                        : [
+                                              {
+                                                  label: text(
+                                                      'visuals.deleteArea'
+                                                  ),
+                                                  onSelect: () =>
+                                                      edit({
+                                                          type: 'item.remove',
+                                                          collection: 'regions',
+                                                          id: region.id,
+                                                      }),
+                                              },
+                                          ]
                                 }
-                            />
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className="size-8 shrink-0 text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-                                aria-label={text('common.focus')}
-                                onClick={() => focus(region.id)}
                             >
-                                <Crosshair />
-                            </Button>
-                        </ActionRow>
-                    )}
+                                <OpenButton
+                                    open={open}
+                                    label={text('visuals.toggleTables', {
+                                        name: region.label,
+                                    })}
+                                    onToggle={() => toggle(region.id)}
+                                />
+                                <InlineName
+                                    value={region.label}
+                                    readOnly={locked}
+                                    hint={text('tables.doubleClickToEdit')}
+                                    editLabel={text('visuals.editName')}
+                                    className="text-sm font-medium"
+                                    onActivate={() => toggle(region.id)}
+                                    actions={<Count count={tables.length} />}
+                                    onSave={(label) =>
+                                        edit({
+                                            type: 'item.update',
+                                            collection: 'regions',
+                                            id: region.id,
+                                            patch: { label },
+                                        })
+                                    }
+                                />
+                                <ColorPicker
+                                    color={region.tint}
+                                    disabled={locked}
+                                    onChange={(tint) =>
+                                        edit({
+                                            type: 'item.update',
+                                            collection: 'regions',
+                                            id: region.id,
+                                            patch: { tint },
+                                        })
+                                    }
+                                />
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-8 shrink-0 text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+                                    aria-label={text('common.focus')}
+                                    onClick={() => focus(region.id)}
+                                >
+                                    <Crosshair />
+                                </Button>
+                            </ActionRow>
+                        );
+                    }}
                 />
             )}
+            {design.regions.order.length > 0 && showOutside ? (
+                <ActionRow
+                    testId="outside-row"
+                    accent="hsl(var(--muted-foreground) / 0.5)"
+                    label=""
+                    items={null}
+                    below={
+                        openIds.has(OUTSIDE) ? (
+                            <TableLines
+                                tables={outside}
+                                accent="hsl(var(--muted-foreground) / 0.5)"
+                                showSchema={showSchema}
+                                emptyText=""
+                            />
+                        ) : null
+                    }
+                >
+                    <OpenButton
+                        open={openIds.has(OUTSIDE)}
+                        label={text('visuals.toggleTables', {
+                            name: text('visuals.outsideAreas'),
+                        })}
+                        onToggle={() => toggle(OUTSIDE)}
+                    />
+                    <button
+                        type="button"
+                        className="flex min-w-0 flex-1 items-center gap-1 rounded-full px-2 py-0.5 text-left text-sm font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggle(OUTSIDE)}
+                    >
+                        <span className="min-w-0 truncate">
+                            {text('visuals.outsideAreas')}
+                        </span>
+                        <span className="min-w-0 flex-1" />
+                        <Count count={outside.length} />
+                    </button>
+                </ActionRow>
+            ) : null}
         </div>
     );
 };
