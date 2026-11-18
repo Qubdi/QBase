@@ -933,28 +933,33 @@ export const adminRoutes =
 
         app.delete('/projects/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
-            const [exists] = await db
-                .select({ id: projects.id, name: projects.name })
-                .from(projects)
-                .where(eq(projects.id, id));
-            if (!exists) return reply.code(404).send({ error: 'not_found' });
             // Everything inside goes with the project: diagrams, and through the
             // foreign keys their locks, snapshots, share links and drift data, plus
-            // memberships and saved connections. One transaction: all or nothing.
+            // memberships and saved connections. One transaction: all or nothing,
+            // with its audit row. The project row is locked first, so a diagram
+            // created at the same moment either lands before the delete (and goes
+            // with it) or finds the project gone and is refused.
             const removed = await db.transaction(async (tx) => {
+                const [exists] = await tx
+                    .select({ id: projects.id, name: projects.name })
+                    .from(projects)
+                    .where(eq(projects.id, id))
+                    .for('update');
+                if (!exists) return null;
                 const gone = await tx
                     .delete(diagrams)
                     .where(eq(diagrams.projectId, id))
                     .returning({ id: diagrams.id });
                 await tx.delete(projects).where(eq(projects.id, id));
+                await audit(tx, {
+                    userId: req.user!.id,
+                    action: 'project.delete',
+                    // the project is gone, so keep its name for the log
+                    meta: { projectId: id, name: exists.name, diagrams: gone.length },
+                });
                 return gone.length;
             });
-            await audit(db, {
-                userId: req.user!.id,
-                action: 'project.delete',
-                // the project is gone, so keep its name for the log
-                meta: { projectId: id, name: exists.name, diagrams: removed },
-            });
+            if (removed === null) return reply.code(404).send({ error: 'not_found' });
             return reply.code(204).send();
         });
 

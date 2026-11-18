@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { eq } from 'drizzle-orm';
-import { diagramLocks, diagrams, sessions } from '../src/db/schema.js';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { eq, sql } from 'drizzle-orm';
+import { auditLog, diagramLocks, diagrams, projects, sessions } from '../src/db/schema.js';
 import {
     as,
     createTestApp,
@@ -438,6 +438,66 @@ describe('admin panel and projects', () => {
             const left = await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, d.id));
             expect(left).toHaveLength(0);
             expect((await call('GET', `/admin/projects/${p.id}/members`, admin)).statusCode).toBe(404);
+        });
+
+        it('answers 404 for a project that does not exist', async () => {
+            const res = await call('DELETE', '/admin/projects/00000000-0000-4000-8000-000000000000', admin);
+            expect(res.statusCode).toBe(404);
+        });
+
+        it('writes the delete audit row in the delete transaction: no row when the delete rolls back', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Rolls back' })).json();
+            const before = await ctx.db
+                .select({ id: auditLog.id })
+                .from(auditLog)
+                .where(eq(auditLog.action, 'project.delete'));
+            // a trigger that refuses the audit row makes the whole delete fail
+            await ctx.db.execute(sql`
+                create function aud_refuse_project_delete() returns trigger language plpgsql as
+                $$ begin if new.action = 'project.delete' then raise exception 'refused'; end if; return new; end $$`);
+            await ctx.db.execute(
+                sql`create trigger aud_refuse before insert on audit_log for each row execute function aud_refuse_project_delete()`
+            );
+            try {
+                const res = await call('DELETE', `/admin/projects/${p.id}`, admin);
+                expect(res.statusCode).toBe(500);
+            } finally {
+                await ctx.db.execute(sql`drop trigger aud_refuse on audit_log`);
+                await ctx.db.execute(sql`drop function aud_refuse_project_delete()`);
+            }
+            const stillThere = await ctx.db.select({ id: projects.id }).from(projects).where(eq(projects.id, p.id));
+            expect(stillThere).toHaveLength(1);
+            const after = await ctx.db
+                .select({ id: auditLog.id })
+                .from(auditLog)
+                .where(eq(auditLog.action, 'project.delete'));
+            expect(after).toHaveLength(before.length);
+        });
+
+        it('takes a diagram created at the same moment along, instead of failing with 500', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Race' })).json();
+            let created = '';
+            let release: () => void = () => undefined;
+            const gate = new Promise<void>((resolve) => (release = resolve));
+            // a diagram inserted but not yet committed holds a share lock on the project row
+            const inserting = ctx.db.transaction(async (tx) => {
+                const [row] = await tx
+                    .insert(diagrams)
+                    .values({ ownerId: admin.id, projectId: p.id, title: 'Late', content: sampleContent })
+                    .returning({ id: diagrams.id });
+                created = row.id;
+                await gate;
+            });
+            await vi.waitFor(() => expect(created).not.toBe(''));
+            const deleting = call('DELETE', `/admin/projects/${p.id}`, admin);
+            // the delete is waiting for the insert; let it commit
+            await new Promise((r) => setTimeout(r, 200));
+            release();
+            await inserting;
+            const res = await deleting;
+            expect(res.statusCode).toBe(204);
+            const left = await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, created));
+            expect(left).toHaveLength(0);
         });
 
         it('deletes an empty project', async () => {
