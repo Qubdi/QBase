@@ -130,6 +130,7 @@ export function convertDesign(
         );
         return false;
     });
+    const exportedById = new Map(exported.map((e) => [e.entity.id, e]));
     const nameOf = (t: ExportTable): string =>
         flavour === 'sqlite' &&
         t.entity.schema &&
@@ -137,7 +138,7 @@ export function convertDesign(
             ? `${t.entity.schema}_${t.entity.name}`
             : t.entity.name;
     const qualifiedName = (t: ExportTable['entity']): string => {
-        const own = exported.find((e) => e.entity.id === t.id);
+        const own = exportedById.get(t.id);
         if (flavour === 'sqlite') return q(own ? nameOf(own) : t.name);
         return t.schema && t.schema !== src.defaultSchema
             ? `${q(t.schema)}.${q(t.name)}`
@@ -447,7 +448,7 @@ export function convertDesign(
 
         // foreign keys
         const validFor = (fk: ExportForeignKey): string | undefined => {
-            const ref = exported.find((e) => e.entity.id === fk.referenced.id);
+            const ref = exportedById.get(fk.referenced.id);
             if (!ref) return 'the referenced table is not exported';
             const names = fk.referencedColumns.map((c) => c.id);
             const pk = ref.primary.map((c) => c.id);
