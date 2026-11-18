@@ -8,8 +8,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 47</b></div>
-  <h1>34 open across six lenses.</h1>
+  <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 48</b></div>
+  <h1>30 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · all containers removed · no secret read</span>
@@ -39,8 +39,8 @@
         <tr><td>Server</td><td>5</td><td>0</td><td>0</td><td>40</td><td>0</td></tr>
         <tr><td>Database</td><td>3</td><td>0</td><td>0</td><td>20</td><td>1</td></tr>
         <tr><td>Client</td><td>5</td><td>0</td><td>0</td><td>103</td><td>0</td></tr>
-        <tr><td>Dead code</td><td>4</td><td>0</td><td>0</td><td>41</td><td>0</td></tr>
-        <tr><td><b>Total</b></td><td>34</td><td>0</td><td>0</td><td>304</td><td>1</td></tr>
+        <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>45</td><td>0</td></tr>
+        <tr><td><b>Total</b></td><td>30</td><td>0</td><td>0</td><td>308</td><td>1</td></tr>
       </tbody>
     </table>
   </div>
@@ -75,8 +75,8 @@
   </a>
   <a class="idx-card repo" href="audit-deadcode.html">
     <h3>Dead code</h3>
-    <p>4 open findings.</p>
-    <p class="lbl">4 open &middot; 0 Crit &middot; 0 High &middot; 41 fixed &middot; 0 accepted</p>
+    <p>0 open findings.</p>
+    <p class="lbl">0 open &middot; 0 Crit &middot; 0 High &middot; 45 fixed &middot; 0 accepted</p>
   </a>
 </section>
 
@@ -86,6 +86,7 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
+        <tr><td>48</td><td>2026-11-18</td><td class="wrap-cell">4 fixed (dead code lens: DEAD-043 four unused account error texts removed; DEAD-044 one <code>openEventStream</code> helper for the lock and share streams; DEAD-045 test-only exports moved into test helpers; DEAD-046 save time uses <code>ago()</code>, <code>words-function.ts</code> removed); export and import round-trip tests added in <code>src/formats/export-import-cases.test.ts</code>; dead code lens has no open findings; 30 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>47</td><td>2026-11-18</td><td class="wrap-cell">Deep sweep of the lock-poke feature, admin project delete, client rework and vendored skills: 23 new (SEC-048, 049; REPO-077 to 083; SRV-042 to 046; DB-025; CLI-112 to 115; DEAD-043 to 046), 3 regressed (DB-009, CLI-019, REPO-006), 1 dropped (CLI-116), SEC-001 narrowed to pull refs; DB-001, 002, 003, 007, 012 moved from Accepted to Fixed where rev 32 put them; stray table fragment removed; 34 open, 0 Crit, 0 High; anchors remapped for open rows</td></tr>
         <tr><td>46</td><td>2026-11-13</td><td class="wrap-cell">2 fixed (CLI-110: all <code>qubdi.*</code> text translated into de, fr, it, ru, in <code>src/i18n/qubdi-locales/</code>; CLI-111: parity test now covers <code>qubdi.*</code>); client lens has no open findings; 8 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>45</td><td>2026-11-13</td><td class="wrap-cell">2 new (CLI-110: <code>qubdi.*</code> text and the navbar right side are English in de, fr, it, ru, supersedes the README note of CLI-106; CLI-111: parity test skips <code>qubdi.*</code>); 10 open, 0 Crit, 0 High; anchors not remapped</td></tr>

@@ -1,6 +1,6 @@
 # QBase — Audit
 
-**rev** 47 · **date** 2026-11-18
+**rev** 48 · **date** 2026-11-18
 **method** static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local `timeago.js` install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine `aud47-srv` 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs `aud47-srv` · drizzle-kit generate diff in scratch copy (empty) · throwaway postgres:18-alpine `aud47-db` seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in `node:24-slim` `aud47-dead` · all containers removed · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content; `.claude/skills/` content checked for secrets and licensing only
 
@@ -11,8 +11,8 @@
 | Server | 5 | 0 | 0 | 40 | 0 |
 | Database | 3 | 0 | 0 | 20 | 1 |
 | Client | 5 | 0 | 0 | 103 | 0 |
-| Dead code | 4 | 0 | 0 | 41 | 0 |
-| **Total** | 34 | 0 | 0 | 304 | 1 |
+| Dead code | 0 | 0 | 0 | 45 | 0 |
+| **Total** | 30 | 0 | 0 | 308 | 1 |
 
 ## Act first
 
@@ -79,12 +79,7 @@ None.
 
 ### Dead code
 
-| ID | Sev | Finding | Where | Fix |
-|----|-----|---------|-------|-----|
-| DEAD-043 | Low | Error text for four codes the server never sends, in five locales | `src/i18n/qubdi/account.ts:32`, `src/i18n/qubdi/account.ts:33`, `src/i18n/qubdi/account.ts:59`, `src/i18n/qubdi/account.ts:61` | Delete the four keys in all five locales |
-| DEAD-044 | Low | Lock-events SSE handshake duplicates the share SSE handshake | `server/src/diagrams/routes.ts:672`, `server/src/share/routes.ts:480` | Extract one shared `openSseStream` helper |
-| DEAD-045 | Low | Exports used only by tests: `initialFilter`, `defaultIntrospectorFactory` | `src/core/model/visibility-filter.ts:93`, `server/src/introspect/routes.ts:42` | Move both into test helpers |
-| DEAD-046 | Low | Two relative-time setups: timeago lang files beside i18n `ago.*` words | `src/pages/editor-page/top-navbar/last-saved.tsx:33`, `src/lib/qubdi/when.ts:19` | Use `ago()` from when.ts; drop timeago lang imports |
+None.
 
 ---
 
@@ -263,6 +258,10 @@ None.
 | CLI-056 | Client | Viewer loading text is not a live region; error and loading unannounced |
 | CLI-070 | Client | Late locale load calls changeLanguage, reverting a newer language pick |
 | CLI-078 | Client | Publish note input has placeholder only, no accessible name |
+| DEAD-046 | Dead code | Two relative-time setups: timeago lang files beside i18n `ago.*` words |
+| DEAD-045 | Dead code | Exports used only by tests: `initialFilter`, `defaultIntrospectorFactory` |
+| DEAD-044 | Dead code | Lock-events SSE handshake duplicates the share SSE handshake |
+| DEAD-043 | Dead code | Error text for four codes the server never sends, in five locales |
 | DEAD-037 | Dead code | JSON-map localStorage reader still copied beside shared `readJsonMap` |
 | DEAD-042 | Dead code | `isCurrentFormat` exported; zero references in src, server, shared, tools, CI |
 | DEAD-022 | Dead code | Unused en keys: canvas.entity openInPanel, narrow; region.colour; memo.colour; clipboard.failed |
@@ -470,6 +469,7 @@ Rows up to Stock Postgres from an earlier pass; last three measured in rev 47 on
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 48 | 2026-11-18 | 4 fixed (dead code lens: DEAD-043 four unused account error texts removed; DEAD-044 one `openEventStream` helper for the lock and share streams; DEAD-045 test-only exports moved into test helpers; DEAD-046 save time uses `ago()`, `words-function.ts` removed); export and import round-trip tests added in `src/formats/export-import-cases.test.ts`; dead code lens has no open findings; 30 open, 0 Crit, 0 High; anchors not remapped |
 | 47 | 2026-11-18 | Deep sweep of the lock-poke feature, admin project delete, client rework and vendored skills: 23 new (SEC-048, 049; REPO-077 to 083; SRV-042 to 046; DB-025; CLI-112 to 115; DEAD-043 to 046), 3 regressed (DB-009, CLI-019, REPO-006), 1 dropped (CLI-116), SEC-001 narrowed to pull refs; DB-001, 002, 003, 007, 012 moved from Accepted to Fixed where rev 32 put them; stray table fragment removed; 34 open, 0 Crit, 0 High; anchors remapped for open rows |
 | 46 | 2026-11-13 | 2 fixed (CLI-110: all `qubdi.*` text translated into de, fr, it, ru, in `src/i18n/qubdi-locales/`; CLI-111: parity test now covers `qubdi.*`); client lens has no open findings; 8 open, 0 Crit, 0 High; anchors not remapped |
 | 45 | 2026-11-13 | 2 new (CLI-110: `qubdi.*` text and the navbar right side are English in de, fr, it, ru, supersedes the README note of CLI-106; CLI-111: parity test skips `qubdi.*`); 10 open, 0 Crit, 0 High; anchors not remapped |
