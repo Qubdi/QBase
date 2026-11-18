@@ -230,7 +230,6 @@ export const sidePanelStrings = {
         groupBySchema: 'Group by Schema',
         groupByArea: 'Group by Area',
         show: 'Show',
-        hide: 'Hide',
         zoomTo: 'Zoom to {{name}}',
         noTables: 'No tables found',
         tryAdjusting: 'Try adjusting your search or filter',

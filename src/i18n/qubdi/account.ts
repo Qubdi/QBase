@@ -144,7 +144,6 @@ export const account = {
     },
     passwordField: {
         show: 'Show password',
-        hide: 'Hide password',
         placeholder: 'Password',
         rules: 'Password rules',
         met: ' (met)',

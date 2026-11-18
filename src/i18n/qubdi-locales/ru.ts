@@ -147,7 +147,6 @@ export const ru = {
         },
         passwordField: {
             show: 'Показать пароль',
-            hide: 'Скрыть пароль',
             placeholder: 'Пароль',
             rules: 'Правила для пароля',
             met: ' (выполнено)',

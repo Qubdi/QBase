@@ -834,7 +834,6 @@ export const ru = {
                     groupBySchema: 'Группировать по схеме',
                     groupByArea: 'Группировать по области',
                     show: 'Показать',
-                    hide: 'Скрыть',
                     zoomTo: 'Приблизить к {{name}}',
                     noTables: 'Таблицы не найдены',
                     tryAdjusting: 'Попробуйте изменить поиск или фильтр',

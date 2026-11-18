@@ -9,12 +9,19 @@ describe('PasswordInput', () => {
         const input = screen.getByLabelText('Secret') as HTMLInputElement;
         expect(input.type).toBe('password');
 
-        fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+        // CLI-113: one fixed name; aria-pressed carries the state
+        const eye = screen.getByRole('button', { name: 'Show password' });
+        expect(eye.getAttribute('aria-pressed')).toBe('false');
+
+        fireEvent.click(eye);
         expect(input.type).toBe('text');
         expect(input.value).toBe('hunter2');
+        expect(eye.getAttribute('aria-label')).toBe('Show password');
+        expect(eye.getAttribute('aria-pressed')).toBe('true');
 
-        fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+        fireEvent.click(eye);
         expect(input.type).toBe('password');
+        expect(eye.getAttribute('aria-pressed')).toBe('false');
     });
 
     it('does not submit the form when the eye is pressed', () => {

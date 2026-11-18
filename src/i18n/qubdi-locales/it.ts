@@ -147,7 +147,6 @@ export const it = {
         },
         passwordField: {
             show: 'Mostra password',
-            hide: 'Nascondi password',
             placeholder: 'Password',
             rules: 'Regole della password',
             met: ' (rispettata)',

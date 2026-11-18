@@ -153,7 +153,6 @@ export const de = {
         },
         passwordField: {
             show: 'Passwort anzeigen',
-            hide: 'Passwort verbergen',
             placeholder: 'Passwort',
             rules: 'Passwortregeln',
             met: ' (erfüllt)',

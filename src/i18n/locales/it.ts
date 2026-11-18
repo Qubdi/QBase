@@ -831,7 +831,6 @@ export const it = {
                     groupBySchema: 'Raggruppa per schema',
                     groupByArea: 'Raggruppa per area',
                     show: 'Mostra',
-                    hide: 'Nascondi',
                     zoomTo: 'Ingrandisci su {{name}}',
                     noTables: 'Nessuna tabella trovata',
                     tryAdjusting: 'Provare a modificare la ricerca o il filtro',

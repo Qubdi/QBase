@@ -836,7 +836,6 @@ export const fr = {
                     groupBySchema: 'Grouper par schéma',
                     groupByArea: 'Grouper par zone',
                     show: 'Afficher',
-                    hide: 'Masquer',
                     zoomTo: 'Zoomer sur {{name}}',
                     noTables: 'Aucune table trouvée',
                     tryAdjusting:

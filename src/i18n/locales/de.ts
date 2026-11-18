@@ -816,7 +816,6 @@ export const de = {
                     groupBySchema: 'Nach Schema gruppieren',
                     groupByArea: 'Nach Bereich gruppieren',
                     show: 'Anzeigen',
-                    hide: 'Ausblenden',
                     zoomTo: 'Auf {{name}} zoomen',
                     noTables: 'Keine Tabellen gefunden',
                     tryAdjusting: 'Passen Sie Ihre Suche oder Ihren Filter an',
