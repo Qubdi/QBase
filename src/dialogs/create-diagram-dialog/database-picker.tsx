@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Database, LayoutGrid } from 'lucide-react';
 import type { DatabaseType } from '@/core/model/database';
@@ -12,8 +12,11 @@ import { DATABASES } from './database-groups';
 const Card: React.FC<{
     type: DatabaseType;
     chosen: boolean;
+    /** the one card in the Tab order (roving tabindex) */
+    tabbable: boolean;
     onPick: (type: DatabaseType) => void;
-}> = ({ type, chosen, onPick }) => {
+    onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
+}> = ({ type, chosen, tabbable, onPick, onKeyDown }) => {
     const { resolvedTheme } = useTheme();
     const logo = databaseLogo(type, resolvedTheme);
     return (
@@ -21,7 +24,9 @@ const Card: React.FC<{
             type="button"
             role="radio"
             aria-checked={chosen}
+            tabIndex={tabbable ? 0 : -1}
             onClick={() => onPick(type)}
+            onKeyDown={onKeyDown}
             className={cn(
                 'flex size-32 flex-col items-center justify-center gap-2 rounded-md p-2 text-center text-sm text-muted-foreground transition-colors hover:bg-secondary max-sm:size-20',
                 chosen && 'bg-secondary text-foreground ring-2 ring-primary'
@@ -61,6 +66,34 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
     onExamples,
 }) => {
     const { t } = useTranslation();
+    // arrow keys move focus between the cards (Enter or Space picks one, which
+    // goes on to the next step); Tab visits a single card
+    const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+        const step =
+            e.key === 'ArrowRight' || e.key === 'ArrowDown'
+                ? 1
+                : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+                  ? -1
+                  : 0;
+        if (step === 0) return;
+        const cards = Array.from(
+            e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+                '[role="radio"]'
+            ) ?? []
+        );
+        const at = cards.indexOf(document.activeElement as HTMLButtonElement);
+        if (at < 0) return;
+        e.preventDefault();
+        const to = (at + step + cards.length) % cards.length;
+        setStop(DATABASES[to]);
+        cards[to].focus();
+    };
+    const [stop, setStop] = useState<DatabaseType | undefined>(undefined);
+    const tabStop =
+        stop ??
+        (value !== undefined && DATABASES.includes(value)
+            ? value
+            : DATABASES[0]);
     return (
         <div className="mb-4 flex min-w-0 flex-col">
             <div
@@ -73,7 +106,9 @@ export const DatabasePicker: React.FC<DatabasePickerProps> = ({
                         key={type}
                         type={type}
                         chosen={value === type}
+                        tabbable={type === tabStop}
                         onPick={onPick}
+                        onKeyDown={onKeyDown}
                     />
                 ))}
             </div>

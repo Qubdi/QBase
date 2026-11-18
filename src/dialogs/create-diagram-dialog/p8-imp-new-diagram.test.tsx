@@ -44,6 +44,25 @@ describe('IMP-004 step 1 of the new diagram dialog', () => {
         );
         expect((await adapter.list())[0].databaseType).toBe('oracle');
     });
+    it('CLI-135: one card is a Tab stop, and arrow keys move focus between cards without picking', async () => {
+        renderInEditor(
+            <CreateDiagramDialog dialog={{ open: true }} />,
+            null,
+            '/'
+        );
+        const radios = await screen.findAllByRole('radio');
+        expect(radios.map((r) => r.tabIndex)).toEqual([-1, 0, -1, -1, -1, -1]);
+        radios[1].focus();
+        fireEvent.keyDown(radios[1], { key: 'ArrowRight' });
+        expect(document.activeElement).toBe(radios[2]);
+        expect(radios.map((r) => r.tabIndex)).toEqual([-1, -1, 0, -1, -1, -1]);
+        fireEvent.keyDown(radios[2], { key: 'ArrowLeft' });
+        fireEvent.keyDown(radios[1], { key: 'ArrowLeft' });
+        expect(document.activeElement).toBe(radios[0]);
+        fireEvent.keyDown(radios[0], { key: 'ArrowLeft' });
+        expect(document.activeElement).toBe(radios[5]);
+        expect(screen.getAllByRole('radio').length).toBe(6);
+    });
     it('the cards carry the logo of their database', async () => {
         renderInEditor(
             <CreateDiagramDialog dialog={{ open: true }} />,
