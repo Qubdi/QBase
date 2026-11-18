@@ -153,12 +153,16 @@ const publishBody = z
 export const PUBLISH_RATE_LIMIT = 20;
 
 export const diagramRoutes =
-    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays' | 'cookieSecure' | 'corsOrigin' | 'sseHeartbeatSeconds'>): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays' | 'cookieSecure' | 'corsOrigin' | 'sseHeartbeatSeconds' | 'sseMaxLockPerUser'>): FastifyPluginAsync =>
     async (app) => {
         const publishLimit = sharedUserLimit(PUBLISH_RATE_LIMIT);
         // every open lock stream's close, so shutting the app down ends them: an
         // open stream would otherwise keep the server from closing for ever
         const openStreams = new Set<() => void>();
+        // how many lock streams each user has open here: one tab holds one, so a
+        // person with many tabs has many, but not without limit (a script could
+        // otherwise open thousands, each with its own heartbeat and queries)
+        const streamsOf = new Map<string, number>();
         // preClose runs before the server waits for its connections to end
         app.addHook('preClose', async () => {
             for (const closeStream of [...openStreams]) closeStream();
@@ -678,7 +682,14 @@ export const diagramRoutes =
             // 'close' event has then already fired and will not fire again.
             if (req.raw.destroyed) return reply.hijack();
 
+            if ((streamsOf.get(user.id) ?? 0) >= config.sseMaxLockPerUser) {
+                return reply.code(429).send({ error: 'too_many_streams' });
+            }
+
             const raw = openEventStream(req, reply, config);
+            // no await between the check above and this count, so two requests
+            // cannot both pass at the limit; `close` gives it back
+            streamsOf.set(user.id, (streamsOf.get(user.id) ?? 0) + 1);
 
             let closed = false;
             const cleanup: Array<() => void> = [];
@@ -686,6 +697,9 @@ export const diagramRoutes =
                 if (closed) return;
                 closed = true;
                 openStreams.delete(close);
+                const left = (streamsOf.get(user.id) ?? 1) - 1;
+                if (left > 0) streamsOf.set(user.id, left);
+                else streamsOf.delete(user.id);
                 cleanup.forEach((fn) => fn());
                 raw.end();
             };
