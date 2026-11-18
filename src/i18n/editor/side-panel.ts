@@ -179,6 +179,8 @@ export const sidePanelStrings = {
         enumValues: 'Enum Values',
         enum: 'Enum',
         composite: 'Composite',
+        alias: 'Alias',
+        baseType: 'Based on (for example varchar(11))',
         valuePlaceholder: 'Add enum value...',
         addValue: 'Add value',
         removeValue: 'Remove {{value}}',

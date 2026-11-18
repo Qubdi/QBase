@@ -778,6 +778,8 @@ export const it = {
                     enumValues: "Valori dell'enum",
                     enum: 'Enum',
                     composite: 'Composto',
+                    alias: 'Alias',
+                    baseType: 'Basato su (ad esempio varchar(11))',
                     valuePlaceholder: 'Aggiungi valore enum...',
                     addValue: 'Aggiungi valore',
                     removeValue: 'Rimuovi {{value}}',

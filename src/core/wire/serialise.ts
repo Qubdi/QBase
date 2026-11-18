@@ -164,6 +164,7 @@ function wireUserType(type: UserType, order: number): RawRecord {
         name: type.name,
         kind: type.kind,
         values: type.values,
+        baseType: type.base,
         fields: type.members?.map((m) => ({ field: m.name, type: m.type })),
         order,
     });

@@ -1,7 +1,7 @@
 import type { ExtraKeys, TypeRef } from './column';
 import type { Id } from './id';
 
-export type UserTypeKind = 'enum' | 'composite';
+export type UserTypeKind = 'enum' | 'composite' | 'alias';
 
 export interface CompositeMember {
     name: string;
@@ -9,7 +9,7 @@ export interface CompositeMember {
     type: string;
 }
 
-/** An enum or composite type declared in the database. */
+/** An enum, composite or alias type declared in the database. */
 export interface UserType {
     id: Id;
     schema?: string;
@@ -19,6 +19,8 @@ export interface UserType {
     values?: string[];
     /** composite members, in order */
     members?: CompositeMember[];
+    /** alias types (SQL Server): the type it is made from, as text, e.g. `varchar(11)` */
+    base?: string;
     extra?: ExtraKeys;
 }
 

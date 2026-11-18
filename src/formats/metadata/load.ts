@@ -99,12 +99,14 @@ export function loadFromDatabaseMetadata(
             kind: t.kind,
             ...(t.kind === 'enum'
                 ? { values: t.values ?? [] }
-                : {
-                      members: (t.fields ?? []).map((f) => ({
-                          name: f.field,
-                          type: f.type,
-                      })),
-                  }),
+                : t.kind === 'alias'
+                  ? { base: t.base_type ?? '' }
+                  : {
+                        members: (t.fields ?? []).map((f) => ({
+                            name: f.field,
+                            type: f.type,
+                        })),
+                    }),
         });
     }
 

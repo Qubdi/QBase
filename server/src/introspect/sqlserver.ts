@@ -128,6 +128,18 @@ export const SQLSERVER_QUERIES = {
         JOIN sys.schemas s ON s.schema_id = t.schema_id
         WHERE t.is_ms_shipped = 0 AND ${SCHEMA_FILTER('s')}
         ORDER BY s.name, t.name, cc.name`,
+
+    // alias types (CREATE TYPE ... FROM): the user-defined scalar types, with
+    // the system type each is made from
+    aliasTypes: `
+        SELECT s.name AS [schema], ty.name AS name, bt.name AS base,
+               ty.max_length AS max_length, ty.precision AS [precision], ty.scale AS scale
+        FROM sys.types ty
+        JOIN sys.schemas s ON s.schema_id = ty.schema_id
+        JOIN sys.types bt ON bt.user_type_id = ty.system_type_id AND bt.is_user_defined = 0
+        WHERE ty.is_user_defined = 1 AND ty.is_assembly_type = 0 AND ty.is_table_type = 0
+          AND ${SCHEMA_FILTER('s')}
+        ORDER BY s.name, ty.name`,
 } as const;
 
 // --- pure conversion helpers (unit tested without a server) -----------------
@@ -172,6 +184,22 @@ export function mssqlColumnShape(
         };
     }
     return { characterMaximumLength: null, precision: null };
+}
+
+/** The text an alias type is made from: `varchar(11)`, `decimal(10,2)`, `int`. */
+export function aliasBaseType(
+    base: string,
+    maxLength: number,
+    precision: number,
+    scale: number
+): string {
+    const t = base.toLowerCase();
+    const shape = mssqlColumnShape(t, maxLength, precision, scale);
+    if (shape.characterMaximumLength !== null)
+        return `${t}(${shape.characterMaximumLength})`;
+    if (EXACT_NUMERIC.has(t)) return `${t}(${precision},${scale})`;
+    if (FRACTIONAL.has(t)) return `${t}(${scale})`;
+    return t;
 }
 
 const action = (desc: unknown) => String(desc ?? 'NO_ACTION').replace(/_/g, ' ');
@@ -305,6 +333,7 @@ export class SqlServerIntrospector implements Introspector {
         const fks = await this.query(SQLSERVER_QUERIES.foreignKeys, schemas);
         const indexes = await this.query(SQLSERVER_QUERIES.indexes, schemas);
         const checks = await this.query(SQLSERVER_QUERIES.checks, schemas);
+        const aliasTypes = await this.query(SQLSERVER_QUERIES.aliasTypes, schemas);
 
         return {
             database_name: String(server.database_name),
@@ -406,9 +435,19 @@ export class SqlServerIntrospector implements Introspector {
                 table: String(c.table),
                 expression: String(c.expression),
             })),
-            // SQL Server has no enum or composite types to list; its alias
-            // types travel as `domain` on the columns that use them
-            custom_types: [],
+            // SQL Server has no enum or composite types; its alias types are
+            // listed here, and also travel as `domain` on the columns that use them
+            custom_types: aliasTypes.map((a) => ({
+                schema: String(a.schema),
+                type: String(a.name),
+                kind: 'alias' as const,
+                base_type: aliasBaseType(
+                    String(a.base),
+                    Number(a.max_length),
+                    Number(a.precision),
+                    Number(a.scale)
+                ),
+            })),
         };
     }
 

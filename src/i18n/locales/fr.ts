@@ -783,6 +783,8 @@ export const fr = {
                     enumValues: "Valeurs de l'énumération",
                     enum: 'Enum',
                     composite: 'Composite',
+                    alias: 'Alias',
+                    baseType: 'Basé sur (par exemple varchar(11))',
                     valuePlaceholder: "Ajouter une valeur d'enum...",
                     addValue: 'Ajouter une valeur',
                     removeValue: 'Retirer {{value}}',

@@ -83,8 +83,10 @@ export function planSetUserTypeKind(id: Id, kind: UserTypeKind): Command {
         id,
         patch:
             kind === 'enum'
-                ? { kind, values: [], members: undefined }
-                : { kind, members: [], values: undefined },
+                ? { kind, values: [], members: undefined, base: undefined }
+                : kind === 'composite'
+                  ? { kind, members: [], values: undefined, base: undefined }
+                  : { kind, base: '', values: undefined, members: undefined },
     };
 }
 

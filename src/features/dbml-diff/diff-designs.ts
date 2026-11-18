@@ -114,7 +114,12 @@ function linkSignature(
 }
 
 const typeSignature = (t: UserType) =>
-    JSON.stringify([t.kind, t.values ?? null, t.members ?? null]);
+    JSON.stringify([
+        t.kind,
+        t.values ?? null,
+        t.members ?? null,
+        t.base ?? null,
+    ]);
 
 /** Compares the current design with the one parsed from edited DBML. */
 export function diffDesigns(current: Design, parsed: Design): DesignDiff {

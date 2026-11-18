@@ -84,7 +84,10 @@ function readBase(
     ): NeutralRead => ({ neutral, ...extra });
     const length =
         typeof column.length === 'number' ? column.length : undefined;
-    const custom = userTypes.find((t) => t.name === column.type.name);
+    // an alias type reaches a column as its base type, with the alias as `domain`
+    const custom = userTypes.find(
+        (t) => t.kind !== 'alias' && t.name === column.type.name
+    );
     if (custom)
         return custom.kind === 'enum'
             ? n({ kind: 'enum', values: custom.values ?? [] })

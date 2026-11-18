@@ -52,6 +52,13 @@ export const MSSQL_DDL = [
             REFERENCES shop.orders (id) ON DELETE NO ACTION ON UPDATE CASCADE
     )`,
     `CREATE VIEW shop.paid_orders AS SELECT id, customer_id FROM shop.orders WHERE note IS NOT NULL`,
+    // alias types (DB-006): sized, scaled, max and plain
+    `CREATE TYPE dbo.ssn_type FROM varchar(11) NOT NULL`,
+    `CREATE TYPE dbo.money_amt FROM decimal(10,2) NULL`,
+    `CREATE TYPE dbo.nickname FROM nvarchar(50) NULL`,
+    `CREATE TYPE dbo.blob_max FROM varbinary(max) NULL`,
+    `CREATE TYPE shop.stamp FROM datetime2(3) NOT NULL`,
+    `CREATE TYPE shop.flag_int FROM int NOT NULL`,
 ];
 
 export async function mssqlAvailable(): Promise<boolean> {

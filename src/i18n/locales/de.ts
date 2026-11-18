@@ -762,6 +762,8 @@ export const de = {
                     enumValues: 'Enum-Werte',
                     enum: 'Enum',
                     composite: 'Zusammengesetzt',
+                    alias: 'Alias',
+                    baseType: 'Basiert auf (zum Beispiel varchar(11))',
                     valuePlaceholder: 'Enum-Wert hinzufügen ...',
                     addValue: 'Wert hinzufügen',
                     removeValue: '{{value}} entfernen',

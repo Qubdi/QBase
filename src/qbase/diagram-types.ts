@@ -35,6 +35,7 @@ export type DatabaseEdition =
 export const DBCustomTypeKind = valueTable({
     enum: 'enum',
     composite: 'composite',
+    alias: 'alias',
 });
 export type DBCustomTypeKind =
     (typeof DBCustomTypeKind)[keyof typeof DBCustomTypeKind];
@@ -152,7 +153,8 @@ const customType = z.object({
     id,
     name: z.string(),
     schema: text,
-    kind: z.enum(['enum', 'composite']),
+    kind: z.enum(['enum', 'composite', 'alias']),
+    baseType: maybe(z.string()),
     values: maybe(z.array(z.string())),
     fields: maybe(z.array(z.object({ field: z.string(), type: z.string() }))),
     order: maybe(z.number()),

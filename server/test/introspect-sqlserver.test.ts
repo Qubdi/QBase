@@ -224,6 +224,22 @@ describe.skipIf(!up)(`SQL Server introspection against a real database${up ? '' 
         }
     });
 
+    it('DB-006: alias types are listed with the type each is made from', () => {
+        expect(meta.custom_types).toEqual([
+            { schema: 'dbo', type: 'blob_max', kind: 'alias', base_type: 'varbinary(max)' },
+            { schema: 'dbo', type: 'money_amt', kind: 'alias', base_type: 'decimal(10,2)' },
+            { schema: 'dbo', type: 'nickname', kind: 'alias', base_type: 'nvarchar(50)' },
+            { schema: 'dbo', type: 'ssn_type', kind: 'alias', base_type: 'varchar(11)' },
+            { schema: 'shop', type: 'flag_int', kind: 'alias', base_type: 'int' },
+            { schema: 'shop', type: 'stamp', kind: 'alias', base_type: 'datetime2(3)' },
+        ]);
+    });
+
+    it('DB-006: a schema filter keeps only the alias types of that schema', async () => {
+        const only = await intro.introspect({ schemas: ['shop'] });
+        expect(only.custom_types?.map((t) => t.type)).toEqual(['flag_int', 'stamp']);
+    });
+
     it('fails with wrong credentials', async () => {
         await expect(
             connectSqlServer(

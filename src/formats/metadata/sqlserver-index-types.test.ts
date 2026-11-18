@@ -53,6 +53,14 @@ const META = {
     ],
     pk_info: [],
     fk_info: [],
+    custom_types: [
+        {
+            schema: 'dbo',
+            type: 'ssn_type',
+            kind: 'alias',
+            base_type: 'varchar(11)',
+        },
+    ],
     indexes: [
         idx('facts', 'cci_facts', 'a', 'CLUSTERED COLUMNSTORE', 1),
         idx('facts', 'cci_facts', 'b', 'CLUSTERED COLUMNSTORE', 2),
@@ -94,5 +102,32 @@ describe('SQL Server metadata: indexes without key columns, alias types', () => 
             .find((c) => c.name === 'ssn')!;
         expect(ssn.domain).toBe('ssn_type');
         expect(ssn.type.name).toBe('varchar');
+    });
+
+    it('DB-006: an alias type is listed as a custom type with the type it is made from', () => {
+        const types = listOf(design.userTypes);
+        expect(types).toHaveLength(1);
+        expect(types[0]).toMatchObject({
+            name: 'ssn_type',
+            kind: 'alias',
+            base: 'varchar(11)',
+        });
+        // it is not read as an enum or composite
+        expect(types[0].values).toBeUndefined();
+        expect(types[0].members).toBeUndefined();
+    });
+
+    it('an alias type without a base in the metadata loads with an empty base', () => {
+        const meta = DatabaseMetadata.parse({
+            ...META,
+            custom_types: [{ schema: 'dbo', type: 'odd', kind: 'alias' }],
+        });
+        const { design: d } = loadFromDatabaseMetadata({
+            databaseType: 'sql_server',
+            databaseMetadata: meta,
+            now: 1,
+            random: rng(),
+        });
+        expect(listOf(d.userTypes)[0].base).toBe('');
     });
 });

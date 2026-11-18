@@ -781,6 +781,8 @@ export const ru = {
                     enumValues: 'Значения перечисления',
                     enum: 'Перечисление',
                     composite: 'Составной',
+                    alias: 'Псевдоним',
+                    baseType: 'Основан на (например, varchar(11))',
                     valuePlaceholder: 'Добавить значение перечисления...',
                     addValue: 'Добавить значение',
                     removeValue: 'Удалить {{value}}',
