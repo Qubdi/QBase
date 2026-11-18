@@ -29,6 +29,18 @@ describe('counters shared through Postgres', () => {
     });
 
     describe('the counter store', () => {
+        it('SEC-036: holds a window of 30 days, longer than a 32-bit count of milliseconds', async () => {
+            const store = createDbCounters(a.db);
+            const month = 30 * 86_400_000;
+            const first = await store.hit('t:month', month);
+            expect(first.count).toBe(1);
+            expect(first.resetInMs).toBeGreaterThan(month - 60_000);
+            const seen = await store.peek('t:month');
+            expect(seen?.count).toBe(1);
+            expect(seen?.resetInMs).toBeGreaterThan(month - 60_000);
+            await store.clear('t:month');
+        });
+
         it('counts up inside a window and reports the time left', async () => {
             const store = createDbCounters(a.db);
             expect((await store.hit('t:up', 60_000)).count).toBe(1);

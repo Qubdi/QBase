@@ -6,13 +6,13 @@
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
-| Security & secrets | 2 | 0 | 0 | 45 | 0 |
+| Security & secrets | 1 | 0 | 0 | 46 | 0 |
 | Repository | 3 | 0 | 0 | 64 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 5 | 0 | 0 | 353 | 2 |
+| **Total** | 4 | 0 | 0 | 354 | 2 |
 
 ## Act first
 
@@ -27,7 +27,6 @@ None.
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SEC-001 | Med | Old SA password in 65 pull refs; old `.env.example` keys in 30 | `.gitleaks.toml:4` | Rotate both; ask GitHub to purge pull refs |
-| SEC-036 | Med | Account-wide sign-in lockout checked before password; strangers lock out any account | `server/src/auth/routes.ts:223`, `server/src/auth/guards.ts:41` | Add delay instead of hard 429, or let correct password through |
 
 ### Repository
 
@@ -61,6 +60,7 @@ None.
 
 | ID | Lens | Finding |
 |----|------|---------|
+| SEC-036 | Security & secrets | Account-wide sign-in lockout checked before password; strangers lock out any account |
 | SEC-037 | Security & secrets | Stolen admin session creates or promotes an admin with no step-up |
 | SEC-048 | Security & secrets | Stolen admin session deletes a project and all its diagrams, no step-up |
 | SEC-049 | Security & secrets | Writer picks `editorId` starting `handoff:`; its lock then refuses every poke |

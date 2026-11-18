@@ -254,7 +254,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`, or the server warns at start that the cookie goes out without `Secure`). A Secure cookie is named `__Host-qbase_session`, otherwise `qbase_session`; either name is accepted |
 | `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
 | `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) from one address before it is locked out of an account; failures from all addresses together lock the account at five times this |
-| `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |
+| `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked address, or a locked account, waits. One address locks only itself. Failures from many addresses together can lock an account for every new address, but an address the person signed in from in the last 30 days still has its password checked, so strangers cannot keep the owner out |
 | `PASSWORD_MIN_LENGTH` | `12` | Fewest characters of a new password. Cannot be set below 8. Applies when a password is set, never at sign-in |
 | `SESSION_DAYS` | `30` | Longest a session lasts, in days (1 to 3650) |
 | `SESSION_IDLE_DAYS` | `14` | A session unused for this many days ends early; `0` = only `SESSION_DAYS` applies |

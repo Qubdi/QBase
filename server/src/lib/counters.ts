@@ -77,7 +77,7 @@ export function createDbCounters(db: Db): CounterStore {
                     expires_at = case when rate_counters.expires_at <= now()
                                       then excluded.expires_at else rate_counters.expires_at end
                 returning count,
-                    (extract(epoch from (expires_at - now())) * 1000)::int as left_ms
+                    (extract(epoch from (expires_at - now())) * 1000)::bigint as left_ms
             `);
             const row = res.rows[0];
             if (!row) throw new Error('rate_counters: the upsert returned no row');
@@ -86,7 +86,7 @@ export function createDbCounters(db: Db): CounterStore {
         async peek(key) {
             const res = await db.execute<{ count: number; left_ms: number }>(sql`
                 select count,
-                    (extract(epoch from (expires_at - now())) * 1000)::int as left_ms
+                    (extract(epoch from (expires_at - now())) * 1000)::bigint as left_ms
                 from rate_counters
                 where key = ${key} and expires_at > now()
             `);
