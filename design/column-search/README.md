@@ -48,7 +48,7 @@ one string each: `filters.title` and the toolbar's `filter` in `canvas-strings.t
 | | Look | Why not |
 | --- | --- | --- |
 | Today | Table names only | The reason for this record. |
-| B | A, with "Search in: Tables / Columns" switches under the box | Lets you leave table names out so that "id" does not bring in every table with "id" in its name, but adds a row of controls to a small panel. Can be added on top of A later: `buildTree` would take the two switches. |
+| B | A, with "Search in: Tables / Columns" switches under the box | Not at first, for the extra row; done next as two switches inside the box, so that "id" need not bring in every table with "id" in its name: see [search-scope](../search-scope/README.md). |
 | C | Two boxes, one for tables and one for columns, both must match | The most exact, and the most to look at and to clear. |
 
 ## Regenerating the pictures

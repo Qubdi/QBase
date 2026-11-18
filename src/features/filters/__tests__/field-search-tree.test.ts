@@ -61,6 +61,66 @@ describe('the search finds fields as well as tables', () => {
         expect(tree('zzz')).toEqual([]);
     });
 
+    describe('where the text is looked for', () => {
+        const scoped = (
+            text: string,
+            scope: { tables: boolean; fields: boolean }
+        ) =>
+            buildTree({
+                design,
+                filter: {},
+                groupBy: 'schema',
+                text,
+                scope,
+                showViews: true,
+            }).flatMap((g) =>
+                g.tables.map((t) => [t.entity.name, t.fields.length])
+            );
+
+        it('looks in both by default', () => {
+            const both = buildTree({
+                design,
+                filter: {},
+                groupBy: 'schema',
+                text: 'email',
+                scope: { tables: true, fields: true },
+                showViews: true,
+            });
+            expect(both).toEqual(tree('email'));
+        });
+
+        it('with tables only, reads table names and lists no fields', () => {
+            const tablesOnly = { tables: true, fields: false };
+            expect(scoped('prod', tablesOnly)).toEqual([['products', 0]]);
+            // "email" is in field names only
+            expect(scoped('email', tablesOnly)).toEqual([]);
+        });
+
+        it('with fields only, lists a table for a field that matches and for nothing else', () => {
+            const fieldsOnly = { tables: false, fields: true };
+            expect(scoped('email', fieldsOnly)).toEqual([
+                ['customers', 1],
+                ['orders', 2],
+                ['users', 2],
+            ]);
+            // "prod" is in a table name only
+            expect(scoped('prod', fieldsOnly)).toEqual([]);
+        });
+
+        it('lists every table, with no fields, when there is no text, whatever the scope', () => {
+            for (const scope of [
+                { tables: true, fields: false },
+                { tables: false, fields: true },
+            ])
+                expect(scoped('', scope)).toEqual([
+                    ['customers', 0],
+                    ['orders', 0],
+                    ['users', 0],
+                    ['products', 0],
+                ]);
+        });
+    });
+
     it('does not change which tables are shown', () => {
         const filter = setTableShown(
             design,

@@ -803,6 +803,10 @@ export const de = {
                 filters: {
                     title: 'Suchen & Filtern',
                     search: 'Tabellen oder Felder suchen ...',
+                    searchOnlyTables: 'Tabellen suchen ...',
+                    searchOnlyFields: 'Felder suchen ...',
+                    searchInTables: 'In Tabellennamen suchen',
+                    searchInFields: 'In Feldnamen suchen',
                     showMoreFields: 'Noch {{count}} anzeigen',
                     showFewerFields: 'Weniger anzeigen',
                     focusField: 'Fokussieren: {{table}}.{{field}}',

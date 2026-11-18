@@ -821,6 +821,10 @@ export const ru = {
                 filters: {
                     title: 'Поиск и фильтр',
                     search: 'Поиск таблиц или полей...',
+                    searchOnlyTables: 'Поиск таблиц...',
+                    searchOnlyFields: 'Поиск полей...',
+                    searchInTables: 'Искать в названиях таблиц',
+                    searchInFields: 'Искать в названиях полей',
                     showMoreFields: 'Показать ещё {{count}}',
                     showFewerFields: 'Показать меньше',
                     focusField: 'Выделить {{table}}.{{field}}',

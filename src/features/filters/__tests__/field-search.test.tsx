@@ -166,3 +166,84 @@ describe('the search finds fields as well as tables', () => {
         expect(screen.queryByTestId('filter-fields')).toBeNull();
     });
 });
+
+describe('the switches in the search box say where the text is looked for', () => {
+    const box = () => screen.getByRole('textbox');
+    const tablesSwitch = () =>
+        screen.getByRole('button', { name: 'Search in table names' });
+    const fieldsSwitch = () =>
+        screen.getByRole('button', { name: 'Search in field names' });
+    const typed = async (text: string) => {
+        await userEvent.clear(box());
+        await userEvent.type(box(), text);
+    };
+
+    it('are both on to begin with', () => {
+        show();
+        expect(tablesSwitch().getAttribute('aria-pressed')).toBe('true');
+        expect(fieldsSwitch().getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('with Fields off, search table names only: no fields are read or listed', async () => {
+        show();
+        await userEvent.click(fieldsSwitch());
+        expect(fieldsSwitch().getAttribute('aria-pressed')).toBe('false');
+        expect(box().getAttribute('placeholder')).toBe('Search tables...');
+        await typed('email');
+        expect(screen.getByText('No tables found')).toBeTruthy();
+        await typed('prod');
+        expect(tableNames()).toEqual(['products']);
+        expect(screen.queryByTestId('filter-fields')).toBeNull();
+    });
+
+    it('with Tables off, search field names only: a table found by its name alone is left out', async () => {
+        show();
+        await userEvent.click(tablesSwitch());
+        expect(tablesSwitch().getAttribute('aria-pressed')).toBe('false');
+        expect(box().getAttribute('placeholder')).toBe('Search fields...');
+        await typed('prod');
+        expect(screen.getByText('No tables found')).toBeTruthy();
+        await typed('email');
+        expect(tableNames()).toEqual(['customers', 'orders', 'users']);
+        expect(fieldNames('customers')).toEqual(['Focus customers.email']);
+    });
+
+    it('switch back to looking in both', async () => {
+        show();
+        await userEvent.click(fieldsSwitch());
+        await userEvent.click(fieldsSwitch());
+        expect(box().getAttribute('placeholder')).toBe(
+            'Search tables or fields...'
+        );
+        await typed('email');
+        expect(tableNames()).toEqual(['customers', 'orders', 'users']);
+    });
+
+    it('keep one of the two on: the last one cannot be switched off', async () => {
+        show();
+        await userEvent.click(fieldsSwitch());
+        await userEvent.click(tablesSwitch());
+        expect(tablesSwitch().getAttribute('aria-pressed')).toBe('true');
+        expect(fieldsSwitch().getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('leave the focus in the box, so typing can go on', async () => {
+        show();
+        await userEvent.click(fieldsSwitch());
+        expect(document.activeElement).toBe(box());
+    });
+
+    it('do not change what is hidden', async () => {
+        const design = fields();
+        const { store } = renderPanel(
+            <FilterPanel onClose={() => undefined} />,
+            design,
+            { filter: { tableIds: [design.entities.order[0]] } }
+        );
+        await userEvent.click(tablesSwitch());
+        await typed('email');
+        expect(selectFilter(store.getState())).toEqual({
+            tableIds: [design.entities.order[0]],
+        });
+    });
+});

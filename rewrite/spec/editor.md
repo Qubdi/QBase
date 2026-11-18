@@ -271,6 +271,16 @@ growing the area if they do not fit), **Delete Area**.
   centres it and **focuses the field** on the canvas, as a click on the field's row in
   the table card does: the field is marked and the tables not related to it stand back.
   Hidden tables that match are listed, greyed.
+- **Where the text is looked for** (since 2026-11-18): two small icon switches sit inside
+  the right end of the search box, **Search in table names** (table icon) and **Search in
+  field names** (list icon), both on to begin with. With only tables on, the box reads
+  "Search tables...", field names are not read and no fields are listed (the panel as it was
+  before field search). With only fields on, it reads "Search fields...", and a table is
+  listed only for a field that matches: a table found by its name alone is left out. One
+  switch always stays on (the last one cannot be switched off). A click on a switch leaves
+  the focus in the box. With no text in the box the switches change nothing. They are kept
+  with the panel: closing it, like clearing the text or the Group by choice, puts both back
+  on.
 - When nothing matches: "No tables found" with the hint "Try adjusting your search or
   filter" and a **Clear filter** button. If the diagram has no tables at all: "No tables
   found" with "Create a table to get started".

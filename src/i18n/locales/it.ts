@@ -818,6 +818,10 @@ export const it = {
                 filters: {
                     title: 'Cerca e filtra',
                     search: 'Cerca tabelle o campi...',
+                    searchOnlyTables: 'Cerca tabelle...',
+                    searchOnlyFields: 'Cerca campi...',
+                    searchInTables: 'Cerca nei nomi delle tabelle',
+                    searchInFields: 'Cerca nei nomi dei campi',
                     showMoreFields: 'Mostra altri {{count}}',
                     showFewerFields: 'Mostra meno',
                     focusField: 'Evidenzia {{table}}.{{field}}',

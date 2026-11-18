@@ -218,6 +218,10 @@ export const sidePanelStrings = {
     filters: {
         title: 'Search & Filter',
         search: 'Search tables or fields...',
+        searchOnlyTables: 'Search tables...',
+        searchOnlyFields: 'Search fields...',
+        searchInTables: 'Search in table names',
+        searchInFields: 'Search in field names',
         showMoreFields: 'Show {{count}} more',
         showFewerFields: 'Show fewer',
         focusField: 'Focus {{table}}.{{field}}',
