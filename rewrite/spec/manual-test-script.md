@@ -271,11 +271,12 @@ Use S1 plus two more tables.
 
 ## 11. Filters and visibility
 
-- [ ] **MT-180** Press Mod+F, then the toolbar Filter button -> a floating "Filter Tables" panel opens and closes on each press; Mod+F works while typing in a text box too (rows: EDT-061, EDT-265)
-- [ ] **MT-181** Look at the panel -> a focused box "Search tables..." and a toggle "Group by Schema" / "Group by Area" (rows: EDT-062)
+- [ ] **MT-180** Press Mod+F, then the toolbar Filter button -> a floating "Search & Filter" panel opens and closes on each press; Mod+F works while typing in a text box too (rows: EDT-061, EDT-265)
+- [ ] **MT-181** Look at the panel -> a focused box "Search tables or fields..." and a toggle "Group by Schema" / "Group by Area" (rows: EDT-062)
 - [ ] **MT-182** Use the eye of a table and of a group; use zoom-to on both -> the table or all tables of the group hide and show; zoom-to moves the view; after every filter change the canvas refits (rows: EDT-063, EDT-064, EDT-073, EDT-024)
 - [ ] **MT-183** Hide a table, then click its row in the panel -> it becomes visible, is selected, flashes and the canvas zooms to it (rows: EDT-065)
 - [ ] **MT-184** Type part of a table name in uppercase in the panel search -> the tree narrows by a case-insensitive substring and the hidden state of tables does not change (rows: EDT-066)
+- [ ] **MT-402** Open the panel (Mod+F) and type part of a field name that no table name contains, for example `email` -> the tables that have such a field are listed, each with the matching fields under it (the first three, the text found marked, the type in grey, and "Show n more" for the rest); a table found by its name only has no fields under it; clicking a field shows the table if it was hidden, selects it, centres it and marks that field on the canvas while the tables not related to it stand back; clearing the box brings back the plain list, and the hidden state of the tables never changed (rows: EDT-066)
 - [ ] **MT-185** Search for a word that exists nowhere -> "No tables found", "Try adjusting your search or filter" and a Clear filter button; in an empty diagram "No tables found" and "Create a table to get started" (rows: EDT-067, EDT-068)
 - [ ] **MT-186** Hide every table -> a centred message "All tables are hidden" with a Show all button on the canvas and in the Tables section; the button shows everything (rows: EDT-069)
 - [ ] **MT-187** Hide a table with relationships -> its lines disappear too (rows: EDT-070)

@@ -821,8 +821,11 @@ export const fr = {
                     deleteNote: 'Supprimer la note',
                 },
                 filters: {
-                    title: 'Filtrer les tables',
-                    search: 'Rechercher des tables...',
+                    title: 'Rechercher et filtrer',
+                    search: 'Rechercher des tables ou des champs...',
+                    showMoreFields: 'Afficher {{count}} de plus',
+                    showFewerFields: 'Afficher moins',
+                    focusField: 'Cibler {{table}}.{{field}}',
                     groupBySchema: 'Grouper par schéma',
                     groupByArea: 'Grouper par zone',
                     show: 'Afficher',
@@ -895,7 +898,7 @@ export const fr = {
             },
             toolbar: {
                 label: 'Outils du canevas',
-                filter: 'Filtrer les tables ({{shortcut}})',
+                filter: 'Rechercher et filtrer ({{shortcut}})',
                 showAll: 'Tout afficher ({{shortcut}})',
                 zoomOut: 'Zoom arrière',
                 zoomIn: 'Zoom avant',

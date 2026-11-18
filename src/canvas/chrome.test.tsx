@@ -35,7 +35,7 @@ describe('toolbar', () => {
             .getAllByRole('button')
             .map((b) => b.getAttribute('aria-label'));
         expect(names).toEqual([
-            'Filter Tables',
+            'Search & Filter',
             'Show All',
             'Zoom Out',
             'Reset zoom to 100%',
@@ -97,7 +97,7 @@ describe('toolbar', () => {
         const { store } = renderCanvas(s.design, {
             canvas: { hooks: { toggleFilterPanel: toggle } },
         });
-        const button = screen.getByLabelText(/^Filter Tables/);
+        const button = screen.getByLabelText(/^Search & Filter/);
         expect(button).toHaveAttribute('data-active', 'false');
         act(() => store.getState().setFilter({ tableIds: [s.users] }));
         expect(button).toHaveAttribute('data-active', 'true');

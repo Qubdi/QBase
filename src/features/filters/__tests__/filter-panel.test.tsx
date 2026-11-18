@@ -14,7 +14,7 @@ describe('EDT-061 EDT-062 the panel opens ready to search', () => {
             withTables(['a'])
         );
         expect(document.activeElement).toBe(
-            screen.getByLabelText('Search tables...')
+            screen.getByLabelText('Search tables or fields...')
         );
         expect(
             screen.getByRole('button', { name: 'Group by Schema' })
@@ -103,7 +103,10 @@ describe('EDT-066 EDT-067 EDT-068 searching', () => {
                 filter: { tableIds: [design.entities.order[0]] },
             }
         );
-        await userEvent.type(screen.getByLabelText('Search tables...'), 'ORD');
+        await userEvent.type(
+            screen.getByLabelText('Search tables or fields...'),
+            'ORD'
+        );
         expect(screen.getAllByTestId('filter-table')).toHaveLength(1);
         expect(selectFilter(store.getState())).toEqual({
             tableIds: [design.entities.order[0]],
@@ -115,7 +118,10 @@ describe('EDT-066 EDT-067 EDT-068 searching', () => {
             <FilterPanel onClose={() => undefined} />,
             withTables(['users'])
         );
-        await userEvent.type(screen.getByLabelText('Search tables...'), 'zzz');
+        await userEvent.type(
+            screen.getByLabelText('Search tables or fields...'),
+            'zzz'
+        );
         expect(screen.getByText('No tables found')).toBeTruthy();
         expect(
             screen.getByText('Try adjusting your search or filter')

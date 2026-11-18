@@ -1,8 +1,9 @@
 import { traitsOf } from '@/core/model/database';
+import type { Column } from '@/core/model/column';
 import type { Design } from '@/core/model/design';
 import type { Entity } from '@/core/model/entity';
 import type { Id } from '@/core/model/id';
-import { entityList } from '@/core/model/lookup';
+import { columnsOf, entityList } from '@/core/model/lookup';
 import {
     isVisible,
     schemaIdOf,
@@ -17,6 +18,8 @@ export type Shown = 'all' | 'some' | 'none';
 export interface TreeTable {
     entity: Entity;
     shown: boolean;
+    /** the fields whose names match the search text; none when there is none */
+    fields: Column[];
 }
 
 export interface TreeGroup {
@@ -102,15 +105,20 @@ export interface TreeInput {
     design: Design;
     filter: VisibilityFilter;
     groupBy: GroupBy;
-    /** narrows the rows by table name; it never changes what is hidden (EDT-066) */
+    /**
+     * narrows the rows to the tables whose name, or one of whose field names,
+     * contains it; it never changes what is hidden (EDT-066)
+     */
     text?: string;
     showViews: boolean;
 }
 
 /**
- * The tree of the Filter Tables panel (EDT-062 to EDT-068): groups by schema
- * or by area, each with its tables. Groups left empty by the search are
- * dropped. A database without schemas has a single flat group.
+ * The tree of the Search & Filter panel (EDT-062 to EDT-068): groups by schema
+ * or by area, each with its tables. A table is listed when its name or one of
+ * its field names contains the search text (ignoring case); the fields that
+ * match come with it. Groups left empty by the search are dropped. A database
+ * without schemas has a single flat group.
  */
 export function buildTree({
     design,
@@ -140,7 +148,17 @@ export function buildTree({
 
     for (const entity of entityList(design)) {
         if (!showViews && entity.kind === 'view') continue;
-        if (needle && !entity.name.toLowerCase().includes(needle)) continue;
+        const fields = needle
+            ? columnsOf(design, entity).filter((c) =>
+                  c.name.toLowerCase().includes(needle)
+              )
+            : [];
+        if (
+            needle &&
+            fields.length === 0 &&
+            !entity.name.toLowerCase().includes(needle)
+        )
+            continue;
         const { key, label } = groupFor(entity);
         let group = groups.get(key);
         if (!group) {
@@ -150,6 +168,7 @@ export function buildTree({
         group.tables.push({
             entity,
             shown: isVisible(filter, entity, defaultSchema),
+            fields,
         });
     }
     const list = [...groups.values()];

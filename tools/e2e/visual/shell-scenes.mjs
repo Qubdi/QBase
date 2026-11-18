@@ -587,12 +587,12 @@ def('visuals-notes-one', BOTH, DESKTOP, async (page) => {
 });
 def('filter-panel', BOTH, DESKTOP, async (page) => {
     await twoTables(page);
-    await page.getByRole('button', { name: 'Filter Tables' }).click();
+    await page.getByRole('button', { name: 'Search & Filter' }).click();
     await settle(page, 500);
 });
 def('filter-panel-group-by-area', L, DESKTOP, async (page) => {
     await twoTables(page);
-    await page.getByRole('button', { name: 'Filter Tables' }).click();
+    await page.getByRole('button', { name: 'Search & Filter' }).click();
     await page.getByText('Group by Area').click();
     await settle(page, 500);
 });

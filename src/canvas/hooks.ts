@@ -34,7 +34,7 @@ export interface CanvasHooks {
     renderEntityEditor?(props: EntityEditorProps): ReactNode;
     /** the floating card that picks the target field of a quick relationship */
     renderLinkCard?(props: LinkCardProps): ReactNode;
-    /** the Filter Tables panel is the workspace's; the toolbar button toggles it */
+    /** the Search & Filter panel is the workspace's; the toolbar button toggles it */
     toggleFilterPanel?(): void;
     filterPanelOpen?: boolean;
     /** a custom type whose fields are tinted: the corner button clears it */

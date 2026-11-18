@@ -1363,7 +1363,7 @@ def('corner-tools-hover', BOTH, DESKTOP, async (page) => {
         'Redo',
         'Auto Arrange Diagram',
         'Highlight Overlapping Tables',
-        'Filter Tables',
+        'Search & Filter',
         'Snap to Grid (Hold Shift)',
     ]) {
         const btn = page.getByRole('button', { name, exact: true }).first();
@@ -1448,10 +1448,10 @@ def('highlight-overlap', L, DESKTOP, async (page) => {
 });
 def('filter-panel', BOTH, DESKTOP, async (page) => {
     await demo(page);
-    await page.getByRole('button', { name: 'Filter Tables' }).click();
+    await page.getByRole('button', { name: 'Search & Filter' }).click();
     await settle(page, 700);
     return {
-        popup: await probeCardWith(page, 'Filter Tables'),
+        popup: await probeCardWith(page, 'Search & Filter'),
         rows: await probeAll(page, 'svg.lucide-eye', 6, [
             'width',
             'height',

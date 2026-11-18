@@ -216,8 +216,11 @@ export const sidePanelStrings = {
         deleteNote: 'Delete note',
     },
     filters: {
-        title: 'Filter Tables',
-        search: 'Search tables...',
+        title: 'Search & Filter',
+        search: 'Search tables or fields...',
+        showMoreFields: 'Show {{count}} more',
+        showFewerFields: 'Show fewer',
+        focusField: 'Focus {{table}}.{{field}}',
         groupBySchema: 'Group by Schema',
         groupByArea: 'Group by Area',
         show: 'Show',

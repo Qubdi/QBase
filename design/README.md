@@ -19,6 +19,7 @@ This folder is not part of the app and is left out of the Docker image (`.docker
 | [Description marker in the field rows](field-description/README.md) | 2026-11-17 | B, Icon inside the name box | nothing: the other options are in the record |
 | [Where the side-panel popups open](popup-side/README.md) | 2026-11-18 | A, Like the column type: left edge on the button, growing to the right | B, Beside the panel (recipe in the record) |
 | [Which tables are in which area](area-tables/README.md) | 2026-11-18 | A, an area row opens to its tables, with a row for the tables in no area | the area shown on the rows of the Tables list |
+| [Field search in the filter panel](column-search/README.md) | 2026-11-18 | A, one box for tables and fields; the panel is now called Search & Filter | B, "Search in" switches on top of A |
 
 ## Adding a topic
 

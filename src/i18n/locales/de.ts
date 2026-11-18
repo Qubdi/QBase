@@ -801,8 +801,11 @@ export const de = {
                     deleteNote: 'Notiz löschen',
                 },
                 filters: {
-                    title: 'Tabellen filtern',
-                    search: 'Tabellen suchen ...',
+                    title: 'Suchen & Filtern',
+                    search: 'Tabellen oder Felder suchen ...',
+                    showMoreFields: 'Noch {{count}} anzeigen',
+                    showFewerFields: 'Weniger anzeigen',
+                    focusField: 'Fokussieren: {{table}}.{{field}}',
                     groupBySchema: 'Nach Schema gruppieren',
                     groupByArea: 'Nach Bereich gruppieren',
                     show: 'Anzeigen',
@@ -873,7 +876,7 @@ export const de = {
             },
             toolbar: {
                 label: 'Zeichenflächen-Werkzeuge',
-                filter: 'Tabellen filtern ({{shortcut}})',
+                filter: 'Suchen & Filtern ({{shortcut}})',
                 showAll: 'Alle anzeigen ({{shortcut}})',
                 zoomOut: 'Verkleinern',
                 zoomIn: 'Vergrößern',

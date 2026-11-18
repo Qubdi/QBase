@@ -182,7 +182,7 @@ server features.
 A floating pill at the bottom-centre (top-centre on mobile). Left to right, with vertical
 dividers:
 
-1. **Filter Tables** (magnifier). Tooltip includes the shortcut Mod+F. Highlighted teal
+1. **Search & Filter** (magnifier; "Filter Tables" before 2026-11-18). Tooltip includes the shortcut Mod+F. Highlighted teal
    while any filter hides something. Toggles the filter panel (2.12).
 2. **Show All** (frame). Tooltip shows Mod+0.
 3. **Zoom Out**, the **zoom percentage** button, **Zoom In**.
@@ -252,16 +252,25 @@ growing the area if they do not fit), **Delete Area**.
 
 - Opened by the toolbar Filter button or Mod+F (works even while typing in a field;
   pressing again closes it). Closed with its X button. It floats over the canvas.
-- Title **Filter Tables**. A search box "Search tables..." (auto-focused). A two-way
-  toggle **Group by Schema** / **Group by Area**.
+- Title **Search & Filter** (it was **Filter Tables** until 2026-11-18, when the search
+  began to look at fields too). A search box "Search tables or fields..." (auto-focused).
+  A two-way toggle **Group by Schema** / **Group by Area**.
 - Below, a tree: top-level groups (each schema, or each area, plus a group for tables with
   none) containing tables. Every group and every table has an **eye** control that shows
   or hides it on the canvas. Hiding a group hides all of its tables. Groups also have a
   "zoom to this group" control, and rows for tables have "zoom to table". Clicking a table
   row makes it visible if hidden, selects it, flashes it briefly, and zooms to it.
-- Typing in the search box narrows the tree to matching table names (case-insensitive,
-  substring). Clearing the box does **not** change which tables are hidden: show/hide
-  choices are separate from the search text.
+- Typing in the search box narrows the tree to the tables whose **name**, or the name of
+  one of whose **fields**, contains the text (case-insensitive, substring). Clearing the
+  box does **not** change which tables are hidden: show/hide choices are separate from the
+  search text.
+- **Fields that match** (since 2026-11-18): a table found through its fields lists those
+  fields under its row, the first three and then "Show n more" (and "Show fewer"), each
+  with the text found marked and its type in grey. A table found by its name only has no
+  fields under it. A click on a field makes the table visible if hidden, selects it,
+  centres it and **focuses the field** on the canvas, as a click on the field's row in
+  the table card does: the field is marked and the tables not related to it stand back.
+  Hidden tables that match are listed, greyed.
 - When nothing matches: "No tables found" with the hint "Try adjusting your search or
   filter" and a **Clear filter** button. If the diagram has no tables at all: "No tables
   found" with "Create a table to get started".

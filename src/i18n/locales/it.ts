@@ -816,8 +816,11 @@ export const it = {
                     deleteNote: 'Elimina nota',
                 },
                 filters: {
-                    title: 'Filtra tabelle',
-                    search: 'Cerca tabelle...',
+                    title: 'Cerca e filtra',
+                    search: 'Cerca tabelle o campi...',
+                    showMoreFields: 'Mostra altri {{count}}',
+                    showFewerFields: 'Mostra meno',
+                    focusField: 'Evidenzia {{table}}.{{field}}',
                     groupBySchema: 'Raggruppa per schema',
                     groupByArea: 'Raggruppa per area',
                     show: 'Mostra',
@@ -889,7 +892,7 @@ export const it = {
             },
             toolbar: {
                 label: 'Strumenti del canvas',
-                filter: 'Filtra tabelle ({{shortcut}})',
+                filter: 'Cerca e filtra ({{shortcut}})',
                 showAll: 'Mostra tutto ({{shortcut}})',
                 zoomOut: 'Riduci',
                 zoomIn: 'Ingrandisci',

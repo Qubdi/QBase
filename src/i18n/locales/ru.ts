@@ -819,8 +819,11 @@ export const ru = {
                     deleteNote: 'Удалить заметку',
                 },
                 filters: {
-                    title: 'Фильтр таблиц',
-                    search: 'Поиск таблиц...',
+                    title: 'Поиск и фильтр',
+                    search: 'Поиск таблиц или полей...',
+                    showMoreFields: 'Показать ещё {{count}}',
+                    showFewerFields: 'Показать меньше',
+                    focusField: 'Выделить {{table}}.{{field}}',
                     groupBySchema: 'Группировать по схеме',
                     groupByArea: 'Группировать по области',
                     show: 'Показать',
@@ -891,7 +894,7 @@ export const ru = {
             },
             toolbar: {
                 label: 'Инструменты холста',
-                filter: 'Фильтр таблиц ({{shortcut}})',
+                filter: 'Поиск и фильтр ({{shortcut}})',
                 showAll: 'Показать все ({{shortcut}})',
                 zoomOut: 'Уменьшить',
                 zoomIn: 'Увеличить',

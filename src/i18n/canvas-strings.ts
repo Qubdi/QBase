@@ -24,7 +24,7 @@ export const canvas = {
     },
     toolbar: {
         label: 'Canvas tools',
-        filter: 'Filter Tables ({{shortcut}})',
+        filter: 'Search & Filter ({{shortcut}})',
         showAll: 'Show All ({{shortcut}})',
         zoomOut: 'Zoom Out',
         zoomIn: 'Zoom In',
