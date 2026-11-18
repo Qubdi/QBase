@@ -612,11 +612,19 @@ export function readConstraint(
     if (cur.acceptWord('UNIQUE')) {
         skipCluster();
         if (!cur.acceptWord('KEY')) cur.acceptWord('INDEX');
-        if (!cur.isPunct('(')) name = name ?? cur.readName()?.name;
+        // the optional index name is always read; CONSTRAINT's name wins
+        if (!cur.isPunct('(')) {
+            const indexName = cur.readName()?.name;
+            name = name ?? indexName;
+        }
         return { kind: 'unique', name, columns: cur.readNameList(), line };
     }
     if (cur.acceptWords('FOREIGN', 'KEY')) {
-        if (!cur.isPunct('(')) name = name ?? cur.readName()?.name;
+        // the optional index name is always read; CONSTRAINT's name wins
+        if (!cur.isPunct('(')) {
+            const indexName = cur.readName()?.name;
+            name = name ?? indexName;
+        }
         const columns = cur.readNameList();
         if (!cur.acceptWord('REFERENCES')) return undefined;
         const reference = readReference(cur);
@@ -636,8 +644,10 @@ export function readConstraint(
     if (cur.acceptWord('FULLTEXT')) method = 'fulltext';
     else if (cur.acceptWord('SPATIAL')) method = 'spatial';
     if (cur.acceptWord('KEY') || cur.acceptWord('INDEX')) {
-        if (!cur.isPunct('(') && !cur.isWord('USING'))
-            name = name ?? cur.readName()?.name;
+        if (!cur.isPunct('(') && !cur.isWord('USING')) {
+            const indexName = cur.readName()?.name;
+            name = name ?? indexName;
+        }
         const using = (): void => {
             if (!cur.acceptWord('USING')) return;
             const m = cur.next()?.value.toLowerCase();

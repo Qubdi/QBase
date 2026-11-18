@@ -428,26 +428,29 @@ CREATE TABLE c (
         expect(table(r, 't').comment).toBe('the table');
     });
 
-    // BUG: read-table.ts readConstraint uses `name = name ?? cur.readName()?.name`
-    // (lines 608 and 612): when CONSTRAINT already gave a name, the index name
-    // that MySQL allows after UNIQUE KEY / FOREIGN KEY is never consumed, so
-    // the column list is not found and the whole constraint is dropped.
-    it.fails(
-        'reads CONSTRAINT c FOREIGN KEY idx (...) and CONSTRAINT c UNIQUE KEY idx (...)',
-        () => {
-            const r = readMysql(`CREATE TABLE t (
+    it('CLI-126: reads CONSTRAINT c FOREIGN KEY idx (...) and CONSTRAINT c UNIQUE KEY idx (...)', () => {
+        const r = readMysql(`CREATE TABLE t (
   id int,
   CONSTRAINT uq UNIQUE KEY uq_idx (id),
   CONSTRAINT fk FOREIGN KEY fk_idx (id) REFERENCES t (id)
 );`);
-            expect(table(r, 't').uniqueKeys).toEqual([
-                { name: 'uq', columns: ['id'] },
-            ]);
-            expect(r.foreignKeys.map((f) => [f.name, f.columns])).toEqual([
-                ['fk', ['id']],
-            ]);
-        }
-    );
+        expect(table(r, 't').uniqueKeys).toEqual([
+            { name: 'uq', columns: ['id'] },
+        ]);
+        expect(r.foreignKeys.map((f) => [f.name, f.columns])).toEqual([
+            ['fk', ['id']],
+        ]);
+    });
+
+    it('CLI-126: reads the columns of CONSTRAINT c KEY idx (...), named by the constraint', () => {
+        const r = readMysql(`CREATE TABLE t (
+  id int,
+  CONSTRAINT c KEY idx (id)
+);`);
+        expect(r.indexes.map((i) => [i.name, i.columns])).toEqual([
+            ['c', ['id']],
+        ]);
+    });
 
     it('reads a table comment without =', () => {
         const r = readMysql("CREATE TABLE t (id int) COMMENT 'hi';");
