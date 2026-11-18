@@ -530,11 +530,7 @@ describe('column definitions', () => {
         expect(t('l').typeName).toBe('char');
     });
 
-    // BUG: readType takes every following word into the type name before it
-    // looks for ARRAY, so the SQL-standard `text ARRAY` becomes a type called
-    // "text array" that is not an array (the ARRAY branch at read-table.ts:148
-    // is only reached after `[]`).
-    it.fails('reads the SQL-standard `type ARRAY` spelling as an array', () => {
+    it('CLI-127: reads the SQL-standard `type ARRAY` spelling as an array', () => {
         const r = readPostgres('CREATE TABLE t (g text ARRAY);');
         expect(col(r, 't', 'g')).toMatchObject({
             typeName: 'text',

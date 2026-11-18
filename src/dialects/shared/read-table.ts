@@ -124,6 +124,8 @@ export function readType(cur: Cursor, ctx: ReadContext): TypeRead {
         if (t.kind === 'word' && words.length > 0) {
             if (TYPE_STOPPERS.has(upper)) break;
             if (upper === 'CHARACTER' && cur.isWord('SET', 1)) break;
+            // `text ARRAY` is the array spelling, read below, not part of the name
+            if (upper === 'ARRAY' && ctx.profile.arrayTypes) break;
         }
         if (words.length >= 5) break;
         takeWord();
