@@ -1,22 +1,22 @@
 # QBase — Audit
 
-**rev** 52 · **date** 2026-11-18
+**rev** 53 · **date** 2026-11-18
 **method** static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local `timeago.js` install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine `aud47-srv` 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs `aud47-srv` · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 `aud47-mssql` (live alias-type checks), throwaway postgres:18-alpine `aud47-db` seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in `node:24-slim` `aud47-dead` · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the `it.fails` tests and KNOWN BUG flow steps · all containers removed · no secret read
 **scope** whole repo except `node_modules/`, `stats/`, `src/templates-data/`, `src/i18n/locales/` content; `.claude/skills/` content checked for secrets and licensing only
 
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 1 | 0 | 0 | 46 | 0 |
-| Repository | 3 | 0 | 0 | 64 | 0 |
+| Repository | 7 | 0 | 0 | 64 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 0 | 0 | 0 | 130 | 1 |
+| Client | 3 | 0 | 1 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 4 | 0 | 0 | 354 | 2 |
+| **Total** | 11 | 0 | 1 | 354 | 2 |
 
 ## Act first
 
-None.
+- **CLI-140 (High)**: `tsc -b` fails and the Docker image build stops. A one-line fix in `src/qbase/wire-edits.ts:71`; nothing can be released until it is in.
 
 ---
 
@@ -35,6 +35,10 @@ None.
 | REPO-004 | Med | Publish workflow ships images while TODO says do not publish | `TODO.md:8`, `rewrite/TODO.md:11`, `.github/workflows/publish.yaml:5` | Reconcile TODO with publish; gate publish on rewrite status |
 | REPO-006 | Low | Dependabot version updates paused: all five ecosystems have limit 0 | `.github/dependabot.yml:1`, `.github/dependabot.yml:9` | Restore the limits, or record the pause as Accepted |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
+| REPO-084 | Med | `test.sh all` shows failed browser suites as passed and exits 0: `suite_browser` returns the status of its last `echo` | `test.sh:190` | Return the status of `report` |
+| REPO-085 | Med | `test.sh all` runs the browser performance suite with `SKIP_BUILD=1`, but that suite builds into its own folder: a blank page, and all six cases fail | `test.sh:238`, `tools/e2e/perf.mjs:311` | Do not set `SKIP_BUILD` for perf, or let perf reuse the smoke build |
+| REPO-086 | Low | Browser flow F4 steps 03 to 05 click buttons named "Hide", which CLI-113 renamed to "Show <name>" with `aria-pressed`: all three time out | `tools/e2e/flows.mjs:897`, `tools/e2e/flows.mjs:918` | Click "Show <name>" and check `aria-pressed` |
+| REPO-087 | Low | Browser flows keep `knownBug` markers for two bugs fixed since (CLI-134 lint text, CLI-135 database card arrow keys); the run says "make this a plain check" | `tools/e2e/flows.mjs` (F18, F20) | Turn both into plain checks |
 
 ### Server
 
@@ -49,6 +53,9 @@ None.
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
+| CLI-140 | High | The CLI-132 fix gives a value that can be `null` to a `boolean`: `tsc -b` fails and the Docker image build stops, so the server-mode browser flows cannot run | `src/qbase/wire-edits.ts:71` | Use `patch.generatedStored ?? current.generated.stored`, so null keeps the current value |
+| CLI-141 | Med | Local autosave still loses an edit made just before a reload: the `pagehide` flush of CLI-117 does not finish in a real browser (flow F13 step 08: 1 area after reload, expected 2) | `src/store/editor-provider.tsx:36`, `tools/e2e/flows.mjs:2464` | Write the pending design synchronously as the page is left (a small localStorage copy read back on load), or start the IndexedDB write earlier |
+| CLI-142 | Med | Import dialog "Database client / psql" tabs have no panels; axe reports `aria-controls` pointing at an id that is not there (critical, `aria-valid-attr-value`) | `src/features/import/import-box.tsx:419` | Render a `TabsContent` for each tab, or use two buttons with `aria-pressed` instead of `role="tab"` |
 
 ### Dead code
 
@@ -492,6 +499,7 @@ Rows up to Stock Postgres from an earlier pass; last three measured in rev 47 on
 
 | Rev | Date | Change |
 |-----|------|--------|
+| 53 | 2026-11-18 | 7 new, found by running every suite (`bash test.sh all`: lint and types, 4818 client and 1433 server tests, benchmarks, smoke, flows, accessibility, performance). Client: CLI-140 (High, the CLI-132 fix breaks `tsc -b` and the image build), CLI-141 (the CLI-117 flush does not save an edit made just before a reload), CLI-142 (import tabs without panels). Repository: REPO-084 (the summary of `test.sh all` hides failed browser suites), REPO-085 (perf reuses a build it never made), REPO-086 and 087 (browser flows follow the CLI-113 rename and drop two fixed known-bug markers). Not fixed; 11 open, 0 Crit, 1 High; anchors not remapped |
 | 52 | 2026-11-18 | 32 fixed and 1 accepted, no new findings. Client lens: CLI-019, 112 to 115 and 117 to 138 fixed (autosave flush on page leave, lint text translated, SQL reader and writer round trips, lexer and validator quoting, accessibility labels and live regions); CLI-139 accepted as won't-fix (the columns map copy is 2 ms at 1000 tables, a fix needs a persistent map). Server lens: SRV-042 (per-user cap on lock streams, `SSE_MAX_LOCK_PER_USER`), SRV-044, 045, 046, 047 fixed. Each fix has a test, and the matching `it.fails` markers became real tests; 17 open, 0 Crit, 0 High; anchors not remapped |
 | 51 | 2026-11-18 | 24 new (CLI-117 to 139: SQL and DBML import, export and highlight defects, local autosave loses the last second of edits, lint text untranslated, cross-dialect export O(n²); SRV-047: NUL in text answers 500); about 700 tests added, known bugs kept as `it.fails`; 50 open, 0 Crit, 0 High; anchors not remapped |
 | 50 | 2026-11-18 | 1 fixed (DB-006: alias type is a third custom-type kind with a base type; listed by the SQL Server introspection and both hand-run scripts, carried in the diagram file and shown in the Custom Types panel; verified against throwaway SQL Server 2025 `aud47-mssql`, server suite 1331 passed, client suite 4178 passed); database lens has no open findings; 26 open, 0 Crit, 0 High; anchors not remapped |
