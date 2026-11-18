@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 25 | 0 | 0 | 105 | 1 |
+| Client | 24 | 0 | 0 | 106 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 47 | 0 | 0 | 314 | 2 |
+| **Total** | 46 | 0 | 0 | 315 | 2 |
 
 ## Act first
 
@@ -91,7 +91,6 @@ None.
 | CLI-133 | Low | Table picker lists a blank schema, same value as All schemas | `src/features/import/table-picker.tsx:31` | Drop empty schemas from the list, or label them |
 | CLI-134 | Low | Lint findings and rule text not translated in de, fr, it, ru | `src/components/qubdi/lint-settings-dialog.tsx:142`, `src/components/qubdi/lint-control.tsx:276` | Route rule and message text through `t()` |
 | CLI-135 | Low | Database cards ignore arrow keys; every card is its own Tab stop | `src/dialogs/create-diagram-dialog/database-picker.tsx:22` | Add roving tabindex and arrow-key handling |
-| CLI-136 | Low | File uploader nests an `<input>` inside a `<button>`; invalid HTML | `src/components/file-uploader/file-uploader.tsx:35`, `src/components/file-uploader/file-uploader.tsx:62` | Place the input beside the button |
 
 ### Dead code
 
@@ -216,6 +215,7 @@ None.
 | DB-020 | Database | Index query keeps invalid indexes (failed CONCURRENTLY builds) as real ones |
 | CLI-138 | Client | Orphan-table lint rule scans every relationship once per table |
 | CLI-137 | Client | Cross-dialect SQL export is O(n²): 455 ms at 4000 tables |
+| CLI-136 | Client | File uploader nests an `<input>` inside a `<button>`; invalid HTML |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |

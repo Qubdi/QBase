@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Client Audit &middot; <b>rev 51</b></div>
-  <h1>25 open (0 Crit, 0 High).</h1>
+  <h1>24 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the <code>it.fails</code> tests and KNOWN BUG flow steps · all containers removed · no secret read</span>
@@ -59,7 +59,6 @@
         <tr><td class="svc-name">CLI-133</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Table picker lists a blank schema, same value as All schemas</td><td class="wrap-cell"><code>src/features/import/table-picker.tsx:31</code></td><td class="wrap-cell">Drop empty schemas from the list, or label them</td></tr>
         <tr><td class="svc-name">CLI-134</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Lint findings and rule text not translated in de, fr, it, ru</td><td class="wrap-cell"><code>src/components/qubdi/lint-settings-dialog.tsx:142</code>, <code>src/components/qubdi/lint-control.tsx:276</code></td><td class="wrap-cell">Route rule and message text through <code>t()</code></td></tr>
         <tr><td class="svc-name">CLI-135</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Database cards ignore arrow keys; every card is its own Tab stop</td><td class="wrap-cell"><code>src/dialogs/create-diagram-dialog/database-picker.tsx:22</code></td><td class="wrap-cell">Add roving tabindex and arrow-key handling</td></tr>
-        <tr><td class="svc-name">CLI-136</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">File uploader nests an <code>&lt;input&gt;</code> inside a <code>&lt;button&gt;</code>; invalid HTML</td><td class="wrap-cell"><code>src/components/file-uploader/file-uploader.tsx:35</code>, <code>src/components/file-uploader/file-uploader.tsx:62</code></td><td class="wrap-cell">Place the input beside the button</td></tr>
       </tbody>
     </table>
   </div>
@@ -67,11 +66,12 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (105)</summary>
+  <details><summary>Fixed (106)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">CLI-136</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">File uploader nests an <code>&lt;input&gt;</code> inside a <code>&lt;button&gt;</code>; invalid HTML</td></tr>
         <tr><td class="svc-name">CLI-137</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Cross-dialect SQL export is O(n&sup2;): 455 ms at 4000 tables</td></tr>
         <tr><td class="svc-name">CLI-138</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Orphan-table lint rule scans every relationship once per table</td></tr>
         <tr><td class="svc-name">CLI-110</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Navbar publish, account, drift, lint and all <code>qubdi.*</code> screens show English in de, fr, it, ru</td></tr>
