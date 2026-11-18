@@ -191,10 +191,7 @@ CREATE TABLE t ( -- the key
         expect(errors(r)).toContain('Unterminated quoted text');
     });
 
-    // BUG: maskCode (validate.ts) ends a [bracket] name at the first `]`
-    // and does not know the `]]` escape, so `(` inside [a]]( b] is seen as
-    // code and a valid script is refused with "Unclosed parenthesis".
-    it.fails('accepts a SQL Server name holding ]] and a parenthesis', () => {
+    it('CLI-124: accepts a SQL Server name holding ]] and a parenthesis', () => {
         const r = readSqlServer('CREATE TABLE [a]]( b] (id int)');
         expect(errors(r)).toEqual([]);
         expect(r.tables.map((t) => t.name)).toEqual(['a]( b']);

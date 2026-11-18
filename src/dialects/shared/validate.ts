@@ -99,7 +99,10 @@ export function maskCode(source: string, profile: LexProfile): Masked {
             blank(i, end);
             i = end;
         } else if (c === '[' && profile.identifierQuotes.includes('[')) {
-            const close = source.indexOf(']', i + 1);
+            // a name ends at a `]` that is not doubled (`]]` is a `]` in the name)
+            let close = source.indexOf(']', i + 1);
+            while (close >= 0 && source[close + 1] === ']')
+                close = source.indexOf(']', close + 2);
             if (close < 0)
                 problems.push({
                     severity: 'error',
