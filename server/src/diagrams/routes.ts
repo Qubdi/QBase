@@ -693,7 +693,13 @@ export const diagramRoutes =
 
             // a viewer that cannot keep up is cut off instead of buffering for ever
             const send = createSseWriter(raw, close);
+            // the snapshot is read again on every heartbeat (below), so an event
+            // is only told once, whichever way it arrives
+            const told = new Set<string>();
             const tell = (ev: LockEvent) => {
+                const key = `${ev.kind}:${ev.pokeId}:${'outcome' in ev ? ev.outcome : ''}`;
+                if (told.has(key)) return;
+                told.add(key);
                 // what the editor needs, not who it was addressed to
                 const data =
                     ev.kind === 'poke'
@@ -757,6 +763,19 @@ export const diagramRoutes =
                     return close();
                 }
                 if (!closed) send(': ping\n\n');
+                // Events are not replayed, and the database's LISTEN connection
+                // can drop and reconnect: an event sent in that gap would never
+                // arrive. Reading what was missed again each beat bounds the loss
+                // to one heartbeat.
+                try {
+                    const missed = await pokeSnapshot(db, id, user.id, editorId);
+                    if (!closed) missed.forEach(tell);
+                } catch (err) {
+                    req.log.error(
+                        { err: safeError(err) },
+                        'lock events: reading what was missed failed'
+                    );
+                }
             }, config.sseHeartbeatSeconds * 1000);
             cleanup.push(() => clearInterval(heartbeat));
 

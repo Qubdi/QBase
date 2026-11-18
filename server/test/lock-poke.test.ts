@@ -627,6 +627,44 @@ describe('the lock stream and the editor\'s session', () => {
         }
     });
 
+    it('SRV-044: hears a request it missed, on the next beat, and only once', async () => {
+        const ctx = await createTestApp({ sseHeartbeatSeconds: 1 });
+        try {
+            const a = await registerUser(ctx.app, 'a@example.com');
+            const b = await registerUser(ctx.app, 'b@example.com');
+            const id = await createDiagram(ctx.app, a);
+            await grant(ctx.app, b, 'editor');
+            const base = await ctx.app.listen({ port: 0, host: '127.0.0.1' });
+            await ctx.app.inject({
+                method: 'POST',
+                url: `/diagrams/${id}/lock`,
+                headers: as(a),
+                payload: { editorId: 'tab-a' },
+            });
+            const s = await openLockStream(base, id, a, 'tab-a');
+            await s.text(': connected');
+            // a request whose event never reached the stream (a gap in the
+            // database's LISTEN connection): only the table knows about it
+            const [row] = await ctx.db
+                .insert(lockPokes)
+                .values({
+                    diagramId: id,
+                    requesterId: b.id,
+                    requesterEditorId: 'tab-b',
+                    holderId: a.id,
+                    holderEditorId: 'tab-a',
+                    expiresAt: new Date(Date.now() + 60_000),
+                })
+                .returning({ id: lockPokes.id });
+            expect(await s.event('poke', 5000)).toMatchObject({ pokeId: row.id });
+            // the next beats (one a second) do not tell it again
+            expect(await s.quiet(2500)).toBe(true);
+            s.close();
+        } finally {
+            await ctx.close();
+        }
+    });
+
     it('closes when the editor loses the right to edit', async () => {
         const ctx = await createTestApp({ sseHeartbeatSeconds: 1 });
         try {

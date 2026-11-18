@@ -8,11 +8,11 @@
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 5 | 0 | 0 | 42 | 0 |
 | Repository | 12 | 0 | 0 | 58 | 0 |
-| Server | 2 | 0 | 0 | 44 | 0 |
+| Server | 1 | 0 | 0 | 45 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 130 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 19 | 0 | 0 | 342 | 2 |
+| **Total** | 18 | 0 | 0 | 343 | 2 |
 
 ## Act first
 
@@ -54,7 +54,6 @@ None.
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
 | SRV-042 | Med | Lock event streams uncapped per user; probe opened 60 for one user | `server/src/diagrams/routes.ts:656`, `server/src/diagrams/routes.ts:700` | Cap open lock streams per user, like share `acquireViewer` |
-| SRV-044 | Low | Lock stream reads missed pokes only at open; a LISTEN gap loses them | `server/src/diagrams/routes.ts:733`, `server/src/diagrams/routes.ts:767` | Re-run `pokeSnapshot` on each heartbeat |
 
 ### Database
 
@@ -81,6 +80,7 @@ None.
 | SRV-047 | Server | NUL character in a diagram title or content answers 500, not 400 |
 | SRV-046 | Server | Admin project delete never tells open share streams their links died |
 | SRV-045 | Server | Release tells requester `left` even when the handoff insert lost the race |
+| SRV-044 | Server | Lock stream reads missed pokes only at open; a LISTEN gap loses them |
 | SRV-043 | Server | Server test fails: `project.delete` audit meta now has `diagrams`, test lacks it |
 | SRV-009 | Server | Default diagram body limit 50 MB blocked the event loop about 0.9 s at 40 MB; now 25 MB, set with `DIAGRAM_BODY_LIMIT_MB` |
 | SRV-008 | Server | Live-viewer caps count per process; held in Postgres by `live_viewers`, shared by all replicas |
