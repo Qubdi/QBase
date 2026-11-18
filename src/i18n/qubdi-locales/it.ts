@@ -29,8 +29,6 @@ export const it = {
             same_password: 'Scegli una password diversa da quella attuale.',
             password_change_required:
                 'Scegli la tua password prima di continuare.',
-            user_not_found: 'Non esiste ancora un account con questa email.',
-            already_member: 'Questa persona ha già accesso.',
             forbidden: 'Non hai il permesso di farlo.',
             not_found: 'Non trovato.',
             encryption_not_configured:
@@ -57,10 +55,6 @@ export const it = {
             reserved_name:
                 "Questo nome è usato dall'app stessa. Scegline un altro.",
             cannot_delete_self: 'Non puoi eliminare il tuo account.',
-            project_not_empty:
-                'Questo progetto contiene ancora dei diagrammi. Eliminali prima.',
-            managed_by_project:
-                "L'accesso è gestito dal progetto. Chiedi a un amministratore di cambiarlo.",
             invalid_response:
                 "Il server ha inviato una risposta che l'app non riesce a leggere.",
             requestFailed: 'Richiesta non riuscita ({{code}}).',

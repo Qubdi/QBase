@@ -30,9 +30,6 @@ export const de = {
                 'Wählen Sie ein Passwort, das sich vom aktuellen unterscheidet.',
             password_change_required:
                 'Wählen Sie Ihr eigenes Passwort, bevor Sie fortfahren.',
-            user_not_found:
-                'Mit dieser E-Mail-Adresse gibt es noch kein Konto.',
-            already_member: 'Diese Person hat bereits Zugriff.',
             forbidden: 'Dazu fehlt Ihnen die Berechtigung.',
             not_found: 'Nicht gefunden.',
             encryption_not_configured:
@@ -63,10 +60,6 @@ export const de = {
             reserved_name:
                 'Dieser Name wird von der App selbst verwendet. Wählen Sie einen anderen.',
             cannot_delete_self: 'Sie können Ihr eigenes Konto nicht löschen.',
-            project_not_empty:
-                'Dieses Projekt enthält noch Diagramme. Löschen Sie diese zuerst.',
-            managed_by_project:
-                'Der Zugriff wird vom Projekt verwaltet. Bitten Sie einen Admin, ihn zu ändern.',
             invalid_response:
                 'Der Server hat eine Antwort gesendet, die diese App nicht lesen kann.',
             requestFailed: 'Anfrage fehlgeschlagen ({{code}}).',

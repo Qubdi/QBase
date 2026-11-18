@@ -30,8 +30,6 @@ export const fr = {
             same_password: 'Choisissez un mot de passe différent de l’actuel.',
             password_change_required:
                 'Choisissez votre propre mot de passe avant de continuer.',
-            user_not_found: 'Aucun compte n’existe encore avec cet e-mail.',
-            already_member: 'Cette personne a déjà accès.',
             forbidden: 'Vous n’avez pas la permission de faire cela.',
             not_found: 'Introuvable.',
             encryption_not_configured:
@@ -61,10 +59,6 @@ export const fr = {
                 'Ce nom est utilisé par l’application elle-même. Choisissez-en un autre.',
             cannot_delete_self:
                 'Vous ne pouvez pas supprimer votre propre compte.',
-            project_not_empty:
-                'Ce projet contient encore des diagrammes. Supprimez-les d’abord.',
-            managed_by_project:
-                'L’accès est géré par le projet. Demandez à un administrateur de le modifier.',
             invalid_response:
                 'Le serveur a envoyé une réponse que cette application ne peut pas lire.',
             requestFailed: 'Échec de la requête ({{code}}).',
