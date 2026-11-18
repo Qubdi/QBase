@@ -10,9 +10,9 @@
 | Repository | 12 | 0 | 0 | 58 | 0 |
 | Server | 5 | 0 | 0 | 41 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 6 | 0 | 0 | 124 | 1 |
+| Client | 5 | 0 | 0 | 125 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 28 | 0 | 0 | 333 | 2 |
+| **Total** | 27 | 0 | 0 | 334 | 2 |
 
 ## Act first
 
@@ -72,7 +72,6 @@ None.
 | CLI-117 | Med | Local autosave loses edits made in the last second before a reload or tab close | `src/store/autosave.ts:35`, `src/store/editor-provider.tsx:17` | Flush autosave on `pagehide`; warn on `beforeunload` while dirty |
 | CLI-118 | Med | pg_dump COPY row with an apostrophe blocks the whole SQL import | `src/dialects/shared/make-reader.ts:13`, `src/dialects/shared/read-script.ts:642` | Blank COPY data before `validateText` |
 | CLI-119 | Med | Nested block comment drops the next table; validator still counts it | `src/dialects/shared/tokenizer.ts:109`, `src/dialects/shared/validate.ts:29` | Track comment depth in the lexer and `maskCode` |
-| CLI-120 | Med | SQL Server `GO <count>` silently drops the next batch | `src/dialects/shared/statements.ts:56` | Accept `GO n` as a batch separator |
 
 ### Dead code
 
@@ -216,6 +215,7 @@ None.
 | CLI-123 | Client | MySQL double-quoted string refused as unterminated text |
 | CLI-122 | Client | PostgreSQL E-string with an escaped quote refused as unterminated |
 | CLI-121 | Client | Dollar tag with a digit not recognised; function body imported as real tables |
+| CLI-120 | Client | SQL Server `GO <count>` silently drops the next batch |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |

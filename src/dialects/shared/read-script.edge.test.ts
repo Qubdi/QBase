@@ -210,10 +210,7 @@ GO
         expect(col(r, 't', 'go').typeName).toBe('int');
     });
 
-    // BUG: T-SQL allows `GO <count>`; splitStatements only splits at a line
-    // holding GO alone, so `GO 2` joins the next batch, which then starts with
-    // GO and is ignored: table b is silently lost.
-    it.fails('splits at GO followed by a repeat count', () => {
+    it('CLI-120: splits at GO followed by a repeat count', () => {
         const r = readSqlServer(
             'CREATE TABLE a (id int)\nGO 2\nCREATE TABLE b (id int)\nGO'
         );
