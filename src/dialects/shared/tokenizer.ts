@@ -23,6 +23,8 @@ export interface LexProfile {
     dollarStrings: boolean;
     /** a backslash escapes a quote inside a string */
     backslashEscapes: boolean;
+    /** `/* ... /* ... *\/ ... *\/`: a block comment may hold block comments (PostgreSQL, SQL Server) */
+    nestedComments?: boolean;
     /** `"..."` is a string, not a name (MySQL and MariaDB, unless ANSI_QUOTES) */
     doubleQuotedStrings?: boolean;
 }
@@ -46,6 +48,30 @@ const TWO_CHAR = new Set([
 
 const isWordStart = (c: string): boolean => /[A-Za-z_\u0080-￿]/.test(c);
 /** `$tag$`: the tag is empty, or a letter or `_` followed by letters, digits and `_`. */
+/**
+ * Where the block comment that opens at `from` ends (just after its closing
+ * star-slash), or -1 when it is never closed. With `nested`, an inner opening
+ * has to be closed too.
+ */
+export function blockCommentEnd(
+    text: string,
+    from: number,
+    nested: boolean
+): number {
+    let depth = 1;
+    let i = from + 2;
+    while (i < text.length) {
+        if (text[i] === '*' && text[i + 1] === '/') {
+            i += 2;
+            if (--depth === 0) return i;
+        } else if (nested && text[i] === '/' && text[i + 1] === '*') {
+            depth++;
+            i += 2;
+        } else i++;
+    }
+    return -1;
+}
+
 export const DOLLAR_TAG = /^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/;
 
 export const isWordChar = (c: string): boolean =>
@@ -112,7 +138,7 @@ export function lex(text: string, profile: LexProfile): LexResult {
             continue;
         }
         if (c === '/' && text[i + 1] === '*') {
-            const close = text.indexOf('*/', i + 2);
+            const close = blockCommentEnd(text, i, !!profile.nestedComments);
             if (close < 0) {
                 problems.push({
                     severity: 'error',
@@ -121,7 +147,7 @@ export function lex(text: string, profile: LexProfile): LexResult {
                     column: startColumn,
                 });
                 advanceTo(n);
-            } else advanceTo(close + 2);
+            } else advanceTo(close);
             continue;
         }
         if (c === "'" || (c === '"' && profile.doubleQuotedStrings)) {

@@ -165,11 +165,7 @@ CREATE TABLE t ( -- the key
         expect(col(r, 't', 'id').comment).toBe("it's");
     });
 
-    // BUG: PostgreSQL nests block comments. The lexer and the validator close
-    // the comment at the first */, so the rest of the comment becomes code in
-    // front of CREATE TABLE and the table is silently dropped (the validator
-    // still says "Found 1 table to import").
-    it.fails('reads a table after a nested block comment', () => {
+    it('CLI-119: reads a table after a nested block comment', () => {
         const r = readPostgres(
             '/* a /* nested */ still comment */ CREATE TABLE t (id int);'
         );

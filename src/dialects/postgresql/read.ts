@@ -26,6 +26,7 @@ const PROFILE: ReaderProfile = {
         identifierQuotes: ['"'],
         hashComments: false,
         dollarStrings: true,
+        nestedComments: true,
         backslashEscapes: false,
     },
     goBatches: false,

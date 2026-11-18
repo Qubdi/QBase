@@ -3,6 +3,7 @@ import { lex } from './tokenizer';
 import type { LexProfile } from './tokenizer';
 
 const PG: LexProfile = {
+    nestedComments: true,
     identifierQuotes: ['"'],
     hashComments: false,
     dollarStrings: true,
@@ -235,12 +236,15 @@ describe('lex: numbers, words and operators', () => {
 });
 
 describe('lex: nested block comments', () => {
-    // BUG: PostgreSQL (and SQL Server) nest block comments, but the lexer
-    // closes the comment at the first `*/`, so `still comment */` is lexed
-    // as code (a word, `*` and `/`).
-    it.fails('drops a nested block comment as a whole', () => {
+    it('CLI-119: drops a nested block comment as a whole', () => {
         expect(kinds('/* a /* b */ still comment */ x', PG)).toEqual([
             'word:x',
         ]);
+    });
+
+    it('CLI-119: closes at the first star-slash where comments do not nest', () => {
+        expect(
+            kinds('/* a /* b */ x */', { ...PG, nestedComments: false })
+        ).toEqual(['word:x', 'punct:*', 'punct:/']);
     });
 });

@@ -1,5 +1,10 @@
 import type { Diagnostic } from '../script-model';
-import { DOLLAR_TAG, isWordChar, type LexProfile } from './tokenizer';
+import {
+    blockCommentEnd,
+    DOLLAR_TAG,
+    isWordChar,
+    type LexProfile,
+} from './tokenizer';
 
 /** A rule that looks for foreign syntax, line by line, in the masked text. */
 export interface LineRule {
@@ -48,7 +53,7 @@ export function maskCode(source: string, profile: LexProfile): Masked {
             blank(i, end);
             i = end;
         } else if (two === '/*') {
-            const close = source.indexOf('*/', i + 2);
+            const close = blockCommentEnd(source, i, !!profile.nestedComments);
             if (close < 0) {
                 problems.push({
                     severity: 'error',
@@ -57,7 +62,7 @@ export function maskCode(source: string, profile: LexProfile): Masked {
                     suggestion: 'Close the comment with */',
                 });
             }
-            const end = close < 0 ? n : close + 2;
+            const end = close < 0 ? n : close;
             blank(i, end);
             i = end;
         } else if (
