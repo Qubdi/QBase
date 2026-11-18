@@ -501,6 +501,7 @@ export const ru = {
                     kindViews: 'Только представления',
                     schema: 'Схема',
                     schemaAll: 'Все схемы',
+                    schemaNone: 'Без схемы',
                     selectPage: 'Выбрать всё на этой странице',
                     viewTag: 'представление',
                     previous: 'Назад',

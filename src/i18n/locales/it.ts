@@ -495,6 +495,7 @@ export const it = {
                     kindViews: 'Solo viste',
                     schema: 'Schema',
                     schemaAll: 'Tutti gli schemi',
+                    schemaNone: 'Senza schema',
                     selectPage: 'Seleziona tutto in questa pagina',
                     viewTag: 'vista',
                     previous: 'Precedente',

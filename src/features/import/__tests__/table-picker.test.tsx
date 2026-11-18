@@ -235,18 +235,20 @@ describe('TablePicker', () => {
         expect(spy.mock.lastCall![0].size).toBe(PICKER_LIMIT);
     });
 
-    // BUG (minor): a row with no schema (MySQL, SQLite metadata) adds an
-    // empty "" schema, which the schema list shows as a blank option with the
-    // same value as "All schemas". It cannot be told apart from "All schemas"
-    // and choosing it does not narrow the list to the rows without a schema.
-    it.fails(
-        'does not offer a blank schema option for rows without a schema',
-        () => {
-            show([row('', 'plain'), row('app', 'users')]);
-            const options = within(
-                screen.getByRole('combobox', { name: 'Schema' })
-            ).getAllByRole('option');
-            expect(options.map((o) => o.textContent)).not.toContain('');
-        }
-    );
+    it('CLI-133: rows without a schema get their own labelled option, which narrows the list to them', async () => {
+        show([row('', 'plain'), row('app', 'users')]);
+        const select = screen.getByRole('combobox', { name: 'Schema' });
+        const options = within(select).getAllByRole('option');
+        expect(options.map((o) => o.textContent)).toEqual([
+            'All schemas',
+            'No schema',
+            'app',
+        ]);
+        expect(new Set(options.map((o) => o.getAttribute('value'))).size).toBe(
+            3
+        );
+        await userEvent.selectOptions(select, 'No schema');
+        expect(screen.getByText('plain')).toBeInTheDocument();
+        expect(screen.queryByText('app.users')).toBeNull();
+    });
 });

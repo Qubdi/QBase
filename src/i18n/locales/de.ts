@@ -487,6 +487,7 @@ export const de = {
                     kindViews: 'Nur Sichten',
                     schema: 'Schema',
                     schemaAll: 'Alle Schemas',
+                    schemaNone: 'Ohne Schema',
                     selectPage: 'Alles auf dieser Seite auswählen',
                     viewTag: 'Sicht',
                     previous: 'Zurück',

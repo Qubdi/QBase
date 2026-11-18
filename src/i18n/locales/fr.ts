@@ -503,6 +503,7 @@ export const fr = {
                     kindViews: 'Vues uniquement',
                     schema: 'Schéma',
                     schemaAll: 'Tous les schémas',
+                    schemaNone: 'Sans schéma',
                     selectPage: 'Tout sélectionner sur cette page',
                     viewTag: 'vue',
                     previous: 'Précédent',
