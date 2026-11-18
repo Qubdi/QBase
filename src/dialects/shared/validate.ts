@@ -1,5 +1,5 @@
 import type { Diagnostic } from '../script-model';
-import type { LexProfile } from './tokenizer';
+import { isWordChar, type LexProfile } from './tokenizer';
 
 /** A rule that looks for foreign syntax, line by line, in the masked text. */
 export interface LineRule {
@@ -68,14 +68,17 @@ export function maskCode(source: string, profile: LexProfile): Masked {
             (c === '`' && profile.identifierQuotes.includes('`'))
         ) {
             const startLine = line;
+            // a backslash escapes in MySQL strings and in a PostgreSQL E'...'
+            const prev = source[i - 1];
+            const escapes =
+                (profile.backslashEscapes && (c === "'" || c === '"')) ||
+                (c === "'" &&
+                    (prev === 'e' || prev === 'E') &&
+                    !isWordChar(source[i - 2] ?? ' '));
             let j = i + 1;
             let closed = false;
             while (j < n) {
-                if (
-                    profile.backslashEscapes &&
-                    (c === "'" || c === '"') &&
-                    source[j] === '\\'
-                ) {
+                if (escapes && source[j] === '\\') {
                     j += 2;
                     continue;
                 }

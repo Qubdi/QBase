@@ -151,11 +151,7 @@ CREATE TABLE t ( -- the key
         expect(col(r, 't', 's').default).toBe("'it''s'");
     });
 
-    // BUG: the validator (maskCode in validate.ts) does not know PostgreSQL
-    // E-strings, so the backslash-escaped quote in E'it\'s' closes the string
-    // early and the rest of the script is reported as unterminated quoted
-    // text: a valid script is refused. The lexer itself reads it correctly.
-    it.fails('accepts a PostgreSQL E-string with an escaped quote', () => {
+    it('CLI-122: accepts a PostgreSQL E-string with an escaped quote', () => {
         const r = readPostgres(
             "CREATE TABLE t (s text DEFAULT E'it\\'s', id int);"
         );

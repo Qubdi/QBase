@@ -45,7 +45,8 @@ const TWO_CHAR = new Set([
 ]);
 
 const isWordStart = (c: string): boolean => /[A-Za-z_\u0080-￿]/.test(c);
-const isWordChar = (c: string): boolean => /[A-Za-z0-9_$\u0080-￿]/.test(c);
+export const isWordChar = (c: string): boolean =>
+    /[A-Za-z0-9_$\u0080-￿]/.test(c);
 const isDigit = (c: string): boolean => c >= '0' && c <= '9';
 
 /**
