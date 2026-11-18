@@ -312,6 +312,38 @@ describe('right-click menus', () => {
         expect(copy.y).toBeGreaterThanOrEqual(80);
     });
 
+    it('right-clicking a field row adds the note to that field, not to its table', () => {
+        const s = shop();
+        const { store } = renderCanvas(s.design);
+        fireEvent.contextMenu(screen.getByTestId(`field-${s.orderUser}`));
+        const menu = screen.getByTestId('pointer-menu');
+        expect(within(menu).queryByText('Add Note')).toBeNull();
+        fireEvent.click(within(menu).getByText('Add Note to Field'));
+        const { memos } = store.getState().design;
+        expect(memos.order).toHaveLength(1);
+        expect(memos.byId[memos.order[0]].anchor).toEqual({
+            kind: 'column',
+            id: s.orderUser,
+        });
+    });
+
+    it('right-clicking the table itself still adds the note to the table', () => {
+        const s = shop();
+        const { store } = renderCanvas(s.design);
+        const card = screen
+            .getByTestId(`entity-${s.orders}`)
+            .closest('.react-flow__node')!;
+        fireEvent.contextMenu(card);
+        const menu = screen.getByTestId('pointer-menu');
+        expect(within(menu).queryByText('Add Note to Field')).toBeNull();
+        fireEvent.click(within(menu).getByText('Add Note'));
+        const { memos } = store.getState().design;
+        expect(memos.byId[memos.order[0]].anchor).toEqual({
+            kind: 'entity',
+            id: s.orders,
+        });
+    });
+
     it('EDT-100: Delete Table removes the table and its links in one undo step', () => {
         const s = shop();
         const { store } = renderCanvas(s.design);

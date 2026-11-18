@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import { shop } from './test/fixtures';
+import { createEditorStore } from '@/store/editor-store';
+import { shop, withRegion } from './test/fixtures';
 import { renderCanvas } from './test/render';
-import { NEW_ITEM_TYPE, newItemDragProps } from './drop-items';
+import { dropNewItem, NEW_ITEM_TYPE, newItemDragProps } from './drop-items';
 
 const transfer = (kind: string) => ({
     types: [NEW_ITEM_TYPE],
@@ -44,6 +45,65 @@ describe('dragging a new item from the side panel', () => {
         });
         expect(store.getState().design.memos.order).toHaveLength(1);
         expect(store.getState().design.regions.order).toHaveLength(1);
+    });
+
+    it('a note dropped on a column row belongs to that column, not to its table', () => {
+        const s = shop();
+        const { store } = renderCanvas(s.design);
+        fireEvent.drop(screen.getByTestId(`field-${s.orderUser}`), {
+            dataTransfer: transfer('note'),
+        });
+        const { memos } = store.getState().design;
+        expect(memos.order).toHaveLength(1);
+        expect(memos.byId[memos.order[0]].anchor).toEqual({
+            kind: 'column',
+            id: s.orderUser,
+        });
+    });
+
+    it('a note dropped on a column row inside an area still belongs to the column', () => {
+        const s = shop();
+        const placed = withRegion(s.design, {
+            x: -50,
+            y: -50,
+            width: 1000,
+            height: 400,
+        });
+        const { store } = renderCanvas(placed.design);
+        fireEvent.drop(screen.getByTestId(`field-${s.orderUser}`), {
+            dataTransfer: transfer('note'),
+        });
+        const { memos } = store.getState().design;
+        expect(memos.byId[memos.order[0]].anchor).toEqual({
+            kind: 'column',
+            id: s.orderUser,
+        });
+    });
+
+    it('a note dropped on the background still goes to the area or table it is nearest to', () => {
+        const s = shop();
+        const { store } = renderCanvas(s.design);
+        fireEvent.drop(screen.getByTestId('diagram-canvas'), {
+            dataTransfer: transfer('note'),
+        });
+        const { memos } = store.getState().design;
+        expect(memos.byId[memos.order[0]].anchor?.kind).toBe('entity');
+    });
+
+    it('a column that is no longer in the design falls back to the nearest owner', () => {
+        const store = createEditorStore({ design: shop().design });
+        expect(
+            dropNewItem(
+                store,
+                'note',
+                { x: 10, y: 20 },
+                undefined,
+                undefined,
+                'gone'
+            )
+        ).toBe(true);
+        const { memos } = store.getState().design;
+        expect(memos.byId[memos.order[0]].anchor?.kind).not.toBe('column');
     });
 
     it('dropping in a read-only diagram does nothing', () => {

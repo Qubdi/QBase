@@ -100,6 +100,7 @@ export const canvas = {
         newRelationship: 'New Relationship',
         newArea: 'New Area',
         addNote: 'Add Note',
+        addFieldNote: 'Add Note to Field',
         arrange: 'Auto Arrange Diagram',
         moveToArea: 'Move to Area',
         moveToAreaCount: 'Move to Area ({{count}})',

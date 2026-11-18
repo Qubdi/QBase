@@ -1,4 +1,5 @@
 import type { EntityKind } from '@/core/model/entity';
+import type { Id } from '@/core/model/id';
 import type { EditorStore } from '@/store/editor-store';
 import { addEntityAt, addNoteAt, addRegionAt } from './canvas-actions';
 import type { Point } from './flow-model';
@@ -15,17 +16,22 @@ export function isNewItemKind(value: string): value is NewItemKind {
     return ['table', 'view', 'area', 'note'].includes(value);
 }
 
-/** Creates the dropped item at a canvas point. Returns false if the drop is not ours. */
+/**
+ * Creates the dropped item at a canvas point. Returns false if the drop is not
+ * ours. `columnId` is the column row the drop landed on, if any: a note dropped
+ * there belongs to that column.
+ */
 export function dropNewItem(
     store: EditorStore,
     kind: string,
     at: Point,
     visibleSchemas?: readonly string[],
-    measure?: Parameters<typeof addEntityAt>[4]
+    measure?: Parameters<typeof addEntityAt>[4],
+    columnId?: Id
 ): boolean {
     if (!isNewItemKind(kind)) return false;
     if (kind === 'area') return addRegionAt(store, at) !== undefined;
-    if (kind === 'note') return addNoteAt(store, at) !== undefined;
+    if (kind === 'note') return addNoteAt(store, at, columnId) !== undefined;
     return addEntityAt(store, kind, at, visibleSchemas, measure) !== undefined;
 }
 

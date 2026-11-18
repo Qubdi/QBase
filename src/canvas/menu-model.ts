@@ -38,7 +38,8 @@ export type MenuLine =
 
 export type MenuTarget =
     | { kind: 'pane' }
-    | { kind: 'entity'; id: Id }
+    /** `columnId`: the field row that was clicked, when it was a row and not the table's title */
+    | { kind: 'entity'; id: Id; columnId?: Id }
     | { kind: 'region'; id: Id }
     | { kind: 'memo'; id: Id };
 
@@ -142,16 +143,26 @@ export function buildMenu(context: MenuContext): MenuLine[] {
         const ids = menuTargets(design, selection, target.id);
         const entity = design.entities.byId[target.id];
         const lines: MenuLine[] = [];
+        // a click on a field row adds the note to that field; on the title, to the table
+        const column =
+            target.columnId && entity?.columnIds.includes(target.columnId)
+                ? target.columnId
+                : undefined;
         if (context.canEditEntity)
             lines.push(
                 item('editTable', { type: 'edit-entity', id: target.id })
             );
         lines.push(
             item('duplicateTable', { type: 'duplicate-entity', id: target.id }),
-            item('addNote', {
-                type: 'new-note',
-                anchor: { kind: 'entity', id: target.id },
-            })
+            column
+                ? item('addFieldNote', {
+                      type: 'new-note',
+                      anchor: { kind: 'column', id: column },
+                  })
+                : item('addNote', {
+                      type: 'new-note',
+                      anchor: { kind: 'entity', id: target.id },
+                  })
         );
         if (entity?.kind === 'table')
             lines.push(

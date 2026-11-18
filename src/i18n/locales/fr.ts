@@ -981,6 +981,7 @@ export const fr = {
                 newRelationship: 'Nouvelle relation',
                 newArea: 'Nouvelle zone',
                 addNote: 'Ajouter une note',
+                addFieldNote: 'Ajouter une note au champ',
                 arrange: 'Organiser le diagramme automatiquement',
                 moveToArea: 'Déplacer vers une zone',
                 moveToAreaCount: 'Déplacer vers une zone ({{count}})',

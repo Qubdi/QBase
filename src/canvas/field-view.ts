@@ -106,6 +106,19 @@ export function shownColumns(
     return columns.filter((c) => chosen.has(c.id));
 }
 
+/**
+ * The column whose row on the canvas holds the element (a drop or a click
+ * landed on it), or undefined when it is on a table's title or on nothing.
+ * Rows say which column they are in `data-column-id` (see `FieldRow`).
+ */
+export function columnAt(target: EventTarget | null): Id | undefined {
+    if (!(target instanceof Element)) return undefined;
+    return (
+        target.closest('[data-column-id]')?.getAttribute('data-column-id') ??
+        undefined
+    );
+}
+
 /** Columns of one entity that take part in links, and the ones that hold a key. */
 export function linkRoles(
     design: Pick<Design, 'links'>,

@@ -958,6 +958,7 @@ export const de = {
                 newRelationship: 'Neue Beziehung',
                 newArea: 'Neuer Bereich',
                 addNote: 'Notiz hinzufügen',
+                addFieldNote: 'Notiz zum Feld hinzufügen',
                 arrange: 'Diagramm automatisch anordnen',
                 moveToArea: 'In Bereich verschieben',
                 moveToAreaCount: 'In Bereich verschieben ({{count}})',

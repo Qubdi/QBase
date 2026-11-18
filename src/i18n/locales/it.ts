@@ -975,6 +975,7 @@ export const it = {
                 newRelationship: 'Nuova relazione',
                 newArea: 'Nuova area',
                 addNote: 'Aggiungi nota',
+                addFieldNote: 'Aggiungi nota al campo',
                 arrange: 'Disponi automaticamente il diagramma',
                 moveToArea: "Sposta nell'area",
                 moveToAreaCount: "Sposta nell'area ({{count}})",

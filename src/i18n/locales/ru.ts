@@ -978,6 +978,7 @@ export const ru = {
                 newRelationship: 'Новая связь',
                 newArea: 'Новая область',
                 addNote: 'Добавить заметку',
+                addFieldNote: 'Добавить заметку к полю',
                 arrange: 'Автоматически упорядочить диаграмму',
                 moveToArea: 'Переместить в область',
                 moveToAreaCount: 'Переместить в область ({{count}})',
