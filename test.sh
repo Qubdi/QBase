@@ -231,11 +231,12 @@ suite_all() {
     track server suite_server
     track bench suite_bench
     track smoke suite_browser smoke run-smoke.sh "Browser smoke test"
-    # the smoke run built dist; the next browser suites reuse it
+    # the smoke run built dist; the next browser suites reuse it (the performance
+    # suite builds into its own folder, so it always builds)
     SKIP_BUILD=1 track flows suite_browser flows run-flows.sh "Browser flows (local mode)"
     track server-flows suite_browser server-flows run-server-flows.sh "Browser flows (server mode)"
     SKIP_BUILD=1 track a11y suite_browser a11y run-a11y.sh "Accessibility audit"
-    SKIP_BUILD=1 track perf suite_browser perf run-perf.sh "Browser performance"
+    track perf suite_browser perf run-perf.sh "Browser performance"
     summary
 }
 

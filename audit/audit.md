@@ -7,12 +7,12 @@
 | Lens | Open | Crit | High | Fixed | Accepted |
 |------|-----:|-----:|-----:|------:|---------:|
 | Security & secrets | 1 | 0 | 0 | 46 | 0 |
-| Repository | 5 | 0 | 0 | 67 | 0 |
+| Repository | 4 | 0 | 0 | 68 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
 | Client | 0 | 0 | 0 | 135 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 6 | 0 | 0 | 362 | 2 |
+| **Total** | 5 | 0 | 0 | 363 | 2 |
 
 ## Act first
 
@@ -36,7 +36,6 @@ None.
 | REPO-006 | Low | Dependabot version updates paused: all five ecosystems have limit 0 | `.github/dependabot.yml:1`, `.github/dependabot.yml:9` | Restore the limits, or record the pause as Accepted |
 | REPO-022 | Low | CODEOWNERS lists a personal email, no team; single point of review | `.github/CODEOWNERS:5` | Use a verified `@org/team` owner |
 | REPO-084 | Med | `test.sh all` shows failed browser suites as passed and exits 0: `suite_browser` returns the status of its last `echo` | `test.sh:190` | Return the status of `report` |
-| REPO-085 | Med | `test.sh all` runs the browser performance suite with `SKIP_BUILD=1`, but that suite builds into its own folder: a blank page, and all six cases fail | `test.sh:238`, `tools/e2e/perf.mjs:311` | Do not set `SKIP_BUILD` for perf, or let perf reuse the smoke build |
 
 ### Server
 
@@ -101,6 +100,7 @@ None.
 | SRV-024 | Server | SESSION_DAYS has no maximum; large value makes expiry Invalid Date, sign-in 500s |
 | SRV-027 | Server | Lint-config GET and PUT have no rate limit unlike /lint |
 | SRV-029 | Server | Session end deletes sessions and locks in separate statements, not one transaction |
+| REPO-085 | Repository | `test.sh all` runs the browser performance suite with `SKIP_BUILD=1`, but that suite builds into its own folder: a blank page, and all six cases fail |
 | REPO-086 | Repository | Browser flow F4 steps 03 to 05 click buttons named "Hide", which CLI-113 renamed to "Show <name>" with `aria-pressed`: all three time out |
 | REPO-087 | Repository | Browser flows keep `knownBug` markers for two bugs fixed since (CLI-134 lint text, CLI-135 database card arrow keys); the run says "make this a plain check" |
 | REPO-088 | Repository | Browser flows in server mode pass only 15 of 53 steps: they follow screens and routes that have moved (S1.04: `/<project>/diagrams` now shows the project list), so most later steps time out. The first-admin setup token is now supplied, but the rest is not updated |
@@ -502,7 +502,7 @@ Rows up to Stock Postgres from an earlier pass; last three measured in rev 47 on
 
 | Rev | Date | Change |
 |-----|------|--------|
-| 54 | 2026-11-19 | CLI-140 fixed (a null `generatedStored` keeps the column as it is; `tsc -b` passes apart from the local `timeago.js` install gap, and the Docker image builds). Building the image let the server-mode browser flows run for the first time since the setup token was added: 2 new. CLI-143 (inline styles refused by the page CSP on the real server) and REPO-088 (the server-mode flows pass 15 of 53 steps: screens and routes have moved on; the first-admin setup token is now supplied). Later that day: CLI-143 fixed (the scroll area and select viewport styles carry the page nonce, the empty style vaul adds is allowed by its hash); CLI-144 found by the flows and fixed (a diagram opened or created from the project dialog on the real server was cancelled by the dialog's leave check); REPO-088 fixed (the server-mode flows pass 53 of 53); REPO-087 fixed (the two `knownBug` markers are plain checks); REPO-086 fixed (flow F4 clicks "Show <name>" and checks `aria-pressed`). 6 open, 0 Crit, 0 High; anchors not remapped |
+| 54 | 2026-11-19 | CLI-140 fixed (a null `generatedStored` keeps the column as it is; `tsc -b` passes apart from the local `timeago.js` install gap, and the Docker image builds). Building the image let the server-mode browser flows run for the first time since the setup token was added: 2 new. CLI-143 (inline styles refused by the page CSP on the real server) and REPO-088 (the server-mode flows pass 15 of 53 steps: screens and routes have moved on; the first-admin setup token is now supplied). Later that day: CLI-143 fixed (the scroll area and select viewport styles carry the page nonce, the empty style vaul adds is allowed by its hash); CLI-144 found by the flows and fixed (a diagram opened or created from the project dialog on the real server was cancelled by the dialog's leave check); REPO-088 fixed (the server-mode flows pass 53 of 53); REPO-087 fixed (the two `knownBug` markers are plain checks); REPO-086 fixed (flow F4 clicks "Show <name>" and checks `aria-pressed`); REPO-085 fixed (`test.sh all` no longer sets `SKIP_BUILD` for the performance suite, which builds into its own folder). 5 open, 0 Crit, 0 High; anchors not remapped |
 | 53 | 2026-11-18 | 7 new, found by running every suite (`bash test.sh all`: lint and types, 4818 client and 1433 server tests, benchmarks, smoke, flows, accessibility, performance). Client: CLI-140 (High, the CLI-132 fix breaks `tsc -b` and the image build), CLI-141 (the CLI-117 flush does not save an edit made just before a reload), CLI-142 (import tabs without panels). Repository: REPO-084 (the summary of `test.sh all` hides failed browser suites), REPO-085 (perf reuses a build it never made), REPO-086 and 087 (browser flows follow the CLI-113 rename and drop two fixed known-bug markers). Not fixed; 11 open, 0 Crit, 1 High; anchors not remapped |
 | 52 | 2026-11-18 | 32 fixed and 1 accepted, no new findings. Client lens: CLI-019, 112 to 115 and 117 to 138 fixed (autosave flush on page leave, lint text translated, SQL reader and writer round trips, lexer and validator quoting, accessibility labels and live regions); CLI-139 accepted as won't-fix (the columns map copy is 2 ms at 1000 tables, a fix needs a persistent map). Server lens: SRV-042 (per-user cap on lock streams, `SSE_MAX_LOCK_PER_USER`), SRV-044, 045, 046, 047 fixed. Each fix has a test, and the matching `it.fails` markers became real tests; 17 open, 0 Crit, 0 High; anchors not remapped |
 | 51 | 2026-11-18 | 24 new (CLI-117 to 139: SQL and DBML import, export and highlight defects, local autosave loses the last second of edits, lint text untranslated, cross-dialect export O(n²); SRV-047: NUL in text answers 500); about 700 tests added, known bugs kept as `it.fails`; 50 open, 0 Crit, 0 High; anchors not remapped |
