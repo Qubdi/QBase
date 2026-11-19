@@ -74,6 +74,42 @@ describe('CLI-117: leaving the page inside the autosave pause', () => {
         expect(save).toHaveBeenCalledTimes(1);
     });
 
+    it('CLI-141: keeps a synchronous copy of an unsaved edit as the page is left, and not otherwise', async () => {
+        const { save } = open();
+        const key = () =>
+            Object.keys(localStorage).filter((k) =>
+                k.startsWith('qbase:pending-copy:')
+            );
+        localStorage.clear();
+        // nothing changed: no copy
+        await act(async () => {
+            window.dispatchEvent(new Event('pagehide'));
+        });
+        expect(key()).toEqual([]);
+        // an edit inside the autosave pause: the copy is there before pagehide returns
+        edit('a');
+        expect(save).not.toHaveBeenCalled();
+        act(() => {
+            window.dispatchEvent(new Event('pagehide'));
+        });
+        expect(key()).toHaveLength(1);
+        await act(async () => undefined);
+    });
+
+    it('CLI-141: keeps no copy in a read-only session', () => {
+        open(true);
+        localStorage.clear();
+        edit('a');
+        act(() => {
+            window.dispatchEvent(new Event('pagehide'));
+        });
+        expect(
+            Object.keys(localStorage).filter((k) =>
+                k.startsWith('qbase:pending-copy:')
+            )
+        ).toEqual([]);
+    });
+
     it('asks before leaving while there are unsaved edits, and not otherwise', async () => {
         open();
         expect(leaving()).toBe(false);

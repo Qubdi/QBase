@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/platform/ui/spinner';
 import { useToast } from '@/platform/toast/use-toast';
@@ -9,6 +9,7 @@ import {
 import type { Design } from '@/core/model/design';
 import type { VisibilityFilter } from '@/core/model/visibility-filter';
 import type { WireWarning } from '@/core/wire/warning';
+import { restorePendingCopy } from '@/persistence/pending-copy';
 import { EditorStoreProvider } from '@/store/editor-provider';
 import { useStorageAdapter } from './storage-context';
 
@@ -61,6 +62,12 @@ export const DiagramProvider: React.FC<
             : { status: 'loading' };
     const [openId, setOpenId] = useState<string | undefined>();
 
+    // read by the load below without making a toggle of it load the diagram again
+    const readonlyRef = useRef(readonly);
+    useEffect(() => {
+        readonlyRef.current = readonly;
+    }, [readonly]);
+
     useEffect(() => {
         let cancelled = false;
         const settle = (next: Loaded) =>
@@ -75,7 +82,19 @@ export const DiagramProvider: React.FC<
                     ? undefined
                     : (await adapter.readSettings()).defaultDiagramId ||
                       undefined);
-            const found = id ? await adapter.load(id) : undefined;
+            const stored = id ? await adapter.load(id) : undefined;
+            if (cancelled) return;
+            // Edits made in the last moments before the page was left may not have
+            // reached IndexedDB; a copy kept as it was left is newer, and wins.
+            const found =
+                id && stored
+                    ? await restorePendingCopy(
+                          // a read-only session never writes (spec C2): it shows the copy only
+                          readonlyRef.current ? undefined : adapter,
+                          id,
+                          stored
+                      )
+                    : stored;
             if (cancelled) return;
             if (!id || !found) return settle({ status: 'missing' });
             const filter = await adapter.readFilter(id);

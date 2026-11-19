@@ -6,6 +6,7 @@ import { serialise } from '../core/wire/serialise';
 import { QBaseDatabase } from './database';
 import { LEGACY_CHILD_STORES } from './legacy-schema';
 import { mergePreviousDatabase } from './merge-previous';
+import { clearPendingCopy } from './pending-copy';
 import { MIGRATION_MARKER, migrateLegacyLayout } from './migrate-legacy';
 import type { MigrationReport } from './migrate-legacy';
 import { summaryOf } from './storage-adapter';
@@ -99,6 +100,8 @@ export class DexieStorageAdapter implements StorageAdapter {
 
     async remove(id: string): Promise<void> {
         this.removed.add(id);
+        // a copy kept as the page was left must not bring it back, or sit there for ever
+        clearPendingCopy(id);
         const db = this.db;
         await db.transaction(
             'rw',

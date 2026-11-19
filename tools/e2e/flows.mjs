@@ -2461,7 +2461,7 @@ await flow(
         });
 
         await step(
-            '08 an edit followed at once by a reload is kept (known bug: lost)',
+            '08 an edit followed at once by a reload is kept',
             async () => {
                 await waitSaved();
                 await rail('Visuals');
@@ -2481,10 +2481,10 @@ await flow(
                 await regions().first().waitFor();
                 await idle();
                 const kept = await regions().count();
-                knownBug(
-                    kept !== 2,
-                    `local mode: an edit made less than 1 s (up to 10 s while editing) before a reload or tab close is lost without a warning (areas after reload: ${kept}, expected 2); there is no pagehide flush or beforeunload prompt as in server mode`
-                );
+                if (kept !== 2)
+                    throw new Error(
+                        `an edit made inside the autosave pause was lost by a reload (areas after reload: ${kept}, expected 2)`
+                    );
             }
         );
     }
