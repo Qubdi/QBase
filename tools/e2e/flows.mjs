@@ -928,7 +928,10 @@ await flow('F4', 'filter panel and zoom to group', {}, async () => {
     await step('04 hide a whole group and show it, zoom to it', async () => {
         const group = page.locator('[data-testid="filter-group"]').first();
         // the group's own switch is the first "Show <name>" of the group
-        await group.getByRole('button', { name: /^Show / }).first().click();
+        await group
+            .getByRole('button', { name: /^Show / })
+            .first()
+            .click();
         await idle();
         check((await tables().count()) === 0, 'group hide left tables');
         await shot('all-hidden');
