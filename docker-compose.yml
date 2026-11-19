@@ -3,7 +3,11 @@
 # push` can also push by hand, and runs none of those checks), with the bundled
 # PostgreSQL. To run an image built from this checkout instead, add
 # docker-compose.build.yml; to work on the code itself, see "Option C" in the README.
-# Configuration comes from .env (see .env.example); the defaults suit local development.
+# Configuration comes from .env (see .env.example; `bash run.sh setup` makes it with random
+# secrets). `bash run.sh start` does everything for a first run, building the image from
+# this checkout. If the image of the release below is not on Docker Hub yet, `docker compose
+# up` stops with "not found": use docker-compose.build.yml (or run.sh start). The defaults
+# suit local development.
 name: qbase
 
 services:

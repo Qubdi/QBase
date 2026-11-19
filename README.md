@@ -51,28 +51,30 @@ A secret in these steps means a long random string. Make one with `openssl rand 
    cd QBase
    ```
 
-2. **Create your settings file.**
+2. **Start it, with one command.**
+
+   ```bash
+   bash run.sh start
+   ```
+
+   It makes `.env` from `.env.example` and fills the two required secrets (`POSTGRES_PASSWORD` and `CONNECTION_KEY`) with random values (it never changes a value you have already set), builds the image from your checkout, starts QBase with its bundled PostgreSQL, waits until both are healthy, and prints the address and the setup token for the first account. The first build takes a few minutes. It needs only Docker; on Windows run it in Git Bash or WSL. Running it again just starts what is already there.
+
+   Keep `.env`: it holds your passwords and keys, and losing `CONNECTION_KEY` makes saved database connections unreadable. `SECRETS_KEY` is optional: it encrypts authenticator-app secrets for two-factor sign-in (see below).
+
+   **The same by hand**, if you prefer:
 
    ```bash
    cp .env.example .env
+   # set POSTGRES_PASSWORD and CONNECTION_KEY in .env (each: a long random string, e.g. `openssl rand -hex 24`;
+   # CONNECTION_KEY needs at least 32 characters). Compose refuses to start without them.
+   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --wait
    ```
 
-3. **Fill in two values in `.env`.** Docker Compose refuses to start without them.
+3. **Or run the published image instead of building it.** `docker-compose.yml` runs `qubdi/qbase` from Docker Hub (the editor and its API in one, for amd64 and arm64), at the release the file belongs to; set `QBASE_VERSION` in `.env` to run another one (`latest` follows the newest release). Once a release is published there, `bash run.sh setup` (to make `.env`) and `docker compose up -d` start it without building. If the image of that version is not on Docker Hub, `docker compose up -d` stops with "not found": use step 2, which builds it.
 
-   ```bash
-   POSTGRES_PASSWORD=<a secret>     # the password of the bundled database
-   CONNECTION_KEY=<a secret>        # at least 32 characters; encrypts saved database passwords
-   ```
+4. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. The form asks for a *setup token*: `bash run.sh start` printed it, otherwise it is in the server's log once (`docker compose logs app`), or it is the `SETUP_TOKEN` you chose. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
 
-   `SECRETS_KEY` is optional: it encrypts authenticator-app secrets for two-factor sign-in (see below). Keep these values; losing `CONNECTION_KEY` makes saved connections unreadable.
-
-4. **Start it.** The first run downloads the published image, `qubdi/qbase` from Docker Hub (the editor and its API in one, for amd64 and arm64). `docker-compose.yml` names the release it belongs to; set `QBASE_VERSION` in `.env` to run another one (`latest` follows the newest release).
-
-   ```bash
-   docker compose up -d
-   ```
-
-5. **Check that it is up.** `db` should be `healthy` and `app` `running` (its health says `starting` for the first half minute).
+5. **Check that it is up** (optional). `db` should be `healthy` and `app` `running` (its health says `starting` for the first half minute).
 
    ```bash
    docker compose ps
@@ -80,8 +82,6 @@ A secret in these steps means a long random string. Make one with `openssl rand 
    ```
 
    In PowerShell `curl` is a different command: open <http://localhost:8080/health> in a browser instead.
-
-6. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. The form asks for a *setup token*, which the server prints once in its log (`docker compose logs app`) or which you chose with `SETUP_TOKEN`. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
 
 Day to day:
 
@@ -102,7 +102,7 @@ QBASE_VERSION=1.3.0-rc1 docker compose -f docker-compose.yml -f docker-compose.b
 
 That image is for your machine's platform only; releases from the tag workflow are built for amd64 and arm64.
 
-`bash run.sh` opens a menu of these: `build`, `rebuild`, `up`, `down`, `down -v`, `push` (it asks for the version); `bash run.sh build 1.0.5` runs one directly, and `bash run.sh help` lists them.
+`bash run.sh` opens a menu of these: `start` (first time: `.env`, build and start), `setup` (only `.env`), `build`, `rebuild`, `up`, `down`, `down -v`, `push` (it asks for the version); `bash run.sh build 1.0.5` runs one directly, and `bash run.sh help` lists them.
 
 QBase listens on `127.0.0.1` only. To reach it from other machines, set `APP_BIND_IP` in `.env` (or put a reverse proxy in front). The editor and its API share one address, so there is no CORS or backend URL to set; behind a reverse proxy, also set `TRUST_PROXY`. See [Configuration](#configuration).
 
@@ -130,7 +130,7 @@ QBase then does not start a database of its own. You need PostgreSQL 16 or newer
    ```bash
    git clone https://github.com/Qubdi/QBase.git
    cd QBase
-   cp .env.example .env
+   bash run.sh setup        # makes .env and fills the two required secrets (or: cp .env.example .env)
    ```
 
 4. **Point `.env` at your database.**
@@ -146,10 +146,10 @@ QBase then does not start a database of its own. You need PostgreSQL 16 or newer
 
    Use a password of plain letters and digits: Compose pastes it into the connection address as it is, so `@ : / ? # %` would break it.
 
-5. **Start only the server and the editor.** `--no-deps` is what keeps the bundled database from starting.
+5. **Start only the server and the editor.** `--no-deps` is what keeps the bundled database from starting. This builds the image from your checkout; once a release of that version is on Docker Hub you can leave out `-f docker-compose.build.yml` and `--build` to pull it instead.
 
    ```bash
-   docker compose up -d --no-deps app
+   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --no-deps app
    ```
 
 6. **Check it.**

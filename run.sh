@@ -5,6 +5,10 @@
 #
 # or name the command directly:
 #
+#   bash run.sh start   [version]   first time: make .env with random secrets, build QBase
+#                                   from this checkout and start it (needs only Docker)
+#   bash run.sh setup               only make .env (copies .env.example, fills the two
+#                                   required secrets; never changes a value you set)
 #   bash run.sh build   [version]   build qubdi/qbase:<version> from this checkout
 #   bash run.sh rebuild [version]   build from scratch (no cache, fresh base images), then start it
 #   bash run.sh up      [version]   start QBase: the local image of that version if there is
@@ -47,7 +51,8 @@ report() {
 }
 
 usage() {
-    sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+    # the comment block at the top of this file
+    awk '/^set -euo/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"
 }
 
 # Asks yes/no; fails (so the command stops) unless the answer is yes
@@ -72,6 +77,62 @@ default_version() {
 set_version() {
     export QBASE_VERSION="${1:-$(default_version)}"
     echo "  Image: $(tag "$QBASE_VERSION")"
+}
+
+# A random hex string of $1 bytes (twice as many characters)
+random_secret() {
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -hex "$1"
+    else
+        head -c "$1" /dev/urandom | od -An -vtx1 | tr -d ' \n'
+    fi
+}
+
+# The value of KEY in .env (empty when unset)
+env_value() {
+    sed -n "s/^$1=//p" .env | tail -n 1 | tr -d '\r"'"'"
+}
+
+# Sets KEY=value in .env: replaces the line, or adds one
+set_env() {
+    local tmp
+    tmp=$(mktemp)
+    if grep -q "^$1=" .env; then
+        awk -v key="$1" -v value="$2" 'BEGIN { FS = OFS = "=" } $1 == key { print key "=" value; next } { print }' .env > "$tmp"
+    else
+        cp .env "$tmp"
+        printf '%s=%s\n' "$1" "$2" >> "$tmp"
+    fi
+    cat "$tmp" > .env   # keeps the file's permissions
+    rm -f "$tmp"
+}
+
+# Makes .env from .env.example when there is none, and fills the two values Compose
+# requires with random secrets when they are empty. A value you have set stays as it is.
+setup_env() {
+    if [[ ! -f .env ]]; then
+        [[ -f .env.example ]] || { err ".env.example is missing: run this from the QBase folder."; return 1; }
+        cp .env.example .env
+        chmod 600 .env
+        ok "Made .env from .env.example"
+    else
+        echo "  .env exists: only empty required values are filled in."
+    fi
+    local made=false
+    if [[ -z "$(env_value POSTGRES_PASSWORD)" ]]; then
+        set_env POSTGRES_PASSWORD "$(random_secret 12)"
+        ok "Made POSTGRES_PASSWORD"
+        made=true
+    fi
+    if [[ -z "$(env_value CONNECTION_KEY)" ]]; then
+        set_env CONNECTION_KEY "$(random_secret 24)"
+        ok "Made CONNECTION_KEY"
+        made=true
+    fi
+    if $made; then
+        warn ".env now holds passwords and keys: keep it private and never commit it."
+        warn "Back up CONNECTION_KEY with your database backups: without it, saved database connections cannot be read."
+    fi
 }
 
 push() {
@@ -111,6 +172,26 @@ run() {
     local command="${1:-}"
     [[ $# -gt 0 ]] && shift
     case "$command" in
+        setup)
+            step "Make .env"
+            setup_env
+            ;;
+        start)
+            step "Set up and start QBase from this checkout"
+            setup_env || return 1
+            set_version "${1:-}"
+            "${BUILD[@]}" up -d --build --wait --wait-timeout 300 || { err "Failed. See: bash run.sh logs"; return 1; }
+            report "${BUILD[@]}" ps --format "$PS_FORMAT"
+            local port token
+            port=$(env_value APP_PORT)
+            token=$("${BASE[@]}" logs app 2>/dev/null | sed -n 's/.*first admin needs this setup token: //p' | tail -n 1)
+            echo "  Open ${BOLD}http://localhost:${port:-8080}${RESET} and create the first account (it becomes the administrator)."
+            if [[ -n "$token" ]]; then
+                echo "  Setup token for that form: ${BOLD}$token${RESET}"
+            else
+                echo "  The setup token is in the log: bash run.sh logs  (or the SETUP_TOKEN you set in .env)"
+            fi
+            ;;
         build)
             step "Build the image from this checkout"
             set_version "${1:-}"
@@ -186,6 +267,8 @@ menu() {
         echo "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
         echo "  ${BOLD}QBase${RESET}   $(state)"
         echo "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+        echo "  ${DIM}First time${RESET}"
+        item s start    "make .env, build from this checkout and start" "$GREEN"
         echo "  ${DIM}Image${RESET}"
         item 1 build    "build from this checkout"
         item 2 rebuild  "build from scratch, then start"
@@ -204,6 +287,7 @@ menu() {
         read -r -p "${BOLD}Choose:${RESET} " choice || exit 0
         # a failed command shows its error and returns to the menu
         case "$choice" in
+            s|start) run start || true ;;
             1) version=$(ask_version); run build "$version" || true ;;
             2) version=$(ask_version); run rebuild "$version" || true ;;
             3) version=$(ask_version); run up "$version" || true ;;
