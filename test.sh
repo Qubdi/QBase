@@ -189,8 +189,11 @@ suite_bench() {
 # Browser suites: the scripts in tools/e2e, which run in the Playwright image
 suite_browser() {  # name, script, title
     step "$3"
+    local status
     report env SHOTS="$OUT/$1" sh "tools/e2e/$2" "$OUT/$1"
+    status=$?
     echo "  Screenshots and results: ${BOLD}$OUT/$1${RESET}"
+    return $status  # the status of report, not of the echo
 }
 
 suite_load() {
