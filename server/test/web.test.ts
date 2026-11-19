@@ -7,7 +7,7 @@ import type { FastifyInstance } from 'fastify';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { buildApp, redactShareToken } from '../src/app.js';
-import { VAUL_STYLE_HASH, webContentSecurityPolicy } from '../src/web.js';
+import { EMPTY_STYLE_HASH, VAUL_STYLE_HASH, webContentSecurityPolicy } from '../src/web.js';
 import { loadConfig } from '../src/config.js';
 import type { Db } from '../src/db/client.js';
 
@@ -132,7 +132,7 @@ describe('serving the editor', () => {
         expect(res.body).not.toContain('__CSP_NONCE__');
         // an element can carry the nonce or the vaul hash, nothing else but 'self'
         const elem = /style-src-elem ([^;]+)/.exec(policy)?.[1];
-        expect(elem).toBe(`'self' 'nonce-${nonce}' '${VAUL_STYLE_HASH}'`);
+        expect(elem).toBe(`'self' 'nonce-${nonce}' '${VAUL_STYLE_HASH}' '${EMPTY_STYLE_HASH}'`);
         expect(/style-src ([^;]+)/.exec(policy)?.[1]).toBe(elem);
         // inline style="" attributes stay allowed; style elements may not be
         expect(policy).toContain("style-src-attr 'unsafe-inline'");
@@ -171,6 +171,10 @@ describe('serving the editor', () => {
         const css = JSON.parse(calls[0][1]) as string;
         const hash = `sha256-${createHash('sha256').update(css).digest('base64')}`;
         expect(hash).toBe(VAUL_STYLE_HASH);
+    });
+
+    it('the empty-style hash is the hash of the empty string', () => {
+        expect(EMPTY_STYLE_HASH).toBe(`sha256-${createHash('sha256').update('').digest('base64')}`);
     });
 
     it('does not serve files from outside the folder', async () => {

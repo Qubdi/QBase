@@ -10,9 +10,9 @@
 | Repository | 8 | 0 | 0 | 64 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 1 | 0 | 0 | 133 | 1 |
+| Client | 0 | 0 | 0 | 134 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 10 | 0 | 0 | 357 | 2 |
+| **Total** | 9 | 0 | 0 | 358 | 2 |
 
 ## Act first
 
@@ -54,7 +54,6 @@ None.
 
 | ID | Sev | Finding | Where | Fix |
 |----|-----|---------|-------|-----|
-| CLI-143 | Med | The browser logs "Refused to apply inline style" (CSP `style-src-elem`) on the admin and editor pages when the app is served by the real server; the source of the inline style is not located | `server/src/web.ts`, `tools/e2e/server-flows.mjs` (S1, S3, S5, S6, S7 console checks) | Find the element that adds an inline style without the page nonce (a modal scroll lock is the first suspect) and give it the nonce |
 
 ### Dead code
 
@@ -222,6 +221,7 @@ None.
 | CLI-140 | Client | The CLI-132 fix gives a value that can be `null` to a `boolean`: `tsc -b` fails and the Docker image build stops, so the server-mode browser flows cannot run |
 | CLI-141 | Client | Local autosave still loses an edit made just before a reload: the `pagehide` flush of CLI-117 does not finish in a real browser (flow F13 step 08: 1 area after reload, expected 2) |
 | CLI-142 | Client | Import dialog "Database client / psql" tabs have no panels; axe reports `aria-controls` pointing at an id that is not there (critical, `aria-valid-attr-value`) |
+| CLI-143 | Client | The browser logs "Refused to apply inline style" (CSP `style-src-elem`) on the admin and editor pages when the app is served by the real server; the source of the inline style is not located |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |
