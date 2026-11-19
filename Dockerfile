@@ -46,6 +46,9 @@ COPY --from=server /app/server/package.json ./
 COPY --from=server /app/server/node_modules ./node_modules
 COPY --from=server /app/server/dist ./dist
 COPY --from=web /usr/src/app/dist /app/web
+# the licence and notice go with every copy of the image (Apache 2.0, section 4)
+COPY --from=web /usr/src/app/LICENSE /usr/src/app/NOTICE /app/
+LABEL org.opencontainers.image.licenses="Apache-2.0"
 # nothing here writes to disk: run as the unprivileged user the image provides
 USER node
 EXPOSE 3001

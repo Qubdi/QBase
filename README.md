@@ -1,7 +1,7 @@
 # QBase
 
 Database schema diagrams you can keep on your own server. QBase is a
-source-available diagram editor with an optional self-hosted backend. The editor
+open source (Apache 2.0) diagram editor with an optional self-hosted backend. The editor
 still works fully offline in the browser; the backend adds accounts, published
 versions, share links, live-database import, re-sync, drift detection
 and schema lint.
@@ -475,7 +475,7 @@ and 21 KB of WAL on a laptop. To go further:
 
 ## License
 
-QBase is licensed under the [Elastic License 2.0](LICENSE): free to use, modify and self-host, for personal and commercial use alike, including inside a company. The one thing it does not allow is offering QBase to others as a hosted or managed service (a SaaS) without a separate licence from Qubdi.
+QBase is licensed under the [Apache License, Version 2.0](LICENSE): free to use, modify, self-host and redistribute, for personal and commercial use alike, including offering it to others as a service. Keep the licence and the [NOTICE](NOTICE) with any copy you distribute, and mark files you changed. Third-party material keeps its own licence (see [NOTICE](NOTICE)); the licence gives no right to use the Qubdi name or logo or the trademarks of the database makers shown in the picker.
 
 ## Supported browsers
 

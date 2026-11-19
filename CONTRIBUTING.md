@@ -56,7 +56,7 @@ Two optional editor scripts: `npm run test:ui` opens the Vitest browser UI, and 
 
 ### License
 
-By contributing, you agree that your work will be licensed under QBase's [license](https://github.com/qubdi/qbase/blob/main/LICENSE).
+By contributing, you agree that your work will be licensed under QBase's [Apache License 2.0](LICENSE), as Section 5 of that licence says for any contribution you submit, and under the terms of the [CLA](CLA.md).
 
 ## Questions?
 

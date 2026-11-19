@@ -1,7 +1,7 @@
 QBase
-Copyright (C) 2026 Qubdi
+Copyright 2026 Qubdi
 
-QBase is a source-available database diagram editor with an optional
+QBase is an open source database diagram editor with an optional
 self-hosted backend, developed in-house by Qubdi.
 
 Acknowledgement
@@ -14,13 +14,16 @@ come from the same upstream (see rewrite/similarity-allow.txt) and the database
 logo images, which were copied from it (see "Database logos" below). Thank you
 to the ChartDB authors and contributors.
 
-QBase is licensed under the Elastic License 2.0 (see the LICENSE file for the
-full text). In short: you may use, copy, modify and redistribute it, including
-inside a company and in production, but you may not provide it to third parties
-as a hosted or managed service that gives them access to a substantial set of
-its features, and you must keep the licence and copyright notices. That short
-summary is not a substitute for the licence text. Any other use that the
-licence does not allow needs a separate licence from Qubdi.
+QBase is licensed under the Apache License, Version 2.0 (see the LICENSE file for
+the full text): you may use, copy, modify and distribute it, for any purpose and
+also commercially, provided that you keep the licence, this NOTICE and the
+copyright notices, and mark files you changed. The licence also grants a patent
+licence from the contributors for their contributions. This short summary is not a
+substitute for the licence text.
+
+The licence covers QBase's own code and documentation. It does not cover the
+third-party material listed below (each part keeps its own licence) and it gives no
+right to use the trademarks and logos of Qubdi or of other owners.
 
 Third-party software
 --------------------
