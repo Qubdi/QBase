@@ -1,8 +1,11 @@
 <div align="center">
 
-<img src="public/favicon.svg" alt="QBase" width="72" height="72">
-
-# QBase
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.svg">
+    <img src="docs/images/logo-light.svg" alt="QBase" height="64">
+  </picture>
+</h1>
 
 **Draw your database schema. Keep it on your own server.**
 
