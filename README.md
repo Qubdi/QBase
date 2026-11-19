@@ -15,7 +15,7 @@ includes the backend, so it is always on there (see [Run it](#run-it)).
 | Backend (optional; always in the Docker image) | `server/` | Node 24, Fastify, Drizzle, PostgreSQL |
 | Shared logic | `shared/` | Pure TypeScript with no dependencies: `reconcile`, drift classification, `lint` |
 | Design references | `design/` | Decision records and screenshots of the interface options that were tried; not part of the app, and left out of the Docker image |
-| Agent skills | `.claude/skills/` | Third-party instruction packs for AI coding assistants such as Claude Code; not part of the app, and left out of the Docker image |
+| Agent skills | `.claude/skills/` | Third-party instruction packs for AI coding assistants such as Claude Code; not part of the app, left out of the Docker image, and not covered by QBase's licence (each has its own, see [NOTICE](NOTICE)) |
 
 ## Features
 

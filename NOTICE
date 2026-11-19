@@ -90,3 +90,16 @@ Radix Icons (MIT)
   src/platform/ui/radix-icons.tsx holds two 15 x 15 icons (the select box caret
   and the accordion chevron) from the Radix Icons set, Copyright (c) WorkOS,
   MIT licence (https://github.com/radix-ui/icons).
+
+Agent skills (.claude/skills)
+  This folder holds third-party instruction packs for AI coding assistants. They
+  are not part of QBase, are left out of the Docker image, and are NOT covered
+  by QBase's Apache 2.0 licence: each keeps its own terms.
+    mattpocock-skills   MIT, Copyright (c) 2026 Matt Pocock (mattpocock-skills/LICENSE)
+    superpowers         MIT, Copyright (c) 2025 Jesse Vincent (superpowers/LICENSE)
+    modern-web-guidance Apache-2.0 (LICENSE-modern-web-guidance)
+    supabase-postgres-best-practices
+                        declares MIT in its SKILL.md
+    chrome-extensions, fastapi, security-audit, vulnerability-triage-brocards
+                        no licence is recorded in this repository: confirm the
+                        terms with their authors before redistributing them
