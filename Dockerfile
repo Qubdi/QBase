@@ -17,6 +17,9 @@ COPY . .
 # .dockerignore leaves the tests out of the build, so the check skips them too
 # (tsconfig.image.json); CI checks them with `tsc -b`.
 RUN npx tsc -p tsconfig.image.json && npx vite build
+# the licence texts of the packages bundled into the editor, served at /THIRD-PARTY-LICENSES.txt
+# (before the next step, so it gets its .br and .gz too)
+RUN node server/scripts/third-party-licenses.mjs . > dist/THIRD-PARTY-LICENSES.txt
 # a .br and .gz beside each large file; the server sends those (see server/src/web.ts)
 RUN node server/scripts/precompress-web.mjs dist
 
@@ -32,7 +35,8 @@ COPY src/lib/data/import-metadata/metadata-types/ ../src/lib/data/import-metadat
 # the copied editor types import zod: let them find the server's copy
 RUN ln -s /app/server/node_modules /app/node_modules \
     && npm run build \
-    && npm prune --omit=dev
+    && npm prune --omit=dev \
+    && node scripts/third-party-licenses.mjs . > THIRD-PARTY-LICENSES-server.txt
 
 # --- the image ---
 FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
@@ -48,6 +52,7 @@ COPY --from=server /app/server/dist ./dist
 COPY --from=web /usr/src/app/dist /app/web
 # the licence and notice go with every copy of the image (Apache 2.0, section 4)
 COPY --from=web /usr/src/app/LICENSE /usr/src/app/NOTICE /app/
+COPY --from=server /app/server/THIRD-PARTY-LICENSES-server.txt /app/
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 # nothing here writes to disk: run as the unprivileged user the image provides
 USER node

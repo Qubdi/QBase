@@ -47,7 +47,7 @@ database, the server and the editor.
 ```bash
 npm run lint && npx vitest run       # editor: lint and tests
 npm run build                        # editor: lint, type check and bundle
-cd server && npm run lint && npm run typecheck && npx vitest run   # server (tests need the Postgres from `docker compose up -d db`, started with POSTGRES_USER=qbase, POSTGRES_PASSWORD=qbase and any CONNECTION_KEY of 16 or more characters, which Compose requires even to start only the database)
+cd server && npm run lint && npm run typecheck && npx vitest run   # server (tests need the Postgres from `docker compose up -d db`, started with POSTGRES_USER=qbase, POSTGRES_PASSWORD=qbase and any non-empty CONNECTION_KEY, which Compose requires even to start only the database)
 ```
 
 The server tests create their own `qbase_test` database next to the one the app uses. By default they connect as `qbase`/`qbase` on `localhost:5433`; set `TEST_PG_PORT`, `TEST_PG_USER` and `TEST_PG_PASSWORD` to use another port, user or password.

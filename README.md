@@ -54,28 +54,28 @@ A secret in these steps means a long random string. Make one with `openssl rand 
    cd QBase
    ```
 
-2. **Start it, with one command.**
+2. **Make your settings and start it.**
+
+   ```bash
+   bash run.sh setup        # makes .env with random secrets
+   docker compose up -d     # pulls the published image and starts it with the bundled PostgreSQL
+   ```
+
+   `bash run.sh setup` makes `.env` from `.env.example` and fills the two required secrets (`POSTGRES_PASSWORD` and `CONNECTION_KEY`) with random values; it never changes a value you have already set. `docker compose up -d` pulls `qubdi/qbase` from Docker Hub (the editor and its API in one, for amd64 and arm64) as `latest`, the newest release; set `QBASE_VERSION` in `.env` to pin another one (such as `1.0.1`). Both need only Docker; on Windows run `run.sh` in Git Bash or WSL.
+
+   Keep `.env`: it holds your passwords and keys, and losing `CONNECTION_KEY` makes saved database connections unreadable. `SECRETS_KEY` is optional: it encrypts authenticator-app secrets for two-factor sign-in (see below).
+
+   **The same by hand**, if you prefer: `cp .env.example .env`, then set `POSTGRES_PASSWORD` and `CONNECTION_KEY` in it (each a long random string, e.g. `openssl rand -hex 24`; `CONNECTION_KEY` needs at least 32 characters). Compose refuses to start without them.
+
+3. **Or build the image from your checkout** instead of pulling it, to run your own changes:
 
    ```bash
    bash run.sh start
    ```
 
-   It makes `.env` from `.env.example` and fills the two required secrets (`POSTGRES_PASSWORD` and `CONNECTION_KEY`) with random values (it never changes a value you have already set), builds the image from your checkout, starts QBase with its bundled PostgreSQL, waits until both are healthy, and prints the address and the setup token for the first account. The first build takes a few minutes. It needs only Docker; on Windows run it in Git Bash or WSL. Running it again just starts what is already there.
+   It makes `.env` as above if there is none, builds the image from your checkout, starts QBase with its bundled PostgreSQL, waits until both are healthy, and prints the address and the setup token for the first account. The first build takes a few minutes. By hand: `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --wait`. If `docker compose up -d` stops with "not found" (a pinned `QBASE_VERSION` that is not published), this is the way to get a working image.
 
-   Keep `.env`: it holds your passwords and keys, and losing `CONNECTION_KEY` makes saved database connections unreadable. `SECRETS_KEY` is optional: it encrypts authenticator-app secrets for two-factor sign-in (see below).
-
-   **The same by hand**, if you prefer:
-
-   ```bash
-   cp .env.example .env
-   # set POSTGRES_PASSWORD and CONNECTION_KEY in .env (each: a long random string, e.g. `openssl rand -hex 24`;
-   # CONNECTION_KEY needs at least 32 characters). Compose refuses to start without them.
-   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --wait
-   ```
-
-3. **Or run the published image instead of building it.** `docker-compose.yml` runs `qubdi/qbase` from Docker Hub (the editor and its API in one, for amd64 and arm64), as `latest`, the newest release; set `QBASE_VERSION` in `.env` to pin another one (such as `1.0.1`). Once a release is published there, `bash run.sh setup` (to make `.env`) and `docker compose up -d` start it without building. If the image of that version is not on Docker Hub, `docker compose up -d` stops with "not found": use step 2, which builds it.
-
-4. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. The form asks for a *setup token*: `bash run.sh start` printed it, otherwise it is in the server's log once (`docker compose logs app`), or it is the `SETUP_TOKEN` you chose. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
+4. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. The form asks for a *setup token*: the server prints it once in its log (`docker compose logs app`; `bash run.sh start` shows it for you), or it is the `SETUP_TOKEN` you chose. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
 
 5. **Check that it is up** (optional). `db` should be `healthy` and `app` `running` (its health says `starting` for the first half minute).
 
@@ -113,7 +113,7 @@ QBase listens on `127.0.0.1` only. To reach it from other machines, set `APP_BIN
 
 ### Option B: Docker, with your own existing PostgreSQL
 
-QBase then does not start a database of its own. You need PostgreSQL 16 or newer. CI runs the server tests on 18; the whole suite was also run on 16.15 on 2026-11-09.
+QBase then does not start a database of its own. You need PostgreSQL 16 or newer. CI runs the whole server test suite on both 16 and 18.
 
 1. **Create an empty database and a role that owns it**, on your PostgreSQL:
 
@@ -151,10 +151,10 @@ QBase then does not start a database of its own. You need PostgreSQL 16 or newer
 
    Use a password of plain letters and digits: Compose pastes it into the connection address as it is, so `@ : / ? # %` would break it.
 
-5. **Start only the server and the editor.** `--no-deps` is what keeps the bundled database from starting. This builds the image from your checkout; once a release of that version is on Docker Hub you can leave out `-f docker-compose.build.yml` and `--build` to pull it instead.
+5. **Start only the server and the editor.** `--no-deps` is what keeps the bundled database from starting. This pulls the published image; to build it from your checkout instead, add `-f docker-compose.build.yml` after `-f docker-compose.yml` and `--build` after `up -d`.
 
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --no-deps app
+   docker compose up -d --no-deps app
    ```
 
 6. **Check it.**
@@ -303,7 +303,7 @@ After the password, a person can be asked for the 6-digit code their authenticat
 - **How it works:** after a correct password the server answers `{ "mfaRequired": true, "challenge": "..." }` and sets no cookie; `POST /auth/login/mfa` with the ticket and a code (or a recovery code) then starts the session. A ticket lasts 5 minutes and dies after 5 wrong codes, wrong codes also count against the account's lockout (`AUTH_MAX_FAILURES`), and a code can be used only once. The secret is stored encrypted (AES-256-GCM) and never returned after set-up; the 10 recovery codes are stored as hashes and shown once. Turning it on needs the password, so a stolen session cannot lock the owner out with a second factor they do not have. Turning it off, making new recovery codes and changing the password need the password and/or a code.
 - **A lost phone:** use a recovery code (each works once). Otherwise an admin opens *Admin > Users* and chooses *Reset two-factor* for that person, who is signed out everywhere and can sign in with the password alone. Resetting another *administrator's* password or two-factor asks the acting admin for their own password (and a code from their authenticator app or a recovery code, if they have two-factor on), so a stolen admin session alone cannot take over another admin; making someone an administrator (creating an admin account or promoting one) and deleting a project, which removes everything in it, ask for the same proof. A wrong password counts against the same lockout as changing your own. If the only admin is locked out, run on the server `npm run mfa:reset -- person@example.com` (from `server/`), or in Docker `docker compose exec app node dist/server/src/cli/mfa-reset.js person@example.com`.
 - **Upgrading from a version that stored recovery codes without the `k1:` prefix:** the first start after the upgrade deletes every unused recovery code stored the old way (migration `0026`), because the oldest ones were a bare sha256 that could be tested offline and the two kinds cannot be told apart. Two-factor stays on and the authenticator still works; people see *0 unused recovery codes* in their account settings and make new ones there. Anyone who had lost their phone and was relying on an old code needs an admin to *Reset two-factor*.
-- **Activity log:** `mfa.enable`, `mfa.disable`, `mfa.reset`, `mfa.recovery_used`, `mfa.recovery_renew` and `mfa.failed`.
+- **Activity log:** `mfa.setup`, `mfa.enable`, `mfa.disable`, `mfa.reset`, `mfa.recovery_used`, `mfa.recovery_renew` and `mfa.failed`.
 
 ### Upgrading the bundled database (PostgreSQL 16 to 18)
 
@@ -445,7 +445,7 @@ Paths are relative to the API root (`/api` when the server also serves the edito
   written on the server's single event loop (about 0.9 s at 40 MB), and reading one back costs
   the parse again in the database driver. An installation that saves diagrams over 25 MB (a
   save of one answers 413) sets `DIAGRAM_BODY_LIMIT_MB` in its `.env` to keep them.
-- DBML import reads at most 2 MB of text (a few thousand tables): the parser it uses slows
+- DBML import reads at most 2,000,000 characters (a few thousand tables): the parser it uses slows
   down faster than the input grows (10k tables take about 12 s). Split a larger file.
 
 ## Scaling
