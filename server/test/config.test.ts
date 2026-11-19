@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     ConfigError,
+    DUMMY_CONNECTION_KEY,
+    DUMMY_DB_PASSWORD,
     loadConfig as loadConfigFrom,
     parseCookieSecure,
     parseTrustProxy,
@@ -304,15 +306,33 @@ describe("the repository's example settings file", () => {
             .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)])
     );
 
-    it('ships no usable password or key: copying it must not bypass the Compose guards', () => {
+    it('ships dummy values for the two secrets Compose requires, and blank for every other key and password', () => {
         for (const name of ['POSTGRES_PASSWORD', 'CONNECTION_KEY', 'MSSQL_SA_PASSWORD']) {
             expect(settings.has(name), name).toBe(true);
         }
+        // QBase starts straight away on the dummies; the server warns while they are in use
+        expect(settings.get('POSTGRES_PASSWORD')).toBe(DUMMY_DB_PASSWORD);
+        expect(settings.get('CONNECTION_KEY')).toBe(DUMMY_CONNECTION_KEY);
         for (const [name, value] of settings) {
-            if (/(KEY|SECRET|PASSWORD)$/.test(name)) {
+            if (
+                /(KEY|SECRET|PASSWORD)$/.test(name) &&
+                name !== 'POSTGRES_PASSWORD' &&
+                name !== 'CONNECTION_KEY'
+            ) {
                 expect(value, name).toBe('');
             }
         }
+    });
+
+    it('has a dummy key the server accepts without ALLOW_SHORT_KEYS', () => {
+        expect(DUMMY_CONNECTION_KEY.length).toBeGreaterThanOrEqual(32);
+        expect(() => loadConfig({ CONNECTION_KEY: DUMMY_CONNECTION_KEY })).not.toThrow();
+    });
+
+    it('has the same dummy values as run.sh, which replaces them with random ones', () => {
+        const runSh = readFileSync(new URL('../../run.sh', import.meta.url), 'utf8');
+        expect(runSh).toContain(`DUMMY_POSTGRES_PASSWORD=${DUMMY_DB_PASSWORD}\n`);
+        expect(runSh).toContain(`DUMMY_CONNECTION_KEY=${DUMMY_CONNECTION_KEY}\n`);
     });
 });
 
@@ -345,6 +365,47 @@ describe('startupWarnings', () => {
         expect(two[0]).toMatch(/^SECRETS_KEY is 16 characters/);
         expect(
             startupWarnings(loadConfig({ ...quiet, CONNECTION_KEY: 'c'.repeat(32) }))
+        ).toEqual([]);
+    });
+
+    it('warns while the dummy key or database password from .env.example is in use', () => {
+        const quiet = { COOKIE_SECURE: 'true' };
+        const key = startupWarnings(
+            loadConfig({ ...quiet, CONNECTION_KEY: DUMMY_CONNECTION_KEY })
+        );
+        // SECRETS_KEY falls back to CONNECTION_KEY: still one warning
+        expect(key).toHaveLength(1);
+        expect(key[0]).toMatch(/^CONNECTION_KEY is the dummy value from \.env\.example/);
+        expect(key[0]).not.toContain(DUMMY_CONNECTION_KEY);
+
+        const secrets = startupWarnings(
+            loadConfig({
+                ...quiet,
+                CONNECTION_KEY: 'c'.repeat(40),
+                SECRETS_KEY: DUMMY_CONNECTION_KEY,
+            })
+        );
+        expect(secrets).toHaveLength(1);
+        expect(secrets[0]).toMatch(/^SECRETS_KEY is the dummy value/);
+
+        const db = startupWarnings(
+            loadConfig({
+                ...quiet,
+                DATABASE_URL: `postgres://qbase:${DUMMY_DB_PASSWORD}@db:5432/qbase`,
+            })
+        );
+        expect(db).toHaveLength(1);
+        expect(db[0]).toMatch(/^The database password is the dummy value/);
+        expect(db[0]).not.toContain(DUMMY_DB_PASSWORD);
+
+        expect(
+            startupWarnings(
+                loadConfig({
+                    ...quiet,
+                    CONNECTION_KEY: 'c'.repeat(40),
+                    DATABASE_URL: 'postgres://qbase:another-password@db:5432/qbase',
+                })
+            )
         ).toEqual([]);
     });
 });

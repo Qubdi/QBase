@@ -7,8 +7,8 @@
 #
 #   bash run.sh start   [version]   first time: make .env with random secrets, build QBase
 #                                   from this checkout and start it (needs only Docker)
-#   bash run.sh setup               only make .env (copies .env.example, fills the two
-#                                   required secrets; never changes a value you set)
+#   bash run.sh setup               only make .env (copies .env.example, replaces its two dummy
+#                                   secrets with random ones; never changes a value you set)
 #   bash run.sh build   [version]   build qubdi/qbase:<version> from this checkout
 #   bash run.sh rebuild [version]   build from scratch (no cache, fresh base images), then start it
 #   bash run.sh up      [version]   start QBase: the local image of that version if there is
@@ -110,24 +110,37 @@ set_env() {
     rm -f "$tmp"
 }
 
-# Makes .env from .env.example when there is none, and fills the two values Compose
-# requires with random secrets when they are empty. A value you have set stays as it is.
+# The dummy secrets .env.example ships, so that QBase starts straight away. They are
+# public: the server warns while it runs on one, and a test keeps these in step with
+# .env.example and server/src/config.ts.
+DUMMY_POSTGRES_PASSWORD=dummy-db-password-change-me
+DUMMY_CONNECTION_KEY=dummy-connection-key-change-me-0123456789
+
+# Makes .env from .env.example when there is none, and gives the two values Compose
+# requires random secrets when they are empty or, in the .env just made, still the dummies
+# .env.example ships. A value you have set stays as it is. In an .env that already exists
+# a dummy is only warned about: the database keeps the password it was created with, so
+# changing it under an existing database would lock QBase out.
 setup_env() {
+    local fresh=false
     if [[ ! -f .env ]]; then
         [[ -f .env.example ]] || { err ".env.example is missing: run this from the QBase folder."; return 1; }
         cp .env.example .env
         chmod 600 .env
         ok "Made .env from .env.example"
+        fresh=true
     else
-        echo "  .env exists: only empty required values are filled in."
+        echo "  .env exists: only empty required values are filled in; a dummy value is only warned about."
     fi
-    local made=false
-    if [[ -z "$(env_value POSTGRES_PASSWORD)" ]]; then
+    local made=false value
+    value=$(env_value POSTGRES_PASSWORD)
+    if [[ -z "$value" ]] || { $fresh && [[ "$value" == "$DUMMY_POSTGRES_PASSWORD" ]]; }; then
         set_env POSTGRES_PASSWORD "$(random_secret 12)"
         ok "Made POSTGRES_PASSWORD"
         made=true
     fi
-    if [[ -z "$(env_value CONNECTION_KEY)" ]]; then
+    value=$(env_value CONNECTION_KEY)
+    if [[ -z "$value" ]] || { $fresh && [[ "$value" == "$DUMMY_CONNECTION_KEY" ]]; }; then
         set_env CONNECTION_KEY "$(random_secret 24)"
         ok "Made CONNECTION_KEY"
         made=true
@@ -135,6 +148,12 @@ setup_env() {
     if $made; then
         warn ".env now holds passwords and keys: keep it private and never commit it."
         warn "Back up CONNECTION_KEY with your database backups: without it, saved database connections cannot be read."
+    fi
+    if [[ "$(env_value POSTGRES_PASSWORD)" == "$DUMMY_POSTGRES_PASSWORD" ]]; then
+        warn "POSTGRES_PASSWORD in .env is still the dummy value from .env.example, which anyone can read. Set your own before the first start: an existing database keeps the password it was created with."
+    fi
+    if [[ "$(env_value CONNECTION_KEY)" == "$DUMMY_CONNECTION_KEY" ]]; then
+        warn "CONNECTION_KEY in .env is still the dummy value from .env.example, which anyone can read. Set your own before you save any database connection."
     fi
 }
 

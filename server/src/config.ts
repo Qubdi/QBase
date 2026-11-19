@@ -131,13 +131,26 @@ export function parseTrustProxy(
 }
 
 /**
+ * The values the repository's `.env.example` ships so that QBase starts straight
+ * away. They sit in a public repository, so a server still running on one is
+ * warned about. A test keeps them in step with `.env.example`, and `run.sh`
+ * replaces them with random ones.
+ */
+export const DUMMY_DB_PASSWORD = 'dummy-db-password-change-me';
+export const DUMMY_CONNECTION_KEY = 'dummy-connection-key-change-me-0123456789';
+
+/**
  * Settings the server runs on but that probably leave something weaker than the
  * operator expects. Printed once at start; none of them stops the server.
  */
 export function startupWarnings(
     config: Pick<
         Config,
-        'cookieSecure' | 'trustProxy' | 'connectionKey' | 'secretsKey'
+        | 'cookieSecure'
+        | 'trustProxy'
+        | 'connectionKey'
+        | 'secretsKey'
+        | 'databaseUrl'
     >
 ): string[] {
     const warnings: string[] = [];
@@ -164,6 +177,15 @@ export function startupWarnings(
         if (value === null) continue;
         // SECRETS_KEY falls back to CONNECTION_KEY: one warning per value
         if (name === 'SECRETS_KEY' && value === config.connectionKey) continue;
+        // the key `.env.example` ships is public: what it encrypts is not protected
+        if (value === DUMMY_CONNECTION_KEY) {
+            warnings.push(
+                `${name} is the dummy value from .env.example, which anyone can read in the QBase repository, ` +
+                    'so what it encrypts is not protected. Set your own (for example `openssl rand -hex 24`); ' +
+                    'changing it makes saved values unreadable, so re-enter them after a change.'
+            );
+            continue;
+        }
         if (value.length < RECOMMENDED_KEY_LENGTH) {
             warnings.push(
                 `${name} is ${value.length} characters; use at least ${RECOMMENDED_KEY_LENGTH} ` +
@@ -171,6 +193,13 @@ export function startupWarnings(
                     'ALLOW_SHORT_KEYS=1 is what lets the server start on it.'
             );
         }
+    }
+    // the database password `.env.example` ships is public as well
+    if (config.databaseUrl.includes(`:${DUMMY_DB_PASSWORD}@`)) {
+        warnings.push(
+            'The database password is the dummy value from .env.example, which anyone can read in the QBase repository. ' +
+                'Set POSTGRES_PASSWORD to your own before the first start: an existing database keeps the password it was created with.'
+        );
     }
     return warnings;
 }
