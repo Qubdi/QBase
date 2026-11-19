@@ -15,8 +15,11 @@
 #                                   one, otherwise it is pulled from Docker Hub
 #   bash run.sh down                stop; the data stays in the postgres-data volume
 #   bash run.sh down -v             stop AND delete all data (asks first)
-#   bash run.sh push    <version>   push qubdi/qbase:<version> to Docker Hub (asks first)
+#   bash run.sh push    <version>   push qubdi/qbase:<version> to Docker Hub (asks first), and
+#                                   move latest to it, replacing the previous latest; a
+#                                   prerelease such as 1.0.5-rc1 never moves latest
 #                                   --all-platforms: build for amd64 and arm64 and push that
+#                                   --no-latest: push the version only, latest stays as it is
 #   bash run.sh ps | logs           status, or follow the app's log
 #
 # version: a tag such as 1.0.5 or 1.0.5-rc1. Without one, QBASE_VERSION from the
@@ -135,25 +138,50 @@ setup_env() {
     fi
 }
 
+# Points latest at the version just pushed: the registry copies that image to the
+# new tag, nothing is rebuilt. The image latest named before ($2, a digest, or
+# nothing) stays on Docker Hub under its own version tag.
+promote_latest() {
+    step "Move latest"
+    report docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE:$1" || return 1
+    if [[ -n "$2" ]]; then
+        echo "  The previous latest was $2. To put it back:"
+        echo "  docker buildx imagetools create --tag $IMAGE:latest $IMAGE@$2"
+    fi
+}
+
 push() {
-    local all_platforms=false version="" arg
+    local all_platforms=false latest=true version="" arg
     for arg in "$@"; do
         case "$arg" in
             --all-platforms) all_platforms=true ;;
+            --no-latest) latest=false ;;
             -*) err "Unknown option: $arg"; return 1 ;;
             *) version="$arg" ;;
         esac
     done
     if [[ -z "$version" || "$version" == "latest" ]]; then
-        err "Give the version to push, e.g. 1.0.5 (latest is moved only by the release workflow, and never by a prerelease)."
+        err "Give the version to push, e.g. 1.0.5 (a stable version also moves latest; latest is not a version of its own)."
         return 1
+    fi
+    # a prerelease never moves latest
+    if $latest && [[ "$version" == *-* ]]; then
+        warn "$version is a prerelease: latest is not moved."
+        latest=false
+    fi
+    # what latest names now, kept to print so it can be put back
+    local previous="" what
+    what=$(tag "$version")
+    if $latest; then
+        previous=$(docker buildx imagetools inspect "$IMAGE:latest" --format '{{.Manifest.Digest}}' 2>/dev/null || true)
+        what="$what and $(tag latest) (replacing the current latest${previous:+, $previous})"
     fi
     if $all_platforms; then
         step "Build for amd64 + arm64 and push"
         set_version "$version"
-        confirm "Build $(tag "$version") for amd64 and arm64 and push it to Docker Hub?" || return 1
+        confirm "Build $what for amd64 and arm64 and push to Docker Hub?" || return 1
         report docker buildx build --platform linux/amd64,linux/arm64 \
-            -t "$IMAGE:$version" --push .
+            -t "$IMAGE:$version" --push . || return 1
     else
         step "Push to Docker Hub"
         set_version "$version"
@@ -163,8 +191,14 @@ push() {
         fi
         warn "This pushes the image built for this machine only ($(docker version -f '{{.Server.Arch}}'))."
         warn "Choose \"push all\" for amd64 and arm64."
-        confirm "Push $(tag "$version") to Docker Hub?" || return 1
-        report "${BUILD[@]}" push app
+        if $latest; then
+            warn "latest would then be for this platform only too: other platforms could no longer pull it."
+        fi
+        confirm "Push $what to Docker Hub?" || return 1
+        report "${BUILD[@]}" push app || return 1
+    fi
+    if $latest; then
+        promote_latest "$version" "$previous"
     fi
 }
 
@@ -277,8 +311,8 @@ menu() {
         item 4 down     "stop (data is kept)"
         item 5 "down -v" "stop and DELETE all data" "$RED"
         echo "  ${DIM}Docker Hub${RESET}"
-        item 6 push     "push the image you built"
-        item 7 "push all" "build amd64 + arm64 and push"
+        item 6 push     "push the image you built, and move latest"
+        item 7 "push all" "build amd64 + arm64, push, and move latest"
         echo "  ${DIM}Look${RESET}"
         item 8 ps       "status"
         item 9 logs     "follow the app's log"

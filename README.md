@@ -104,6 +104,8 @@ That image is for your machine's platform only; releases from the tag workflow a
 
 `bash run.sh` opens a menu of these: `start` (first time: `.env`, build and start), `setup` (only `.env`), `build`, `rebuild`, `up`, `down`, `down -v`, `push` (it asks for the version); `bash run.sh build 1.0.5` runs one directly, and `bash run.sh help` lists them.
 
+To publish an image by hand, `bash run.sh push <version>` pushes the image you built as `qubdi/qbase:<version>` to Docker Hub, and `bash run.sh push <version> --all-platforms` builds it for amd64 and arm64 first (push only the image built for your machine and `latest` would lose the other platform). A stable version also becomes `latest`, replacing the previous one, which stays on Docker Hub under its own version tag (the script prints its digest and the command to put it back); a prerelease such as `1.0.5-rc1` never moves `latest`, and `--no-latest` leaves it alone too. It asks before pushing, and the image is not scanned or signed as the tag workflow's is.
+
 QBase listens on `127.0.0.1` only. To reach it from other machines, set `APP_BIND_IP` in `.env` (or put a reverse proxy in front). The editor and its API share one address, so there is no CORS or backend URL to set; behind a reverse proxy, also set `TRUST_PROXY`. See [Configuration](#configuration).
 
 ### Option B: Docker, with your own existing PostgreSQL
