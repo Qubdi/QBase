@@ -50,7 +50,7 @@ updates:
 
   # the compose files' images (the bundled Postgres, SQL Server) are pinned by
   # digest; Postgres' major version moves on purpose, with the data volume (see
-  # the README)
+  # docs/operations.md)
   - package-ecosystem: docker-compose
     directory: /
     schedule:

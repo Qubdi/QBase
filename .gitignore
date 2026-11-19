@@ -120,7 +120,7 @@ dev.env
 
 # Database dumps made by the upgrade guide: they hold roles and password hashes
 qbase-backup*.sql
-# ...and the ones the README's cron backup writes
+# ...and the ones the cron backup in docs/operations.md writes
 qbase-*.dump
 
 # load test output

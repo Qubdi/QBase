@@ -66,7 +66,7 @@ change one setting at a time.
   listener connection, so this points at the Postgres LISTEN/NOTIFY bridge or
   at a closed stream.
 - Run it with 2 replicas behind a proxy before trusting the in-memory rate
-  limiters: they are per process (see "Notes" and "Scaling" in the main README).
+  limiters: they are per process (see "Notes" and "Scaling" in [docs/operations.md](../../docs/operations.md)).
 
 ## Sizes
 

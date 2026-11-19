@@ -12,6 +12,7 @@ coverage
 # git hooks, version control
 audit/
 design/
+docs/
 tools/
 server/load/
 .github/

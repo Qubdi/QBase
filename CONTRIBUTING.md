@@ -39,7 +39,8 @@ request with how; it takes one reply.
 
 ### Setting up
 
-You need Node 24 (see `.nvmrc`) and Docker. The steps in the [README](README.md#run-it) start the
+You need Node 24 (see `.nvmrc`) and Docker. The steps in
+[Run QBase](docs/install.md#option-c-from-source-for-development) start the
 database, the server and the editor.
 
 ### Running the tests

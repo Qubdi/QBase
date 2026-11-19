@@ -2,7 +2,7 @@
 # tag workflow, .github/workflows/publish.yaml, after its checks pass; `bash run.sh
 # push` can also push by hand, and runs none of those checks), with the bundled
 # PostgreSQL. To run an image built from this checkout instead, add
-# docker-compose.build.yml; to work on the code itself, see "Option C" in the README.
+# docker-compose.build.yml; to work on the code itself, see "Option C" in docs/install.md.
 # Configuration comes from .env (see .env.example; `bash run.sh setup` makes it with random
 # secrets). `bash run.sh start` builds the image from this checkout instead of pulling it.
 # If an image cannot be pulled (a QBASE_VERSION that is not published), `docker compose up`
@@ -15,7 +15,7 @@ services:
     container_name: qbase-db
     restart: unless-stopped
     # the official image, pinned by digest (Dependabot keeps it current; the major
-    # version moves on purpose, with the data volume: see the README)
+    # version moves on purpose, with the data volume: see docs/operations.md)
     image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-qbase}
@@ -23,7 +23,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-qbase}
     # Postgres' stock settings suit a laptop: 128 MB of shared buffers, 100
     # connections and a 64 MB /dev/shm. Sized for a server with 2 GB or more for
-    # the database; lower them on a smaller one. See README, "Scaling".
+    # the database; lower them on a smaller one. See docs/operations.md, "Scaling".
     shm_size: 256mb
     command:
       - postgres
@@ -43,7 +43,7 @@ services:
       # PostgreSQL 18 images keep the data in a version folder below this path, so the
       # mount is /var/lib/postgresql, not .../data. A new volume name on purpose: the old
       # qbase-data holds PostgreSQL 16 files and is left untouched (see "Upgrading the
-      # bundled database" in the README)
+      # bundled database" in docs/operations.md)
       - postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
