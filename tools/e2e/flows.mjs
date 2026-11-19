@@ -892,8 +892,18 @@ await flow('F4', 'filter panel and zoom to group', {}, async () => {
             const row = page
                 .locator('[data-testid="filter-table"]')
                 .filter({ hasText: 'customers' });
-            await row.getByRole('button', { name: 'Hide' }).click();
+            // one switch, "Show <name>": pressed while the table is shown
+            const eye = row.getByRole('button', { name: 'Show customers' });
+            check(
+                (await eye.getAttribute('aria-pressed')) === 'true',
+                'the switch of a shown table is not pressed'
+            );
+            await eye.click();
             await idle();
+            check(
+                (await eye.getAttribute('aria-pressed')) === 'false',
+                'the switch of a hidden table is still pressed'
+            );
             check(
                 (await tables().count()) === 2,
                 `${await tables().count()} tables visible`
@@ -903,8 +913,12 @@ await flow('F4', 'filter panel and zoom to group', {}, async () => {
                 'the line of a hidden table is drawn'
             );
             await shot('table-hidden');
-            await row.getByRole('button', { name: 'Show' }).click();
+            await eye.click();
             await idle();
+            check(
+                (await eye.getAttribute('aria-pressed')) === 'true',
+                'the switch is not pressed again'
+            );
             check((await tables().count()) === 3, 'table not shown again');
             check((await drawnEdges()) === 1, 'line not back');
             void group;
@@ -913,7 +927,8 @@ await flow('F4', 'filter panel and zoom to group', {}, async () => {
 
     await step('04 hide a whole group and show it, zoom to it', async () => {
         const group = page.locator('[data-testid="filter-group"]').first();
-        await group.getByRole('button', { name: 'Hide' }).first().click();
+        // the group's own switch is the first "Show <name>" of the group
+        await group.getByRole('button', { name: /^Show / }).first().click();
         await idle();
         check((await tables().count()) === 0, 'group hide left tables');
         await shot('all-hidden');
