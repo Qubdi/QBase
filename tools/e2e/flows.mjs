@@ -6,8 +6,6 @@
 // undo/redo, lint, every language, dark mode, keyboard-only dialogs). Same
 // approach as smoke.mjs.
 //   tools/e2e/run-flows.sh [shots-dir]      (ONLY=F3,F5 runs some flows; SKIP_BUILD=1 reuses dist)
-// Known product bugs are logged as KNOWN BUG and do not fail the run;
-// STRICT=1 makes them fail.
 // Every flow starts in a fresh browser context (clean storage) and ends with a
 // step that fails on any console error, page error or failed request.
 import process from 'node:process';
@@ -1543,22 +1541,6 @@ async function waitSaved() {
         'the editor never said everything is saved',
         15000
     );
-}
-/**
- * A known product bug: logged as KNOWN BUG and kept out of the failures, so
- * the run stays green; STRICT=1 makes it fail. Once fixed, it says so.
- */
-const knownBugs = [];
-function knownBug(present, message) {
-    if (!present) {
-        console.log(
-            `  note: the known bug "${message}" no longer shows; make this a plain check`
-        );
-        return;
-    }
-    if (process.env.STRICT) throw new Error(`known bug: ${message}`);
-    console.log(`  KNOWN BUG ${flowName}: ${message}`);
-    knownBugs.push(`${flowName}: ${message}`);
 }
 const diagramTitle = async () =>
     (await page.getByRole('heading', { level: 1 }).first().innerText()).trim();
@@ -3410,7 +3392,6 @@ await flow(
                     );
                     const seen = await sweep();
                     const problems = [];
-                    const lintEnglish = [];
                     for (const [name, texts] of Object.entries(seen)) {
                         const en = new Set(english[name]);
                         for (const t of texts) {
@@ -3422,23 +3403,14 @@ await flow(
                                 problems.push(`${name}: raw key "${t}"`);
                             else if (/\{\{|\}\}/.test(t))
                                 problems.push(`${name}: placeholder "${t}"`);
-                            else if (en.has(t) && looksEnglish(t)) {
-                                // the lint rule names, descriptions and findings come
-                                // untranslated from shared/lint.ts (known bug)
-                                if (name.startsWith('lint'))
-                                    lintEnglish.push(t);
-                                else problems.push(`${name}: English "${t}"`);
-                            }
+                            else if (en.has(t) && looksEnglish(t))
+                                problems.push(`${name}: English "${t}"`);
                         }
                     }
                     if (problems.length) await shot(`locale-${lang}`);
                     check(
                         problems.length === 0,
                         `\n    ${problems.join('\n    ')}`
-                    );
-                    knownBug(
-                        lintEnglish.length > 0,
-                        `${lang}: the Lint panel findings and the Lint settings rule names and descriptions stay English (${new Set(lintEnglish).size} strings, e.g. "${lintEnglish[0]}")`
                     );
                 }
             );
@@ -3825,15 +3797,18 @@ await flow(
                 // a radiogroup moves between its radios with the arrow keys (ARIA radio pattern)
                 await page.keyboard.press('ArrowRight');
                 await pause(200);
-                knownBug(
-                    (await focusedLabel()) === 'PostgreSQL',
-                    'the database cards of the new-diagram dialog are role="radio" in a radiogroup but ignore the arrow keys, and every card is its own Tab stop'
+                check(
+                    (await focusedLabel()) !== 'PostgreSQL',
+                    'the arrow key did not move the focus to the next database card'
                 );
-                await d.getByRole('radio', { name: 'PostgreSQL' }).focus();
-                await tabUntil(
-                    async () => (await focusedLabel()) === 'MariaDB',
-                    'the MariaDB card',
-                    6
+                // roving tabindex: only the focused card is a Tab stop
+                check(
+                    (await d
+                        .getByRole('radio')
+                        .evaluateAll(
+                            (rs) => rs.filter((r) => r.tabIndex === 0).length
+                        )) === 1,
+                    'the database cards are not a single Tab stop'
                 );
                 await page.keyboard.press('Space');
                 const next = page.getByRole('dialog', {
@@ -3872,5 +3847,4 @@ console.log(
 );
 for (const f of failed)
     console.log(`  FAILED ${f.name}: ${f.error.split('\n')[0]}`);
-for (const k of knownBugs) console.log(`  KNOWN BUG ${k}`);
 process.exit(failed.length ? 1 : 0);

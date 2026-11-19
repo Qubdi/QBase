@@ -9,7 +9,7 @@
 
 <header>
   <div class="eyebrow">QBase &middot; Audit Index &middot; <b>rev 54</b></div>
-  <h1>8 open across six lenses.</h1>
+  <h1>7 open across six lenses.</h1>
   <div class="meta-row">
     <span><b>audit date</b> 2026-11-18</span>
     <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · all containers removed · no secret read</span>
@@ -35,12 +35,12 @@
       <thead><tr><th>Lens</th><th>Open</th><th>Crit</th><th>High</th><th>Fixed</th><th>Accepted</th></tr></thead>
       <tbody>
         <tr><td>Security &amp; secrets</td><td>1</td><td>0</td><td>0</td><td>46</td><td>0</td></tr>
-        <tr><td>Repository</td><td>7</td><td>0</td><td>0</td><td>65</td><td>0</td></tr>
+        <tr><td>Repository</td><td>6</td><td>0</td><td>0</td><td>66</td><td>0</td></tr>
         <tr><td>Server</td><td>0</td><td>0</td><td>0</td><td>46</td><td>0</td></tr>
         <tr><td>Database</td><td>0</td><td>0</td><td>0</td><td>23</td><td>1</td></tr>
         <tr><td>Client</td><td>0</td><td>0</td><td>0</td><td>135</td><td>1</td></tr>
         <tr><td>Dead code</td><td>0</td><td>0</td><td>0</td><td>45</td><td>0</td></tr>
-        <tr><td><b>Total</b></td><td>8</td><td>0</td><td>0</td><td>360</td><td>2</td></tr>
+        <tr><td><b>Total</b></td><td>7</td><td>0</td><td>0</td><td>361</td><td>2</td></tr>
       </tbody>
     </table>
   </div>
@@ -55,8 +55,8 @@
   </a>
   <a class="idx-card repo" href="audit-repository.html">
     <h3>Repository &amp; governance</h3>
-    <p>7 open findings.</p>
-    <p class="lbl">7 open &middot; 0 Crit &middot; 0 High &middot; 65 fixed &middot; 0 accepted</p>
+    <p>6 open findings.</p>
+    <p class="lbl">6 open &middot; 0 Crit &middot; 0 High &middot; 66 fixed &middot; 0 accepted</p>
   </a>
   <a class="idx-card dev" href="audit-server.html">
     <h3>Server</h3>
@@ -86,7 +86,7 @@
     <table>
       <thead><tr><th>Rev</th><th>Date</th><th class="wrap-cell">Change</th></tr></thead>
       <tbody>
-        <tr><td>54</td><td>2026-11-19</td><td class="wrap-cell">CLI-140 fixed (a null <code>generatedStored</code> keeps the column as it is; <code>tsc -b</code> passes apart from the local <code>timeago.js</code> install gap, and the Docker image builds). Building the image let the server-mode browser flows run for the first time since the setup token was added: 2 new. CLI-143 (inline styles refused by the page CSP on the real server) and REPO-088 (the server-mode flows pass 15 of 53 steps: screens and routes have moved on; the first-admin setup token is now supplied). Later that day: CLI-143 fixed (the scroll area and select viewport styles carry the page nonce, the empty style vaul adds is allowed by its hash); CLI-144 found by the flows and fixed (a diagram opened or created from the project dialog on the real server was cancelled by the dialog's leave check); REPO-088 fixed (the server-mode flows pass 53 of 53). 8 open, 0 Crit, 0 High; anchors not remapped</td></tr>
+        <tr><td>54</td><td>2026-11-19</td><td class="wrap-cell">CLI-140 fixed (a null <code>generatedStored</code> keeps the column as it is; <code>tsc -b</code> passes apart from the local <code>timeago.js</code> install gap, and the Docker image builds). Building the image let the server-mode browser flows run for the first time since the setup token was added: 2 new. CLI-143 (inline styles refused by the page CSP on the real server) and REPO-088 (the server-mode flows pass 15 of 53 steps: screens and routes have moved on; the first-admin setup token is now supplied). Later that day: CLI-143 fixed (the scroll area and select viewport styles carry the page nonce, the empty style vaul adds is allowed by its hash); CLI-144 found by the flows and fixed (a diagram opened or created from the project dialog on the real server was cancelled by the dialog's leave check); REPO-088 fixed (the server-mode flows pass 53 of 53); REPO-087 fixed (the two <code>knownBug</code> markers are plain checks). 7 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>53</td><td>2026-11-18</td><td class="wrap-cell">7 new, found by running every suite (<code>bash test.sh all</code>: lint and types, 4818 client and 1433 server tests, benchmarks, smoke, flows, accessibility, performance). Client: CLI-140 (High, the CLI-132 fix breaks <code>tsc -b</code> and the image build), CLI-141 (the CLI-117 flush does not save an edit made just before a reload), CLI-142 (import tabs without panels). Repository: REPO-084 (the summary of <code>test.sh all</code> hides failed browser suites), REPO-085 (perf reuses a build it never made), REPO-086 and 087 (browser flows follow the CLI-113 rename and drop two fixed known-bug markers). Not fixed; 11 open, 0 Crit, 1 High; anchors not remapped</td></tr>
         <tr><td>52</td><td>2026-11-18</td><td class="wrap-cell">32 fixed and 1 accepted, no new findings. Client lens: CLI-019, 112 to 115 and 117 to 138 fixed (autosave flush on page leave, lint text translated, SQL reader and writer round trips, lexer and validator quoting, accessibility labels and live regions); CLI-139 accepted as won't-fix (the columns map copy is 2 ms at 1000 tables, a fix needs a persistent map). Server lens: SRV-042 (per-user cap on lock streams, <code>SSE_MAX_LOCK_PER_USER</code>), SRV-044, 045, 046, 047 fixed. Each fix has a test, and the matching <code>it.fails</code> markers became real tests; 17 open, 0 Crit, 0 High; anchors not remapped</td></tr>
         <tr><td>51</td><td>2026-11-18</td><td class="wrap-cell">24 new (CLI-117 to 139: SQL and DBML import, export and highlight defects, local autosave loses the last second of edits, lint text untranslated, cross-dialect export O(n²); SRV-047: NUL in text answers 500); about 700 tests added, known bugs kept as <code>it.fails</code>; 50 open, 0 Crit, 0 High; anchors not remapped</td></tr>
