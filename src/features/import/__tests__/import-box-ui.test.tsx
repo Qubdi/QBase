@@ -141,6 +141,31 @@ describe('ImportBox instructions', () => {
         ).toBeNull();
     });
 
+    it('CLI-142: the chosen tab points at a panel that exists, and holds what the tab shows', async () => {
+        show();
+        const panelOf = (tab: HTMLElement) => {
+            const id = tab.getAttribute('aria-controls');
+            expect(id).toBeTruthy();
+            const panel = document.getElementById(id!);
+            expect(panel).not.toBeNull();
+            expect(panel).toHaveAttribute('role', 'tabpanel');
+            return panel!;
+        };
+        const client = screen.getByRole('tab', { name: 'DB Client' });
+        expect(
+            within(panelOf(client)).getByRole('button', {
+                name: 'Copy the query',
+            })
+        ).toBeInTheDocument();
+        await userEvent.click(screen.getByRole('tab', { name: 'PSQL' }));
+        const psql = screen.getByRole('tab', { name: 'PSQL' });
+        expect(
+            within(panelOf(psql)).getByText(
+                'Save the script as a file, then run:'
+            )
+        ).toBeInTheDocument();
+    });
+
     it('MySQL has no psql choice', () => {
         show({ databaseType: 'mysql' });
         expect(screen.queryByRole('tab', { name: 'PSQL' })).toBeNull();

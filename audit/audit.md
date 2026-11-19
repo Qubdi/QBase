@@ -10,9 +10,9 @@
 | Repository | 7 | 0 | 0 | 64 | 0 |
 | Server | 0 | 0 | 0 | 46 | 0 |
 | Database | 0 | 0 | 0 | 23 | 1 |
-| Client | 3 | 0 | 1 | 130 | 1 |
+| Client | 2 | 0 | 1 | 131 | 1 |
 | Dead code | 0 | 0 | 0 | 45 | 0 |
-| **Total** | 11 | 0 | 1 | 354 | 2 |
+| **Total** | 10 | 0 | 1 | 355 | 2 |
 
 ## Act first
 
@@ -55,7 +55,6 @@ None.
 |----|-----|---------|-------|-----|
 | CLI-140 | High | The CLI-132 fix gives a value that can be `null` to a `boolean`: `tsc -b` fails and the Docker image build stops, so the server-mode browser flows cannot run | `src/qbase/wire-edits.ts:71` | Use `patch.generatedStored ?? current.generated.stored`, so null keeps the current value |
 | CLI-141 | Med | Local autosave still loses an edit made just before a reload: the `pagehide` flush of CLI-117 does not finish in a real browser (flow F13 step 08: 1 area after reload, expected 2) | `src/store/editor-provider.tsx:36`, `tools/e2e/flows.mjs:2464` | Write the pending design synchronously as the page is left (a small localStorage copy read back on load), or start the IndexedDB write earlier |
-| CLI-142 | Med | Import dialog "Database client / psql" tabs have no panels; axe reports `aria-controls` pointing at an id that is not there (critical, `aria-valid-attr-value`) | `src/features/import/import-box.tsx:419` | Render a `TabsContent` for each tab, or use two buttons with `aria-pressed` instead of `role="tab"` |
 
 ### Dead code
 
@@ -220,6 +219,7 @@ None.
 | CLI-117 | Client | Local autosave loses edits made in the last second before a reload or tab close |
 | CLI-112 | Client | Taken banner status region re-announces its countdown every second |
 | CLI-019 | Client | Four bare `exhaustive-deps` disables give no reason |
+| CLI-142 | Client | Import dialog "Database client / psql" tabs have no panels; axe reports `aria-controls` pointing at an id that is not there (critical, `aria-valid-attr-value`) |
 | CLI-110 | Client | Navbar publish, account, drift, lint and all `qubdi.*` screens show English in de, fr, it, ru |
 | CLI-111 | Client | Locale parity test skips `qubdi.*`, so missing translations pass CI |
 | CLI-103 | Client | Failed autosave (5xx, 429, network) never retries without a new edit |
