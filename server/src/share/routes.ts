@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { createSseWriter } from '../lib/sse-write.js';
+import { createSseWriter, openEventStream } from '../lib/sse-write.js';
 import { and, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
@@ -12,7 +12,6 @@ import { CryptoBox } from '../introspect/crypto-box.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { safeError } from '../lib/safe-error.js';
 import { addressKey } from '../lib/rate-key.js';
-import { API_SECURITY_HEADERS, hstsHeaders } from '../lib/security-headers.js';
 import { canWrite, getRole } from '../diagrams/permissions.js';
 import { emitLinkChanged, onLinkChanged, onPublish } from '../events.js';
 import { activeLinkSql, countedLinkSql } from './active.js';
@@ -475,26 +474,7 @@ export const publicShareRoutes =
                 return reply.hijack();
             }
 
-            reply.hijack();
-            const raw = reply.raw;
-            raw.writeHead(200, {
-                'content-type': 'text/event-stream',
-                'cache-control': 'no-cache, no-transform',
-                // nginx would hold events back in a buffer until it fills
-                'x-accel-buffering': 'no',
-                // the stream bypasses the app's onSend hook
-                ...API_SECURITY_HEADERS,
-                ...hstsHeaders(req, config.cookieSecure),
-                connection: 'keep-alive',
-                ...(config.corsOrigin
-                    ? {
-                          'access-control-allow-origin': config.corsOrigin,
-                          'access-control-allow-credentials': 'true',
-                          vary: 'Origin',
-                      }
-                    : {}),
-            });
-            raw.write(': connected\n\n');
+            const raw = openEventStream(req, reply, config);
 
             let closed = false;
             const cleanup: Array<() => void> = [];

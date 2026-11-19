@@ -31,16 +31,9 @@ export const PasswordInput = React.forwardRef<
                 type="button"
                 disabled={disabled}
                 aria-pressed={visible}
-                aria-label={t(
-                    visible
-                        ? 'qubdi.account.passwordField.hide'
-                        : 'qubdi.account.passwordField.show'
-                )}
-                title={t(
-                    visible
-                        ? 'qubdi.account.passwordField.hide'
-                        : 'qubdi.account.passwordField.show'
-                )}
+                // one fixed name; aria-pressed says whether the text is shown
+                aria-label={t('qubdi.account.passwordField.show')}
+                title={t('qubdi.account.passwordField.show')}
                 // keep the caret in the field when the button is pressed
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setShown((s) => !s)}

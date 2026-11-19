@@ -390,12 +390,19 @@ describe('admin ProjectsPanel', () => {
                 within(confirm).getByLabelText(/type the project name/),
                 'Scratch'
             );
+            // and the admin's own password, so a stolen session cannot do it
+            await userEvent.type(
+                within(confirm).getByLabelText('Your password'),
+                'my-own-password'
+            );
             await userEvent.click(
                 within(confirm).getByRole('button', { name: 'Delete project' })
             );
 
             await waitFor(() =>
-                expect(calls.remove).toHaveBeenCalledWith('p2')
+                expect(calls.remove).toHaveBeenCalledWith('p2', {
+                    adminPassword: 'my-own-password',
+                })
             );
             await waitFor(() =>
                 expect(toastTitles()).toContain('Project deleted')

@@ -35,6 +35,14 @@ const NOT_SYSTEM = 'is_ms_shipped = 0';
 const description = (major: string, minor: string) =>
     `(SELECT CAST(ep.value AS nvarchar(4000)) FROM sys.extended_properties ep WHERE ep.class = 1 AND ep.name = N'MS_Description' AND ep.major_id = ${major} AND ep.minor_id = ${minor})`;
 
+/** `varchar(11)`, `decimal(10,2)`, `int`: the text an alias type is made from. */
+const ALIAS_BASE = `bt.name + CASE
+        WHEN bt.name IN ('nchar', 'nvarchar') THEN '(' + CASE WHEN ty.max_length = -1 THEN 'max' ELSE CAST(ty.max_length / 2 AS varchar(10)) END + ')'
+        WHEN bt.name IN ('char', 'varchar', 'binary', 'varbinary') THEN '(' + CASE WHEN ty.max_length = -1 THEN 'max' ELSE CAST(ty.max_length AS varchar(10)) END + ')'
+        WHEN bt.name IN ('decimal', 'numeric') THEN '(' + CAST(ty.precision AS varchar(10)) + ',' + CAST(ty.scale AS varchar(10)) + ')'
+        WHEN bt.name IN ('datetime2', 'datetimeoffset', 'time') THEN '(' + CAST(ty.scale AS varchar(10)) + ')'
+        ELSE '' END`;
+
 const SECTIONS: Section[] = [
     {
         key: 'tables',
@@ -176,6 +184,21 @@ const SECTIONS: Section[] = [
             str('schema', 's.name'),
             str('table', 't.name'),
             str('expression', 'cc.definition'),
+        ],
+    },
+    {
+        // alias types (CREATE TYPE ... FROM): the user-defined scalar types,
+        // with the system type each is made from and its size
+        key: 'custom_types',
+        from: `sys.types ty
+    JOIN sys.schemas s ON s.schema_id = ty.schema_id
+    JOIN sys.types bt ON bt.user_type_id = ty.system_type_id AND bt.is_user_defined = 0
+    WHERE ty.is_user_defined = 1 AND ty.is_assembly_type = 0 AND ty.is_table_type = 0`,
+        fields: [
+            str('schema', 's.name'),
+            str('type', 'ty.name'),
+            str('kind', `'alias'`),
+            str('base_type', ALIAS_BASE),
         ],
     },
 ];

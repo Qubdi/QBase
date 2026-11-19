@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HelmetProvider } from 'react-helmet-async';
 import {
@@ -136,11 +136,13 @@ describe('admin panel frame', () => {
         try {
             open('/admin/activity');
             await nav();
-            expect(scrolled).toEqual(['Activity']);
+            await waitFor(() => expect(scrolled).toEqual(['Activity']));
 
             await userEvent.click(screen.getByRole('link', { name: 'Users' }));
             await screen.findByRole('heading', { name: 'Users' });
-            expect(scrolled).toEqual(['Activity', 'Users']);
+            await waitFor(() =>
+                expect(scrolled).toEqual(['Activity', 'Users'])
+            );
         } finally {
             Element.prototype.scrollIntoView = original;
         }

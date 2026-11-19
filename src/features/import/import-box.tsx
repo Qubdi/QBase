@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, GripVertical, Info, Wand2 } from 'lucide-react';
 import { Button } from '@/platform/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/platform/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/ui/tabs';
 import { Textarea } from '@/platform/ui/textarea';
 import { CodeView } from './code-view';
 import { EditionIcon, MethodIcon } from './chip-icons';
@@ -314,6 +314,35 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
     const dump = dumpCommandFor(databaseType);
     const psqlSwitch = hasPsqlTab(databaseType, method);
 
+    // the script to run, or the psql command, or why there is none
+    const scriptView =
+        script && psqlSwitch && client === 'psql' ? (
+            <>
+                <p className="text-primary">
+                    {t('editor.importing.box.psqlSave')}
+                </p>
+                <CodeView
+                    code={PSQL_COMMAND}
+                    language="shell"
+                    label={t('editor.importing.box.psql')}
+                    className="h-[96px]"
+                />
+            </>
+        ) : script ? (
+            <CodeView
+                code={script}
+                language="sql"
+                label={t('editor.importing.box.copyScript')}
+                copyLabel={t('editor.importing.box.copyScript')}
+                onCopy={copyScript}
+                className="h-[198px]"
+            />
+        ) : (
+            <p className="text-xs text-muted-foreground">
+                {t('editor.importing.box.noScript')}
+            </p>
+        );
+
     return (
         <div
             ref={grid}
@@ -412,9 +441,9 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
                                     onValueChange={(v) =>
                                         setClient(v as 'client' | 'psql')
                                     }
-                                    className="self-start"
+                                    className="flex flex-col gap-2"
                                 >
-                                    <TabsList className="h-8 rounded-lg border-0 bg-secondary p-1">
+                                    <TabsList className="h-8 self-start rounded-lg border-0 bg-secondary p-1">
                                         <TabsTrigger
                                             value="client"
                                             className="h-6 flex-none rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
@@ -428,35 +457,16 @@ export const ImportBox: React.FC<ImportBoxProps> = ({
                                             {t('editor.importing.box.psql')}
                                         </TabsTrigger>
                                     </TabsList>
+                                    {/* the panel of the chosen tab: without one, the tab's aria-controls points at nothing */}
+                                    <TabsContent
+                                        value={client}
+                                        className="mt-0 flex flex-col gap-2"
+                                    >
+                                        {scriptView}
+                                    </TabsContent>
                                 </Tabs>
-                            ) : null}
-                            {script && psqlSwitch && client === 'psql' ? (
-                                <>
-                                    <p className="text-primary">
-                                        {t('editor.importing.box.psqlSave')}
-                                    </p>
-                                    <CodeView
-                                        code={PSQL_COMMAND}
-                                        language="shell"
-                                        label={t('editor.importing.box.psql')}
-                                        className="h-[96px]"
-                                    />
-                                </>
-                            ) : script ? (
-                                <CodeView
-                                    code={script}
-                                    language="sql"
-                                    label={t('editor.importing.box.copyScript')}
-                                    copyLabel={t(
-                                        'editor.importing.box.copyScript'
-                                    )}
-                                    onCopy={copyScript}
-                                    className="h-[198px]"
-                                />
                             ) : (
-                                <p className="text-xs text-muted-foreground">
-                                    {t('editor.importing.box.noScript')}
-                                </p>
+                                scriptView
                             )}
                         </>
                     ) : null}

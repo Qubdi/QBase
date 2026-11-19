@@ -30,8 +30,6 @@ export const fr = {
             same_password: 'Choisissez un mot de passe différent de l’actuel.',
             password_change_required:
                 'Choisissez votre propre mot de passe avant de continuer.',
-            user_not_found: 'Aucun compte n’existe encore avec cet e-mail.',
-            already_member: 'Cette personne a déjà accès.',
             forbidden: 'Vous n’avez pas la permission de faire cela.',
             not_found: 'Introuvable.',
             encryption_not_configured:
@@ -61,10 +59,6 @@ export const fr = {
                 'Ce nom est utilisé par l’application elle-même. Choisissez-en un autre.',
             cannot_delete_self:
                 'Vous ne pouvez pas supprimer votre propre compte.',
-            project_not_empty:
-                'Ce projet contient encore des diagrammes. Supprimez-les d’abord.',
-            managed_by_project:
-                'L’accès est géré par le projet. Demandez à un administrateur de le modifier.',
             invalid_response:
                 'Le serveur a envoyé une réponse que cette application ne peut pas lire.',
             requestFailed: 'Échec de la requête ({{code}}).',
@@ -159,7 +153,6 @@ export const fr = {
         },
         passwordField: {
             show: 'Afficher le mot de passe',
-            hide: 'Masquer le mot de passe',
             placeholder: 'Mot de passe',
             rules: 'Règles du mot de passe',
             met: ' (respectée)',
@@ -374,6 +367,10 @@ export const fr = {
                 '<strong>{{name}}</strong>, tous ses diagrammes et les affectations de ses membres seront supprimés. Cette action est irréversible.',
             confirmPrompt:
                 'Pour confirmer, saisissez le nom du projet : <strong>{{name}}</strong>',
+            confirmItsYou:
+                'La suppression d’un projet supprime tout ce qu’il contient. Saisissez votre propre mot de passe pour confirmer que c’est bien vous.',
+            confirmItsYouCode:
+                'La suppression d’un projet supprime tout ce qu’il contient. Saisissez votre propre mot de passe et un code de votre application d’authentification (ou un code de récupération) pour confirmer que c’est bien vous.',
             cancel: 'Annuler',
         },
         newProject: {
@@ -749,6 +746,13 @@ export const fr = {
             madeAdmin: 'Nommé admin',
             removeAdmin: 'Retirer les droits d’admin',
             makeAdmin: 'Nommer admin',
+            makeAdminTitle: 'Faire de cette personne un administrateur ?',
+            makeAdminDescription:
+                '{{email}} pourra tout faire comme un administrateur : gérer les utilisateurs, les projets et tous les diagrammes.',
+            confirmGrant:
+                'Cela donne à quelqu’un tous les droits d’administrateur. Saisissez votre propre mot de passe pour confirmer que c’est bien vous.',
+            confirmGrantCode:
+                'Cela donne à quelqu’un tous les droits d’administrateur. Saisissez votre propre mot de passe et un code de votre application d’authentification (ou un code de récupération) pour confirmer que c’est bien vous.',
             userDisabled: 'Utilisateur désactivé',
             userEnabled: 'Utilisateur activé',
             resetPasswordOf: 'Réinitialiser le mot de passe de {{email}}',
@@ -990,6 +994,101 @@ export const fr = {
                 'Les paramètres du lint n’ont pas été enregistrés sur le serveur',
             saveFailedBody:
                 'Les paramètres précédents sont rétablis. Réessayez.',
+        },
+        lintText: {
+            messages: {
+                noPrimaryKey: 'La table {{table}} n’a pas de clé primaire.',
+                orphanTable: 'La table {{table}} n’a aucune relation.',
+                noDescription: 'La table {{table}} n’a pas de description.',
+                reservedTable:
+                    'Le nom de table « {{table}} » est un mot réservé.',
+                reservedColumn:
+                    'La colonne « {{table}}.{{column}} » est un mot réservé.',
+                varcharNoLength:
+                    'La colonne {{table}}.{{column}} est de type {{type}} sans longueur.',
+                nullableInUniqueIndex:
+                    'La colonne {{table}}.{{column}} est nullable mais fait partie de l’index unique {{index}}.',
+                nullableUnique:
+                    'La colonne {{table}}.{{column}} est nullable mais unique.',
+                indexRepeatsPk:
+                    'L’index {{index}} sur {{table}} répète la clé primaire.',
+                indexDuplicate:
+                    'L’index {{index}} sur {{table}} duplique {{other}}.',
+                indexCovered:
+                    'L’index {{index}} sur {{table}} est déjà couvert par {{other}}.',
+                indexCoveredByPk:
+                    'L’index {{index}} sur {{table}} est déjà couvert par la clé primaire.',
+                fkTypeMismatch:
+                    '{{from}}.{{column}} est de type {{type}} mais référence {{to}}.{{toColumn}} qui est de type {{toType}}.',
+                fkNoIndex:
+                    'La clé étrangère {{from}}({{columns}}) → {{to}} n’a pas d’index.',
+                tableCase: 'La table « {{name}} » n’est pas en {{style}}.',
+                columnCase:
+                    'La colonne « {{table}}.{{name}} » n’est pas en {{style}}.',
+                tableSingular:
+                    'La table « {{table}} » est au singulier, mais la plupart des tables sont au pluriel.',
+                tablePlural:
+                    'La table « {{table}} » est au pluriel, mais la plupart des tables sont au singulier.',
+            },
+            rules: {
+                'table-without-primary-key': {
+                    title: 'Table sans clé primaire',
+                    description: 'Chaque table devrait avoir une clé primaire.',
+                },
+                'foreign-key-without-index': {
+                    title: 'Clé étrangère sans index',
+                    description:
+                        'Les jointures et suppressions sur la table parente sont lentes sans index sur la colonne de clé étrangère.',
+                },
+                'foreign-key-type-mismatch': {
+                    title: 'Type de clé étrangère différent de la colonne référencée',
+                    description:
+                        'Les deux colonnes d’une relation devraient avoir le même type.',
+                },
+                'nullable-in-unique-key': {
+                    title: 'Colonne nullable dans une clé unique',
+                    description:
+                        'La plupart des bases acceptent plusieurs NULL dans une clé unique, qui n’impose donc pas ce qu’elle semble imposer.',
+                },
+                'duplicate-index': {
+                    title: 'Index en double',
+                    description:
+                        'Deux index sur les mêmes colonnes, ou un index qui répète la clé primaire.',
+                },
+                'overlapping-index': {
+                    title: 'Index qui se chevauchent',
+                    description:
+                        'Un index qui n’est que le début d’un autre index augmente le coût d’écriture sans bénéfice.',
+                },
+                'naming-case': {
+                    title: 'Style de nommage incohérent',
+                    description: 'Mélange de snake_case et de camelCase.',
+                },
+                'naming-plural': {
+                    title: 'Nombre incohérent dans les noms de tables',
+                    description:
+                        'Mélange de noms de tables au singulier et au pluriel.',
+                },
+                'reserved-word': {
+                    title: 'Mot réservé utilisé comme nom',
+                    description:
+                        'Les noms qui sont des mots réservés SQL doivent être entre guillemets partout.',
+                },
+                'orphan-table': {
+                    title: 'Table sans relations',
+                    description:
+                        'Une table que rien ne référence et qui ne référence rien.',
+                },
+                'missing-table-description': {
+                    title: 'Table sans description',
+                    description: 'Documentez à quoi sert chaque table.',
+                },
+                'varchar-without-length': {
+                    title: 'varchar sans longueur',
+                    description:
+                        'Sous SQL Server, un varchar nu fait un caractère ; MySQL et MariaDB le refusent.',
+                },
+            },
         },
         lintSettings: {
             title: 'Paramètres du lint',

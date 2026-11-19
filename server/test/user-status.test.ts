@@ -180,7 +180,10 @@ describe('user status (active / disabled)', () => {
 
         it('counts only admins who can still sign in when protecting the last one', async () => {
             const second = await registerUser(ctx.app, 'second-admin@example.com');
-            expect((await patch(admin, second.id, { isAdmin: true })).statusCode).toBe(
+            expect((await patch(admin, second.id, {
+                    isAdmin: true,
+                    adminPassword: 'Password-123!',
+                })).statusCode).toBe(
                 200
             );
             const secondSession = await loginUser(ctx.app, 'second-admin@example.com');
@@ -214,6 +217,7 @@ describe('user status (active / disabled)', () => {
                     email: 'spare-admin@example.com',
                     password: 'Password-123!',
                     isAdmin: true,
+                    adminPassword: 'Password-123!',
                 },
             });
             const spareId = created.json().id;

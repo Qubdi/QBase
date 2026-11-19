@@ -90,6 +90,8 @@ const createUserBody = z.object({
     // the rules are checked in the route (weakPassword), so the answer can list them
     password: z.string().max(200),
     isAdmin: z.boolean().default(false),
+    // proof for making an administrator (see createStepUp)
+    ...stepUpFields,
 });
 
 const updateUserBody = z
@@ -97,7 +99,8 @@ const updateUserBody = z
         password: z.string().max(200).optional(),
         isAdmin: z.boolean().optional(),
         isActive: z.boolean().optional(),
-        // proof for resetting another admin's password (see createStepUp)
+        // proof for resetting another admin's password, or making someone an
+        // administrator (see createStepUp)
         ...stepUpFields,
     })
     .refine(
@@ -366,6 +369,10 @@ export const adminRoutes =
 
         app.post('/users', async (req, reply) => {
             const body = createUserBody.parse(req.body);
+            // A new administrator can do everything this one can, so a stolen
+            // session must not be able to make one: the admin's own password
+            // (and code) first, before anything is looked at or written.
+            if (body.isAdmin && !(await stepUp(req, reply, body))) return;
             const weak = weakPassword(config, body.password, body.email);
             if (weak) return reply.code(400).send(weak);
             const taken = await db
@@ -427,6 +434,16 @@ export const adminRoutes =
             if (body.password !== undefined && id === req.user!.id) {
                 return reply.code(400).send({ error: 'use_change_password' });
             }
+            // Giving someone administrator rights, like taking over another
+            // admin's account below, needs this admin's own password (and code):
+            // a stolen session alone must not be able to make itself a second
+            // way in. Asked once, however many of the checks apply.
+            let proven = false;
+            const prove = async (): Promise<boolean> => {
+                if (!proven) proven = await stepUp(req, reply, body);
+                return proven;
+            };
+            if (body.isAdmin === true && !(await prove())) return;
             const patch: Partial<typeof users.$inferInsert> = {};
             if (body.isAdmin !== undefined) patch.isAdmin = body.isAdmin;
             if (body.isActive !== undefined) patch.isActive = body.isActive;
@@ -440,7 +457,7 @@ export const adminRoutes =
                     return reply.code(404).send({ error: 'not_found' });
                 // taking over another admin's account needs this admin's own
                 // password (and code): a stolen session alone must not do it
-                if (account.isAdmin && !(await stepUp(req, reply, body))) {
+                if (account.isAdmin && !(await prove())) {
                     return;
                 }
                 const weak = weakPassword(config, body.password, account.email);
@@ -933,28 +950,47 @@ export const adminRoutes =
 
         app.delete('/projects/:id', async (req, reply) => {
             const { id } = idParam.parse(req.params);
-            const [exists] = await db
-                .select({ id: projects.id, name: projects.name })
-                .from(projects)
-                .where(eq(projects.id, id));
-            if (!exists) return reply.code(404).send({ error: 'not_found' });
+            // This removes every diagram in the project, with their snapshots and
+            // share links, and cannot be undone: the admin's own password (and
+            // code) are asked for first, so a stolen session alone cannot do it.
+            const proof = z.object(stepUpFields).partial().parse(req.body ?? {});
+            if (!(await stepUp(req, reply, proof))) return;
             // Everything inside goes with the project: diagrams, and through the
             // foreign keys their locks, snapshots, share links and drift data, plus
-            // memberships and saved connections. One transaction: all or nothing.
+            // memberships and saved connections. One transaction: all or nothing,
+            // with its audit row. The project row is locked first, so a diagram
+            // created at the same moment either lands before the delete (and goes
+            // with it) or finds the project gone and is refused.
             const removed = await db.transaction(async (tx) => {
+                const [exists] = await tx
+                    .select({ id: projects.id, name: projects.name })
+                    .from(projects)
+                    .where(eq(projects.id, id))
+                    .for('update');
+                if (!exists) return null;
+                // the links of those diagrams die with them: note which, so their
+                // open live streams can be told once the delete is committed
+                const links = await tx
+                    .select({ id: shareLinks.id })
+                    .from(shareLinks)
+                    .innerJoin(diagrams, eq(diagrams.id, shareLinks.diagramId))
+                    .where(eq(diagrams.projectId, id));
                 const gone = await tx
                     .delete(diagrams)
                     .where(eq(diagrams.projectId, id))
                     .returning({ id: diagrams.id });
                 await tx.delete(projects).where(eq(projects.id, id));
-                return gone.length;
+                await audit(tx, {
+                    userId: req.user!.id,
+                    action: 'project.delete',
+                    // the project is gone, so keep its name for the log
+                    meta: { projectId: id, name: exists.name, diagrams: gone.length },
+                });
+                return { count: gone.length, linkIds: links.map((l) => l.id) };
             });
-            await audit(db, {
-                userId: req.user!.id,
-                action: 'project.delete',
-                // the project is gone, so keep its name for the log
-                meta: { projectId: id, name: exists.name, diagrams: removed },
-            });
+            if (removed === null) return reply.code(404).send({ error: 'not_found' });
+            // tell the open share streams to look again: their links are gone
+            removed.linkIds.forEach(emitLinkChanged);
             return reply.code(204).send();
         });
 

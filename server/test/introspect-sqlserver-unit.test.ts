@@ -213,6 +213,10 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
             { schema: 'dbo', table: 'people', name: 'ix_first', column: 'first', index_type: 'NONCLUSTERED', unique: true, primary: true, where: null, direction: 'ASC', column_position: 1 },
         ],
         checks: [{ schema: 'dbo', table: 'people', expression: '([age]>=(0))' }],
+        aliasTypes: [
+            { schema: 'dbo', name: 'nickname', base: 'nvarchar', max_length: 40, precision: 0, scale: 0 },
+            { schema: 'sales', name: 'money_amt', base: 'decimal', max_length: 9, precision: 10, scale: 2 },
+        ],
     };
     const pool = {
         request: () => ({
@@ -231,7 +235,10 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         const { SqlServerIntrospector } = await import('../src/introspect/sqlserver.js');
         const meta = await new SqlServerIntrospector(pool as never).introspect({ schemas: [] });
         expect(meta.check_constraints).toEqual([{ schema: 'dbo', table: 'people', expression: '([age]>=(0))' }]);
-        expect(meta.custom_types).toEqual([]);
+        expect(meta.custom_types).toEqual([
+            { schema: 'dbo', type: 'nickname', kind: 'alias', base_type: 'nvarchar(20)' },
+            { schema: 'sales', type: 'money_amt', kind: 'alias', base_type: 'decimal(10,2)' },
+        ]);
         expect(meta.columns.map((c) => c.generated)).toEqual([
             null,
             { expression: '(upper([first]))', stored: true },
@@ -244,6 +251,15 @@ describe('SQL Server metadata: checks, computed columns, index predicates (fake 
         ]);
         // CLI-039: the catalog's is_primary_key travels as `primary`
         expect(meta.indexes.map((i) => i.primary)).toEqual([false, true]);
+    });
+
+    it('DB-006: alias types are listed in custom_types with the type they are made from', async () => {
+        const { SqlServerIntrospector } = await import('../src/introspect/sqlserver.js');
+        const meta = await new SqlServerIntrospector(pool as never).introspect({ schemas: [] });
+        expect(meta.custom_types?.map((t) => [t.type, t.kind, t.base_type])).toEqual([
+            ['nickname', 'alias', 'nvarchar(20)'],
+            ['money_amt', 'alias', 'decimal(10,2)'],
+        ]);
     });
 
     it('DB-006: an alias type arrives as its base type plus the alias as domain, sized like the base', async () => {
@@ -295,5 +311,24 @@ describe('SQL Server login privileges', () => {
     it('reads both roles with one registered query', () => {
         expect(SQLSERVER_QUERIES.privileges).toMatch(/IS_SRVROLEMEMBER\('sysadmin'\)/);
         expect(SQLSERVER_QUERIES.privileges).toMatch(/IS_MEMBER\('db_owner'\)/);
+    });
+});
+
+describe('DB-006: the text an alias type is made from', () => {
+    it.each([
+        ['nvarchar', 40, 0, 0, 'nvarchar(20)'],
+        ['nvarchar', -1, 0, 0, 'nvarchar(max)'],
+        ['varchar', 11, 0, 0, 'varchar(11)'],
+        ['varbinary', -1, 0, 0, 'varbinary(max)'],
+        ['char', 3, 0, 0, 'char(3)'],
+        ['decimal', 9, 10, 2, 'decimal(10,2)'],
+        ['numeric', 5, 5, 0, 'numeric(5,0)'],
+        ['datetime2', 8, 27, 3, 'datetime2(3)'],
+        ['int', 4, 10, 0, 'int'],
+        ['bit', 1, 1, 0, 'bit'],
+        ['DATE', 3, 10, 0, 'date'],
+    ])('%s (%i, %i, %i) is %s', async (base, maxLength, precision, scale, want) => {
+        const { aliasBaseType } = await import('../src/introspect/sqlserver.js');
+        expect(aliasBaseType(base, maxLength, precision, scale)).toBe(want);
     });
 });

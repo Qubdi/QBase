@@ -19,6 +19,7 @@ import {
     type LintConfig,
     type LintSeverity,
     type RuleId,
+    type RuleInfo,
 } from '../../../shared/lint';
 
 export interface LintSettingsDialogProps {
@@ -38,6 +39,15 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
     onSave,
 }) => {
     const { t } = useTranslation();
+    // the rule text is English in the shared engine; the editor translates it
+    const ruleTitle = (r: RuleInfo) =>
+        t(`qubdi.database.lintText.rules.${r.id}.title`, {
+            defaultValue: r.title,
+        });
+    const ruleDescription = (r: RuleInfo) =>
+        t(`qubdi.database.lintText.rules.${r.id}.description`, {
+            defaultValue: r.description,
+        });
     const severityOptions = (['error', 'warning', 'info'] as const).map(
         (value) => ({
             value,
@@ -120,7 +130,7 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                                 aria-label={t(
                                                     'qubdi.database.lintSettings.enableRule',
                                                     {
-                                                        title: r.title,
+                                                        title: ruleTitle(r),
                                                     }
                                                 )}
                                                 checked={s.enabled}
@@ -139,10 +149,10 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                                 )}
                                             >
                                                 <span className="font-medium leading-snug">
-                                                    {r.title}
+                                                    {ruleTitle(r)}
                                                 </span>
                                                 <span className="text-xs leading-snug text-muted-foreground">
-                                                    {r.description}
+                                                    {ruleDescription(r)}
                                                 </span>
                                             </span>
                                         </label>
@@ -155,7 +165,7 @@ export const LintSettingsDialog: React.FC<LintSettingsDialogProps> = ({
                                             aria-label={t(
                                                 'qubdi.database.lintSettings.severityFor',
                                                 {
-                                                    title: r.title,
+                                                    title: ruleTitle(r),
                                                 }
                                             )}
                                             value={s.severity}

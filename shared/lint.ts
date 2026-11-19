@@ -214,6 +214,50 @@ export type LintFix =
           to: string;
       };
 
+/**
+ * The English text of every finding, with `{{name}}` placeholders. The editor
+ * looks the same key up in its own translations (`qubdi.database.lint.messages`),
+ * so a finding reads in the user's language; the server and the CLI print this.
+ */
+export const MESSAGES = {
+    noPrimaryKey: 'Table {{table}} has no primary key.',
+    orphanTable: 'Table {{table}} has no relationships.',
+    noDescription: 'Table {{table}} has no description.',
+    reservedTable: 'Table name "{{table}}" is a reserved word.',
+    reservedColumn: 'Column "{{table}}.{{column}}" is a reserved word.',
+    varcharNoLength:
+        'Column {{table}}.{{column}} is {{type}} without a length.',
+    nullableInUniqueIndex:
+        'Column {{table}}.{{column}} is nullable but part of unique index {{index}}.',
+    nullableUnique: 'Column {{table}}.{{column}} is nullable but unique.',
+    indexRepeatsPk: 'Index {{index}} on {{table}} repeats the primary key.',
+    indexDuplicate: 'Index {{index}} on {{table}} duplicates {{other}}.',
+    indexCovered:
+        'Index {{index}} on {{table}} is already covered by {{other}}.',
+    indexCoveredByPk:
+        'Index {{index}} on {{table}} is already covered by the primary key.',
+    fkTypeMismatch:
+        '{{from}}.{{column}} is {{type}} but references {{to}}.{{toColumn}} which is {{toType}}.',
+    fkNoIndex: 'Foreign key {{from}}({{columns}}) \u2192 {{to}} has no index.',
+    tableCase: 'Table "{{name}}" is not {{style}}.',
+    columnCase: 'Column "{{table}}.{{name}}" is not {{style}}.',
+    tableSingular: 'Table "{{table}}" is singular but most tables are plural.',
+    tablePlural: 'Table "{{table}}" is plural but most tables are singular.',
+} as const;
+
+export type MessageKey = keyof typeof MESSAGES;
+export type MessageArgs = Record<string, string>;
+interface Msg {
+    key: MessageKey;
+    args: MessageArgs;
+}
+const msg = (key: MessageKey, args: MessageArgs): Msg => ({ key, args });
+const renderMessage = (m: Msg): string =>
+    MESSAGES[m.key].replace(
+        /\{\{(\w+)\}\}/g,
+        (_, k: string) => m.args[k] ?? ''
+    );
+
 export interface Finding {
     /** stable across runs, so the UI can keep selection and dismissals */
     id: string;
@@ -221,6 +265,9 @@ export interface Finding {
     severity: LintSeverity;
     target: LintTarget;
     message: string;
+    /** the key and values of `message`, for translating it */
+    messageKey?: MessageKey;
+    messageArgs?: MessageArgs;
     fix?: LintFix;
 }
 
@@ -416,7 +463,7 @@ export function lint(input: LintInput, config: LintConfig = {}): Finding[] {
         ruleId: RuleId,
         key: string,
         target: LintTarget,
-        message: string,
+        message: Msg,
         fix?: LintFix
     ) => {
         const s = settings(ruleId);
@@ -426,7 +473,9 @@ export function lint(input: LintInput, config: LintConfig = {}): Finding[] {
             ruleId,
             severity: s.severity,
             target,
-            message,
+            message: renderMessage(message),
+            messageKey: message.key,
+            messageArgs: message.args,
             fix,
         });
     };
@@ -434,8 +483,14 @@ export function lint(input: LintInput, config: LintConfig = {}): Finding[] {
     const real = desc.tables.filter((t) => !t.isView);
     const byKey = new Map(desc.tables.map((t) => [t.key, t]));
 
+    const linkedKeys = new Set<string>();
+    for (const r of desc.relationships) {
+        linkedKeys.add(r.fromTable);
+        linkedKeys.add(r.toTable);
+    }
+
     for (const t of real) {
-        tableRules(t, desc, dialect, emit);
+        tableRules(t, desc, linkedKeys, dialect, emit);
     }
     relationshipRules(desc, byKey, emit);
     namingRules(desc, config, emit);
@@ -455,13 +510,14 @@ type Emit = (
     ruleId: RuleId,
     key: string,
     target: LintTarget,
-    message: string,
+    message: Msg,
     fix?: LintFix
 ) => void;
 
 function tableRules(
     t: TableDesc,
     desc: SchemaDesc,
+    linkedKeys: ReadonlySet<string>,
     dialect: string,
     emit: Emit
 ) {
@@ -470,20 +526,17 @@ function tableRules(
             'table-without-primary-key',
             t.key,
             tableTarget(t),
-            `Table ${t.name} has no primary key.`
+            msg('noPrimaryKey', { table: t.name })
         );
     }
 
     if (desc.tables.length > 1) {
-        const linked = desc.relationships.some(
-            (r) => r.fromTable === t.key || r.toTable === t.key
-        );
-        if (!linked) {
+        if (!linkedKeys.has(t.key)) {
             emit(
                 'orphan-table',
                 t.key,
                 tableTarget(t),
-                `Table ${t.name} has no relationships.`
+                msg('orphanTable', { table: t.name })
             );
         }
     }
@@ -493,7 +546,7 @@ function tableRules(
             'missing-table-description',
             t.key,
             tableTarget(t),
-            `Table ${t.name} has no description.`
+            msg('noDescription', { table: t.name })
         );
     }
 
@@ -503,7 +556,7 @@ function tableRules(
             'reserved-word',
             `${t.key}`,
             tableTarget(t),
-            `Table name "${t.name}" is a reserved word.`
+            msg('reservedTable', { table: t.name })
         );
     }
     for (const c of t.columns) {
@@ -512,7 +565,7 @@ function tableRules(
                 'reserved-word',
                 `${t.key}.${c.name}`,
                 columnTarget(t, c),
-                `Column "${t.name}.${c.name}" is a reserved word.`
+                msg('reservedColumn', { table: t.name, column: c.name })
             );
         }
     }
@@ -525,7 +578,11 @@ function tableRules(
                     'varchar-without-length',
                     `${t.key}.${c.name}`,
                     columnTarget(t, c),
-                    `Column ${t.name}.${c.name} is ${c.type} without a length.`,
+                    msg('varcharNoLength', {
+                        table: t.name,
+                        column: c.name,
+                        type: c.type,
+                    }),
                     {
                         action: 'set_column_length',
                         tableId: t.id,
@@ -550,7 +607,11 @@ function tableRules(
                     'nullable-in-unique-key',
                     `${t.key}.${c.name}`,
                     columnTarget(t, c),
-                    `Column ${t.name}.${c.name} is nullable but part of unique index ${ix.name}.`
+                    msg('nullableInUniqueIndex', {
+                        table: t.name,
+                        column: c.name,
+                        index: ix.name,
+                    })
                 );
             }
         }
@@ -562,7 +623,7 @@ function tableRules(
                 'nullable-in-unique-key',
                 `${t.key}.${c.name}`,
                 columnTarget(t, c),
-                `Column ${t.name}.${c.name} is nullable but unique.`
+                msg('nullableUnique', { table: t.name, column: c.name })
             );
         }
     }
@@ -626,8 +687,12 @@ function indexRules(t: TableDesc, emit: Emit) {
                 `${t.key}.${ix.name}`,
                 target(ix),
                 copiesPk
-                    ? `Index ${ix.name} on ${t.name} repeats the primary key.`
-                    : `Index ${ix.name} on ${t.name} duplicates ${dup!.name}.`,
+                    ? msg('indexRepeatsPk', { index: ix.name, table: t.name })
+                    : msg('indexDuplicate', {
+                          index: ix.name,
+                          table: t.name,
+                          other: dup!.name,
+                      }),
                 removeFix(ix)
             );
         }
@@ -653,7 +718,16 @@ function indexRules(t: TableDesc, emit: Emit) {
                 'overlapping-index',
                 `${t.key}.${ix.name}`,
                 target(ix),
-                `Index ${ix.name} on ${t.name} is already covered by ${longer ? longer.name : 'the primary key'}.`,
+                longer
+                    ? msg('indexCovered', {
+                          index: ix.name,
+                          table: t.name,
+                          other: longer.name,
+                      })
+                    : msg('indexCoveredByPk', {
+                          index: ix.name,
+                          table: t.name,
+                      }),
                 removeFix(ix)
             );
         }
@@ -692,7 +766,14 @@ function relationshipRules(
                     'foreign-key-type-mismatch',
                     `${key}.${a.name}`,
                     rTarget,
-                    `${from.name}.${a.name} is ${a.type} but references ${to.name}.${b.name} which is ${b.type}.`,
+                    msg('fkTypeMismatch', {
+                        from: from.name,
+                        column: a.name,
+                        type: a.type,
+                        to: to.name,
+                        toColumn: b.name,
+                        toType: b.type,
+                    }),
                     {
                         action: 'set_column_type',
                         tableId: from.id,
@@ -724,7 +805,11 @@ function relationshipRules(
                 'foreign-key-without-index',
                 key,
                 rTarget,
-                `Foreign key ${from.name}(${r.fromColumns.join(', ')}) → ${bare(r.toTable)} has no index.`,
+                msg('fkNoIndex', {
+                    from: from.name,
+                    columns: r.fromColumns.join(', '),
+                    to: bare(r.toTable),
+                }),
                 {
                     action: 'add_index',
                     tableId: from.id,
@@ -786,7 +871,7 @@ function namingRules(desc: SchemaDesc, config: LintConfig, emit: Emit) {
                     'naming-case',
                     n.table.key,
                     tableTarget(n.table),
-                    `Table "${n.name}" is not ${label}.`,
+                    msg('tableCase', { name: n.name, style: label }),
                     {
                         action: 'rename_table',
                         tableId: n.table.id,
@@ -799,7 +884,11 @@ function namingRules(desc: SchemaDesc, config: LintConfig, emit: Emit) {
                     'naming-case',
                     `${n.table.key}.${n.name}`,
                     columnTarget(n.table, n.column!),
-                    `Column "${n.table.name}.${n.name}" is not ${label}.`,
+                    msg('columnCase', {
+                        table: n.table.name,
+                        name: n.name,
+                        style: label,
+                    }),
                     {
                         action: 'rename_column',
                         tableId: n.table.id,
@@ -837,7 +926,9 @@ function namingRules(desc: SchemaDesc, config: LintConfig, emit: Emit) {
             'naming-plural',
             t.key,
             tableTarget(t),
-            `Table "${t.name}" is ${expected === 'plural' ? 'singular' : 'plural'} but most tables are ${expected}.`
+            msg(expected === 'plural' ? 'tableSingular' : 'tablePlural', {
+                table: t.name,
+            })
         );
     }
 }

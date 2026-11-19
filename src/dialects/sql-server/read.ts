@@ -7,6 +7,7 @@ const PROFILE: ReaderProfile = {
         identifierQuotes: ['[', '"'],
         hashComments: false,
         dollarStrings: false,
+        nestedComments: true,
         backslashEscapes: false,
     },
     goBatches: true,

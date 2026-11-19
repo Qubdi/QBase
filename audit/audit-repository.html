@@ -8,12 +8,12 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 46</b></div>
-  <h1>4 open (0 Crit, 0 High).</h1>
+  <div class="eyebrow">QBase &middot; Repository &amp; governance Audit &middot; <b>rev 54</b></div>
+  <h1>3 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-13</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
-    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+    <span><b>audit date</b> 2026-11-18</span>
+    <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the <code>it.fails</code> tests and KNOWN BUG flow steps · all containers removed · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content; <code>.claude/skills/</code> content checked for secrets and licensing only</span>
   </div>
   <div class="split-nav">
     <b>Part of a 7-file audit split &mdash;</b>
@@ -28,18 +28,16 @@
 </header>
 
 <main id="main">
-
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Repository &amp; governance</h2></div>
-  <p class="section-note">4 open &middot; 59 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
+  <p class="section-note">3 open &middot; 69 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
       <tbody>
-        <tr><td class="svc-name">REPO-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish workflow ships images while TODO says do not publish</td><td class="wrap-cell"><code>TODO.md:7</code>, <code>rewrite/TODO.md:11</code>, <code>.github/workflows/publish.yaml:5</code></td><td class="wrap-cell">Reconcile TODO with publish; gate publish on rewrite status</td></tr>
+        <tr><td class="svc-name">REPO-004</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish workflow ships images while TODO says do not publish</td><td class="wrap-cell"><code>TODO.md:8</code>, <code>rewrite/TODO.md:11</code>, <code>.github/workflows/publish.yaml:5</code></td><td class="wrap-cell">Reconcile TODO with publish; gate publish on rewrite status</td></tr>
+        <tr><td class="svc-name">REPO-006</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">Dependabot version updates paused: all five ecosystems have limit 0</td><td class="wrap-cell"><code>.github/dependabot.yml:1</code>, <code>.github/dependabot.yml:9</code></td><td class="wrap-cell">Restore the limits, or record the pause as Accepted</td></tr>
         <tr><td class="svc-name">REPO-022</td><td><span class="pill flat">Low</span></td><td class="wrap-cell">CODEOWNERS lists a personal email, no team; single point of review</td><td class="wrap-cell"><code>.github/CODEOWNERS:5</code></td><td class="wrap-cell">Use a verified <code>@org/team</code> owner</td></tr>
-        <tr><td class="svc-name">REPO-070</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Full-history gitleaks fails: two test keys missing from <code>.gitleaksignore</code></td><td class="wrap-cell"><code>server/test/startup.test.ts:8</code>, <code>server/test/drift-reseal.test.ts:9</code>, <code>.gitleaksignore:1</code></td><td class="wrap-cell">Add their fingerprints, or build the keys at run time</td></tr>
-        <tr><td class="svc-name">REPO-074</td><td><span class="pill warn">Med</span></td><td class="wrap-cell">Publish pushes to Docker Hub and GHCR with no environment gate or main-ancestry check</td><td class="wrap-cell"><code>.github/workflows/publish.yaml:5</code>, <code>.github/workflows/publish.yaml:109</code></td><td class="wrap-cell">Add <code>environment:</code> with reviewers; verify tag commit is on main</td></tr>
       </tbody>
     </table>
   </div>
@@ -47,11 +45,22 @@
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (59)</summary>
+  <details><summary>Fixed (69)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">REPO-084</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>test.sh all</code> shows failed browser suites as passed and exits 0: <code>suite_browser</code> returns the status of its last <code>echo</code></td></tr>
+        <tr><td class="svc-name">REPO-085</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>test.sh all</code> runs the browser performance suite with <code>SKIP_BUILD=1</code>, but that suite builds into its own folder: a blank page, and all six cases fail</td></tr>
+        <tr><td class="svc-name">REPO-086</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Browser flow F4 steps 03 to 05 click buttons named "Hide", which CLI-113 renamed to "Show &lt;name&gt;" with <code>aria-pressed</code>: all three time out</td></tr>
+        <tr><td class="svc-name">REPO-087</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Browser flows keep <code>knownBug</code> markers for two bugs fixed since (CLI-134 lint text, CLI-135 database card arrow keys); the run says "make this a plain check"</td></tr>
+        <tr><td class="svc-name">REPO-088</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Browser flows in server mode pass only 15 of 53 steps: they follow screens and routes that have moved (S1.04: <code>/&lt;project&gt;/diagrams</code> now shows the project list), so most later steps time out. The first-admin setup token is now supplied, but the rest is not updated</td></tr>
+        <tr><td class="svc-name">REPO-083</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">README never mentions the tracked <code>.claude/skills/</code> and <code>design/</code> folders</td></tr>
+        <tr><td class="svc-name">REPO-082</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">TODO says four React Compiler rules are off; eslint has them on</td></tr>
+        <tr><td class="svc-name">REPO-081</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dev advisory GHSA-fc5q-39xc-vjpf (picomatch) unseen; CI audits prod only</td></tr>
+        <tr><td class="svc-name">REPO-080</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">34 of 36 commits since 2026-11-14 not Conventional; release-please skips them</td></tr>
+        <tr><td class="svc-name">REPO-074</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Publish pushes to Docker Hub and GHCR with no environment gate or main-ancestry check</td></tr>
+        <tr><td class="svc-name">REPO-070</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Full-history gitleaks fails: two test keys missing from <code>.gitleaksignore</code></td></tr>
         <tr><td class="svc-name">REPO-071</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Dependabot header says npm updates paused; both entries have limit 5</td></tr>
         <tr><td class="svc-name">REPO-072</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>INTROSPECT_ALLOW_PRIVILEGED</code> read outside <code>config.ts</code>, absent from compose and <code>.env.example</code></td></tr>
         <tr><td class="svc-name">REPO-073</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>WEB_DIR</code> read in <code>config.ts</code> but absent from <code>server/.env.example</code></td></tr>
@@ -105,7 +114,6 @@
         <tr><td class="svc-name">REPO-002</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>latest</code> tag moves on every <code>v*</code> tag, including prereleases</td></tr>
         <tr><td class="svc-name">REPO-003</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Similarity check runs only on <code>rewrite/clean-room</code>, never on main</td></tr>
         <tr><td class="svc-name">REPO-005</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">CI gitleaks v8.30.1 fails on main: share-token test key fingerprints not ignored</td></tr>
-        <tr><td class="svc-name">REPO-006</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">npm version updates paused; both npm entries have limit 0</td></tr>
         <tr><td class="svc-name">REPO-013</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Playwright npm package installed at run time without a lockfile</td></tr>
         <tr><td class="svc-name">REPO-015</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">1.1 MB <code>audit-ui-differences.html</code> tracked, not an owned audit file</td></tr>
         <tr><td class="svc-name">REPO-027</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Load run.sh never fails on a k6 threshold; README says it gates CI</td></tr>
@@ -124,7 +132,7 @@
     </table>
   </div>
   </details>
-  <details><summary>Dropped (3)</summary>
+  <details><summary>Dropped (6)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th class="wrap-cell">Finding</th><th class="wrap-cell">Reason</th></tr></thead>
@@ -132,11 +140,15 @@
         <tr><td class="svc-name">REPO-026</td><td class="wrap-cell">Husky pre-commit skips server lint silently when server deps absent</td><td class="wrap-cell">Wrong: the hook prints a skip notice, and CI runs the server lint</td></tr>
         <tr><td class="svc-name">REPO-007</td><td class="wrap-cell">Gitleaks config cites SEC-001 which does not exist at rev 0</td><td class="wrap-cell">SEC-001 now exists; reference valid</td></tr>
         <tr><td class="svc-name">REPO-047</td><td class="wrap-cell">Gitleaks flags two-factor test lines; secret scan fails</td><td class="wrap-cell">CI-pinned gitleaks v8.30.1 does not flag them; root cause is REPO-005</td></tr>
+        <tr><td class="svc-name">REPO-077</td><td class="wrap-cell">Vendored skill doc adds two gitleaks hits; CI and publish secret scans fail</td><td class="wrap-cell">Removed from the audit at the owner's request; not fixed</td></tr>
+        <tr><td class="svc-name">REPO-078</td><td class="wrap-cell">NOTICE omits vendored third-party skills and their MIT and Apache-2.0 licences</td><td class="wrap-cell">Removed from the audit at the owner's request; not fixed</td></tr>
+        <tr><td class="svc-name">REPO-079</td><td class="wrap-cell">Five vendored skills carry no licence text or source</td><td class="wrap-cell">Removed from the audit at the owner's request; not fixed</td></tr>
       </tbody>
     </table>
   </div>
   </details>
 </section>
+
 
 </main>
   <div class="split-nav">

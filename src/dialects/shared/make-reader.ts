@@ -1,6 +1,7 @@
 import type { Diagnostic, ScriptResult } from '../script-model';
 import type { ReaderProfile } from './profile';
 import { readStatements } from './read-script';
+import { blankCopyData } from './statements';
 import { validateText } from './validate';
 import type { ValidationRules } from './validate';
 
@@ -10,7 +11,10 @@ export function makeReader(
     rules: ValidationRules
 ): (text: string) => ScriptResult {
     return (text) => {
-        const checks = validateText(text, profile.lex, rules);
+        // COPY data rows are not SQL (an apostrophe in one is just text), so
+        // the checks see them blanked, as the reader does
+        const checked = profile.lex.dollarStrings ? blankCopyData(text) : text;
+        const checks = validateText(checked, profile.lex, rules);
         const blocked = checks.some((d) => d.severity === 'error');
         const empty: ScriptResult = {
             tables: [],

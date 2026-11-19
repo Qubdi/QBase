@@ -88,8 +88,9 @@ const SHAPES: Record<string, Shape> = {
         id: ['string'],
         schema: ['string', 'n'],
         name: ['string'],
-        kind: [['enum', 'composite']],
+        kind: [['enum', 'composite', 'alias']],
         values: ['strings', 'n'],
+        baseType: ['string', 'n'],
         order: ['number', 'n'],
     },
     area: {

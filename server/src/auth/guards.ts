@@ -1,12 +1,27 @@
 import type { FastifyReply } from 'fastify';
 import type { Config } from '../config.js';
-import type { CounterStore } from '../lib/counters.js';
+import { createMemoryCounters, type CounterStore } from '../lib/counters.js';
 import { addressKey } from '../lib/rate-key.js';
 import { createFailureThrottle } from '../lib/failure-throttle.js';
 import type { MfaGuard } from './mfa-routes.js';
 
 /** the all-addresses ceiling on failures at one account, as a multiple of AUTH_MAX_FAILURES */
 const ACCOUNT_FAILURE_FACTOR = 5;
+
+/** how long an address that signed in to an account stays one of its known addresses */
+const KNOWN_ADDRESS_DAYS = 30;
+
+/**
+ * The addresses an account has signed in from. While the account is locked for
+ * every address together, a person at one of these still gets their password
+ * checked, so strangers guessing from elsewhere cannot lock the owner out of
+ * their own account; any other address stays locked out.
+ */
+export interface KnownAddresses {
+    /** notes a successful sign-in; the address is known for 30 days from the last one */
+    remember(userId: string, address: string): Promise<void>;
+    has(userId: string, address: string): Promise<boolean>;
+}
 
 /** The failure counters that sign-in, the account screens and the admin step-up all share. */
 export interface AuthGuards {
@@ -16,6 +31,7 @@ export interface AuthGuards {
     /** answers 429 and returns true while the key is locked out */
     locked: (reply: FastifyReply, key: string) => Promise<boolean>;
     mfaGuard: MfaGuard;
+    knownAddresses: KnownAddresses;
 }
 
 /**
@@ -78,5 +94,20 @@ export function createAuthGuards(
             await accountFailures.reset(`mfa:${userId}`);
         },
     };
-    return { failures, accountFailures, locked, mfaGuard };
+
+    const known = store ?? createMemoryCounters();
+    const knownKey = (userId: string, address: string) => `known-address:${userId}:${address}`;
+    const knownAddresses: KnownAddresses = {
+        async remember(userId, address) {
+            const key = knownKey(userId, address);
+            // a window opens at the first hit: starting a new one makes it last
+            // 30 days from this sign-in, not from the first
+            await known.clear(key);
+            await known.hit(key, KNOWN_ADDRESS_DAYS * 86_400_000);
+        },
+        async has(userId, address) {
+            return (await known.peek(knownKey(userId, address))) !== undefined;
+        },
+    };
+    return { failures, accountFailures, locked, mfaGuard, knownAddresses };
 }

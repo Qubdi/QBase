@@ -304,6 +304,59 @@ describe('auth throttling', () => {
         }
     });
 
+    it('SEC-036: lets the owner in from an address they signed in from before, while the account is locked for everyone else', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 2 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            const from = (address: string, password: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/login',
+                    payload: { email: 'a@example.com', password },
+                    remoteAddress: address,
+                });
+            // the owner has signed in from home before
+            expect((await from('198.51.100.9', 'Password-123!')).statusCode).toBe(200);
+            // strangers, one failure from each of many addresses, lock the account
+            for (let n = 1; n <= 10; n++) {
+                expect((await from(`203.0.113.${n}`, 'wrong-password')).statusCode).toBe(401);
+            }
+            // a stranger's address stays locked out, even with the right password
+            expect((await from('203.0.113.99', 'Password-123!')).statusCode).toBe(429);
+            // the owner, from home, is not shut out of their own account
+            expect((await from('198.51.100.9', 'Password-123!')).statusCode).toBe(200);
+            // and a wrong password from that address is an ordinary failed sign-in
+            expect((await from('198.51.100.9', 'wrong-password')).statusCode).toBe(401);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('SEC-036: a known address does not unlock a made-up email, and a new address stays locked', async () => {
+        const ctx = await createTestApp({ authMaxFailures: 2 });
+        try {
+            await registerUser(ctx.app, 'a@example.com');
+            const from = (email: string, address: string, password: string) =>
+                ctx.app.inject({
+                    method: 'POST',
+                    url: '/auth/login',
+                    payload: { email, password },
+                    remoteAddress: address,
+                });
+            expect((await from('a@example.com', '198.51.100.9', 'Password-123!')).statusCode).toBe(200);
+            for (let n = 1; n <= 10; n++) {
+                await from('nobody@example.com', `203.0.113.${n}`, 'wrong-password');
+                await from('a@example.com', `203.0.113.${n}`, 'wrong-password');
+            }
+            // an email that is not an account is answered 429 from any address
+            expect((await from('nobody@example.com', '198.51.100.9', 'Password-123!')).statusCode).toBe(429);
+            // the owner from an address that never signed in to the account
+            expect((await from('a@example.com', '198.51.100.10', 'Password-123!')).statusCode).toBe(429);
+        } finally {
+            await ctx.close();
+        }
+    });
+
     it('counts unknown emails too, so the lockout does not reveal accounts', async () => {
         const ctx = await createTestApp({ authMaxFailures: 2 });
         try {

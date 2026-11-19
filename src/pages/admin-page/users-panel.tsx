@@ -42,13 +42,12 @@ import {
 } from '@/lib/qubdi/api';
 import { Ago } from '@/components/qubdi/ago-time';
 import { PasswordField } from '@/components/qubdi/password-field';
-import { Input } from '@/platform/ui/input';
 import { useQubdi } from '@/hooks/use-qubdi';
 import { usePasswordMinLength } from '@/hooks/use-password-min-length';
 import { checkPassword } from '../../../shared/password';
 import { NewUserDialog } from './new-user-dialog';
 import { UserSessionsDialog } from './user-sessions-dialog';
-import { PasswordInput } from '@/components/qubdi/password-input';
+import { ProofFields } from './proof-fields';
 
 /** How often the user list is fetched again in the background. */
 const USERS_REFRESH_MS = 30_000;
@@ -81,43 +80,6 @@ const bulkToast = (t: TFn, action: BulkUserAction, result: BulkUsersResult) => {
     };
 };
 
-/** The acting admin's own password, and a code when their account has two-factor on. */
-const ProofFields: React.FC<{
-    needsCode: boolean;
-    password: string;
-    onPassword: (v: string) => void;
-    code: string;
-    onCode: (v: string) => void;
-}> = ({ needsCode, password, onPassword, code, onCode }) => {
-    const { t } = useTranslation();
-    return (
-        <>
-            <p className="text-sm text-muted-foreground">
-                {needsCode
-                    ? t('qubdi.adminUsers.users.confirmItsYouCode')
-                    : t('qubdi.adminUsers.users.confirmItsYou')}
-            </p>
-            <PasswordInput
-                autoComplete="current-password"
-                placeholder={t('qubdi.adminUsers.users.ownPassword')}
-                aria-label={t('qubdi.adminUsers.users.ownPassword')}
-                value={password}
-                onChange={(e) => onPassword(e.target.value)}
-            />
-            {needsCode ? (
-                <Input
-                    type="text"
-                    autoComplete="one-time-code"
-                    placeholder={t('qubdi.adminUsers.users.ownCode')}
-                    aria-label={t('qubdi.adminUsers.users.ownCode')}
-                    value={code}
-                    onChange={(e) => onCode(e.target.value)}
-                />
-            ) : null}
-        </>
-    );
-};
-
 export interface UsersPanelProps {
     currentUserId: string;
 }
@@ -136,6 +98,8 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
             .length > 0;
     const [deleteFor, setDeleteFor] = useState<AdminUser | null>(null);
     const [mfaResetFor, setMfaResetFor] = useState<AdminUser | null>(null);
+    // making someone an admin asks for this admin's own password (and code)
+    const [promoteFor, setPromoteFor] = useState<AdminUser | null>(null);
     // resetting another admin asks for this admin's own password (and code)
     const { user: me } = useQubdi();
     const needsOwnCode = me?.mfaEnabled === true;
@@ -155,6 +119,13 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                   ...(needsOwnCode ? { adminCode: ownCode.trim() } : {}),
               }
             : {};
+    /** What the server wants to make someone an admin: always the acting admin's own proof. */
+    const ownProof = () => ({
+        adminPassword: ownPassword,
+        ...(needsOwnCode ? { adminCode: ownCode.trim() } : {}),
+    });
+    const ownProofMissing =
+        ownPassword === '' || (needsOwnCode && ownCode.trim() === '');
     const proofMissing = (target: AdminUser | null) =>
         target !== null &&
         target.isAdmin &&
@@ -255,6 +226,8 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
         email: string;
         password: string;
         isAdmin: boolean;
+        adminPassword?: string;
+        adminCode?: string;
     }) => {
         await api.adminCreateUser(user);
         list.reload();
@@ -594,29 +567,32 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                                         variant="ghost"
                                                         size="sm"
                                                         disabled={busy || self}
-                                                        onClick={() =>
-                                                            run(
+                                                        onClick={() => {
+                                                            if (!u.isAdmin) {
+                                                                // giving admin rights asks who is asking
+                                                                startProof();
+                                                                setPromoteFor(
+                                                                    u
+                                                                );
+                                                                return;
+                                                            }
+                                                            void run(
                                                                 () =>
                                                                     api.adminUpdateUser(
                                                                         u.id,
                                                                         {
-                                                                            isAdmin:
-                                                                                !u.isAdmin,
+                                                                            isAdmin: false,
                                                                         }
                                                                     ),
                                                                 {
-                                                                    title: u.isAdmin
-                                                                        ? t(
-                                                                              'qubdi.adminUsers.users.adminRemoved'
-                                                                          )
-                                                                        : t(
-                                                                              'qubdi.adminUsers.users.madeAdmin'
-                                                                          ),
+                                                                    title: t(
+                                                                        'qubdi.adminUsers.users.adminRemoved'
+                                                                    ),
                                                                     description:
                                                                         u.email,
                                                                 }
-                                                            )
-                                                        }
+                                                            );
+                                                        }}
                                                     >
                                                         {u.isAdmin
                                                             ? t(
@@ -834,6 +810,11 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                         />
                         {resetFor?.isAdmin ? (
                             <ProofFields
+                                message={t(
+                                    needsOwnCode
+                                        ? 'qubdi.adminUsers.users.confirmItsYouCode'
+                                        : 'qubdi.adminUsers.users.confirmItsYou'
+                                )}
                                 needsCode={needsOwnCode}
                                 password={ownPassword}
                                 onPassword={setOwnPassword}
@@ -917,6 +898,11 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                     {mfaResetFor?.isAdmin ? (
                         <div className="flex flex-col gap-3">
                             <ProofFields
+                                message={t(
+                                    needsOwnCode
+                                        ? 'qubdi.adminUsers.users.confirmItsYouCode'
+                                        : 'qubdi.adminUsers.users.confirmItsYou'
+                                )}
                                 needsCode={needsOwnCode}
                                 password={ownPassword}
                                 onPassword={setOwnPassword}
@@ -1018,6 +1004,76 @@ export const UsersPanel: React.FC<UsersPanelProps> = ({ currentUserId }) => {
                                           count: chosen.length,
                                       }
                                   )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
+                open={promoteFor !== null}
+                onOpenChange={(o) => !o && setPromoteFor(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t('qubdi.adminUsers.users.makeAdminTitle')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('qubdi.adminUsers.users.makeAdminDescription', {
+                                email: promoteFor?.email ?? '',
+                            })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="flex flex-col gap-3">
+                        <ProofFields
+                            message={t(
+                                needsOwnCode
+                                    ? 'qubdi.adminUsers.users.confirmGrantCode'
+                                    : 'qubdi.adminUsers.users.confirmGrant'
+                            )}
+                            needsCode={needsOwnCode}
+                            password={ownPassword}
+                            onPassword={setOwnPassword}
+                            code={ownCode}
+                            onCode={setOwnCode}
+                        />
+                    </div>
+                    {proofError ? (
+                        <p role="alert" className="text-sm text-red-500">
+                            {proofError}
+                        </p>
+                    ) : null}
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>
+                            {t('qubdi.adminUsers.users.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            disabled={busy || ownProofMissing}
+                            onClick={(e) => {
+                                // stays open while it runs, so a wrong password can be corrected
+                                e.preventDefault();
+                                const target = promoteFor;
+                                if (!target) return;
+                                setProofError(null);
+                                void run(
+                                    async () => {
+                                        await api.adminUpdateUser(target.id, {
+                                            isAdmin: true,
+                                            ...ownProof(),
+                                        });
+                                        setPromoteFor(null);
+                                    },
+                                    {
+                                        title: t(
+                                            'qubdi.adminUsers.users.madeAdmin'
+                                        ),
+                                        description: target.email,
+                                    },
+                                    setProofError
+                                );
+                            }}
+                        >
+                            {t('qubdi.adminUsers.users.makeAdmin')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

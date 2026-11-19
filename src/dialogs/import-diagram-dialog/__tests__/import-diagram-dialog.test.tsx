@@ -107,11 +107,16 @@ const show = (syncDiagram: QubdiContext['syncDiagram'], ws: Workspace | null) =>
         </MemoryRouter>
     );
 
+/**
+ * Picks the file and presses Import. The import runs asynchronously (reading
+ * the file, the server call), so each test then waits for the state it ends
+ * in: a fixed pause is too short on a loaded machine, and an import still
+ * running would leak its calls into the next test.
+ */
 const importFile = async () => {
     fireEvent.click(screen.getByText('pick file'));
     await act(async () => {
         fireEvent.click(screen.getByRole('button', { name: 'Import' }));
-        await new Promise((resolve) => setTimeout(resolve, 20));
     });
 };
 
@@ -127,14 +132,14 @@ describe('ImportDiagramDialog', () => {
         const sync = vi.fn(async () => 'remote-1');
         show(sync, workspace);
         await importFile();
-        expect(sync).toHaveBeenCalledWith(
-            expect.objectContaining({ name: 'Shop' }),
-            'p1'
-        );
         await waitFor(() =>
             expect(screen.getByTestId('where').textContent).toBe(
                 '/billing/diagrams/remote-1'
             )
+        );
+        expect(sync).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'Shop' }),
+            'p1'
         );
     });
 
@@ -144,7 +149,7 @@ describe('ImportDiagramDialog', () => {
         });
         show(sync, workspace);
         await importFile();
-        expect(deleteDiagram).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(deleteDiagram).toHaveBeenCalledTimes(1));
         expect(screen.getByTestId('where').textContent).toBe('/');
     });
 
@@ -153,7 +158,9 @@ describe('ImportDiagramDialog', () => {
         const sync = vi.fn();
         show(sync, workspace);
         await importFile();
-        expect(screen.getByRole('alert').textContent).toMatch(/too large/);
+        expect((await screen.findByRole('alert')).textContent).toMatch(
+            /too large/
+        );
         expect(addDiagram).not.toHaveBeenCalled();
         expect(sync).not.toHaveBeenCalled();
     });
@@ -163,7 +170,7 @@ describe('ImportDiagramDialog', () => {
         const sync = vi.fn();
         show(sync, workspace);
         await importFile();
-        expect(screen.getByRole('alert')).toBeTruthy();
+        expect(await screen.findByRole('alert')).toBeTruthy();
         expect(addDiagram).not.toHaveBeenCalled();
         expect(sync).not.toHaveBeenCalled();
     });

@@ -108,6 +108,22 @@ describe('diagram edit lock', () => {
         expect(other.json()).toEqual({ held: false, holder: 'a@example.com' });
     });
 
+    it('SEC-049: refuses an editor id that starts with handoff:, which is the server\'s own', async () => {
+        const res = await lock(a, 'handoff:mine');
+        expect(res.statusCode).toBe(400);
+        // nothing was locked, so another editor still gets the diagram
+        expect((await lock(b, 'tab-b')).json()).toEqual({ held: true });
+        // the same everywhere an editor id is taken
+        const save = await ctx.app.inject({
+            method: 'PUT',
+            url: `/diagrams/${id}`,
+            headers: as(b),
+            payload: { title: 'x', editorId: 'handoff:mine' },
+        });
+        expect(save.statusCode).toBe(400);
+        expect((await unlock(b, 'handoff:mine')).statusCode).toBe(400);
+    });
+
     it('frees the diagram when its editor lets go', async () => {
         await lock(a, 'tab-a');
         expect((await unlock(a, 'tab-a')).statusCode).toBe(204);

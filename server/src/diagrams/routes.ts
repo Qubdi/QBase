@@ -10,10 +10,9 @@ import { emitLinkChanged, onLockEvent, type LockEvent } from '../events.js';
 import { getSessionUser, isSecureRequest, sessionTokenOf } from '../auth/sessions.js';
 import { sharedUserLimit } from '../lib/rate-key.js';
 import { safeError } from '../lib/safe-error.js';
-import { API_SECURITY_HEADERS, hstsHeaders } from '../lib/security-headers.js';
-import { createSseWriter } from '../lib/sse-write.js';
+import { createSseWriter, openEventStream } from '../lib/sse-write.js';
 import { gunzipBody } from './gzip-body.js';
-import { acquireLock, releaseLock } from './lock.js';
+import { acquireLock, HANDOFF_PREFIX, releaseLock } from './lock.js';
 import { canWrite, getProjectRole, getRole } from './permissions.js';
 import {
     answerPoke,
@@ -30,7 +29,7 @@ import {
     presentSaved,
     publishSnapshot,
 } from './service.js';
-import { exceedsDepth } from '../lib/depth.js';
+import { containsNul, exceedsDepth } from '../lib/depth.js';
 import { diagramFingerprintAsync } from '../lib/hash.js';
 import { isForeignKeyViolation } from '../lib/pg-errors.js';
 import { pgDate } from '../lib/pg-date.js';
@@ -53,8 +52,19 @@ const listQuery = z.object({
     /** only this project's diagrams */
     projectId: z.string().uuid().optional(),
 });
-/** Names one open editor (a browser tab) for the diagram's edit lock. */
-const editorIdSchema = z.string().min(1).max(100);
+/**
+ * Names one open editor (a browser tab) for the diagram's edit lock. The
+ * `handoff:` names are the server's own, for a lock set aside for a page that
+ * is about to claim it: an editor that chose one would hold a lock every poke
+ * refuses to ask about.
+ */
+const editorIdSchema = z
+    .string()
+    .min(1)
+    .max(100)
+    .refine((id) => !id.startsWith(HANDOFF_PREFIX), {
+        message: `an editor id cannot start with "${HANDOFF_PREFIX}"`,
+    });
 const versionParam = z.object({
     id: z.string().uuid(),
     version: z.coerce.number().int().positive().max(2147483647),
@@ -86,10 +96,22 @@ const diagramContent = z
     // overflow the recursive hash, so it is refused as a bad request
     .refine((content) => !exceedsDepth(content, MAX_CONTENT_DEPTH), {
         message: `content nests deeper than ${MAX_CONTENT_DEPTH} levels`,
+    })
+    // the database cannot store U+0000 in jsonb: refuse it here, as a bad request
+    .refine((content) => !containsNul(content), {
+        message: 'content holds a NUL character',
     });
 
+/** A title: trimmed, 1 to 200 characters, and no NUL (Postgres cannot store it). */
+const titleText = z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .refine((t) => !t.includes('\u0000'), { message: 'title holds a NUL character' });
+
 const createBody = z.object({
-    title: z.string().trim().min(1).max(200),
+    title: titleText,
     content: diagramContent,
     // every diagram lives in a project
     projectId: z.string().uuid(),
@@ -97,7 +119,7 @@ const createBody = z.object({
 
 const updateBody = z
     .object({
-        title: z.string().trim().min(1).max(200).optional(),
+        title: titleText.optional(),
         content: diagramContent.optional(),
         autoPublish: z.boolean().optional(),
         /**
@@ -142,12 +164,16 @@ const publishBody = z
 export const PUBLISH_RATE_LIMIT = 20;
 
 export const diagramRoutes =
-    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays' | 'cookieSecure' | 'corsOrigin' | 'sseHeartbeatSeconds'>): FastifyPluginAsync =>
+    (db: Db, config: Pick<Config, 'diagramBodyLimit' | 'snapshotKeep' | 'auditSaveMinutes' | 'autoPublishCoalesceSeconds' | 'sessionIdleDays' | 'cookieSecure' | 'corsOrigin' | 'sseHeartbeatSeconds' | 'sseMaxLockPerUser'>): FastifyPluginAsync =>
     async (app) => {
         const publishLimit = sharedUserLimit(PUBLISH_RATE_LIMIT);
         // every open lock stream's close, so shutting the app down ends them: an
         // open stream would otherwise keep the server from closing for ever
         const openStreams = new Set<() => void>();
+        // how many lock streams each user has open here: one tab holds one, so a
+        // person with many tabs has many, but not without limit (a script could
+        // otherwise open thousands, each with its own heartbeat and queries)
+        const streamsOf = new Map<string, number>();
         // preClose runs before the server waits for its connections to end
         app.addHook('preClose', async () => {
             for (const closeStream of [...openStreams]) closeStream();
@@ -667,26 +693,14 @@ export const diagramRoutes =
             // 'close' event has then already fired and will not fire again.
             if (req.raw.destroyed) return reply.hijack();
 
-            reply.hijack();
-            const raw = reply.raw;
-            raw.writeHead(200, {
-                'content-type': 'text/event-stream',
-                'cache-control': 'no-cache, no-transform',
-                // nginx would hold events back in a buffer until it fills
-                'x-accel-buffering': 'no',
-                // the stream bypasses the app's onSend hook
-                ...API_SECURITY_HEADERS,
-                ...hstsHeaders(req, config.cookieSecure),
-                connection: 'keep-alive',
-                ...(config.corsOrigin
-                    ? {
-                          'access-control-allow-origin': config.corsOrigin,
-                          'access-control-allow-credentials': 'true',
-                          vary: 'Origin',
-                      }
-                    : {}),
-            });
-            raw.write(': connected\n\n');
+            if ((streamsOf.get(user.id) ?? 0) >= config.sseMaxLockPerUser) {
+                return reply.code(429).send({ error: 'too_many_streams' });
+            }
+
+            const raw = openEventStream(req, reply, config);
+            // no await between the check above and this count, so two requests
+            // cannot both pass at the limit; `close` gives it back
+            streamsOf.set(user.id, (streamsOf.get(user.id) ?? 0) + 1);
 
             let closed = false;
             const cleanup: Array<() => void> = [];
@@ -694,6 +708,9 @@ export const diagramRoutes =
                 if (closed) return;
                 closed = true;
                 openStreams.delete(close);
+                const left = (streamsOf.get(user.id) ?? 1) - 1;
+                if (left > 0) streamsOf.set(user.id, left);
+                else streamsOf.delete(user.id);
                 cleanup.forEach((fn) => fn());
                 raw.end();
             };
@@ -701,7 +718,13 @@ export const diagramRoutes =
 
             // a viewer that cannot keep up is cut off instead of buffering for ever
             const send = createSseWriter(raw, close);
+            // the snapshot is read again on every heartbeat (below), so an event
+            // is only told once, whichever way it arrives
+            const told = new Set<string>();
             const tell = (ev: LockEvent) => {
+                const key = `${ev.kind}:${ev.pokeId}:${'outcome' in ev ? ev.outcome : ''}`;
+                if (told.has(key)) return;
+                told.add(key);
                 // what the editor needs, not who it was addressed to
                 const data =
                     ev.kind === 'poke'
@@ -765,6 +788,19 @@ export const diagramRoutes =
                     return close();
                 }
                 if (!closed) send(': ping\n\n');
+                // Events are not replayed, and the database's LISTEN connection
+                // can drop and reconnect: an event sent in that gap would never
+                // arrive. Reading what was missed again each beat bounds the loss
+                // to one heartbeat.
+                try {
+                    const missed = await pokeSnapshot(db, id, user.id, editorId);
+                    if (!closed) missed.forEach(tell);
+                } catch (err) {
+                    req.log.error(
+                        { err: safeError(err) },
+                        'lock events: reading what was missed failed'
+                    );
+                }
             }, config.sseHeartbeatSeconds * 1000);
             cleanup.push(() => clearInterval(heartbeat));
 

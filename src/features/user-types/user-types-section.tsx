@@ -122,6 +122,29 @@ const EnumValues: React.FC<{ type: UserType }> = ({ type }) => {
     );
 };
 
+/** An alias type (SQL Server): the type it is made from, as text such as `varchar(11)`. */
+const AliasBase: React.FC<{ type: UserType }> = ({ type }) => {
+    const { locked, edit } = useEditorEnv();
+    const text = useText();
+    return (
+        <Input
+            className="h-8"
+            aria-label={text('userTypes.baseType')}
+            placeholder={text('userTypes.baseType')}
+            readOnly={locked}
+            value={type.base ?? ''}
+            onChange={(e) =>
+                edit({
+                    type: 'item.update',
+                    collection: 'userTypes',
+                    id: type.id,
+                    patch: { base: e.target.value },
+                })
+            }
+        />
+    );
+};
+
 const Members: React.FC<{ type: UserType }> = ({ type }) => {
     const { design, locked, edit } = useEditorEnv();
     const text = useText();
@@ -281,7 +304,9 @@ const TypeRow: React.FC<{
                 <span className="shrink-0 rounded-full border px-2 text-[11px] font-semibold leading-5 text-muted-foreground">
                     {type.kind === 'enum'
                         ? text('userTypes.enum')
-                        : text('userTypes.composite')}
+                        : type.kind === 'alias'
+                          ? text('userTypes.alias')
+                          : text('userTypes.composite')}
                 </span>
                 <DropdownMenu {...menu}>
                     <DropdownMenuTrigger asChild>
@@ -353,11 +378,22 @@ const TypeRow: React.FC<{
                                     value: 'composite',
                                     label: text('userTypes.composite'),
                                 },
+                                // only a database that has alias types lists them
+                                ...(type.kind === 'alias'
+                                    ? [
+                                          {
+                                              value: 'alias',
+                                              label: text('userTypes.alias'),
+                                          },
+                                      ]
+                                    : []),
                             ]}
                         />
                     </div>
                     {type.kind === 'enum' ? (
                         <EnumValues type={type} />
+                    ) : type.kind === 'alias' ? (
+                        <AliasBase type={type} />
                     ) : (
                         <Members type={type} />
                     )}

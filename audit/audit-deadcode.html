@@ -8,12 +8,12 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 46</b></div>
+  <div class="eyebrow">QBase &middot; Dead code Audit &middot; <b>rev 54</b></div>
   <h1>0 open (0 Crit, 0 High).</h1>
   <div class="meta-row">
-    <span><b>audit date</b> 2026-11-13</span>
-    <span><b>method</b> static analysis · whole-tree read · eslint, tsc --noEmit, client vitest run, server vitest run (scratch copy, node:24-slim) vs throwaway postgres:18-alpine <code>srvaudit-pg2</code> and <code>srvaudit-pg3</code> (both removed after) · <code>srvaudit-pg3</code> seeded 20k diagrams, 503k snapshots, 1M audit rows, read-only EXPLAIN · drizzle-kit generate diff in scratch copy · hostile-input scratch tests against real modules · npm audit root and server (0 advisories) · gitleaks v8.30.1 via docker, all local refs · knip/depcheck absent, replaced by scratch scans · no secret read</span>
-    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content</span>
+    <span><b>audit date</b> 2026-11-18</span>
+    <span><b>method</b> static analysis · whole-tree read of every in-scope file changed since rev 46 plus all route files · eslint root and server (0 problems, unused-directive report clean) · tsc server 0 errors, client 9 (local <code>timeago.js</code> install drift, CLI-116) · client vitest 4108/4109 · server vitest (scratch copy) vs throwaway postgres:18-alpine <code>aud47-srv</code> 1256/1257, 15 SQL Server skipped · scratch HTTP probes vs <code>aud47-srv</code> · drizzle-kit generate diff in scratch copy (empty) · throwaway SQL Server 2025 <code>aud47-mssql</code> (live alias-type checks), throwaway postgres:18-alpine <code>aud47-db</code> seeded 20k diagrams, 60k snapshots, 200k pokes, read-only EXPLAIN · npm audit root and server (prod 0; all deps 14 and 11 high, one dev advisory) · gitleaks v8.30.1 via docker on tree, local refs and an origin mirror with pull refs · vite build into scratch · knip/depcheck absent, replaced by scratch scans in <code>node:24-slim</code> <code>aud47-dead</code> · rev 51 test pass: client vitest 4766 passed, 19 expected fail · server vitest 1406 passed, 2 expected fail, throwaway postgres:18-alpine · browser flows 142/142 in the pinned Playwright image · perf budgets 30/30 · new findings come from the <code>it.fails</code> tests and KNOWN BUG flow steps · all containers removed · no secret read</span>
+    <span><b>scope</b> whole repo except <code>node_modules/</code>, <code>stats/</code>, <code>src/templates-data/</code>, <code>src/i18n/locales/</code> content; <code>.claude/skills/</code> content checked for secrets and licensing only</span>
   </div>
   <div class="split-nav">
     <b>Part of a 7-file audit split &mdash;</b>
@@ -30,17 +30,27 @@
 <main id="main">
 <section id="reg" class="repo-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Dead code</h2></div>
-  <p class="section-note">0 open &middot; 41 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
-  <p>None.</p>
+  <p class="section-note">0 open &middot; 45 fixed &middot; 0 accepted. Source of truth: <code>audit/audit.md</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
 </section>
 
 <section id="closed" class="repo-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (41)</summary>
+  <details><summary>Fixed (45)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
       <tbody>
+        <tr><td class="svc-name">DEAD-046</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Two relative-time setups: timeago lang files beside i18n <code>ago.*</code> words</td></tr>
+        <tr><td class="svc-name">DEAD-045</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Exports used only by tests: <code>initialFilter</code>, <code>defaultIntrospectorFactory</code></td></tr>
+        <tr><td class="svc-name">DEAD-044</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Lock-events SSE handshake duplicates the share SSE handshake</td></tr>
+        <tr><td class="svc-name">DEAD-043</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Error text for four codes the server never sends, in five locales</td></tr>
         <tr><td class="svc-name">DEAD-037</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">JSON-map localStorage reader still copied beside shared <code>readJsonMap</code></td></tr>
         <tr><td class="svc-name">DEAD-042</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell"><code>isCurrentFormat</code> exported; zero references in src, server, shared, tools, CI</td></tr>
         <tr><td class="svc-name">DEAD-022</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Unused en keys: canvas.entity openInPanel, narrow; region.colour; memo.colour; clipboard.failed</td></tr>
@@ -106,6 +116,7 @@
   </div>
   </details>
 </section>
+
 
 </main>
   <div class="split-nav">

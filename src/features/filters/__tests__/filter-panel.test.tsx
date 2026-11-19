@@ -39,13 +39,16 @@ describe('EDT-063 EDT-064 EDT-072 the eyes', () => {
             withTables(['a', 'b']),
             { filter: {} }
         );
-        await userEvent.click(screen.getByRole('button', { name: 'Hide a' }));
+        const eye = () => screen.getByRole('button', { name: 'Show a' });
+        expect(eye().getAttribute('aria-pressed')).toBe('true');
+        await userEvent.click(eye());
+        expect(eye().getAttribute('aria-pressed')).toBe('false');
         const id = store.getState().design.entities.order[0];
         expect(selectFilter(store.getState()).tableIds).toEqual([
             store.getState().design.entities.order[1],
         ]);
         expect(selectFilter(store.getState()).tableIds).not.toContain(id);
-        await userEvent.click(screen.getByRole('button', { name: 'Show a' }));
+        await userEvent.click(eye());
         expect(selectFilter(store.getState())).toEqual({});
     });
 
@@ -56,7 +59,7 @@ describe('EDT-063 EDT-064 EDT-072 the eyes', () => {
             { filter: {} }
         );
         await userEvent.click(
-            screen.getByRole('button', { name: 'Hide public' })
+            screen.getByRole('button', { name: 'Show public' })
         );
         expect(selectFilter(store.getState())).toEqual({ tableIds: [] });
     });
@@ -67,7 +70,7 @@ describe('EDT-063 EDT-064 EDT-072 the eyes', () => {
             withTables(['a']),
             { filter: {} }
         );
-        await userEvent.click(screen.getByRole('button', { name: 'Hide a' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Show a' }));
         expect(store.getState().history.undo).toHaveLength(0);
     });
 });

@@ -169,3 +169,88 @@ describe('UsersPanel: resetting a password', () => {
         expect(screen.queryByRole('dialog')).not.toBeNull();
     });
 });
+
+describe('UsersPanel: making someone an admin (SEC-037)', () => {
+    beforeEach(async () => {
+        adminListUsers.mockReset();
+        adminUpdateUser.mockReset();
+        toast.mockReset();
+        acting.mfaEnabled = false;
+        adminListUsers.mockResolvedValue({
+            items: users,
+            total: users.length,
+            page: 1,
+            limit: 10,
+        });
+        adminUpdateUser.mockResolvedValue({
+            id: 'x',
+            isAdmin: true,
+            isActive: true,
+        });
+        render(<UsersPanel currentUserId="me" />);
+        await screen.findByText('ann@corp.io');
+    });
+
+    const rowOf = (email: string) =>
+        screen.getByText(email).closest('tr') as HTMLElement;
+
+    it('asks for your own password before it promotes, and sends it', async () => {
+        fireEvent.click(
+            within(rowOf('ann@corp.io')).getByRole('button', {
+                name: 'Make admin',
+            })
+        );
+        const dialog = await screen.findByRole('alertdialog');
+        // nothing was sent just by clicking
+        expect(adminUpdateUser).not.toHaveBeenCalled();
+        const go = within(dialog).getByRole('button', {
+            name: 'Make admin',
+        }) as HTMLButtonElement;
+        expect(go.disabled).toBe(true);
+        fireEvent.change(within(dialog).getByLabelText('Your password'), {
+            target: { value: 'my-own-password' },
+        });
+        expect(go.disabled).toBe(false);
+        fireEvent.click(go);
+        await waitFor(() =>
+            expect(adminUpdateUser).toHaveBeenCalledWith('u2', {
+                isAdmin: true,
+                adminPassword: 'my-own-password',
+            })
+        );
+    });
+
+    it('stays open and shows why when the password is refused', async () => {
+        adminUpdateUser.mockRejectedValueOnce(
+            new ApiError(403, 'wrong_password')
+        );
+        fireEvent.click(
+            within(rowOf('ann@corp.io')).getByRole('button', {
+                name: 'Make admin',
+            })
+        );
+        const dialog = await screen.findByRole('alertdialog');
+        fireEvent.change(within(dialog).getByLabelText('Your password'), {
+            target: { value: 'wrong' },
+        });
+        fireEvent.click(
+            within(dialog).getByRole('button', { name: 'Make admin' })
+        );
+        expect(await within(dialog).findByRole('alert')).toBeTruthy();
+        expect(screen.getByRole('alertdialog')).toBeTruthy();
+    });
+
+    it('removes admin rights at once, with no question', async () => {
+        fireEvent.click(
+            within(rowOf('root@corp.io')).getByRole('button', {
+                name: 'Remove admin',
+            })
+        );
+        await waitFor(() =>
+            expect(adminUpdateUser).toHaveBeenCalledWith('u3', {
+                isAdmin: false,
+            })
+        );
+        expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+});

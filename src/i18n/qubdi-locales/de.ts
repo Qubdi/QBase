@@ -30,9 +30,6 @@ export const de = {
                 'Wählen Sie ein Passwort, das sich vom aktuellen unterscheidet.',
             password_change_required:
                 'Wählen Sie Ihr eigenes Passwort, bevor Sie fortfahren.',
-            user_not_found:
-                'Mit dieser E-Mail-Adresse gibt es noch kein Konto.',
-            already_member: 'Diese Person hat bereits Zugriff.',
             forbidden: 'Dazu fehlt Ihnen die Berechtigung.',
             not_found: 'Nicht gefunden.',
             encryption_not_configured:
@@ -63,10 +60,6 @@ export const de = {
             reserved_name:
                 'Dieser Name wird von der App selbst verwendet. Wählen Sie einen anderen.',
             cannot_delete_self: 'Sie können Ihr eigenes Konto nicht löschen.',
-            project_not_empty:
-                'Dieses Projekt enthält noch Diagramme. Löschen Sie diese zuerst.',
-            managed_by_project:
-                'Der Zugriff wird vom Projekt verwaltet. Bitten Sie einen Admin, ihn zu ändern.',
             invalid_response:
                 'Der Server hat eine Antwort gesendet, die diese App nicht lesen kann.',
             requestFailed: 'Anfrage fehlgeschlagen ({{code}}).',
@@ -160,7 +153,6 @@ export const de = {
         },
         passwordField: {
             show: 'Passwort anzeigen',
-            hide: 'Passwort verbergen',
             placeholder: 'Passwort',
             rules: 'Passwortregeln',
             met: ' (erfüllt)',
@@ -375,6 +367,10 @@ export const de = {
                 '<strong>{{name}}</strong>, alle seine Diagramme und die Zuweisungen seiner Mitglieder werden gelöscht. Dies kann nicht rückgängig gemacht werden.',
             confirmPrompt:
                 'Geben Sie zur Bestätigung den Projektnamen ein: <strong>{{name}}</strong>',
+            confirmItsYou:
+                'Beim Löschen eines Projekts wird alles darin entfernt. Geben Sie Ihr eigenes Passwort ein, um zu bestätigen, dass Sie es sind.',
+            confirmItsYouCode:
+                'Beim Löschen eines Projekts wird alles darin entfernt. Geben Sie Ihr eigenes Passwort und einen Code aus Ihrer Authenticator-App (oder einen Wiederherstellungscode) ein, um zu bestätigen, dass Sie es sind.',
             cancel: 'Abbrechen',
         },
         newProject: {
@@ -750,6 +746,13 @@ export const de = {
             madeAdmin: 'Zum Admin gemacht',
             removeAdmin: 'Admin entziehen',
             makeAdmin: 'Zum Admin machen',
+            makeAdminTitle: 'Diese Person zum Admin machen?',
+            makeAdminDescription:
+                '{{email}} kann alles tun, was ein Administrator darf: Benutzer, Projekte und alle Diagramme verwalten.',
+            confirmGrant:
+                'Dies gibt jemandem volle Administratorrechte. Geben Sie Ihr eigenes Passwort ein, um zu bestätigen, dass Sie es sind.',
+            confirmGrantCode:
+                'Dies gibt jemandem volle Administratorrechte. Geben Sie Ihr eigenes Passwort und einen Code aus Ihrer Authenticator-App (oder einen Wiederherstellungscode) ein, um zu bestätigen, dass Sie es sind.',
             userDisabled: 'Benutzer deaktiviert',
             userEnabled: 'Benutzer aktiviert',
             resetPasswordOf: 'Passwort von {{email}} zurücksetzen',
@@ -991,6 +994,103 @@ export const de = {
                 'Lint-Einstellungen wurden nicht auf dem Server gespeichert',
             saveFailedBody:
                 'Die vorherigen Einstellungen sind wieder aktiv. Versuchen Sie es erneut.',
+        },
+        lintText: {
+            messages: {
+                noPrimaryKey: 'Tabelle {{table}} hat keinen Primärschlüssel.',
+                orphanTable: 'Tabelle {{table}} hat keine Beziehungen.',
+                noDescription: 'Tabelle {{table}} hat keine Beschreibung.',
+                reservedTable:
+                    'Der Tabellenname „{{table}}“ ist ein reserviertes Wort.',
+                reservedColumn:
+                    'Die Spalte „{{table}}.{{column}}“ ist ein reserviertes Wort.',
+                varcharNoLength:
+                    'Spalte {{table}}.{{column}} ist {{type}} ohne Länge.',
+                nullableInUniqueIndex:
+                    'Spalte {{table}}.{{column}} ist nullable, aber Teil des eindeutigen Index {{index}}.',
+                nullableUnique:
+                    'Spalte {{table}}.{{column}} ist nullable, aber eindeutig.',
+                indexRepeatsPk:
+                    'Index {{index}} auf {{table}} wiederholt den Primärschlüssel.',
+                indexDuplicate:
+                    'Index {{index}} auf {{table}} dupliziert {{other}}.',
+                indexCovered:
+                    'Index {{index}} auf {{table}} wird bereits von {{other}} abgedeckt.',
+                indexCoveredByPk:
+                    'Index {{index}} auf {{table}} wird bereits vom Primärschlüssel abgedeckt.',
+                fkTypeMismatch:
+                    '{{from}}.{{column}} ist {{type}}, verweist aber auf {{to}}.{{toColumn}} mit dem Typ {{toType}}.',
+                fkNoIndex:
+                    'Fremdschlüssel {{from}}({{columns}}) → {{to}} hat keinen Index.',
+                tableCase: 'Die Tabelle „{{name}}“ ist nicht {{style}}.',
+                columnCase:
+                    'Die Spalte „{{table}}.{{name}}“ ist nicht {{style}}.',
+                tableSingular:
+                    'Die Tabelle „{{table}}“ steht im Singular, die meisten Tabellen aber im Plural.',
+                tablePlural:
+                    'Die Tabelle „{{table}}“ steht im Plural, die meisten Tabellen aber im Singular.',
+            },
+            rules: {
+                'table-without-primary-key': {
+                    title: 'Tabelle ohne Primärschlüssel',
+                    description:
+                        'Jede Tabelle sollte einen Primärschlüssel haben.',
+                },
+                'foreign-key-without-index': {
+                    title: 'Fremdschlüssel ohne Index',
+                    description:
+                        'Joins und Löschvorgänge in der übergeordneten Tabelle sind ohne Index auf der Fremdschlüsselspalte langsam.',
+                },
+                'foreign-key-type-mismatch': {
+                    title: 'Fremdschlüsseltyp weicht von der referenzierten Spalte ab',
+                    description:
+                        'Die beiden Spalten einer Beziehung sollten denselben Typ haben.',
+                },
+                'nullable-in-unique-key': {
+                    title: 'Nullable-Spalte in einem eindeutigen Schlüssel',
+                    description:
+                        'Die meisten Datenbanken erlauben in einem eindeutigen Schlüssel viele NULL-Werte, er erzwingt also nicht, was er zu erzwingen scheint.',
+                },
+                'duplicate-index': {
+                    title: 'Doppelter Index',
+                    description:
+                        'Zwei Indizes auf denselben Spalten oder ein Index, der den Primärschlüssel wiederholt.',
+                },
+                'overlapping-index': {
+                    title: 'Überlappender Index',
+                    description:
+                        'Ein Index, der nur der Anfang eines anderen Index ist, verursacht Schreibkosten ohne Nutzen.',
+                },
+                'naming-case': {
+                    title: 'Uneinheitlicher Namensstil',
+                    description: 'Mischung aus snake_case und camelCase.',
+                },
+                'naming-plural': {
+                    title: 'Uneinheitliche Zahl bei Tabellennamen',
+                    description:
+                        'Mischung aus Singular- und Plural-Tabellennamen.',
+                },
+                'reserved-word': {
+                    title: 'Reserviertes Wort als Name',
+                    description:
+                        'Namen, die reservierte SQL-Wörter sind, müssen überall in Anführungszeichen stehen.',
+                },
+                'orphan-table': {
+                    title: 'Tabelle ohne Beziehungen',
+                    description:
+                        'Eine Tabelle, auf die nichts verweist und die auf nichts verweist.',
+                },
+                'missing-table-description': {
+                    title: 'Tabelle ohne Beschreibung',
+                    description:
+                        'Dokumentieren Sie, wofür jede Tabelle gedacht ist.',
+                },
+                'varchar-without-length': {
+                    title: 'varchar ohne Länge',
+                    description:
+                        'In SQL Server ist ein einfaches varchar ein Zeichen lang; MySQL und MariaDB lehnen es ab.',
+                },
+            },
         },
         lintSettings: {
             title: 'Lint-Einstellungen',

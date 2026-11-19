@@ -180,6 +180,97 @@ export const database = {
         saveFailedTitle: 'Lint settings were not saved to the server',
         saveFailedBody: 'The previous settings are back. Try again.',
     },
+    lintText: {
+        messages: {
+            noPrimaryKey: 'Table {{table}} has no primary key.',
+            orphanTable: 'Table {{table}} has no relationships.',
+            noDescription: 'Table {{table}} has no description.',
+            reservedTable: 'Table name "{{table}}" is a reserved word.',
+            reservedColumn: 'Column "{{table}}.{{column}}" is a reserved word.',
+            varcharNoLength:
+                'Column {{table}}.{{column}} is {{type}} without a length.',
+            nullableInUniqueIndex:
+                'Column {{table}}.{{column}} is nullable but part of unique index {{index}}.',
+            nullableUnique:
+                'Column {{table}}.{{column}} is nullable but unique.',
+            indexRepeatsPk:
+                'Index {{index}} on {{table}} repeats the primary key.',
+            indexDuplicate:
+                'Index {{index}} on {{table}} duplicates {{other}}.',
+            indexCovered:
+                'Index {{index}} on {{table}} is already covered by {{other}}.',
+            indexCoveredByPk:
+                'Index {{index}} on {{table}} is already covered by the primary key.',
+            fkTypeMismatch:
+                '{{from}}.{{column}} is {{type}} but references {{to}}.{{toColumn}} which is {{toType}}.',
+            fkNoIndex:
+                'Foreign key {{from}}({{columns}}) → {{to}} has no index.',
+            tableCase: 'Table "{{name}}" is not {{style}}.',
+            columnCase: 'Column "{{table}}.{{name}}" is not {{style}}.',
+            tableSingular:
+                'Table "{{table}}" is singular but most tables are plural.',
+            tablePlural:
+                'Table "{{table}}" is plural but most tables are singular.',
+        },
+        rules: {
+            'table-without-primary-key': {
+                title: 'Table without a primary key',
+                description: 'Every table should have a primary key.',
+            },
+            'foreign-key-without-index': {
+                title: 'Foreign key without an index',
+                description:
+                    'Joins and deletes on the parent are slow without an index on the foreign key column.',
+            },
+            'foreign-key-type-mismatch': {
+                title: 'Foreign key type differs from the referenced column',
+                description:
+                    'The two columns of a relationship should have the same type.',
+            },
+            'nullable-in-unique-key': {
+                title: 'Nullable column in a unique key',
+                description:
+                    'Most databases allow many NULLs in a unique key, so it does not enforce what it seems to.',
+            },
+            'duplicate-index': {
+                title: 'Duplicate index',
+                description:
+                    'Two indexes on the same columns, or an index repeating the primary key.',
+            },
+            'overlapping-index': {
+                title: 'Overlapping index',
+                description:
+                    'An index that is only the beginning of another index adds write cost for no benefit.',
+            },
+            'naming-case': {
+                title: 'Inconsistent name style',
+                description: 'Mixing snake_case and camelCase.',
+            },
+            'naming-plural': {
+                title: 'Inconsistent table name number',
+                description: 'Mixing singular and plural table names.',
+            },
+            'reserved-word': {
+                title: 'Reserved word as a name',
+                description:
+                    'Names that are SQL reserved words need quoting everywhere.',
+            },
+            'orphan-table': {
+                title: 'Table without relationships',
+                description:
+                    'A table nothing references and that references nothing.',
+            },
+            'missing-table-description': {
+                title: 'Table without a description',
+                description: 'Document what each table is for.',
+            },
+            'varchar-without-length': {
+                title: 'varchar without a length',
+                description:
+                    'On SQL Server a bare varchar is one character; MySQL and MariaDB reject it.',
+            },
+        },
+    },
     lintSettings: {
         title: 'Lint settings',
         description:

@@ -3,6 +3,7 @@ import { buildApp, type AppDeps } from '../src/app.js';
 import { loadConfig, type Config } from '../src/config.js';
 import pg from 'pg';
 import { createDb } from '../src/db/client.js';
+import { createIntrospectorFactory } from '../src/introspect/routes.js';
 
 export const TEST_DB = 'qbase_test';
 // TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
@@ -237,3 +238,8 @@ export async function createDiagram(
     });
     return res.json().id;
 }
+
+/** The introspector factory with no privileged logins allowed. */
+export const defaultIntrospectorFactory = createIntrospectorFactory({
+    introspectAllowPrivileged: false,
+});

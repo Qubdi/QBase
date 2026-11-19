@@ -286,7 +286,7 @@ export async function settlePokesOnRelease(
         });
     for (const poke of left) {
         // unless someone took the free diagram in the meantime
-        await db
+        const set = await db
             .insert(diagramLocks)
             .values({
                 diagramId,
@@ -294,7 +294,11 @@ export async function settlePokesOnRelease(
                 editorId: `${HANDOFF_PREFIX}${poke.id}`,
                 expiresAt: inSeconds(HANDOFF_SECONDS),
             })
-            .onConflictDoNothing();
+            .onConflictDoNothing()
+            .returning({ diagramId: diagramLocks.diagramId });
+        // "left" tells the one who waited that the diagram is theirs to take:
+        // say it only when it was set aside for them, not when someone else won
+        if (set.length === 0) continue;
         emitLockEvent({
             kind: 'poke-result',
             diagramId,

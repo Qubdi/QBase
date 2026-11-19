@@ -54,6 +54,8 @@ export interface Config {
     sseMaxPerLink: number;
     /** most live (SSE) viewers one client address may have open at once, over all links */
     sseMaxPerIp: number;
+    /** most lock event streams one user may have open at once, on this server process */
+    sseMaxLockPerUser: number;
     /** seconds between the pings that keep a live stream open (and re-check who is on it) */
     sseHeartbeatSeconds: number;
     /** pino level: fatal, error, warn, info, debug, trace or silent */
@@ -342,6 +344,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         ),
         sseMaxPerLink: int('SSE_MAX_PER_LINK', 100, 1),
         sseMaxPerIp: int('SSE_MAX_PER_IP', 20, 1),
+        sseMaxLockPerUser: int('SSE_MAX_LOCK_PER_USER', 20, 1),
         // the seconds go to setInterval in ms: above 2147483 it overflows to 1 ms ticks, so the cap is an hour
         sseHeartbeatSeconds: int('SSE_HEARTBEAT_SECONDS', 25, 1, 3600),
         trustProxy,

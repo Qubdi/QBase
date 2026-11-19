@@ -1,7 +1,6 @@
 import { IDBKeyRange } from 'fake-indexeddb';
 import { describe, expect, it, vi } from 'vitest';
 import { listOf } from '../core/model/collection';
-import { initialFilter } from '../core/model/visibility-filter';
 import { NOW, withTables } from '../core/testing/helpers';
 import { parse } from '../core/wire/parse';
 import { serialise } from '../core/wire/serialise';
@@ -527,7 +526,6 @@ function contract(label: string, make: () => Promise<StorageAdapter>) {
             };
             expect(await a.readFilter(design.id)).toBeUndefined();
             expect(withSchemas.filter).toBeUndefined();
-            expect(initialFilter()).toEqual({});
         });
 
         it('DAT-013 deleting a diagram removes it, its filter, and resets it as default', async () => {

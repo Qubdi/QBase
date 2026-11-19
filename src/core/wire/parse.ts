@@ -217,11 +217,15 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
         const rd = new RecordReader(raw, path, warn);
         const id = uniqueId(rd.str('id'), typeIds, path, warn, random);
         const kindText = rd.str('kind');
-        const kind = kindText === 'composite' ? 'composite' : 'enum';
+        const kind =
+            kindText === 'composite' || kindText === 'alias'
+                ? kindText
+                : 'enum';
         if (
             kindText !== undefined &&
             kindText !== 'enum' &&
-            kindText !== 'composite'
+            kindText !== 'composite' &&
+            kindText !== 'alias'
         )
             warn(`${path}.kind`, 'unknown kind; treated as enum');
         const type: UserType = {
@@ -235,6 +239,8 @@ export function parse(input: unknown, options: ParseOptions = {}): ParseResult {
         if (values) type.values = values;
         const members = readMembers(rd, path, warn);
         if (members) type.members = members;
+        const baseType = rd.str('baseType');
+        if (baseType !== undefined && kind === 'alias') type.base = baseType;
         const order = rd.num('order');
         typeRows.push({ item: withExtras(type, rd), order });
     });

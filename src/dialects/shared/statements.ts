@@ -55,11 +55,19 @@ export function splitStatements(
             goBatches &&
             upper(t) === 'GO' &&
             parens === 0 &&
-            tokens[i - 1]?.line !== t.line &&
-            tokens[i + 1]?.line !== t.line
+            tokens[i - 1]?.line !== t.line
         ) {
-            flush();
-            continue;
+            // GO alone on its line, or `GO <count>` (the count is not needed)
+            const next = tokens[i + 1];
+            const count =
+                next?.kind === 'number' &&
+                next.line === t.line &&
+                tokens[i + 2]?.line !== t.line;
+            if (next?.line !== t.line || count) {
+                flush();
+                if (count) i++;
+                continue;
+            }
         }
         current.push(t);
         if (!inBlockStatement && current.length <= 8)

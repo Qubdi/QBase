@@ -48,7 +48,7 @@ describe('two admins acting at once', () => {
             method: 'PATCH',
             url: `/admin/users/${b.id}`,
             headers: as(a),
-            payload: { isAdmin: true },
+            payload: { isAdmin: true, adminPassword: 'Password-123!' },
         });
         expect(res.statusCode).toBe(200);
     });

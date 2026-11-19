@@ -83,6 +83,7 @@ export const importingStrings = {
         kindViews: 'Views only',
         schema: 'Schema',
         schemaAll: 'All schemas',
+        schemaNone: 'No schema',
         selectPage: 'Choose everything on this page',
         viewTag: 'view',
         previous: 'Previous',

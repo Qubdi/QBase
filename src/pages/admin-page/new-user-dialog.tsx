@@ -12,7 +12,9 @@ import {
 import { errorMessage } from '@/lib/qubdi/api';
 import { PasswordField } from '@/components/qubdi/password-field';
 import { usePasswordMinLength } from '@/hooks/use-password-min-length';
+import { useQubdi } from '@/hooks/use-qubdi';
 import { checkPassword } from '../../../shared/password';
+import { ProofFields } from './proof-fields';
 
 export interface NewUserDialogProps {
     open: boolean;
@@ -22,6 +24,9 @@ export interface NewUserDialogProps {
         email: string;
         password: string;
         isAdmin: boolean;
+        /** the acting admin's own proof, sent only when the new account is an admin */
+        adminPassword?: string;
+        adminCode?: string;
     }) => Promise<void>;
 }
 
@@ -37,6 +42,14 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
     const [isAdmin, setIsAdmin] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+    // making an administrator asks for the acting admin's own password (and code)
+    const { user: me } = useQubdi();
+    const needsOwnCode = me?.mfaEnabled === true;
+    const [ownPassword, setOwnPassword] = useState('');
+    const [ownCode, setOwnCode] = useState('');
+    const proofMissing =
+        isAdmin &&
+        (ownPassword === '' || (needsOwnCode && ownCode.trim() === ''));
     const minLength = usePasswordMinLength(open);
     const weak =
         checkPassword(password, { minLength, email: email.trim() }).length > 0;
@@ -49,6 +62,8 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
             setEmail('');
             setPassword('');
             setIsAdmin(false);
+            setOwnPassword('');
+            setOwnCode('');
             setError(null);
         }
     }
@@ -58,7 +73,19 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
         setError(null);
         setBusy(true);
         try {
-            await onCreate({ email: email.trim(), password, isAdmin });
+            await onCreate({
+                email: email.trim(),
+                password,
+                isAdmin,
+                ...(isAdmin
+                    ? {
+                          adminPassword: ownPassword,
+                          ...(needsOwnCode
+                              ? { adminCode: ownCode.trim() }
+                              : {}),
+                      }
+                    : {}),
+            });
             onOpenChange(false);
         } catch (err) {
             setError(errorMessage(err));
@@ -111,6 +138,20 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
                         />
                         {t('qubdi.adminUsers.newUser.makeAdmin')}
                     </label>
+                    {isAdmin ? (
+                        <ProofFields
+                            message={t(
+                                needsOwnCode
+                                    ? 'qubdi.adminUsers.users.confirmGrantCode'
+                                    : 'qubdi.adminUsers.users.confirmGrant'
+                            )}
+                            needsCode={needsOwnCode}
+                            password={ownPassword}
+                            onPassword={setOwnPassword}
+                            code={ownCode}
+                            onCode={setOwnCode}
+                        />
+                    ) : null}
                     {error ? (
                         <p role="alert" className="text-sm text-destructive">
                             {error}
@@ -127,7 +168,9 @@ export const NewUserDialog: React.FC<NewUserDialogProps> = ({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={busy || !email.trim() || weak}
+                            disabled={
+                                busy || !email.trim() || weak || proofMissing
+                            }
                         >
                             {t('qubdi.adminUsers.newUser.create')}
                         </Button>

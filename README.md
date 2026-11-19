@@ -13,6 +13,8 @@ and schema lint.
 | Editor | `src/` | React 19, TypeScript, Vite, Tailwind, `@xyflow/react`, Dexie |
 | Backend (optional) | `server/` | Node 24, Fastify, Drizzle, PostgreSQL |
 | Shared logic | `shared/` | Pure TypeScript with no dependencies: `reconcile`, drift classification, `lint` |
+| Design references | `design/` | Decision records and screenshots of the interface options that were tried; not part of the app, and left out of the Docker image |
+| Agent skills | `.claude/skills/` | Third-party instruction packs for AI coding assistants such as Claude Code; not part of the app, and left out of the Docker image |
 
 ## Features
 
@@ -252,7 +254,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `COOKIE_SECURE` | `auto` | The session cookie's `Secure` flag: `true`, `false`, or `auto` (only on requests that arrived over HTTPS; behind a proxy also set `TRUST_PROXY`, or the server warns at start that the cookie goes out without `Secure`). A Secure cookie is named `__Host-qbase_session`, otherwise `qbase_session`; either name is accepted |
 | `AUTH_RATE_LIMIT` | `20` | Sign-in, sign-up and change-password calls per minute per client address |
 | `AUTH_MAX_FAILURES` | `10` | Failed sign-ins (or wrong current passwords) from one address before it is locked out of an account; failures from all addresses together lock the account at five times this |
-| `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked account waits. Locking is per account, so someone who knows an email can lock it out for this long |
+| `AUTH_LOCKOUT_MINUTES` | `15` | How long a locked address, or a locked account, waits. One address locks only itself. Failures from many addresses together can lock an account for every new address, but an address the person signed in from in the last 30 days still has its password checked, so strangers cannot keep the owner out |
 | `PASSWORD_MIN_LENGTH` | `12` | Fewest characters of a new password. Cannot be set below 8. Applies when a password is set, never at sign-in |
 | `SESSION_DAYS` | `30` | Longest a session lasts, in days (1 to 3650) |
 | `SESSION_IDLE_DAYS` | `14` | A session unused for this many days ends early; `0` = only `SESSION_DAYS` applies |
@@ -267,6 +269,7 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `AUDIT_RETENTION_DAYS` | `365` | Audit rows older than this many days are deleted; `0` keeps them all |
 | `SSE_MAX_PER_LINK` | `100` | Most live viewers one share link may have at once |
 | `SSE_MAX_PER_IP` | `20` | Most live viewers one client address may have at once, over all links |
+| `SSE_MAX_LOCK_PER_USER` | `20` | Most lock event streams one signed-in user may have open at once (one per editor tab), counted per server process |
 | `SSE_HEARTBEAT_SECONDS` | `25` | Seconds between pings on a live stream (1 to 3600); each re-checks a signed-in viewer's session and names the newest version |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 
@@ -293,7 +296,7 @@ After the password, a person can be asked for the 6-digit code their authenticat
 - **Turn it on for the server:** set `SECRETS_KEY` (or `CONNECTION_KEY`, which is used when `SECRETS_KEY` is unset), at least 32 characters, and keep it safe. With no key the entry is not shown and nothing is an error. `MFA_ENABLED=false` removes the feature completely. In local-only mode (no server) there are no accounts, so there is no two-factor either.
 - **The server's clock must be right.** A code is accepted within about 30 seconds either side of now (`MFA_WINDOW_STEPS`, default 1). On an offline or air-gapped machine keep the clock correct (NTP, or set it by hand); a clock that is minutes out rejects every code.
 - **How it works:** after a correct password the server answers `{ "mfaRequired": true, "challenge": "..." }` and sets no cookie; `POST /auth/login/mfa` with the ticket and a code (or a recovery code) then starts the session. A ticket lasts 5 minutes and dies after 5 wrong codes, wrong codes also count against the account's lockout (`AUTH_MAX_FAILURES`), and a code can be used only once. The secret is stored encrypted (AES-256-GCM) and never returned after set-up; the 10 recovery codes are stored as hashes and shown once. Turning it on needs the password, so a stolen session cannot lock the owner out with a second factor they do not have. Turning it off, making new recovery codes and changing the password need the password and/or a code.
-- **A lost phone:** use a recovery code (each works once). Otherwise an admin opens *Admin > Users* and chooses *Reset two-factor* for that person, who is signed out everywhere and can sign in with the password alone. Resetting another *administrator's* password or two-factor asks the acting admin for their own password (and a code from their authenticator app or a recovery code, if they have two-factor on), so a stolen admin session alone cannot take over another admin; a wrong password counts against the same lockout as changing your own. If the only admin is locked out, run on the server `npm run mfa:reset -- person@example.com` (from `server/`), or in Docker `docker compose exec app node dist/server/src/cli/mfa-reset.js person@example.com`.
+- **A lost phone:** use a recovery code (each works once). Otherwise an admin opens *Admin > Users* and chooses *Reset two-factor* for that person, who is signed out everywhere and can sign in with the password alone. Resetting another *administrator's* password or two-factor asks the acting admin for their own password (and a code from their authenticator app or a recovery code, if they have two-factor on), so a stolen admin session alone cannot take over another admin; making someone an administrator (creating an admin account or promoting one) and deleting a project, which removes everything in it, ask for the same proof. A wrong password counts against the same lockout as changing your own. If the only admin is locked out, run on the server `npm run mfa:reset -- person@example.com` (from `server/`), or in Docker `docker compose exec app node dist/server/src/cli/mfa-reset.js person@example.com`.
 - **Upgrading from a version that stored recovery codes without the `k1:` prefix:** the first start after the upgrade deletes every unused recovery code stored the old way (migration `0026`), because the oldest ones were a bare sha256 that could be tested offline and the two kinds cannot be told apart. Two-factor stays on and the authenticator still works; people see *0 unused recovery codes* in their account settings and make new ones there. Anyone who had lost their phone and was relying on an old code needs an admin to *Reset two-factor*.
 - **Activity log:** `mfa.enable`, `mfa.disable`, `mfa.reset`, `mfa.recovery_used`, `mfa.recovery_renew` and `mfa.failed`.
 

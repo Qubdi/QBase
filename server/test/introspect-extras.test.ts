@@ -5,8 +5,7 @@ import { filterMetadata } from '../src/introspect/filter.js';
 import { PostgresIntrospector, POSTGRES_QUERIES } from '../src/introspect/postgres.js';
 import { assertReadOnlySql } from '../src/introspect/readonly-guard.js';
 import type { DatabaseMetadata } from '../src/introspect/types.js';
-import { defaultIntrospectorFactory } from '../src/introspect/routes.js';
-import { as, createTestApp, registerUser, type TestCtx } from './helpers.js';
+import { as, createTestApp, defaultIntrospectorFactory, registerUser, type TestCtx } from './helpers.js';
 import { PG_PASSWORD, PG_PORT, PG_USER, SAMPLE_ADMIN_URL } from './introspect-pg-fixture.js';
 
 // A second database, so the shared sample (whose counts other tests assert) stays as it is.

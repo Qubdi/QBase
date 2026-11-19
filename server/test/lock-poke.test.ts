@@ -2,7 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { diagramLocks, lockPokes, sessions } from '../src/db/schema.js';
-import { POKE_COOLDOWN_SECONDS, POKE_WAIT_SECONDS } from '../src/diagrams/poke.js';
+import {
+    POKE_COOLDOWN_SECONDS,
+    POKE_WAIT_SECONDS,
+    settlePokesOnRelease,
+} from '../src/diagrams/poke.js';
 import { purgeOldPokes } from '../src/maintenance.js';
 import {
     as,
@@ -474,6 +478,23 @@ describe('asking the editor of a locked diagram to step out', () => {
         });
     });
 
+    describe('when the holder leaves and someone else is first', () => {
+        it('SRV-045: tells the one who waited nothing when another tab already holds the diagram', async () => {
+            await poked();
+            const requester = await stream(b, 'tab-b');
+            await requester.text(': connected');
+            // a's lock goes and c takes the free diagram before the leaving is settled
+            await ctx.db.delete(diagramLocks);
+            expect((await lock(c, 'tab-c')).json()).toEqual({ held: true });
+
+            await settlePokesOnRelease(ctx.db, id, a.id, 'tab-a');
+
+            // the diagram was not set aside for b, so b is not told it can have it
+            expect(await requester.quiet(300)).toBe(true);
+            expect(await lockRow()).toMatchObject({ userId: c.id, editorId: 'tab-c' });
+        });
+    });
+
     describe('the lock stream', () => {
         it('shows a request that was sent while the holder was not connected', async () => {
             await poked();
@@ -601,6 +622,75 @@ describe('the lock stream and the editor\'s session', () => {
             await s.text(': ping');
             await ctx.db.delete(sessions);
             expect(await s.ended(5000)).toBe(true);
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('SRV-042: lets one user keep only so many lock streams open, and frees a place when one closes', async () => {
+        const ctx = await createTestApp({ sseMaxLockPerUser: 2 });
+        try {
+            const a = await registerUser(ctx.app, 'a@example.com');
+            const b = await registerUser(ctx.app, 'b@example.com');
+            const id = await createDiagram(ctx.app, a);
+            await grant(ctx.app, b, 'editor');
+            const base = await ctx.app.listen({ port: 0, host: '127.0.0.1' });
+            const first = await openLockStream(base, id, a, 'tab-1');
+            const second = await openLockStream(base, id, a, 'tab-2');
+            expect([first.status, second.status]).toEqual([200, 200]);
+
+            const third = await openLockStream(base, id, a, 'tab-3');
+            expect(third.status).toBe(429);
+            expect(await third.json()).toEqual({ error: 'too_many_streams' });
+
+            // the limit is for each user, not for the server
+            const other = await openLockStream(base, id, b, 'tab-b');
+            expect(other.status).toBe(200);
+
+            // closing a stream gives its place back
+            first.close();
+            await new Promise((r) => setTimeout(r, 300));
+            const again = await openLockStream(base, id, a, 'tab-4');
+            expect(again.status).toBe(200);
+            for (const s of [second, other, again]) s.close();
+        } finally {
+            await ctx.close();
+        }
+    });
+
+    it('SRV-044: hears a request it missed, on the next beat, and only once', async () => {
+        const ctx = await createTestApp({ sseHeartbeatSeconds: 1 });
+        try {
+            const a = await registerUser(ctx.app, 'a@example.com');
+            const b = await registerUser(ctx.app, 'b@example.com');
+            const id = await createDiagram(ctx.app, a);
+            await grant(ctx.app, b, 'editor');
+            const base = await ctx.app.listen({ port: 0, host: '127.0.0.1' });
+            await ctx.app.inject({
+                method: 'POST',
+                url: `/diagrams/${id}/lock`,
+                headers: as(a),
+                payload: { editorId: 'tab-a' },
+            });
+            const s = await openLockStream(base, id, a, 'tab-a');
+            await s.text(': connected');
+            // a request whose event never reached the stream (a gap in the
+            // database's LISTEN connection): only the table knows about it
+            const [row] = await ctx.db
+                .insert(lockPokes)
+                .values({
+                    diagramId: id,
+                    requesterId: b.id,
+                    requesterEditorId: 'tab-b',
+                    holderId: a.id,
+                    holderEditorId: 'tab-a',
+                    expiresAt: new Date(Date.now() + 60_000),
+                })
+                .returning({ id: lockPokes.id });
+            expect(await s.event('poke', 5000)).toMatchObject({ pokeId: row.id });
+            // the next beats (one a second) do not tell it again
+            expect(await s.quiet(2500)).toBe(true);
+            s.close();
         } finally {
             await ctx.close();
         }

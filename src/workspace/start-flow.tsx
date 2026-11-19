@@ -28,8 +28,7 @@ export const StartFlow: React.FC = () => {
         return () => {
             cancelled = true;
         };
-        // the dialog functions are stable per provider; the flow runs once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- the dialog functions are stable per provider; the flow runs once per adapter and workspace
     }, [adapter, workspace]);
 
     return <div className="h-dvh w-dvw bg-background" />;

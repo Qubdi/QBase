@@ -127,6 +127,36 @@ const isTextual = (n: Neutral): boolean =>
     n.kind === 'text' ||
     n.kind === 'enum';
 
+/**
+ * The elements of the inside of a PostgreSQL array literal (`a,"b,c",d`):
+ * a double-quoted element may hold commas, and a backslash takes the next
+ * character as it is. Blank unquoted elements are skipped.
+ */
+function pgArrayElements(body: string): { text: string; quoted: boolean }[] {
+    const out: { text: string; quoted: boolean }[] = [];
+    let text = '';
+    let quoted = false;
+    let inQuotes = false;
+    const end = () => {
+        const value = quoted ? text : text.trim();
+        if (quoted || value !== '') out.push({ text: value, quoted });
+        text = '';
+        quoted = false;
+    };
+    for (let i = 0; i < body.length; i++) {
+        const ch = body[i];
+        if (ch === '\\' && i + 1 < body.length) {
+            text += body[++i];
+        } else if (ch === '"') {
+            inQuotes = !inQuotes;
+            quoted = true;
+        } else if (ch === ',' && !inQuotes) end();
+        else if (inQuotes || quoted || ch !== ' ' || text !== '') text += ch;
+    }
+    end();
+    return out;
+}
+
 /** A default written for the target, or dropped with a reason. */
 export function convertDefault(
     raw: string,
@@ -190,14 +220,11 @@ export function convertDefault(
                 target !== 'postgres' &&
                 /^\{.*\}$/s.test(d.v)
             ) {
-                const items = d.v
-                    .slice(1, -1)
-                    .split(',')
-                    .map((x) => x.trim().replace(/^"|"$/g, ''))
-                    .filter((x) => x !== '')
-                    .map((x) =>
-                        /^-?\d+(\.\d+)?$/.test(x) ? x : JSON.stringify(x)
-                    );
+                const items = pgArrayElements(d.v.slice(1, -1)).map((x) =>
+                    !x.quoted && /^-?\d+(\.\d+)?$/.test(x.text)
+                        ? x.text
+                        : JSON.stringify(x.text)
+                );
                 // the JSON text sits inside a quoted literal of the target
                 const json = `[${items.join(', ')}]`.replace(/'/g, "''");
                 return wrap(`'${isMy ? json.replace(/\\/g, '\\\\') : json}'`);

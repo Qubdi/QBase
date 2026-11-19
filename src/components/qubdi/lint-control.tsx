@@ -38,6 +38,14 @@ export const LintControl: React.FC = () => {
     const { focusOnTable } = useFocusOn();
     const { isSidePanelShowed, openTableFromSidebar } = useLayout();
     const { toast } = useToast();
+    /** the finding's text in the interface language; the English text is the fallback */
+    const findingText = (f: Finding): string =>
+        f.messageKey
+            ? t(`qubdi.database.lintText.messages.${f.messageKey}`, {
+                  ...f.messageArgs,
+                  defaultValue: f.message,
+              })
+            : f.message;
     const [open, setOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [config, setConfig] = useState<LintConfig>(() =>
@@ -273,7 +281,7 @@ export const LintControl: React.FC = () => {
                                                       <span className="mr-1 font-mono text-xs uppercase text-primary">
                                                           {f.ruleId}
                                                       </span>
-                                                      {f.message}
+                                                      {findingText(f)}
                                                   </button>
                                                   {f.fix &&
                                                   !diagram.readonly ? (

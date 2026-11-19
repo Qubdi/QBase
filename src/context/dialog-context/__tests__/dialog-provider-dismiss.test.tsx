@@ -1,6 +1,14 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import {
+    MemoryRouter,
+    Route,
+    RouterProvider,
+    Routes,
+    createMemoryRouter,
+    useLocation,
+    useNavigate,
+} from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/components/qubdi/workspace-context', () => ({
@@ -19,11 +27,25 @@ vi.mock('@/platform/theme/theme-context', () => ({
     useTheme: () => ({ resolvedTheme: 'light' }),
 }));
 vi.mock('@/components/qubdi/project-open-dialog', () => ({
-    ProjectOpenDialog: (p: { canClose?: boolean; onClose: () => void }) => (
-        <button data-can-close={String(p.canClose)} onClick={p.onClose}>
-            dismiss-open
-        </button>
-    ),
+    ProjectOpenDialog: (p: { canClose?: boolean; onClose: () => void }) => {
+        const navigate = useNavigate();
+        return (
+            <>
+                <button data-can-close={String(p.canClose)} onClick={p.onClose}>
+                    dismiss-open
+                </button>
+                {/* what choosing a diagram does: close, then go to it */}
+                <button
+                    onClick={() => {
+                        p.onClose();
+                        navigate('/p/d');
+                    }}
+                >
+                    pick-diagram
+                </button>
+            </>
+        );
+    },
 }));
 
 vi.mock('@/components/qubdi/project-create-dialog', () => ({
@@ -129,5 +151,39 @@ describe('project start dialog with no diagram open', () => {
                 '/admin/projects'
             )
         );
+    });
+
+    it('opening a diagram whose page loads its code first is not undone by going back', async () => {
+        window.history.replaceState({ idx: 1 }, '');
+        const router = createMemoryRouter(
+            [
+                {
+                    path: '/p',
+                    element: (
+                        <DialogProvider>
+                            <Opener />
+                            <Where />
+                        </DialogProvider>
+                    ),
+                },
+                {
+                    path: '/p/d',
+                    // the page code arrives later than the next tick, as on the real server
+                    async lazy() {
+                        await new Promise((r) => setTimeout(r, 50));
+                        return { element: <Where /> };
+                    },
+                },
+            ],
+            { initialEntries: ['/admin/projects', '/p'], initialIndex: 1 }
+        );
+        render(<RouterProvider router={router} />);
+        fireEvent.click(screen.getByText('start'));
+        fireEvent.click(await screen.findByText('pick-diagram'));
+        await waitFor(() =>
+            expect(screen.getByTestId('where').textContent).toBe('/p/d')
+        );
+        await new Promise((r) => setTimeout(r, 30));
+        expect(router.state.location.pathname).toBe('/p/d');
     });
 });

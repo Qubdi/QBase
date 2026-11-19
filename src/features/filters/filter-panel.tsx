@@ -364,7 +364,7 @@ export const FilterPanel: React.FC<{
                                         ) : null}
                                         <ToggleEye
                                             shown={group.shown !== 'none'}
-                                            label={`${group.shown === 'none' ? text('filters.show') : text('filters.hide')} ${groupName}`}
+                                            label={`${text('filters.show')} ${groupName}`}
                                             onClick={() =>
                                                 set(
                                                     setTablesShown(
@@ -418,7 +418,7 @@ export const FilterPanel: React.FC<{
                                                       </button>
                                                       <ToggleEye
                                                           shown={shown}
-                                                          label={`${shown ? text('filters.hide') : text('filters.show')} ${entity.name}`}
+                                                          label={`${text('filters.show')} ${entity.name}`}
                                                           onClick={() =>
                                                               set(
                                                                   setTableShown(

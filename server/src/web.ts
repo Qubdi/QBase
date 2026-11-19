@@ -20,6 +20,14 @@ export const CSP_NONCE_PLACEHOLDER = '__CSP_NONCE__';
 export const VAUL_STYLE_HASH = 'sha256-YIjArHm2rkb5J7hX9lUM1bnQ3Kp61MTfluMGkuyKwDw=';
 
 /**
+ * SHA-256 of the empty string. vaul (and other libraries that add a style the
+ * same way) append an empty <style> to the head and fill it a moment later;
+ * the browser checks the element while it is still empty and logs a refusal
+ * for it. An empty style styles nothing, so allowing it costs nothing.
+ */
+export const EMPTY_STYLE_HASH = 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
+
+/**
  * The policy of an editor page. Styles: a <style> element needs this page's
  * nonce (or the vaul hash above), so an injected <style> does nothing. A
  * style="" attribute stays allowed (style-src-attr): React and the canvas set
@@ -28,7 +36,7 @@ export const VAUL_STYLE_HASH = 'sha256-YIjArHm2rkb5J7hX9lUM1bnQ3Kp61MTfluMGkuyKw
  * 'self'. Without a nonce (files, errors) only 'self' and the hash apply.
  */
 export const webContentSecurityPolicy = (nonce?: string): string => {
-    const elem = ["'self'", ...(nonce ? [`'nonce-${nonce}'`] : []), `'${VAUL_STYLE_HASH}'`].join(' ');
+    const elem = ["'self'", ...(nonce ? [`'nonce-${nonce}'`] : []), `'${VAUL_STYLE_HASH}'`, `'${EMPTY_STYLE_HASH}'`].join(' ');
     return [
         "default-src 'self'",
         "script-src 'self'",

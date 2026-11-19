@@ -88,8 +88,3 @@ export function isUnrestricted(filter: VisibilityFilter | undefined): boolean {
         (filter.schemaIds === undefined && filter.tableIds === undefined)
     );
 }
-
-/** The filter a diagram starts with when none is saved: everything is shown. */
-export function initialFilter(): VisibilityFilter {
-    return {};
-}

@@ -49,7 +49,9 @@ APP_PW="$(openssl rand -hex 12)"
 SRC_PW="$(openssl rand -hex 12)"
 CONN_KEY="$(openssl rand -hex 16)"
 ADMIN_PW="Aa1!$(openssl rand -hex 8)"
-(umask 077; printf 'SRC_PW=%s\nADMIN_PW=%s\n' "$SRC_PW" "$ADMIN_PW" > "$SECRETS")
+# the first admin of an empty server needs this token (the server would otherwise make one and only print it)
+SETUP_TOKEN="$(openssl rand -hex 16)"
+(umask 077; printf 'SRC_PW=%s\nADMIN_PW=%s\nSETUP_TOKEN=%s\n' "$SRC_PW" "$ADMIN_PW" "$SETUP_TOKEN" > "$SECRETS")
 docker network create "$NET" >/dev/null || exit 1
 docker run -d --name "$APPDB" --network "$NET" -e POSTGRES_USER=qbase -e POSTGRES_PASSWORD="$APP_PW" -e POSTGRES_DB=qbase "$PGIMG" >/dev/null || exit 1
 docker run -d --name "$SRCDB" --network "$NET" -e POSTGRES_USER=src -e POSTGRES_PASSWORD="$SRC_PW" -e POSTGRES_DB=shop "$PGIMG" >/dev/null || exit 1
@@ -64,7 +66,7 @@ done
 sleep 2
 docker run -d --name "$APP" --network "$NET" \
     -e DATABASE_URL="postgres://qbase:$APP_PW@$APPDB:5432/qbase" \
-    -e CONNECTION_KEY="$CONN_KEY" -e INTROSPECT_ALLOW_HOSTS="$SRCDB" \
+    -e CONNECTION_KEY="$CONN_KEY" -e INTROSPECT_ALLOW_HOSTS="$SRCDB" -e SETUP_TOKEN="$SETUP_TOKEN" \
     -e AUTH_RATE_LIMIT=1000 -e LOG_LEVEL=warn -e PORT=3001 \
     qbtest-app >/dev/null || exit 1
 i=0
@@ -78,7 +80,7 @@ else
 fi
 docker run --rm --ipc=host --network "$NET" -u "$(id -u)" -e HOME=/tmp -e SHOTS=/shots \
     -e BASE_URL="http://$APP:3001" -e SRC_HOST="$SRCDB" -e SRC_USER=src \
-    -e SRC_PASSWORD="$SRC_PW" -e SRC_DB=shop -e ADMIN_PASSWORD="$ADMIN_PW" \
+    -e SRC_PASSWORD="$SRC_PW" -e SRC_DB=shop -e ADMIN_PASSWORD="$ADMIN_PW" -e SETUP_TOKEN="$SETUP_TOKEN" \
     -e ONLY="${ONLY:-}" -e SCRIPT="${SCRIPT:-tools/e2e/server-flows.mjs}" \
     -v "$PWD":/w:ro -v "$SHOTS":/shots -v "$PW_CACHE":/tmp/pw -w /w \
     mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2 \

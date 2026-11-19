@@ -15,6 +15,9 @@ export interface TablePickerProps {
 
 type Kind = 'all' | 'tables' | 'views';
 
+/** The schema choice that means every schema; no real schema name can be this. */
+const ALL_SCHEMAS = '\u0000';
+
 /** Search, kind and schema filters, and paged tick boxes over the found tables. */
 export const TablePicker: React.FC<TablePickerProps> = ({
     rows,
@@ -24,7 +27,7 @@ export const TablePicker: React.FC<TablePickerProps> = ({
     const { t } = useTranslation();
     const [search, setSearch] = useState('');
     const [kind, setKind] = useState<Kind>('all');
-    const [schema, setSchema] = useState('');
+    const [schema, setSchema] = useState(ALL_SCHEMAS);
     const [page, setPage] = useState(0);
 
     const schemas = useMemo(
@@ -36,7 +39,7 @@ export const TablePicker: React.FC<TablePickerProps> = ({
             rows.filter(
                 (r) =>
                     (kind === 'all' || (kind === 'views') === r.view) &&
-                    (schema === '' || r.schema === schema) &&
+                    (schema === ALL_SCHEMAS || r.schema === schema) &&
                     r.name.toLowerCase().includes(search.trim().toLowerCase())
             ),
         [rows, kind, schema, search]
@@ -118,12 +121,12 @@ export const TablePicker: React.FC<TablePickerProps> = ({
                         setPage(0);
                     }}
                 >
-                    <option value="">
+                    <option value={ALL_SCHEMAS}>
                         {t('editor.importing.picker.schemaAll')}
                     </option>
                     {schemas.map((s) => (
                         <option key={s} value={s}>
-                            {s}
+                            {s || t('editor.importing.picker.schemaNone')}
                         </option>
                     ))}
                 </select>

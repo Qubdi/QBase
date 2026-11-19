@@ -13,17 +13,24 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/platform/ui/alert-dialog';
+import { useQubdi } from '@/hooks/use-qubdi';
 import { projectHomePath } from '@/lib/qubdi/project-path';
 import type { AdminProject } from '@/lib/qubdi/api';
+import { ProofFields, type OwnProof } from './proof-fields';
 
 export interface ProjectSettingsProps {
     project: AdminProject;
     busy: boolean;
     onSave: (name: string, description: string) => void;
-    onDelete: () => void;
+    /** resolves to the reason it failed, or null once the project is gone */
+    onDelete: (proof: OwnProof) => Promise<string | null>;
 }
 
-/** Rename or describe the project, or delete it with everything inside, after typing its name. */
+/**
+ * Rename or describe the project, or delete it with everything inside: after
+ * typing its name, and with the admin's own password (and code), so a stolen
+ * session alone cannot do it.
+ */
 export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     project,
     busy,
@@ -35,6 +42,13 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     const [description, setDescription] = useState(project.description);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const fieldId = useId();
+    const { user: me } = useQubdi();
+    const needsOwnCode = me?.mfaEnabled === true;
+    const [ownPassword, setOwnPassword] = useState('');
+    const [ownCode, setOwnCode] = useState('');
+    const [proofError, setProofError] = useState<string | null>(null);
+    const proofMissing =
+        ownPassword === '' || (needsOwnCode && ownCode.trim() === '');
 
     // the form follows the project when it, or its saved text, changes
     const [synced, setSynced] = useState({
@@ -197,15 +211,46 @@ export const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                             autoComplete="off"
                             spellCheck={false}
                         />
+                        <ProofFields
+                            message={t(
+                                needsOwnCode
+                                    ? 'qubdi.adminProjects.settings.confirmItsYouCode'
+                                    : 'qubdi.adminProjects.settings.confirmItsYou'
+                            )}
+                            needsCode={needsOwnCode}
+                            password={ownPassword}
+                            onPassword={setOwnPassword}
+                            code={ownCode}
+                            onCode={setOwnCode}
+                        />
                     </div>
+                    {proofError ? (
+                        <p role="alert" className="text-sm text-red-500">
+                            {proofError}
+                        </p>
+                    ) : null}
                     <AlertDialogFooter>
                         <AlertDialogCancel>
                             {t('qubdi.adminProjects.settings.cancel')}
                         </AlertDialogCancel>
                         <AlertDialogAction
-                            disabled={!confirmed || busy}
+                            disabled={!confirmed || busy || proofMissing}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            onClick={onDelete}
+                            onClick={(e) => {
+                                // stays open while it runs, so a wrong password can be corrected
+                                e.preventDefault();
+                                setProofError(null);
+                                void onDelete({
+                                    adminPassword: ownPassword,
+                                    ...(needsOwnCode
+                                        ? { adminCode: ownCode.trim() }
+                                        : {}),
+                                }).then((failed) => {
+                                    if (failed === null)
+                                        setConfirmDelete(false);
+                                    else setProofError(failed);
+                                });
+                            }}
                         >
                             {t('qubdi.adminProjects.settings.deleteButton')}
                         </AlertDialogAction>

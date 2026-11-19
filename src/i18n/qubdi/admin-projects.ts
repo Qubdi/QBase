@@ -77,6 +77,10 @@ export const adminProjects = {
             '<strong>{{name}}</strong>, all its diagrams and all its member assignments will be deleted. This cannot be undone.',
         confirmPrompt:
             'To confirm, type the project name: <strong>{{name}}</strong>',
+        confirmItsYou:
+            'Deleting a project removes everything in it. Enter your own password to confirm it is you.',
+        confirmItsYouCode:
+            'Deleting a project removes everything in it. Enter your own password and a code from your authenticator app (or a recovery code) to confirm it is you.',
         cancel: 'Cancel',
     },
     newProject: {

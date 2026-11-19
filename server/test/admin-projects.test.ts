@@ -1,6 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { eq } from 'drizzle-orm';
-import { diagramLocks, diagrams, sessions } from '../src/db/schema.js';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { eq, sql } from 'drizzle-orm';
+import { auditLog, diagramLocks, diagrams, projects, sessions, shareLinks } from '../src/db/schema.js';
+import { onLinkChanged } from '../src/events.js';
 import {
     as,
     createTestApp,
@@ -19,6 +20,9 @@ describe('admin panel and projects', () => {
     let stranger: TestUser;
     let projectId: string;
     let diagramId: string;
+
+    // what the admin sends to delete a project: their own password (SEC-048)
+    const proof = { adminPassword: 'Password-123!' };
 
     const call = (
         method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
@@ -94,6 +98,7 @@ describe('admin panel and projects', () => {
 
             const promote = await call('PATCH', `/admin/users/${login.id}`, admin, {
                 isAdmin: true,
+                adminPassword: 'Password-123!',
             });
             expect(promote.statusCode).toBe(200);
             const me = await call('GET', '/auth/me', login);
@@ -433,16 +438,138 @@ describe('admin panel and projects', () => {
                     content: sampleContent,
                 })
                 .returning({ id: diagrams.id });
-            const res = await call('DELETE', `/admin/projects/${p.id}`, admin);
+            const res = await call('DELETE', `/admin/projects/${p.id}`, admin, proof);
             expect(res.statusCode).toBe(204);
             const left = await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, d.id));
             expect(left).toHaveLength(0);
             expect((await call('GET', `/admin/projects/${p.id}/members`, admin)).statusCode).toBe(404);
         });
 
+        it('SRV-046: tells the open share streams of its diagrams that their links are gone, once the delete is done', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Doomed links' })).json();
+            const ids: string[] = [];
+            for (const title of ['One', 'Two']) {
+                const [d] = await ctx.db
+                    .insert(diagrams)
+                    .values({ ownerId: admin.id, projectId: p.id, title, content: sampleContent })
+                    .returning({ id: diagrams.id });
+                const [link] = await ctx.db
+                    .insert(shareLinks)
+                    .values({
+                        diagramId: d.id,
+                        tokenHash: `srv046-${title}-${Math.random()}`,
+                        createdBy: admin.id,
+                        live: true,
+                    })
+                    .returning({ id: shareLinks.id });
+                ids.push(link.id);
+            }
+            const heard: string[] = [];
+            const stop = onLinkChanged((id: string) => heard.push(id));
+            try {
+                const res = await call('DELETE', `/admin/projects/${p.id}`, admin, proof);
+                expect(res.statusCode).toBe(204);
+            } finally {
+                stop();
+            }
+            expect(heard.sort()).toEqual([...ids].sort());
+        });
+
+        it('SEC-048: asks for the admin\'s own password before it deletes anything', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Needs proof' })).json();
+            const [d] = await ctx.db
+                .insert(diagrams)
+                .values({ ownerId: admin.id, projectId: p.id, title: 'Inside', content: sampleContent })
+                .returning({ id: diagrams.id });
+            const intact = async () => ({
+                project: (await ctx.db.select({ id: projects.id }).from(projects).where(eq(projects.id, p.id))).length,
+                diagram: (await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, d.id))).length,
+            });
+
+            // a stolen session sends nothing more than the cookie
+            const none = await call('DELETE', `/admin/projects/${p.id}`, admin);
+            expect(none.statusCode).toBe(403);
+            expect(none.json()).toEqual({ error: 'step_up_required' });
+            expect(await intact()).toEqual({ project: 1, diagram: 1 });
+
+            const wrong = await call('DELETE', `/admin/projects/${p.id}`, admin, { adminPassword: 'not-it' });
+            expect(wrong.statusCode).toBe(403);
+            expect(wrong.json()).toEqual({ error: 'wrong_password' });
+            expect(await intact()).toEqual({ project: 1, diagram: 1 });
+
+            const ok = await call('DELETE', `/admin/projects/${p.id}`, admin, proof);
+            expect(ok.statusCode).toBe(204);
+            expect(await intact()).toEqual({ project: 0, diagram: 0 });
+        });
+
+        it('SEC-048: asks before saying a project does not exist, so a probe learns nothing', async () => {
+            const res = await call('DELETE', '/admin/projects/00000000-0000-4000-8000-000000000000', admin);
+            expect(res.statusCode).toBe(403);
+        });
+
+        it('answers 404 for a project that does not exist', async () => {
+            const res = await call('DELETE', '/admin/projects/00000000-0000-4000-8000-000000000000', admin, proof);
+            expect(res.statusCode).toBe(404);
+        });
+
+        it('writes the delete audit row in the delete transaction: no row when the delete rolls back', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Rolls back' })).json();
+            const before = await ctx.db
+                .select({ id: auditLog.id })
+                .from(auditLog)
+                .where(eq(auditLog.action, 'project.delete'));
+            // a trigger that refuses the audit row makes the whole delete fail
+            await ctx.db.execute(sql`
+                create function aud_refuse_project_delete() returns trigger language plpgsql as
+                $$ begin if new.action = 'project.delete' then raise exception 'refused'; end if; return new; end $$`);
+            await ctx.db.execute(
+                sql`create trigger aud_refuse before insert on audit_log for each row execute function aud_refuse_project_delete()`
+            );
+            try {
+                const res = await call('DELETE', `/admin/projects/${p.id}`, admin, proof);
+                expect(res.statusCode).toBe(500);
+            } finally {
+                await ctx.db.execute(sql`drop trigger aud_refuse on audit_log`);
+                await ctx.db.execute(sql`drop function aud_refuse_project_delete()`);
+            }
+            const stillThere = await ctx.db.select({ id: projects.id }).from(projects).where(eq(projects.id, p.id));
+            expect(stillThere).toHaveLength(1);
+            const after = await ctx.db
+                .select({ id: auditLog.id })
+                .from(auditLog)
+                .where(eq(auditLog.action, 'project.delete'));
+            expect(after).toHaveLength(before.length);
+        });
+
+        it('takes a diagram created at the same moment along, instead of failing with 500', async () => {
+            const p = (await call('POST', '/admin/projects', admin, { name: 'Race' })).json();
+            let created = '';
+            let release: () => void = () => undefined;
+            const gate = new Promise<void>((resolve) => (release = resolve));
+            // a diagram inserted but not yet committed holds a share lock on the project row
+            const inserting = ctx.db.transaction(async (tx) => {
+                const [row] = await tx
+                    .insert(diagrams)
+                    .values({ ownerId: admin.id, projectId: p.id, title: 'Late', content: sampleContent })
+                    .returning({ id: diagrams.id });
+                created = row.id;
+                await gate;
+            });
+            await vi.waitFor(() => expect(created).not.toBe(''));
+            const deleting = call('DELETE', `/admin/projects/${p.id}`, admin, proof);
+            // the delete is waiting for the insert; let it commit
+            await new Promise((r) => setTimeout(r, 200));
+            release();
+            await inserting;
+            const res = await deleting;
+            expect(res.statusCode).toBe(204);
+            const left = await ctx.db.select({ id: diagrams.id }).from(diagrams).where(eq(diagrams.id, created));
+            expect(left).toHaveLength(0);
+        });
+
         it('deletes an empty project', async () => {
             const p = await call('POST', '/admin/projects', admin, { name: 'Scratch' });
-            const res = await call('DELETE', `/admin/projects/${p.json().id}`, admin);
+            const res = await call('DELETE', `/admin/projects/${p.json().id}`, admin, proof);
             expect(res.statusCode).toBe(204);
         });
 

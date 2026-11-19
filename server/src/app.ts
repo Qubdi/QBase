@@ -27,6 +27,7 @@ import { createCounters } from './lib/counters.js';
 import { sharedRateLimitStore } from './lib/rate-limit-store.js';
 import { addressKey, sharedUserLimit } from './lib/rate-key.js';
 import { safeError } from './lib/safe-error.js';
+import { isUnstorableText } from './lib/pg-errors.js';
 import { registerWeb, API_PREFIX } from './web.js';
 import { publicShareRoutes, shareManagementRoutes } from './share/routes.js';
 
@@ -265,6 +266,11 @@ export function buildApp({
             return reply
                 .code(400)
                 .send({ error: 'invalid_request', issues: err.issues });
+        }
+        // text the database cannot store (a NUL character) is the caller's own
+        // input, wherever a schema did not catch it first
+        if (isUnstorableText(err)) {
+            return reply.code(400).send({ error: 'invalid_request' });
         }
         const status = (err as { statusCode?: number }).statusCode ?? 500;
         // unexpected failures: log them with the request id, show the client nothing

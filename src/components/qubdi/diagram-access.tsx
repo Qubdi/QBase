@@ -304,7 +304,7 @@ function useLegacyAccess(localId: string | undefined): DiagramAccessValue {
     // read it when it ran
     const remoteId = useMemo(
         () => (localId ? getRemoteId(localId) : undefined),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `who` and `tick` are not read in the callback: they only say when to read the remote id again
         [who, localId, tick]
     );
     // the answers that need no server call are worked out while rendering

@@ -130,6 +130,77 @@ describe('EDT-191 to EDT-194 kind, values and members', () => {
     });
 });
 
+describe('DB-006 alias types (SQL Server)', () => {
+    const alias = () =>
+        applyOk(withTables([]), {
+            type: 'item.insert',
+            collection: 'userTypes',
+            item: {
+                id: 'al',
+                name: 'ssn_type',
+                kind: 'alias',
+                base: 'varchar(11)',
+            },
+        }).design;
+
+    it('shows an alias as its own kind, with what it is made from', async () => {
+        renderPanel(<UserTypesSection />, alias());
+        expect(screen.getByText('Alias')).toBeTruthy();
+        await userEvent.click(
+            screen.getByRole('button', { name: /^Show or hide the details/ })
+        );
+        const base = screen.getByLabelText(
+            'Based on (for example varchar(11))'
+        ) as HTMLInputElement;
+        expect(base.value).toBe('varchar(11)');
+        // not the enum or composite editors
+        expect(screen.queryByText('No enum values defined')).toBeNull();
+        expect(screen.queryByText('No fields defined')).toBeNull();
+    });
+
+    it('changes what the alias is made from', async () => {
+        const { store } = renderPanel(<UserTypesSection />, alias());
+        await userEvent.click(
+            screen.getByRole('button', { name: /^Show or hide the details/ })
+        );
+        const base = screen.getByLabelText(
+            'Based on (for example varchar(11))'
+        );
+        await userEvent.clear(base);
+        await userEvent.type(base, 'char(9)');
+        expect(types(store)[0].base).toBe('char(9)');
+    });
+
+    it('switching an alias to enum drops its base', async () => {
+        const { store } = renderPanel(<UserTypesSection />, alias());
+        await userEvent.click(
+            screen.getByRole('button', { name: /^Show or hide the details/ })
+        );
+        await userEvent.click(screen.getByRole('combobox', { name: 'Kind' }));
+        await userEvent.click(
+            await screen.findByRole('option', { name: 'Enum' })
+        );
+        expect(types(store)[0]).toMatchObject({ kind: 'enum', values: [] });
+        expect(types(store)[0].base).toBeUndefined();
+    });
+
+    it('does not offer Alias as a kind to an enum', async () => {
+        const view = renderPanel(<UserTypesSection />, withTables([]));
+        await userEvent.click(
+            screen.getAllByRole('button', { name: 'New Type' })[0]
+        );
+        await userEvent.click(
+            screen.getByRole('button', { name: /^Show or hide the details/ })
+        );
+        await userEvent.click(screen.getByRole('combobox', { name: 'Kind' }));
+        expect(
+            await screen.findByRole('option', { name: 'Composite' })
+        ).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'Alias' })).toBeNull();
+        expect(view.store.getState().design.userTypes.order).toHaveLength(1);
+    });
+});
+
 describe('EDT-192 enum value rules', () => {
     it('refuses blank and repeated values', () => {
         expect(withEnumValue(['a'], '  ')).toBeUndefined();

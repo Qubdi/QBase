@@ -98,12 +98,14 @@ describe('audit meta: what an action was done to', () => {
             const gone = await call(
                 admin,
                 'DELETE',
-                `/admin/projects/${projectId}`
+                `/admin/projects/${projectId}`,
+                { adminPassword: 'Password-123!' }
             );
             expect(gone.statusCode).toBe(204);
             expect((await latest('project.delete')).meta).toEqual({
                 projectId,
                 name: 'Billing and invoices',
+                diagrams: 0,
             });
         });
     });
@@ -135,6 +137,7 @@ describe('audit meta: what an action was done to', () => {
 
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
                 isAdmin: true,
+                adminPassword: 'Password-123!',
             });
             expect((await latest('user.update')).meta).toEqual({
                 targetUserId: targetId,
@@ -155,6 +158,7 @@ describe('audit meta: what an action was done to', () => {
             // the next test expects the target to be an admin again
             await call(admin, 'PATCH', `/admin/users/${targetId}`, {
                 isAdmin: true,
+                adminPassword: 'Password-123!',
             });
         });
 

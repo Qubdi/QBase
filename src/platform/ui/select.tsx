@@ -4,6 +4,7 @@ import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { CaretSortIcon } from './radix-icons';
 
 import { cn } from '@/lib/utils/utils';
+import { cspNonce } from '@/platform/csp-nonce';
 
 const Select = SelectPrimitive.Root;
 
@@ -82,6 +83,7 @@ const SelectContent = React.forwardRef<
         >
             <SelectScrollUpButton />
             <SelectPrimitive.Viewport
+                nonce={cspNonce()}
                 className={cn(
                     'p-1',
                     position === 'popper' &&

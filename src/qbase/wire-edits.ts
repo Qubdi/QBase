@@ -30,8 +30,15 @@ export function keyFromIndex(index: DBIndex): Key {
     };
 }
 
-/** A change to a saved column, as a change to the model's column. */
-export function columnPatchFromWire(patch: Partial<DBField>): Patch<Column> {
+/**
+ * A change to a saved column, as a change to the model's column. `current` is
+ * the column as it is now: a patch that only flips `generatedStored` has no
+ * expression of its own, so it keeps the one the column has.
+ */
+export function columnPatchFromWire(
+    patch: Partial<DBField>,
+    current?: Pick<Column, 'generated'>
+): Patch<Column> {
     const out: Patch<Column> = {};
     if (patch.name !== undefined) out.name = patch.name;
     if ('type' in patch && patch.type)
@@ -52,7 +59,19 @@ export function columnPatchFromWire(patch: Partial<DBField>): Patch<Column> {
     if ('comments' in patch) out.comments = unset(patch.comments);
     if ('check' in patch) out.check = unset(patch.check);
     if ('domain' in patch) out.domain = unset(patch.domain);
-    if ('generatedExpression' in patch || 'generatedStored' in patch) {
+    if (
+        !('generatedExpression' in patch) &&
+        patch.generatedStored !== undefined
+    ) {
+        // only whether it is stored changes; with no computed column there is
+        // nothing to change
+        if (current?.generated)
+            out.generated = {
+                expression: current.generated.expression,
+                // null clears a flag in the wire shape: here it means "leave as it is"
+                stored: patch.generatedStored ?? current.generated.stored,
+            };
+    } else if ('generatedExpression' in patch || 'generatedStored' in patch) {
         const expression = unset(patch.generatedExpression);
         out.generated = expression
             ? { expression, stored: patch.generatedStored ?? true }

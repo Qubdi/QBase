@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { i18n } from '@/i18n/i18n';
 import { database } from '@/i18n/qubdi/database';
+import { MESSAGES, RULES } from '../../../shared/lint';
 
 const leaves = (obj: object, prefix = ''): string[] =>
     Object.entries(obj).flatMap(([key, value]) =>
@@ -49,5 +50,34 @@ describe('qubdi.database keys', () => {
         expect(i18n.t('qubdi.database.importFromDb.views', { count: 3 })).toBe(
             ' and 3 views'
         );
+    });
+
+    it('CLI-134: has text for every lint message and rule, in every language', async () => {
+        const original = i18n.language;
+        try {
+            for (const lng of ['en', 'de', 'fr', 'it', 'ru']) {
+                await i18n.changeLanguage(lng);
+                for (const [key, english] of Object.entries(MESSAGES)) {
+                    const full = `qubdi.database.lintText.messages.${key}`;
+                    const text = i18n.t(full);
+                    expect(i18n.exists(full), `${lng} ${full}`).toBe(true);
+                    const holes = (x: string) =>
+                        [...x.matchAll(/\{\{(\w+)\}\}/g)]
+                            .map((m) => m[1])
+                            .sort();
+                    expect(holes(text), `${lng} ${full}`).toEqual(
+                        holes(english)
+                    );
+                }
+                for (const r of RULES) {
+                    for (const part of ['title', 'description']) {
+                        const full = `qubdi.database.lintText.rules.${r.id}.${part}`;
+                        expect(i18n.exists(full), `${lng} ${full}`).toBe(true);
+                    }
+                }
+            }
+        } finally {
+            await i18n.changeLanguage(original);
+        }
     });
 });

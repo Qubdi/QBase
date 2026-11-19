@@ -95,8 +95,10 @@ const checkRow = z.object({
 const customTypeRow = z.object({
     schema: z.string(),
     type: z.string(),
-    kind: z.enum(['enum', 'composite']),
+    kind: z.enum(['enum', 'composite', 'alias']),
     values: z.array(z.string()).nullish(),
+    /** alias types: what the type is made from, e.g. `varchar(11)` */
+    base_type: z.string().nullish(),
     fields: z
         .array(z.object({ field: z.string(), type: z.string() }))
         .nullish(),

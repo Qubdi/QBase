@@ -85,7 +85,7 @@ export const authRoutes =
                 },
             },
         };
-        const { failures, accountFailures, locked, mfaGuard } = guards;
+        const { failures, accountFailures, locked, mfaGuard, knownAddresses } = guards;
 
         const cookieSecure = (req: FastifyRequest) =>
             isSecureRequest(req, config.cookieSecure);
@@ -115,6 +115,13 @@ export const authRoutes =
             // a plain-named cookie from before the prefix would otherwise sit
             // beside the new one for the rest of its life
             if (secure) reply.clearCookie(SESSION_COOKIE, { path: '/', secure });
+            // this address is now one the account has signed in from (see the
+            // account lockout in /login); failing to note it must not fail the sign-in
+            try {
+                await knownAddresses.remember(userId, addressKey(req.ip));
+            } catch (err) {
+                req.log.error({ err: safeError(err) }, 'known address was not noted');
+            }
         };
 
         const mfa = createMfa(db, config);
@@ -220,17 +227,30 @@ export const authRoutes =
             const key = `login:${body.email}:${addressKey(req.ip)}`;
             const accountKey = `login:${body.email}`;
             if (await locked(reply, key)) return;
+            const findUser = async () =>
+                (await db.select().from(users).where(eq(users.email, body.email)))[0];
+            let user: Awaited<ReturnType<typeof findUser>> | undefined;
+            let looked = false;
+            // The account is locked for every address together once guesses add up
+            // (many addresses can do that). That must not shut out its owner: an
+            // address the account has signed in from before still gets its
+            // password checked, with the address's own lockout above. Any other
+            // address, and any made-up email, is answered as before.
             const accountWait = await accountFailures.blockedFor(accountKey);
             if (accountWait > 0) {
-                return reply
-                    .code(429)
-                    .header('retry-after', accountWait)
-                    .send({ error: 'too_many_attempts' });
+                user = await findUser();
+                looked = true;
+                const known = user
+                    ? await knownAddresses.has(user.id, addressKey(req.ip))
+                    : false;
+                if (!known) {
+                    return reply
+                        .code(429)
+                        .header('retry-after', accountWait)
+                        .send({ error: 'too_many_attempts' });
+                }
             }
-            const [user] = await db
-                .select()
-                .from(users)
-                .where(eq(users.email, body.email));
+            if (!looked) user = await findUser();
             const ok = user
                 ? await verifyPassword(user.passwordHash, body.password)
                 : await verifyAgainstNobody(body.password);

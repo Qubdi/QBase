@@ -29,6 +29,7 @@ import {
 import { NewProjectDialog } from './new-project-dialog';
 import { ProjectMembers } from './project-members';
 import { ProjectSettings } from './project-settings';
+import type { OwnProof } from './proof-fields';
 import { DEFAULT_PROJECT_SORT, ProjectSortMenu } from './project-sort-menu';
 
 const PAGE_SIZE = 5;
@@ -245,21 +246,31 @@ export const ProjectsPanel: React.FC = () => {
             { done: { title: t('qubdi.adminProjects.projects.savedTitle') } }
         );
 
-    const deleteProject = (project: AdminProject) =>
-        run(
-            async () => {
-                await api.adminDeleteProject(project.id);
-                choose(null);
-            },
-            {
-                // the project is gone, so there is nothing to reload members for
-                reload: false,
-                done: {
-                    title: t('qubdi.adminProjects.projects.deletedTitle'),
-                    description: project.name,
-                },
-            }
-        );
+    /**
+     * Deletes the project. Resolves to why it failed (shown in the dialog that
+     * asked for the admin's password, so a wrong one can be corrected), or null.
+     */
+    const deleteProject = async (
+        project: AdminProject,
+        proof: OwnProof
+    ): Promise<string | null> => {
+        setBusy(true);
+        try {
+            await api.adminDeleteProject(project.id, proof);
+            choose(null);
+            // the project is gone, so there is nothing to reload members for
+            list.reload();
+            toast({
+                title: t('qubdi.adminProjects.projects.deletedTitle'),
+                description: project.name,
+            });
+            return null;
+        } catch (e) {
+            return errorMessage(e);
+        } finally {
+            setBusy(false);
+        }
+    };
 
     return (
         <div className="grid gap-6 md:grid-cols-[280px_1fr]">
@@ -450,8 +461,8 @@ export const ProjectsPanel: React.FC = () => {
                                     onSave={(name, description) =>
                                         void save(selected, name, description)
                                     }
-                                    onDelete={() =>
-                                        void deleteProject(selected)
+                                    onDelete={(proof) =>
+                                        deleteProject(selected, proof)
                                     }
                                 />
                             </TabsContent>

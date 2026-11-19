@@ -1,6 +1,13 @@
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import type { AdminProject } from '@/lib/qubdi/api';
 import { ProjectSettings } from './project-settings';
 
@@ -15,9 +22,15 @@ const project = (patch: Partial<AdminProject> = {}): AdminProject => ({
     ...patch,
 });
 
+const acting = vi.hoisted(() => ({ mfaEnabled: false }));
+vi.mock('@/hooks/use-qubdi', () => ({
+    useQubdi: () => ({ user: { id: 'me', mfaEnabled: acting.mfaEnabled } }),
+}));
+
 const setup = (p = project(), busy = false) => {
     const onSave = vi.fn();
-    const onDelete = vi.fn();
+    // resolves to null once the project is gone, or to why it could not be
+    const onDelete = vi.fn().mockResolvedValue(null);
     render(
         <ProjectSettings
             project={p}
@@ -93,22 +106,82 @@ describe('ProjectSettings', () => {
         expect(onDelete).not.toHaveBeenCalled();
     });
 
-    it('typing the exact name enables Delete and deletes once', () => {
-        const { onDelete } = setup();
+    const openConfirm = () => {
         const section = screen.getByRole('region', { name: 'Delete project' });
         fireEvent.click(
             within(section).getByRole('button', { name: 'Delete project' })
         );
-        const confirm = screen.getByRole('alertdialog');
+        return screen.getByRole('alertdialog');
+    };
+    const confirmButton = (dialog: HTMLElement) =>
+        within(dialog).getByRole('button', { name: 'Delete project' });
+
+    it('typing the exact name and your own password enables Delete, and deletes once with the proof', async () => {
+        acting.mfaEnabled = false;
+        const { onDelete } = setup();
+        const confirm = openConfirm();
         fireEvent.change(
             within(confirm).getByLabelText(/type the project name/),
             { target: { value: 'Shop' } }
         );
-        const del = within(confirm).getByRole('button', {
-            name: 'Delete project',
+        // the name alone is not enough (SEC-048)
+        expect(confirmButton(confirm)).toBeDisabled();
+        fireEvent.change(within(confirm).getByLabelText('Your password'), {
+            target: { value: 'my-own-password' },
         });
-        expect(del).toBeEnabled();
-        fireEvent.click(del);
+        expect(confirmButton(confirm)).toBeEnabled();
+        fireEvent.click(confirmButton(confirm));
         expect(onDelete).toHaveBeenCalledTimes(1);
+        expect(onDelete).toHaveBeenCalledWith({
+            adminPassword: 'my-own-password',
+        });
+        await waitFor(() =>
+            expect(screen.queryByRole('alertdialog')).toBeNull()
+        );
+    });
+
+    it('asks for a code too when the admin has two-factor on, and sends it', async () => {
+        acting.mfaEnabled = true;
+        const { onDelete } = setup();
+        const confirm = openConfirm();
+        await userEvent.type(
+            within(confirm).getByLabelText(/type the project name/),
+            'Shop'
+        );
+        await userEvent.type(
+            within(confirm).getByLabelText('Your password'),
+            'my-own-password'
+        );
+        expect(confirmButton(confirm)).toBeDisabled();
+        await userEvent.type(
+            within(confirm).getByLabelText('Your code'),
+            ' 123456 '
+        );
+        expect(confirmButton(confirm)).toBeEnabled();
+        await userEvent.click(confirmButton(confirm));
+        expect(onDelete).toHaveBeenCalledWith({
+            adminPassword: 'my-own-password',
+            adminCode: '123456',
+        });
+        acting.mfaEnabled = false;
+    });
+
+    it('stays open and says why when the password is refused, so it can be corrected', async () => {
+        acting.mfaEnabled = false;
+        const { onDelete } = setup();
+        onDelete.mockResolvedValueOnce('That password is not right.');
+        const confirm = openConfirm();
+        fireEvent.change(
+            within(confirm).getByLabelText(/type the project name/),
+            { target: { value: 'Shop' } }
+        );
+        fireEvent.change(within(confirm).getByLabelText('Your password'), {
+            target: { value: 'wrong' },
+        });
+        fireEvent.click(confirmButton(confirm));
+        expect(await within(confirm).findByRole('alert')).toHaveTextContent(
+            'That password is not right.'
+        );
+        expect(screen.getByRole('alertdialog')).toBeTruthy();
     });
 });

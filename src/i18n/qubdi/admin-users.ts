@@ -137,6 +137,13 @@ export const adminUsers = {
         madeAdmin: 'Made admin',
         removeAdmin: 'Remove admin',
         makeAdmin: 'Make admin',
+        makeAdminTitle: 'Make this person an admin?',
+        makeAdminDescription:
+            '{{email}} will be able to do everything an administrator can: manage users, projects and every diagram.',
+        confirmGrant:
+            'This gives someone full administrator rights. Enter your own password to confirm it is you.',
+        confirmGrantCode:
+            'This gives someone full administrator rights. Enter your own password and a code from your authenticator app (or a recovery code) to confirm it is you.',
         userDisabled: 'User disabled',
         userEnabled: 'User enabled',
         resetPasswordOf: 'Reset password of {{email}}',

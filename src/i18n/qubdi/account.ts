@@ -29,8 +29,6 @@ export const account = {
         same_password: 'Choose a password different from the current one.',
         password_change_required:
             'Choose your own password before you continue.',
-        user_not_found: 'No account with that email exists yet.',
-        already_member: 'That person already has access.',
         forbidden: 'You do not have permission to do that.',
         not_found: 'Not found.',
         encryption_not_configured:
@@ -56,10 +54,6 @@ export const account = {
         reserved_name:
             'That name is used by the app itself. Choose another one.',
         cannot_delete_self: 'You cannot delete your own account.',
-        project_not_empty:
-            'This project still has diagrams. Delete them first.',
-        managed_by_project:
-            'Access is managed by the project. Ask an admin to change it.',
         // not server codes: fallbacks
         invalid_response: 'The server sent an answer this app cannot read.',
         requestFailed: 'Request failed ({{code}}).',
@@ -150,7 +144,6 @@ export const account = {
     },
     passwordField: {
         show: 'Show password',
-        hide: 'Hide password',
         placeholder: 'Password',
         rules: 'Password rules',
         met: ' (met)',

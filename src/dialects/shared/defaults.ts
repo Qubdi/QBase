@@ -44,6 +44,42 @@ export function isNumberText(text: string): boolean {
     return NUMBER.test(text);
 }
 
+const ESCAPE_CHARS: Record<string, string> = {
+    '0': '\0',
+    b: '\b',
+    n: '\n',
+    r: '\r',
+    t: '\t',
+    Z: '\x1a',
+};
+
+/**
+ * A MySQL string default written with backslash escapes (`'it\\'s'`, what
+ * mysqldump writes) as the one form the design keeps and the writers expect:
+ * quotes doubled and every backslash literal. Text that is not one such string
+ * is returned as it is.
+ */
+export function plainStringDefault(text: string): string {
+    if (!/^'(?:[^'\\]|\\[\s\S]|'')*'$/.test(text)) return text;
+    let body = '';
+    const inner = text.slice(1, -1);
+    for (let i = 0; i < inner.length; i++) {
+        const ch = inner[i];
+        if (ch === '\\' && i + 1 < inner.length) {
+            const next = inner[++i];
+            // \% and \_ keep their backslash (they only mean something in LIKE)
+            body +=
+                next === '%' || next === '_'
+                    ? `\\${next}`
+                    : (ESCAPE_CHARS[next] ?? next);
+        } else if (ch === "'" && inner[i + 1] === "'") {
+            body += "'";
+            i++;
+        } else body += ch;
+    }
+    return `'${body.replace(/'/g, "''")}'`;
+}
+
 export function isQuotedText(text: string): boolean {
     return SINGLE_QUOTED.test(text);
 }

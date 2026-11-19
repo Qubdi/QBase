@@ -1,5 +1,10 @@
 import type { Diagnostic } from '../script-model';
-import type { LexProfile } from './tokenizer';
+import {
+    blockCommentEnd,
+    DOLLAR_TAG,
+    isWordChar,
+    type LexProfile,
+} from './tokenizer';
 
 /** A rule that looks for foreign syntax, line by line, in the masked text. */
 export interface LineRule {
@@ -48,7 +53,7 @@ export function maskCode(source: string, profile: LexProfile): Masked {
             blank(i, end);
             i = end;
         } else if (two === '/*') {
-            const close = source.indexOf('*/', i + 2);
+            const close = blockCommentEnd(source, i, !!profile.nestedComments);
             if (close < 0) {
                 problems.push({
                     severity: 'error',
@@ -57,23 +62,28 @@ export function maskCode(source: string, profile: LexProfile): Masked {
                     suggestion: 'Close the comment with */',
                 });
             }
-            const end = close < 0 ? n : close + 2;
+            const end = close < 0 ? n : close;
             blank(i, end);
             i = end;
         } else if (
             c === "'" ||
-            (c === '"' && profile.identifierQuotes.includes('"')) ||
+            (c === '"' &&
+                (profile.identifierQuotes.includes('"') ||
+                    profile.doubleQuotedStrings)) ||
             (c === '`' && profile.identifierQuotes.includes('`'))
         ) {
             const startLine = line;
+            // a backslash escapes in MySQL strings and in a PostgreSQL E'...'
+            const prev = source[i - 1];
+            const escapes =
+                (profile.backslashEscapes && (c === "'" || c === '"')) ||
+                (c === "'" &&
+                    (prev === 'e' || prev === 'E') &&
+                    !isWordChar(source[i - 2] ?? ' '));
             let j = i + 1;
             let closed = false;
             while (j < n) {
-                if (
-                    profile.backslashEscapes &&
-                    c === "'" &&
-                    source[j] === '\\'
-                ) {
+                if (escapes && source[j] === '\\') {
                     j += 2;
                     continue;
                 }
@@ -99,16 +109,26 @@ export function maskCode(source: string, profile: LexProfile): Masked {
             blank(i, end);
             i = end;
         } else if (c === '[' && profile.identifierQuotes.includes('[')) {
-            const close = source.indexOf(']', i + 1);
-            const end = close < 0 ? i + 1 : close + 1;
+            // a name ends at a `]` that is not doubled (`]]` is a `]` in the name)
+            let close = source.indexOf(']', i + 1);
+            while (close >= 0 && source[close + 1] === ']')
+                close = source.indexOf(']', close + 2);
+            if (close < 0)
+                problems.push({
+                    severity: 'error',
+                    message: 'Unterminated quoted text',
+                    line,
+                    suggestion: 'Close the name with ]',
+                });
+            const end = close < 0 ? n : close + 1;
             blank(i, end);
             i = end;
         } else if (
             c === '$' &&
             profile.dollarStrings &&
-            /^\$[A-Za-z_]*\$/.test(source.slice(i, i + 64))
+            DOLLAR_TAG.test(source.slice(i, i + 64))
         ) {
-            const tag = /^\$[A-Za-z_]*\$/.exec(source.slice(i, i + 64))![0];
+            const tag = DOLLAR_TAG.exec(source.slice(i, i + 64))![0];
             const close = source.indexOf(tag, i + tag.length);
             const end = close < 0 ? n : close + tag.length;
             blank(i, end);
