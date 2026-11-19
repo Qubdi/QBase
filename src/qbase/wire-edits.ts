@@ -68,7 +68,8 @@ export function columnPatchFromWire(
         if (current?.generated)
             out.generated = {
                 expression: current.generated.expression,
-                stored: patch.generatedStored,
+                // null clears a flag in the wire shape: here it means "leave as it is"
+                stored: patch.generatedStored ?? current.generated.stored,
             };
     } else if ('generatedExpression' in patch || 'generatedStored' in patch) {
         const expression = unset(patch.generatedExpression);

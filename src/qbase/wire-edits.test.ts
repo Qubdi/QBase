@@ -172,6 +172,16 @@ describe('columnPatchFromWire', () => {
         ).toEqual({ generated: { expression: 'a + 1', stored: false } });
     });
 
+    it('CLI-140: a null generatedStored keeps whether the column is stored', () => {
+        // the wire shape can carry null for a flag; there is nothing to flip
+        expect(
+            columnPatchFromWire(
+                { generatedStored: null },
+                { generated: { expression: 'a + 1', stored: false } }
+            )
+        ).toEqual({ generated: { expression: 'a + 1', stored: false } });
+    });
+
     it('CLI-132: flipping generatedStored on a column that is not computed changes nothing', () => {
         expect(columnPatchFromWire({ generatedStored: false })).toEqual({});
         expect(columnPatchFromWire({ generatedStored: false }, {})).toEqual({});

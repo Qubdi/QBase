@@ -256,6 +256,11 @@ await section('S1', 'sign-in, first admin, sign out and in', async () => {
             await d
                 .getByPlaceholder('Password', { exact: true })
                 .fill(ADMIN_PW);
+            // an empty server wants its setup token before it makes the first admin
+            if (process.env.SETUP_TOKEN)
+                await d
+                    .getByPlaceholder('Setup token')
+                    .fill(process.env.SETUP_TOKEN);
             await d
                 .getByRole('button', { name: 'Create admin account' })
                 .click();
