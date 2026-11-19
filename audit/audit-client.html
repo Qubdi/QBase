@@ -30,7 +30,7 @@
 <main id="main">
 <section id="reg" class="stg-sector">
   <div class="section-head"><span class="snum">01</span><h2>Open &mdash; Client</h2></div>
-  <p class="section-note">0 open &middot; 134 fixed &middot; 1 accepted. Source of truth: <code>audit/audit.md</code>.</p>
+  <p class="section-note">0 open &middot; 135 fixed &middot; 1 accepted. Source of truth: <code>audit/audit.md</code>.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Sev</th><th class="wrap-cell">Finding</th><th>Where</th><th class="wrap-cell">Fix</th></tr></thead>
@@ -42,7 +42,7 @@
 
 <section id="closed" class="stg-sector">
   <div class="section-head"><span class="snum">02</span><h2>Fixed and accepted</h2></div>
-  <details><summary>Fixed (134)</summary>
+  <details><summary>Fixed (135)</summary>
   <div class="table-wrap">
     <table>
       <thead><tr><th>ID</th><th>Status</th><th class="wrap-cell">Finding</th></tr></thead>
@@ -78,6 +78,7 @@
         <tr><td class="svc-name">CLI-141</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Local autosave still loses an edit made just before a reload: the <code>pagehide</code> flush of CLI-117 does not finish in a real browser (flow F13 step 08: 1 area after reload, expected 2)</td></tr>
         <tr><td class="svc-name">CLI-142</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Import dialog "Database client / psql" tabs have no panels; axe reports <code>aria-controls</code> pointing at an id that is not there (critical, <code>aria-valid-attr-value</code>)</td></tr>
         <tr><td class="svc-name">CLI-143</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">The browser logs "Refused to apply inline style" (CSP <code>style-src-elem</code>) on the admin and editor pages when the app is served by the real server; the source of the inline style is not located</td></tr>
+        <tr><td class="svc-name">CLI-144</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Opening or creating a diagram from the project's diagram dialog sent the user back to the project list on the real server: the "leave if empty" check ran one tick after the dialog closed, before the lazily loaded editor route had changed the address, so it navigated home and cancelled the open</td></tr>
         <tr><td class="svc-name">CLI-110</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Navbar publish, account, drift, lint and all <code>qubdi.*</code> screens show English in de, fr, it, ru</td></tr>
         <tr><td class="svc-name">CLI-111</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Locale parity test skips <code>qubdi.*</code>, so missing translations pass CI</td></tr>
         <tr><td class="svc-name">CLI-103</td><td><span class="pill good">Fixed</span></td><td class="wrap-cell">Failed autosave (5xx, 429, network) never retries without a new edit</td></tr>

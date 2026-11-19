@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useMemo, useReducer } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { Suspense, lazy, useContext, useMemo, useReducer } from 'react';
+import { UNSAFE_DataRouterContext, useNavigate } from 'react-router-dom';
 import { useTheme } from '@/platform/theme/theme-context';
 import { toast } from '@/platform/toast/use-toast';
 import { useWorkspace } from '@/components/qubdi/workspace-context';
@@ -131,6 +131,8 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
     const [open, dispatch] = useReducer(reduce, NONE);
     const workspace = useWorkspace();
     const navigate = useNavigate();
+    // the app's router (none under a plain <MemoryRouter>): its pending navigation
+    const router = useContext(UNSAFE_DataRouterContext)?.router;
     const adapter = useStorageAdapter();
     const store = useOptionalEditorStoreApi();
     const canvas = useCanvasActions();
@@ -194,12 +196,15 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
     // A project dialog shown with no diagram behind it (the workspace's start
     // flow) can be dismissed: the user leaves for the page they came from. The
     // check waits a tick so that opening or creating a diagram, which also
-    // closes the dialog, is not undone by going back.
+    // closes the dialog, is not undone by going back. Under the app's router a
+    // page that loads its code first changes the address later than that tick,
+    // so a navigation still under way counts as having left.
     const leaveIfEmpty = () => {
         if (store) return;
         const here = window.location.pathname;
         setTimeout(() => {
             if (window.location.pathname !== here) return;
+            if (router && router.state.navigation.state !== 'idle') return;
             const idx = (window.history.state as { idx?: number } | null)?.idx;
             if (idx) navigate(-1);
             else navigate('/');

@@ -757,6 +757,8 @@ await section('S7', 'import a diagram from the live PostgreSQL', async () => {
             await d
                 .getByLabel('Password', { exact: true })
                 .fill(E.SRC_PASSWORD);
+            // the throwaway source database speaks plain TCP; TLS is on by default
+            await d.getByLabel('Use SSL / TLS').uncheck();
             await d.getByLabel('Save connection as').fill('shop-source');
             await d.getByRole('button', { name: 'Connect' }).click();
             await d.getByRole('checkbox', { name: /customers/ }).waitFor();
@@ -867,9 +869,13 @@ await section('S8', 'customise, lint, drift, re-sync', async () => {
                 .nth(3)
                 .click();
             await page.keyboard.press('Escape');
-            // the Description section of the card starts closed
+            // the description is edited in the Tables panel (its form, Description
+            // section starts closed), not on the canvas card
             await page
-                .locator('[data-edit-card]')
+                .getByRole('button', { name: 'Tables', exact: true })
+                .click();
+            await page.getByText('customers', { exact: true }).first().click();
+            await page
                 .getByRole('button', { name: 'Description', exact: true })
                 .click();
             const desc = page
