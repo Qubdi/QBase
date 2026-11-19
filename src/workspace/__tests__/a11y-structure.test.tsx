@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-// Regressions found by the axe audit (tools/e2e/a11y.mjs, rewrite/phase9/a11y.md).
+// Regressions found by the axe audit (tools/e2e/a11y.mjs).
 const source = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
 describe('page structure', () => {

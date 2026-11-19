@@ -19,7 +19,7 @@ const EXTERNAL = process.env.BASE_URL?.replace(/\/$/, '');
 const BASE = EXTERNAL || `http://localhost:${PORT}`;
 mkdirSync(SHOTS, { recursive: true });
 
-// Appendix sample of rewrite/spec/import-export.md (10.5, PostgreSQL A1).
+// A sample PostgreSQL dump with the features the import must read.
 const PG_SAMPLE = `SET statement_timeout = 0;
 CREATE TYPE public.mood AS ENUM ('calm', 'busy');
 CREATE TABLE public.pets (

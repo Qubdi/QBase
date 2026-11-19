@@ -354,8 +354,8 @@ before a release.
 | `tools/e2e/run-a11y.sh` | Accessibility audit (axe-core and keyboard checks) |
 | `tools/e2e/run-perf.sh` | Timings on large diagrams (`SIZES=50,200`) |
 
-The scripts in `tools/e2e/visual/` compare screens of two running builds and are for the
-rewrite work only.
+The scripts in `tools/e2e/visual/` compare screens of two running builds side by side; they are
+a development aid and run by hand.
 
 ## Schema lint in CI
 

@@ -19,7 +19,7 @@ import pg16 from './fixtures/live-postgresql-16.json';
 import pg18 from './fixtures/live-postgresql-18.json';
 
 // The fixtures are what the client scripts returned from throwaway PostgreSQL
-// 18.6 / 16.15, MySQL 8.4 and MariaDB 11.8 (rewrite/phase9/live-checks.md),
+// 18.6 / 16.15, MySQL 8.4 and MariaDB 11.8,
 // kept as hand-written JSON. The server's POST /api/introspect returns the
 // same shape (server/test/introspect-extras.test.ts).
 

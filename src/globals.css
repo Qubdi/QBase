@@ -5,8 +5,7 @@
  * Design tokens. Every colour is a "hue sat% light%" triple so that
  * tailwind.config.js can wrap it in hsl() and still allow an opacity
  * modifier. The values were measured from the editor the owner wants kept.
- * A few are moved by the smallest step that reaches WCAG AA contrast:
- * see rewrite/decisions-phase9-restore.md ("Accessibility changes").
+ * A few are moved by the smallest step that reaches WCAG AA contrast.
  */
 :root {
     --radius: 0.75rem;

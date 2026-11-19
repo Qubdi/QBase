@@ -3,8 +3,9 @@
 // licences, and marks anything that is not clearly permissive for review.
 // Run from the repository root after `npm ci` in both packages:
 //   node tools/licences.mjs
-// Output: rewrite/inventory/third-party-licences.csv
+// Output: the CSV on standard output (node tools/licences.mjs > licences.csv), then a summary on standard error
 import fs from 'node:fs';
+import process from 'node:process';
 import { isPermissive } from './permissive.mjs';
 
 const rows = [];
@@ -59,15 +60,12 @@ const lines = rows.map((row) => {
         review,
     ].join(',');
 });
-fs.writeFileSync(
-    'rewrite/inventory/third-party-licences.csv',
-    [header, ...lines].join('\n') + '\n'
-);
+process.stdout.write([header, ...lines].join('\n') + '\n');
 const flagged = lines.filter((line) => line.endsWith(',yes'));
-console.log(
+console.error(
     `${rows.length} direct dependencies; ${flagged.length} need review`
 );
-console.log(flagged.join('\n'));
+console.error(flagged.join('\n'));
 const counts = {};
 for (const row of rows) counts[row.license] = (counts[row.license] ?? 0) + 1;
-console.log(counts);
+console.error(counts);

@@ -5,7 +5,7 @@
  *
  * Left out, because the dictionary keeps them in LONG columns that SQL cannot
  * aggregate: column default values, view definitions and check conditions.
- * Not yet run against a live Oracle server (see rewrite/decisions-phase9-restore.md).
+ * Not yet run against a live Oracle server.
  */
 export const ORACLE_SCRIPT = `SELECT JSON_OBJECT(
   'database_name' VALUE SYS_CONTEXT('USERENV', 'DB_NAME'),

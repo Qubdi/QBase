@@ -506,7 +506,7 @@ describe('hand-written results import (IMP-059)', () => {
 });
 
 // Found by running the scripts on live servers (PostgreSQL 16 and 18, MySQL
-// 8.4 and 5.7, MariaDB 11, CockroachDB); see rewrite/phase9/live-checks.md.
+// 8.4 and 5.7, MariaDB 11, CockroachDB).
 describe('fixes found on live databases', () => {
     it('PostgreSQL reads an index column by attribute number, not through pg_get_indexdef', () => {
         // pg_get_indexdef quotes "Mixed Col"; the column list has the bare name

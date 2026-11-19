@@ -1,6 +1,6 @@
 /**
  * Phase 9 data checks: an old-layout (nine-store) browser database built by
- * hand from rewrite/spec/data-format.md sections 2 and 3, opened through the
+ * hand from the data format spec (the old layout), opened through the
  * migration. Every field name and shape here comes from the spec, not from
  * the code under test.
  */

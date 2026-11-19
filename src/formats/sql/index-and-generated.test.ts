@@ -9,8 +9,7 @@ import { importSql } from './import-sql';
 
 // SQL files carry DESC, partial-index predicates, computed columns and (in
 // PostgreSQL) domains; reading a script keeps them, and a script written from
-// a design reads back as the same design (rewrite/phase9/live-checks.md,
-// "Third pass").
+// a design reads back as the same design.
 
 const projection = (design: Design) =>
     listOf(design.entities).map((e) => ({

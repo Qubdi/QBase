@@ -7,7 +7,7 @@ import type { FlowInput, NodeMemory } from './flow-model';
 import type { LinkEdge } from './flow-model';
 import { HANDLES_MIN_ZOOM } from './field-row';
 
-/** Behaviour that keeps a large diagram quick (the numbers are in rewrite/phase9/perf.md). */
+/** Behaviour that keeps a large diagram quick (the timings are measured by tools/e2e/perf.mjs). */
 function input(over: Partial<FlowInput> = {}): FlowInput {
     const s = shop();
     return {

@@ -3,8 +3,8 @@
  *
  * Part A settles data-format Q13 (which end of a relationship is source and
  * which is target) from the spec text and shows that wire, model, SQL and
- * DBML agree. Part B runs the sample inputs and outputs of
- * rewrite/spec/import-export.md section 10 through the code.
+ * DBML agree. Part B runs the sample inputs and outputs of the import and
+ * export behaviour spec through the code.
  */
 import { describe, expect, it } from 'vitest';
 import { listOf } from '@/core/model/collection';
@@ -330,7 +330,7 @@ const summary = (d: Design) =>
 /**
  * Where the spec's own round trip rule cannot hold, because another rule of
  * the same spec wins. Each entry rewrites the FIRST export into what the
- * second export must be (owner to confirm, see rewrite/phase9/data-checks.md).
+ * second export must be (owner to confirm).
  */
 const SPEC_ROUND_TRIP_EXCEPTIONS: Record<string, (first: string) => string> = {
     // import-export 10.2 writes comments as `-- text` lines / a block; no
