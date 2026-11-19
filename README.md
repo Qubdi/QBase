@@ -1,17 +1,18 @@
 # QBase
 
-Database schema diagrams you can keep on your own server. QBase is a
-open source (Apache 2.0) diagram editor with an optional self-hosted backend. The editor
-still works fully offline in the browser; the backend adds accounts, published
-versions, share links, live-database import, re-sync, drift detection
-and schema lint.
+Database schema diagrams you can keep on your own server. QBase is an
+open source (Apache 2.0) diagram editor with an optional self-hosted backend. On its
+own the editor works fully offline in the browser: diagrams stay in the browser and
+there are no accounts. The backend adds accounts, published versions, share links,
+live-database import, re-sync, drift detection and schema lint. The Docker image
+includes the backend, so it is always on there (see [Run it](#run-it)).
 
 ## What is in here
 
 | Part | Where | Stack |
 | --- | --- | --- |
 | Editor | `src/` | React 19, TypeScript, Vite, Tailwind, `@xyflow/react`, Dexie |
-| Backend (optional) | `server/` | Node 24, Fastify, Drizzle, PostgreSQL |
+| Backend (optional; always in the Docker image) | `server/` | Node 24, Fastify, Drizzle, PostgreSQL |
 | Shared logic | `shared/` | Pure TypeScript with no dependencies: `reconcile`, drift classification, `lint` |
 | Design references | `design/` | Decision records and screenshots of the interface options that were tried; not part of the app, and left out of the Docker image |
 | Agent skills | `.claude/skills/` | Third-party instruction packs for AI coding assistants such as Claude Code; not part of the app, and left out of the Docker image |
@@ -37,6 +38,8 @@ QBase is two parts: the **server**, which keeps accounts, projects and diagrams 
 | [**A**](#option-a-everything-in-docker-with-the-bundled-postgresql) | Docker | the one bundled with QBase (simplest) |
 | [**B**](#option-b-docker-with-your-own-existing-postgresql) | Docker | one you already run |
 | [**C**](#option-c-from-source-for-development) | your machine, from source | either |
+
+With Docker (A and B) the server is always on: the image holds the server and the editor, which the server serves itself, so it needs PostgreSQL and the first account you create becomes the administrator. Only C can run the editor on its own: without `VITE_QUBDI_BACKEND_URL` it is in local-only mode, with the diagrams kept in your browser and no accounts, projects, share links or live-database import.
 
 You need Git for all of them, [Docker](https://docs.docker.com/get-docker/) with Compose v2 for A and B (`docker compose version` should work), and Node 24 for C (the version in `.nvmrc`). Commands are for a Bash shell; in Windows PowerShell `cp` works the same, and Git Bash has `openssl`.
 
@@ -217,7 +220,7 @@ The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the conne
    npm run dev                       # http://localhost:5173
    ```
 
-   `.env` from step 2 already has `VITE_QUBDI_BACKEND_URL=http://localhost:3001`. Without that setting the editor runs in local-only mode and shows no account screens (schema lint works either way).
+   `.env` from step 2 already has `VITE_QUBDI_BACKEND_URL=http://localhost:3001`. Without that setting the editor runs in local-only mode: it shows no account screens, the diagrams stay in your browser, and accounts, projects, share links and live-database import are not available (schema lint works either way).
 
 5. **Open <http://localhost:5173>** and create the first account: it becomes the administrator. The form asks for a setup token, which `npm run dev` of the server prints once at start (or set `SETUP_TOKEN` in `server/.env`).
 
