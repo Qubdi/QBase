@@ -20,6 +20,13 @@ import {
 import { addressKey } from '../lib/rate-key.js';
 import { createAuthGuards, type AuthGuards } from './guards.js';
 import { createMfa, mfaAvailable } from './mfa.js';
+import type { QauthClient } from './qauth.js';
+import {
+    accountForPerson,
+    qauthAccessFor,
+    replyForQauthError,
+    sealRefresh,
+} from './qauth-session.js';
 import { mfaRoutes } from './mfa-routes.js';
 import { weakPassword } from './password-rules.js';
 import {
@@ -72,7 +79,9 @@ export const authRoutes =
         db: Db,
         config: Config,
         // shared with the admin step-up, so a lockout holds at every door
-        guards: AuthGuards = createAuthGuards(config)
+        guards: AuthGuards = createAuthGuards(config),
+        // QAuth mode (AUTH_PROVIDER=qauth): QAuth knows the people, see qauth.ts
+        qauth: QauthClient | null = null
     ): FastifyPluginAsync =>
     async (app) => {
         // per client address; an account's failures are counted separately
@@ -93,13 +102,15 @@ export const authRoutes =
         const startSession = async (
             req: FastifyRequest,
             reply: FastifyReply,
-            userId: string
+            userId: string,
+            idpRefreshEnc?: string
         ) => {
             const { token, expiresAt } = await createSession(
                 db,
                 userId,
                 config.sessionDays,
-                req.headers['user-agent']
+                req.headers['user-agent'],
+                idpRefreshEnc
             );
             const secure = cookieSecure(req);
             // over https the cookie takes the `__Host-` name (a browser only
@@ -126,6 +137,43 @@ export const authRoutes =
 
         const mfa = createMfa(db, config);
 
+        // QAuth vouched for the person: open QBase's own session for their account
+        const finishQauthSignIn = async (
+            req: FastifyRequest,
+            reply: FastifyReply,
+            tokens: import('./qauth.js').QauthTokens
+        ) => {
+            const person = await qauth!.me(tokens.accessToken);
+            const found = await accountForPerson(db, person);
+            const withdraw = async () => {
+                await qauth!.logout(tokens.accessToken).catch(() => undefined);
+            };
+            if (!found.ok) {
+                await withdraw();
+                return reply.code(403).send({ error: found.error });
+            }
+            if (!found.isActive) {
+                // a disabled account is answered like a wrong password
+                await withdraw();
+                return reply.code(401).send({ error: 'invalid_credentials' });
+            }
+            await startSession(
+                req,
+                reply,
+                found.userId,
+                tokens.refreshToken ? sealRefresh(config, tokens.refreshToken) : undefined
+            );
+            await audit(db, { userId: found.userId, action: 'user.sign_in' });
+            const [user] = await db.select().from(users).where(eq(users.id, found.userId));
+            return {
+                id: user.id,
+                email: user.email,
+                isAdmin: user.isAdmin,
+                mustChangePassword: tokens.mustChangePassword,
+                mfaEnabled: false,
+            };
+        };
+
         // lets the UI show the first-run "create admin" form only when it applies
         app.get('/setup-status', limit, async () => {
             // one row is enough to know; counting would visit every user
@@ -133,6 +181,18 @@ export const authRoutes =
                 .select({ id: users.id })
                 .from(users)
                 .limit(1);
+            // with QAuth the first person to sign in becomes the admin: there is no form
+            // the first-run form is only for the local mode
+            if (qauth) {
+                return {
+                    needsSetup: false,
+                    setupTokenRequired: false,
+                    setupTokenConfigured: true,
+                    passwordMinLength: config.passwordMinLength,
+                    mfaAvailable: false,
+                    authProvider: 'qauth' as const,
+                };
+            }
             // the form needs the minimum length to tick its checklist as people type
             return {
                 needsSetup: anyUser.length === 0,
@@ -148,13 +208,15 @@ export const authRoutes =
             };
         });
 
-        if (config.mfaEnabled) {
+        if (config.mfaEnabled && !qauth) {
             await app.register(
                 mfaRoutes({ db, config, mfa, failures, locked, mfaGuard, limit, startSession })
             );
         }
 
         app.post('/register', limit, async (req, reply) => {
+            // people are made at QAuth (an invitation or its sign-up); QBase has no sign-up of its own
+            if (qauth) return reply.code(403).send({ error: 'signup_disabled' });
             const body = newAccount.parse(req.body);
             const weak = weakPassword(config, body.password, body.email);
             if (weak) return reply.code(400).send(weak);
@@ -224,8 +286,50 @@ export const authRoutes =
             });
         });
 
+        if (qauth) {
+            // the second step of a QAuth sign-in: the ticket QAuth gave, and the code
+            app.post('/login/mfa', limit, async (req, reply) => {
+                const body = z
+                    .object({
+                        challenge: z.string().max(4096),
+                        code: z.string().max(64).optional(),
+                        recoveryCode: z.string().max(64).optional(),
+                    })
+                    .parse(req.body);
+                try {
+                    const tokens = await qauth.verifyMfa(
+                        body.challenge,
+                        body.code ?? body.recoveryCode ?? '',
+                        req.ip
+                    );
+                    return await finishQauthSignIn(req, reply, tokens);
+                } catch (err) {
+                    if (err instanceof Error && err.name === 'QauthError') {
+                        const e = err as import('./qauth.js').QauthError;
+                        if (e.status === 401 || e.status === 403) {
+                            const code = e.code === 'invalid_ticket' ? 'invalid_challenge' : 'invalid_code';
+                            return reply.code(401).send({ error: code });
+                        }
+                    }
+                    return replyForQauthError(reply, err);
+                }
+            });
+        }
+
         app.post('/login', limit, async (req, reply) => {
             const body = signIn.parse(req.body);
+            if (qauth) {
+                // QAuth checks the password, the lockout and the second step; QBase only asks
+                try {
+                    const result = await qauth.login(body.email, body.password, req.ip);
+                    if (result.kind === 'mfa') {
+                        return { mfaRequired: true, challenge: result.ticket };
+                    }
+                    return await finishQauthSignIn(req, reply, result.tokens);
+                } catch (err) {
+                    return replyForQauthError(reply, err);
+                }
+            }
             // Unknown emails are counted too, so the lockout reveals nothing. The
             // address is part of the key: failures from one address lock out that
             // address for that account, so a stranger cannot keep someone else
@@ -317,7 +421,17 @@ export const authRoutes =
             if (req.user) {
                 await audit(db, { userId: req.user.id, action: 'user.logout' });
             }
-            await destroySession(db, sessionTokenOf(req.cookies, cookieSecure(req)));
+            const sessionToken = sessionTokenOf(req.cookies, cookieSecure(req));
+            if (qauth && sessionToken) {
+                // sign out at QAuth too, so the person is not still signed in there
+                try {
+                    const fresh = await qauthAccessFor(db, config, qauth, sessionToken, req.ip);
+                    if (fresh) await qauth.logout(fresh.accessToken);
+                } catch (err) {
+                    req.log.warn({ err: safeError(err) }, 'QAuth did not confirm the sign-out');
+                }
+            }
+            await destroySession(db, sessionToken);
             const secure = cookieSecure(req);
             reply.clearCookie(SESSION_COOKIE, { path: '/', secure });
             if (secure) reply.clearCookie(SECURE_SESSION_COOKIE, { path: '/', secure });
@@ -340,6 +454,36 @@ export const authRoutes =
                 return reply.code(401).send({ error: 'unauthorized' });
             }
             const body = changePassword.parse(req.body);
+            if (qauth) {
+                // the password is QAuth's: it checks the old one, the rules and the second step
+                const sessionToken = sessionTokenOf(req.cookies, cookieSecure(req));
+                try {
+                    const fresh = sessionToken
+                        ? await qauthAccessFor(db, config, qauth, sessionToken, req.ip)
+                        : null;
+                    if (!fresh) return reply.code(401).send({ error: 'unauthorized' });
+                    await qauth.changePassword(
+                        fresh.accessToken,
+                        body.currentPassword,
+                        body.newPassword,
+                        body.code ?? body.recoveryCode
+                    );
+                } catch (err) {
+                    if (err instanceof Error && err.name === 'QauthError') {
+                        const e = err as import('./qauth.js').QauthError;
+                        if (e.code === 'invalid_credentials') {
+                            return reply.code(403).send({ error: 'wrong_password' });
+                        }
+                        if (e.code === 'weak_password' || e.code === 'breached_password') {
+                            return reply.code(400).send({ error: e.code, ...e.extra, code: undefined });
+                        }
+                    }
+                    return replyForQauthError(reply, err);
+                }
+                await destroyOtherSessions(db, req.user.id, sessionToken);
+                await audit(db, { userId: req.user.id, action: 'user.password_change' });
+                return { ok: true };
+            }
             const key = `password:${req.user.id}`;
             if (await locked(reply, key)) return;
             const [user] = await db

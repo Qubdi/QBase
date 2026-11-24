@@ -225,6 +225,13 @@
       "when": 1794928183139,
       "tag": "0031_lock_pokes",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795100000000,
+      "tag": "0032_qauth_accounts",
+      "breakpoints": true
     }
   ]
 }

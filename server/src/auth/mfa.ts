@@ -30,8 +30,11 @@ export const MFA_ISSUER = 'QBase';
  * encrypt secrets with. Without a key nobody can set it up, and that is not
  * an error: the feature just is not offered.
  */
-export const mfaAvailable = (config: Pick<Config, 'mfaEnabled' | 'secretsKey'>) =>
-    config.mfaEnabled && config.secretsKey !== null;
+export const mfaAvailable = (
+    config: Pick<Config, 'mfaEnabled' | 'secretsKey'> & Partial<Pick<Config, 'authProvider'>>
+) =>
+    // with QAuth the second step is QAuth's, not QBase's
+    config.authProvider !== 'qauth' && config.mfaEnabled && config.secretsKey !== null;
 
 export interface Mfa {
     /** a fresh secret for the user, stored encrypted and still switched off */

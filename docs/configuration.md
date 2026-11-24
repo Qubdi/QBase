@@ -24,6 +24,9 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `SETUP_TOKEN` | unset | The token the first sign-up needs while no account exists, so a stranger who reaches an empty server cannot become its administrator. At least 16 characters. **Required to create the first account**: the server does not make one, and with none set it refuses the first sign-up (`setup_token_required`) and says so in its log. Once an account exists it is no longer asked for |
 | `ALLOW_OPEN_BOOTSTRAP` | `false` | `true` lets the first caller become administrator with no setup token. For throwaway local servers only |
 | `MFA_ENABLED` | `true` | `false` removes two-factor sign-in completely: no endpoints, no screens |
+| `AUTH_PROVIDER` | `local` | `qauth` hands the people to [QAuth](https://github.com/qubdi/qauth): it checks passwords, two-step codes and resets, and QBase keeps its own accounts only for its own roles (see "Signing in through QAuth" below). `local` is QBase's own sign-in |
+| `QAUTH_URL` | unset | With `AUTH_PROVIDER=qauth`: where QAuth is, as this server reaches it (`https://id.example.com`) |
+| `QAUTH_CLIENT_ID` | unset | With `AUTH_PROVIDER=qauth`: the client id QAuth gave this app when it was registered |
 | `MFA_WINDOW_STEPS` | `1` | 30-second steps a code is accepted either side of now (0 to 5) |
 | `INTROSPECT_ALLOW_HOSTS` | empty | Hosts, IPs or IPv4 CIDRs the server may connect to even if private (loopback, `10.x`, ...). Blocked by default. A bad entry stops the server at start, and a range wider than `/8` is refused |
 | `INTROSPECT_ALLOW_PRIVILEGED` | unset | `1` lets a SQL Server import log in as a `sysadmin` or `db_owner`; by default such a login is refused. Use a read-only login instead |
@@ -55,3 +58,16 @@ All settings live in `.env` files, none are hard-coded. `.env` is git-ignored.
 | `SSE_MAX_LOCK_PER_USER` | `20` | Most lock event streams one signed-in user may have open at once (one per editor tab), counted per server process |
 | `SSE_HEARTBEAT_SECONDS` | `25` | Seconds between pings on a live stream (1 to 3600); each re-checks a signed-in viewer's session and names the newest version |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
+
+
+## Signing in through QAuth
+
+With `AUTH_PROVIDER=qauth`, QBase's own sign-in screens stay as they are but the people live in QAuth. Register QBase there as an app (its own pool of people, or a group shared with your other apps), then set `AUTH_PROVIDER`, `QAUTH_URL`, `QAUTH_CLIENT_ID` and a `SECRETS_KEY` (the QAuth refresh token kept with a session is encrypted with it).
+
+- **QAuth decides who the person is**: the password, the lockout, two-step verification, password changes and resets. The sign-in form, the second-step form and change-password call QAuth. Two-step is set up on QAuth's own pages, so QBase hides its own.
+- **QBase decides what they may do**: its administrators, projects and diagram access stay QBase's, keyed on QAuth's person id (`users.qauth_sub`). The first person to sign in becomes QBase's administrator, as the first account of a local install does; QBase's admin page can make others. An existing local account is linked when QAuth has verified the same address (its projects and diagrams carry over); an unverified address is refused (`account_exists`).
+- **Accounts are made at QAuth** (an invitation, or its self sign-up). QBase has no sign-up, no "create user" and no password reset of its own (`managed_by_qauth`).
+- **Sessions**: after QAuth vouches for the person, QBase opens its own session as before. Every five minutes a session asks QAuth whether the person is still signed in there (a refresh): signing out at QAuth, a password change or a disabled account ends the QBase session too. If QAuth cannot be reached the session keeps working and asks again on the next request. Signing out of QBase signs out at QAuth.
+- **Client address**: QAuth throttles by client address and sees QBase as the client, so QBase sends the browser's address in `X-Forwarded-For`; set `QAUTH_TRUSTED_PROXIES` at QAuth to QBase's address so it is believed, and `TRUST_PROXY` here as for any proxy.
+
+`tools/qauth-integration/run.sh` starts a real QAuth and a real QBase in Docker and drives the whole flow (sign-in, two-step, QBase roles, password change, a sign-in ended at QAuth, sign-out).

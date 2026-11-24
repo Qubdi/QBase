@@ -4,6 +4,7 @@ import { loadConfig, type Config } from '../src/config.js';
 import pg from 'pg';
 import { createDb } from '../src/db/client.js';
 import { createIntrospectorFactory } from '../src/introspect/routes.js';
+import type { QauthClient } from '../src/auth/qauth.js';
 
 export const TEST_DB = 'qbase_test';
 // TEST_PG_PORT points the suite at a throwaway Postgres instead of the one on 5433
@@ -31,7 +32,9 @@ export async function createTestApp(
     /** set false to add a second app without wiping the first one's data */
     reset = true,
     /** the all-routes allowance per user; tests make many calls, so it is high by default */
-    userRateLimit = 100_000
+    userRateLimit = 100_000,
+    /** QAuth mode: a stand-in for QAuth (see qauth-mode.test.ts) */
+    qauth?: QauthClient
 ): Promise<TestCtx> {
     const config = {
         // tests make many calls; the limits are exercised with explicit overrides
@@ -65,7 +68,7 @@ export async function createTestApp(
     // a new app starts with every allowance unspent, as one with its own memory did
     await pool.query('delete from rate_counters');
     await pool.query('delete from live_viewers');
-    const app = buildApp({ config, db, introspect, userRateLimit });
+    const app = buildApp({ config, db, introspect, userRateLimit, qauth });
     await app.ready();
     return {
         app,

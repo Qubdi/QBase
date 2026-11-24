@@ -16,6 +16,12 @@ export const account = {
         invalid_request: 'Please check the values you entered.',
         wrong_password: 'Current password is incorrect.',
         invalid_code: 'That code is not right. Check the app and try again.',
+        managed_by_qauth:
+            'Accounts and passwords are kept in QAuth. Ask your QAuth administrator.',
+        auth_unavailable:
+            'Sign-in is not available right now: QAuth cannot be reached. Try again in a moment.',
+        account_exists:
+            'An account with that address already exists here. Ask an administrator to link it.',
         invalid_challenge:
             'That sign-in took too long or had too many wrong codes. Enter your password again.',
         mfa_code_required:

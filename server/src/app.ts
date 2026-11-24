@@ -5,6 +5,8 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { sql } from 'drizzle-orm';
 import { ZodError } from 'zod';
 import { createAuthGuards } from './auth/guards.js';
+import { createQauthClient, type QauthClient } from './auth/qauth.js';
+import { qauthSessionAlive } from './auth/qauth-session.js';
 import { authRoutes } from './auth/routes.js';
 import {
     getSessionUser,
@@ -46,6 +48,8 @@ export interface AppDeps {
     userRateLimit?: number;
     /** where log lines go instead of stdout (tests read them) */
     logStream?: NodeJS.WritableStream;
+    /** QAuth mode: the client for QAuth (tests pass a fake; otherwise made from the config) */
+    qauth?: QauthClient;
 }
 
 /**
@@ -113,7 +117,10 @@ export function buildApp({
     introspect,
     userRateLimit = USER_RATE_LIMIT,
     logStream,
+    qauth: qauthDep,
 }: AppDeps): FastifyInstance {
+    const qauth: QauthClient | null =
+        config.authProvider === 'qauth' ? (qauthDep ?? createQauthClient(config)) : null;
     const prefix = config.webDir ? API_PREFIX : '';
     const app = Fastify({
         // closing the server drops idle connections only: a request being answered
@@ -236,11 +243,12 @@ export function buildApp({
 
     api.addHook('preHandler', async (req) => {
         // a route that settles the caller before reading its body has done it already
-        req.user ??= await getSessionUser(
-            db,
-            sessionTokenOf(req.cookies, isSecureRequest(req, config.cookieSecure)),
-            config.sessionIdleDays * 86_400
-        );
+        const token = sessionTokenOf(req.cookies, isSecureRequest(req, config.cookieSecure));
+        req.user ??= await getSessionUser(db, token, config.sessionIdleDays * 86_400);
+        // QAuth mode: now and then ask QAuth whether the person is still signed in there
+        if (req.user && qauth && token && !(await qauthSessionAlive(db, config, qauth, token, req.ip))) {
+            req.user = null;
+        }
     });
 
     // Every signed-in call draws on one allowance per user. Counting waits for
@@ -287,8 +295,8 @@ export function buildApp({
 
     // one set of failure counters, so a lockout reached through one door holds at the others
     const guards = createAuthGuards(config, counters);
-    api.register(authRoutes(db, config, guards), { prefix: '/auth' });
-    api.register(adminRoutes(db, config, guards), { prefix: '/admin' });
+    api.register(authRoutes(db, config, guards, qauth), { prefix: '/auth' });
+    api.register(adminRoutes(db, config, guards, qauth), { prefix: '/admin' });
     api.register(projectRoutes(db), { prefix: '/projects' });
     api.register(diagramRoutes(db, config), { prefix: '/diagrams' });
     api.register(memberRoutes(db), { prefix: '/diagrams' });

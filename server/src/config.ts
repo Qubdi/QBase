@@ -97,6 +97,18 @@ export interface Config {
     secretsKey: string | null;
     /** false removes two-factor completely: no endpoints, no UI */
     mfaEnabled: boolean;
+    /**
+     * Who knows the people: QBase itself ('local', the default) or QAuth
+     * ('qauth'). With QAuth, sign-in, passwords, two-factor and resets happen
+     * there; QBase keeps its own accounts only to hang its own roles and
+     * diagram access on (keyed on QAuth's person id) and opens its own session
+     * after QAuth has vouched for the person.
+     */
+    authProvider: 'local' | 'qauth';
+    /** where QAuth lives, as this server reaches it (qauth mode only) */
+    qauthUrl: string | null;
+    /** the id QAuth gave QBase when it was registered as an app (qauth mode only) */
+    qauthClientId: string | null;
     /** 30-second steps a code is accepted either side of now (clock drift) */
     mfaWindowSteps: number;
     /**
@@ -350,6 +362,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     }
     const connectionKey = key('CONNECTION_KEY');
     const secretsKey = key('SECRETS_KEY') ?? connectionKey;
+    const authProviderRaw = (env.AUTH_PROVIDER?.trim().toLowerCase() || 'local');
+    if (authProviderRaw !== 'local' && authProviderRaw !== 'qauth') {
+        problems.push(`AUTH_PROVIDER must be "local" or "qauth" (got "${authProviderRaw}")`);
+    }
+    const authProvider = authProviderRaw === 'qauth' ? 'qauth' : 'local';
+    const qauthUrl = env.QAUTH_URL?.trim().replace(/\/+$/, '') || null;
+    const qauthClientId = env.QAUTH_CLIENT_ID?.trim() || null;
+    if (authProvider === 'qauth') {
+        if (!qauthUrl || !/^https?:\/\//.test(qauthUrl)) {
+            problems.push('QAUTH_URL (the address of QAuth, with http:// or https://) is required when AUTH_PROVIDER=qauth');
+        }
+        if (!qauthClientId) {
+            problems.push('QAUTH_CLIENT_ID (the id QAuth gave this app) is required when AUTH_PROVIDER=qauth');
+        }
+        // the QAuth refresh token kept with a session is encrypted with it
+        if (!secretsKey) {
+            problems.push('SECRETS_KEY (or CONNECTION_KEY) is required when AUTH_PROVIDER=qauth');
+        }
+    }
     const config: Config = {
         databaseUrl,
         // loopback unless told otherwise; the Docker image sets 0.0.0.0
@@ -398,6 +429,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         connectionKey,
         secretsKey,
         mfaEnabled: env.MFA_ENABLED?.trim().toLowerCase() !== 'false',
+        authProvider,
+        qauthUrl,
+        qauthClientId,
         mfaWindowSteps: parseWindowSteps(env.MFA_WINDOW_STEPS),
         driftCacheSeconds: int('DRIFT_CACHE_SECONDS', 300),
     };

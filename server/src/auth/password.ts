@@ -3,9 +3,11 @@ import { hash, verify } from '@node-rs/argon2';
 export const hashPassword = (password: string) => hash(password);
 
 export async function verifyPassword(
-    passwordHash: string,
+    passwordHash: string | null,
     password: string
 ): Promise<boolean> {
+    // a person QAuth knows has no password here: it is checked there
+    if (passwordHash === null) return false;
     try {
         return await verify(passwordHash, password);
     } catch {

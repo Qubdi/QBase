@@ -66,7 +66,9 @@ export async function createSession(
     db: Db,
     userId: string,
     days: number,
-    userAgent?: string
+    userAgent?: string,
+    /** QAuth mode: QAuth's refresh token for this sign-in, already encrypted */
+    idpRefreshEnc?: string
 ): Promise<{ token: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + days * 86_400_000);
@@ -85,6 +87,7 @@ export async function createSession(
             userId,
             expiresAt,
             userAgent: keepUserAgent(userAgent),
+            ...(idpRefreshEnc ? { idpRefreshEnc, idpCheckedAt: new Date() } : {}),
         });
     });
     return { token, expiresAt };

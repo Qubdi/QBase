@@ -34,6 +34,7 @@ import { hashPassword } from '../auth/password.js';
 import { createAuthGuards, type AuthGuards } from '../auth/guards.js';
 import { createMfa } from '../auth/mfa.js';
 import { createStepUp, stepUpFields } from '../auth/step-up.js';
+import type { QauthClient } from '../auth/qauth.js';
 import { weakPassword } from '../auth/password-rules.js';
 import type { Config } from '../config.js';
 import { isForeignKeyViolation, isUniqueViolation } from '../lib/pg-errors.js';
@@ -234,14 +235,17 @@ export const adminRoutes =
             | 'mfaWindowSteps'
             | 'authMaxFailures'
             | 'authLockoutMinutes'
+            | 'cookieSecure'
         >,
         // the failure counters of sign-in and the account screens: a wrong
         // password here counts against the same lockout
-        guards: AuthGuards = createAuthGuards(config)
+        guards: AuthGuards = createAuthGuards(config),
+        // QAuth mode: accounts and passwords are QAuth's, see auth/qauth.ts
+        qauth: QauthClient | null = null
     ): FastifyPluginAsync =>
     async (app) => {
-        const stepMfa = config.mfaEnabled ? createMfa(db, config) : null;
-        const stepUp = createStepUp({ db, config, mfa: stepMfa, guards });
+        const stepMfa = config.mfaEnabled && !qauth ? createMfa(db, config) : null;
+        const stepUp = createStepUp({ db, config, mfa: stepMfa, guards, qauth });
         app.addHook('preHandler', async (req, reply) => {
             if (!req.user) {
                 return reply.code(401).send({ error: 'unauthorized' });
@@ -368,6 +372,8 @@ export const adminRoutes =
         });
 
         app.post('/users', async (req, reply) => {
+            // people are made at QAuth: they appear here when they first sign in
+            if (qauth) return reply.code(409).send({ error: 'managed_by_qauth' });
             const body = createUserBody.parse(req.body);
             // A new administrator can do everything this one can, so a stolen
             // session must not be able to make one: the admin's own password
@@ -447,6 +453,10 @@ export const adminRoutes =
             const patch: Partial<typeof users.$inferInsert> = {};
             if (body.isAdmin !== undefined) patch.isAdmin = body.isAdmin;
             if (body.isActive !== undefined) patch.isActive = body.isActive;
+            if (body.password !== undefined && qauth) {
+                // a lost password is reset at QAuth, not here
+                return reply.code(409).send({ error: 'managed_by_qauth' });
+            }
             if (body.password !== undefined) {
                 // the rules compare with the account's own email
                 const [account] = await db

@@ -41,7 +41,10 @@ export const users = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         // the plain unique constraint serves the sign-in lookup (email = $1)
         email: text('email').notNull().unique(),
-        passwordHash: text('password_hash').notNull(),
+        // null for a person QAuth knows (AUTH_PROVIDER=qauth): the password is QAuth's
+        passwordHash: text('password_hash'),
+        // QAuth's id for the person (its `sub`), what QBase's own roles hang on; null for a local account
+        qauthSub: text('qauth_sub').unique(),
         isAdmin: boolean('is_admin').notNull().default(false),
         // a disabled user cannot sign in; their data and assignments stay
         isActive: boolean('is_active').notNull().default(true),
@@ -146,6 +149,11 @@ export const sessions = pgTable(
         // the browser's User-Agent, cut to 200 characters, so an admin can tell
         // sessions apart; no IP address is kept, it is personal data we do not need
         userAgent: text('user_agent'),
+        // QAuth mode: QAuth's refresh token for this sign-in (encrypted), used to ask
+        // QAuth whether the person is still signed in there; null for a local session
+        idpRefreshEnc: text('idp_refresh_enc'),
+        // when QAuth was last asked (at sign-in, then at most every few minutes)
+        idpCheckedAt: timestamp('idp_checked_at', { withTimezone: true }),
     },
     (t) => [
         // sign-in, sign-out and "reset password" delete a user's sessions by

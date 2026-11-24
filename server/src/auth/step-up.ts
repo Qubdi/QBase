@@ -8,6 +8,9 @@ import type { Config } from '../config.js';
 import type { AuthGuards } from './guards.js';
 import type { Mfa } from './mfa.js';
 import { verifyPassword } from './password.js';
+import { QauthError, type QauthClient } from './qauth.js';
+import { qauthAccessFor } from './qauth-session.js';
+import { isSecureRequest, sessionTokenOf } from './sessions.js';
 
 /** What a request sends to prove the signed-in person is really the one asking. */
 export const stepUpFields = {
@@ -32,11 +35,13 @@ export interface StepUpInput {
  */
 export function createStepUp(deps: {
     db: Db;
-    config: Pick<Config, 'mfaEnabled'>;
+    config: Pick<Config, 'mfaEnabled' | 'secretsKey' | 'cookieSecure'>;
     mfa: Mfa | null;
     guards: AuthGuards;
+    /** QAuth mode: QAuth checks the password and the second step */
+    qauth?: QauthClient | null;
 }) {
-    const { db, config, mfa, guards } = deps;
+    const { db, config, mfa, guards, qauth } = deps;
     return async (
         req: FastifyRequest,
         reply: FastifyReply,
@@ -46,6 +51,43 @@ export function createStepUp(deps: {
         if (input.adminPassword === undefined || input.adminPassword === '') {
             reply.code(403).send({ error: 'step_up_required' });
             return false;
+        }
+        if (qauth) {
+            // the person's own password (and code) are QAuth's to check, on their sign-in there
+            const key = `password:${userId}`;
+            if (await guards.locked(reply, key)) return false;
+            const token = sessionTokenOf(req.cookies, isSecureRequest(req, config.cookieSecure));
+            try {
+                const fresh = token
+                    ? await qauthAccessFor(db, config as never, qauth, token, req.ip)
+                    : null;
+                if (!fresh) {
+                    reply.code(401).send({ error: 'unauthorized' });
+                    return false;
+                }
+                await qauth.stepUp(fresh.accessToken, input.adminPassword, input.adminCode);
+            } catch (err) {
+                if (err instanceof QauthError && err.refused) {
+                    if (err.code === 'mfa_code_required' || err.code === 'mfa_required') {
+                        reply.code(403).send({ error: 'mfa_code_required' });
+                        return false;
+                    }
+                    if (err.code === 'invalid_code' || err.code === 'invalid_mfa_code') {
+                        await guards.failures.recordFailure(key);
+                        await audit(db, { userId, action: 'mfa.failed' });
+                        reply.code(403).send({ error: 'invalid_code' });
+                        return false;
+                    }
+                    await guards.failures.recordFailure(key);
+                    await audit(db, { userId, action: 'user.password_check_failed' });
+                    reply.code(403).send({ error: 'wrong_password' });
+                    return false;
+                }
+                reply.code(503).send({ error: 'auth_unavailable' });
+                return false;
+            }
+            await guards.failures.reset(key);
+            return true;
         }
         // the key every password check of this account counts under, so
         // change-password and two-factor off hold the same lockout
