@@ -137,7 +137,11 @@ export const authRoutes =
             return {
                 needsSetup: anyUser.length === 0,
                 // the form shows its token field only while it is needed; the token itself is never sent
-                setupTokenRequired: anyUser.length === 0 && config.setupToken !== null,
+                setupTokenRequired:
+                    anyUser.length === 0 &&
+                    (config.setupToken !== null || !config.allowOpenBootstrap),
+                // false = the operator has not set SETUP_TOKEN, so the form cannot succeed yet
+                setupTokenConfigured: config.setupToken !== null || config.allowOpenBootstrap,
                 passwordMinLength: config.passwordMinLength,
                 // whether the account menu offers two-factor at all
                 mfaAvailable: mfaAvailable(config),
@@ -167,6 +171,9 @@ export const authRoutes =
             }
             // While the server is empty, only whoever read the token in its log
             // (or set SETUP_TOKEN) may create the admin. Checked before the slow hash.
+            if (config.setupToken === null && !config.allowOpenBootstrap) {
+                return reply.code(403).send({ error: 'setup_token_required' });
+            }
             if (config.setupToken !== null && !sameToken(body.setupToken, config.setupToken)) {
                 return reply.code(403).send({ error: 'invalid_setup_token' });
             }

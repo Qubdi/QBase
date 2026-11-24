@@ -78,11 +78,16 @@ export interface Config {
     webhookAllowHosts: string[];
     /**
      * Token the first-run sign-up must send while no account exists, so whoever
-     * reaches an empty server cannot become its admin. SETUP_TOKEN; when it is
-     * unset the server makes a random one at start and prints it once (see
-     * server.ts). null = none required (tests, and the app once an account exists).
+     * reaches an empty server cannot become its admin. SETUP_TOKEN. The server never
+     * makes one itself: with none set, the first sign-up is refused
+     * (`setup_token_required`) unless allowOpenBootstrap is on.
      */
     setupToken: string | null;
+    /**
+     * ALLOW_OPEN_BOOTSTRAP=true lets the first caller become admin with no setup token.
+     * Off by default; for tests and throwaway local servers only.
+     */
+    allowOpenBootstrap: boolean;
     /** secret for encrypting saved connection passwords; null disables saving */
     connectionKey: string | null;
     /**
@@ -387,6 +392,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         introspectAllowPrivileged: env.INTROSPECT_ALLOW_PRIVILEGED?.trim() === '1',
         webhookAllowHosts,
         setupToken,
+        allowOpenBootstrap: ['1', 'true'].includes(
+            env.ALLOW_OPEN_BOOTSTRAP?.trim().toLowerCase() ?? ''
+        ),
         connectionKey,
         secretsKey,
         mfaEnabled: env.MFA_ENABLED?.trim().toLowerCase() !== 'false',

@@ -30,17 +30,18 @@ describe('start-up tasks', () => {
     afterEach(() => ctx.close());
 
     describe('the first-run setup token', () => {
-        it('is made and printed once on an empty server with no SETUP_TOKEN', async () => {
+        it('is never made by the server: with none set it warns how to set one', async () => {
             const { out, lines } = fakeLog();
             const config = await runStartupTasks(ctx.db, configWith(), out);
-            expect(config.setupToken).toMatch(/^[A-Za-z0-9_-]{24}$/);
-            expect(lines.log.join('\n')).toContain(`needs this setup token: ${config.setupToken}`);
+            expect(config.setupToken).toBeNull();
+            expect(lines.warn.join('\n')).toContain('Set SETUP_TOKEN');
+            expect(lines.log.join('\n')).not.toContain('needs this setup token');
         });
 
-        it('makes a different token each time', async () => {
-            const a = await runStartupTasks(ctx.db, configWith(), fakeLog().out);
-            const b = await runStartupTasks(ctx.db, configWith(), fakeLog().out);
-            expect(a.setupToken).not.toBe(b.setupToken);
+        it('says so when ALLOW_OPEN_BOOTSTRAP lets the first caller in', async () => {
+            const { out, lines } = fakeLog();
+            await runStartupTasks(ctx.db, configWith({ ALLOW_OPEN_BOOTSTRAP: 'true' }), out);
+            expect(lines.warn.join('\n')).toContain('ALLOW_OPEN_BOOTSTRAP is on');
         });
 
         it('keeps the SETUP_TOKEN the operator set and does not print it', async () => {
@@ -57,7 +58,7 @@ describe('start-up tasks', () => {
             const { out, lines } = fakeLog();
             const config = await runStartupTasks(ctx.db, configWith(), out);
             expect(config.setupToken).toBeNull();
-            expect(lines.log.join('\n')).not.toContain('No account exists');
+            expect(lines.log.join('\n') + lines.warn.join('\n')).not.toContain('No account exists');
         });
     });
 
@@ -98,16 +99,17 @@ describe('start-up tasks', () => {
                     return Reflect.get(target, prop, receiver);
                 },
             });
-            const config = await runStartupTasks(broken, configWith({ SECRETS_KEY }), out);
+            await runStartupTasks(broken, configWith({ SECRETS_KEY }), out);
             expect(lines.error.join('\n')).toContain('Could not encrypt saved webhook URLs: database is down');
-            // it went on to the setup token
-            expect(config.setupToken).not.toBeNull();
+            // it went on to the setup-token check
+            expect(lines.warn.join('\n')).toContain('SETUP_TOKEN');
         });
     });
 
     it('re-seals stored secrets without complaint when there is nothing to do', async () => {
         const { out, lines } = fakeLog();
-        await runStartupTasks(ctx.db, configWith({ SECRETS_KEY }), out);
+        // a token is set, so the empty server has nothing to warn about either
+        await runStartupTasks(ctx.db, configWith({ SECRETS_KEY, SETUP_TOKEN: 't'.repeat(16) }), out);
         expect(lines.error).toEqual([]);
         expect(lines.warn).toEqual([]);
     });

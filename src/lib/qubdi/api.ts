@@ -476,6 +476,8 @@ const setupStatusSchema = z.looseObject({
     mfaAvailable: z.boolean().optional(),
     // the first-run form shows its setup-token field only when this is true
     setupTokenRequired: z.boolean().optional(),
+    // false = the server has no SETUP_TOKEN yet, so the first sign-up would be refused
+    setupTokenConfigured: z.boolean().optional(),
 });
 const mfaStatusSchema = z.looseObject({
     available: z.boolean(),
@@ -574,6 +576,7 @@ export function createApi(
                 mfaAvailable?: boolean;
                 /** the first-run sign-up needs the setup token the server printed */
                 setupTokenRequired?: boolean;
+                setupTokenConfigured?: boolean;
             }>(
                 'GET',
                 '/auth/setup-status',

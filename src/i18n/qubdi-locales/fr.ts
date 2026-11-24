@@ -9,7 +9,9 @@ export const fr = {
             step_up_required:
                 'Saisissez votre propre mot de passe pour continuer : cette action modifie un autre administrateur.',
             invalid_setup_token:
-                'Ce jeton de configuration est incorrect. Copiez-le depuis le journal du serveur ou depuis SETUP_TOKEN.',
+                'Ce jeton de configuration est incorrect. Utilisez le SETUP_TOKEN défini sur le serveur.',
+            setup_token_required:
+                'Le serveur n’a pas de SETUP_TOKEN : définissez-en un (16 caractères minimum) et redémarrez avant de créer le premier compte.',
             invalid_request: 'Veuillez vérifier les valeurs saisies.',
             wrong_password: 'Le mot de passe actuel est incorrect.',
             invalid_code:
@@ -104,7 +106,7 @@ export const fr = {
             password: 'Mot de passe',
             setupToken: 'Jeton de configuration',
             setupTokenHint:
-                'Le serveur a affiché ce jeton dans son journal au démarrage (ou c’est le SETUP_TOKEN que vous avez défini).',
+                'C’est le SETUP_TOKEN défini par l’administrateur du serveur.',
         },
         accountMenu: {
             signIn: 'Se connecter',

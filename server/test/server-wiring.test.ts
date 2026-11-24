@@ -13,6 +13,7 @@ const config = {
     port: 4321,
     host: '127.0.0.1',
     setupToken: null as string | null,
+    allowOpenBootstrap: false,
 };
 const settings = vi.hoisted(() => ({ configError: false }));
 

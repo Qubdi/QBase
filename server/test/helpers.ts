@@ -44,6 +44,8 @@ export async function createTestApp(
             AUTH_MAX_FAILURES: '100000',
             // every save is recorded and every change published, so tests can
             // count them; the throttles have tests of their own
+            // the first sign-up needs no setup token here; setup-token.test.ts covers the strict default
+            ALLOW_OPEN_BOOTSTRAP: 'true',
             AUDIT_SAVE_MINUTES: '0',
             AUTO_PUBLISH_COALESCE_SECONDS: '0',
         }),

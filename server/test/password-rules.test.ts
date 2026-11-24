@@ -284,6 +284,7 @@ describe('setup-status', () => {
             expect(res.json()).toEqual({
                 needsSetup: true,
                 setupTokenRequired: false,
+                setupTokenConfigured: true,
                 passwordMinLength: 14,
                 mfaAvailable: false,
             });

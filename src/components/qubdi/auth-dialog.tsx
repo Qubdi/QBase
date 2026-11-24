@@ -43,6 +43,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
     const [challenge, setChallenge] = useState<string | null>(null);
     const [recovery, setRecovery] = useState(false);
     const [code, setCode] = useState('');
+    // the server has no SETUP_TOKEN yet, so creating the first account would be refused
+    const [tokenMissing, setTokenMissing] = useState(false);
     const minLength = usePasswordMinLength(open);
     // the rules apply to a password being chosen, never to signing in
     const weak =
@@ -55,10 +57,14 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
             .then((r) => {
                 setNeedsSetup(r.needsSetup);
                 setTokenRequired(r.needsSetup && r.setupTokenRequired === true);
+                setTokenMissing(
+                    r.needsSetup && r.setupTokenConfigured === false
+                );
             })
             .catch(() => {
                 setNeedsSetup(false);
                 setTokenRequired(false);
+                setTokenMissing(false);
             });
     }, [open]);
 
@@ -268,6 +274,11 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
                                 {t('qubdi.account.authDialog.setupTokenHint')}
                             </p>
                         </>
+                    ) : null}
+                    {mode === 'register' && tokenMissing ? (
+                        <p role="alert" className="text-sm text-red-500">
+                            {t('qubdi.account.errors.setup_token_required')}
+                        </p>
                     ) : null}
                     {error ? (
                         <p role="alert" className="text-sm text-red-500">

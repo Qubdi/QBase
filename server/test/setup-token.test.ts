@@ -66,11 +66,33 @@ describe('first-run sign-up with a setup token', () => {
 describe('first-run sign-up with no setup token configured', () => {
     let ctx: TestCtx;
     beforeAll(async () => {
-        ctx = await createTestApp({ setupToken: null });
+        ctx = await createTestApp({ setupToken: null, allowOpenBootstrap: false });
     });
     afterAll(() => ctx.close());
 
-    it('does not ask for one', async () => {
+    it('refuses, before hashing, and tells the form it cannot succeed yet', async () => {
+        const before = hashed.count;
+        const body = (await ctx.app.inject({ url: '/auth/setup-status' })).json();
+        expect(body).toMatchObject({
+            needsSetup: true,
+            setupTokenRequired: true,
+            setupTokenConfigured: false,
+        });
+        const res = await ctx.app.inject({ method: 'POST', url: '/auth/register', payload: account });
+        expect(res.statusCode).toBe(403);
+        expect(res.json().error).toBe('setup_token_required');
+        expect(hashed.count).toBe(before);
+    });
+});
+
+describe('first-run sign-up with ALLOW_OPEN_BOOTSTRAP', () => {
+    let ctx: TestCtx;
+    beforeAll(async () => {
+        ctx = await createTestApp({ setupToken: null, allowOpenBootstrap: true });
+    });
+    afterAll(() => ctx.close());
+
+    it('lets the first caller become admin with no token', async () => {
         const body = (await ctx.app.inject({ url: '/auth/setup-status' })).json();
         expect(body).toMatchObject({ needsSetup: true, setupTokenRequired: false });
         const res = await ctx.app.inject({ method: 'POST', url: '/auth/register', payload: account });

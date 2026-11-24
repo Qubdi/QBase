@@ -9,7 +9,9 @@ export const de = {
             step_up_required:
                 'Geben Sie zum Fortfahren Ihr eigenes Passwort ein: Dies ändert einen anderen Administrator.',
             invalid_setup_token:
-                'Dieses Einrichtungstoken ist nicht korrekt. Kopieren Sie es aus dem Serverprotokoll oder aus SETUP_TOKEN.',
+                'Dieses Einrichtungstoken ist nicht korrekt. Verwenden Sie das auf dem Server gesetzte SETUP_TOKEN.',
+            setup_token_required:
+                'Auf dem Server ist kein SETUP_TOKEN gesetzt: Setzen Sie eines (mindestens 16 Zeichen) und starten Sie neu, bevor Sie das erste Konto anlegen.',
             invalid_request: 'Bitte prüfen Sie Ihre Eingaben.',
             wrong_password: 'Das aktuelle Passwort ist falsch.',
             invalid_code:
@@ -105,7 +107,7 @@ export const de = {
             password: 'Passwort',
             setupToken: 'Einrichtungstoken',
             setupTokenHint:
-                'Der Server hat dieses Token beim Start in sein Protokoll geschrieben (oder es ist das von Ihnen gesetzte SETUP_TOKEN).',
+                'Es ist das SETUP_TOKEN, das der Serveradministrator gesetzt hat.',
         },
         accountMenu: {
             signIn: 'Anmelden',

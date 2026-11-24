@@ -74,11 +74,15 @@ You only need [Docker](https://docs.docker.com/get-docker/) with Compose v2. The
    POSTGRES_PASSWORD=dummy-db-password-change-me
    # encrypts the database connections you save (at least 32 characters)
    CONNECTION_KEY=dummy-connection-key-change-me-0123456789
+   # the first account asks for this; the server makes none itself (at least 16 characters)
+   SETUP_TOKEN=
    ```
+
+   Fill `SETUP_TOKEN` too (for example `openssl rand -hex 16`): without it nobody can create the first account.
 
    Make each value with `openssl rand -hex 24`, or choose your own. Keep this file: if `CONNECTION_KEY` is lost or changed, saved database connections can no longer be read. While a dummy value is still in use, the server prints a warning in its log (`docker compose logs app`).
 
-   Everything else has a default that suits one machine, so change it only if you need to: `APP_PORT` (8080), `APP_BIND_IP` to reach QBase from other machines, or `QBASE_VERSION` (remove the `#`) to pin a release. Two more secrets are optional, `SECRETS_KEY` and `SETUP_TOKEN`; the comments in the file explain them.
+   Everything else has a default that suits one machine, so change it only if you need to: `APP_PORT` (8080), `APP_BIND_IP` to reach QBase from other machines, or `QBASE_VERSION` (remove the `#`) to pin a release. `SECRETS_KEY` is an optional extra secret; the comments in the file explain it.
 
    On Windows run these commands in Git Bash or WSL, or download `docker-compose.yml` and `.env.example` from the repository in your browser and save them as `docker-compose.yml` and `.env`.
 
@@ -91,11 +95,7 @@ You only need [Docker](https://docs.docker.com/get-docker/) with Compose v2. The
 
 4. **Open the editor and create the first account.**
 
-   ```bash
-   docker compose logs app                  # the setup token is printed once in this log
-   ```
-
-   Go to <http://localhost:8080> and sign up. The first account becomes the administrator, and the form asks for the setup token from the log.
+   Go to <http://localhost:8080> and sign up. The first account becomes the administrator, and the form asks for the `SETUP_TOKEN` from your `.env`. The server never makes one itself: with `SETUP_TOKEN` empty the first account is refused.
 
 Day to day, in the same folder:
 

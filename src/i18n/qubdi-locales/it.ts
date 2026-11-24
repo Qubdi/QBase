@@ -9,7 +9,9 @@ export const it = {
             step_up_required:
                 'Inserisci la tua password per continuare: questa azione modifica un altro amministratore.',
             invalid_setup_token:
-                'Il token di configurazione non è corretto. Copialo dal log del server o da SETUP_TOKEN.',
+                'Il token di configurazione non è corretto. Usa il SETUP_TOKEN impostato sul server.',
+            setup_token_required:
+                'Il server non ha un SETUP_TOKEN: impostane uno (almeno 16 caratteri) e riavvia prima di creare il primo account.',
             invalid_request: 'Controlla i valori inseriti.',
             wrong_password: 'La password attuale non è corretta.',
             invalid_code:
@@ -100,7 +102,7 @@ export const it = {
             password: 'Password',
             setupToken: 'Token di configurazione',
             setupTokenHint:
-                "Il server ha stampato questo token nel log all'avvio (oppure è il SETUP_TOKEN che hai impostato).",
+                'È il SETUP_TOKEN impostato da chi gestisce il server.',
         },
         accountMenu: {
             signIn: 'Accedi',

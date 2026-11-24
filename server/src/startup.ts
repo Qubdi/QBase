@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import { safeError } from './lib/safe-error.js';
 import type { Config } from './config.js';
 import type { Db } from './db/client.js';
@@ -61,17 +60,19 @@ export async function runStartupTasks(
         out.error('Could not re-seal stored secrets:', safeError(err).message);
     }
 
-    // On an empty server the first sign-up becomes the admin, so it needs a token:
-    // SETUP_TOKEN, or one made now and printed once. Several replicas behind one
-    // address need SETUP_TOKEN, since each would print a different one.
+    // On an empty server the first sign-up becomes the admin, so it needs SETUP_TOKEN. The
+    // server does not make one: with none set the first sign-up is refused, and this says so.
     if ((await db.select({ id: users.id }).from(users).limit(1)).length === 0) {
-        if (config.setupToken === null) {
-            config = { ...config, setupToken: randomBytes(18).toString('base64url') };
-            out.log(
-                `No account exists yet. Creating the first admin needs this setup token: ${config.setupToken}`
+        if (config.setupToken !== null) {
+            out.log('No account exists yet. Creating the first admin needs the SETUP_TOKEN you set.');
+        } else if (config.allowOpenBootstrap) {
+            out.warn(
+                'No account exists yet and ALLOW_OPEN_BOOTSTRAP is on: the first person to reach this server becomes its admin.'
             );
         } else {
-            out.log('No account exists yet. Creating the first admin needs the SETUP_TOKEN you set.');
+            out.warn(
+                'No account exists yet. Set SETUP_TOKEN (at least 16 characters, e.g. `openssl rand -hex 16`) and restart: until then nobody can create the first admin.'
+            );
         }
     }
     return config;

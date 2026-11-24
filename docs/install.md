@@ -46,7 +46,7 @@ A secret in these steps means a long random string. Make one with `openssl rand 
 
    It makes `.env` as above if there is none, builds the image from your checkout, starts QBase with its bundled PostgreSQL, waits until both are healthy, and prints the address and the setup token for the first account. The first build takes a few minutes. By hand: `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --wait`. If `docker compose up -d` stops with "not found" (a pinned `QBASE_VERSION` that is not published), this is the way to get a working image.
 
-4. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. The form asks for a *setup token*: the server prints it once in its log (`docker compose logs app`; `bash run.sh start` shows it for you), or it is the `SETUP_TOKEN` you chose. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
+4. **Open the editor** at <http://localhost:8080> and create the first account. It becomes the administrator. The form asks for a *setup token*, which is the `SETUP_TOKEN` in `.env` (`bash run.sh setup` makes one; `bash run.sh start` shows it). The server never makes one itself: with no `SETUP_TOKEN` the first account is refused. Sign-up then closes: the administrator adds everyone else under *Admin > Users* and gives them access to projects.
 
 5. **Check that it is up** (optional). `db` should be `healthy` and `app` `running` (its health says `starting` for the first half minute).
 
@@ -144,7 +144,7 @@ QBase then does not start a database of its own. You need PostgreSQL 16 or newer
    | `database "qbase" does not exist` | step 1 was skipped, or `POSTGRES_DB` is spelled differently |
    | `permission denied` | the role does not own the database (`ALTER DATABASE qbase OWNER TO qbase;`) |
 
-7. **Open the editor** at <http://localhost:8080> and create the first account, as in Option A (the setup token is in the server's log).
+7. **Open the editor** at <http://localhost:8080> and create the first account, as in Option A (the setup token is the `SETUP_TOKEN` in `.env`).
 
 The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the connection address from the five values above. If your database requires SSL, use Option C with `?sslmode=require` on `DATABASE_URL`.
 
@@ -193,4 +193,4 @@ The Docker setup cannot ask PostgreSQL for SSL, because Compose builds the conne
 
    `.env` from step 2 already has `VITE_QUBDI_BACKEND_URL=http://localhost:3001`. Without that setting the editor runs in local-only mode: it shows no account screens, the diagrams stay in your browser, and accounts, projects, share links and live-database import are not available (schema lint works either way).
 
-5. **Open <http://localhost:5173>** and create the first account: it becomes the administrator. The form asks for a setup token, which `npm run dev` of the server prints once at start (or set `SETUP_TOKEN` in `server/.env`).
+5. **Open <http://localhost:5173>** and create the first account: it becomes the administrator. The form asks for a setup token: set `SETUP_TOKEN` (at least 16 characters) in `server/.env` first, since the server makes none itself and refuses the first account without it.

@@ -145,6 +145,11 @@ setup_env() {
         ok "Made CONNECTION_KEY"
         made=true
     fi
+    if [[ -z "$(env_value SETUP_TOKEN)" ]]; then
+        set_env SETUP_TOKEN "$(random_secret 16)"
+        ok "Made SETUP_TOKEN (the first account asks for it)"
+        made=true
+    fi
     if $made; then
         warn ".env now holds passwords and keys: keep it private and never commit it."
         warn "Back up CONNECTION_KEY with your database backups: without it, saved database connections cannot be read."
@@ -237,12 +242,12 @@ run() {
             report "${BUILD[@]}" ps --format "$PS_FORMAT"
             local port token
             port=$(env_value APP_PORT)
-            token=$("${BASE[@]}" logs app 2>/dev/null | sed -n 's/.*first admin needs this setup token: //p' | tail -n 1)
+            token=$(env_value SETUP_TOKEN)
             echo "  Open ${BOLD}http://localhost:${port:-8080}${RESET} and create the first account (it becomes the administrator)."
             if [[ -n "$token" ]]; then
                 echo "  Setup token for that form: ${BOLD}$token${RESET}"
             else
-                echo "  The setup token is in the log: bash run.sh logs  (or the SETUP_TOKEN you set in .env)"
+                echo "  The setup token is the SETUP_TOKEN in .env (the server makes none itself)"
             fi
             ;;
         build)

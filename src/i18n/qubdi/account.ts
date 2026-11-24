@@ -10,7 +10,9 @@ export const account = {
         step_up_required:
             'Enter your own password to continue: this changes another administrator.',
         invalid_setup_token:
-            'That setup token is not right. Copy it from the server log or from SETUP_TOKEN.',
+            'That setup token is not right. Use the SETUP_TOKEN set on the server.',
+        setup_token_required:
+            'This server has no SETUP_TOKEN: set one (at least 16 characters) and restart it before creating the first account.',
         invalid_request: 'Please check the values you entered.',
         wrong_password: 'Current password is incorrect.',
         invalid_code: 'That code is not right. Check the app and try again.',
@@ -96,8 +98,7 @@ export const account = {
         email: 'Email',
         password: 'Password',
         setupToken: 'Setup token',
-        setupTokenHint:
-            'The server printed this token in its log when it started (or it is the SETUP_TOKEN you set).',
+        setupTokenHint: 'It is the SETUP_TOKEN the server administrator set.',
     },
     accountMenu: {
         signIn: 'Sign in',
