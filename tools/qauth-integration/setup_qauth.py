@@ -11,7 +11,7 @@ if b.get("status") == "mfa_required":
     sys.exit("admin needs mfa")
 H = {"authorization": f"Bearer {tok}"}
 s, b, _ = call("POST", f"{Q}/step-up", {"password": PW}, H); assert s == 200, (s, b)
-s, b, _ = call("POST", f"{Q}/admin/oidc-clients", {"name": "QBase", "redirect_uris": ["http://localhost:13001/cb"], "public": True}, H); assert s == 201, (s, b)
+s, b, _ = call("POST", f"{Q}/admin/oidc-clients", {"name": "QBase", "redirect_uris": ["http://localhost:13001/cb"], "public": True, "scopes": ["openid", "email", "profile", "offline_access"], "post_logout_redirect_uris": ["http://localhost:13001/signed-out"]}, H); assert s == 201, (s, b)
 cid = b["client_id"]
 s, b, _ = call("POST", f"{Q}/admin/projects/{cid}/first-admin", {"email": "ann@example.com"}, H); assert s == 201, (s, b)
 inv = b["token"]

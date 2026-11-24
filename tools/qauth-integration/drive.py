@@ -100,5 +100,50 @@ s, b, _ = call("POST", f"{B}/auth/logout", None, cookies=bob)
 check("logout through QBase", s == 200, (s, b))
 s, b, _ = call("GET", f"{B}/auth/me", cookies=bob)
 check("and the session is gone", s == 401, (s, b))
+
+print("OpenID Connect (the redirect way) against the same QAuth")
+import hashlib, os, urllib.parse, urllib.request, json
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k): return None
+opener = urllib.request.build_opener(NoRedirect)
+def get_nr(url, cookie=""):
+    req = urllib.request.Request(url, headers={"cookie": cookie} if cookie else {})
+    try:
+        r = opener.open(req, timeout=20); return r.status, dict(r.headers), r.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.code, dict(e.headers), e.read().decode()
+def form(url, data):
+    req = urllib.request.Request(url, data=urllib.parse.urlencode(data).encode(), method="POST")
+    try:
+        r = urllib.request.urlopen(req, timeout=20); return r.status, json.loads(r.read().decode() or "{}")
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode()
+        try: return e.code, json.loads(raw)
+        except ValueError: return e.code, {"raw": raw}
+s, b, h = call("POST", f"{Q}/login", {"email": "bob@example.com", "password": PW + "y", "client_id": CID})
+browser = cookie_of(h)
+check("a browser session at QAuth (refresh cookie)", bool(browser), (s, b))
+verifier = base64.urlsafe_b64encode(os.urandom(48)).rstrip(b"=").decode()
+challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
+params = {"response_type": "code", "client_id": CID, "redirect_uri": "http://localhost:13001/cb", "scope": "openid email offline_access",
+          "state": "s1", "nonce": "n1", "code_challenge": challenge, "code_challenge_method": "S256"}
+st, hd, _ = get_nr(f"{Q}/oidc/authorize?" + urllib.parse.urlencode(params), browser)
+loc = hd.get("location") or hd.get("Location") or ""
+code = urllib.parse.parse_qs(urllib.parse.urlsplit(loc).query).get("code", [""])[0]
+check("authorize hands back a code (PKCE)", st == 302 and code, (st, loc))
+st, tok = form(f"{Q}/oidc/token", {"grant_type": "authorization_code", "code": code, "redirect_uri": "http://localhost:13001/cb", "code_verifier": verifier, "client_id": CID})
+check("the token endpoint gives an ID token, an access token and a refresh token", st == 200 and tok.get("id_token") and tok.get("refresh_token"), (st, tok))
+st, tok2 = form(f"{Q}/oidc/token", {"grant_type": "refresh_token", "refresh_token": tok.get("refresh_token", ""), "client_id": CID})
+check("the refresh token gives new tokens and a successor", st == 200 and tok2.get("refresh_token") and tok2["refresh_token"] != tok["refresh_token"], (st, tok2))
+s, info, _ = call("GET", f"{Q}/oidc/userinfo", None, {"authorization": "Bearer " + tok2.get("access_token", "")})
+check("userinfo works with the new access token and has no roles", s == 200 and info.get("email") == "bob@example.com" and "roles" not in info, (s, info))
+st, _ = form(f"{Q}/oidc/revoke", {"token": tok2["refresh_token"], "client_id": CID})
+check("the app withdraws its refresh token", st == 200, st)
+st, again = form(f"{Q}/oidc/token", {"grant_type": "refresh_token", "refresh_token": tok2["refresh_token"], "client_id": CID})
+check("a withdrawn refresh token no longer works", st == 400 and again.get("error") == "invalid_grant", (st, again))
+st, hd, _ = get_nr(f"{Q}/oidc/logout?" + urllib.parse.urlencode({"id_token_hint": tok["id_token"], "post_logout_redirect_uri": "http://localhost:13001/signed-out", "state": "bye"}), browser)
+check("RP-initiated logout ends the sign-in and returns to the app", st == 302 and (hd.get("location") or "") == "http://localhost:13001/signed-out?state=bye", (st, hd.get("location")))
+s, b, _ = call("GET", f"{Q}/me", None, {"authorization": "Bearer " + b["access_token"]})
+check("the QAuth session of that browser is over", s == 401, (s, b))
 print(f"\n{ok} passed, {fail} failed")
 sys.exit(1 if fail else 0)
