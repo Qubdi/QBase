@@ -145,5 +145,21 @@ st, hd, _ = get_nr(f"{Q}/oidc/logout?" + urllib.parse.urlencode({"id_token_hint"
 check("RP-initiated logout ends the sign-in and returns to the app", st == 302 and (hd.get("location") or "") == "http://localhost:13001/signed-out?state=bye", (st, hd.get("location")))
 s, b, _ = call("GET", f"{Q}/me", None, {"authorization": "Bearer " + b["access_token"]})
 check("the QAuth session of that browser is over", s == 401, (s, b))
+
+print("A web page calling QAuth from a browser (CORS)")
+time.sleep(31)  # a code is good for one 30-second step only
+s, b, _ = call("POST", f"{Q}/login", {"email": "ann@example.com", "password": PW, "client_id": CID})
+if b.get("status") == "mfa_required":
+    s, b, _ = call("POST", f"{Q}/mfa/verify", {"ticket": b["mfa_ticket"], "code": totp(secret)})
+    time.sleep(31)
+HH = {"authorization": "Bearer " + b["access_token"]}
+call("POST", f"{Q}/step-up", {"password": PW, "mfa_code": totp(secret)}, HH)
+s, b, _ = call("PUT", f"{Q}/admin/projects/{CID}/origins", {"origins": ["https://qbase.example.com"]}, HH)
+check("the app lists its website", s == 200 and b.get("origins") == ["https://qbase.example.com"], (s, b))
+time.sleep(11)  # a change shows within ten seconds
+s, b, h = call("OPTIONS", f"{Q}/login", None, {"origin": "https://qbase.example.com", "access-control-request-method": "POST", "access-control-request-headers": "content-type"})
+check("its preflight is answered for that origin only", s == 204 and h.get("access-control-allow-origin") == "https://qbase.example.com" and not h.get("access-control-allow-credentials"), (s, dict(h)))
+s, b, h = call("GET", f"{Q}/config", None, {"origin": "https://evil.example.com"})
+check("another website gets no CORS headers", s == 200 and not h.get("access-control-allow-origin"), dict(h))
 print(f"\n{ok} passed, {fail} failed")
 sys.exit(1 if fail else 0)
